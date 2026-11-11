@@ -23,9 +23,9 @@
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
   display: flex; flex-direction: column; gap: var(--space-3); min-height: 0;
-  /* Abajo, aire para que la última fila se alcance entera bajo el fundido; el margen solo se come el hueco del panel, así
-     la lista termina donde empieza «lo que trae» (antes se metía 22 px debajo y ese renglón quedaba sobre las tarjetas). */
-  overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-10); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-4));
+  /* Abajo, aire para que la última fila se alcance entera bajo el fundido; entre la lista y «lo que trae» queda el hueco
+     del panel (R3: sin él, el filo de la tarjeta que se funde tocaba ese renglón). */
+  overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-10); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
 }
 /* Lo que sigue se funde, solo del lado donde hay más (sources.js · edges): antes la cuadrícula se cortaba en seco arriba y
    la última fila quedaba siempre velada. */

@@ -39,6 +39,22 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     list.classList.toggle("sources__list--down", list.scrollTop + list.clientHeight < list.scrollHeight - 2);
   };
   list.addEventListener("scroll", edges, { passive: true });
+  /** Lleva lo enfocado a la vista FUERA del fundido (3 rem, sources.css): `scrollIntoView` lo dejaba a medias bajo el velo
+   *  (la fila de arriba cortada al subir; «Ver los demás» con el velo encima al llegar abajo). Cerca de una orilla, hasta
+   *  la orilla: así la primera y la última fila quedan enteras y su fundido se apaga. */
+  function reveal(el) {
+    if (!el) return;
+    const fade = 3 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
+    const box = list.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const max = Math.max(0, list.scrollHeight - list.clientHeight);
+    let top = list.scrollTop;
+    if (r.top - box.top < fade) top += r.top - box.top - fade;
+    else if (box.bottom - r.bottom < fade) top += r.bottom - box.bottom + fade;
+    top = Math.max(0, Math.min(max, top));
+    if (top < fade) top = 0;
+    else if (max - top < fade) top = max;
+    if (Math.abs(top - list.scrollTop) > 1) list.scrollTo({ top, behavior: motion() });
+  }
   new MutationObserver(() => requestAnimationFrame(edges)).observe(list, { childList: true });
   const why = h("div", { class: "sources__why", role: "status" });
   const status = h("div", { class: "sources__status", role: "status" });
@@ -110,7 +126,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     rows = compose();
     at = { row: Math.min(r, rows.length - 1), col: 0 };
     renderRows();
-    cells[at.row]?.[at.col]?.scrollIntoView({ block: "nearest", behavior: motion() });
+    reveal(cells[at.row]?.[at.col]);
     onChange?.();
   }
 
@@ -197,7 +213,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     at = next;
     const button = cells[at.row]?.[at.col];
     button?.classList.add("is-focused");
-    button?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
+    reveal(button);
     describe();
     onMove?.();
   }
@@ -209,7 +225,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     buttons[index]?.classList.remove("is-focused");
     index = next;
     buttons[index]?.classList.add("is-focused");
-    buttons[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
+    reveal(buttons[index]);
     onMove?.();
   }
 

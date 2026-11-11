@@ -461,3 +461,62 @@ def test_long_list_and_editing_your_list(browser, server):  # noqa: F811
         page.close()
     finally:
         post("unlink")
+
+
+@pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
+def test_choose_version_is_whole_and_the_notice_does_not_cover(browser, server, width, height):  # noqa: F811
+    """R3-1 (revisión 2, punto 11): en «Elegir versión» la etiqueta de arriba es la turquesa del sistema; al bajar, «Ver los
+    demás» enfocada se ve entera y sin velo; al subir, la fila de arriba tampoco queda bajo el fundido; y el aviso «Esa versión
+    ya no está» no tapa ninguna tarjeta. La demo sirve la ficha de Dune y sus versiones sin internet."""
+    page = browser.new_page(viewport={"width": width, "height": height})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.route("**/api/stremio/play", lambda r: r.fulfill(
+        status=409, json={"detail": "Esa versión ya no está disponible; vuelve a abrir la lista"}))
+    page.goto(f"{server}/?pelicula=tt15239678")
+    ready(page)
+    page.locator("section.title:not([hidden])").wait_for(timeout=8000)
+    page.wait_for_timeout(1200)
+    page.keyboard.press("y")
+    page.locator(".sources .version").first.wait_for(timeout=8000)
+    page.wait_for_timeout(800)
+    if page.locator(".sheet__title", has_text="Así funciona").is_visible():
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(600)
+    colors = page.evaluate("""() => {
+      const probe = document.createElement('span'); probe.style.color = 'var(--color-reason)'; document.body.append(probe);
+      const want = getComputedStyle(probe).color; probe.remove();
+      return [getComputedStyle(document.querySelector('.sources__heading')).color, want]; }""")
+    assert colors[0] == colors[1], colors
+    whole = """() => {
+      const list = document.querySelector('.sources__list'), el = list.querySelector('.is-focused');
+      const a = list.getBoundingClientRect(), b = el.getBoundingClientRect(), fade = 3 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const up = list.classList.contains('sources__list--up'), down = list.classList.contains('sources__list--down');
+      return { text: el.textContent.trim().slice(0, 20), up, down,
+               top: b.top - a.top - (up ? fade : 0), bottom: a.bottom - b.bottom - (down ? fade : 0) }; }"""
+    for _ in range(12):
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(150)
+    page.wait_for_timeout(700)
+    end = page.evaluate(whole)
+    assert end["text"].startswith("Ver los demás"), end
+    assert not end["down"] and end["top"] >= -1 and end["bottom"] >= -1, end
+    for _ in range(12):
+        page.keyboard.press("ArrowUp")
+        page.wait_for_timeout(150)
+    page.wait_for_timeout(700)
+    start = page.evaluate(whole)
+    assert not start["up"] and start["top"] >= -1 and start["bottom"] >= -1, start
+    page.keyboard.press("Enter")
+    page.locator(".toast:not([hidden])").wait_for(timeout=5000)
+    page.wait_for_timeout(700)
+    toast = page.evaluate("""() => {
+      const t = document.querySelector('.toast').getBoundingClientRect();
+      const hit = [...document.querySelectorAll('.sources .version')].filter((v) => {
+        const r = v.getBoundingClientRect();
+        return r.height && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top; });
+      return { text: document.querySelector('.toast').innerText, hit: hit.map((v) => v.textContent.trim().slice(0, 20)) }; }""")
+    assert "Esa versión ya no está" in toast["text"] and "Elige otra de la lista" in toast["text"], toast
+    assert not toast["hit"], toast
+    assert not errors, errors
+    page.close()

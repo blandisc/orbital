@@ -98,8 +98,26 @@ DEMO_TITLES = {
 }
 
 
+HEROES = ["hero-generic-1.jpg", "hero-generic-2.jpg", "hero-switch-1.jpg", "hero-xbox-1.jpg", "hero-psp-1.jpg", "hero-wii-2.jpg"]
+
+
+def demo_row_title(kind: str, meta_id: str) -> dict | None:
+    """Toda película o serie de las filas de la demo (demo_foryou) también tiene ficha sin internet: así se abre su
+    ficha y «Elegir versión» desde Películas y series, Explorar o Buscar (antes daba 502 fuera de DEMO_TITLES)."""
+    pool = demo_foryou.MOVIES if kind == "movie" else demo_foryou.SHOWS
+    entry = next((e for e in pool.values() if e["imdb"] == meta_id), None)
+    if not entry:
+        return None
+    hero = HEROES[int(hashlib.sha1(meta_id.encode()).hexdigest(), 16) % len(HEROES)]
+    year = str(entry["year"])
+    return {"name": entry["title"], "year": year if kind == "movie" else f"{year}–", "imdbRating": "8.1",
+            "genres": entry["genres"][:2] or ["Drama"], "hero": hero,
+            "description": f"{entry['title']}: una ficha de muestra de la demostración, sin internet.",
+            **({"runtime": f"{entry['runtime']} min"} if entry.get("runtime") else {"seasons": 2, "episodes": 4})}
+
+
 def demo_meta(kind: str, meta_id: str) -> dict | None:
-    t = DEMO_TITLES.get((kind, meta_id))
+    t = DEMO_TITLES.get((kind, meta_id)) or demo_row_title(kind, meta_id)
     if not t:
         return None
     hero = f"/img/placeholders/{t['hero']}"
