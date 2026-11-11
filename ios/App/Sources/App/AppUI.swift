@@ -40,6 +40,14 @@ final class AppUI {
     var seeingDownloads = false
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
+    /// V9: lo que hacen el botón del control de Inicio y abrir una ficha en el panel (iPad, Mac), por ventana (`window`). Las
+    /// pone la raíz de cada ventana; el entorno solo lleva datos (`RemoteOpener`, `TitlePanelOpener`), así no se vuelve a
+    /// pintar quien lo lee con cada pasada de la raíz.
+    @ObservationIgnored var remoteButtons: [Int: () -> Void] = [:]
+    @ObservationIgnored var titlePanels: [Int: (TitleRoute, CGRect?) -> Void] = [:]
+    @ObservationIgnored private var lastWindow = 0
+    /// Un número para cada ventana (lo guarda su raíz en un `@State`).
+    func newWindow() -> Int { lastWindow += 1; return lastWindow }
     /// El Centro de control pidió «Un Simpson al azar»: Inicio abre la ruleta.
     var openSimpsons = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).

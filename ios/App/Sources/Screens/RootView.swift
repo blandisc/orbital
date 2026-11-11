@@ -247,12 +247,15 @@ extension EnvironmentValues {
 
 /// El botón del control: siempre igual a otro (como `TitlePanelOpener`), para que Inicio no se vuelva a pintar entera cada
 /// vez que la raíz cambia de pestaña o regresa de una ficha.
+/// V9: el valor del entorno es solo datos (`wide`); la acción vive en `AppUI.remoteButton` (fuera de Observation). Con el
+/// cierre dentro, SwiftUI daba el entorno por cambiado en cada pasada de la raíz (cada sondeo de la TV) aunque `==` dijera
+/// que era igual, y volvía a pintar Inicio entera (`-perf-why`: «_openRemote changed», 25 veces al abrir una ficha).
 struct RemoteOpener: Equatable {
     /// Lo único que cambia lo que hace: si el control abre como panel o como hoja.
     let wide: Bool
-    let open: () -> Void
-    func callAsFunction() { open() }
-    static func == (a: Self, b: Self) -> Bool { a.wide == b.wide }
+    /// De qué ventana es (su acción, en `AppUI.remoteButtons`).
+    let window: Int
+    @MainActor func callAsFunction() { AppEnvironment.shared.ui.remoteButtons[window]?() }
 }
 
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
@@ -263,6 +266,8 @@ struct MainTabs: View {
     private let ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
     @State private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
+    /// Esta ventana (V9: sus acciones del entorno viven en `AppUI`, ver `RemoteOpener`).
+    @State private var window = AppEnvironment.shared.ui.newWindow()
     /// El acompañante del juego abierto en la consola.
     @State private var showGame = false
     /// La hoja del control estirada (el control completo) o corta.
@@ -298,11 +303,12 @@ struct MainTabs: View {
     /// mismo botón lo cierra.
     private var openRemoteAction: RemoteOpener? {
         guard tvNow.model.isConfigured else { return nil }
-        return RemoteOpener(wide: remoteAsPanel || sizeClass == .regular) {
+        ui.remoteButtons[window] = {
             if remoteAsPanel && showRemote { showRemote = false; return }
             if remoteAsPanel { panelTitle = nil }   // un solo panel a la derecha: el control reemplaza a la ficha
             remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true
         }
+        return RemoteOpener(wide: remoteAsPanel || sizeClass == .regular, window: window)
     }
 
     /// Ventana ancha (iPad horizontal, Mac): el control va en un panel fijo a la derecha y se navega a la vez. Angosta (iPad
@@ -328,10 +334,12 @@ struct MainTabs: View {
 
     /// Abrir fichas en el panel (iPad, Mac); en el iPhone no existe y navegan a pantalla completa.
     private var titleOpener: TitlePanelOpener? {
-        titleAsPanel ? TitlePanelOpener { route, _ in
+        guard titleAsPanel else { return nil }
+        ui.titlePanels[window] = { route, _ in
             showRemote = false
             panelTitle = route
-        } : nil
+        }
+        return TitlePanelOpener(window: window)
     }
 
     /// Las cuatro pestañas, cada una con su pila de navegación.

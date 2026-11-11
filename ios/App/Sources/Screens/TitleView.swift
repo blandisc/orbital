@@ -12,7 +12,9 @@ struct TitleView: View {
     /// que todavía no tiene el entorno de la app, y uno obligatorio tiraba la app (R1, 31 oct 2026; `ToolbarEnvironmentTests`).
     @Environment(AppEnvironment.self) private var appEnv: AppEnvironment?
     var env: AppEnvironment { appEnv ?? .shared }
-    @Environment(\.dismiss) private var dismiss
+    /// Sin `@Environment(\.dismiss)` aquí (V9): cambia con cada movimiento de la pila y llegó a pintar la ficha 69 veces seguidas
+    /// al abrirla. Quien cierra la ficha lee `dismiss` en su propia pieza (`DismissWhen`).
+    @State private var closing = false
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
     @Environment(\.horizontalSizeClass) var sizeClass
@@ -89,8 +91,8 @@ struct TitleView: View {
                                                            save: { saving = true }, versions: { if let v = model.continueVideoID { openVersions(v) } }))
     }
 
-    /// Lo que la ficha carga y sigue mientras está abierta.
-    private func loaded(_ model: TitleModel) -> some View {
+    /// Lo que la ficha sigue mientras está abierta (aparte de `loaded`: juntas tardaban en revisarse, V9).
+    private func following(_ model: TitleModel) -> some View {
         framed(model)
         .task { await model.followDownloads() }
         // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
@@ -106,6 +108,12 @@ struct TitleView: View {
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .modifier(RewatchDialog(row: $rewatch, version: rewatchVersion(model), again: { startEpisode(model, videoID: $0) }, versions: openVersions, unwatch: { id in Task { await model.unmarkWatched(id) } }))
+    }
+
+    /// Lo que la ficha carga al abrir.
+    private func loaded(_ model: TitleModel) -> some View {
+        following(model)
+        .modifier(DismissWhen(closing: closing))
         .task {
             await model.load()
             Task { await model.loadBestSource(onCellular: env.connectivity.isCellular); if model.bestSource != nil { Perf.mark("title.sources") } }   // aparte: las fuentes tardan y no detienen el color del fondo
@@ -113,7 +121,7 @@ struct TitleView: View {
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, ["sources", "sources-all", "sources-request"].contains(Demo.open ?? ""), let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
-            if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
+            if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { closing = true } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
             if Demo.isOn, let sheet = Demo.open.flatMap({ TitleDebridSheet(rawValue: $0.replacingOccurrences(of: "rd-", with: "")) }), Demo.open?.hasPrefix("rd-") == true {
@@ -130,6 +138,10 @@ struct TitleView: View {
     }
 
     var body: some View {
+        let _ = BodyCount.tick("title")   // V9: cuántas veces se pinta (`-perf-bodies`)
+        #if DEBUG
+        let _ = BodyCount.explains ? Self._printChanges() : ()   // `-perf-why`: qué la hizo pintarse
+        #endif
         let model = observer.model
         loaded(model)
         .sheet(item: $sourcesFor) { target in
@@ -564,5 +576,15 @@ enum WideTab: Hashable {
         if let extras, !(extras.crew + extras.cast).isEmpty { tabs.append(.cast) }
         if let extras, extras.collection != nil || !extras.recommendations.isEmpty { tabs.append(.similar) }
         return tabs + [.details]
+    }
+}
+
+/// Cierra la pantalla cuando `closing` se vuelve verdadero. Aparte para que solo esta pieza lea `dismiss`, que cambia con cada
+/// movimiento de la navegación (V9).
+private struct DismissWhen: ViewModifier {
+    let closing: Bool
+    @Environment(\.dismiss) private var dismiss
+    func body(content: Content) -> some View {
+        content.onChange(of: closing) { _, close in if close { dismiss() } }
     }
 }

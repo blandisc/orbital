@@ -8,10 +8,11 @@ import OrbitalCore
 /// Siempre igual a otro: la raíz lo arma en cada pasada (cambiar de pestaña, regresar de una ficha) y, como el cierre solo
 /// toca su estado guardado, cambiarlo por uno nuevo no cambia nada; sin esto, todo lo que lo lee se volvía a pintar.
 struct TitlePanelOpener: Equatable {
-    static func == (_: Self, _: Self) -> Bool { true }
-    /// La ficha y, si se sabe, el marco del póster que se tocó (en la ventana): de ahí sale el zoom hacia el panel.
-    let open: (TitleRoute, CGRect?) -> Void
-    func callAsFunction(_ route: TitleRoute, from frame: CGRect? = nil) { open(route, frame) }
+    /// La ficha y, si se sabe, el marco del póster que se tocó (en la ventana): de ahí sale el zoom hacia el panel. La acción
+    /// vive en `AppUI.titlePanel` (V9, como `RemoteOpener`): con el cierre dentro, cada pasada de la raíz volvía a pintar cada
+    /// póster que lee el entorno.
+    let window: Int
+    @MainActor func callAsFunction(_ route: TitleRoute, from frame: CGRect? = nil) { AppEnvironment.shared.ui.titlePanels[window]?(route, frame) }
 }
 
 extension EnvironmentValues {
