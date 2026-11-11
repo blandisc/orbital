@@ -4,13 +4,31 @@ import Foundation
 /// la app los convierte a `Color`).
 /// «Nada se crea suelto»: las pantallas usan estos tokens, no colores ni medidas a mano.
 public enum DesignTokens {
+    // generado: inicio
+    // Lo de aquí hasta «generado: fin» lo escribe scripts/generar_tokens.py desde design/tokens.json (lo que comparte con la
+    // TV): se cambia allá y se vuelve a generar, no aquí.
     /// Paleta única: los mismos valores que `orbital/web/styles/palette.json`.
     public static let palette: [String: String] = [
         "ink-1000": "#070708", "ink-950": "#0c0c0e", "ink-900": "#131316", "ink-850": "#18181c", "ink-800": "#1e1e23",
-        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-250": "#babac1", "ink-200": "#cdcdd3", "paper": "#f5f4f0",
-        "red-400": "#f0574d", "amber-300": "#f4c24d", "teal-300": "#5fd6c6",
-        "pad-green": "#5cbf6d", "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
+        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-250": "#babac1", "ink-200": "#cdcdd3",
+        "paper": "#f5f4f0", "red-400": "#f0574d", "amber-300": "#f4c24d", "teal-300": "#5fd6c6", "pad-green": "#5cbf6d",
+        "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
     ]
+
+    /// El color de cada plataforma («otra»: Apple TV+ y las demás, plata). Igual que `platforms` en design/tokens.json.
+    public enum Platform {
+        public static let hex: [String: String] = ["netflix": "#e60a14", "disney": "#456eff", "hbo": "#7a3dff",
+                                                   "prime": "#1a99ff", "paramount": "#0063ff", "otra": "#c7c7d1"]
+        public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
+    }
+
+    /// Espacio (puntos): 4, 8, 12, 16, 20, 24, 32, 40, 56.
+    public enum Space { public static let s1 = 4.0, s2 = 8.0, s3 = 12.0, s4 = 16.0, s5 = 20.0, s6 = 24.0, s8 = 32.0, s10 = 40.0, s14 = 56.0 }
+    /// Las esquinas (puntos); la cápsula, `pill`, vive abajo (`extension DesignTokens.Radius`).
+    public enum Radius { public static let xs = 8.0, sm = 8.0, md = 8.0, lg = 16.0, xl = 16.0, xxl = 16.0 }
+    /// Duraciones en segundos (las de la TV: `design/tokens.json`); con «Reducir movimiento» valen 0.
+    public enum Motion { public static let fast = 0.14, base = 0.22, slow = 0.32, enter = 0.52, tint = 0.7 }
+    // generado: fin
 
     /// Los colores por su papel, en modo oscuro (la paleta de la consola) y en modo claro. Las pantallas nunca usan la paleta
     /// directa: usan estos papeles (`DS.bg`, `DS.text`…), que cambian solos con el modo. El claro es «papel»: el mismo
@@ -141,13 +159,6 @@ public enum DesignTokens {
     /// En oscuro se hunde hacia el grafito; en claro se vuelve un velo de color muy suave sobre el papel.
     public enum Projection { public static let darkMix = 0.55, lightMix = 0.84, fadeTo = 0.62 }
 
-    /// El color de cada plataforma («otra»: Apple TV+ y las demás, plata). Igual que `platforms` en design/tokens.json.
-    public enum Platform {
-        public static let hex: [String: String] = ["netflix": "#e60a14", "disney": "#456eff", "hbo": "#7a3dff", "prime": "#1a99ff",
-                                                   "paramount": "#0063ff", "otra": "#c7c7d1"]
-        public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
-    }
-
     /// El color de cada lista (`DS.ListTint`): el de siempre en oscuro y, en claro, el mismo tono más oscuro para que el ícono
     /// se distinga del papel (≥ 3:1 sobre el fondo y la superficie en los dos modos).
     public enum ListTint {
@@ -170,13 +181,8 @@ public enum DesignTokens {
         return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
     }
 
-    /// Espacio (puntos): 4, 8, 12, 16, 20, 24, 32, 40, 56.
-    public enum Space { public static let s1 = 4.0, s2 = 8.0, s3 = 12.0, s4 = 16.0, s5 = 20.0, s6 = 24.0, s8 = 32.0, s10 = 40.0, s14 = 56.0 }
-    public enum Radius { public static let xs = 8.0, sm = 8.0, md = 8.0, lg = 16.0, xl = 16.0, xxl = 16.0, pill = 999.0 }
     /// Tamaños de letra (se escalan con Dynamic Type, que hace de «Tamaño del texto»).
     public enum TextSize { public static let xs = 11.0, sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
-    /// Duraciones en segundos (las de la TV: `design/tokens.json`); con «Reducir movimiento» valen 0.
-    public enum Motion { public static let fast = 0.14, base = 0.22, slow = 0.32, enter = 0.52, tint = 0.7 }
     public enum Opacity {
         public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
@@ -311,6 +317,9 @@ public enum DesignTokens {
         public static let focusedRowRatio = 1.6
     }
 }
+
+/// La cápsula (como `--radius-pill` de la TV): fuera del bloque generado porque design/tokens.json mide las esquinas en rem.
+public extension DesignTokens.Radius { static let pill = 999.0 }
 
 /// Convierte «#rrggbb» en sus componentes 0…1.
 public func rgb(hex: String) -> (r: Double, g: Double, b: Double)? {

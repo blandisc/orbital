@@ -138,6 +138,14 @@ carpeta temporal) se guarda normalizado: texto «`<llave>`» y números fijos de
   nombres estables). Al agregar una ruta para el iPhone, agrégala a `companion.CAPABILITIES`; la prueba revisa que cada
   capacidad apunte a rutas que existen.
 
+## Los valores de diseño compartidos (`design/tokens.json`)
+
+Lo que la TV y el iPhone comparten (la paleta, el espaciado, las esquinas, los grosores, las duraciones y los colores de
+las plataformas) se escribe solo en `design/tokens.json`. `python scripts/generar_tokens.py` reescribe el bloque entre
+`generado: inicio` y `generado: fin` de `orbital/web/styles/tokens.css` y de
+`ios/OrbitalCore/Sources/OrbitalCore/DesignTokens.swift`; lo que es de una sola app queda fuera del bloque, a mano.
+`tests/test_generated_tokens.py` falla si alguno de los dos no está al día (`--check` hace la misma revisión).
+
 ## Las rutas lentas y los hilos de «Para ti»
 
 Las listas y las fichas (`@slow`, `orbital/api/slow.py`) hacen fila aparte, 16 a la vez, para que `/api/status` y las

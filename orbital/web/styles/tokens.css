@@ -11,6 +11,9 @@
 }
 
 :root {
+  /* generado: inicio */
+  /* Lo de aquí hasta «generado: fin» lo escribe scripts/generar_tokens.py desde design/tokens.json (lo que comparte
+     con el iPhone): se cambia allá y se vuelve a generar, no aquí. */
   /* Paleta: grafitos neutros (la interfaz no tiene color propio; el color lo pone el juego) */
   --palette-ink-1000: #070708;
   --palette-ink-950: #0c0c0e;
@@ -48,6 +51,22 @@
      iPhone (DS.Radius.xs … .xxl) se mapean a estas dos en design/tokens.json. */
   --radius-sm: .5rem; /* esquina chica: botones cuadrados, teclas, insignias y lo diminuto (el cursor, la batería) */
   --radius-lg: 1rem; /* esquina de tarjeta: pósters, tarjetas, hojas, menús */
+
+  /* Grosores: los del iPhone (Font.Weight), con el mismo nombre */
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800; /* la cifra grande (stat), como el .heavy del iPhone */
+
+  /* Duraciones que comparte con el iPhone (DS.Motion, allá en segundos) */
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+  --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
+  --duration-tint: 700ms; /* lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego */
+  /* generado: fin */
+
+  /* La cápsula (la misma del iPhone: DS.Radius.pill) */
   --radius-pill: 999px;
 
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
@@ -123,10 +142,6 @@
   --type-group-label-tracking: var(--tracking-label);
   --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
   --type-stat-weight: var(--weight-heavy);
-  --weight-regular: 400;
-  --weight-semibold: 600;
-  --weight-bold: 700;
-  --weight-heavy: 800; /* la cifra grande (stat), como el .heavy del iPhone */
   /* Interlineado: seis pasos. none = una línea suelta (reloj, glifos); tight = títulos grandes; snug = datos y títulos medianos;
      title = texto chico con «…» o line-clamp (el recorte corta en el renglón y con menos de ~1.3 se comía la cola de g, p, j, y);
      normal = textos cortos; relaxed = párrafos. Un título GRANDE con line-clamp no sube el interlineado: deja asomar la cola con
@@ -150,10 +165,6 @@
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
   --duration-none: 0s; /* movimiento reducido: sin transición */
   --duration-instant: 90ms;
-  --duration-fast: 140ms;
-  --duration-base: 220ms;
-  --duration-slow: 320ms;
-  --duration-tint: 700ms; /* lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego */
   --duration-loop: 1.6s; /* un ciclo que se repite: el barrido de carga, el giro del aviso, cada paso de «¿Qué es esto?» (DebridFlowStrip del iPhone) */
   --duration-exit: 160ms;
   --ease-out: cubic-bezier(.16, 1, .3, 1);
@@ -174,7 +185,6 @@
   --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
   --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
   --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
-  --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
   --duration-land: 760ms; /* el arranque de Orbital */
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
