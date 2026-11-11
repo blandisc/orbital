@@ -2,7 +2,7 @@ import XCTest
 @testable import OrbitalCore
 @testable import OrbitalAddons
 
-/// F1 · las 29 respuestas reales de la TV (`tests/fixtures/contract`, las escribe `tests/test_contract_fixtures.py`) pasan por
+/// F1 · las 36 respuestas reales de la TV (`tests/fixtures/contract`, las escribe `tests/test_contract_fixtures.py`) pasan por
 /// las mismas funciones que usa la app. Si la TV cambia o quita un campo que el iPhone lee, una de estas falla.
 final class ContractFixturesTests: XCTestCase {
     /// Una TV de mentira que contesta lo que dice un ejemplo (estado y cuerpo), solo a esa ruta y con ese método.
@@ -15,7 +15,8 @@ final class ContractFixturesTests: XCTestCase {
         init(_ name: String, replacing: [String: String] = [:]) throws {
             let fixture = try Fixtures.json("contract/\(name).json")
             method = try XCTUnwrap(fixture["request"]?["method"]?.string)
-            path = try XCTUnwrap(fixture["request"]?["path"]?.string)
+            // Lo que cambia en cada corrida («<id>») también va en la ruta: se pone el mismo valor en la ruta y en la respuesta.
+            path = replacing.reduce(try XCTUnwrap(fixture["request"]?["path"]?.string)) { $0.replacingOccurrences(of: $1.key, with: $1.value) }
             status = try XCTUnwrap(fixture["status"]?.intValue)
             var text = String(decoding: try XCTUnwrap(fixture["response"]).serialized(), as: UTF8.self)
             for (from, to) in replacing { text = text.replacingOccurrences(of: from, with: to) }
@@ -50,13 +51,14 @@ final class ContractFixturesTests: XCTestCase {
         let folder = Fixtures.root.appendingPathComponent("contract")
         let names = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { $0.hasSuffix(".json") }.map { String($0.dropLast(5)) })
         let covered: Set<String> = [
-            "addons", "companion", "companion_choices", "companion_console", "companion_game_409", "companion_inbox_ack", "companion_input",
+            "addons", "art", "art_missing", "companion", "companion_choices", "companion_console", "companion_game_409", "companion_inbox_ack", "companion_input",
             "companion_now", "companion_now_episode", "companion_now_movie", "companion_player_409", "companion_player_toggle",
-            "companion_resume", "companion_text", "devices", "devices_invite", "devices_key_required", "devices_pair", "foryou",
+            "companion_resume", "companion_text", "devices", "devices_invite", "devices_key_required", "devices_pair", "devices_upgrade",
+            "devices_upgrade_denied", "devices_upgrade_gone", "devices_upgrade_ok", "devices_upgrade_waiting", "foryou",
             "foryou_details", "foryou_dismiss", "foryou_list", "foryou_list_continue", "ping", "realdebrid", "realdebrid_requests",
             "stremio_play", "voice", "voice_hints",
         ]
-        XCTAssertEqual(names.count, 29)
+        XCTAssertEqual(names.count, 36)
         XCTAssertEqual(names, covered, "ejemplo nuevo o quitado en tests/fixtures/contract: súmale (o quítale) su prueba")
     }
 
