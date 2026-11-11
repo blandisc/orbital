@@ -44,15 +44,20 @@ public actor RemoteForYou {
             let brand = row["brand"]?.string
             listInfo[id] = (title, brand)
             // Lo popular de Cinemeta va sin origen en el iPhone; los catálogos de complementos son «Complemento» (una consola
-            // anterior a su corte E todavía dice «Stremio» en los dos).
+            // anterior a su corte E todavía dice «Stremio» en los dos). Seguir viendo y Mi lista sin Trakt vienen de tu Stremio
+            // en la TV: sin sello (Stremio ya no es el origen de lo tuyo, P4; antes salían como «Complemento»).
             var source = row["source"]?.string ?? ""
-            if id == "cinemeta" || source == "Cinemeta" { source = "" } else if source == "Stremio" { source = ForYouList.addonSource }
+            if id == "cinemeta" || source == "Cinemeta" || Self.ownShelves.contains(id) { source = "" }
+            else if source == "Stremio" { source = ForYouList.addonSource }
             out.append(ForYouList(id: id, title: title, group: Self.group(id: id, brand: brand), brand: brand,
                                    logo: row["logo"]?.string, splitsKinds: row["split"]?.bool ?? false,
                                    source: source, meta: row["meta"]?.string ?? ""))
         }
         return out
     }
+
+    /// Lo tuyo en la TV (lo que dejaste a medias y tu lista): no lleva sello de origen.
+    static let ownShelves: Set<String> = ["continue", "mylist"]
 
     private static func group(id: String, brand: String?) -> ForYouGroup {
         if brand != nil { return .platforms }

@@ -41707,13 +41707,13 @@
         }
       }
     },
-    "Real-Debrid · bajando para ti": {
+    "Lo que pediste": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Real-Debrid · downloading for you"
+            "value": "What you requested"
           }
         }
       }

@@ -7,8 +7,8 @@ import OrbitalModels
 /// «Guardado». Abre donde la dejaste (en este aparato); la primera vez, en Guardado. Un aviso de descargas abre «Descargas».
 ///
 /// «Descargas», en dos partes (RX1-A, 3 nov): «En este iPhone · sin internet» arriba (lo que se está bajando a este aparato,
-/// con su avance, lo listo para ver sin conexión agrupado por título y la descarga inteligente) y, abajo, «Real-Debrid ·
-/// bajando para ti» (lo que pediste a la nube, `DownloadsCloudPart`; Fernando, 4 nov: primero el aparato). Sin Real-Debrid (Plus, App Store) solo hay la segunda
+/// con su avance, lo listo para ver sin conexión agrupado por título y la descarga inteligente) y, abajo, «Lo que
+/// pediste» (lo que pediste a la nube, `DownloadsCloudPart`; Fernando, 4 nov: primero el aparato). Sin Real-Debrid (Plus, App Store) solo hay la segunda
 /// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
 /// «Guardado», Mi lista y tus listas de Trakt (`LibrarySavedView`).
 struct DownloadsView: View {
@@ -146,7 +146,7 @@ struct DownloadsView: View {
         let level: DSSectionHead.Level = showsCloud ? .subsection : .section
         let symbol = { (name: String) in showsCloud ? nil : name }
         return List {
-            // Primero «En este iPhone · sin internet» y abajo «Real-Debrid · bajando para ti» (Fernando, 4 nov 2026, la 1774).
+            // Primero «En este iPhone · sin internet» y abajo «Lo que pediste» (Fernando, 4 nov 2026, la 1774).
             if showsCloud {
                 Section {
                     DSSectionHead(title: DeviceWords.text("En este iPhone · sin internet", mac: "En esta Mac · sin internet"), level: .section, symbol: ThisDevice.symbol)

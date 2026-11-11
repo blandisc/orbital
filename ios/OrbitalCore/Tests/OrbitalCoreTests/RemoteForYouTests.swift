@@ -13,9 +13,11 @@ final class RemoteForYouTests: XCTestCase {
         let http = FakeHTTP()
         func row(_ id: String, _ source: String) -> JSON { ["id": .string(id), "title": "x", "source": .string(source), "meta": "", "split": false] }
         http.json["https://tv.example/api/foryou"] = ["lists": [row("cinemeta", "Stremio"), row("addon:a:b", "Stremio"), row("cinemeta", "Cinemeta"),
-                                                                row("addon:c:d", "Complemento"), row("critics", "Rotten Tomatoes")], "mosaic": []]
+                                                                row("addon:c:d", "Complemento"), row("critics", "Rotten Tomatoes"),
+                                                                row("continue", "Stremio"), row("mylist", "Stremio")], "mosaic": []]
         let lists = try await remote(http).lists()
-        XCTAssertEqual(lists.map(\.source), ["", ForYouList.addonSource, "", ForYouList.addonSource, "Rotten Tomatoes"])
+        // Seguir viendo y Mi lista (de tu Stremio en la TV, sin Trakt) no llevan sello: ni «Stremio» ni «Complemento» (P4).
+        XCTAssertEqual(lists.map(\.source), ["", ForYouList.addonSource, "", ForYouList.addonSource, "Rotten Tomatoes", "", ""])
     }
 
     func testOverviewConvertsListsAndKeepsPlatformLogoAndRankInTheMosaic() async throws {

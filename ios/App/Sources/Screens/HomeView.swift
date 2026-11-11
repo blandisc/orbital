@@ -345,7 +345,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let reason = reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
                     TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: s.title, size: .hero)
-                    DataLine(parts: heroData(s), color: DS.onArtSecondary)
+                    DataLine(parts: heroData(s), color: DS.onArtSecondary, trakt: s.traktRating)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityAction(named: Text("Ver ficha")) { openTitle = s.route }

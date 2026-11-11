@@ -97,16 +97,12 @@ jobs:
   # La app del iPhone/iPad/Mac misma: se genera el proyecto con XcodeGen y se compila para el simulador, sin firma,
   # en Debug y en Release (Release ya rompió una vez cosas que Debug no veía).
   #
-  # PROVISIONAL (10 nov 2026): `continue-on-error` hasta que la app compile con el Xcode de la CI. Hoy el compilador de la
-  # CI (Xcode 26.3, el más nuevo que ofrece GitHub) rechaza dos expresiones que el Xcode de la Mac acepta:
-  #   - ios/App/Shared/WidgetImage.swift:26  («value of optional type 'Double?' must be unwrapped»)
-  #   - ios/App/Sources/Design/Brand.swift:43 («unable to type-check this expression in reasonable time»)
-  # Se arreglan partiendo la expresión en variables con tipo (ver el arreglo de Trakt+Ratings.swift). Cuando compile en
-  # verde en Debug y Release, quitar `continue-on-error` para que cuente de verdad.
+  # Obligatorio desde el 11 nov 2026: la app ya compila con el Xcode de la CI (más estricto que el de la Mac con las
+  # expresiones largas). Si una expresión vuelve a tardar, se parte en variables con tipo; para verlo antes de subir,
+  # compilar con `-Xfrontend -warn-long-expression-type-checking=150`.
   iphone-app:
     runs-on: macos-15
     timeout-minutes: 40
-    continue-on-error: true
     # Cuando llega un commit nuevo, la compilación del anterior se cancela: los runners de macOS son pocos y con varios
     # commits seguidos se forma fila.
     concurrency:
@@ -163,8 +159,8 @@ jobs:
   # etiqueta, así que nunca recibe un commit que la CI no aprobó. Los commits que fallan no la tocan.
   tv-estable:
     needs: [windows, macos, iphone-app]
-    # Mientras `iphone-app` sea provisional (ver arriba), no cuenta para la etiqueta; cuando deje de serlo, agregar
-    # `&& needs.iphone-app.result == 'success'` aquí.
+    # `iphone-app` no cuenta para la etiqueta a propósito: la tele no usa la app del iPhone, y ese job se cancela cuando
+    # llega otro commit, así que atarla lo dejaría sin avanzar en días de muchos cambios.
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       && needs.windows.result == 'success' && needs.macos.result == 'success'

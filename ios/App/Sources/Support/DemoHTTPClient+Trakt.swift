@@ -40,7 +40,11 @@ extension DemoHTTPClient {
             ("tt1375666", "Inception", 2010, "movie"), ("tt7366338", "Chernobyl", 2019, "series"), ("tt0133093", "The Matrix", 1999, "movie"),
             ("tt0386676", "The Office", 2005, "series"), ("tt0068646", "The Godfather", 1972, "movie"), ("tt5753856", "Dark", 2017, "series")]
         func item(_ t: (imdb: String, title: String, year: Int, kind: String)) -> JSON {
-            ["title": .string(t.title), "year": .int(t.year), "runtime": t.kind == "movie" ? 140 : 50, "ids": ["trakt": 1, "imdb": .string(t.imdb)]]
+            // Con su calificación de Trakt, como llega con `extended=full` (la del héroe de Inicio, «81 %»).
+            var fields: [String: JSON] = ["title": .string(t.title), "year": .int(t.year), "runtime": t.kind == "movie" ? 140 : 50,
+                                          "ids": ["trakt": 1, "imdb": .string(t.imdb)]]
+            if let rating = watchlistFacts[t.imdb]?.rating { fields["rating"] = .double(rating) }
+            return .object(fields)
         }
         func json(_ value: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: value.serialized()) }
         if url.host == "mdblist.com" {
