@@ -56,12 +56,12 @@
 
 
 /* Foco invertido, como el menú: inconfundible desde el sofá (antes, un borde de 2 px). */
-.source--focused, .source--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
-.source--focused .source__res { background: var(--on-light-fill-strong); color: inherit; }
-.source--focused .source__release { color: inherit; opacity: var(--opacity-near); }
-.source--focused .chip { background: var(--on-light-fill); }
-.source--focused .chip--good { color: var(--on-light-live); }
-.source--focused .chip--warn { color: var(--on-light-warning); }
+.is-focused.source, .is-focused.source:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
+.is-focused.source .source__res { background: var(--on-light-fill-strong); color: inherit; }
+.is-focused.source .source__release { color: inherit; opacity: var(--opacity-near); }
+.is-focused.source .chip { background: var(--on-light-fill); }
+.is-focused.source .chip--good { color: var(--on-light-live); }
+.is-focused.source .chip--warn { color: var(--on-light-warning); }
 
 /* «Elegir versión»: una fila por idioma (nombre a la izquierda; «Tu idioma», «Original», «Tal vez» debajo) y sus
    calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
@@ -95,14 +95,14 @@
 .version__other { justify-self: start; white-space: normal; text-wrap: balance; } /* con letra grande pasa a dos renglones en vez de cortarse */
 
 /* Foco invertido, como las fuentes y el menú. */
-.version--focused, .version--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
-.version--focused .version__res--4k { color: inherit; }
-.version--focused .version__state--good { color: var(--on-light-live); }
-.version--focused .version__state--warn { color: var(--on-light-warning); }
-.version--focused .version__facts { color: inherit; opacity: var(--opacity-near); }
-.version--focused .badge { background: var(--color-on-primary); color: var(--color-primary); }
-.version--focused .chip { background: var(--on-light-fill); }
-:is(.version--focused, .source--focused) .addon-mark { color: inherit; opacity: var(--opacity-near); }
+.is-focused.version, .is-focused.version:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
+.is-focused.version .version__res--4k { color: inherit; }
+.is-focused.version .version__state--good { color: var(--on-light-live); }
+.is-focused.version .version__state--warn { color: var(--on-light-warning); }
+.is-focused.version .version__facts { color: inherit; opacity: var(--opacity-near); }
+.is-focused.version .badge { background: var(--color-on-primary); color: var(--color-primary); }
+.is-focused.version .chip { background: var(--on-light-fill); }
+:is(.is-focused.version, .is-focused.source) .addon-mark { color: inherit; opacity: var(--opacity-near); }
 .source__chips .addon-mark { align-self: center; }
 
 /* Mientras se busca (VersionsSkeleton del iPhone): las mismas filas y casillas, con renglones grises del alto de su letra en

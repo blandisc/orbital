@@ -177,7 +177,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   function paint() {
     for (const node of el.querySelectorAll("[data-focus-id]")) {
       const focused = node.dataset.focusId === focusId;
-      node.classList.toggle(node.classList.contains("card") ? "card--focused" : "is-focused", focused);
+      node.classList.toggle("is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
       if (focused && node.parentElement === grid) markGridEdge(node);

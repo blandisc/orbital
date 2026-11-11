@@ -73,7 +73,7 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
     mount(list, options.map((o, i) => o.heading
       ? h("div", { class: "sheet__heading", role: "presentation" }, o.label)
       : h("div", {
-        class: ["sheet__item", "settings__row", zone === "list" && i === row && "sheet__item--focused", o.warn && "settings__row--warn",
+        class: ["sheet__item", "settings__row", zone === "list" && i === row && "is-focused", o.warn && "settings__row--warn",
           o.value !== undefined && "sheet__item--setting"],
         role: "menuitem", "aria-current": zone === "list" && i === row ? "true" : null,
         // Mouse y dedo: un toque abre (como en una hoja); en una fila con segmentos, cada segmento elige el suyo.

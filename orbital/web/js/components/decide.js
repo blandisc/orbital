@@ -82,7 +82,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
   }
 
   function paint() {
-    [...picksEl.children].forEach((card, i) => card.classList.toggle("card--focused", zone === "picks" && i === index));
+    [...picksEl.children].forEach((card, i) => card.classList.toggle("is-focused", zone === "picks" && i === index));
     paintAbout();
     paintQuestions();
     el.dataset.zone = zone === "picks" ? "picks" : "questions";

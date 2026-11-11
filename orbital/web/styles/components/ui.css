@@ -47,8 +47,8 @@
   content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0; height: var(--tab-mark);
   border-radius: var(--tab-mark); background: currentColor;
 }
-.pill--tab.pill--focused::after, .pill--tab.is-focused::after { content: none; }
-.pill--focused, .pill.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
+.is-focused.pill--tab.pill::after, .is-focused.pill--tab::after { content: none; }
+.is-focused.pill, .is-focused.pill { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 /* GlassSwitch: el selector de vidrio del segundo piso (las consolas de Juegos). La cápsula es vidrio; la elegida, blanco tenue;
    la enfocada, el foco invertido de toda píldora. Si no caben con su nombre, las que no están elegidas ni enfocadas quedan en su
    foto (glass-switch--compact, lo pone quien la usa al medir). */
@@ -66,10 +66,10 @@
   transition: padding var(--duration-slow) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }
 .glass-switch__item.pill--on { background: transparent; color: var(--color-text); }
-.glass-switch__item.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
+.is-focused.glass-switch__item { background: var(--inverse-bg); color: var(--inverse-fg); }
 /* Enfocada y elegida a la vez (al pasar de consola con ◀ ▶): el blanco del foco es la cápsula que viaja. */
-.glass-switch__item.pill--on.is-focused { background: transparent; transform: none; }
-.glass-switch:has(.pill--on.is-focused) .glass-switch__glide { background: var(--inverse-bg); box-shadow: none; }
+.is-focused.glass-switch__item.pill--on { background: transparent; transform: none; }
+.glass-switch:has(.is-focused.pill--on) .glass-switch__glide { background: var(--inverse-bg); box-shadow: none; }
 /* El nombre se estira y se pliega (grid 0fr → 1fr, sin medirlo), como el de las secciones. */
 .glass-switch__label {
   display: grid; grid-template-columns: 1fr; opacity: 1;
@@ -88,9 +88,9 @@
 .segmented__item { min-height: calc(var(--pill-height) - var(--space-2)); padding: 0 var(--space-4); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); cursor: pointer; }
 .segmented__item:hover { color: var(--color-text); }
 .segmented__item.pill--on { background: var(--color-primary); color: var(--color-on-primary); }
-.sheet__item--focused .segmented { background: var(--on-light-fill-strong); }
-.sheet__item--focused .segmented__item { color: var(--inverse-fg); }
-.sheet__item--focused .segmented__item.pill--on { background: var(--inverse-fg); color: var(--inverse-bg); }
+.is-focused.sheet__item .segmented { background: var(--on-light-fill-strong); }
+.is-focused.sheet__item .segmented__item { color: var(--inverse-fg); }
+.is-focused.sheet__item .segmented__item.pill--on { background: var(--inverse-fg); color: var(--inverse-bg); }
 [data-input="touch"] .segmented__item { min-height: var(--touch-target); }
 
 /* SidePanel: un panel a la derecha sobre un velo (los menús —sheet— y las fuentes —sources—). Comparten el velo que se funde, el
@@ -155,7 +155,7 @@
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out),
     opacity var(--duration-base) var(--ease-out), filter var(--duration-base) var(--ease-out);
 }
-.tile--focused { transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
+.is-focused.tile { transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .tile--dimmed { opacity: var(--tile-dim-opacity); }
 /* El ícono de de dónde es (Steam, Switch, Película) lleva el color de su plataforma (--platform, ver core/home.js ·
    platformColor), aclarado para leerse sobre lo oscuro. */

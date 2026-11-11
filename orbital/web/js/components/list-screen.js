@@ -196,7 +196,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   function paintTabs() {
     tabsEl.hidden = list.tabs.length < 2;
     mount(tabsEl, list.tabs.map((t, i) => Pill(t.label, {
-      on: i === tab, tone: "tab", className: zone === "tabs" && i === tab && "pill--focused",
+      on: i === tab, tone: "tab", className: zone === "tabs" && i === tab && "is-focused",
       tabindex: "-1", role: "tab", "aria-selected": i === tab ? "true" : "false", onClick: () => switchTab(i),
     })));
   }
@@ -262,7 +262,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   function paintFocus() {
     grid.querySelectorAll(".card").forEach((card, i) => {
       const on = zone === "grid" && i === index;
-      card.classList.toggle("card--focused", on);
+      card.classList.toggle("is-focused", on);
       card.tabIndex = on ? 0 : -1;
       if (on) markGridEdge(card);
     });

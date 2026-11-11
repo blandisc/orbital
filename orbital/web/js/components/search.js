@@ -103,7 +103,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       keyboard.setLayout(layout(undo, dictateGlyph, shownListening, goGlyph));
     }
     keyboard.active = zone === "keys";
-    focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "pill--focused",
+    focusables.forEach((node, i) => node.classList.toggle("is-focused",
       zone === "results" && i === resultIndex));
     field.classList.toggle("search__field--listening", !!listening);
   }

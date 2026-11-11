@@ -93,7 +93,7 @@ export function createFilterPanel({ count, onResults, onMove, onClose }) {
     mount(rows, FILTERS.map((row, i) => {
       const value = row.options.find(([v]) => v === (filter[row.id] ?? ""))?.[1] ?? row.options[0][1];
       const changed = row.id !== "kind" && filter[row.id];
-      return h("div", { class: ["filter__row", i === at && "filter__row--focused", changed && "filter__row--on"], role: "listitem",
+      return h("div", { class: ["filter__row", i === at && "is-focused", changed && "filter__row--on"], role: "listitem",
         "data-hue": row.hue, onClick: () => { at = i; step(i, 1); } },
       h("span", { class: "filter__icon", "aria-hidden": "true" }, svg(ICONS[row.icon] || ICONS.list)),
       h("span", { class: "filter__label" }, row.label),

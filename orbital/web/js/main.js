@@ -729,7 +729,7 @@ function renderView() {
 function forYouFocused(item) {
   if (!inForYou()) return;
   if (item) ui.backdrop.show(item.hero || item.image || null);
-  const node = document.querySelector(".foryou-mosaic__tile--focused");
+  const node = document.querySelector(".foryou-mosaic__tile.is-focused");
   if (node) {
     const r = node.getBoundingClientRect();
     ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
@@ -1923,7 +1923,7 @@ function openTitle(item, restoreFocus = null) {
 /** De dónde se abre la ficha: la tarjeta enfocada en pantalla y su logo (el arte se abre desde ahí; el logo viaja). */
 function openingFrom() {
   const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : ui.shelf.el;
-  const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--focused, .card--focused");
+  const node = view?.querySelector(".tile.is-focused, .foryou-mosaic__tile.is-focused, .card.is-focused");
   const rect = node?.getBoundingClientRect();
   if (!rect?.width) return null;
   const logo = node.querySelector(".tile--feature__logo, .foryou-mosaic__logo");
@@ -1938,7 +1938,7 @@ const { watch, trailer, launch, resumeRunning, playChannel } = createLaunching({
   focusedRect: () => {
     const view = inHome() ? ui.home.el : inGames() ? ui.games.el : null;
     if (!view) return ui.shelf.focused();
-    const node = view.querySelector(".card--focused") || view.querySelector(".tile--focused"); // la portada antes que el riel
+    const node = view.querySelector(".card.is-focused") || view.querySelector(".tile.is-focused"); // la portada antes que el riel
     const rect = node?.getBoundingClientRect();
     return rect?.width ? { rect, ratio: Number(node.dataset.ratio) || rect.width / rect.height } : null;
   },

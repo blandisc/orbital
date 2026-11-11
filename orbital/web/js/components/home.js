@@ -197,7 +197,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   function markFocused() {
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
-      node.classList.toggle(node.classList.contains("card") ? "card--focused" : node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
+      node.classList.toggle("is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }

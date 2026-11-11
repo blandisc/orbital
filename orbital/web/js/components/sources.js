@@ -106,7 +106,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
 
   function option(opt, r, c) {
     if (opt.more) {
-      return h("button", { class: ["version", "version--more", r === at.row && c === at.col && "version--focused"], type: "button",
+      return h("button", { class: ["version", "version--more", r === at.row && c === at.col && "is-focused"], type: "button",
         "aria-label": `Más idiomas: ${rows[r].names.join(", ")}`,
         onClick: () => (r === at.row && c === at.col ? openMore(r) : focus({ row: r, col: c })) },
       h("span", { class: "version__res" }, "Ver los demás"),
@@ -114,7 +114,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     }
     const [label, tone] = rows[r].ask ? askState(opt.source) : state(opt.source);
     const button = h("button", {
-      class: ["version", r === at.row && c === at.col && "version--focused"], type: "button",
+      class: ["version", r === at.row && c === at.col && "is-focused"], type: "button",
       "aria-label": `${rows[r].name} · ${opt.res}`,
       onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
     },
@@ -166,7 +166,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       h("div", { class: "sources__group-title" }, Flag(rows[cell.row].code), `${rows[cell.row].name} · ${opt.res}`),
       ...items.map((src, i) => {
         const [label, tone] = isAsk(cell.row) ? askState(src) : state(src);
-        return h("button", { class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
+        return h("button", { class: ["source", i === index && "is-focused"], type: "button", role: "listitem",
           onClick: () => (i === index ? act(src, isAsk(cell.row)) : setIndex(i)) },
         h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
         h("span", { class: "source__main" },
@@ -179,10 +179,10 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
 
   function focus(next) {
     if (next.row === at.row && next.col === at.col) return;
-    cells[at.row]?.[at.col]?.classList.remove("version--focused");
+    cells[at.row]?.[at.col]?.classList.remove("is-focused");
     at = next;
     const button = cells[at.row]?.[at.col];
-    button?.classList.add("version--focused");
+    button?.classList.add("is-focused");
     button?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
     describe();
     onMove?.();
@@ -192,9 +192,9 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     const next = Math.max(0, Math.min(items.length - 1, i));
     if (next === index) return;
     const buttons = list.querySelectorAll(".source");
-    buttons[index]?.classList.remove("source--focused");
+    buttons[index]?.classList.remove("is-focused");
     index = next;
-    buttons[index]?.classList.add("source--focused");
+    buttons[index]?.classList.add("is-focused");
     buttons[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
     onMove?.();
   }

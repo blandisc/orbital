@@ -174,6 +174,7 @@
   --duration-snappy: 290ms; /* DS.Motion.snap: firme, con un rebote que casi no se ve; lo que se acomoda o se aprieta */
   --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
   --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
+  --duration-orbit: 700ms; /* la órbita: el filo recorre lo enfocado una vez y se queda quieto */
   --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
   --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
@@ -298,7 +299,7 @@
   --keyboard-width: 54rem;
   /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
   --tile-radius: var(--radius-xl);
-  --tile-focus-scale: 1.03;
+  --tile-focus-scale: 1.08; /* la órbita (D3-A): lo enfocado se levanta de verdad; antes 1.03 no se notaba a 3 m */
   /* El realce al enfocar: lo de dentro (la consola, el logo, la miniatura) crece y se levanta un poco, con resorte. */
   --pop-transform: scale(1.06) translateY(-.1rem);
   --tile-dim-opacity: .8;
@@ -337,6 +338,9 @@
   --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */
   --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
+  /* La órbita (orbit.css): el filo de luz de lo enfocado y la línea oscura que lo separa del arte. */
+  --orbit-width: .18rem;
+  --orbit-gap: .1rem;
   --press-scale: .96; /* al tocar un botón, una tecla o una pista del pie: se hunde un poco */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }

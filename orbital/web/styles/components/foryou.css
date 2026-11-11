@@ -14,7 +14,7 @@
 body[data-screensaver] .hints, body[data-screensaver] .status-bar__brand,
 body[data-screensaver] .status-bar__search, body[data-screensaver] .status-bar__tabs,
 body[data-screensaver] .status-bar__right > :not(.status-bar__clock):not(.battery) { display: none; }
-body[data-screensaver] .foryou-mosaic__tile--focused { box-shadow: none; }
+body[data-screensaver] .is-focused.foryou-mosaic__tile { box-shadow: none; }
 /* De borde a borde (sin el aire de la barra ni del pie) y, encima, a la derecha, solo la batería y la hora en blanco. */
 body[data-screensaver] .foryou { position: fixed; inset: 0; z-index: var(--z-raised); padding: 0; } /* el margen de la TV lo guarda el mosaico por dentro: ese lugar lo llenan las columnas de las orillas */
 body[data-screensaver] .foryou-mosaic {

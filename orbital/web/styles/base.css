@@ -106,7 +106,7 @@ body[data-offline] .needs-internet { opacity: var(--opacity-off); filter: graysc
   content: ""; position: fixed; inset: 0; z-index: var(--z-launch); pointer-events: none; background: var(--color-video-bg);
   animation: fade-out var(--duration-land) var(--ease-out) forwards;
 }
-[data-landing="return"] .tile--focused, [data-landing="return"] .card--focused {
+[data-landing="return"] .is-focused.tile, [data-landing="return"] .is-focused.card {
   animation: land-focus var(--duration-land) var(--ease-out) var(--delay-2) both;
 }
 @keyframes land-focus { from { opacity: .4; transform: scale(.94); } }

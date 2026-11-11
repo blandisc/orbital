@@ -33,7 +33,7 @@ export function createKeyboard({ onPress, label = "Teclado" }) {
   function paint() {
     nodes.forEach((cells, r) => cells.forEach((node, c) => {
       const focused = active && r === pos.row && c === pos.col;
-      node.classList.toggle("keyboard__key--focused", focused);
+      node.classList.toggle("is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }));

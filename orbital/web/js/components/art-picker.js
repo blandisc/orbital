@@ -62,7 +62,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
   function paint() {
     rows.forEach((row, r) => row.options.forEach((o, c) => {
       const on = r === focus.r && c === focus.c;
-      o.button.classList.toggle("tile--focused", on);
+      o.button.classList.toggle("is-focused", on);
       if (on) o.el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
     }));
   }

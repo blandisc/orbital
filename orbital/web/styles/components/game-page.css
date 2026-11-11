@@ -39,4 +39,4 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
   --card-height: 9rem; --card-focus-scale: 1.12;
   display: flex; align-items: flex-end; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out);
 }
-.game-page__track .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
+.game-page__track .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }

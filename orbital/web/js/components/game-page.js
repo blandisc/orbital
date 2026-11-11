@@ -66,7 +66,7 @@ export function createGamePage({ onAction, onShow, onMove, onClose }) {
   }
 
   function paintRow() {
-    [...track.children].forEach((card, i) => card.classList.toggle("card--focused", i === at));
+    [...track.children].forEach((card, i) => card.classList.toggle("is-focused", i === at));
     const card = track.children[at];
     if (card) {
       const room = track.parentElement.clientWidth;

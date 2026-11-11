@@ -24,7 +24,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon);
   vertical-align: .62em; transition: translate var(--duration-slow) var(--ease-spring);
 }
-.status-bar__brand:hover .status-bar__moon, .status-bar__brand.is-focused .status-bar__moon { translate: .08em -.18em; }
+.status-bar__brand:hover .status-bar__moon, .is-focused.status-bar__brand .status-bar__moon { translate: .08em -.18em; }
 
 .status-bar__wordmark {
   font-family: var(--font-brand); font-size: var(--type-section); font-weight: var(--type-section-weight);
@@ -98,7 +98,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .status-bar__search:hover { background: var(--color-glass-hover); color: var(--color-text); }
 .status-bar__search-glyph:empty { display: none; }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
-.status-bar__search.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.is-focused.status-bar__search { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
 /* Letra grande en pantallas angostas (Legion Go): la barra no cabía y la hora se salía por la derecha.
    Ceden la palabra «Buscar» (queda la lupa) y el nombre de lo abierto (queda el ▶). */
@@ -142,8 +142,8 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 }
 .assistant:hover { background: var(--color-glass); color: var(--color-text); }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que Buscar. */
-.assistant.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
-.assistant.is-focused .assistant__ring { color: inherit; filter: none; }
+.is-focused.assistant { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.is-focused.assistant .assistant__ring { color: inherit; filter: none; }
 .assistant__ring { position: relative; display: grid; place-items: center; color: var(--color-text-faint); transition: color var(--duration-slow) var(--ease-out); }
 .assistant__ring .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
 .assistant--live .assistant__ring { color: color-mix(in oklab, var(--assistant-accent) 55%, var(--color-text-muted)); }

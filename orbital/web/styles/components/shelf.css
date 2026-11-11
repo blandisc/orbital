@@ -67,7 +67,7 @@
   transition: box-shadow var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out);
 }
 /* El foco en tus títulos: el escenario entero es la pieza enfocada (con el anillo de cualquier póster). */
-.shelf__stage--focused { opacity: 1; box-shadow: var(--focus-lift), var(--shadow-card); }
+.is-focused.shelf__stage { opacity: 1; box-shadow: var(--focus-lift), var(--shadow-card); }
 .shelf__row:not(.shelf__row--current) .shelf__stage { opacity: var(--opacity-off); }
 .shelf__stage-art {
   position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit; overflow: hidden;
@@ -105,11 +105,11 @@
   white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
   transition: opacity var(--duration-fast) var(--ease-out);
 }
-.shelf__dated:has(.card--focused) .shelf__day { opacity: 0; }
+.shelf__dated:has(.is-focused.card) .shelf__day { opacity: 0; }
 .shelf__dot { flex: none; width: .5rem; height: .5rem; border-radius: var(--radius-pill); background: var(--color-new); }
 .shelf__dated--soon .shelf__day { color: var(--color-text-muted); }
 .shelf__dated--soon .shelf__dot { background: var(--color-text-muted); }
-.shelf__dated--soon:not(:has(.card--focused)) { opacity: var(--opacity-soft); }
+.shelf__dated--soon:not(:has(.is-focused.card)) { opacity: var(--opacity-soft); }
 .shelf__marks {
   position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-above);
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); pointer-events: none;

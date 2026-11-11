@@ -203,6 +203,8 @@
   --shadow-overlay: 0 1.5rem 4rem rgba(0, 0, 0, .55);
   /* Foco (Apple TV, 31 oct 2026): lo enfocado se levanta —crece y flota con su sombra—; sin anillo y, desde el 2 nov 2026,
      sin brillo ni destello encima del arte (Fernando: «quita ese brillo»). */
+  --orbit-light: var(--color-text); /* la punta del filo mientras recorre */
+  --orbit-shade: color-mix(in oklab, var(--palette-ink-1000) 55%, transparent); /* la línea oscura bajo el filo: lo separa del arte claro */
   --focus-lift: var(--edge-hairline), 0 .9rem 2.2rem -.8rem rgba(0, 0, 0, .55); /* más corta y con su filo (unslop, 2 nov 2026): antes 0 1.2rem 2.6rem, una mancha negra */
 }
 
@@ -210,7 +212,9 @@
    otra vez, en cada pieza que recibe ese color (js/components/backdrop.js · TINTED). Así el color cambia solo ahí, sin
    recalcular el estilo de toda la página en cada tecla. */
 [data-theme="orbital"],
-[data-theme="orbital"] :is(.backdrop, .screen, .side-panel, .launch, .toast, .card--focused, .card--chosen) {
+[data-theme="orbital"] :is(.backdrop, .screen, .side-panel, .launch, .toast, .is-focused.card, .card--chosen) {
   --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
   --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
+  /* La órbita (D3-A): el filo de lo enfocado, del color de su arte con un piso claro (se ve sobre arte oscuro o sin arte). */
+  --orbit-color: color-mix(in oklab, var(--art-accent) 62%, var(--color-text));
 }

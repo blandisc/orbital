@@ -81,7 +81,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     dayTitle.textContent = sentence(`${DAY_NAMES[c.date.getDay()]} ${c.date.getDate()} de ${MONTHS[c.date.getMonth()]}`)
       + (c.iso === today ? " · hoy" : "");
     mount(list, shows.length ? shows.map((s, i) => h("button", {
-      class: ["calendar__show", zone === "list" && i === row && "calendar__show--focused"], type: "button", tabindex: "-1", role: "listitem",
+      class: ["calendar__show", zone === "list" && i === row && "is-focused"], type: "button", tabindex: "-1", role: "listitem",
       onClick: () => onPick?.(s),
     }, s.image ? h("img", { class: "calendar__thumb", src: sized(s.image, THUMB_PX), alt: "", loading: "lazy" }) : h("span", { class: "calendar__thumb" }),
     h("span", { class: "calendar__show-text" },
@@ -91,7 +91,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
   }
 
   function paint() {
-    [...grid.children].forEach((cell, i) => cell.classList.toggle("calendar__cell--focused", zone === "grid" && i === at));
+    [...grid.children].forEach((cell, i) => cell.classList.toggle("is-focused", zone === "grid" && i === at));
     paintSide();
     el.dataset.zone = zone;
     onChange();

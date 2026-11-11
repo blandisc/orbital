@@ -27,7 +27,7 @@
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
-.login__field--focused { background: var(--color-glass-hover); box-shadow: var(--focus-lift); transform: scale(var(--inverse-scale)); }
+.is-focused.login__field { background: var(--color-glass-hover); box-shadow: var(--focus-lift); transform: scale(var(--inverse-scale)); }
 .login__label { color: var(--color-text-muted); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
 .login__value { min-height: 1.6em; font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .login__field--secret .login__value { letter-spacing: var(--tracking-digits); }

@@ -96,9 +96,9 @@ def test_focused_piece_is_marked_with_aria_current(page):
     page.keyboard.press("e")  # Juegos: portada enfocada, filtro y consola del riel
     page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     page.wait_for_timeout(400)
-    assert page.locator(".card--focused[aria-current=true]:visible").count() == 1  # las vistas ocultas conservan su último foco
-    page.keyboard.press("m")  # el menú: una opción enfocada (.sheet__item--focused) sin que la hoja lo ponga a mano
-    page.locator(".sheet__item--focused").first.wait_for(timeout=3000)
+    assert page.locator(".card.is-focused[aria-current=true]:visible").count() == 1  # las vistas ocultas conservan su último foco
+    page.keyboard.press("m")  # el menú: una opción enfocada (.sheet__item.is-focused) sin que la hoja lo ponga a mano
+    page.locator(".sheet__item.is-focused").first.wait_for(timeout=3000)
     first = page.locator(".sheet__item[aria-current=true]:visible")
     assert first.count() == 1
     before = first.inner_text()
@@ -206,7 +206,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
     assert page.locator(".tv__cat").count() > 1  # las categorías, siempre a la vista
     assert page.locator(".tv__cat--on").inner_text().startswith("Todos")
-    assert page.locator(".tv__tile").count() == 47 and page.locator(".tv__tile.tile--focused").count() == 1  # 42 de la lista y los 5 de «Tus canales» (las de arranque)
+    assert page.locator(".tv__tile").count() == 47 and page.locator(".tv__tile.is-focused").count() == 1  # 42 de la lista y los 5 de «Tus canales» (las de arranque)
     # Los canales de Orbital (una serie al aire todo el día) van primero, sin número ni «24/7» encima (TV-2).
     first = page.locator(".tv__tile").first
     assert "Los Simpson 24/7" in first.inner_text() and first.locator(".tv__number").count() == 0

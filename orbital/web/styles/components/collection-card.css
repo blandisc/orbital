@@ -9,9 +9,9 @@
   position: absolute; inset: auto 12% -18% 12%; height: 55%; z-index: var(--z-behind); pointer-events: none;
   background: radial-gradient(50% 60% at 50% 100%, var(--halo, var(--color-hairline)), transparent 72%); opacity: var(--opacity-soft);
 }
-.card--focused .collection__glow { opacity: var(--opacity-solid); }
+.is-focused.card .collection__glow { opacity: var(--opacity-solid); }
 /* El foco de .card (anillo y brillo), con el halo de su color si tiene; sin esto la sombra de arriba le ganaba. */
-.card--collection.card--focused { box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
+.is-focused.card--collection.card { box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
 
 /* El abanico (FanCard): tres pósters, el del medio al frente y los de los lados inclinados detrás. */
 .collection__fan { position: absolute; left: 50%; top: 10%; width: 0; height: 64%; }
@@ -107,5 +107,5 @@
 /* Fila centrada (Tus plataformas, Premios, Estudios, Por año): la enfocada al centro y al frente; las de los lados, más
    chicas y apagadas (como el carrusel centrado del iPhone). Sin reflejo: ni pósters ni tarjetas lo llevan. */
 .shelf__row--centered .card--collection { transform-origin: 50% 100%; }
-.shelf__row--centered .card--collection.card--focused { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
-.shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: var(--opacity-away); }
+.shelf__row--centered .is-focused.card--collection.card { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
+.shelf__row--current.shelf__row--centered .card--collection:not(.is-focused.card) { transform: scale(.9); opacity: var(--opacity-away); }

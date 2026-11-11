@@ -18,7 +18,7 @@
 .settings[data-zone="rail"] .settings__list { opacity: var(--opacity-near); }
 /* Lo que falta: el ícono en ámbar (como un aviso `warn`). */
 .settings__row--warn .sheet__icon { color: var(--color-warning); background: color-mix(in oklab, var(--color-warning) 18%, transparent); }
-.settings__row--warn.sheet__item--focused .sheet__icon { color: inherit; background: var(--on-light-fill-strong); }
+.is-focused.settings__row--warn.sheet__item .sheet__icon { color: inherit; background: var(--on-light-fill-strong); }
 /* La ayuda de la fila enfocada: una sola línea, al pie, sobre el pie de controles. */
 .settings__help { display: flex; align-items: center; gap: var(--space-3); max-width: 66rem; padding-top: var(--space-3); box-shadow: 0 -1px 0 var(--color-hairline);
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }

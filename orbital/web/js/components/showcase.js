@@ -56,8 +56,8 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
   }
 
   function paint() {
-    for (const node of grid.children) node.classList.toggle("tile--focused", node.dataset.focusId === focusId);
-    grid.querySelector(".tile--focused")?.scrollIntoView({ block: "nearest" });
+    for (const node of grid.children) node.classList.toggle("is-focused", node.dataset.focusId === focusId);
+    grid.querySelector(".tile.is-focused")?.scrollIntoView({ block: "nearest" });
   }
 
   function close() {

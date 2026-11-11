@@ -20,10 +20,10 @@
 .filter__row--on .filter__value { color: var(--color-text); font-weight: var(--weight-semibold); }
 .filter__arrow { display: grid; place-items: center; min-width: var(--icon-xl); color: inherit; font-size: var(--type-body); font-weight: var(--type-body-weight); opacity: var(--opacity-faint); }
 /* Enfocada: el foco invertido de toda opción; su color se queda en el ícono. */
-.filter__row--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
-.filter__row--focused .filter__value { color: var(--inverse-fg); }
-.filter__row--focused .filter__icon { background: var(--on-light-fill-strong); }
-.filter__row:not(.filter__row--focused):hover { background: var(--color-glass); }
+.is-focused.filter__row { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.is-focused.filter__row .filter__value { color: var(--inverse-fg); }
+.is-focused.filter__row .filter__icon { background: var(--on-light-fill-strong); }
+.filter__row:not(.is-focused.filter__row):hover { background: var(--color-glass); }
 .filter__result { display: grid; justify-items: center; gap: var(--space-3); }
 .filter__note { color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .filter__clear { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }

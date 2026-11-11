@@ -104,7 +104,7 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
 .title__read--idle { visibility: hidden; } /* una serie le guarda su lugar */
-.title__read--focused { background: var(--inverse-bg); color: var(--inverse-fg); text-shadow: none; transform: scale(var(--inverse-scale)); }
+.is-focused.title__read { background: var(--inverse-bg); color: var(--inverse-fg); text-shadow: none; transform: scale(var(--inverse-scale)); }
 
 /* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
 .title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
@@ -171,7 +171,7 @@
 .title__version--pending { pointer-events: none; }
 .title__version-skeleton { width: 9em; }
 /* Enfocada con el control (Fernando, 4 nov): como un botón enfocado de la fila; A la abre. */
-.title__version--focused { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
+.is-focused.title__version { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }
@@ -187,11 +187,11 @@
 /* Prendido («Siguiendo», «Guardada»): vidrio elegido, el papel de lo seleccionado. En blanco se confundía con el enfocado. */
 .title__action--on .title__action-tile { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); }
 /* Foco invertido (como el menú): se ve desde el sofá. «Ver» toma el color del arte (como el Jugar de Game Glance). */
-.title__action--primary.title__action--focused { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
-.title__action--focused small { color: inherit; opacity: var(--opacity-near); }
-.title__action--icon.title__action--focused { transform: scale(var(--inverse-scale)); }
-.title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
-.title__action--icon.title__action--focused .title__action-name { opacity: 1; }
+.is-focused.title__action--primary.title__action { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
+.is-focused.title__action small { color: inherit; opacity: var(--opacity-near); }
+.is-focused.title__action--icon.title__action { transform: scale(var(--inverse-scale)); }
+.is-focused.title__action--icon.title__action .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
+.is-focused.title__action--icon.title__action .title__action-name { opacity: 1; }
 .title__action--icon:hover .title__action-tile { background: var(--color-glass-hover); }
 
 /* Abajo (series): temporadas (LB/RB) y la fila de episodios (◀ ▶). */
@@ -245,8 +245,8 @@
 .episode--watched .episode__thumb { filter: saturate(.75); }
 .episode--upcoming { opacity: var(--opacity-away); }
 /* Foco: como las portadas (anillo y crece un poco); su nombre a todo color. */
-.episode--focused .episode__thumb { transform: scale(1.05); box-shadow: var(--focus-lift); }
-.episode--focused .episode__title { color: var(--color-text); }
+.is-focused.episode .episode__thumb { transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); }
+.is-focused.episode .episode__title { color: var(--color-text); }
 .episode:hover .episode__title { color: var(--color-text); }
 
 /* Lo de abajo, como el iPhone (Reparto y equipo, La saga, Más como esto, Detalles): al bajar, sube desde abajo sobre la ficha.
@@ -332,7 +332,7 @@
   transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
 }
 .title__review--mine { box-shadow: inset var(--letterboxd-edge) 0 0 var(--color-letterboxd), var(--edge-glass-hairline); }
-.title__review--focused { background: var(--color-glass-selected); box-shadow: var(--focus-lift), var(--edge-glass-selected); transform: scale(1.02); }
+.is-focused.title__review { background: var(--color-glass-selected); box-shadow: var(--focus-lift), var(--edge-glass-selected); transform: scale(1.02); }
 .title__review-head { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
 .title__review-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .title__review--mine .title__review-author { color: var(--color-letterboxd); }

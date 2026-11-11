@@ -20,8 +20,8 @@
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
   box-shadow: var(--edge-hairline);
 }
-.card--focused:not(.card--bump-left, .card--bump-right) { animation: focus-lean var(--duration-snappy) var(--ease-snappy); }
-[data-heading="left"] .card--focused:not(.card--bump-left, .card--bump-right) { animation-name: focus-lean-back; }
+.is-focused.card:not(.card--bump-left, .card--bump-right) { animation: focus-lean var(--duration-snappy) var(--ease-snappy); }
+[data-heading="left"] .is-focused.card:not(.card--bump-left, .card--bump-right) { animation-name: focus-lean-back; }
 @keyframes focus-lean { from { translate: -.3rem 0; } }
 @keyframes focus-lean-back { from { translate: .3rem 0; } }
 .card__image {
@@ -88,13 +88,13 @@
 }
 /* El nombre solo bajo la enfocada (Card · caption "focus", como el Apple TV): las demás son puro arte. */
 .card--name-on-focus .card__caption { opacity: 0; text-align: center; transition: opacity var(--duration-fast) var(--ease-out); }
-.card--name-on-focus.card--focused .card__caption { opacity: 1; }
-.card-grid .card--name-on-focus.card--focused .card__caption { right: auto; width: max-content; max-width: calc(var(--card-height) * 1.8); text-align: left; }
-.card-grid .card--name-on-focus.card--focused[data-edge="end"] .card__caption { left: auto; right: 0; text-align: right; }
+.is-focused.card--name-on-focus.card .card__caption { opacity: 1; }
+.card-grid .is-focused.card--name-on-focus.card .card__caption { right: auto; width: max-content; max-width: calc(var(--card-height) * 1.8); text-align: left; }
+.card-grid .is-focused.card--name-on-focus.card[data-edge="end"] .card__caption { left: auto; right: 0; text-align: right; }
 .card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
 .card__caption span { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* En la enfocada, el héroe ya dice "Jugado hace…" en grande. */
-.card--focused .card__chip, .card--dimmed .card__chip { opacity: 0; } /* filas inactivas: no asoman */
+.is-focused.card .card__chip, .card--dimmed .card__chip { opacity: 0; } /* filas inactivas: no asoman */
 .card__chip { transition: opacity var(--duration-fast) var(--ease-out); }
 /* Llegar al final de una fila: la tarjeta se empuja un poco (translate es independiente del scale del foco). */
 .card--bump-left { animation: bump-left var(--duration-base) var(--ease-out); }
@@ -126,7 +126,7 @@
 .card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva y flota con su sombra, sin anillo (Apple TV), y proyecta un brillo de
    su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
-.card--focused {
+.is-focused.card {
   transform: translateY(-.35rem) scale(var(--card-focus-scale));
   margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1));
   box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
@@ -136,7 +136,7 @@
 }
 /* Jerarquía en la fila actual: las vecinas bajan un poco el brillo para que el foco mande. */
 /* Con opacidad (la compone la GPU) en vez de filter en cada vecina, que se repintaba al moverse. */
-.shelf__row--current .card:not(.card--focused) { opacity: var(--opacity-near); }
+.shelf__row--current .card:not(.is-focused.card) { opacity: var(--opacity-near); }
 .card--dimmed { opacity: var(--opacity-off); filter: saturate(.6); }
 /* Progreso de lo que estás viendo (Stremio): sobre un degradado para que se lea en cualquier póster. */
 .card--has-progress::before {
@@ -146,12 +146,12 @@
 /* CardGrid: la cuadrícula de portadas (Juegos, una lista abierta). Todas con la misma forma (--grid-ratio, .667 si no se dice) y la
    enfocada crece hacia arriba; en la primera y la última columna, hacia adentro: no se sale del margen (markGridEdge). */
 .card-grid .card { --ratio: var(--grid-ratio, .667) !important; }
-.card-grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
-.card-grid .card--focused[data-edge="start"] { transform-origin: left bottom; }
-.card-grid .card--focused[data-edge="end"] { transform-origin: right bottom; }
+.card-grid .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
+.card-grid .is-focused.card[data-edge="start"] { transform-origin: left bottom; }
+.card-grid .is-focused.card[data-edge="end"] { transform-origin: right bottom; }
 /* Top 10: la cifra va a la izquierda del póster; enfocado crece hacia la derecha y no se la come (antes, desde el centro,
    tapaba el «1»). */
-.card-grid .card-ranked .card--focused:not([data-edge="end"]) { transform-origin: left bottom; }
+.card-grid .card-ranked .is-focused.card:not([data-edge="end"]) { transform-origin: left bottom; }
 .card__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; } /* auto: el ancho lo dan left y right */
 .card--has-progress:not(.card--has-art) .card__meta { padding-bottom: calc(var(--space-3) + var(--progress-height) + var(--space-1)); }
 
@@ -191,6 +191,6 @@
 
 /* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras
    el foco está en otra parte. */
-.card--chosen:not(.card--focused) { box-shadow: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .3rem var(--color-accent); }
+.card--chosen:not(.is-focused.card) { box-shadow: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .3rem var(--color-accent); }
 /* «Hoy» (Lo nuevo de lo tuyo): la placa del puesto, en el verde de lo que ya se puede ver. */
 .card__today.badge { background: var(--color-new); color: var(--color-on-primary); }

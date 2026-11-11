@@ -24,7 +24,7 @@
 .sheet__icon.sheet__icon--tint { width: var(--explain-tile); height: var(--explain-tile); align-self: center; border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--tint) 18%, transparent); color: var(--tint); }
 .sheet__icon.sheet__icon--tint .icon, .sheet__icon.sheet__icon--tint svg { width: var(--icon-lg); height: var(--icon-lg); }
-.sheet__item--focused .sheet__icon.sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
+.is-focused.sheet__item .sheet__icon.sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
 /* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
    mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
 .sheet__meter { padding: 0 var(--space-2) var(--space-6); margin-top: calc(-1 * var(--space-3)); } /* PT9: la barra del pedido, bajo su texto */
@@ -100,7 +100,7 @@
 .sheet__value { flex: 0 1 auto; max-width: 55%; margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-semibold); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; } /* parte solo entre palabras: «Start+Select+Home» entero */
 /* Un estado que ya está bien (✓ Conectada, ✓ Guardada): su color, para verlo de un vistazo. */
 .sheet__value--ok { color: var(--color-ok); }
-.sheet__item--focused .sheet__value--ok { color: inherit; }
+.is-focused.sheet__item .sheet__value--ok { color: inherit; }
 .sheet__value--choice {
   flex: none; max-width: none; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem .4rem; border-radius: var(--radius-pill);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text);
@@ -112,14 +112,14 @@
 .sheet__item--dismiss::before { content: ""; position: absolute; left: var(--space-3); right: var(--space-3); top: calc(-1 * var(--space-2)); height: 1px; background: var(--color-hairline); }
 .sheet__item--dismiss .sheet__icon { background: transparent; color: var(--color-text-muted); }
 /* Foco invertido (fondo claro, texto oscuro): se lee desde el sofá sin buscarlo. */
-.sheet__item--focused, .sheet__item--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
-.sheet__item--focused .sheet__icon { background: var(--on-light-fill-strong); color: inherit; }
-.sheet__item--focused .sheet__hint, .sheet__item--focused .sheet__value { color: inherit; }
-.sheet__item--focused .sheet__hint--below { color: color-mix(in oklab, var(--inverse-fg) 70%, transparent); }
-.sheet__item--focused .sheet__value--choice { background: var(--on-light-fill-strong); }
+.is-focused.sheet__item, .is-focused.sheet__item:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
+.is-focused.sheet__item .sheet__icon { background: var(--on-light-fill-strong); color: inherit; }
+.is-focused.sheet__item .sheet__hint, .is-focused.sheet__item .sheet__value { color: inherit; }
+.is-focused.sheet__item .sheet__hint--below { color: color-mix(in oklab, var(--inverse-fg) 70%, transparent); }
+.is-focused.sheet__item .sheet__value--choice { background: var(--on-light-fill-strong); }
 .sheet__item--danger .sheet__icon { background: color-mix(in oklab, var(--color-danger) 18%, transparent); color: var(--color-danger); }
-.sheet__item--danger.sheet__item--focused { background: var(--color-danger); color: var(--color-on-primary); }
-.sheet__item--danger.sheet__item--focused .sheet__icon { background: var(--on-color-fill); color: inherit; }
+.is-focused.sheet__item--danger.sheet__item { background: var(--color-danger); color: var(--color-on-primary); }
+.is-focused.sheet__item--danger.sheet__item .sheet__icon { background: var(--on-color-fill); color: inherit; }
 
 /* Encabezado de sección dentro de una hoja (Atajos: «En un juego», «En Orbital»…): no se enfoca. */
 .sheet__heading { padding: var(--space-5) var(--space-3) var(--space-1); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }

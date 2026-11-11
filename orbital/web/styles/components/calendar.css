@@ -30,7 +30,7 @@
   position: absolute; right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); padding: .05em .45em;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
 }
-.calendar__cell--focused { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
+.is-focused.calendar__cell { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .calendar__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 
 .calendar__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-glass-strong); }
@@ -40,10 +40,10 @@
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-3); padding: var(--inset-row);
   border-radius: var(--radius-lg); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text); text-align: left;
 }
-.calendar__show--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.is-focused.calendar__show { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .calendar__thumb { width: 3.2rem; aspect-ratio: 2 / 3; border-radius: var(--radius-inner-row); object-fit: cover; background: var(--color-surface-raised); }
 .calendar__show-text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .calendar__show-title { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .calendar__show-meta { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.calendar__show--focused .calendar__show-meta { color: inherit; opacity: var(--opacity-near); }
+.is-focused.calendar__show .calendar__show-meta { color: inherit; opacity: var(--opacity-near); }
 .calendar[data-zone="list"] .calendar__grid { opacity: var(--opacity-away); }

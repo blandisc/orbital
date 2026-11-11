@@ -262,7 +262,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
       t.node.style.left = t.node.style.right = tileInset(col, c, r);
       t.node.classList.toggle("foryou-mosaic__tile--land", on);
       if (on) t.loadWide();
-      t.node.classList.toggle("foryou-mosaic__tile--focused", on);
+      t.node.classList.toggle("is-focused", on);
     });
   }
 

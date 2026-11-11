@@ -28,7 +28,7 @@
 }
 /* Dentro de un botón: un poco más chico. Sobre lo claro (el botón principal, el foco invertido) el disco va sólido. */
 .glyph--sm { --glyph-size: 1.45rem; }
-:is(.button--primary, .title__action--primary, .is-focused, .pill--focused) .glyph { --glyph-bg: var(--glyph-bg-solid); backdrop-filter: none; }
+:is(.button--primary, .title__action--primary, .is-focused, .is-focused.pill) .glyph { --glyph-bg: var(--glyph-bg-solid); backdrop-filter: none; }
 
 .glyph--drawn { padding: 0; width: var(--glyph-size); }
 .glyph--drawn svg { width: 68%; height: 68%; }

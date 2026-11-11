@@ -31,7 +31,7 @@
   background: radial-gradient(90% 70% at 50% 18%, color-mix(in oklab, var(--glow) 20%, transparent) 0%, transparent 72%);
   transition: opacity var(--duration-base) var(--ease-out);
 }
-.tile--console.tile--focused .tile--console__glow {
+.is-focused.tile--console.tile .tile--console__glow {
   background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
 .tile--console__media { position: relative; flex: 1 1 auto; min-height: 4rem; display: grid; place-items: center; padding: var(--space-3) var(--inset-card) 0; }
@@ -40,10 +40,10 @@
   filter: var(--shadow-drop-lg);
   transition: transform var(--duration-base) var(--ease-spring);
 }
-.tile--console.tile--focused .tile--console__photo { transform: var(--pop-transform); }
+.is-focused.tile--console.tile .tile--console__photo { transform: var(--pop-transform); }
 /* Steam y GeForce NOW: su logotipo en blanco, del tamaño visual de una foto de consola. */
 .tile--console__logo { height: 3.2rem; width: auto; opacity: var(--opacity-solid); filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
-.tile--console.tile--focused .tile--console__logo { transform: var(--pop-transform); opacity: 1; }
+.is-focused.tile--console.tile .tile--console__logo { transform: var(--pop-transform); opacity: 1; }
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--space-2) var(--inset-card) var(--inset-card); }
 .tile--console__name {

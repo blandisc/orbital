@@ -71,7 +71,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     let shown = -1;
     /** Muestra el título i (sin i: el elegido); focused: el foco está en tus títulos. */
     const show = (i = chosen, focused = false) => {
-      el.classList.toggle("shelf__stage--focused", focused);
+      el.classList.toggle("is-focused", focused);
       if (i === shown) return;
       shown = i;
       const item = seedItems[i] || info;
@@ -225,7 +225,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
       const card = cards[col];
       if (!card) return;
       const focused = isCurrent && col === c;
-      card.classList.toggle("card--focused", focused);
+      card.classList.toggle("is-focused", focused);
       card.classList.toggle("card--dimmed", !isCurrent);
       card.tabIndex = focused ? 0 : -1;
       if (focused) card.setAttribute("aria-current", "true");

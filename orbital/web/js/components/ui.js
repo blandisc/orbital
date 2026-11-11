@@ -86,7 +86,7 @@ export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
 
 /**
  * Píldora que se elige: un filtro (Juegos, ¿Qué vemos?), una pestaña (lista, temporada) o una búsqueda reciente. Lo elegido
- * lleva relleno tenue (`on`) y el foco se invierte (`pill--focused`, o `.is-focused` si lo pone la navegación espacial).
+ * lleva relleno tenue (`on`) y el foco se invierte (`.is-focused`, la clase de foco de todas las piezas).
  * `tone`: "outline" (con contorno, los filtros) o "fill" (con relleno). El resto de `attrs` va al botón (role, onClick…).
  */
 export const Pill = (label, { on = false, tone = null, icon = null, className = null, ...attrs } = {}) =>

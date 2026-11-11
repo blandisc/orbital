@@ -38,7 +38,7 @@
 .home__track { display: flex; align-items: flex-end; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
 .home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-3); /* lo que crece la enfocada */ }
-.home__track--upnext .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
+.home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
 /* Tus consolas: tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más). La enfocada crece hacia
    arriba (la fila guarda ese alto: nada brinca). */
@@ -47,7 +47,7 @@
   flex: 0 0 calc((100% - 7 * var(--tile-gap)) / 7.35); height: var(--console-size);
   transition: height var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
 }
-.home__track--consoles > .tile--console.tile--focused { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
+.home__track--consoles > .is-focused.tile--console.tile { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
 /* Arriba, las consolas solo asoman y se desvanecen hacia abajo: al bajar a ellas, el Inicio sube y se ven enteras. */
 .home:not([data-zone="consoles"]) .home__track--consoles {
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 0, var(--mask-solid) var(--console-grow), transparent calc(var(--console-grow) + var(--home-peek)));

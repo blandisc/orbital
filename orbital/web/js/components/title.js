@@ -326,7 +326,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function paintMore() {
     for (const id of PANEL) {
       const p = panel[id];
-      const focused = id === "cast" ? "person-chip--focused" : id === "reviews" ? "title__review--focused" : "card--focused";
+      const focused = "is-focused";
       [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index && id !== "details"));
       const node = p.row.children[p.index];
       if (node && zone === id && id !== "details") p.row.scrollTo({ left: Math.max(0, node.offsetLeft - p.row.clientWidth * .3), behavior: motion("smooth") });
@@ -390,7 +390,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
     mount(actions, buttons.flatMap((b, i) => [h("button", {
       class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", b.active && "title__action--on",
-        zone === "actions" && i === action && !onVersion && "title__action--focused"],
+        zone === "actions" && i === action && !onVersion && "is-focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; onVersion = false; run(b); },
     }, b.primary
@@ -411,7 +411,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const flag = plays?.line === line && plays.lang ? Flag(plays.lang, plays.dub) : null;
     const rest = flag ? String(line).split(" · ").slice(1).join(" · ") : line;
     // Fernando, 4 nov: también es una parada de la fila (A la abre), no solo el atajo Y: con el control se la saltaba.
-    return h("button", { class: ["title__version", zone === "actions" && onVersion && "title__version--focused"], type: "button",
+    return h("button", { class: ["title__version", zone === "actions" && onVersion && "is-focused"], type: "button",
       "aria-label": `Versión: ${line}`, onClick: () => sources() },
       glyphs.options && Glyph(glyphs.options, { small: true }), flag, h("span", {}, [flag && rest && "· ", versionShort(rest, line)].filter(Boolean)));
   }
@@ -461,7 +461,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     mount(list, episodes.map((ep, i) => {
       const st = states.get(ep.id) || {};
       return h("button", {
-        class: ["episode", zone === "episodes" && i === index && "episode--focused", st.watched && "episode--watched",
+        class: ["episode", zone === "episodes" && i === index && "is-focused", st.watched && "episode--watched",
           st.upcoming && "episode--upcoming", st.left && "episode--current"],
         type: "button", role: "listitem", "aria-label": `Episodio ${ep.episode} · ${ep.title}`,
         onClick: () => {
@@ -571,9 +571,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const count = seasons()[season]?.episodes.length ?? 0;
     const next = Math.max(0, Math.min(count - 1, i));
     if (next === index) return false;
-    list.children[index]?.classList.remove("episode--focused");
+    list.children[index]?.classList.remove("is-focused");
     index = next;
-    list.children[index]?.classList.add("episode--focused");
+    list.children[index]?.classList.add("is-focused");
     focusVisible();
     describeEpisode();
     return true;

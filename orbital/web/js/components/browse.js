@@ -59,7 +59,7 @@ export function keepInView(grid, viewport, focusId) {
   // El nombre y el año van bajo la portada (fuera de su caja) y la enfocada, al crecer, los empuja más abajo: sin contarlos, el
   // último renglón de una lista quedaba con su pie bajo el fundido del borde («se desaparece y no se pinta bien»).
   const caption = node.querySelector(".card__caption");
-  const scale = node.classList.contains("card--focused") ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) || 1 : 1;
+  const scale = node.classList.contains("card") && node.classList.contains("is-focused") ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) || 1 : 1;
   const below = caption ? Math.max(0, caption.offsetTop + caption.offsetHeight - node.offsetHeight) * scale : 0;
   const bottom = node.offsetHeight + (below ? below + rem * .75 : 0); // y un respiro bajo el pie
   let next = shift;

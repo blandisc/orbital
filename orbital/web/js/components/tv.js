@@ -128,7 +128,7 @@ export function createTv({ onFocus, onPick }) {
   function paint() {
     for (const node of el.querySelectorAll("[data-focus-id]")) {
       const on = node.dataset.focusId === focusId;
-      node.classList.toggle(node.classList.contains("tv__tile") ? "tile--focused" : "is-focused", on);
+      node.classList.toggle("is-focused", on);
       if (on) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }

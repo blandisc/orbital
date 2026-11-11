@@ -81,7 +81,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         h("span", { class: "sheet__step-label" }, step.label))]).filter(Boolean));
     mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h(option.info ? "div" : "button", {
       // PT12 (Fernando, 4 nov): un renglón que solo informa («No ocupa espacio en la TV») no parece botón ni se marca.
-      class: ["sheet__item", option.info && "sheet__item--info", i === index && !option.info && "sheet__item--focused", option.danger && "sheet__item--danger",
+      class: ["sheet__item", option.info && "sheet__item--info", i === index && !option.info && "is-focused", option.danger && "sheet__item--danger",
         option.value !== undefined && "sheet__item--setting",
         // «Cancelar» / «Cerrar menú» van al final, separados del resto por una línea.
         option.command?.type === "close" && "sheet__item--dismiss"],
@@ -185,7 +185,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function press(i) {
     if (i !== index) {
       index = i;
-      [...list.children].forEach((item, n) => item.classList.toggle("sheet__item--focused", n === index));
+      [...list.children].forEach((item, n) => item.classList.toggle("is-focused", n === index));
       reveal();
       onMove?.();
     }
@@ -218,7 +218,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       index = next;
       onMove?.();
       // Solo cambia la clase: así el foco se desliza con transición en vez de redibujarse.
-      [...list.children].forEach((item, i) => item.classList.toggle("sheet__item--focused", i === index));
+      [...list.children].forEach((item, i) => item.classList.toggle("is-focused", i === index));
       reveal();
     } else if (action === "left" || action === "right") {
       // En un ajuste (‹ Grande ›), ◀/▶ cambian el valor; en lo demás, mueven como ↑/↓.

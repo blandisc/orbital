@@ -20,7 +20,7 @@
 /* Dictando: la tecla «Escuchando…» respira con el acento, como la línea del campo. */
 .keyboard__key--on:has(.icon) { color: var(--color-accent); animation: listening-key var(--duration-breathe) var(--ease-float) infinite; }
 @keyframes listening-key { 50% { box-shadow: inset 0 0 0 2px var(--color-accent); } }
-.keyboard__key--focused, .keyboard__key--focused:hover {
+.is-focused.keyboard__key, .is-focused.keyboard__key:hover {
   background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale));
 }
 @media (max-height: 640px) { .keyboard { --key-height: 2.5rem; } }
