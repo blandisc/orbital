@@ -173,3 +173,91 @@ def test_search_looks_like_the_rest(browser, server, width, height):  # noqa: F8
       .map((t) => t.textContent)""")
     assert not cut, cut
     assert not page.errors, page.errors
+
+
+# F11 (P4): los flujos con el mando que no tenían prueba de DOM (no hay jsdom: se prueban en el navegador de verdad).
+FOCUSED_IN = "(scope) => { const e = document.querySelector(`${scope} .is-focused`); return e && (e.getAttribute('aria-label') || e.textContent.trim()); }"
+
+
+def test_menu_reaches_every_entry(browser, server):  # noqa: F811
+    """☰ (M) abre el menú y ↓ llega a cada entrada, una por una, y da la vuelta al final."""
+    page = open_at(browser, server)
+    page.wait_for_timeout(1500)
+    if page.locator(".sheet .sheet__item").first.is_visible():  # la guía de la primera vez, si salió: se cierra
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(600)
+    page.keyboard.press("m")
+    page.locator(".sheet .sheet__item").first.wait_for(timeout=5000)
+    page.wait_for_timeout(500)
+    if page.locator(".sheet .sheet__item", has_text="Listo").count():  # con la consola recién puesta, ☰ abre su guía: «Listo»
+        page.locator(".sheet .sheet__item", has_text="Listo").click()
+        page.wait_for_timeout(800)
+        page.keyboard.press("m")
+        page.locator(".sheet .sheet__item", has_text="Ajustes").wait_for(timeout=5000)
+        page.wait_for_timeout(500)
+    count = page.locator(".sheet .sheet__item").count()
+    seen = []
+    for _ in range(count + 1):
+        seen.append(page.evaluate(FOCUSED_IN, ".sheet"))
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(150)
+    assert None not in seen, seen
+    assert len(set(seen[:count])) == count, seen  # cada entrada, una vez
+    assert seen[count] == seen[0], seen  # y vuelve a la primera
+    assert any("Ajustes" in s for s in seen), seen
+    assert not page.errors, page.errors
+
+
+def test_home_to_title_and_back_keeps_focus(browser, server):  # noqa: F811
+    """Inicio → la ficha (Y › Ver episodios) → B: de vuelta en Inicio, el foco sigue en la misma tarjeta."""
+    page = open_at(browser, server)
+    page.wait_for_timeout(800)
+    before = page.evaluate(FOCUSED_IN, ".home")
+    assert before == "The Office", before
+    page.keyboard.press("y")
+    page.locator(".sheet .sheet__item").first.wait_for(timeout=5000)
+    page.wait_for_timeout(400)
+    assert "Ver episodios" in page.evaluate(FOCUSED_IN, ".sheet")
+    page.keyboard.press("Enter")
+    page.locator("section.title:not([hidden])").wait_for(timeout=8000)
+    page.wait_for_timeout(800)
+    page.keyboard.press("Escape")
+    page.locator("section.title").wait_for(state="hidden", timeout=5000)
+    page.wait_for_timeout(600)
+    assert page.evaluate(FOCUSED_IN, ".home") == before
+    assert not page.errors, page.errors
+
+
+def test_search_types_and_picks(browser, server):  # noqa: F811
+    """Buscar (S): escribir «office», RT/AvPág salta a los resultados y A abre la ficha de lo elegido."""
+    page = open_at(browser, server)
+    page.keyboard.press("s")
+    page.keyboard.type("office")
+    page.locator(".search .card-grid button.card").first.wait_for(timeout=5000)
+    page.wait_for_timeout(1200)
+    page.keyboard.press("PageDown")
+    page.wait_for_timeout(300)
+    picked = page.evaluate(FOCUSED_IN, ".search__results")
+    assert picked, "RT/AvPág no llevó el foco a los resultados"
+    page.keyboard.press("Enter")
+    page.locator("section.title:not([hidden])").wait_for(timeout=8000)
+    assert picked in page.locator("section.title:not([hidden])").inner_text(), picked
+    assert not page.errors, page.errors
+
+
+def test_tabs_are_reached_with_up(browser, server):  # noqa: F811
+    """Películas y series: ↑ desde el contenido llega a las pestañas (Todo · Películas · Series) y → cambia de pestaña."""
+    page = open_at(browser, server)
+    page.keyboard.press("e")
+    page.keyboard.press("e")
+    page.wait_for_timeout(1800)
+    for _ in range(5):
+        if page.locator(".pill--tab.is-focused").count():
+            break
+        page.keyboard.press("ArrowUp")
+        page.wait_for_timeout(400)
+    assert page.locator(".pill--tab.is-focused").inner_text().strip() == "Todo"
+    page.keyboard.press("ArrowRight")
+    page.wait_for_timeout(900)
+    assert page.locator(".pill--tab.is-focused").inner_text().strip() == "Películas"
+    assert not page.errors, page.errors

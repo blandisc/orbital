@@ -5,6 +5,10 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 
 ✅ con el mando · ⚠️ con el mando, con una salvedad · ❌ necesita teclado, ratón o pantalla táctil
 
+Con prueba de humo en un navegador de verdad (F11, 10 nov 2026, `tests/smoke/test_ui_flows.py`): ☰ llega a cada entrada del
+menú y da la vuelta; Inicio → la ficha → B regresa con el foco en la misma tarjeta; Buscar escribe, RT salta a los resultados
+y A abre lo elegido; ↑ llega a las pestañas de Películas y series y → cambia de pestaña.
+
 ## Arrancar y navegar
 
 | Flujo | Cómo | Estado |
