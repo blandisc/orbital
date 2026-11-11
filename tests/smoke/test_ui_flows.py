@@ -6,7 +6,6 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from test_ui_smoke import playwright, ready, server  # noqa: F401  (server es un fixture)
 
 
