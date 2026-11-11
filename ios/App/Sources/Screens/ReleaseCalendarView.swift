@@ -27,7 +27,7 @@ struct ReleaseCalendarView: View {
         }
         .scrollContentBackground(.hidden).background(Backdrop())
         .task { await model.load() }
-        .sensoryFeedback(.selection, trigger: model.selected)
+        .dsFeedback(.selection, trigger: model.selected)
     }
 
     private func header(_ model: ReleaseCalendarModel) -> some View {

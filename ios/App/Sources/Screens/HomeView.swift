@@ -320,7 +320,7 @@ struct HomeView: View {
             heroSlot = current.flatMap { new.firstIndex(of: $0) } ?? 0
         }
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
-        .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil }
+        .dsFeedback(.selection, trigger: heroSlot) { old, _ in old != nil }
     }
 
     private func hero(_ s: Suggestion) -> some View {
@@ -502,7 +502,7 @@ struct HomeView: View {
                 // guardada está lejos, se acerca.
                 .onAppear { proxy.scrollTo(pillAnchor(service.brand), anchor: .leading) }
             }
-            .sensoryFeedback(.selection, trigger: service.brand)
+            .dsFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {
                     if items.isEmpty {

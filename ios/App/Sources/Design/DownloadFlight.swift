@@ -34,7 +34,7 @@ struct DownloadFlightLayer: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: landed)
+        .dsFeedback(.impact(flexibility: .soft), trigger: landed)
         .onChange(of: flight) { _, new in
             guard let new, !reduceMotion, new.poster != nil else { return }
             arrived = false; shown = new

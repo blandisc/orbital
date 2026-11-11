@@ -21,7 +21,7 @@ extension TitleView {
             }
         }
         .menuStyle(.button).buttonStyle(.plain)
-        .sensoryFeedback(.success, trigger: status) { _, now in now != .none }
+        .dsFeedback(.success, trigger: status) { _, now in now != .none }
         .animation(DS.Motion.base(reduceMotion), value: status)
         .accessibilityIdentifier("title-status")
     }

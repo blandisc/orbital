@@ -121,7 +121,7 @@ struct DSSeasonMenu: View {
             }
         }
         .dsSecondaryButton()
-        .sensoryFeedback(.selection, trigger: selection)
+        .dsFeedback(.selection, trigger: selection)
         .accessibilityIdentifier("season-menu")
     }
 
@@ -168,7 +168,7 @@ struct DSSeasonPicker: View {
         .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         .scrollPosition(id: $scrolled, anchor: .center)
         .onChange(of: current, initial: true) { _, season in scrolled = season }
-        .sensoryFeedback(.selection, trigger: current)
+        .dsFeedback(.selection, trigger: current)
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("season-picker")

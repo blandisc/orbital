@@ -562,7 +562,7 @@ struct FilterChoice: View {
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: selected)
+        .dsFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -589,7 +589,7 @@ struct FilterLogoChoice<Logo: View>: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: selected)
+        .dsFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

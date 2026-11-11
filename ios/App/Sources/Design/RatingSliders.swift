@@ -140,7 +140,7 @@ private extension View {
     /// VoiceOver lo lee como un ajustable («Muy buena, 7.5 o más»): de nivel en nivel y, pasando Excelente, de medio en medio.
     /// Cada nivel que se alcanza o se deja da un toquecito.
     func ratingSliderAccessibility(value: Binding<Double?>, scale: RatingSlider, label: Text, prefix: String) -> some View {
-        sensoryFeedback(.selection, trigger: scale.level(value.wrappedValue))
+        dsFeedback(.selection, trigger: scale.level(value.wrappedValue))
             .accessibilityElement()
             .accessibilityLabel(label)
             .accessibilityValue(value.wrappedValue.map { v in

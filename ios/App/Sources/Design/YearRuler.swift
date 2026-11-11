@@ -90,7 +90,7 @@ struct YearRuler: View {
         }
         .frame(height: DS.Size.touchTarget)
         .padding(.horizontal, DS.Filter.handleWidth / 2)
-        .sensoryFeedback(.selection, trigger: years)
+        .dsFeedback(.selection, trigger: years)
     }
 
     private func x(_ year: Int, _ width: CGFloat) -> CGFloat { CGFloat(logic.fraction(of: year)) * width }

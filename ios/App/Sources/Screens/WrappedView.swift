@@ -177,7 +177,7 @@ struct WrappedView: View {
                 Text(answer == right ? "¡Exacto!" : "Casi: fue \(stats.top.first?.title ?? "")").recipe(.cardTitle)
             }
         }
-        .sensoryFeedback(.success, trigger: answer) { (_: String?, new: String?) in new.map { $0 == right } ?? false }
+        .dsFeedback(.success, trigger: answer) { (_: String?, new: String?) in new.map { $0 == right } ?? false }
     }
 
     private func big(_ value: Text, _ label: Text, _ detail: Text) -> some View {

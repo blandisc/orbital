@@ -127,7 +127,7 @@ struct DecideView: View {
                     Color.clear.aspectRatio(DS.Poster.aspect, contentMode: .fit).frame(maxWidth: .infinity).accessibilityHidden(true)
                 }
             }
-            .sensoryFeedback(.selection, trigger: s.imdb)
+            .dsFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
                 if !facts.isEmpty { Text(verbatim: facts).recipe(.label, color: DS.accent).lineLimit(1) }

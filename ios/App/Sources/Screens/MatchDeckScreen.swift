@@ -163,7 +163,7 @@ struct MatchDeckScreen: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: model.cards.first?.imdb)
+        .dsFeedback(.impact(flexibility: .soft), trigger: model.cards.first?.imdb)
     }
 
     private func action(_ name: Text, id: String, @ViewBuilder button: () -> some View) -> some View {

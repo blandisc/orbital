@@ -24,7 +24,7 @@ struct RatingStars: View {
             ForEach(1...5, id: \.self) { i in star(i, shown: shown) }
         }
         .onChange(of: value) { old, new in startWave(from: old, to: new) }
-        .sensoryFeedback(.impact(flexibility: .soft, intensity: DS.Rating.waveIntensity), trigger: tick)
+        .dsFeedback(.impact(flexibility: .soft, intensity: DS.Rating.waveIntensity), trigger: tick)
         .contentShape(Rectangle())
         .overlay {
             GeometryReader { geo in
@@ -33,7 +33,7 @@ struct RatingStars: View {
                     .simultaneousGesture(drag(width: geo.size.width))
             }
         }
-        .sensoryFeedback(.selection, trigger: dragging) { old, new in old != nil && new != nil && old != new }
+        .dsFeedback(.selection, trigger: dragging) { old, new in old != nil && new != nil && old != new }
         .accessibilityElement()
         .accessibilityLabel(Text("Tu calificación"))
         .accessibilityValue(value.map { Text("\($0.formatted()) de 5 estrellas") } ?? Text("Sin calificar"))

@@ -259,8 +259,8 @@ struct ShelfMoment: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onClose)
-        .sensoryFeedback(.impact(weight: .light), trigger: step == 1)
-        .sensoryFeedback(.success, trigger: step == 3)
+        .dsFeedback(.impact(weight: .light), trigger: step == 1)
+        .dsFeedback(.success, trigger: step == 3)
         .task {
             if reduceMotion { step = 3 } else {
                 // El ritual: aparece en gris, se revela, baja a la repisa, se enciende la estatuilla.

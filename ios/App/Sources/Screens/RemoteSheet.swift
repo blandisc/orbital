@@ -401,7 +401,7 @@ struct RemoteSheet: View {
         VolumeControl(volume: model.volume,
                       down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
                       mute: { Task { await model.toggleMute() } })
-            .sensoryFeedback(.impact(weight: .medium), trigger: model.volumeBrakes)   // el + se frena en 100 (V5-B)
+            .dsFeedback(.impact(weight: .medium), trigger: model.volumeBrakes)   // el + se frena en 100 (V5-B)
         if model.extraOnlyForVideos { DSNotice(text: "El Extra es solo para videos.") }   // V6-A
         if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }
     }

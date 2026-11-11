@@ -72,8 +72,8 @@ struct SimpsonsRoulette: View {
                 }
         }
         .environment(\.colorScheme, .dark)
-        .sensoryFeedback(.selection, trigger: clicks)
-        .sensoryFeedback(.success, trigger: landed) { _, now in now }
+        .dsFeedback(.selection, trigger: clicks)
+        .dsFeedback(.success, trigger: landed) { _, now in now }
         // Gira una vez. Esta vista vuelve a «aparecer» con el episodio ya encima (al mandar el video a la ventana de PiP o salir
         // de la app lo vuelve a presentar el sistema), y antes cada vez giraba otra vez y abría otro episodio al azar debajo.
         .task { guard playing == nil, !finished else { return }; await roll() }

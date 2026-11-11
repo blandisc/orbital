@@ -62,7 +62,7 @@ struct StoryPlayer: View {
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { g in step(g.location.x < width * DS.Watching.backZone ? -1 : 1) })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
-        .sensoryFeedback(.success, trigger: turnsDone)
+        .dsFeedback(.success, trigger: turnsDone)
         .animation(DS.Motion.base(reduceMotion), value: index)
         .task(id: "\(index)|\(paused)|\(active)|\(scenePhase == .active)") { await tick() }
         .onChange(of: index) { _, _ in if last { onFinish() } }

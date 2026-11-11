@@ -484,7 +484,7 @@ struct PlayerScrubBar: View {
                 .onEnded { _ in dragging = false; editing(false) })
         }
         .frame(height: DS.PlayerPanel.scrubHit)
-        .sensoryFeedback(.selection, trigger: dragging)
+        .dsFeedback(.selection, trigger: dragging)
     }
 
     /// El susto bajo el punto mientras arrastras: la burbuja lo nombra.

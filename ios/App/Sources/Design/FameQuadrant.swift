@@ -49,7 +49,7 @@ struct FameQuadrant: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: on)
+        .dsFeedback(.selection, trigger: on)
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("filter-fame-\(fame.rawValue)")
     }

@@ -49,7 +49,7 @@ struct OnboardingDone: View {
                   primary: Text("Ir a Inicio"), next: go) {
             GuideMiniHome(liked: liked.isEmpty ? Array(more.prefix(3)) : liked, more: Array(more.dropFirst(liked.isEmpty ? 3 : 0)), logos: logos, grow: grow)
         }
-        .sensoryFeedback(.success, trigger: grow)
+        .dsFeedback(.success, trigger: grow)
     }
 
     /// El Inicio en miniatura crece y se desvanece; luego, el de verdad.

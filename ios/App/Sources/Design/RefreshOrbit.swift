@@ -87,7 +87,7 @@ private struct OrbitalRefreshable: ViewModifier {
                 armed = false
                 start()
             }
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: armed) { old, new in !old && new }   // llegaste al umbral
+            .dsFeedback(.impact(flexibility: .soft), trigger: armed) { old, new in !old && new }   // llegaste al umbral
             .accessibilityAction(named: Text("Actualizar")) { start() }
     }
 

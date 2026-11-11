@@ -69,7 +69,7 @@ struct DSTextTabs<ID: Hashable>: View {
         }
         // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
         .animation(DS.Motion.fade, value: selection)
-        .sensoryFeedback(.selection, trigger: selection)
+        .dsFeedback(.selection, trigger: selection)
     }
 
     private func tabs(titles: Bool) -> some View {
@@ -138,7 +138,7 @@ struct DSGenreMenu: View {
             }
         }
         .dsSecondaryButton()
-        .sensoryFeedback(.selection, trigger: selection)
+        .dsFeedback(.selection, trigger: selection)
         .accessibilityLabel(Text("Género"))
         .accessibilityValue(selection.map { Text(verbatim: name($0)) } ?? Text("Todos los géneros"))
         .accessibilityIdentifier("genre-menu")
@@ -187,7 +187,7 @@ struct DSChoiceMenu<ID: Hashable>: View {
             }
         }
         .modifier(ChoiceMenuLook(style: style))
-        .sensoryFeedback(.selection, trigger: selection)
+        .dsFeedback(.selection, trigger: selection)
         .accessibilityLabel(label)
         .accessibilityValue(current?.title ?? Text(verbatim: ""))
     }
@@ -243,8 +243,8 @@ struct KindPill: View {
         .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Capsule())
         .fixedSize()
-        .sensoryFeedback(.selection, trigger: kind)
-        .sensoryFeedback(.impact(weight: .light), trigger: open)
+        .dsFeedback(.selection, trigger: kind)
+        .dsFeedback(.impact(weight: .light), trigger: open)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Series o películas"))
         #if DEBUG

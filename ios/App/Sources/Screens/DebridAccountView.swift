@@ -63,7 +63,7 @@ struct DebridAccountView: View {
         }
         .animation(DS.Motion.base(reduceMotion), value: model.keyCheck)
         .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
-        .sensoryFeedback(.success, trigger: model.redeem) { _, new in new == .done }
+        .dsFeedback(.success, trigger: model.redeem) { _, new in new == .done }
         .task { await model.checkShared() }   // CX2-A: la copia de tus aparatos Apple, cada vez que se abre
         .task { guard !checked else { return }; checked = true; await model.recheck() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.checkShared() } } }   // TEC-6
@@ -340,7 +340,7 @@ private struct DebridChangeKeyPage: View {
         .navigationTitle("Cambiar la clave").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .onAppear { model.token = "" }
-        .sensoryFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }
+        .dsFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }
         .onChange(of: model.check) { _, new in if case .ok = new { dismiss() } }
         .onDisappear { model.cancelCode() }
     }

@@ -16,7 +16,7 @@ private struct EdgeBump: ViewModifier {
                 if beyond, !past { bumps += 1 }
                 past = beyond
             }
-            .sensoryFeedback(.impact(weight: .light, intensity: DS.Motion.edgeIntensity), trigger: bumps)
+            .dsFeedback(.impact(weight: .light, intensity: DS.Motion.edgeIntensity), trigger: bumps)
     }
 }
 

@@ -89,7 +89,7 @@ private struct SelectableModifier: ViewModifier {
                 }
             }
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(ListSelection.space)) } action: { selection.frames[id] = $0 }
-            .sensoryFeedback(.selection, trigger: on)
+            .dsFeedback(.selection, trigger: on)
     }
 }
 

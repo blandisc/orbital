@@ -75,7 +75,7 @@ struct SubtitleButton: View {
         .contentShape(Circle())
         .onTapGesture(perform: open)
         .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, perform: toggle)
-        .sensoryFeedback(.selection, trigger: code)
+        .dsFeedback(.selection, trigger: code)
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(Text("Audio y subtítulos"))

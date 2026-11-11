@@ -79,7 +79,7 @@ struct OnboardingSeeHere: View {
                 DebridSharedOffer(debrid: model, carded: true)
             }
         }
-        .sensoryFeedback(.success, trigger: model.ready)
+        .dsFeedback(.success, trigger: model.ready)
         .onDisappear { model.cancelCode() }
         .task { await model.checkShared(); canPaste = UIPasteboard.general.hasStrings }
         // De regreso de la página de Real-Debrid: si copiaste algo, «Pegar tu clave» a la vista.

@@ -54,7 +54,7 @@ struct TouchPad: View {
                         withAnimation(DS.Motion.base(reduceMotion)) { touch = nil }
                     }
             )
-            .sensoryFeedback(.selection, trigger: ticks)
+            .dsFeedback(.selection, trigger: ticks)
             .accessibilityElement()
             .accessibilityLabel(Text("Pad de la TV"))
             .accessibilityHint(selectLabel.map { Text("Desliza para moverte; toca para \($0)") } ?? Text("Desliza para moverte; toca para elegir"))
@@ -149,13 +149,13 @@ struct RemoteKey: View {
         .buttonStyle(.plain)
         .foregroundStyle(DS.text)
         .simultaneousGesture(DragGesture(minimumDistance: 0).updating($pressed) { _, state, _ in state = true })
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
+        .dsFeedback(.impact(flexibility: .soft), trigger: taps)
         .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
             guard let longPress else { return }
             held += 1; heldAt = Date(); longPress()
         })
         .accessibilityActions { if let longPress { Button("Mantener") { longPress() } } }
-        .sensoryFeedback(.impact(weight: .heavy), trigger: held)
+        .dsFeedback(.impact(weight: .heavy), trigger: held)
     }
 }
 
@@ -232,7 +232,7 @@ struct VolumeControl: View {
         // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
         .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeightFitted)
         .dsCard(translucent: true)
-        .sensoryFeedback(.selection, trigger: volume?.shown)
+        .dsFeedback(.selection, trigger: volume?.shown)
         .accessibilityElement(children: .contain)
         .accessibilityValue(volume.map { inExtra ? Text("\($0.shown) %, Extra") : Text("\($0.shown) %") } ?? Text(""))
     }
@@ -346,7 +346,7 @@ struct RemoteScrubber: View {
             }
             .frame(height: DS.Size.touchTarget)
         }
-        .sensoryFeedback(.selection, trigger: target.map { Int($0 / 60) })
+        .dsFeedback(.selection, trigger: target.map { Int($0 / 60) })
         .accessibilityElement()
         .accessibilityLabel(Text("Línea de tiempo"))
         .accessibilityValue(Text(verbatim: Self.clock(position)))
@@ -461,7 +461,7 @@ private struct ScareWarning: ViewModifier {
         let soon = scares.first { $0.time > position && $0.time - position <= DS.Remote.scareLead }?.time
         content
             .onChange(of: soon, initial: true) { _, time in if enabled, let time, time != warned { warned = time; buzz += 1 } }
-            .sensoryFeedback(.warning, trigger: buzz)
+            .dsFeedback(.warning, trigger: buzz)
     }
 }
 

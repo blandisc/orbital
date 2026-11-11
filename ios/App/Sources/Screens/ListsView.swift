@@ -323,7 +323,7 @@ struct ListsView: View {
         } label: { Image(systemName: "list.bullet.indent") }
         .accessibilityLabel(Text("Ir a una sección"))
         .accessibilityIdentifier("paraTi-sections")
-        .sensoryFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)
+        .dsFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)
     }
 
     private func isShown(_ section: CollectionSection) -> Bool {

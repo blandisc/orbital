@@ -46,7 +46,7 @@ struct AdvancedFilterSheet: View {
                 }
                 // Abrir un filtro no mueve la lista: el panel baja desde su mosaico y lo de abajo se recorre (Fernando, 31 oct 2026).
                 // Solo si el panel queda debajo de la orilla, la lista sube lo justo para que se vea entero.
-                .sensoryFeedback(.selection, trigger: open)
+                .dsFeedback(.selection, trigger: open)
                 .onChange(of: open) { _, page in
                     guard let page else { return }
                     Task {

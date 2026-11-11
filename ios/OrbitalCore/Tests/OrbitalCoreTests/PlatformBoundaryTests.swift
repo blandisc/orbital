@@ -46,4 +46,22 @@ final class PlatformBoundaryTests: XCTestCase {
         }
         XCTAssertTrue(problems.isEmpty, "Código del aparato fuera de Platform/ (docs/producto/ipad-y-mac-2026-10.md):\n" + problems.joined(separator: "\n"))
     }
+
+    /// La vibración pasa por `dsFeedback` (`Platform/Haptics.swift`): en el iPad y la Mac no hace nada. Un `sensoryFeedback`
+    /// directo tronaba la app en el iPad al abrir el reproductor (10 nov 2026).
+    func testHapticsGoThroughDSFeedback() throws {
+        let sources = repo.appendingPathComponent("ios/App/Sources")
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil)).allObjects
+        var problems: [String] = []
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let relative = file.path.replacingOccurrences(of: sources.path + "/", with: "")
+            if relative == "Platform/Haptics.swift" { continue }
+            let text = try String(contentsOf: file, encoding: .utf8)
+            for (n, line) in text.components(separatedBy: "\n").enumerated() where line.contains("sensoryFeedback(") {
+                if line.trimmingCharacters(in: .whitespaces).hasPrefix("//") { continue }
+                problems.append("\(relative):\(n + 1)")
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "Usa `.dsFeedback(…)` en vez de `.sensoryFeedback(…)` (solo el iPhone vibra):\n" + problems.joined(separator: "\n"))
+    }
 }

@@ -52,8 +52,8 @@ struct OnboardingLikes: View {
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: picked)
-        .sensoryFeedback(.success, trigger: chosen.count >= OnboardingModel.minimumLikes)
+        .dsFeedback(.selection, trigger: picked)
+        .dsFeedback(.success, trigger: chosen.count >= OnboardingModel.minimumLikes)
         .task { await model.loadCandidates(); arrived = true }
         .task { await model.loadPlatforms() }
     }
@@ -138,7 +138,7 @@ struct OnboardingHave: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .sensoryFeedback(.selection, trigger: taps)
+        .dsFeedback(.selection, trigger: taps)
     }
 
     @ViewBuilder private func object(_ piece: OnboardingModel.Piece, _ model: OnboardingModel) -> some View {

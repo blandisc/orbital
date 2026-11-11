@@ -74,7 +74,7 @@ struct ShelfPoster: View {
             }
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
+        .dsFeedback(.impact(flexibility: .soft), trigger: taps)
         .contextMenu { SuggestionActions(suggestion: suggestion, favorite: favorite, ownList: ownList, onDismiss: onDismiss) }
     }
 

@@ -151,7 +151,7 @@ struct ConfirmIconButton: View {
         .buttonBorderShape(asking ? .capsule : .circle).controlSize(.large)
         .accessibilityLabel(Text(label))
         .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))
-        .sensoryFeedback(.selection, trigger: asking)
+        .dsFeedback(.selection, trigger: asking)
         .task(id: asking) {
             guard asking else { return }
             try? await Task.sleep(nanoseconds: DS.Timing.confirm)

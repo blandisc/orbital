@@ -84,7 +84,7 @@ struct CheckRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(checked ? .isSelected : [])
-        .sensoryFeedback(.selection, trigger: checked)
+        .dsFeedback(.selection, trigger: checked)
     }
 }
 
@@ -114,7 +114,7 @@ struct SimpsonsSeasonsPicker: View {
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: selected)
+        .dsFeedback(.selection, trigger: selected)
         .accessibilityElement(children: .contain)   // cada temporada conserva su nombre
         .accessibilityIdentifier("simpsons-seasons")
     }

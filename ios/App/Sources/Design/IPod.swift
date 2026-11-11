@@ -219,7 +219,7 @@ struct IPodWheel: View {
                     lastAngle = nil; travelled = 0
                 })
         }
-        .sensoryFeedback(.selection, trigger: clicks)
+        .dsFeedback(.selection, trigger: clicks)
         .accessibilityElement(children: .contain)
     }
 

@@ -135,7 +135,7 @@ struct DSSegmented<Value: Hashable>: View {
         } label: { EmptyView() }
         .pickerStyle(.segmented)
         .frame(maxWidth: DS.Size.segmentedMax)   // en ventana ancha no se estira de orilla a orilla
-        .sensoryFeedback(.selection, trigger: current)
+        .dsFeedback(.selection, trigger: current)
     }
 }
 

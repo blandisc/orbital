@@ -13,7 +13,7 @@ struct FavoriteButton: View {
                 .foregroundStyle(isFavorite ? AnyShapeStyle(DS.Favorites.filled) : AnyShapeStyle(.primary))
                 .contentTransition(.symbolEffect(.replace))
         }
-        .sensoryFeedback(.success, trigger: isFavorite) { _, now in now }
+        .dsFeedback(.success, trigger: isFavorite) { _, now in now }
         .accessibilityLabel(isFavorite ? Text("Quitar de favoritos") : Text("Agregar a favoritos"))
         .accessibilityAddTraits(isFavorite ? .isSelected : [])
         .accessibilityIdentifier("title-favorite")

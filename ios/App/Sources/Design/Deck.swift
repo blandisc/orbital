@@ -37,7 +37,7 @@ struct AvatarPicker: View {
             }
         }
         .padding(.vertical, DS.Space.s2)
-        .sensoryFeedback(.selection, trigger: selection)
+        .dsFeedback(.selection, trigger: selection)
     }
 }
 
@@ -52,7 +52,7 @@ struct AppIconPicker: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, DS.Space.s2)
-        .sensoryFeedback(.selection, trigger: current)
+        .dsFeedback(.selection, trigger: current)
     }
 
     private func option(_ name: String?, preview: String, label: Text) -> some View {

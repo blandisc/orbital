@@ -303,7 +303,7 @@ struct TitleView: View {
                     if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv.and.mediabox") }   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                     .disabled(model.continueVideoID == nil || env.isSendingToTV(model.metaID))
-                    .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
+                    .dsFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
                     .accessibilityLabel(Text("Ver en la TV"))
             }
             // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).

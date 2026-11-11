@@ -35,7 +35,7 @@ struct TorrentioQualities: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Calidades").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sensoryFeedback(.selection, trigger: hidden)
+        .dsFeedback(.selection, trigger: hidden)
     }
 }
 

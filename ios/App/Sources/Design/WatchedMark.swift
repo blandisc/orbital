@@ -24,7 +24,7 @@ struct WatchedMark: View {
         }
         .frame(width: DS.WatchedMark.size, height: DS.WatchedMark.size)
         .opacity(drawn > 0 ? 1 : 0)
-        .sensoryFeedback(.success, trigger: watched) { old, new in !old && new }
+        .dsFeedback(.success, trigger: watched) { old, new in !old && new }
         .onChange(of: watched) { _, now in
             // Se dibuja con la entrada de siempre (sin resorte: un trazo que rebota se ve roto); quitarla, con un fundido.
             withAnimation(now ? DS.Motion.enter(reduceMotion) ?? DS.Motion.fade : DS.Motion.fade) { drawn = now ? 1 : 0 }

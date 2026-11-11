@@ -68,7 +68,7 @@ struct HomeHeader: View {
         .contentShape(Rectangle())
         .simultaneousGesture(swipe(enabled: !stories.isEmpty))
         .animation(DS.Motion.smooth(reduceMotion), value: collapsed)
-        .sensoryFeedback(.selection, trigger: open)
+        .dsFeedback(.selection, trigger: open)
         .onChange(of: stories.isEmpty) { _, empty in if empty { open = false } }
         #if DEBUG
         .task { if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-stories-open") { open = true } }   // capturas: ya abiertas

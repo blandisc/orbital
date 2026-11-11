@@ -71,7 +71,7 @@ extension PlayerScreen {
                 framing.zoomBeforePinch = (zoom, Date())
                 setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", magnification, lasted))
             }))
-            .sensoryFeedback(.impact, trigger: zoom)
+            .dsFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
             .onChange(of: dragging) { _, now in
                 // Un arrastre cancelado (sin `onEnded`): se limpia todo sin buscar ni mover nada. Un momento después, para que
@@ -99,10 +99,10 @@ extension PlayerScreen {
             // lado izquierdo, derecho, desde cualquier lugar»).
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
                 .onEnded { _ in holdFastForward(model) })
-            .sensoryFeedback(.impact, trigger: drag.isFastForwarding)
-            .sensoryFeedback(.impact(weight: .light), trigger: skipHaptic)
-            .sensoryFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
-            .sensoryFeedback(.success, trigger: drag.fastForwardLocked)
+            .dsFeedback(.impact, trigger: drag.isFastForwarding)
+            .dsFeedback(.impact(weight: .light), trigger: skipHaptic)
+            .dsFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
+            .dsFeedback(.success, trigger: drag.fastForwardLocked)
         }
         .accessibilityHidden(true)
     }

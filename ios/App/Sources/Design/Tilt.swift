@@ -30,7 +30,7 @@ private struct Tiltable: ViewModifier {
                 // 6 nov: «el scroll no sirve sobre la imagen»). Este no estorba al desplazamiento: si el dedo se mueve antes de
                 // mantener, gana el scroll.
                 .gesture(HoldAndMove(hold: DS.Tilt.hold) { drag = $0 })
-                .sensoryFeedback(.impact(flexibility: .soft), trigger: drag == nil) { was, now in was && !now }   // lo «agarraste»
+                .dsFeedback(.impact(flexibility: .soft), trigger: drag == nil) { was, now in was && !now }   // lo «agarraste»
         }
     }
 

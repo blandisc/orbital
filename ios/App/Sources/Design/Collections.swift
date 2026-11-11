@@ -221,7 +221,7 @@ struct BecauseCard<Related: View>: View {
         .padding(DS.Space.s3)
         .modifier(BecauseBackdrop(poster: artBackdrop ? current?.poster : nil))
         .animation(DS.Motion.snap(reduceMotion), value: selected)
-        .sensoryFeedback(.selection, trigger: selected)
+        .dsFeedback(.selection, trigger: selected)
     }
 
     // MARK: mazo

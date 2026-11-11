@@ -73,7 +73,7 @@ struct DecideTile: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: selected)
+        .dsFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

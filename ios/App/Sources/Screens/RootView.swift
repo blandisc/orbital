@@ -93,7 +93,7 @@ struct RootView: View {
                       },
                       close: { ui.openStory = nil })
         }
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
+        .dsFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
             ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
         }
@@ -358,7 +358,7 @@ struct MainTabs: View {
             }
         }
         // Terminó una descarga: un toque de «listo» en la mano, estés en la pantalla que estés.
-        .sensoryFeedback(.success, trigger: finishedDownloads) { old, new in new > old }
+        .dsFeedback(.success, trigger: finishedDownloads) { old, new in new > old }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
@@ -525,7 +525,7 @@ struct BannerView: View {
                   seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
                 .id(banner.serial)
                 .transition(DS.Motion.notice(reduceMotion))
-                .sensoryFeedback(banner.tone == .error || banner.tone == .warn ? .warning : .success, trigger: banner.serial)
+                .dsFeedback(banner.tone == .error || banner.tone == .warn ? .warning : .success, trigger: banner.serial)
         }
     }
 }

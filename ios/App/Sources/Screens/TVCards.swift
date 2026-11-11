@@ -84,7 +84,7 @@ struct NowPlayingCard: View {
         }
         .disabled(busy)
         .opacity(busy ? DS.NowPlaying.busyOpacity : 1)
-        .sensoryFeedback(.impact, trigger: tap)
+        .dsFeedback(.impact, trigger: tap)
     }
 
     @ViewBuilder private func buttons(labeled: Bool) -> some View {

@@ -48,7 +48,7 @@ struct VoiceRow: View {
         .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .dsCard(translucent: true)
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
+        .dsFeedback(.impact(flexibility: .soft), trigger: taps)
         // Lo de adentro se funde en el mismo alto (escuchar → responder); el alto cambia solo al abrir y al plegar.
         .animation(DS.Motion.base(reduceMotion), value: phase)
         .animation(DS.Motion.base(reduceMotion), value: reply)

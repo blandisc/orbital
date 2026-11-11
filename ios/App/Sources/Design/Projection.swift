@@ -312,7 +312,7 @@ struct MosaicCaption<More: View>: View {
             }
             // Un toque, no un arrastre: arrastrar desde el pie sigue moviendo el mosaico de atrás.
             .onTapGesture { opened += 1; open?() }
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: opened)
+            .dsFeedback(.impact(flexibility: .soft), trigger: opened)
             .accessibilityAddTraits(open == nil ? [] : .isButton)
             .accessibilityHint(open == nil ? Text(verbatim: "") : Text("Abre la ficha"))
             .accessibilityIdentifier("mosaic-caption-open")

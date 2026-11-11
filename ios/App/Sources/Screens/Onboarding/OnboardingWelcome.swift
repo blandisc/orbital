@@ -58,7 +58,7 @@ struct OnboardingWelcome: View {
         .background(Backdrop())
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture().onEnded { touched += 1; attract = false })
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: moon)
+        .dsFeedback(.impact(flexibility: .soft), trigger: moon)
         .task { await model.loadCandidates() }
         .task {
             if reduceMotion { appeared = true; showsButton = true; return }
