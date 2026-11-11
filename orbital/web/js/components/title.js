@@ -697,6 +697,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   async function load({ quiet = false } = {}) {
     const mine = ++token;
+    const fresh = quiet; // ponerse al día: siempre del servidor (la ficha guardada de un minuto solo sirve al abrirla)
     // Ponerse al día en silencio: lo que ves se queda (y sus botones funcionan) hasta que llega lo nuevo.
     quiet = quiet && !!details && !details.error;
     const keepEpisode = quiet && zone === "episodes" ? episode()?.id : null;
@@ -712,7 +713,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     }
     const [kind, id] = [item.kind, item.meta_id];
     try {
-      const data = await api.stremioTitle(kind, id);
+      const data = await api.stremioTitle(kind, id, { fresh });
       if (mine !== token) return;
       if (!data || typeof data !== "object" || (!data.id && !data.title)) throw new Error("La ficha llegó incompleta. Intenta de nuevo.");
       details = data;

@@ -477,8 +477,18 @@ function remoteText(text, submit, replace = false) {
   renderHints();
 }
 
+// Al control del iPhone le basta saber qué hay al frente con ~300 ms de retraso: se junta lo que cambió en ese rato y se
+// manda lo último, no casi en cada tecla (V10, 10 nov 2026; con el mando salía un POST por cada paso que cambiaba la leyenda).
+// Sin reiniciar la espera: aunque sigas moviéndote, el iPhone se entera a lo mucho 300 ms tarde.
+const REPORT_UI_WAIT = 300;
+let reportUiTimer = 0;
+function reportUiSoon() {
+  if (reportUiTimer) return;
+  reportUiTimer = setTimeout(() => { reportUiTimer = 0; reportUi(); }, REPORT_UI_WAIT);
+}
+
 function renderHints() {
-  queueMicrotask(reportUi); // después de pintar el pie: con su leyenda
+  reportUiSoon(); // después de pintar el pie (con su leyenda) y de que te detengas
   const g = glyphs();
   // Te moviste después de ocultar algo: Y ya no deshace, así que el aviso deja de decirlo.
   if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }

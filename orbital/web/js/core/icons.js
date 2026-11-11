@@ -143,10 +143,10 @@ export function platformMark(item) {
   if (item.source === "geforcenow" || item.category === "geforcenow") return file("geforcenow.svg");
   if (item.category === "steam" || item.source === "steam") return file("steam.svg");
   const text = `${item.source} ${item.subtitle} ${item.system ?? ""}`.toLowerCase();
-  const marks = [["switch", "switch.png"], ["gamecube", "gc.png"], ["wii", "wii.png"], ["gba", "gba.png"], ["game boy", "gba.png"],
-    ["xbox 360", "xbox360.png"], ["xbox360", "xbox360.png"], ["xbox", "xbox.png"], ["psp", "psp.png"], ["ps4", "ps4.png"],
-    ["playstation 4", "ps4.png"], ["ps3", "ps3.png"], ["playstation 3", "ps3.png"]];
-  const found = marks.find(([key]) => text.includes(key)) ?? (/gc/.test(text) ? ["gc", "gc.png"] : null);
+  const marks = [["switch", "switch.webp"], ["gamecube", "gc.webp"], ["wii", "wii.webp"], ["gba", "gba.webp"], ["game boy", "gba.webp"],
+    ["xbox 360", "xbox360.webp"], ["xbox360", "xbox360.webp"], ["xbox", "xbox.webp"], ["psp", "psp.webp"], ["ps4", "ps4.webp"],
+    ["playstation 4", "ps4.webp"], ["ps3", "ps3.webp"], ["playstation 3", "ps3.webp"]];
+  const found = marks.find(([key]) => text.includes(key)) ?? (/gc/.test(text) ? ["gc", "gc.webp"] : null);
   return found ? file(found[1]) : null;
 }
 

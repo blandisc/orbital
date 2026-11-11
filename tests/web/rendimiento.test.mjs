@@ -40,3 +40,19 @@ test("el héroe se ajusta en el siguiente cuadro, no en medio de pintar el títu
   assert.match(body(hero, "fill"), /fitSoon\(\);/);
   assert.doesNotMatch(body(hero, "fill"), /\bfit\(\);/);
 });
+
+test("las fotos de consola existen, son WebP y pesan poco (V10: antes PNG de 74–322 KB)", async () => {
+  const { statSync } = await import("node:fs");
+  const { SYSTEMS } = await import("../../orbital/web/js/core/home.js");
+  const icons = read("core/icons.js");
+  const photos = new Set([...Object.values(SYSTEMS).map((s) => s.photo).filter(Boolean),
+    ...[...icons.matchAll(/"([\w-]+\.(?:webp|png|jpe?g))"/g)].map((m) => m[1])]);
+  for (const photo of photos) {
+    const file = new URL(`../../orbital/web/img/consoles/${photo}`, import.meta.url);
+    const size = statSync(file).size; // lanza si no existe
+    if (!photo.endsWith(".svg")) {
+      assert.match(photo, /\.webp$/, `${photo}: las fotos van en WebP`);
+      assert.ok(size < 60_000, `${photo} pesa ${size} bytes`);
+    }
+  }
+});

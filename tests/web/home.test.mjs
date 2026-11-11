@@ -39,7 +39,7 @@ test("consolas: la última usada primero, con su foto, cuántos juegos y los nue
   const { consoles, games } = buildHome(rows);
   assert.deepEqual(consoles.map((c) => c.name), ["Steam", "Switch", "GameCube"]);
   const sw = consoles[1];
-  assert.equal(sw.photo, "img/consoles/switch.png");
+  assert.equal(sw.photo, "img/consoles/switch.webp");
   assert.equal(consoles[0].photo, "img/consoles/steam.svg"); // Steam: su logotipo
   assert.equal(consoles[0].logo, true);
   assert.equal(sw.count, 2);

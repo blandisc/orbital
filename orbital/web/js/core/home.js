@@ -21,16 +21,16 @@ const sameAs = (a, b) => a.id === b.id || (a.title && a.title === b.title && isW
 
 /** Nombre corto y foto de cada sistema (ES-DE). Lo que no esté aquí usa el título de su fila. */
 export const SYSTEMS = {
-  switch: { name: "Switch", photo: "switch.png" },
-  gc: { name: "GameCube", photo: "gc.png" },
-  gamecube: { name: "GameCube", photo: "gc.png" },
-  wii: { name: "Wii", photo: "wii.png" },
-  gba: { name: "GBA", photo: "gba.png" },
-  psp: { name: "PSP", photo: "psp.png" },
-  ps3: { name: "PS3", photo: "ps3.png" },
-  ps4: { name: "PS4", photo: "ps4.png" },
-  xbox: { name: "Xbox", photo: "xbox.png" },
-  xbox360: { name: "Xbox 360", photo: "xbox360.png" },
+  switch: { name: "Switch", photo: "switch.webp" },
+  gc: { name: "GameCube", photo: "gc.webp" },
+  gamecube: { name: "GameCube", photo: "gc.webp" },
+  wii: { name: "Wii", photo: "wii.webp" },
+  gba: { name: "GBA", photo: "gba.webp" },
+  psp: { name: "PSP", photo: "psp.webp" },
+  ps3: { name: "PS3", photo: "ps3.webp" },
+  ps4: { name: "PS4", photo: "ps4.webp" },
+  xbox: { name: "Xbox", photo: "xbox.webp" },
+  xbox360: { name: "Xbox 360", photo: "xbox360.webp" },
   // Plataformas de PC: no hay una consola que fotografiar, va su logotipo.
   steam: { name: "Steam", photo: "steam.svg", logo: true },
   geforcenow: { name: "GeForce NOW", photo: "geforcenow.svg", logo: true },

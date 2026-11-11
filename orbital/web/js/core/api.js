@@ -13,6 +13,9 @@ const UNBOUNDED = { timeout: 0 };
 
 /** `timeout` (ms; 0 = sin límite) corta una espera que nunca termina; `signal` deja cancelarla (B mientras conecta). */
 async function request(path, { timeout = DEFAULT_TIMEOUT, signal, ...options } = {}) {
+  // Algo cambió (marcar vista, calificar, ver, borrar…): la ficha guardada puede ya no ser cierta. Lo de /api/ui/ (qué hay al
+  // frente, el diagnóstico del mando) no toca ninguna ficha.
+  if (options.method && options.method !== "GET" && !path.startsWith("/api/ui/")) titles.clear();
   const signals = [signal, timeout && AbortSignal.timeout?.(timeout)].filter(Boolean);
   let res;
   try {
@@ -43,6 +46,22 @@ async function request(path, { timeout = DEFAULT_TIMEOUT, signal, ...options } =
     const error = new Error(detail || fallback);
     error.status = res.status;
     throw error;
+  }
+  return data;
+}
+
+/** La ficha de una película o serie, guardada un minuto (V10, 10 nov 2026): volver a abrir la misma (entrar y salir, o
+ *  pasar de una a otra y regresar) ya no espera al servidor. `fresh`: pedirla de nuevo (ponerse al día tras ver algo). */
+export const TITLE_TTL = 60000;
+const titles = new Map(); // "kind:id" → { at, data }
+async function titleDetails(kind, id, { fresh = false } = {}) {
+  const key = `${kind}:${id}`;
+  const kept = titles.get(key);
+  if (!fresh && kept && Date.now() - kept.at < TITLE_TTL) return structuredClone(kept.data);
+  const data = await request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`);
+  if (data && typeof data === "object" && (data.id || data.title)) {
+    titles.set(key, { at: Date.now(), data: structuredClone(data) });
+    if (titles.size > 40) titles.delete(titles.keys().next().value); // la más vieja
   }
   return data;
 }
@@ -79,7 +98,7 @@ export const api = {
   remembered: () => request("/api/stremio/remembered"),
   forgetRemembered: (id) => post("/api/stremio/remembered/forget", { id }),
   genre: (kind, genre) => request(`/api/stremio/genre?kind=${kind}&genre=${encodeURIComponent(genre)}`),
-  stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
+  stremioTitle: (kind, id, options) => titleDetails(kind, id, options),
   settings: () => request("/api/settings"),
   setup: () => request("/api/setup"),
   diagnostics: () => request("/api/diagnostics"),
