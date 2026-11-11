@@ -359,6 +359,7 @@ def test_the_iphone_open_counts_as_a_visit_too(public):
     assert state.settings()["companion_seen"]
 
 
+@pytest.mark.reloj  # el tope de ~15 por segundo se mide con el reloj real
 def test_iphone_remote_buttons_go_to_whatever_is_in_front(public, monkeypatch):
     """El control del iPhone: un botón llega a la interfaz como el mando (o al reproductor si está al frente), con token
     y sin pasarse de ~15 por segundo."""

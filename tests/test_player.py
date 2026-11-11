@@ -63,6 +63,17 @@ TRACKS = [
 ]
 
 
+def eventually(check, timeout: float = 10.0) -> bool:
+    """Espera a que `check()` se cumpla, con un tope amplio: las cuentas atrás del reproductor corren en hilos y con la
+    consola cargada (la prueba previa a actualizar) un `sleep` fijo llegaba antes que ellas y rechazaba al azar."""
+    deadline = time.monotonic() + timeout
+    while not check():
+        if time.monotonic() > deadline:
+            return False
+        time.sleep(.01)
+    return True
+
+
 def make_player(**props):
     mpv = FakeMpv(props)
     p = player.OrbitalPlayer(mpv=mpv)
@@ -540,6 +551,7 @@ def test_next_file_uses_its_own_subtitles():
     assert p._fallback_subs is None and p._subs_lang == ""
 
 
+@pytest.mark.reloj  # mide segundos de reloj: fuera de la pasada antes de actualizar, sí en la CI
 def test_y_never_blocks_the_controller_while_sources_load():
     import time as _t
 
@@ -555,7 +567,6 @@ def test_y_never_blocks_the_controller_while_sources_load():
 
 
 def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
-    import time as _t
 
     p, mpv = make_player()
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
@@ -565,8 +576,7 @@ def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
     p.phone_button("pageright")  # en el teléfono no se mantiene: cada toque cuenta
     p.phone_button("pageright")
     assert "2 episodios adelante" in mpv.overlays[p.EPISODE_CARD]
-    _t.sleep(.4)
-    assert asked == [2]
+    assert eventually(lambda: asked == [2])
 
 
 def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
@@ -590,12 +600,10 @@ def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
     p.remote._repeats["lt"] = 5  # sigues manteniéndolo: las repeticiones no cuentan
     p.press("lt")
     p.press("lt-up")
-    _t.sleep(.3)
-    assert asked == [-1] and ("quit",) not in mpv.sent
+    assert eventually(lambda: asked == [-1]) and ("quit",) not in mpv.sent
 
 
 def test_keyboard_brackets_change_episode_with_one_press():
-    import time as _t
 
     p, mpv = make_player()
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
@@ -604,8 +612,7 @@ def test_keyboard_brackets_change_episode_with_one_press():
     p.EPISODE_WAIT = .1
     try:
         p.key("rt")  # la tecla ]
-        _t.sleep(.3)
-        assert asked == [1]
+        assert eventually(lambda: asked == [1])
     finally:
         player_ui.set_input("gamepad")
 
@@ -626,7 +633,6 @@ def test_paused_hints_say_rt_next_episode_only_when_there_is_one():
 
 
 def test_paused_next_pill_only_with_a_next_episode_and_a_tap_goes_there():
-    import time as _t
 
     p, mpv = make_player(pause=True, duration=1300.0, **{"time-pos": 500.0})
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:5:2", "next": "T6 E1"}
@@ -642,8 +648,7 @@ def test_paused_next_pill_only_with_a_next_episode_and_a_tap_goes_there():
         pill = next(t for t in player_ui.targets["hud"] if t[4] == "next")
         p.tap(pill[0] + 5, pill[1] + 5)
         assert "Cambio de episodio" in mpv.overlays[p.EPISODE_CARD]
-        _t.sleep(.3)
-        assert asked == [1]
+        assert eventually(lambda: asked == [1])
         p.current.meta = {**p.current.meta, "next": ""}  # el último: sin píldora
         p.show_hud()
         assert not any(t[4] == "next" for t in player_ui.targets["hud"]) and "Siguiente ·" not in mpv.overlays[1]
