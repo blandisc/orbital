@@ -405,6 +405,7 @@ struct MiMediaTitleView: View {
 
 /// «Corregir ficha»: buscar el título por nombre y elegir el bueno. Vale para todos los archivos con ese nombre.
 struct FixMatchSheet: View {
+    @Environment(\.titleName) var titleName
     let info: OneDriveName
     let fileName: String
     let model: MiMediaModel
@@ -429,9 +430,9 @@ struct FixMatchSheet: View {
                     ForEach(results) { r in
                         Button { Task { if let choose { await choose(r) } else { await model.fix(info, to: r) }; dismiss() } } label: {
                             HStack(spacing: DS.Space.s3) {
-                                PosterView(url: r.poster, title: r.title).frame(width: DS.Size.thumbSmall)
+                                PosterView(url: r.poster, title: titleName(r.title, id: r.metaID, kind: r.kind)).frame(width: DS.Size.thumbSmall)
                                 VStack(alignment: .leading, spacing: 0) {
-                                    Text(verbatim: r.title).recipe(.cardTitle)
+                                    Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)).recipe(.cardTitle)
                                     Text(verbatim: r.year).recipe(.caption)
                                 }
                             }

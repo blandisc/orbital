@@ -6,6 +6,7 @@ import OrbitalModels
 /// ve en la TV (pausa, ±10, siguiente…); estirada hacia arriba, además el control completo de la consola: el pad
 /// (`TouchPad`), sus teclas (`RemoteKey`) y «Escribir» cuando la TV tiene dónde.
 struct RemoteSheet: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     var tvNow: ModelObserver<TVNowModel>
@@ -123,7 +124,7 @@ struct RemoteSheet: View {
         }
         .sheet(isPresented: $pickingEpisode) {
             if let now = model.now, let seriesID = now.metaID {
-                EpisodePickerSheet(title: now.title, currentVideoID: now.videoID,
+                EpisodePickerSheet(title: titleName(now.title, id: now.metaID, kind: now.kind), currentVideoID: now.videoID,
                                    load: { await VoiceAssistant(services: env.services, tvNow: model).episodes(seriesID: seriesID) },
                                    play: { season, episode in
                                        answer(model) { await $0.playEpisode(seriesID: seriesID, episode: episode, season: season.season, title: now.title) }
@@ -254,7 +255,7 @@ struct RemoteSheet: View {
         if large, let now = model.now {
             // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
+                PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
                     .remoteMorph("poster", in: morph)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)

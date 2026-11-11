@@ -116,7 +116,7 @@ enum ReleaseNotifier {
         }
         for alert in due {
             let content = UNMutableNotificationContent()
-            content.title = alert.show
+            content.title = AppEnvironment.shared.services.titleNames.name(alert.show, id: alert.metaID, kind: "series")
             let episode = Strings.episode(season: alert.season, episode: alert.episode, language: language)
             content.subtitle = alert.episodeTitle.isEmpty ? episode : "\(episode) · \(alert.episodeTitle)"
             // En cuanto sale (Fernando, 1 nov 2026): «Ya salió», aunque Real-Debrid todavía no lo tenga.

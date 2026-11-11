@@ -188,6 +188,7 @@ struct ArtTile: View {
 /// Lo que suena en tu Orbital, en el accesorio de la barra de pestañas (como el MiniPlayer de Música): el póster, el nombre,
 /// «En la TV · T1 E5» y pausa / reanudar. Vive en toda la app mientras la TV reproduce algo.
 struct TVAccessory: View {
+    @Environment(\.titleName) var titleName
     let now: OrbitalRemote.NowPlaying
     var busy = false
     let toggle: () -> Void
@@ -212,7 +213,7 @@ struct TVAccessory: View {
         HStack(spacing: DS.Space.s2) {
             // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
             // Completo, con su propia forma: el arte de la TV no siempre es vertical y antes se recortaba.
-            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect, whole: true)
+            PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: now.live ? 1 : DS.Poster.aspect, whole: true)
                 .frame(height: DS.Size.accessoryArt)
             VStack(alignment: .leading, spacing: 0) {
                 MarqueeText(text: Text(verbatim: now.live ? (now.channel ?? now.title) : now.title), recipe: .labelLarge)

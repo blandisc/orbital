@@ -73,7 +73,7 @@ struct FilterEditor: View {
                 ForEach(Tmdb.filterGenres, id: \.slug) { g in
                     let on = excluding ? filter.excluded.contains(g.slug) : filter.genres.contains(g.slug)
                     let other = excluding ? filter.genres.contains(g.slug) : filter.excluded.contains(g.slug)
-                    DecideTile(title: excluding && on ? Text("Sin \(g.title)") : Text(verbatim: g.title), image: FilterCatalog.genreImage(g.slug),
+                    DecideTile(title: excluding && on ? Text("Sin \(g.title)") : Text(verbatim: g.title), image: FilterCatalog.genreImage(g.slug),   // no-es-título: un género
                                selected: on, dimmed: other, height: DS.Filter.genreTile) {
                         // Un género está en «quiero» o en «no quiero», nunca en los dos.
                         edit { f in

@@ -7,6 +7,7 @@ import OrbitalCore
 /// En reposo, la órbita da una vuelta cada 40 s. Un solo reloj (`TimelineView`) para todo, a 60 cuadros mientras entra y a
 /// 30 después; se pausa en segundo plano. Con «Reducir movimiento», todo quieto y ya armado.
 struct OrbitCatch: View {
+    @Environment(\.titleName) var titleName
     /// Los pósters (sus direcciones); si faltan, sus lugares quedan con el color de la superficie.
     let posters: [Suggestion]
     /// Llegó la luna (para el toque en la mano, que pone la pantalla).
@@ -90,7 +91,7 @@ struct OrbitCatch: View {
 
     @ViewBuilder private func poster(_ p: Placed) -> some View {
         let item = p.index < posters.count ? posters[p.index] : nil
-        PosterView(url: item?.poster, title: item?.title ?? "", maxPoints: DS.Welcome.posterHeight)
+        PosterView(url: item?.poster, title: item.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } ?? "", maxPoints: DS.Welcome.posterHeight)
             .frame(height: DS.Welcome.posterHeight)
             .brightness(p.bright - 1)
             .rotationEffect(.degrees(p.twist))

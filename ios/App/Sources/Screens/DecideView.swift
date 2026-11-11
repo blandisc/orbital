@@ -8,6 +8,7 @@ import OrbitalModels
 /// «Más filtros» es su propia página (géneros, época, de qué listas, bien calificada en IMDb, Trakt o TMDB, lo ya visto), y
 /// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, qué quitar.
 struct DecideView: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var observer: ModelObserver<DecideModel>
     @Environment(AppEnvironment.self) private var env
@@ -129,7 +130,7 @@ struct DecideView: View {
             }
             .dsFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
+                Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)).recipe(.cardTitle).lineLimit(1)
                 if !facts.isEmpty { Text(verbatim: facts).recipe(.label, color: DS.accent).lineLimit(1) }
                 if let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
             }

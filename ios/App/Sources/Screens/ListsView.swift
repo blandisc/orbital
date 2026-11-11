@@ -5,6 +5,7 @@ import OrbitalModels
 /// «Para ti › Listas» (Para ti B, docs/producto/inicio-benchmark/para-ti/): la portada del mosaico, un círculo por cada
 /// parte, «¿Qué vemos hoy?», el filtro Todo · Series · Películas y los grupos de estantes (cada uno dice de dónde viene).
 struct ListsView: View {
+    @Environment(\.titleName) var titleName
     var observer: ModelObserver<ParaTiModel>
     /// «Decide por mí», el sorteo (en un iPhone angosto vive en el índice de arriba).
     var onDecide: () -> Void = {}
@@ -170,8 +171,8 @@ struct ListsView: View {
                         Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios y películas recién llegados")) {
                             ForEach(model.newOnPlatforms) { s in
                                 TitleNavigationLink(route: s.route) {
-                                    WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
-                                             caption: Text(verbatim: s.title), platform: s.platformName)
+                                    WideCard(art: s.wide, logo: s.logo, title: titleName(s.title, id: s.imdb, kind: s.kind), badge: Text(badgeKey(s.reason)),
+                                             caption: Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)), platform: s.platformName)
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu { SuggestionActions(suggestion: s) { dismissed in Task { await model.dismiss(dismissed) } } }

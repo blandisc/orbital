@@ -11,6 +11,7 @@ extension View {
 }
 
 private struct SuggestionWatchedWhen: ViewModifier {
+    @Environment(\.titleName) var titleName
     @Binding var item: Suggestion?
     let onPick: (Suggestion, Date) -> Void
     @Environment(AppEnvironment.self) private var env
@@ -19,7 +20,7 @@ private struct SuggestionWatchedWhen: ViewModifier {
     func body(content: Content) -> some View {
         content.sheet(item: $item) { s in
             let language = env.services.appSettings.uiLanguage
-            WatchedWhenSheet(title: Text(verbatim: s.title), detail: s.year.map { Text(verbatim: "\(Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)) · \($0)") } ?? Text(verbatim: Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)),
+            WatchedWhenSheet(title: Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)), detail: s.year.map { Text(verbatim: "\(Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)) · \($0)") } ?? Text(verbatim: Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)),
                              poster: s.poster, releaseTitle: Text("El día que se estrenó"),
                              releaseDetail: released.map { Text(verbatim: Strings.longDay($0, language: language)) }, language: language) { when, _ in
                 let now = Date()

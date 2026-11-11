@@ -3,6 +3,7 @@ import OrbitalCore
 import OrbitalModels
 
 struct HomeView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @State private var home: ModelObserver<HomeModel>
     @State private var tvNow: ModelObserver<TVNowModel>
@@ -340,11 +341,11 @@ struct HomeView: View {
     private func hero(_ s: Suggestion) -> some View {
         // La portada abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
         // ficha en vez de reproducir).
-        BleedArt(url: s.wide, title: s.title, aspect: heroAspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
+        BleedArt(url: s.wide, title: titleName(s.title, id: s.imdb, kind: s.kind), aspect: heroAspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let reason = reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
-                    TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: s.title, size: .hero)
+                    TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: titleName(s.title, id: s.imdb, kind: s.kind), size: .hero)
                     DataLine(parts: heroData(s), color: DS.onArtSecondary, trakt: TraktRatings.shown(s.imdb, fallback: s.traktRating))
                 }
                 .accessibilityElement(children: .combine)
@@ -410,7 +411,7 @@ struct HomeView: View {
                             env.ui.playerSource = PlayerZoomID(metaID: item.metaID, slot: "continue")
                             Task { await env.play(item) }
                         } label: {
-                            StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
+                            StillCard(title: titleName(item.title, id: item.metaID, kind: item.kind), art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
                                       fallback: item.background == nil ? nil : item.poster)
                                 .playerZoomSource(PlayerZoomID(metaID: item.metaID, slot: "continue"))
                         }
@@ -455,7 +456,7 @@ struct HomeView: View {
                     ForEach(items.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
                         TitleNavigationLink(route: s.route) {
-                            WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
+                            WatchlistCard(title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
                         }
                         .buttonStyle(.plain)
                         .contextMenu { listActions(s, in: .myList) }
@@ -528,7 +529,7 @@ struct HomeView: View {
                         else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand), zoom: s.route) }
+                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand), zoom: s.route) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -566,7 +567,7 @@ struct HomeView: View {
             LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s4) {
                 ForEach(shown) { item in
                     TitleNavigationLink(route: route(item)) {
-                        StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item),
+                        StillCard(title: titleName(item.title, id: item.metaID, kind: item.kind), art: item.background ?? item.poster, data: continueData(item),
                                   progress: item.progress, width: nil, fallback: item.background == nil ? nil : item.poster)
                     }
                     .buttonStyle(.plain)

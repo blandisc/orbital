@@ -51,6 +51,7 @@ struct CollectionRoute: Hashable {
 /// Una colección en cuadrícula de pósters (con ordenar y filtrar): los ganadores de un premio (con el año del premio), Mi
 /// lista de Stremio, o lo más popular de un año (películas o series).
 struct CollectionGridView: View {
+    @Environment(\.titleName) var titleName
     var collections: ModelObserver<CollectionsModel>
     let route: CollectionRoute
     @Environment(AppEnvironment.self) private var env
@@ -169,7 +170,7 @@ struct CollectionGridView: View {
             LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                     TitleNavigationLink(route: s.route) {
-                        RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, zoom: s.route)
+                        RankedPosterCard(rank: s.rank ?? index + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, zoom: s.route)
                     }
                     .buttonStyle(.plain)
                 }

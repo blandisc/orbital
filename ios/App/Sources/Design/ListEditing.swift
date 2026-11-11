@@ -110,6 +110,7 @@ struct ListEditToolbar: ToolbarContent {
 /// «Agregar a …»: busca un título por nombre y agrégalo con un toque; lo que ya está en la lista lleva su palomita y un
 /// toque lo quita. La hoja se queda abierta para agregar varios.
 struct AddToListSheet: View {
+    @Environment(\.titleName) var titleName
     let listName: Text
     let search: (String) async -> [SearchResult]
     let contains: (String) -> Bool
@@ -154,9 +155,9 @@ struct AddToListSheet: View {
         let inList = contains(r.metaID)
         return Button { Task { await toggle(r); version += 1 } } label: {
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: r.poster, title: r.title).frame(width: DS.Size.thumbSmall)
+                PosterView(url: r.poster, title: titleName(r.title, id: r.metaID, kind: r.kind)).frame(width: DS.Size.thumbSmall)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: r.title).recipe(.cardTitle)
+                    Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)).recipe(.cardTitle)
                     Text(verbatim: r.year).recipe(.caption)
                 }
                 Spacer(minLength: 0)
@@ -169,7 +170,7 @@ struct AddToListSheet: View {
         }
         .buttonStyle(.plain)
         .id("\(r.id)-\(version)")
-        .accessibilityLabel(Text(verbatim: r.title))
+        .accessibilityLabel(Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)))
         .accessibilityValue(inList ? Text("En la lista") : Text(""))
         .accessibilityHint(inList ? Text("Quitar de \(listName)") : Text("Agregar a \(listName)"))
     }

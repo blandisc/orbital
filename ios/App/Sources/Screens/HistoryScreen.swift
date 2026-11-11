@@ -9,6 +9,7 @@ import OrbitalModels
 struct HistoryRoute: Hashable {}
 
 struct HistoryScreen: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppEnvironment.self) private var env
     /// Lo que se carga, se borra y se deshace vive en `HistoryModel` (F5): la pantalla solo pinta.
@@ -97,7 +98,7 @@ struct HistoryScreen: View {
         // Con `item` (no `isPresented`): la hoja nace con su título; con `isPresented` llegaba en blanco (la pasada del 10 nov).
         .sheet(item: $pickedReady) { r in
             if r.kind == "movie" {
-                ViewingDatePicker(title: Text(verbatim: r.title), initial: Date()) { date in add(r, at: date) }
+                ViewingDatePicker(title: Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)), initial: Date()) { date in add(r, at: date) }
             } else {
                 // Una serie se marca capítulo por capítulo: su ficha.
                 NavigationStack { TitleView(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster)) }
@@ -127,7 +128,7 @@ struct HistoryScreen: View {
     private func row(_ e: TraktHistoryEntry, repeated: Bool) -> some View {
         Button { editing = e } label: {
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: e.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
+                PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: titleName(e.title, id: e.target.imdb, kind: e.target.isEpisode ? "series" : "movie")).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: name(e)).recipe(.cardTitle, color: DS.text).lineLimit(2)
                     whenLine(e, repeated: repeated)
@@ -155,7 +156,7 @@ struct HistoryScreen: View {
 
     private func name(_ e: TraktHistoryEntry) -> String {
         guard let s = e.target.season, let n = e.target.episode else { return e.title }
-        return "\(e.title) · " + Strings.episode(season: s, episode: n, language: language)   // «T2 E5» / «S2 E5» según el idioma
+        return "\(titleName(e.title, id: e.target.imdb, kind: "series")) · " + Strings.episode(season: s, episode: n, language: language)   // «T2 E5» / «S2 E5» según el idioma
     }
 
     private func remove(_ e: TraktHistoryEntry) {

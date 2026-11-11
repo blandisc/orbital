@@ -12,11 +12,11 @@ extension TitleView {
         // hacia arriba lo mismo, así lo de abajo («Ver», los datos) no se mueve.
         let extra = scheme == .dark ? topInset : 0
         let aspect = contentWidth > 0 && extra > 0 ? contentWidth / (contentWidth / heroAspect + extra) : heroAspect
-        return BleedArt(url: model.background ?? model.poster, title: model.title,
+        return BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind),
                  aspect: aspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
                  fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false, raised: extra) {
             VStack(spacing: DS.Space.s2) {
-                TitleLogo(url: model.logo, title: model.title, size: .hero, centered: true)
+                TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
                 if let tagline = model.extras?.tagline {
                     Text(verbatim: tagline).font(DS.TextRecipe.secondary.font.italic()).foregroundStyle(DS.onArtSecondary)

@@ -6,6 +6,7 @@ import OrbitalModels
 /// Película o episodio: póster, título, avance (interpolado entre sondeos, sin saltar) y −10 · Pausa · +10 · Siguiente.
 /// TV en vivo: el canal, «● En vivo» y ▲▼ · Sin sonido. Con letra de accesibilidad grande los botones se apilan con su nombre.
 struct NowPlayingCard: View {
+    @Environment(\.titleName) var titleName
     let now: OrbitalRemote.NowPlaying
     let fetchedAt: Date
     let busy: Bool
@@ -25,7 +26,7 @@ struct NowPlayingCard: View {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv.and.mediabox")
                 .font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
+                PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
                     .remoteMorph("poster", in: morph)
                 info
                 Spacer(minLength: 0)
@@ -137,6 +138,7 @@ struct NowPlayingCard: View {
 /// «Desde la TV»: lo que mandaste con «Enviar al iPhone», en una tarjeta pequeña bajo «Viendo en la TV».
 /// Ver abre el video donde ibas, Descargar lo guarda en el iPhone y Descartar la quita. Con letra de accesibilidad grande los botones se apilan.
 struct FromTVCard: View {
+    @Environment(\.titleName) var titleName
     let item: OrbitalRemote.InboxItem
     let onWatch: () -> Void
     let onDownload: () -> Void
@@ -149,7 +151,7 @@ struct FromTVCard: View {
         let background = item.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, item.metaID) : item.poster
         WithArtColors(url: background) { colors in
             ZStack(alignment: .bottomLeading) {
-                PosterView(url: background, title: item.title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
+                PosterView(url: background, title: titleName(item.title, id: item.metaID, kind: item.kind), aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
                     .overlay(ArtVeil(kind: .both, at: DS.Backdrop.scrimMid))
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     HStack(alignment: .firstTextBaseline) {
@@ -159,7 +161,7 @@ struct FromTVCard: View {
                             .font(DS.TextRecipe.label.font)
                     }
                     Spacer(minLength: DS.Space.s2)
-                    TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)
+                    TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: titleName(item.title, id: item.metaID, kind: item.kind))
                     DataLine(parts: [detail], color: DS.onArtSecondary)
                     HeroActions {
                         Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).controlSize(.large)

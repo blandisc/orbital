@@ -39,7 +39,7 @@ extension PlayerScreen {
                 ipodTopBar.frame(width: geo.size.width)
                 PlayerTimeReader(time: model.time) { position in
                     IPodScreen(face: face, status: ipodStatus(model),
-                               playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
+                               playing: state == .playing, title: titleName(current.displayTitle, id: current.metaID, kind: current.kind), detail: ipodDetail(model),
                                position: held ?? position, duration: model.snapshot.duration)
                 }
                     .frame(width: layout.screen.width, height: layout.screen.height)

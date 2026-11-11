@@ -185,6 +185,7 @@ public final class TitleModel: ObservableModel {
             localized = local
             title = local["name"]?.string ?? original["name"]?.string ?? title
             originalTitle = original["name"]?.string ?? title
+            if local["name"]?.string != original["name"]?.string { services.titleNames.remember(id: metaID, name: title) }
             info = CinemetaParsing.describe(local)
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)

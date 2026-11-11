@@ -5,6 +5,7 @@ import OrbitalModels
 /// La hoja «¿Cuándo la viste?» de la ficha: arma qué se marca (película, episodio, temporada o serie), su fecha de estreno
 /// y cuántos episodios anteriores faltan, y hace lo elegido.
 struct TitleWatchedWhen: ViewModifier {
+    @Environment(\.titleName) var titleName
     let model: TitleModel
     @Binding var scope: WatchedScope?
     @Environment(AppEnvironment.self) private var env
@@ -32,9 +33,9 @@ struct TitleWatchedWhen: ViewModifier {
 
     private func title(_ scope: WatchedScope) -> Text {
         switch scope {
-        case .movie, .series: Text(verbatim: model.title)
-        case .episode(let id): Text(verbatim: "\(model.title) · \(code(id))")
-        case .season(let s): Text("\(model.title) · Temporada \(s)")
+        case .movie, .series: Text(verbatim: titleName(model.title, id: model.metaID, kind: model.kind))
+        case .episode(let id): Text(verbatim: "\(titleName(model.title, id: model.metaID, kind: model.kind)) · \(code(id))")
+        case .season(let s): Text("\(titleName(model.title, id: model.metaID, kind: model.kind)) · Temporada \(s)")
         }
     }
 

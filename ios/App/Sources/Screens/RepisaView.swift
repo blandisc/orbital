@@ -113,6 +113,7 @@ struct RepisaView: View {
 /// La repisa de una colección: sus títulos por década (o de diez en diez), en gris los que te faltan y a color los que viste;
 /// abajo, «La siguiente». Tocar uno abre su ficha rápida; «Ya la vi» lo pone en la repisa.
 struct RepisaCollectionView: View {
+    @Environment(\.titleName) var titleName
     let id: String
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
@@ -152,7 +153,7 @@ struct RepisaCollectionView: View {
                     ForEach(shown.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             HStack(alignment: .firstTextBaseline) {
-                                Text(verbatim: group.title).recipe(.cardTitle)
+                                Text(verbatim: group.title).recipe(.cardTitle)   // no-es-título: un grupo de la colección
                                 Spacer()
                                 Text(verbatim: "\(group.items.filter { model.watched.contains($0.imdb) }.count) / \(group.items.count)").recipe(.caption, color: DS.textMuted).monospacedDigit()
                             }
@@ -242,7 +243,7 @@ struct RepisaCollectionView: View {
         HStack(alignment: .bottom, spacing: DS.Space.s2) {
             ForEach(items) { item in
                 Button { picked = item } label: {
-                    CanonPoster(url: item.poster, title: item.title, label: label(item, c), seen: model.watched.contains(item.imdb),
+                    CanonPoster(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), label: label(item, c), seen: model.watched.contains(item.imdb),
                                 favorite: (env.ratings.stars(item.imdb) ?? 0) >= 5, rank: c.grouping == .rank ? item.rank : nil)
                 }
                 .buttonStyle(.plain)
@@ -268,10 +269,10 @@ struct RepisaCollectionView: View {
 
     private func nextBar(_ item: CanonCollection.Item, _ c: CanonCollection) -> some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.nextPoster)
+            PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind)).frame(width: DS.Repisa.nextPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 why(c, item).recipe(.badge, color: DS.eyebrow)
-                Text(verbatim: item.title).recipe(.cardTitle).lineLimit(1)
+                Text(verbatim: titleName(item.title, id: item.imdb, kind: item.kind)).recipe(.cardTitle).lineLimit(1)
             }
             Spacer(minLength: 0)
             // «Ver» la reproduce; tocar el resto del renglón abre su ficha (Fernando, 31 oct 2026).
@@ -294,9 +295,9 @@ struct RepisaCollectionView: View {
             // El póster y el título abren su ficha (Fernando, 31 oct 2026: antes solo se podía ver o marcar como vista).
             Button { picked = nil; onOpenTitle(route(item)) } label: {
             HStack(alignment: .top, spacing: DS.Space.s4) {
-                PosterView(url: item.poster, title: item.title).frame(width: DS.Filter.resultWidth)
+                PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind)).frame(width: DS.Filter.resultWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text(verbatim: item.title).recipe(.title).lineLimit(3)
+                    Text(verbatim: titleName(item.title, id: item.imdb, kind: item.kind)).recipe(.title).lineLimit(3)
                     Text(verbatim: label(item, c)).recipe(.footnote, color: DS.textMuted)
                     if !others.isEmpty {
                         Text("También en \(Text(verbatim: others.map { Self.plainName($0) }.joined(separator: ", ")))").recipe(.footnote, color: DS.textMuted)
@@ -342,8 +343,8 @@ struct RepisaCollectionView: View {
         let group = c.groups().first { g in g.items.contains { $0.imdb == item.imdb } }
         let missing = group.map { g in g.items.filter { !model.watched.contains($0.imdb) }.count } ?? 0
         // Solo el logro («Completaste Los 2010»); lo que falta ya no se dice (Fernando, 31 oct 2026).
-        let next: Text? = group.flatMap { g in missing == 0 ? Text("Completaste \(g.title)") : nil }
-        return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: item.title, emblem: c.id,
+        let next: Text? = group.flatMap { g in missing == 0 ? Text("Completaste \(g.title)") : nil }   // no-es-título: un grupo de la colección
+        return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: titleName(item.title, id: item.imdb, kind: item.kind), emblem: c.id,
                            seen: c.seen(model.watched), total: max(c.total, c.items.count), next: next, completed: group != nil && missing == 0) {
             if placed?.id == item.id { placed = nil }
         }

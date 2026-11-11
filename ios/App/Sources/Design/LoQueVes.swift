@@ -94,6 +94,7 @@ struct WatchingBars: View {
 /// de lunes a domingo, del azul del logo según cuánto viste). Se desliza de lado hacia atrás en el tiempo y abre en lo de
 /// hoy; arriba, la letra de cada mes (y el año en enero). Tocar un día abre debajo lo que viste; tocarlo otra vez lo cierra.
 struct WatchingZoomMap: View {
+    @Environment(\.titleName) var titleName
     let plays: [TraktPlay]
     let locale: Locale
     @State private var day: Date?
@@ -194,9 +195,9 @@ struct WatchingZoomMap: View {
                 ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
                     TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
                         HStack(spacing: DS.Space.s3) {
-                            PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
+                            PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: titleName(g.title, id: g.imdb, kind: g.kind)).frame(width: DS.YearMap.dayPoster)
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                Text(verbatim: g.title).recipe(.cardTitle).lineLimit(1)
+                                Text(verbatim: titleName(g.title, id: g.imdb, kind: g.kind)).recipe(.cardTitle).lineLimit(1)
                                 Text(verbatim: g.detail).recipe(.footnote).lineLimit(2)
                             }
                             Spacer(minLength: 0)
@@ -328,6 +329,7 @@ struct WatchingGenres: View {
 /// El carrusel de «Cómo calificas»: los pósters de lo que calificaste con el número elegido, de lo más reciente a lo más
 /// viejo; tocar uno abre su ficha.
 struct WatchingFiveStars: View {
+    @Environment(\.titleName) var titleName
     struct Item: Identifiable { let id: String; let title: String; let kind: String; let poster: String }
     let items: [Item]
     let open: (Item) -> Void
@@ -337,12 +339,12 @@ struct WatchingFiveStars: View {
             HStack(spacing: DS.Space.s2) {
                 ForEach(items) { item in
                     Button { open(item) } label: {
-                        PosterView(url: item.poster, title: item.title)
+                        PosterView(url: item.poster, title: titleName(item.title, id: item.id, kind: item.kind))
                             .frame(width: DS.Watching.starPoster)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(verbatim: item.title))
+                    .accessibilityLabel(Text(verbatim: titleName(item.title, id: item.id, kind: item.kind)))
                 }
             }
             .padding(.horizontal, DS.Space.gutter)

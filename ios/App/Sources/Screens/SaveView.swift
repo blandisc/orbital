@@ -7,6 +7,7 @@ import OrbitalModels
 /// entra arriba). **Nada salta al llegar las listas** (`SaveSheetPlan`): su zona aparta su alto al abrir, con renglones esqueleto
 /// del mismo alto que los de verdad, y las fijas no dependen de la red.
 struct SaveView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
     var observer: ModelObserver<TitleModel>
@@ -69,7 +70,7 @@ struct SaveView: View {
 
     /// El título y, a la derecha (debajo con letra grande), «Nueva lista…»: siempre en el mismo lugar, aunque carguen las listas.
     private func header(_ m: TitleModel) -> some View {
-        let title = Text("Guardar en…"), subtitle = Text(verbatim: m.title)
+        let title = Text("Guardar en…"), subtitle = Text(verbatim: titleName(m.title, id: m.metaID, kind: m.kind))
         let newList = Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus").frame(minHeight: DS.Size.touchTarget) }
             .dsGlassButton().accessibilityIdentifier("save-new-list")
         return Group {

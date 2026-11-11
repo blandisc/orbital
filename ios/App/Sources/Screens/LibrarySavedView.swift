@@ -8,6 +8,7 @@ import OrbitalModels
 /// Por ver · Viendo · Vistas. Cada póster lleva su barra de avance y abre su ficha. Sin Trakt, el vacío con «Conectar
 /// Trakt»; una lista vacía, con «Explorar».
 struct SavedListScreen: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<SavedModel>
     /// La lista que abriste desde el tablero (Mi lista o una tuya); el menú de arriba deja cambiarla.
@@ -129,10 +130,10 @@ struct SavedListScreen: View {
         let link = TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
         if model.selected == SavedModel.watchlist {
             link.contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: .inList, model: model) } }
-                .selectable(selection, id: s.imdb, title: s.title)
+                .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
         } else {
             link.listEditable(editing: false, listName: listName, remove: model.canEdit && !selection.editing ? { remove(s) } : nil)
-                .selectable(selection, id: s.imdb, title: s.title)
+                .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
         }
     }
 
@@ -172,6 +173,7 @@ struct SavedListScreen: View {
 /// abajo, tus listas de Trakt. Cada tarjeta abre su montón completo. Sin Trakt, el vacío con «Conectar Trakt».
 /// En la TV: «Guardado» sigue siendo la fila «Mi lista» (BI-TV-A); el tablero queda pendiente en el registro de paridad.
 struct LibrarySavedView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<SavedModel>
     /// «Nueva lista» (G4-A): el nombre que escribes.
@@ -351,6 +353,7 @@ struct SavedStateRoute: Hashable { let status: String }
 /// Un montón del tablero completo: Viendo y Las dejé en cuadrícula (con «Ordenar y filtrar»); Vistas por mes, lo más reciente
 /// arriba.
 struct SavedStateScreen: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<SavedModel>
     let status: TitleStatus
@@ -363,7 +366,7 @@ struct SavedStateScreen: View {
     private func cell(_ s: Suggestion, width: CGFloat, from: TitleStatus) -> some View {
         TitleLink(route: s.route, progress: status == .watched ? nil : model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
             .contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: from, model: model) } }
-            .selectable(selection, id: s.imdb, title: s.title)
+            .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
     }
 
     var body: some View {
@@ -428,7 +431,7 @@ struct SavedStateScreen: View {
         let follow = env.follow, ids = shows.map(\.imdb)
         if let problem = await follow.hide(ids) { env.notify(problem, tone: .error); return }
         for id in ids { await ReleaseNotifier.forget(id) }
-        env.notify(ids.count == 1 ? "La dejaste" : "Las dejaste", detail: ids.count == 1 ? shows.first?.title : nil, tone: .info,
+        env.notify(ids.count == 1 ? "La dejaste" : "Las dejaste", detail: ids.count == 1 ? shows.first.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } : nil, tone: .info,
                    actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
             Task { _ = await follow.unhide(ids) }
         }

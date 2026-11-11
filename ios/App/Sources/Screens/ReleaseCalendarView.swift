@@ -5,6 +5,7 @@ import OrbitalModels
 /// Sale hoy › el mes: cada día con el color de lo que sale de las series que sigues (dos el mismo día: la casilla partida).
 /// Tocar un día enseña abajo qué sale; tocar una serie abre su ficha.
 struct ReleaseCalendarView: View {
+    @Environment(\.titleName) var titleName
     @State private var observer = ModelObserver(ReleaseCalendarModel(AppEnvironment.shared.services))
     @Environment(AppEnvironment.self) private var env
     let open: (TitleRoute) -> Void
@@ -87,9 +88,9 @@ struct ReleaseCalendarView: View {
             ForEach(airings) { a in
                 Button { open(a.series.route) } label: {
                     HStack(spacing: DS.Space.s3) {
-                        PosterView(url: a.series.poster, title: a.series.title).frame(width: DS.Size.thumbSmall)
+                        PosterView(url: a.series.poster, title: titleName(a.series.title, id: a.series.imdb, kind: "series")).frame(width: DS.Size.thumbSmall)
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(verbatim: a.series.title).recipe(.cardTitle).lineLimit(1)
+                            Text(verbatim: titleName(a.series.title, id: a.series.imdb, kind: "series")).recipe(.cardTitle).lineLimit(1)
                             Text(verbatim: a.episodeLabel(env.services.episodeLabel)).recipe(.footnote).lineLimit(1)
                         }
                         Spacer(minLength: DS.Space.s2)

@@ -46,6 +46,7 @@ struct Rail<Content: View>: View {
 
 /// Una portada que lleva a la ficha, con su nombre debajo.
 struct TitleLink: View {
+    @Environment(\.titleName) var titleName
     let route: TitleRoute
     var badge: LocalizedStringKey?
     /// El ícono de la placa (el calendario de cuándo sale).
@@ -80,11 +81,11 @@ struct TitleLink: View {
     private var link: some View {
         TitleNavigationLink(route: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked && !bookmarkIsControl, rank: rank, progress: progress, width: width, fallback: fallbackPoster)
+                PosterCard(title: titleName(route.title, id: route.metaID, kind: route.kind), poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked && !bookmarkIsControl, rank: rank, progress: progress, width: width, fallback: fallbackPoster)
                     .titleZoomSource(route)
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {
-                    Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
+                    Text(verbatim: titleName(route.title, id: route.metaID, kind: route.kind)).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
                     if let detail { detail.recipe(.footnote).lineLimit(detailLines).frame(width: width, alignment: .leading) }
                 }
             }

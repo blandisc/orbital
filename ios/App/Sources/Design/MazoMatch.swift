@@ -8,6 +8,7 @@ import OrbitalCore
 /// derecha su calificación de Trakt y abajo a la derecha el ▶ de «Ver ya». Al arrastrarla (o al tocar un botón) se tiñe y
 /// asoma un sello, como Tinder: «PASO» en rojo (izquierda), «GUARDAR» en verde (derecha) y «PARA HOY» en azul (arriba).
 struct MatchCard: View {
+    @Environment(\.titleName) var titleName
     let suggestion: Suggestion
     /// Los géneros ya en el idioma de la app (los pone la pantalla).
     var genres: [String] = []
@@ -27,12 +28,12 @@ struct MatchCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Color.clear.overlay { PosterView(url: suggestion.poster, title: suggestion.title, aspect: nil, bleed: true).scaledToFill() }
+            Color.clear.overlay { PosterView(url: suggestion.poster, title: titleName(suggestion.title, id: suggestion.imdb, kind: suggestion.kind), aspect: nil, bleed: true).scaledToFill() }
                 .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
             ArtVeil(at: DS.Match.veilFrom)   // más arriba que de costumbre: el porqué, el nombre, los datos y los géneros
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text(badgeKey(suggestion.reason)).recipe(.eyebrow, color: DS.eyebrow).lineLimit(1)
-                Text(verbatim: suggestion.title).font(DS.TextRecipe.title.font).foregroundStyle(DS.paper).lineLimit(2)
+                Text(verbatim: titleName(suggestion.title, id: suggestion.imdb, kind: suggestion.kind)).font(DS.TextRecipe.title.font).foregroundStyle(DS.paper).lineLimit(2)
                 facts.recipe(.footnote, color: DS.onArtSecondary).lineLimit(1)
                 if !genres.isEmpty {
                     HStack(spacing: DS.Space.s1) {

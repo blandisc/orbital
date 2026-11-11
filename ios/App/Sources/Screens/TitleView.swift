@@ -5,6 +5,7 @@ import OrbitalAddons
 
 /// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     let route: TitleRoute
     /// Opcional a propósito: al mantener presionado un póster, iOS arma la ficha (y los botones de su barra) en un árbol
@@ -200,12 +201,12 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo
                 ZStack(alignment: .bottomLeading) {
                     // Al bajar, el arte se recoge como en el iPhone.
-                    BleedArt(url: model.background ?? model.poster, title: model.title, collapse: DS.backdropDeep,
+                    BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind), collapse: DS.backdropDeep,
                              fallback: model.poster, fadesTop: false) { EmptyView() }
                         .overlay { ArtVeil(kind: .leading, strength: .deep) }
                         .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, until: DS.TitleAction.wideVeilSolid, strength: .deep) }
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                        TitleLogo(url: model.logo, title: model.title, size: .hero)
+                        TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero)
                             .frame(maxWidth: DS.TitleAction.wideLogoWidth, alignment: .leading)
                         facts(model, leading: true)
                         actions(model)
@@ -325,7 +326,7 @@ struct TitleView: View {
             }
             // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
-                ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
+                ShareLink(item: url, subject: Text(verbatim: titleName(model.title, id: model.metaID, kind: model.kind))) { Image(systemName: "square.and.arrow.up") }
                     .accessibilityLabel(Text("Compartir"))
             }
         }

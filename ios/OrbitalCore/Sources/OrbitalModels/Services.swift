@@ -58,6 +58,12 @@ public final class Services: ObservableModel {
     public let oneDriveLibrary: OneDriveLibrary
     public private(set) var cinemeta: Cinemeta { didSet { notify() } }
     public private(set) var localizer: Localizer { didSet { notify() } }
+    /// La puerta única del nombre de un título en tu idioma (revisión 2, 11 nov): la usan todas las vistas.
+    public private(set) lazy var titleNames: TitleNames = TitleNames(
+        language: { [settings] in Localizer.tmdbLanguage(settings.value.uiLanguage) },
+        lookup: titleLookup(), known: titleKnown())
+    private func titleLookup() -> TitleNames.Lookup { let l = localizer; return { kind, imdb in await l.title(kind: kind, imdb: imdb) } }
+    private func titleKnown() -> TitleNames.Known { let l = localizer; return { await l.allKnownTitles() } }
     /// El póster sin texto de cada título, para los marcos altos (`TallArt`); la clave de TMDB se lee en cada consulta.
     public let tallArt: TallArt
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
@@ -124,8 +130,16 @@ public final class Services: ObservableModel {
         let hidden = ForYou.hidden(kv), off = ForYou.unfollowed(kv).union(hidden)
         let upcoming = WidgetSnapshot.timeline(recent: widgetRecent.filter { !off.contains($0.series.imdb) },
                                                upcoming: widgetAirings.filter { !off.contains($0.series.imdb) }, now: now(), episode: episodeLabel)
-        publish(WidgetSnapshot.make(continueWatching: widgetContinue.filter { !hidden.contains($0.metaID) }, labels: widgetLabels, language: appSettings.uiLanguage,
-                                    upcoming: upcoming.isEmpty ? nil : upcoming))
+        // El widget y la pantalla de inicio dicen el mismo nombre que la app (la puerta de `titleNames`).
+        let names = titleNames
+        let shown = widgetContinue.filter { !hidden.contains($0.metaID) }.map { item -> HomeItem in
+            var item = item; item.title = names.name(item.title, id: item.metaID, kind: item.kind); return item
+        }
+        let named = upcoming.map { episode -> WidgetSnapshot.UpcomingEpisode in
+            var episode = episode; episode.title = names.name(episode.title, id: episode.metaID, kind: "series"); return episode
+        }
+        publish(WidgetSnapshot.make(continueWatching: shown, labels: widgetLabels, language: appSettings.uiLanguage,
+                                    upcoming: named.isEmpty ? nil : named))
     }
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { notify() } }
@@ -490,6 +504,7 @@ public final class Services: ObservableModel {
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let settings = settings, secrets = secrets
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
+        titleNames.reset(lookup: titleLookup(), known: titleKnown())
         self.tmdb = tmdb
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock)

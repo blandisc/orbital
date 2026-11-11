@@ -22,6 +22,7 @@ private struct ScrollSpot: Equatable { var y: CGFloat; var bottom: CGFloat }
 /// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, solo la puerta del filtro avanzado, lo que buscaste
 /// y los géneros (BX, Fernando, 9 nov 2026: lo más popular hoy se fue a Explorar); al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @State private var catalog: ModelObserver<CatalogModel>
     @State private var search: ModelObserver<SearchModel>
@@ -220,7 +221,7 @@ struct BrowseView: View {
         if let top = shown.first, top.metaID.hasPrefix("tt") {
             let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
             TitleNavigationLink(route: route) {
-                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: top.title,
+                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: titleName(top.title, id: top.metaID, kind: top.kind),
                           why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
             }
             .perfTag("search.top")

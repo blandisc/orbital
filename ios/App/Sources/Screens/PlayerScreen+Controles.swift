@@ -196,7 +196,7 @@ extension PlayerScreen {
     var playerTitle: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(2) }
-            Text(current.displayTitle).recipe(.section, color: DS.text).lineLimit(2)
+            Text(verbatim: titleName(current.displayTitle, id: current.metaID, kind: current.kind)).recipe(.section, color: DS.text).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -335,7 +335,7 @@ extension PlayerScreen {
         case .queued:
             inDownloads = true
             // La misma versión que estás viendo; se sigue bajando aunque cierres el reproductor.
-            show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? r.displayTitle : subtitle), detail: tr("La misma versión que estás viendo"),
+            show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? titleName(r.displayTitle, id: r.metaID, kind: r.kind) : subtitle), detail: tr("La misma versión que estás viendo"),
                               tone: .success, showsDownloads: true))
         case .already: inDownloads = true; alreadyDownloaded()
         case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr("Real-Debrid no tiene un archivo de este título"), tone: .info))

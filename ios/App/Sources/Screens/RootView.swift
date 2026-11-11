@@ -16,6 +16,7 @@ struct TitleRoute: Hashable {
 }
 
 struct RootView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
@@ -141,7 +142,7 @@ struct RootView: View {
             Group {
                 if let h = ui.handoff {
                     // «Sigue en tu Orbital · Minions & Monstruos · desde 12:34»; si iba al principio, lo dice así (no «en 0:00»).
-                    Toast(tone: .success, title: Text("Sigue en tu Orbital"), detail: Text("\(Text(verbatim: "\(h.request.displayTitle) · "))\(Self.handoffFrom(h.position))"),
+                    Toast(tone: .success, title: Text("Sigue en tu Orbital"), detail: Text("\(Text(verbatim: "\(titleName(h.request.displayTitle, id: h.request.metaID, kind: h.request.kind)) · "))\(Self.handoffFrom(h.position))"),
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
                           symbol: "tv.and.mediabox", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
                         .transition(DS.Motion.notice(reduceMotion))

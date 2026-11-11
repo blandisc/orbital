@@ -42,14 +42,15 @@ extension Text {
 
 /// Una reseña de «Tus reseñas»: el póster, el nombre y el año, tus estrellas, dos renglones de tu reseña y cuándo la viste.
 struct LetterboxdReviewRow: View {
+    @Environment(\.titleName) var titleName
     let entry: LetterboxdEntry
     let watched: Text?
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
-            PosterView(url: entry.imdb.map { String(format: ForYou.metahubPoster, $0) }, title: entry.title).frame(width: DS.Letterboxd.poster)
+            PosterView(url: entry.imdb.map { String(format: ForYou.metahubPoster, $0) }, title: titleName(entry.title, id: entry.imdb, kind: entry.kind)).frame(width: DS.Letterboxd.poster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("\(Text(verbatim: entry.title).bold())\(Text(verbatim: entry.year.map { "  \($0)" } ?? "").foregroundStyle(DS.textMuted))")
+                Text("\(Text(verbatim: titleName(entry.title, id: entry.imdb, kind: entry.kind)).bold())\(Text(verbatim: entry.year.map { "  \($0)" } ?? "").foregroundStyle(DS.textMuted))")
                     .recipe(.body).lineLimit(1)
                 LetterboxdStars(rating: entry.rating, liked: entry.liked)
                 if let review = entry.review { Text(verbatim: review).recipe(.footnote, color: DS.textMuted).lineLimit(2) }

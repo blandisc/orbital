@@ -166,7 +166,7 @@ private struct VoiceTopicsView: View {
                         }
                         .id("phone")
                         ForEach(guide.groups) { group in
-                            VoiceTopic(title: Text(verbatim: group.title)) {
+                            VoiceTopic(title: Text(verbatim: group.title)) {   // no-es-título: un grupo de comandos
                                 ForEach(group.commands) {
                                     PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty, onSay: onSay)
                                 }
@@ -237,7 +237,7 @@ private struct VoiceGuideResults: View {
             DSEmptyState(symbol: "magnifyingglass", title: Text("Nada con \(query)"))
         }
         ForEach(groups) { group in
-            VoiceTopic(title: Text(verbatim: group.title)) {
+            VoiceTopic(title: Text(verbatim: group.title)) {   // no-es-título: un grupo de comandos
                 ForEach(group.commands) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty, onSay: onSay) }
             }
         }
@@ -254,7 +254,7 @@ private struct VoiceGuideResults: View {
     private var filteredGroups: [AlexaGuide.Group] {
         guide.groups.compactMap { g in
             let hits = g.commands.filter(matches)
-            return hits.isEmpty ? nil : AlexaGuide.Group(title: g.title, icon: g.icon, commands: hits)
+            return hits.isEmpty ? nil : AlexaGuide.Group(title: g.title, icon: g.icon, commands: hits)   // no-es-título: un grupo de comandos
         }
     }
 }

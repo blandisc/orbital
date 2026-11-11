@@ -142,6 +142,7 @@ struct SavedListManagement: ViewModifier {
 
 /// «Ordenar a mano»: la lista con agarraderas; arrastras y «Guardar» lo deja así en Trakt (y en la TV, cuando recargue).
 struct ReorderListSheet: View {
+    @Environment(\.titleName) var titleName
     let title: Text
     @State var items: [Suggestion]
     let save: ([String]) async -> Bool
@@ -157,9 +158,9 @@ struct ReorderListSheet: View {
             List {
                 ForEach(items, id: \.imdb) { s in
                     HStack(spacing: DS.Space.s3) {
-                        PosterView(url: s.poster, title: s.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
+                        PosterView(url: s.poster, title: titleName(s.title, id: s.imdb, kind: s.kind)).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
-                            Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
+                            Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)).recipe(.cardTitle).lineLimit(1)
                             if let year = s.year { Text(verbatim: String(year)).recipe(.footnote, color: DS.textMuted) }
                         }
                     }

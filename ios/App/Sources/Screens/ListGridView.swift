@@ -76,6 +76,7 @@ struct PlatformRoute: Hashable { var brand: String }
 /// Los rankings de una plataforma: su logo con su brillo arriba y, por ranking (Top 10 de Netflix, tendencia de JustWatch;
 /// series y películas), los pósters con su número grande en el color de la plataforma. Tocar uno abre su ficha.
 struct PlatformRankingsView: View {
+    @Environment(\.titleName) var titleName
     var observer: ModelObserver<ParaTiModel>
     let hub: PlatformHub
     private var model: ParaTiModel { observer.model }
@@ -148,7 +149,7 @@ struct PlatformRankingsView: View {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                 TitleNavigationLink(route: s.route) {
-                    RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint, zoom: s.route)
+                    RankedPosterCard(rank: s.rank ?? index + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint, zoom: s.route)
                 }
                 .buttonStyle(.plain)
             }

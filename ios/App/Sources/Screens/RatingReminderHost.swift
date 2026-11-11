@@ -5,6 +5,7 @@ import OrbitalModels
 /// lo de abajo en todas las pantallas), conectada a tus calificaciones (`RatingsModel`): calificar desde ahí, descartar o abrir
 /// la fila completa en una hoja. Se queda en su lugar hasta que calificas o la cierras; calificar siempre se puede en la ficha.
 struct RatingReminderHost: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showQueue = false
@@ -14,7 +15,7 @@ struct RatingReminderHost: View {
         let _ = model.track()
         Group {
             if let item = model.current {
-                RatingReminder(title: item.title, poster: URL(string: item.poster), more: model.more,
+                RatingReminder(title: titleName(item.title, id: item.imdb, kind: item.kind), poster: URL(string: item.poster), more: model.more,
                                onRate: { stars in Task { await model.rate(imdb: item.imdb, kind: item.kind, stars: stars) } },
                                onDismiss: { model.dismiss(item.imdb) },
                                onOpenQueue: { showQueue = true })

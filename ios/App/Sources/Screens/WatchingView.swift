@@ -47,6 +47,7 @@ enum WatchingText {
 /// «Lo que ves»: tus números del periodo (semana, mes, año o siempre), el mapa día por día, las barras, tus géneros, cómo
 /// calificas y lo que más viste. (El Wrapped, apagado por ahora.)
 struct WatchingView: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// El ancho de la pantalla: en el iPad la portada crece con él (si no, el arte quedaba en una franja con bordes).
     @State private var width: CGFloat = 0
@@ -118,7 +119,7 @@ struct WatchingView: View {
     private func hero(_ s: WatchingStats) -> some View {
         ZStack(alignment: .bottomLeading) {
             if let top = s.top.first {
-                PosterView(url: String(format: ForYou.metahubBackground, top.imdb), title: top.title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
+                PosterView(url: String(format: ForYou.metahubBackground, top.imdb), title: titleName(top.title, id: top.imdb, kind: top.kind), aspect: nil, bleed: true, maxPoints: DS.Image.wide)
                     .frame(maxWidth: .infinity, maxHeight: .infinity).clipped().accessibilityHidden(true)
             }
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
@@ -161,7 +162,7 @@ struct WatchingView: View {
                     ForEach(Array(s.top.prefix(DS.Watching.topCount).enumerated()), id: \.element.imdb) { i, t in
                         Button { onOpenTitle(TitleRoute(kind: t.kind, metaID: t.imdb, title: t.title, poster: t.poster)) } label: {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                RankedPosterCard(rank: i + 1, title: t.title, poster: t.poster)
+                                RankedPosterCard(rank: i + 1, title: titleName(t.title, id: t.imdb, kind: t.kind), poster: t.poster)
                                 Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos · \(t.minutes / 60) h").recipe(.caption, color: DS.textMuted).lineLimit(1)
                             }
                         }
@@ -243,7 +244,7 @@ struct WatchingView: View {
         case .all: Text("Lo que veas aquí o en Trakt aparece solo.")
         }
         let last: Text? = model.lastPlay.map { p in
-            Text("Lo último que viste fue \(Text(verbatim: p.title)), el \(Text(verbatim: Strings.date(p.at, .weekdayDayMonth, language: language))).")
+            Text("Lo último que viste fue \(Text(verbatim: titleName(p.title, id: p.imdb, kind: p.kind))), el \(Text(verbatim: Strings.date(p.at, .weekdayDayMonth, language: language))).")
         }
         let first = model.firstPeriodWithData()
         return DSEmptyState(symbol: "popcorn", title: Text("Aún nada \(WatchingCard.phrase(model.period))"),
@@ -326,6 +327,7 @@ struct RatedRoute: Hashable, Identifiable { let stars: Int; var id: Int { stars 
 
 /// Lo que calificaste, en pósters, del 5 al 1 (o solo un número de estrellas). Tocar uno abre su ficha.
 struct WatchingRatedView: View {
+    @Environment(\.titleName) var titleName
     struct Item: Identifiable { let id: String; let title: String; let kind: String; let stars: Int }
     let stars: Int
     let items: [Item]
@@ -343,11 +345,11 @@ struct WatchingRatedView: View {
                                 Button {
                                     onOpenTitle(TitleRoute(kind: item.kind, metaID: item.id, title: item.title, poster: String(format: ForYou.metahubPoster, item.id)))
                                 } label: {
-                                    PosterView(url: String(format: ForYou.metahubPoster, item.id), title: item.title).frame(width: width)
+                                    PosterView(url: String(format: ForYou.metahubPoster, item.id), title: titleName(item.title, id: item.id, kind: item.kind)).frame(width: width)
                                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(Text(verbatim: item.title))
+                                .accessibilityLabel(Text(verbatim: titleName(item.title, id: item.id, kind: item.kind)))
                             }
                         }
                     }

@@ -12,6 +12,7 @@ import OrbitalModels
 /// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
 /// «Guardado», Mi lista y tus listas de Trakt (`LibrarySavedView`).
 struct DownloadsView: View {
+    @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var observer: ModelObserver<DownloadsModel>
@@ -185,7 +186,7 @@ struct DownloadsView: View {
                     DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: level, symbol: symbol("film")).listHeadRow()
                     // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
                     ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
-                        readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
+                        readyRow(title: titleName(g.title, id: g.metaID, kind: g.kind), poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                     }
                 }
                 .downloadCard()
@@ -243,18 +244,18 @@ struct DownloadsView: View {
     /// Lo que se está bajando: póster, nombre, datos en SF Mono, el avance y pausar o seguir.
     private func row(_ item: DownloadItem, _ model: DownloadsModel) -> some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
+            PosterView(url: item.poster, title: titleName(item.title, id: item.metaID, kind: item.kind)).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Dos renglones para el nombre y el estado en el suyo: con letra grande «En pausa» se caía al final de la línea.
                 let details = [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality].compactMap { $0 }
                 if item.state == .downloading && !item.waitingForNetwork {
                     // Bajando: el nombre y siempre dos renglones de datos, sin desparramarse: qué es y cuánto lleva, y la
                     // velocidad con lo que falta (lo que no cabe se deja fuera, no se parte en más renglones).
-                    Text(item.title).recipe(.cardTitle).lineLimit(1)
+                    Text(verbatim: titleName(item.title, id: item.metaID, kind: item.kind)).recipe(.cardTitle).lineLimit(1)
                     DataLine(parts: details + ["\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"])
                     DataLine(parts: speedParts(item, model))
                 } else {
-                    Text(item.title).recipe(.cardTitle).lineLimit(2)
+                    Text(verbatim: titleName(item.title, id: item.metaID, kind: item.kind)).recipe(.cardTitle).lineLimit(2)
                     if !details.isEmpty { DataLine(parts: details) }
                     if let status = status(item, model) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
                 }
@@ -312,9 +313,9 @@ struct DownloadsView: View {
     /// Una serie descargada: su póster, cuántas temporadas y episodios, y cuánto ocupa (sin archivos sueltos).
     private func seriesRow(_ g: DownloadGroup) -> some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: g.poster, title: g.title).frame(width: DS.Size.thumbSmall)
+            PosterView(url: g.poster, title: titleName(g.title, id: g.metaID, kind: g.kind)).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(g.title).recipe(.cardTitle).lineLimit(1)
+                Text(verbatim: titleName(g.title, id: g.metaID, kind: g.kind)).recipe(.cardTitle).lineLimit(1)
                 DataLine(parts: [g.seasons.count > 1 ? seasonsText(g.seasons.count) : seasonText(g.seasons.first?.number), episodesText(g.items.count), bytes(g.bytes)].compactMap { $0 })
             }
         }
@@ -372,6 +373,7 @@ struct DownloadSeasonRoute: Hashable { var metaID: String; var season: Int }
 
 /// Una serie descargada: con varias temporadas, una fila por temporada; con una sola, directo sus episodios.
 struct DownloadSeriesView: View {
+    @Environment(\.titleName) var titleName
     var observer: ModelObserver<DownloadsModel>
     @Environment(AppEnvironment.self) private var env
     let metaID: String
@@ -403,12 +405,13 @@ struct DownloadSeriesView: View {
         }
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? "")).navigationBarTitleDisplayMode(.inline)
     }
 }
 
 /// Los episodios descargados de una temporada: tocar uno lo reproduce; deslizar lo borra.
 struct DownloadSeasonView: View {
+    @Environment(\.titleName) var titleName
     var observer: ModelObserver<DownloadsModel>
     @Environment(AppEnvironment.self) private var env
     @State private var subtitlesFor: DownloadItem?
@@ -425,7 +428,7 @@ struct DownloadSeasonView: View {
                     Button { Task { env.play(await model.playRequest(item)) } } label: {
                         HStack(spacing: DS.Space.s3) {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle).recipe(.cardTitle).lineLimit(2)
+                                Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : item.subtitle).recipe(.cardTitle).lineLimit(2)
                                 DataLine(parts: [item.quality, ByteSize.text(item.writtenBytes, locale: env.uiLocale)].compactMap { $0 })
                             }
                             Spacer(minLength: DS.Space.s2)
@@ -437,7 +440,7 @@ struct DownloadSeasonView: View {
                     .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }
                     .contextMenu {
                         Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
-                        ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {
+                        ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : item.subtitle))) {
                             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
                         }
                     }
@@ -448,7 +451,7 @@ struct DownloadSeasonView: View {
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? "")).navigationBarTitleDisplayMode(.inline)
         .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
     }
 }
@@ -456,6 +459,7 @@ struct DownloadSeasonView: View {
 /// «Buscar subtítulos» de una descarga: los idiomas que hay (el tuyo primero) y, al tocar uno, se baja y se guarda con el video
 /// (sale sin conexión). Cada toque suma otro de ese idioma, por si el primero no va a tiempo.
 struct DownloadSubtitlesSheet: View {
+    @Environment(\.titleName) var titleName
     let item: DownloadItem
     let model: DownloadsModel
     @Environment(AppEnvironment.self) private var env
@@ -466,7 +470,7 @@ struct DownloadSubtitlesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)"))
+            DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : "\(titleName(item.title, id: item.metaID, kind: item.kind)) · \(item.subtitle)"))
             if let found {
                 if found.isEmpty {
                     DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)

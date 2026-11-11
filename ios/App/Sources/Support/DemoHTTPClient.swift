@@ -222,7 +222,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     }
 
     /// Nombres en español para el TMDB de mentira (Mi media y la ficha los enseñan traducidos).
-    static let demoSpanish: [(String, String)] = [("tt15239678", "Dune: Parte dos"), ("tt11280740", "Separación")]
+    static let demoSpanish: [(String, String)] = [("tt15239678", "Duna: Parte dos"), ("tt11280740", "Separación"), ("tt1160419", "Duna"),
+                                                  ("tt0386676", "La Oficina"), ("tt0816692", "Interestelar")]
 
     /// Títulos reales para el TMDB de mentira (sus pósters salen de metahub).
     static let demoIMDb: [(String, String)] = [

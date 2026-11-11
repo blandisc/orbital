@@ -19,7 +19,7 @@ enum AppearNotifier {
         let status = await DebridRequestNotifier.permission()
         guard status == .authorized || status == .provisional else { return }
         let content = UNMutableNotificationContent()
-        content.title = String(format: Strings.tr("Ya apareció %@", language: language), entry.title)
+        content.title = String(format: Strings.tr("Ya apareció %@", language: language), AppEnvironment.shared.services.titleNames.name(entry.title, id: entry.metaID, kind: entry.kind))
         content.body = Strings.tr("Alguien ya lo comparte · ábrelo para verlo o pedirlo", language: language)
         content.threadIdentifier = DebridRequestNotifier.thread
         content.sound = .default

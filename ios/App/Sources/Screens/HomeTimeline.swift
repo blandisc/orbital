@@ -7,11 +7,16 @@ import OrbitalModels
 /// salió va con su punto turquesa (`DS.fresh`) (ya se puede ver; lo de hoy, «Nuevo»); lo que viene, más apagado y con cuánto falta. Abre en HOY (lo de antes a la izquierda). El calendario del mes
 /// completo, en el botón del encabezado.
 struct ReleaseTimeline: View {
+    @Environment(\.titleName) var titleName
     let airings: [Airing]
     let onOpen: (TitleRoute) -> Void
     let onCalendar: () -> Void
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Con letra grande la tarjeta crece con su texto (revisión 2: «Severa…», «8:00 p…» cortados), hasta `maxGrowth`.
+    @ScaledMetric(relativeTo: .footnote) private var scaledWidth = DS.HomeTimeline.width
+    @ScaledMetric(relativeTo: .caption) private var scaledLabelRow = DS.HomeTimeline.labelRow
+    private var cardWidth: CGFloat { min(scaledWidth, DS.HomeTimeline.width * DS.HomeTimeline.maxGrowth) }
 
     var body: some View {
         // Cada minuto: lo que sale hoy a las 21:00 pasa a «Nuevo» a esa hora, y a medianoche «Hoy» se vuelve «Ayer».
@@ -82,7 +87,7 @@ struct ReleaseTimeline: View {
                 .frame(width: DS.HomeTimeline.markLine)
                 .frame(maxHeight: .infinity)
         }
-        .frame(height: DS.HomeTimeline.width / DS.Poster.aspect + DS.HomeTimeline.labelRow)
+        .frame(height: cardWidth / DS.Poster.aspect + scaledLabelRow)
         .accessibilityHidden(true)
     }
 
@@ -93,10 +98,10 @@ struct ReleaseTimeline: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Circle().fill(soon ? DS.ink500 : DS.fresh).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
-                    when(a).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
+                    when(a).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1).minimumScaleFactor(DS.HomeTimeline.labelShrink)
                 }
-                .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
-                PosterView(url: a.series.poster, title: a.series.title)
+                .frame(minHeight: scaledLabelRow, alignment: .leading)
+                PosterView(url: a.series.poster, title: titleName(a.series.title, id: a.series.imdb, kind: "series"))
                     .overlay(alignment: .topLeading) {
                         if moment == .new { DSCornerRibbon(text: "Nuevo") }
                     }
@@ -110,11 +115,11 @@ struct ReleaseTimeline: View {
                     }
                     .opacity(soon ? DS.Opacity.dimmed : 1)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: a.series.title).recipe(.label).lineLimit(1)
+                    Text(verbatim: titleName(a.series.title, id: a.series.imdb, kind: "series")).recipe(.label).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                     Text(verbatim: episode).recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
             }
-            .frame(width: DS.HomeTimeline.width)
+            .frame(width: cardWidth)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

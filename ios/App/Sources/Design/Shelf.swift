@@ -83,6 +83,7 @@ struct PopularRoute: Hashable {}
 /// los rankings de tus plataformas). Películas y series alternadas. Una franja más de Explorar (BX, Fernando, 9 nov 2026:
 /// antes vivía en Buscar, que se quedó solo para buscar); su «Ver todo» abre `PopularGridView`.
 struct PopularTodayShelf: View {
+    @Environment(\.titleName) var titleName
     let items: [CatalogItem]
     /// Cuántos van en la franja con puesto (un Top 10).
     static let count = 10
@@ -99,7 +100,7 @@ struct PopularTodayShelf: View {
                     ForEach(Array(items.prefix(Self.count).enumerated()), id: \.element.id) { index, item in
                         let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
                         TitleNavigationLink(route: route) {
-                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, zoom: route)
+                            RankedPosterCard(rank: index + 1, title: titleName(item.title, id: item.metaID, kind: item.kind), poster: item.poster, zoom: route)
                         }
                         .buttonStyle(.plain)
                     }

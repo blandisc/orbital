@@ -48,6 +48,7 @@ struct SuggestionActions: View {
 
 /// Un póster de un estante: toca para abrir la ficha (con una háptica suave), mantén para el menú.
 struct ShelfPoster: View {
+    @Environment(\.titleName) var titleName
     let suggestion: Suggestion
     let style: ShelfPlan.Style
     let inList: Bool
@@ -67,7 +68,7 @@ struct ShelfPoster: View {
     var body: some View {
         Group {
             if style == .top10, let rank = suggestion.rank {
-                TitleNavigationLink(route: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew, zoom: suggestion.route) }.buttonStyle(.plain)
+                TitleNavigationLink(route: suggestion.route) { RankedPosterCard(rank: rank, title: titleName(suggestion.title, id: suggestion.imdb, kind: suggestion.kind), poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew, zoom: suggestion.route) }.buttonStyle(.plain)
             } else {
                 TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), badgeSymbol: badge.flatMap(badgeSymbol), platformRank: platformRank, bookmarked: inList, unbookmark: unbookmark, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))

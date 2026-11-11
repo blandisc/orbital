@@ -5,6 +5,7 @@ import OrbitalModels
 /// «Tu año» (Ajustes, bajo tu perfil): lo que viste este año según tu historial de Trakt — horas, racha más larga, tu
 /// género, el mapa de calor día por día (películas, series o las dos) y lo que más viste.
 struct YearView: View {
+    @Environment(\.titleName) var titleName
     /// «Miércoles, 28 de octubre» / «Wednesday, October 28»: solo la primera letra en mayúscula (`capitalized` ponía «De Octubre»).
     static func dayTitle(_ day: Date, _ locale: Locale) -> String {
         let text = day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale))
@@ -165,9 +166,9 @@ struct YearView: View {
                     ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
                         TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
                             HStack(spacing: DS.Space.s3) {
-                                PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
+                                PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: titleName(g.title, id: g.imdb, kind: g.kind)).frame(width: DS.YearMap.dayPoster)
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                    Text(verbatim: g.title).recipe(.cardTitle).lineLimit(1)
+                                    Text(verbatim: titleName(g.title, id: g.imdb, kind: g.kind)).recipe(.cardTitle).lineLimit(1)
                                     Text(verbatim: g.detail).recipe(.footnote).lineLimit(2)
                                 }
                                 Spacer(minLength: 0)

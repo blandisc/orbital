@@ -33,7 +33,7 @@ extension TitleView {
             let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), DS.Symbol.cloud, { requestFromDebrid(model) }) }
             return ContinueAction(title: Text("Ver en la TV"), symbol: "tv.and.mediabox", version: Text("Lo tiene tu TV con otra cuenta"),
                                   play: { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.kind == "series" ? model.continueVideoID : nil,
-                                                                    title: model.title.isEmpty ? model.originalTitle : model.title) } },
+                                                                    title: model.title.isEmpty ? model.originalTitle : model.title) } },   // no-es-título: el nombre que se manda a la TV (ella lo traduce)
                                   aside: here, tint: artAccent)
         default: return nil
         }

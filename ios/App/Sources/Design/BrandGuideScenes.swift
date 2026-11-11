@@ -7,6 +7,7 @@ import OrbitalCore
 /// G2 · Tu órbita: un planeta chico con su anillo; lo que eliges entra en órbita como una miniatura que llega volando. Con tres,
 /// el anillo se cierra y llega la luna (`onClosed`, para el toque en la mano). Con «Reducir movimiento», todo en su lugar.
 struct GuideOrbit: View {
+    @Environment(\.titleName) var titleName
     let picked: [Suggestion]
     var needed = 3
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -25,7 +26,7 @@ struct GuideOrbit: View {
                 .rotationEffect(.degrees(DS.Welcome.tilt))
             MarkPlanet().frame(width: DS.GuideScene.planet, height: DS.GuideScene.planet).foregroundStyle(DS.text)
             ForEach(Array(picked.prefix(DS.Welcome.posters).enumerated()), id: \.element.imdb) { i, item in
-                PosterView(url: item.poster, title: item.title, maxPoints: DS.GuideScene.mini)
+                PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), maxPoints: DS.GuideScene.mini)
                     .frame(height: DS.GuideScene.mini)
                     .offset(slot(i))
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .offset(y: DS.Welcome.fallFrom / 2).combined(with: .scale(scale: DS.Scene.lifted * DS.Scene.lifted)).combined(with: .opacity),
@@ -57,6 +58,7 @@ struct GuideOrbit: View {
 /// G7 · Tu Inicio en miniatura: lo que elegiste baja a sus filas («Porque te gustó…», «Nuevo en tus plataformas»), una pieza
 /// tras otra. Al final, `grow` lo hace crecer a pantalla completa (se vuelve el Inicio de verdad).
 struct GuideMiniHome: View {
+    @Environment(\.titleName) var titleName
     let liked: [Suggestion]
     let more: [Suggestion]
     let logos: [String]
@@ -98,7 +100,7 @@ struct GuideMiniHome: View {
     private func posters(_ items: [Suggestion], delay: Int) -> some View {
         HStack(spacing: DS.Space.s2) {
             ForEach(Array(items.enumerated()), id: \.element.imdb) { i, item in
-                PosterView(url: item.poster, title: item.title, maxPoints: DS.GuideScene.homePoster)
+                PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), maxPoints: DS.GuideScene.homePoster)
                     .frame(height: DS.GuideScene.homePoster)
                     .offset(y: landed || reduceMotion ? 0 : -DS.Welcome.fallFrom / 3)
                     .opacity(landed || reduceMotion ? 1 : 0)

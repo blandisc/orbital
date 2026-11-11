@@ -173,6 +173,7 @@ enum BecauseRelated: Equatable { case ready, loading, none }
 /// «Porque viste X, te recomendamos»: el mazo de cartas de lo último que viste (la de arriba es el título elegido; se
 /// avienta a un lado o con ‹ › para pasar al siguiente) y abajo lo que Trakt relaciona con él. Sin elegir, cambia solo cada día.
 struct BecauseCard<Related: View>: View {
+    @Environment(\.titleName) var titleName
     let seeds: [BecauseSeed]
     let selected: String
     var state: BecauseRelated = .ready
@@ -253,7 +254,7 @@ struct BecauseCard<Related: View>: View {
                     .padding(.bottom, DS.Space.s2)
                 }
                 Text("Porque viste").recipe(.footnote, color: DS.textMuted).lineLimit(1)
-                Text(verbatim: current?.title ?? "").recipe(.title)
+                Text(verbatim: current.map { titleName($0.title, id: $0.id) } ?? "").recipe(.title)
                     .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
                     .contentTransition(.opacity)
                 // Qué es y de qué año.
@@ -303,6 +304,7 @@ private struct BecauseBackdrop: ViewModifier {
 /// El mazo de «Porque viste»: la carta de arriba es el título elegido y debajo se asoman los siguientes. Arrastrarla a un
 /// lado (o tocarla) la avienta y queda la siguiente.
 struct BecauseDeck: View {
+    @Environment(\.titleName) var titleName
     let seeds: [BecauseSeed]
     let index: Int
     let step: (Int) -> Void
@@ -315,7 +317,7 @@ struct BecauseDeck: View {
         ZStack {
             ForEach(Array(shown.enumerated()).reversed(), id: \.element.id) { depth, seed in
                 let top = depth == 0
-                PosterView(url: seed.poster, title: seed.title)
+                PosterView(url: seed.poster, title: titleName(seed.title, id: seed.id))
                     .frame(width: DS.Collections.deckPoster)
                     .shadow(DS.Elevation.medium)
                     .scaleEffect(1 - CGFloat(depth) * DS.Collections.deckShrink)

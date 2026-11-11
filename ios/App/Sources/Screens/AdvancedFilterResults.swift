@@ -7,6 +7,7 @@ import OrbitalModels
 /// presionado lo quita) y «＋ Filtro»; el orden en la barra; la cuadrícula de pósters con su calificación, año y duración,
 /// por páginas al bajar.
 struct FilterResultsView: View {
+    @Environment(\.titleName) var titleName
     let model: AdvancedFilterModel
     /// Reabre el cajón (en ese filtro, o sin nada abierto).
     let edit: (FilterPage?) -> Void
@@ -26,7 +27,7 @@ struct FilterResultsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s2) {
                         ForEach(squares(language), id: \.id) { s in
-                            FilterSummarySquare(symbol: s.symbol, title: s.title, hue: s.hue, edit: { edit(s.page) }, remove: s.remove)
+                            FilterSummarySquare(symbol: s.symbol, title: s.title, hue: s.hue, edit: { edit(s.page) }, remove: s.remove)   // no-es-título: el resumen de un filtro
                                 .accessibilityIdentifier("filter-square-\(s.id)")
                         }
                         FilterSummarySquare(symbol: "plus", title: Text("Filtro"), edit: { edit(nil) }).accessibilityIdentifier("filter-edit")
@@ -94,7 +95,7 @@ struct FilterResultsView: View {
 
     private func cell(_ s: Suggestion) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            PosterView(url: s.poster, title: s.title)
+            PosterView(url: s.poster, title: titleName(s.title, id: s.imdb, kind: s.kind))
                 .overlay(alignment: .bottomLeading) {
                     // Con Letterboxd, su promedio (en su verde); si no, el de TMDB.
                     if let r = s.letterboxdRating ?? s.tmdbRating {
@@ -105,7 +106,7 @@ struct FilterResultsView: View {
                             .padding(DS.Space.s1)
                     }
                 }
-            Text(s.title).recipe(.footnote).lineLimit(1)
+            Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)).recipe(.footnote).lineLimit(1)
             facts(s).recipe(.caption, color: DS.textMuted).lineLimit(1)
         }
     }

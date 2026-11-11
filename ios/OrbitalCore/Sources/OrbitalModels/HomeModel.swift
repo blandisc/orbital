@@ -357,7 +357,8 @@ public final class HomeModel: ObservableModel {
     private func publishWidget(airings: [Airing]? = nil, recent: [Airing]? = nil) {
         services.publishWidget(continueWatching: continueWatching, airings: airings, recent: recent)
         // Siri: «Seguir viendo» y tu lista (antes solo «Seguir viendo»: «pon Los Simpson» fallaba si no estaba ahí).
-        services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, $0.title] })
+        let names = services.titleNames
+        services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, names.name($0.title, id: $0.metaID, kind: $0.kind)] })
     }
 
     /// Quitado de Mi lista desde un menú (o regresado con «Deshacer»): cambia aquí al instante, en su mismo lugar.

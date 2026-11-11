@@ -137,6 +137,7 @@ struct HomeChannels: View {
 
 /// Elegir tus canales: los tuyos (tocar uno lo quita), unas sugeridas y un buscador para añadir cualquier serie.
 struct ChannelsSheet: View {
+    @Environment(\.titleName) var titleName
     let model: ChannelsModel
     @State private var query = ""
     /// La búsqueda va en camino (no se dice «No encontré…» antes de tiempo).
@@ -200,7 +201,7 @@ struct ChannelsSheet: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: DS.HomeChannels.gridColumns), spacing: DS.Space.s3) {
                 ForEach(picks) { pick in
                     Button { model.toggle(pick) } label: {
-                        PosterView(url: pick.poster, title: pick.title)
+                        PosterView(url: pick.poster, title: titleName(pick.title, id: pick.id, kind: "series"))
                             .overlay(alignment: .topTrailing) {
                                 Image(systemName: model.isChannel(pick.id) ? "checkmark.circle.fill" : "plus.circle.fill")
                                     .font(DS.TextRecipe.cardTitle.font).symbolRenderingMode(.palette)
@@ -232,7 +233,7 @@ struct ChannelsSheet: View {
                     // Todo el renglón es el botón; a la derecha, un ícono (no una pastilla de texto): + para añadir, ✓ si ya es canal.
                     Button { model.toggle(pick) } label: {
                         HStack(spacing: DS.Space.s3) {
-                            PosterView(url: pick.poster, title: pick.title).frame(width: DS.HomeChannels.resultPoster)
+                            PosterView(url: pick.poster, title: titleName(pick.title, id: pick.id, kind: "series")).frame(width: DS.HomeChannels.resultPoster)
                             Text(verbatim: name(pick)).recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: on ? "checkmark.circle.fill" : "plus.circle")

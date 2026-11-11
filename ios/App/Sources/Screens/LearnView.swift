@@ -42,7 +42,7 @@ struct LearnView: View {
                         }
                         .accessibilityIdentifier("learn-\(story.id)")
                     }
-                } header: { Text(group.title) }
+                } header: { Text(group.title) }   // no-es-título: un tema de la guía
                 .listRowBackground(DS.surface)
             }
             if let tvTutorial {

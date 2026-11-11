@@ -56,6 +56,7 @@ final class PlayerHolder {
 
 /// El reproductor a pantalla completa, con gestos: un toque muestra los controles, doble toque a los lados salta ±10 s.
 struct PlayerScreen: View {
+    @Environment(\.titleName) var titleName
     let request: PlayRequest
     /// A mano: el que arma Swift solo trae un argumento por cada `@State` y la CI tardaba en elegirlo.
     init(request: PlayRequest) { self.request = request }
@@ -402,7 +403,7 @@ struct PlayerScreen: View {
                 if let aspect = engine.videoAspect, aspect != knownAspect { knownAspect = aspect }   // para cuando el motor la olvide
                 logLongLoading(model)
                 pip.update(engine.pictureInPicture)
-                nowPlaying.update(title: current.displayTitle, subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
+                nowPlaying.update(title: titleName(current.displayTitle, id: current.metaID, kind: current.kind), subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
             }
         }
         .onChange(of: scenePhase) { _, phase in

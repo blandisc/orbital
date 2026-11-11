@@ -71,7 +71,7 @@ extension TitleView {
                     Label { Text("La dejé") } icon: { Image(systemName: status == .dropped ? "checkmark" : "eye.slash") }
                 }
             }
-        } header: { Text("¿Cómo vas con \(model.title)?") }
+        } header: { Text("¿Cómo vas con \(titleName(model.title, id: model.metaID, kind: model.kind))?") }
         if series, follow.available {
             Section {
                 Toggle(isOn: Binding(get: { follow.isFollowing(model.metaID) }, set: { on in Task { await setBell(model, follow, on) } })) {

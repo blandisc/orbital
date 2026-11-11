@@ -39,7 +39,7 @@ enum DownloadFailureNotifier {
 
     private static func post(_ item: DownloadItem, language: String) {
         let content = UNMutableNotificationContent()
-        content.title = String(format: Strings.tr("Se detuvo «%@»", language: language), item.title)
+        content.title = String(format: Strings.tr("Se detuvo «%@»", language: language), AppEnvironment.shared.services.titleNames.name(item.title, id: item.metaID, kind: item.kind))
         if !item.subtitle.isEmpty { content.subtitle = item.subtitle }
         if let progress = item.progress, progress > 0 {
             content.body = String(format: Strings.tr("Iba en %lld %%. Puedes reintentar o elegir otra versión.", language: language), Int64(progress * 100))

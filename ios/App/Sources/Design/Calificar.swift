@@ -176,6 +176,7 @@ struct RatingReminder: View {
 
 /// La fila completa de lo que te falta calificar (desde «y 2 más»): un renglón por título con sus estrellas.
 struct RatingQueue: View {
+    @Environment(\.titleName) var titleName
     struct Row: Identifiable { let id: String; let title: String; let poster: URL? }
     let rows: [Row]
     let onRate: (String, Double) -> Void
@@ -184,7 +185,7 @@ struct RatingQueue: View {
     var body: some View {
         List(rows) { row in
             HStack(spacing: DS.Space.s3) {
-                Text(row.title).recipe(.body).lineLimit(2)
+                Text(verbatim: titleName(row.title, id: row.id)).recipe(.body).lineLimit(2)
                 Spacer(minLength: DS.Space.s2)
                 RatingStars(value: nil, size: DS.Rating.starInline) { if let v = $0 { onRate(row.id, v) } }
             }

@@ -6,6 +6,7 @@ import OrbitalModels
 /// bienvenida; al tocar uno se voltea y una copia entra en tu órbita, arriba; con tres, el anillo se cierra y llega la luna.
 /// Tus plataformas son sus logos, en gris hasta que los enciendes. Son gustos, no vistos. Se puede seguir sin elegir.
 struct OnboardingLikes: View {
+    @Environment(\.titleName) var titleName
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
     let next: () -> Void
@@ -60,7 +61,7 @@ struct OnboardingLikes: View {
 
     private func likeTile(_ item: Suggestion, on: Bool, toggle: @escaping () -> Void) -> some View {
         Button(action: toggle) {
-            PosterView(url: item.poster, title: item.title)
+            PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind))
                 .overlay(alignment: .topTrailing) {
                     if on {
                         Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.section.font)
@@ -76,7 +77,7 @@ struct OnboardingLikes: View {
                 .animation(DS.Motion.pop(reduceMotion), value: on)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: item.title))
+        .accessibilityLabel(Text(verbatim: titleName(item.title, id: item.imdb, kind: item.kind)))
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 

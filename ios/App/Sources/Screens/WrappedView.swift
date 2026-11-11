@@ -4,6 +4,7 @@ import OrbitalCore
 /// Tu Wrapped de la semana, el mes o el año: historias a pantalla completa que avanzan solas (tocar a los lados cambia,
 /// mantener pausa) y un quiz que espera tu respuesta. Sale de los mismos números de «Lo que ves».
 struct WrappedView: View {
+    @Environment(\.titleName) var titleName
     let stats: WatchingStats
     let language: String
     let close: () -> Void
@@ -102,7 +103,7 @@ struct WrappedView: View {
             DS.backdropDeep
             if let first = stats.top.first {
                 Color.clear.overlay {
-                    PosterView(url: first.poster, title: first.title, aspect: nil).scaledToFill().blur(radius: DS.Space.s14).opacity(DS.Watching.backdropOpacity)
+                    PosterView(url: first.poster, title: titleName(first.title, id: first.imdb, kind: first.kind), aspect: nil).scaledToFill().blur(radius: DS.Space.s14).opacity(DS.Watching.backdropOpacity)
                 }
                 .clipped()
             }
@@ -130,8 +131,8 @@ struct WrappedView: View {
             if let t = stats.top.first {
                 VStack(alignment: .leading, spacing: DS.Space.s3) {
                     Text("Lo que más viste").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
-                    PosterView(url: t.poster, title: t.title).frame(width: DS.Watching.storyPoster)
-                    Text(verbatim: t.title).font(DS.TextRecipe.title.font)
+                    PosterView(url: t.poster, title: titleName(t.title, id: t.imdb, kind: t.kind)).frame(width: DS.Watching.storyPoster)
+                    Text(verbatim: titleName(t.title, id: t.imdb, kind: t.kind)).font(DS.TextRecipe.title.font)
                     Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos, \(t.minutes / 60) h").recipe(.body, color: DS.onArtSecondary)
                 }
             }
@@ -165,16 +166,16 @@ struct WrappedView: View {
             HStack(spacing: DS.Space.s3) {
                 ForEach(options, id: \.imdb) { t in
                     Button { if answer == nil { answer = t.imdb } } label: {
-                        PosterView(url: t.poster, title: t.title)
+                        PosterView(url: t.poster, title: titleName(t.title, id: t.imdb, kind: t.kind))
                             .dsSelectionRing(answer != nil && t.imdb == right, radius: DS.Radius.sm, width: DS.Stroke.focus)
                             .opacity(answer == nil || t.imdb == right ? 1 : DS.Opacity.faint)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(verbatim: t.title))
+                    .accessibilityLabel(Text(verbatim: titleName(t.title, id: t.imdb, kind: t.kind)))
                 }
             }
             if let answer {
-                Text(answer == right ? "¡Exacto!" : "Casi: fue \(stats.top.first?.title ?? "")").recipe(.cardTitle)
+                Text(answer == right ? "¡Exacto!" : "Casi: fue \(stats.top.first.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } ?? "")").recipe(.cardTitle)
             }
         }
         .dsFeedback(.success, trigger: answer) { (_: String?, new: String?) in new.map { $0 == right } ?? false }

@@ -80,6 +80,7 @@ struct OnboardingWelcome: View {
 /// La vitrina (B1): la bienvenida se enseña sola. La luna se posa en un póster, el póster se vuelve su ficha, se encienden
 /// los tres pasos de la nube y «Ver» se presiona. Dos vueltas y regresa a la órbita (`finished`).
 struct AttractFilm: View {
+    @Environment(\.titleName) var titleName
     let posters: [Suggestion]
     let finished: () -> Void
     @State private var scene = 0
@@ -95,7 +96,7 @@ struct AttractFilm: View {
                 // Encuentra qué ver: tres pósters y la luna sobre el de en medio.
                 HStack(spacing: DS.Space.s3) {
                     ForEach(Array(posters.prefix(3).enumerated()), id: \.offset) { i, item in
-                        PosterView(url: item.poster, title: item.title, maxPoints: DS.Welcome.posterHeight * 2)
+                        PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), maxPoints: DS.Welcome.posterHeight * 2)
                             .frame(height: DS.Welcome.posterHeight * 2)
                             .overlay(alignment: .topTrailing) {
                                 if i == 1 { Circle().fill(DS.brandMoon).frame(width: DS.Welcome.moon, height: DS.Welcome.moon) }
@@ -106,9 +107,9 @@ struct AttractFilm: View {
             case 1:
                 // Su ficha: el póster grande, el título y «Ver».
                 VStack(spacing: DS.Space.s3) {
-                    PosterView(url: pick?.poster, title: pick?.title ?? "", maxPoints: DS.Welcome.planet * 2)
+                    PosterView(url: pick?.poster, title: pick.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } ?? "", maxPoints: DS.Welcome.planet * 2)
                         .frame(height: DS.Welcome.planet * 1.6)
-                    if let pick { Text(verbatim: pick.title).recipe(.cardTitle, color: DS.text) }
+                    if let pick { Text(verbatim: titleName(pick.title, id: pick.imdb, kind: pick.kind)).recipe(.cardTitle, color: DS.text) }
                 }
             case 2:
                 DebridFlowStrip()

@@ -270,6 +270,7 @@ private struct MosaicColumnLayer: View, Equatable {
 /// Una pieza del mosaico: su arte (portada o ancho), el ícono de su esquina, y si está enfocada, su
 /// etiqueta, el logo del título (o su nombre si no carga) y un dato de una línea.
 private struct MosaicTileCell: View {
+    @Environment(\.titleName) var titleName
     @Environment(\.locale) private var locale
     private var language: String { locale.language.languageCode?.identifier ?? "es" }
     let tile: MosaicTile
@@ -294,7 +295,7 @@ private struct MosaicTileCell: View {
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { if focused { onOpen() } else { onFocus() } }
             .accessibilityHint(focused ? Text("Abre la ficha") : Text("Elegir"))
-            .accessibilityLabel(Text(tile.item.title))
+            .accessibilityLabel(Text(verbatim: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind)))
         .accessibilityIdentifier("mosaic-tile")
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
     }
@@ -314,7 +315,7 @@ private struct MosaicTileCell: View {
     /// iPhone: todas las piezas son su póster, del mismo tamaño; la enfocada solo lleva su anillo (su información va bajo
     /// el mosaico, en `MosaicCaption`).
     private var poster: some View {
-        PosterView(url: tile.item.poster, title: tile.item.title, aspect: nil, bleed: true, maxPoints: DS.Image.mosaic)
+        PosterView(url: tile.item.poster, title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind), aspect: nil, bleed: true, maxPoints: DS.Image.mosaic)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
@@ -326,7 +327,7 @@ private struct MosaicTileCell: View {
     private var framed: some View {
         ZStack(alignment: .bottomLeading) {
             // Elegir no cambia de imagen: bajarla y decodificarla en ese momento trababa el mosaico.
-            PosterView(url: tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
+            PosterView(url: tile.shape == .wide ? tile.item.wide : tile.item.poster, title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind), aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { ArtVeil() }
             // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
             // y sin puesto (el puesto es de su lista, en Listas).
@@ -336,7 +337,7 @@ private struct MosaicTileCell: View {
                     // «En Mi lista» con su ícono, como en un póster (D10: íconos, no cápsulas de texto).
                     if inWatchlist { DSIconBadge(symbol: "bookmark.fill", label: "En Mi lista") }
                     else if let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: badgeKey(tile.item.reason)) }
-                    TitleLogo(url: tile.item.logo, title: tile.item.title)
+                    TitleLogo(url: tile.item.logo, title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind))
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item, language: language).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
                     }

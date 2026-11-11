@@ -72,6 +72,7 @@ extension TitleView {
 
 /// Las hojas de «Tus vistas» y «Tu nota».
 struct TitleViewingsAndNote: ViewModifier {
+    @Environment(\.titleName) var titleName
     let model: TitleModel
     @Binding var viewingsFor: ViewingsTarget?
     @Binding var noting: Bool
@@ -84,7 +85,7 @@ struct TitleViewingsAndNote: ViewModifier {
                     .fittedScrollSheet()
             }
             .sheet(isPresented: $noting) {
-                NoteSheet(title: model.title, text: env.notes.note(model.metaID), inTrakt: env.notes.savesInTrakt) { text in
+                NoteSheet(title: titleName(model.title, id: model.metaID, kind: model.kind), text: env.notes.note(model.metaID), inTrakt: env.notes.savesInTrakt) { text in
                     let notes = env.notes, id = model.metaID, series = model.kind == "series"
                     Task { await notes.save(id, series: series, text: text) }
                 }

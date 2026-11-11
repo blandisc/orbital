@@ -71,7 +71,7 @@ enum DebridRequestNotifier {
     @MainActor static func post(retried request: DebridRequest, language: String) async {
         guard await allowed() else { return }
         let content = UNMutableNotificationContent()
-        let what = [request.title, episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
+        let what = [AppEnvironment.shared.services.titleNames.name(request.title, id: request.metaID, kind: request.kind), episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
         content.title = String(format: Strings.tr("Volví a pedir %@", language: language), what)
         content.body = Strings.tr("Ya se liberó un lugar en tu Real-Debrid", language: language)
         content.threadIdentifier = thread
@@ -92,9 +92,9 @@ enum DebridRequestNotifier {
     @MainActor static func post(ready request: DebridRequest, language: String) async {
         guard await allowed() else { return }
         let content = UNMutableNotificationContent()
-        let what = episodeName(request, language: language) ?? request.title
+        let what = episodeName(request, language: language) ?? AppEnvironment.shared.services.titleNames.name(request.title, id: request.metaID, kind: request.kind)
         content.title = String(format: Strings.tr("Ya está %@", language: language), what)
-        if request.kind == "series" { content.subtitle = request.title }
+        if request.kind == "series" { content.subtitle = AppEnvironment.shared.services.titleNames.name(request.title, id: request.metaID, kind: request.kind) }
         content.body = request.device == DebridRequestsModel.tvDevice ? Strings.tr("Lo pediste desde la TV", language: language)
                                                                       : Strings.tr("La nube terminó de bajarlo · ábrelo para verlo", language: language)
         content.threadIdentifier = thread
@@ -109,7 +109,7 @@ enum DebridRequestNotifier {
     @MainActor static func post(stalled request: DebridRequest, language: String) async {
         guard await allowed() else { return }
         let content = UNMutableNotificationContent()
-        content.title = [request.title, episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
+        content.title = [AppEnvironment.shared.services.titleNames.name(request.title, id: request.metaID, kind: request.kind), episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
         content.body = Strings.tr("Sigue sin bajar · ¿probar otra versión?", language: language)
         content.threadIdentifier = thread
         content.userInfo = ["kind": request.kind, "id": request.metaID, "title": request.title, "open": "title"]
