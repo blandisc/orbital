@@ -24,7 +24,9 @@ public final class Services: ObservableModel {
     public let library: LocalLibrary
     /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
     public let scrobbleLog: ScrobbleLog
-    private let flushGate = FlushGate()
+    /// La cola única de Trakt (F4): la misma para el `WatchService` de antes y el de después de `rebuild()`, así que lo que uno
+    /// anota mientras el otro vacía no se pierde. Lo que Trakt no aceptó queda en `traktQueue.discards`.
+    public let traktQueue: TraktQueue
     public let stremio: StremioAPI
 
     public private(set) var registry: AddonRegistry { didSet { notify() } }
@@ -214,7 +216,9 @@ public final class Services: ObservableModel {
         }
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
-        self.traktOutbox = TraktOutbox(kv)
+        let traktQueue = TraktQueue(store: pending, clock: clock)
+        self.traktQueue = traktQueue
+        self.traktOutbox = TraktOutbox(queue: traktQueue, kv: kv, clock: clock)
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
         // Stremio fuera (E1, Fernando, 3 nov 2026): la sesión que quedara guardada se borra y nada vuelve a usarla.
@@ -290,7 +294,7 @@ public final class Services: ObservableModel {
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: makeOrbital, clock: clock)
         self.watch = WatchService(library: library, stremio: stremio, authKey: { nil }, cinemeta: cinemeta, trakt: trakt,
-                                  pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+                                  pending: pending, clock: clock, queue: traktQueue, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) }, cinemeta: cinemeta)
@@ -471,8 +475,7 @@ public final class Services: ObservableModel {
         if !force, let running = librarySync { await running.value; return }
         let task = Task { [self] in
             await freshenDebrid()
-            await traktOutbox.flush(trakt)
-            await watch.flushPending()
+            await watch.flushPending()   // lo visto y lo de tus listas: la misma cola
             await sync.pull(force: force)
         }
         librarySync = task
@@ -495,7 +498,7 @@ public final class Services: ObservableModel {
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         watch = WatchService(library: library, stremio: stremio, authKey: { nil }, cinemeta: cinemeta, trakt: trakt,
-                             pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+                             pending: pending, clock: clock, queue: traktQueue, scrobbleLog: scrobbleLog)
         sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         generation += 1
     }

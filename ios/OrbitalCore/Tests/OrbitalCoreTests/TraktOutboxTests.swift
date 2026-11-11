@@ -2,14 +2,21 @@ import XCTest
 @testable import OrbitalCore
 
 /// Guardar en Trakt sin conexión (o con tu Orbital apagada): se queda en el iPhone y se manda después; no se pierde.
+extension TraktOutbox {
+    /// Para las pruebas: la cola única sobre `store` (el mismo `store` y `kv` = la misma app tras cerrarla).
+    convenience init(_ kv: KeyValueStore, store: PendingStore = InMemoryPendingStore()) {
+        self.init(queue: TraktQueue(store: store), kv: kv)
+    }
+}
+
 final class TraktOutboxTests: XCTestCase {
     func testLoUltimoQueEligesEsLoQueCuentaYSobreviveAlCierre() {
-        let kv = InMemoryKeyValueStore()
-        let box = TraktOutbox(kv)
+        let kv = InMemoryKeyValueStore(), store = InMemoryPendingStore()
+        let box = TraktOutbox(kv, store: store)
         box.enqueue(.init(target: TraktOutbox.watchlist, imdb: "tt1", series: false, add: true))
         box.enqueue(.init(target: TraktOutbox.watchlist, imdb: "tt1", series: false, add: false))
         box.enqueue(.init(target: "123", imdb: "tt1", series: false, add: true))
-        let again = TraktOutbox(kv)
+        let again = TraktOutbox(kv, store: store)
         XCTAssertEqual(again.pending.count, 2)
         XCTAssertEqual(again.pending(target: TraktOutbox.watchlist, imdb: "tt1"), false)
         XCTAssertEqual(again.pending(target: "123", imdb: "tt1"), true)

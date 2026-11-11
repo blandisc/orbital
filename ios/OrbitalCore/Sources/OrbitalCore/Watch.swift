@@ -136,8 +136,9 @@ public struct ResumePoint: Sendable, Equatable {
     }
 }
 
-/// Lo que espera para subirse cuando vuelva la red: la copia a Stremio, y lo que va a Trakt (vistos, desmarcados, tu avance y
-/// lo que quitaste de «Seguir viendo»). Lo del teléfono ya quedó guardado: esto solo es el viaje.
+/// Lo que espera para subirse cuando vuelva la red: la copia a Stremio, y lo que va a Trakt (vistos, desmarcados, tu avance,
+/// lo que quitaste de «Seguir viendo» y, desde la cola única (F4), tus listas, calificaciones y notas). Lo del teléfono ya
+/// quedó guardado: esto solo es el viaje. Lo descartado queda en `discards`.
 public struct PendingWork: Sendable, Equatable, Codable {
     /// La copia a Stremio (mientras dure la prueba).
     public var progress: [ProgressEvent] = []
@@ -152,6 +153,10 @@ public struct PendingWork: Sendable, Equatable, Codable {
     public var traktViewingRemovals: [Int] = []
     /// «La vi otra vez» o una fecha cambiada: se suben aunque haya otra vista cerca (las pediste tú).
     public var traktRewatched: [TraktWatched] = []
+    /// Tus listas, Mi lista, favoritos, calificaciones, notas y series escondidas (antes `TraktOutbox` en UserDefaults).
+    public var outbox: [TraktOutbox.Item] = []
+    /// Lo que Trakt no aceptó o venció: la bitácora que la app puede enseñar (los más nuevos al final, con tope).
+    public var discards: [TraktDiscard] = []
     public init() {}
     public struct TraktWatched: Sendable, Equatable, Codable {
         public var target: TraktTarget
@@ -159,11 +164,20 @@ public struct PendingWork: Sendable, Equatable, Codable {
         /// Una fecha cambiada: el id de la vista vieja, que se borra solo cuando la nueva ya llegó (si Trakt la rechaza, la
         /// vieja se queda: nunca se pierde la vista).
         public var replaces: Int?
+        /// Desde cuándo espera en la cola (no es `at`: una vista puede ser de hace años). La cola lo anota la primera vez que lo
+        /// intenta; pasado `TraktQueue.expiry` sin poder mandarse, vence.
+        public var queuedAt: Double?
         public init(target: TraktTarget, at: Double, replaces: Int? = nil) { self.target = target; self.at = at; self.replaces = replaces }
     }
     /// Las vistas de Trakt que ya no se enseñan: las borradas y las que una fecha cambiada está reemplazando.
     public var goneViewings: Set<Int> { Set(traktViewingRemovals + traktRewatched.compactMap(\.replaces)) }
-    public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty && traktViewingRemovals.isEmpty && traktRewatched.isEmpty }
+    /// Nada que mandar (la bitácora de descartes no cuenta: no se manda).
+    public var isEmpty: Bool { progress.isEmpty && !hasTraktWork }
+    /// Algo espera para Trakt.
+    public var hasTraktWork: Bool {
+        !(traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty && traktViewingRemovals.isEmpty
+          && traktRewatched.isEmpty && outbox.isEmpty)
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -174,13 +188,18 @@ public struct PendingWork: Sendable, Equatable, Codable {
         playbackRemovals = try c.decodeIfPresent([TraktWatched].self, forKey: .playbackRemovals) ?? []
         traktViewingRemovals = try c.decodeIfPresent([Int].self, forKey: .traktViewingRemovals) ?? []
         traktRewatched = try c.decodeIfPresent([TraktWatched].self, forKey: .traktRewatched) ?? []
+        outbox = try c.decodeIfPresent([TraktOutbox.Item].self, forKey: .outbox) ?? []
+        discards = try c.decodeIfPresent([TraktDiscard].self, forKey: .discards) ?? []
     }
-    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals, traktViewingRemovals, traktRewatched }
+    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals, traktViewingRemovals, traktRewatched, outbox, discards }
 }
 
 public protocol PendingStore: Sendable {
     func load() -> PendingWork
     func save(_ work: PendingWork)
+    /// Leer, cambiar y guardar en un solo paso (nadie escribe en medio): así dos `WatchService` a la vez (al rearmar los
+    /// servicios) o la cola y la pantalla no se pisan lo que acaban de anotar. Devuelve lo que quedó.
+    @discardableResult func update(_ body: (inout PendingWork) -> Void) -> PendingWork
 }
 
 public final class InMemoryPendingStore: PendingStore, @unchecked Sendable {
@@ -189,6 +208,9 @@ public final class InMemoryPendingStore: PendingStore, @unchecked Sendable {
     public init() {}
     public func load() -> PendingWork { lock.withLock { work } }
     public func save(_ work: PendingWork) { lock.withLock { self.work = work } }
+    @discardableResult public func update(_ body: (inout PendingWork) -> Void) -> PendingWork {
+        lock.withLock { body(&work); return work }
+    }
 }
 
 /// La cola en un archivo JSON (Application Support): sobrevive a que cierren la app.
@@ -202,6 +224,14 @@ public final class FilePendingStore: PendingStore, @unchecked Sendable {
     }
     public func save(_ work: PendingWork) {
         lock.withLock { StoredFile.write(work, to: url, what: "el trabajo pendiente") }
+    }
+    @discardableResult public func update(_ body: (inout PendingWork) -> Void) -> PendingWork {
+        lock.withLock {
+            var work = StoredFile.read(PendingWork.self, from: url, what: "el trabajo pendiente") ?? PendingWork()
+            body(&work)
+            StoredFile.write(work, to: url, what: "el trabajo pendiente")
+            return work
+        }
     }
 }
 
@@ -219,15 +249,6 @@ public struct ReportOutcome: Sendable, Equatable {
     public var saved = false
     /// La copia a Stremio quedó en la cola (sin conexión).
     public var queued = false
-}
-
-/// Un solo vaciado de la cola a la vez en toda la app (aunque se rearmen los servicios al cambiar una clave).
-public final class FlushGate: @unchecked Sendable {
-    private let lock = NSLock()
-    private var busy = false
-    public init() {}
-    func enter() -> Bool { lock.withLock { if busy { return false }; busy = true; return true } }
-    func leave() { lock.withLock { busy = false } }
 }
 
 enum WatchError: Error, CustomStringConvertible {

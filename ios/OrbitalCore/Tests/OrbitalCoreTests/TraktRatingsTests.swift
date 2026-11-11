@@ -53,11 +53,11 @@ final class TraktRatingsTests: XCTestCase {
     }
 
     func testSinConexionLaCalificacionEsperaYLaUltimaEsLaQueCuenta() async {
-        let kv = InMemoryKeyValueStore(), box = TraktOutbox(kv)
+        let kv = InMemoryKeyValueStore(), store = InMemoryPendingStore(), box = TraktOutbox(kv, store: store)
         box.enqueue(.rating(imdb: "tt6751668", series: false, 7))
         box.enqueue(.rating(imdb: "tt6751668", series: false, 9))
         box.enqueue(.rating(imdb: "tt0804503", series: true, nil))
-        let again = TraktOutbox(kv)
+        let again = TraktOutbox(kv, store: store)
         XCTAssertEqual(again.pendingRatings["tt6751668"], .some(9))
         XCTAssertEqual(again.pendingRatings["tt0804503"], .some(nil), "quitarla también espera")
         let http = FakeHTTP()

@@ -11,7 +11,10 @@ public actor WatchService {
     let trakt: Trakt?
     let pending: PendingStore
     let clock: @Sendable () -> Date
-    let gate: FlushGate
+    /// La cola única de Trakt (la misma para todos los `WatchService` de la app).
+    let traktQueue: TraktQueue
+    /// ¿Se está subiendo la copia a Stremio? (una vez a la vez)
+    var copying = false
     let scrobbleLog: ScrobbleLog?
     let sleep: @Sendable (TimeInterval) async -> Void
     /// Cuándo se le mandó a Trakt el último aviso de cada video que suena (para el respaldo cada 5 minutos).
@@ -21,11 +24,11 @@ public actor WatchService {
     var afterBackup: Set<String> = []
 
     public init(library: LocalLibrary = LocalLibrary(), stremio: StremioAPI, authKey: @escaping @Sendable () -> String?, cinemeta: Cinemeta,
-                trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, gate: FlushGate = FlushGate(),
+                trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, queue: TraktQueue? = nil,
                 scrobbleLog: ScrobbleLog? = nil,
                 sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep) {
         self.store = library; self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt
-        self.pending = pending; self.clock = clock; self.gate = gate; self.scrobbleLog = scrobbleLog; self.sleep = sleep
+        self.pending = pending; self.clock = clock; self.traktQueue = queue ?? TraktQueue(store: pending, clock: clock); self.scrobbleLog = scrobbleLog; self.sleep = sleep
     }
 
     /// ¿Hay copia a Stremio? Solo si lo conectaste (fases 1 y 2 de la transición).
@@ -85,15 +88,6 @@ public actor WatchService {
 
     nonisolated func announceChange() { NotificationCenter.default.post(name: LocalLibrary.changed, object: nil) }
 
-    /// ¿Vale la pena volver a intentarlo más tarde? (sin red, servidor caído, límite de peticiones o sesión por reconectar)
-    static func shouldRetry(_ error: TraktError) -> Bool {
-        switch error {
-        case .network, .auth: return true
-        case .http(let status): return status >= 500 || status == 429 || status == 408
-        case .invalid: return false
-        }
-    }
-
     // MARK: Trakt
     private func scrobble(_ event: ProgressEvent, _ phase: PlaybackPhase) async {
         guard let trakt, trakt.linked else { return }
@@ -135,7 +129,7 @@ public actor WatchService {
     /// `start` + 2 s + `pause`, con el avance real (con su tope). Sin red, tu avance queda en la cola.
     func checkpoint(_ event: ProgressEvent, _ target: TraktTarget) async {
         do { try await sendCheckpoint(event, target) }
-        catch let error as TraktError { scrobbleLog?.recordFailure(error.description); if Self.shouldRetry(error) { queue(progress: event) } }
+        catch let error as TraktError { scrobbleLog?.recordFailure(error.description); if TraktQueue.retry(error) { queue(progress: event) } }
         catch { scrobbleLog?.recordFailure("\(error)") }
     }
 
@@ -166,7 +160,7 @@ public actor WatchService {
             return true
         } catch let error as TraktError {
             scrobbleLog?.recordFailure(error.description)
-            guard Self.shouldRetry(error), action != .start else { return false }
+            guard TraktQueue.retry(error), action != .start else { return false }
             // Sin conexión: lo visto se sube después con su fecha real; tu avance, solo si Trakt no tiene uno más nuevo.
             if action == .stop && done { enqueue(trakt: .init(target: target, at: event.at)) } else { queue(progress: event) }
             return false
@@ -191,18 +185,18 @@ public actor WatchService {
     }
 
     func enqueue(trakt item: PendingWork.TraktWatched) {
-        var work = pending.load()
-        // El mismo título cerrado dos veces sin red es UN visionado, no dos.
-        work.traktWatched.removeAll { $0.target == item.target && abs($0.at - item.at) < 12 * 3600 }
-        work.traktWatched.append(item)
-        pending.save(work)
+        pending.update { work in
+            // El mismo título cerrado dos veces sin red es UN visionado, no dos.
+            work.traktWatched.removeAll { $0.target == item.target && abs($0.at - item.at) < 12 * 3600 }
+            work.traktWatched.append(item)
+        }
     }
 
     /// Tu avance para Trakt, en la cola: solo el último de cada video cuenta.
     func queue(progress event: ProgressEvent) {
-        var work = pending.load()
-        work.traktProgress.removeAll { $0.videoID == event.videoID }
-        work.traktProgress.append(event)
-        pending.save(work)
+        pending.update { work in
+            work.traktProgress.removeAll { $0.videoID == event.videoID }
+            work.traktProgress.append(event)
+        }
     }
 }

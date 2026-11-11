@@ -206,12 +206,12 @@ final class WatchRobustnessTests: XCTestCase {
     let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
     let get = "https://api.strem.io/api/datastoreGet", put = "https://api.strem.io/api/datastorePut"
 
-    func make(trakt: Trakt? = nil, remote: JSON? = nil, gate: FlushGate = FlushGate()) -> (WatchService, FakeHTTP, InMemoryPendingStore, Clock) {
+    func make(trakt: Trakt? = nil, remote: JSON? = nil) -> (WatchService, FakeHTTP, InMemoryPendingStore, Clock) {
         let http = FakeHTTP(), pending = InMemoryPendingStore(), clock = Clock()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json[get] = ["result": remote.map { [$0] } ?? []]
         http.json[put] = ["result": ["success": true]]
-        return (WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now }, gate: gate), http, pending, clock)
+        return (WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now }), http, pending, clock)
     }
 
     func event(_ clock: Clock, video: String = "tt0386676:1:1", position: Double = 600, duration: Double = 1320, watched: Double = 120, title: String = "The Office", finished: Bool = false) -> ProgressEvent {

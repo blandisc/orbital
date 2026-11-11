@@ -1,9 +1,10 @@
 import Foundation
 
-/// Lo que guardaste en Trakt (tu watchlist, tus favoritos, tus listas, tus calificaciones y las series que dejaste) y Trakt aún no recibió: sin internet, o con la sesión prestada por tu
-/// Orbital caducada y la consola apagada. Se guarda aquí (sobrevive al cierre de la app) y se manda en cuanto se pueda; lo
-/// último que elegiste para un título en una lista es lo que cuenta. Las listas se recuerdan para poder elegirlas sin conexión.
-public final class TraktOutbox: @unchecked Sendable {
+/// Lo que guardaste en Trakt (tu watchlist, tus favoritos, tus listas, tus calificaciones, tus notas y las series que dejaste) y
+/// Trakt aún no recibió: sin internet o sin sesión ahora. Vive en la cola única de Trakt (`TraktQueue`, F4: el mismo archivo
+/// que lo visto) y se manda en cuanto se pueda; lo último que elegiste para un título en una lista es lo que cuenta. Las listas
+/// se recuerdan para poder elegirlas sin conexión.
+public final class TraktOutbox: Sendable {
     public struct Item: Codable, Equatable, Sendable {
         /// «watchlist», «favorites» o el id de una de tus listas.
         public var target: String
@@ -16,6 +17,9 @@ public final class TraktOutbox: @unchecked Sendable {
         public var sections: [String]?
         /// Solo en `notes`: tu nota (vacía: borrarla).
         public var note: String?
+        /// Desde cuándo espera (segundos de 1970): pasado `TraktQueue.expiry` sin poder mandarse, vence. nil: de antes de la cola
+        /// única (cuenta desde que se migró).
+        public var queuedAt: Double?
         public init(target: String, imdb: String, series: Bool, add: Bool, rating: Int? = nil, sections: [String]? = nil, note: String? = nil) {
             self.target = target; self.imdb = imdb; self.series = series; self.add = add; self.rating = rating; self.sections = sections; self.note = note
         }
@@ -33,100 +37,103 @@ public final class TraktOutbox: @unchecked Sendable {
         }
     }
     public static let watchlist = "watchlist", favorites = "favorites", ratings = "ratings", hidden = "hidden", notes = "notes"
-    static let key = "trakt-outbox", listsKey = "trakt-lists"
+    /// Lo que se manda uno por uno (no se junta en un solo envío por lista).
+    static let singles: Set<String> = [favorites, ratings, hidden, notes]
+    /// Donde vivía antes (UserDefaults): se migra una vez a la cola única.
+    static let legacyKey = "trakt-outbox", listsKey = "trakt-lists"
 
     private let kv: KeyValueStore
-    private let lock = NSLock()
-    private var items: [Item]
-    private var flushing = false
+    /// La cola única (lo visto y esto, en el mismo archivo y vaciados por el mismo motor).
+    public let queue: TraktQueue
+    private var store: PendingStore { queue.store }
+    private let clock: @Sendable () -> Date
 
-    public init(_ kv: KeyValueStore) {
-        self.kv = kv
-        items = kv.data(Self.key).flatMap { try? JSONDecoder().decode([Item].self, from: $0) } ?? []
+    public init(queue: TraktQueue, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.queue = queue; self.kv = kv; self.clock = clock
+        migrate()
     }
 
-    public var pending: [Item] { lock.withLock { items } }
+    /// Lo que esperaba en UserDefaults (antes de la cola única) pasa al archivo, sin perder nada y sin pisar lo que ya esté
+    /// ahí; luego se borra de UserDefaults. Si se vuelve a llamar, no hace nada.
+    private func migrate() {
+        guard let data = kv.data(Self.legacyKey) else { return }
+        let old = (try? JSONDecoder().decode([Item].self, from: data)) ?? []
+        let now = clock().timeIntervalSince1970
+        store.update { work in
+            for var item in old where !work.outbox.contains(where: { $0.target == item.target && $0.imdb == item.imdb }) {
+                item.queuedAt = item.queuedAt ?? now
+                work.outbox.append(item)
+            }
+        }
+        kv.set(Self.legacyKey, data: nil)
+    }
+
+    public var pending: [Item] { store.load().outbox }
 
     /// Lo pendiente de un título en una lista: true si va a entrar, false si va a salir, nil si no hay nada pendiente.
-    public func pending(target: String, imdb: String) -> Bool? { lock.withLock { items.last { $0.target == target && $0.imdb == imdb }?.add } }
+    public func pending(target: String, imdb: String) -> Bool? { pending.last { $0.target == target && $0.imdb == imdb }?.add }
 
     /// Las calificaciones que aún no llegan a Trakt: IMDb → 1…10, o nil si la quitaste.
     public var pendingRatings: [String: Int?] {
-        lock.withLock { Dictionary(items.filter { $0.target == Self.ratings }.map { ($0.imdb, $0.rating) }, uniquingKeysWith: { $1 }) }
+        Dictionary(pending.filter { $0.target == Self.ratings }.map { ($0.imdb, $0.rating) }, uniquingKeysWith: { $1 })
     }
 
     /// Tus notas que aún no llegan a Trakt: IMDb → texto ("" si la borraste).
     public var pendingNotes: [String: String] {
-        lock.withLock { Dictionary(items.filter { $0.target == Self.notes }.map { ($0.imdb, $0.note ?? "") }, uniquingKeysWith: { $1 }) }
+        Dictionary(pending.filter { $0.target == Self.notes }.map { ($0.imdb, $0.note ?? "") }, uniquingKeysWith: { $1 })
     }
 
     /// Las series que escondiste o mostraste y Trakt aún no sabe: IMDb → escondida. Lo que diga Trakt al recargar no las pisa.
     public var pendingHidden: [String: Bool] {
-        lock.withLock { Dictionary(items.filter { $0.target == Self.hidden }.map { ($0.imdb, $0.add) }, uniquingKeysWith: { $1 }) }
+        Dictionary(pending.filter { $0.target == Self.hidden }.map { ($0.imdb, $0.add) }, uniquingKeysWith: { $1 })
     }
+
+    /// Lo que Trakt no aceptó o venció (la bitácora de la cola única).
+    public var discards: [TraktDiscard] { queue.discards }
 
     public func enqueue(_ item: Item) {
-        lock.withLock {
-            items.removeAll { $0.target == item.target && $0.imdb == item.imdb }   // lo último que elegiste es lo que cuenta
-            items.append(item)
-            save()
+        var item = item
+        item.queuedAt = item.queuedAt ?? clock().timeIntervalSince1970
+        store.update { work in
+            work.outbox.removeAll { $0.target == item.target && $0.imdb == item.imdb }   // lo último que elegiste es lo que cuenta
+            work.outbox.append(item)
         }
     }
 
-    /// ¿Vale la pena guardarlo para después? Sin red, sin sesión ahora mismo, o Trakt ocupado/caído: sí. Un título inválido o
-    /// una lista que ya no existe: no (reintentarlo no lo arregla).
-    public static func retryable(_ error: Error) -> Bool {
-        guard let trakt = error as? TraktError else { return true }
-        switch trakt {
-        case .network, .auth: return true
-        case .http(let status): return status == 401 || status == 408 || status == 429 || status >= 500
-        case .invalid: return false
-        }
-    }
+    /// ¿Vale la pena guardarlo para después? La misma política de toda la cola (`TraktQueue.retry`).
+    public static func retryable(_ error: Error) -> Bool { TraktQueue.retry(error) }
 
-    /// Manda lo pendiente, en orden. Se detiene al primer error que se puede reintentar (sigue sin conexión): lo demás espera.
+    /// Manda lo pendiente (de esto y de lo visto: es la misma cola). Devuelve cuántos de tus listas, calificaciones y notas salieron.
     @discardableResult
     public func flush(_ trakt: Trakt?) async -> Int {
-        guard let trakt, trakt.linked else { return 0 }
-        guard lock.withLock({ flushing ? false : { flushing = true; return true }() }) else { return 0 }
-        defer { lock.withLock { flushing = false } }
-        var sent = 0
-        var queue = pending[...]
-        while let item = queue.first {
-            // Varios seguidos a la misma lista (o a Mi lista), todos para poner o todos para quitar: un solo envío (G3-A).
-            if item.target != Self.favorites, item.target != Self.ratings, item.target != Self.hidden, item.target != Self.notes {
-                let run = queue.prefix { $0.target == item.target && $0.add == item.add }
-                if run.count > 1 {
-                    do {
-                        try await trakt.setItems(target: item.target, run.map { ($0.imdb, $0.series) }, add: item.add)
-                        sent += run.count
-                    } catch where Self.retryable(error) {
-                        break
-                    } catch {}   // no se puede (lista borrada): se descartan
-                    let done = Array(run)
-                    lock.withLock { for d in done { if let i = items.firstIndex(of: d) { items.remove(at: i) } }; save() }
-                    queue = queue.dropFirst(run.count)
-                    continue
-                }
-            }
-            queue = queue.dropFirst()
-            do {
-                if item.target == Self.watchlist { try await trakt.setWatchlist(imdb: item.imdb, series: item.series, add: item.add) }
-                else if item.target == Self.favorites { try await trakt.setFavorite(imdb: item.imdb, series: item.series, add: item.add) }
-                else if item.target == Self.ratings { try await trakt.setRating(imdb: item.imdb, series: item.series, rating: item.add ? item.rating : nil) }
-                else if item.target == Self.notes {
-                    let existing = try await trakt.myNotes()[item.imdb]?.id
-                    try await trakt.setNote(imdb: item.imdb, series: item.series, text: item.note ?? "", existing: existing)
-                }
-                else if item.target == Self.hidden { try await trakt.setHidden(imdb: item.imdb, hidden: item.add, sections: item.sections ?? Trakt.hiddenSections) }
-                else { try await trakt.setListItem(listID: item.target, imdb: item.imdb, series: item.series, add: item.add) }
-                sent += 1
-            } catch where Self.retryable(error) {
-                break
-            } catch {}   // no se puede (título inválido, lista borrada): se descarta
-            lock.withLock { if let i = items.firstIndex(of: item) { items.remove(at: i); save() } }
+        let before = await queue.outboxSent
+        await queue.flush(trakt)
+        return await queue.outboxSent - before
+    }
+
+    /// Un envío de la cola a Trakt.
+    static func send(_ item: Item, _ trakt: Trakt) async throws {
+        if item.target == watchlist { try await trakt.setWatchlist(imdb: item.imdb, series: item.series, add: item.add) }
+        else if item.target == favorites { try await trakt.setFavorite(imdb: item.imdb, series: item.series, add: item.add) }
+        else if item.target == ratings { try await trakt.setRating(imdb: item.imdb, series: item.series, rating: item.add ? item.rating : nil) }
+        else if item.target == notes {
+            let existing = try await trakt.myNotes()[item.imdb]?.id
+            try await trakt.setNote(imdb: item.imdb, series: item.series, text: item.note ?? "", existing: existing)
         }
-        return sent
+        else if item.target == hidden { try await trakt.setHidden(imdb: item.imdb, hidden: item.add, sections: item.sections ?? Trakt.hiddenSections) }
+        else { try await trakt.setListItem(listID: item.target, imdb: item.imdb, series: item.series, add: item.add) }
+    }
+
+    /// Cómo se dice el destino en la bitácora.
+    static func label(_ target: String) -> String {
+        switch target {
+        case watchlist: "Mi lista"
+        case favorites: "Favoritos"
+        case ratings: "Calificación"
+        case hidden: "Series que dejaste"
+        case notes: "Nota"
+        default: "Lista \(target)"
+        }
     }
 
     // MARK: tus listas, para elegirlas sin conexión
@@ -137,6 +144,4 @@ public final class TraktOutbox: @unchecked Sendable {
     public func remember(lists: [(id: String, name: String)]) {
         kv.set(Self.listsKey, data: try? JSONEncoder().encode(lists.map { [$0.id, $0.name] }))
     }
-
-    private func save() { kv.set(Self.key, data: try? JSONEncoder().encode(items)) }
 }

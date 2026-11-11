@@ -25,9 +25,10 @@ final class LibrarySyncTests: XCTestCase {
         let sleeps = SleepLog()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         for action in ["start", "pause", "stop"] { http.json["\(api)/scrobble/\(action)"] = [:] }
+        let queue = TraktQueue(store: pending, clock: { clock.now })
         let watch = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { stremio ? "KEY" : nil }, cinemeta: Cinemeta(http: http),
-                                 trakt: trakt, pending: pending, clock: { clock.now }, sleep: { sleeps.add($0) })
-        let outbox = TraktOutbox(kv)
+                                 trakt: trakt, pending: pending, clock: { clock.now }, queue: queue, sleep: { sleeps.add($0) })
+        let outbox = TraktOutbox(queue: queue, kv: kv, clock: { clock.now })
         let sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: outbox, pending: pending, clock: { clock.now })
         return Rig(http: http, clock: clock, library: library, pending: pending, kv: kv, trakt: trakt, watch: watch, sync: sync, outbox: outbox, sleeps: sleeps)
     }

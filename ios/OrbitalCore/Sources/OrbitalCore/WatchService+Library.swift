@@ -59,7 +59,7 @@ extension WatchService {
         announceChange()
         if let outbox, metaID.hasPrefix("tt") {
             outbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: add))
-            if flush { await outbox.flush(trakt) }
+            if flush { await flushPending() }
         }
         if copiesToStremio { try? await copyLibrary(kind: kind, metaID: metaID, poster: poster, add: add) }
     }
@@ -77,9 +77,7 @@ extension WatchService {
         }
         announceChange()
         if let target = TraktTarget(videoID: videoID, kind: kind) {
-            var work = pending.load()
-            work.traktUnwatched.removeAll { $0 == target }
-            pending.save(work)
+            pending.update { $0.traktUnwatched.removeAll { $0 == target } }
             enqueue(trakt: .init(target: target, at: at))
         }
         if copiesToStremio { try? await copyWatched(kind: kind, metaID: metaID, videoID: videoID) }
@@ -105,10 +103,8 @@ extension WatchService {
             if e.videoID == nil || order.contains(e.videoID ?? "") { e.finish(videoID: last, next: next, at: max(latest.at.timeIntervalSince1970, 1)) }
         }
         announceChange()
-        var work = pending.load()
         let targets = videos.compactMap { v in TraktTarget(videoID: v.id, kind: kind).map { ($0, v.at) } }
-        work.traktUnwatched.removeAll { t in targets.contains { $0.0 == t } }
-        pending.save(work)
+        pending.update { work in work.traktUnwatched.removeAll { t in targets.contains { $0.0 == t } } }
         for (target, at) in targets { enqueue(trakt: .init(target: target, at: at.timeIntervalSince1970)) }
         if copiesToStremio { for v in videos { try? await copyWatched(kind: kind, metaID: metaID, videoID: v.id) } }
         await flushPending()
@@ -125,11 +121,11 @@ extension WatchService {
         store.update(metaID, make: { LibraryMerge.make(metaID, kind: kind, name: "") }) { $0.seen.remove(videoID) }
         announceChange()
         guard let target = TraktTarget(videoID: videoID, kind: kind) else { return }
-        var work = pending.load()
-        work.traktWatched.removeAll { $0.target == target }
-        work.traktRewatched.removeAll { $0.target == target }   // «La vi otra vez» sin red no lo regresa
-        if !work.traktUnwatched.contains(target) { work.traktUnwatched.append(target) }
-        pending.save(work)
+        pending.update { work in
+            work.traktWatched.removeAll { $0.target == target }
+            work.traktRewatched.removeAll { $0.target == target }   // «La vi otra vez» sin red no lo regresa
+            if !work.traktUnwatched.contains(target) { work.traktUnwatched.append(target) }
+        }
         await flushPending()
     }
 
@@ -144,10 +140,10 @@ extension WatchService {
         }
         announceChange()
         if metaID.hasPrefix("tt") {
-            var work = pending.load()
-            work.playbackRemovals.removeAll { $0.target.imdb == metaID }
-            work.playbackRemovals.append(.init(target: TraktTarget(imdb: metaID), at: now))
-            pending.save(work)
+            pending.update { work in
+                work.playbackRemovals.removeAll { $0.target.imdb == metaID }
+                work.playbackRemovals.append(.init(target: TraktTarget(imdb: metaID), at: now))
+            }
         }
         if copiesToStremio { try? await copyDismiss(metaID: metaID, newEpisode: newEpisode) }
         await flushPending()

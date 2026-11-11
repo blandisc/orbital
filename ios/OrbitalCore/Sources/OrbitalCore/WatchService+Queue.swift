@@ -7,9 +7,7 @@ extension WatchService {
     /// Copia el avance a Stremio; sin red, a la cola. Devuelve si quedó en la cola.
     func copyToStremio(_ event: ProgressEvent) async -> Bool {
         do { try await write(event); return false } catch {
-            var work = pending.load()
-            work.progress.append(event)
-            pending.save(work)
+            pending.update { $0.progress.append(event) }
             return true
         }
     }
@@ -66,91 +64,35 @@ extension WatchService {
     }
 
     // MARK: la cola
-    /// Sube lo que quedó esperando. Un avance viejo no pisa algo más nuevo hecho en otro aparato: Trakt no deja fechar un aviso
-    /// en el pasado, así que antes de mandarlo se compara con lo que Trakt tiene. Solo uno a la vez; lo que llegue a la cola
-    /// mientras tanto se conserva.
+    /// Sube lo que quedó esperando: la copia a Stremio aquí y lo de Trakt en la cola única (`TraktQueue`, F4), que se vacía
+    /// de uno en uno en toda la app aunque haya dos `WatchService` (al rearmar los servicios). Un avance viejo no pisa algo más
+    /// nuevo hecho en otro aparato. Lo que llegue a la cola mientras tanto se conserva.
     @discardableResult
     public func flushPending() async -> PendingWork {
-        guard gate.enter() else { return pending.load() }
-        defer { gate.leave() }
-        let snapshot = pending.load()
-        guard !snapshot.isEmpty else { return snapshot }
-        var retry = PendingWork()
-        for event in snapshot.progress.sorted(by: { $0.at < $1.at }) {
+        await flushCopies()
+        guard let trakt else { return pending.load() }
+        return await traktQueue.flush(trakt, checkpoint: { [weak self] event, target in try await self?.sendCheckpoint(event, target) })
+    }
+
+    /// La copia a Stremio que quedó esperando (mientras dure la prueba).
+    private func flushCopies() async {
+        guard !copying else { return }
+        copying = true
+        defer { copying = false }
+        let snapshot = pending.load().progress
+        guard !snapshot.isEmpty else { return }
+        var retry: [ProgressEvent] = []
+        for event in snapshot.sorted(by: { $0.at < $1.at }) {
             guard let key = authKey() else { continue }   // ya no hay Stremio: la copia sobra
             do {
                 if let raw = try await stremio.libraryItem(authKey: key, id: event.metaID),
                    let newer = StremioLibrary.epoch(raw["_mtime"]), newer > event.at + 1 { continue }  // el remoto es más nuevo: no se pisa
                 try await write(event)
-            } catch { retry.progress.append(event) }
+            } catch { retry.append(event) }
         }
-        if let trakt, trakt.linked {
-            retry.traktUnwatched = await attempt(snapshot.traktUnwatched) { try await trakt.removeFromHistory($0) }
-            // Pocos, uno por uno (sin duplicar lo que ya está en Trakt); muchos (una temporada, una serie), de 100 en 100.
-            if snapshot.traktWatched.count < Self.batchFrom {
-                retry.traktWatched = await attempt(snapshot.traktWatched) { try await trakt.addToHistory($0.target, watchedAt: Date(timeIntervalSince1970: $0.at)) }
-            } else {
-                let chunks = stride(from: 0, to: snapshot.traktWatched.count, by: 100).map { Array(snapshot.traktWatched[$0..<min($0 + 100, snapshot.traktWatched.count)]) }
-                retry.traktWatched = await attempt(chunks) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
-            }
-            // Primero lo nuevo, una por una; la vieja de una fecha cambiada se borra solo si la nueva llegó.
-            var replaced: [Int] = []
-            for item in snapshot.traktRewatched {
-                let sent = await attempt([item]) { try await trakt.addToHistory([($0.target, Date(timeIntervalSince1970: $0.at))]) }
-                if sent.isEmpty, item.replaces != nil, await Self.landed(item, in: trakt) { replaced.append(item.replaces!) }
-                retry.traktRewatched += sent
-            }
-            let removals = snapshot.traktViewingRemovals + replaced
-            if !removals.isEmpty {
-                retry.traktViewingRemovals = await attempt([removals]) { try await trakt.removeViewings($0) }.flatMap { $0 }
-            }
-            retry.playbackRemovals = await attempt(snapshot.playbackRemovals) { removal in
-                let stale = try await trakt.playback(fresh: true).filter { $0.target.imdb == removal.target.imdb && $0.pausedAt.timeIntervalSince1970 <= removal.at + 1 }
-                for item in stale { try await trakt.removePlayback(id: item.id) }
-            }
-            retry.traktProgress = await attempt(snapshot.traktProgress) { event in
-                guard let target = TraktTarget(videoID: event.videoID, kind: event.kind) else { return }
-                // Lo viste en otro aparato mientras tanto (Trakt tiene uno más nuevo): el de aquí ya es viejo, se descarta.
-                if let remote = await trakt.paused(target), remote.pausedAt.timeIntervalSince1970 > event.at { return }
-                try await sendCheckpoint(event, target)
-            }
-        } else {
-            retry.traktWatched = snapshot.traktWatched; retry.traktUnwatched = snapshot.traktUnwatched
-            retry.traktProgress = snapshot.traktProgress; retry.playbackRemovals = snapshot.playbackRemovals
-            retry.traktViewingRemovals = snapshot.traktViewingRemovals; retry.traktRewatched = snapshot.traktRewatched
-        }
-        // Lo que se subió sale; lo que falló se queda; lo que llegó durante el vaciado también se queda.
-        let current = pending.load()
-        var next = PendingWork()
-        next.progress = current.progress.filter { !snapshot.progress.contains($0) } + retry.progress
-        next.traktWatched = current.traktWatched.filter { !snapshot.traktWatched.contains($0) } + retry.traktWatched
-        next.traktUnwatched = current.traktUnwatched.filter { !snapshot.traktUnwatched.contains($0) } + retry.traktUnwatched
-        next.traktProgress = current.traktProgress.filter { !snapshot.traktProgress.contains($0) } + retry.traktProgress
-        next.playbackRemovals = current.playbackRemovals.filter { !snapshot.playbackRemovals.contains($0) } + retry.playbackRemovals
-        next.traktViewingRemovals = current.traktViewingRemovals.filter { !snapshot.traktViewingRemovals.contains($0) } + retry.traktViewingRemovals
-        next.traktRewatched = current.traktRewatched.filter { !snapshot.traktRewatched.contains($0) } + retry.traktRewatched
-        pending.save(next)
-        return next
+        pending.update { $0.progress = $0.progress.filter { !snapshot.contains($0) } + retry }
     }
 
-    /// ¿La vista nueva ya está en Trakt? (si Trakt la rechazó, `attempt` la descarta sin decirlo: la vieja no se borra).
-    static func landed(_ item: PendingWork.TraktWatched, in trakt: Trakt) async -> Bool {
-        guard let all = try? await trakt.viewings(item.target) else { return true }   // sin cómo saberlo: se confía en el 2xx
-        return all.contains { abs($0.at.timeIntervalSince1970 - item.at) < 2 }
-    }
-
-    /// Manda cada cosa; devuelve lo que vale la pena reintentar (sin red, Trakt caído). Lo que Trakt rechaza (inválido) se descarta.
     /// Desde cuántos vistos pendientes se suben juntos.
     static let batchFrom = 4
-
-    private func attempt<T: Sendable>(_ items: [T], _ send: (T) async throws -> Void) async -> [T] {
-        var again: [T] = []
-        for item in items {
-            do { try await send(item) }
-            catch let error as TraktError { if Self.shouldRetry(error) { again.append(item) } }
-            catch is URLError { again.append(item) }   // sin red (lo que no pasó por `NetworkError`): espera
-            catch {}
-        }
-        return again
-    }
 }
