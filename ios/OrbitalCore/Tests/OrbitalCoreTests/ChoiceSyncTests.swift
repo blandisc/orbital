@@ -13,6 +13,8 @@ final class FakeOrbital: HTTPClient, @unchecked Sendable {
     /// El lote más grande que llegó y un título que la TV rechaza con 422 (como un valor que no entiende).
     var biggestBatch = 0
     var refuse: String?
+    /// Los títulos de cada petición, en orden.
+    var sent: [[String]] = []
 
     func tvSets(_ id: String, _ key: String, _ value: String) { lock.withLock { rev += 1; titles[id, default: [:]][key] = value; revs[id] = rev } }
 
@@ -23,6 +25,7 @@ final class FakeOrbital: HTTPClient, @unchecked Sendable {
             calls += 1
             let changes = body?["changes"]?.object ?? [:]
             biggestBatch = max(biggestBatch, changes.count)
+            sent.append(changes.keys.sorted())
             if changes.count > 100 { return HTTPResponse(status: 422, data: Data(#"{"detail":[{"msg":"too many"}]}"#.utf8)) }   // `max_length=100`
             if let refuse, changes[refuse] != nil { return HTTPResponse(status: 422, data: Data(#"{"detail":"valor inválido"}"#.utf8)) }
             var rejected: [JSON] = []
@@ -109,12 +112,49 @@ final class ChoiceSyncTests: XCTestCase {
         tv.lock.withLock { tv.refuse = "tt0000000" }   // cae en el primer lote (en orden)
         await prefs.syncChoices(with: remote)
         XCTAssertEqual(tv.biggestBatch, 100)
-        XCTAssertEqual(tv.titles.count, 150, "los otros dos lotes llegaron")
-        XCTAssertEqual(prefs.pendingChoices.count, 100, "el lote rechazado espera")
+        XCTAssertEqual(tv.titles.count, 249, "los otros dos lotes llegaron, y del rechazado, uno por uno, todos menos el malo")
+        XCTAssertEqual(prefs.pendingChoices.keys.sorted(), ["tt0000000"], "solo el que la TV no quiere espera")
         tv.lock.withLock { tv.refuse = nil }
         await prefs.syncChoices(with: remote)
         XCTAssertEqual(tv.titles.count, 250)
         XCTAssertTrue(prefs.pendingChoices.isEmpty)
+    }
+
+    /// Revisión del 11 nov 2026: lo que la TV rechaza siempre ya no se reenvía para siempre: tras `maxRefusals` intentos se aparta
+    /// (y queda en la bitácora); lo demás sigue llegando.
+    func testLoQueLaTVRechazaSiempreSeApartaTrasVariosIntentos() async {
+        let (prefs, tv, remote, _) = rig()
+        await prefs.syncChoices(with: remote)
+        prefs.remember(metaID: "tt1", audioTrack: "en")
+        prefs.remember(metaID: "tt2", audioTrack: "es")
+        tv.lock.withLock { tv.refuse = "tt1" }
+        for attempt in 1...TitlePreferences.maxRefusals {
+            await prefs.syncChoices(with: remote)
+            if attempt < TitlePreferences.maxRefusals { XCTAssertNotNil(prefs.pendingChoices["tt1"], "intento \(attempt): aún se reintenta") }
+        }
+        XCTAssertNil(prefs.pendingChoices["tt1"], "ya no se reenvía")
+        XCTAssertNotNil(prefs.setAsideChoices["tt1"], "queda apartado")
+        XCTAssertNotNil(tv.titles["tt2"], "lo demás llegó")
+        let before = tv.lock.withLock { tv.sent.count }
+        await prefs.syncChoices(with: remote)
+        XCTAssertFalse(tv.lock.withLock { tv.sent }.dropFirst(before).contains { $0.contains("tt1") }, "no se vuelve a mandar")
+    }
+
+    /// Si eliges otra cosa para ese título, el cambio nuevo cuenta desde cero (no hereda los rechazos del viejo).
+    func testUnCambioNuevoNoHeredaLosRechazos() async {
+        let (prefs, tv, remote, _) = rig()
+        await prefs.syncChoices(with: remote)
+        prefs.remember(metaID: "tt1", audioTrack: "en")
+        tv.lock.withLock { tv.refuse = "tt1" }
+        for _ in 1..<TitlePreferences.maxRefusals { await prefs.syncChoices(with: remote) }
+        prefs.remember(metaID: "tt1", audioTrack: "es")   // otra elección: su cuenta empieza en cero
+        for _ in 1..<TitlePreferences.maxRefusals { await prefs.syncChoices(with: remote) }
+        XCTAssertNotNil(prefs.pendingChoices["tt1"], "aún se reintenta")
+        XCTAssertTrue(prefs.setAsideChoices.isEmpty)
+        tv.lock.withLock { tv.refuse = nil }
+        await prefs.syncChoices(with: remote)
+        XCTAssertTrue(prefs.pendingChoices.isEmpty)
+        XCTAssertEqual(tv.titles["tt1"]?["audio"], "es")
     }
 
     func testOlvidarTambienLlega() async {

@@ -44177,6 +44177,17 @@
           }
         }
       }
+    },
+    "Actualiza Orbital en este iPhone para usar esto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Orbital on this iPhone to use this."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

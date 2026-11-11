@@ -308,7 +308,15 @@ public final class TitlePreferences: @unchecked Sendable {
         var revs: [String: Int] = [:]
         /// Lo que se eligió aquí y tu Orbital aún no sabe (sobrevive sin conexión).
         var pending: [String: OrbitalRemote.ChoiceChange] = [:]
+        /// Cuántas veces seguidas rechazó la TV el cambio pendiente de cada título, y cuál (otro cambio cuenta desde cero).
+        /// Opcional: lo guardado antes no lo trae.
+        var refusals: [String: Refused]?
+        /// Lo que la TV rechazó `maxRefusals` veces: ya no se reenvía; queda aquí para diagnóstico (y en la bitácora).
+        var setAside: [String: OrbitalRemote.ChoiceChange]?
     }
+    struct Refused: Codable { var change: OrbitalRemote.ChoiceChange; var count: Int }
+    /// Tras cuántos rechazos de la TV un cambio deja de reenviarse (se aparta y queda en la bitácora).
+    static let maxRefusals = 3
     static let syncKey = "choices-sync"
     private var sync: SyncState
     private var syncing = false
@@ -514,21 +522,25 @@ public final class TitlePreferences: @unchecked Sendable {
         // De a lo más `syncBatch` títulos por vuelta: la TV no acepta más de 100 cambios ni más de 16 KB por petición, y todo
         // junto se rechazaba entero sin que nadie se enterara (A10, 10 nov 2026). Sin nada pendiente va una vuelta vacía (para
         // traer lo de la TV).
-        for batch in Self.batches(lock.withLock { sync.pending }) {
+        var batches = Self.batches(lock.withLock { sync.pending })[...]
+        while let batch = batches.popFirst() {
             let since = lock.withLock { sync.rev }
             let reply: OrbitalRemote.ChoicesReply?
             do { reply = try await remote.syncChoices(since: since, changes: batch) }
             catch OrbitalRemote.Failure.refused(let why) {
-                // La TV no quiso este lote (413 o 422: muy grande o un valor que no entiende): queda pendiente y se dice en la
-                // bitácora; los demás lotes siguen.
+                // La TV no quiso este lote (413 o 422: muy grande o un valor que no entiende): se dice en la bitácora y los demás
+                // lotes siguen. Un lote de varios se vuelve a mandar título por título, para dar con el que no quiere; ese, tras
+                // `maxRefusals` rechazos, se aparta (antes se reenviaba para siempre).
                 Log.network.error("La TV rechazó \(batch.count, privacy: .public) idiomas por título: \(why, privacy: .public)")
+                if batch.count > 1 { batches = ArraySlice(batch.sorted { $0.key < $1.key }.map { [$0.key: $0.value] } + batches) }
+                else { giveUpAfterRefusals(batch, why: why) }
                 continue
             } catch {
                 return   // sin conexión: lo pendiente espera
             }
             guard let reply else { return }   // una Orbital de antes
             lock.withLock {
-                for (id, change) in batch where sync.pending[id] == change { sync.pending[id] = nil }   // lo que cambió mientras, se manda la próxima
+                for (id, change) in batch where sync.pending[id] == change { sync.pending[id] = nil; sync.refusals?[id] = nil }   // lo que cambió mientras, se manda la próxima
                 for (id, theirs) in reply.changed {
                     sync.revs[id] = theirs.rev
                     if sync.pending[id] != nil { continue }   // aquí hay algo más nuevo: va en la siguiente
@@ -553,6 +565,28 @@ public final class TitlePreferences: @unchecked Sendable {
             Dictionary(uniqueKeysWithValues: ids[start..<min(start + syncBatch, ids.count)].map { ($0, pending[$0]!) })
         }
     }
+
+    /// Un lote que la TV no quiso: cada título suma un rechazo; al llegar a `maxRefusals` su cambio se aparta (ya no se reenvía
+    /// para siempre) y se registra. Si mientras tanto elegiste otra cosa para ese título, ese cambio nuevo cuenta desde cero.
+    private func giveUpAfterRefusals(_ batch: [String: OrbitalRemote.ChoiceChange], why: String) {
+        lock.withLock {
+            var counts = sync.refusals ?? [:]
+            var aside = sync.setAside ?? [:]
+            for (id, change) in batch where sync.pending[id] == change {
+                let count = (counts[id]?.change == change ? counts[id]!.count : 0) + 1
+                counts[id] = Refused(change: change, count: count)
+                guard count >= Self.maxRefusals else { continue }
+                sync.pending[id] = nil; counts[id] = nil; aside[id] = change
+                Log.network.error("La TV rechazó \(Self.maxRefusals, privacy: .public) veces los idiomas de \(id, privacy: .public): se dejan de mandar (\(why, privacy: .public))")
+            }
+            sync.refusals = counts.isEmpty ? nil : counts
+            sync.setAside = aside.isEmpty ? nil : aside
+            saveSync()
+        }
+    }
+
+    /// Lo que la TV rechazó tantas veces que ya no se manda (pruebas y diagnóstico).
+    public var setAsideChoices: [String: OrbitalRemote.ChoiceChange] { lock.withLock { sync.setAside ?? [:] } }
 
     /// Lo que falta mandar (pruebas y diagnóstico).
     public var pendingChoices: [String: OrbitalRemote.ChoiceChange] { lock.withLock { sync.pending } }

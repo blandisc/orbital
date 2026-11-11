@@ -485,7 +485,7 @@ public struct OrbitalRemote: Sendable {
         }
         let json: JSON?
         do { json = try await send("api/companion/choices", method: "POST", body: JSON.object(["since": .int(since), "changes": .object(body)]).serialized()) }
-        catch Failure.refused(let why) where why == Self.updateLine { return nil }
+        catch Failure.refused(let why) where Self.isUpdateLine(why) { return nil }
         guard let json, let rev = json["rev"]?.intValue else { return nil }
         var changed: [String: TitleChoice] = [:]
         for (id, raw) in json["changed"]?.object ?? [:] {
@@ -554,7 +554,7 @@ public struct OrbitalRemote: Sendable {
         guard let base, isConfigured else { throw Failure.notConfigured }
         // F1: lo que la TV no anuncia no se pide (y no se adivina por un 404).
         if let capability = TVContract.capability(for: path), !supports(capability) {
-            throw Self.padPaths.contains(path) ? Failure.outdated : Failure.refused(Self.updateLine)
+            throw Self.padPaths.contains(path) ? Failure.outdated : Failure.refused(contract.missingLine)
         }
         // K1: con llave, la llave (y la TV ignora `X-Orbital-Device-Id`, así que ya no va); sin ella, el token del túnel.
         var headers = ["Authorization": "Bearer \(hasDeviceKey ? deviceKey : token)"]
@@ -584,7 +584,7 @@ public struct OrbitalRemote: Sendable {
             // Solo es «versión anterior» si la ruta no existe (FastAPI dice «Not Found»): eso nunca se muestra crudo. La consola
             // también contesta 404 cuando en ese momento no halló de dónde verlo: ese motivo se dice tal cual.
             if let detail = JSON.parse(response.data)?["detail"]?.string, detail != "Not Found" { throw Failure.refused(detail) }
-            throw Failure.refused(Self.updateLine)
+            throw Failure.refused(contract.missingLine)
         default:
             let detail = JSON.parse(response.data)?["detail"]?.string
             throw Failure.refused(detail ?? "Tu Orbital contestó con un error (\(response.status)).")

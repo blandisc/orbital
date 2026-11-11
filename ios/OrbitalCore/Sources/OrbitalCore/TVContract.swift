@@ -12,6 +12,16 @@ public struct TVContract: Sendable, Equatable {
     /// Una TV de antes (o que aún no contesta).
     public static let unknown = TVContract()
 
+    /// El número de contrato que entiende este iPhone (el de `API_VERSION` en `orbital/companion.py` el día que se escribió esta
+    /// app). Una TV con uno mayor es más nueva que el iPhone: lo que falte es porque el iPhone quedó atrás.
+    public static let supportedAPI = 1
+
+    /// ¿Esta TV habla un contrato más nuevo que el que entiende este iPhone?
+    public var isNewerThanThisPhone: Bool { (api ?? 0) > Self.supportedAPI }
+
+    /// Qué decir cuando falta algo: si la TV es más nueva, quien debe actualizarse es el iPhone (antes siempre se culpaba a la TV).
+    public var missingLine: String { isNewerThanThisPhone ? OrbitalRemote.phoneUpdateLine : OrbitalRemote.updateLine }
+
     /// ¿Esta TV ya dice qué sabe hacer?
     public var isKnown: Bool { api != nil && capabilities != nil }
 
@@ -82,8 +92,13 @@ extension OrbitalRemote {
     /// ¿La TV conectada sabe hacer esto? Con una TV de antes, sí (se intenta como siempre).
     public func supports(_ capability: String) -> Bool { contract.supports(capability) }
 
-    /// Lo que se dice cuando la TV no anuncia (o no tiene) lo que se pidió.
+    /// Lo que se dice cuando la TV no anuncia (o no tiene) lo que se pidió y la TV es la vieja.
     public static let updateLine = "Tu Orbital de la tele necesita actualizarse para esto."
+    /// Lo mismo cuando la TV es más nueva que este iPhone (su contrato `api` es mayor que `TVContract.supportedAPI`).
+    public static let phoneUpdateLine = "Actualiza Orbital en este iPhone para usar esto."
+
+    /// ¿Es uno de los dos avisos de «falta actualizar» (quien llama lo toma como «esta TV no lo tiene»)?
+    public static func isUpdateLine(_ line: String) -> Bool { line == updateLine || line == phoneUpdateLine }
 
     /// Las rutas del control completo: sin ellas el pad se esconde (`Failure.outdated`).
     static let padPaths: Set<String> = ["api/companion/input", "api/companion/text", "api/voice/hints"]
