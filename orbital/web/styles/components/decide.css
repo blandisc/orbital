@@ -3,7 +3,7 @@
 .decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
 .decide__modes { display: flex; gap: var(--space-1); }
 /* En pantallas bajas (la Legion Go) las pestañas de arriba le quitan aire a las preguntas: los carteles bajan un poco. */
-@media (max-height: 900px) { .decide { --decide-poster-height: 13rem; } }
+@media (max-height: 900px) { .decide { --decide-poster-height: 12rem; } }
 .decide__lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .decide__stage { display: flex; align-items: center; gap: var(--space-10); min-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6)); padding-top: var(--space-6); }
 .decide__picks { display: flex; align-items: center; gap: var(--card-gap); }
@@ -19,7 +19,8 @@
   display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
 }
 .decide__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.decide__questions { display: grid; gap: var(--space-3); }
+/* R2-7: la última pregunta («Qué») con aire sobre el pie (antes casi lo tocaba). */
+.decide__questions { display: grid; gap: var(--space-3); margin-bottom: var(--space-6); }
 .decide__question { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: var(--space-4); }
 .decide__label { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: right; }
 .decide[data-zone="questions"] .decide__picks .card { opacity: var(--opacity-away); }

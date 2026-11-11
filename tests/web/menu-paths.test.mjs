@@ -6,7 +6,7 @@ import { mainMenu } from "../../orbital/web/js/core/menus.js";
 
 // D5-A (revisión del 10 nov): ☰ queda para el sistema. Lo que salió de ahí conserva un camino a la vista con mando, teclado,
 // mouse y dedo, y el atajo que tenía sigue sirviendo y se anuncia donde vive ahora.
-const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const main = read("js/main.js");
 const foryou = read("js/components/foryou.js");
 const decide = read("js/components/decide.js");
@@ -32,5 +32,10 @@ test("D5-A: «Decide por mí» y «¿Qué vemos hoy?» son una sola entrada de E
   // Adentro, arriba: «Tres que caben» y «Una por una» (el mazo de «¿Qué vemos hoy?»).
   assert.deepEqual(DECIDE_MODES, ["Tres que caben", "Una por una"]);
   assert.match(decide, /else if \(action === "up" && onDeck\) \{ zone = "modes"; option = 1; \}/);
-  assert.match(main, /onDeck: \(\) => \{ ui\.decide\.close\(\); runCommand\(\{ type: "match" \}\); \}/);
+  // R2-7: el mazo se abre encima de Decide (su segunda pestaña) y, al cerrarlo, Decide sigue ahí; el mazo va antes que Decide
+  // en la pila de lo abierto (recibe las teclas) y lleva el mismo encabezado y pestañas.
+  assert.match(main, /onDeck: \(\) => runCommand\(\{ type: "match" \}\)/);
+  assert.match(main, /if \(!ui\.decide\.isOpen\) ui\.decide\.open\(\);/);
+  assert.ok(main.indexOf("ui.match, ui.decide") > 0, "el mazo, encima de Decide");
+  assert.match(read("js/components/match-deck.js"), /DecideHead\(\), modes/);
 });

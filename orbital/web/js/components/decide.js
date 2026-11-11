@@ -15,6 +15,11 @@ import { Pill, ScreenHead } from "./ui.js";
  * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · onPick(item) · onMove() · onClose() · onDeck()
  */
 export const DECIDE_MODES = ["Tres que caben", "Una por una"];
+/** D5-A (R2-7): el mismo encabezado en las dos pestañas de Decide (aquí y en el mazo, match-deck.js). */
+export const DecideHead = () => ScreenHead({ eyebrow: "Para cuando no sabes qué ver", title: "Decide por mí" });
+/** Las dos pestañas; `on` la que ves, `focused` la enfocada con el mando (o null), `onPick(i)` al tocar o hacer clic. */
+export const DecideModes = (el, { on, focused = null, onPick }) => mount(el, DECIDE_MODES.map((label, i) => Pill(label, {
+  on: i === on, tone: "tab", role: "tab", tabindex: "-1", className: focused === i && "is-focused", onClick: () => onPick(i) })));
 const QUESTIONS = [
   { id: "time", label: "Tiempo", options: [["short", "Media hora"], ["hour", "Una hora"], ["long", "Dos horas o más"]] },
   { id: "mood", label: "Ánimo", options: [["", "Cualquiera"], ["light", "Ligera"], ["intense", "Intensa"], ["think", "Para pensar"], ["together", "En pareja"]] },
@@ -50,7 +55,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
   const questions = h("div", { class: "decide__questions" });
   const modes = h("div", { class: "decide__modes", role: "tablist", "aria-label": "Cómo decidir" });
   const el = h("section", { class: "decide screen", hidden: true, "aria-label": "Decide por mí" },
-    ScreenHead({ eyebrow: "Para cuando no sabes qué ver", title: "Decide por mí" }), modes, lead,
+    DecideHead(), modes, lead,
     h("div", { class: "decide__stage" }, picksEl, h("div", { class: "decide__about" }, name, why, overview)), status, questions);
 
   let choice = { time: "", mood: "", kind: "" };
@@ -87,8 +92,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
   }
 
   function paintModes() {
-    mount(modes, DECIDE_MODES.map((label, i) => Pill(label, { on: i === 0, tone: "tab", role: "tab", tabindex: "-1",
-      className: zone === "modes" && option === i && "is-focused", onClick: () => (i === 1 ? onDeck?.() : null) })));
+    DecideModes(modes, { on: 0, focused: zone === "modes" ? option : null, onPick: (i) => (i === 1 ? onDeck?.() : null) });
   }
 
   function paint() {
@@ -163,6 +167,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
     if (action === "alt") { onMove?.(); shuffle(); return true; }
+    if (action === "nextsection" && onDeck) { onDeck(); return true; } // E / RB: la otra pestaña, «Una por una»
     if (zone === "modes") {
       if (action === "left" && option > 0) option--;
       else if (action === "right" && option < DECIDE_MODES.length - 1) option++;
