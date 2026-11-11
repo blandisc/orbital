@@ -337,6 +337,10 @@ struct HomeView: View {
                 .accessibilityAction(named: Text("Ver ficha")) { openTitle = s.route }
                 HeroActions { heroButtons(s) }
             }
+            // La portada es arte de alto fijo: con letra de accesibilidad su texto se salía por arriba de la tarjeta (bordes,
+            // SE con letra grande). Crece hasta xxxLarge, como las piezas del mosaico; el visor de contenido grande lo amplía.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .accessibilityShowsLargeContentViewer()
             .padding(.bottom, heroOverlap + DS.Space.s6)   // los puntos y, en oscuro, lo que se encima
         }
         .contentShape(Rectangle())

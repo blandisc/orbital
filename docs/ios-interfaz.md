@@ -55,6 +55,13 @@ Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hub
   que la prueba que ya existe entre `tokens.css` y `player_ui.py`), y ningún archivo de pantalla escribe un
   color, tamaño o duración a mano.
 - El fondo toma el tono del título (como `--art-tint`), calculado del póster.
+- **Bordes** (I12, revisión del 10 nov 2026): todo cambio de interfaz se mira en tres condiciones antes de darlo por
+  hecho: el iPhone grande normal, el iPhone SE, y el SE con letra de accesibilidad grande en modo claro. Nada cortado
+  ni encimado, nada pegado a la orilla (el margen es `DS.Space.gutter`), los íconos dentro de su círculo y el texto en
+  AA (4.5:1) también en claro. `ios/scripts/bordes.sh <udid-grande> <udid-se>` toma las diez pantallas principales en
+  las tres y deja las capturas en `/tmp/orbital-bordes`. Lo que no cabe se reacomoda con `ViewThatFits` (de títulos con
+  íconos a solo títulos y, al final, solo íconos) o se topa con `dynamicTypeSize` y el visor de contenido grande; nunca
+  con un tamaño fijo. Un estado vacío va arriba, donde empezaría la lista, no al centro.
 
 ## 4b. Bilingüe
 
