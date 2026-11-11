@@ -64,3 +64,21 @@ def test_a_change_serializes_only_that_entry(tmp_path, monkeypatch):
                                                   "details:9": {"n": 9}}
     cache.clear("details:1")
     assert "details:1" not in json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_clear_and_the_save_timer_never_bring_back_what_was_cleared(tmp_path):
+    """`clear()` guarda al instante y el temporizador puede estar guardando a la vez: lo borrado no regresa del disco."""
+    import json as _json
+    import threading as _threading
+
+    path = tmp_path / "foryou-cache.json"
+    for _ in range(20):
+        cache = Cache(path=path)
+        for i in range(200):
+            cache.get(f"poster:{i}", 60, lambda i=i: {"url": "x" * 200, "i": i})
+        saver = _threading.Thread(target=cache._save)
+        saver.start()
+        cache.clear("poster:")
+        saver.join()
+        on_disk = _json.loads(path.read_text(encoding="utf-8"))
+        assert not [k for k in on_disk if k.startswith("poster:")]

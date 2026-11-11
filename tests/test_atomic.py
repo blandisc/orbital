@@ -104,3 +104,112 @@ def test_atomic_text_writes_the_same_bytes_as_write_text(tmp_path, monkeypatch):
     atomic.atomic_write_text(safe, text)
     assert safe.read_bytes() == text.replace("\n", "\r\n").encode("utf-8")
     assert not atomic.tmp_path(safe).exists()
+
+
+def test_threads_writing_and_reading_the_same_file_never_see_half_a_file(tmp_path):
+    """Revisión del 11 nov 2026: con el temporal fijo, 2 hilos × 300 escrituras daban 165 FileNotFoundError y 188 lecturas
+    de JSON roto. Ahora: 3 escritores, 3 lectores; nadie falla, nadie lee a medias y queda la última escritura."""
+    import threading
+
+    path = tmp_path / "foryou-cache.json"
+    atomic_write(path, json.dumps({"writer": -1, "n": -1, "pad": ""}), durable=False)
+    errors: list = []
+    stop = threading.Event()
+    pad = "x" * 20_000  # lo bastante grande para que una lectura a medias se note
+
+    def writer(w):
+        try:
+            for n in range(300):
+                atomic_write(path, json.dumps({"writer": w, "n": n, "pad": pad}), durable=n % 50 == 0)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(("write", repr(exc)))
+
+    def reader():
+        while not stop.is_set():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                assert data["pad"] in ("", pad)
+            except PermissionError:  # Windows: abrir justo mientras se cambia; el lector real reintenta
+                continue
+            except Exception as exc:  # noqa: BLE001
+                errors.append(("read", repr(exc)))
+
+    readers = [threading.Thread(target=reader) for _ in range(3)]
+    writers = [threading.Thread(target=writer, args=(w,)) for w in range(3)]
+    for t in readers + writers:
+        t.start()
+    for t in writers:
+        t.join()
+    stop.set()
+    for t in readers:
+        t.join()
+    assert errors == []
+    final = json.loads(path.read_text(encoding="utf-8"))
+    assert final["n"] == 299  # la última de algún escritor, completa
+    atomic_write(path, '{"ultima": true}')
+    assert json.loads(path.read_text(encoding="utf-8")) == {"ultima": True}  # nunca se pierde la última
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["foryou-cache.json"]  # ningún temporal tirado
+
+
+def test_backups_are_made_safely_from_several_threads(tmp_path):
+    import threading
+
+    path = tmp_path / "state.json"
+    atomic_write(path, json.dumps({"n": 0}), backup=True)
+    errors: list = []
+
+    def writer(w):
+        try:
+            for n in range(100):
+                atomic_write(path, json.dumps({"n": n, "w": w}), backup=True)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(repr(exc))
+
+    threads = [threading.Thread(target=writer, args=(w,)) for w in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+    assert json.loads(backup_path(path).read_text(encoding="utf-8"))["n"] in range(100)  # el .bak, completo
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["state.json", "state.json.bak"]
+
+
+def test_the_backup_is_pushed_to_disk_too(tmp_path, monkeypatch):
+    synced = []
+    real = os.fsync
+    monkeypatch.setattr(atomic.os, "fsync", lambda fd: (synced.append(fd), real(fd))[1])
+    path = tmp_path / "x.json"
+    atomic_write(path, "uno")
+    synced.clear()
+    atomic_write(path, "dos", backup=True)
+    assert len(synced) >= 2  # el nuevo y su .bak
+
+
+def test_a_busy_file_on_windows_is_retried_briefly(tmp_path, monkeypatch):
+    path = tmp_path / "x.json"
+    path.write_text("viejo", encoding="utf-8")
+    real = os.replace
+    tries = []
+
+    def busy_then_ok(a, b):
+        tries.append(1)
+        if len(tries) < 3:
+            raise PermissionError(13, "El proceso no tiene acceso al archivo porque está siendo utilizado")
+        real(a, b)
+
+    monkeypatch.setattr(atomic, "WINDOWS", True)
+    monkeypatch.setattr(atomic.os, "replace", busy_then_ok)
+    monkeypatch.setattr(atomic.time, "sleep", lambda s: None)
+    atomic_write(path, "nuevo", durable=False)
+    assert path.read_text(encoding="utf-8") == "nuevo" and len(tries) == 3
+
+
+def test_saving_does_not_change_who_can_read_the_file(tmp_path):
+    if os.name == "nt":
+        pytest.skip("permisos de Unix")
+    path = tmp_path / "x.json"
+    path.write_text("viejo", encoding="utf-8")
+    path.chmod(0o644)
+    atomic_write(path, "nuevo")
+    assert path.stat().st_mode & 0o777 == 0o644  # mkstemp crea 0600: se respetan los de antes
