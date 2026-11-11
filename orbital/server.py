@@ -177,6 +177,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     catalog = catalog or Catalog(config)
     if kiosk is not None:
         catalog.kiosk = kiosk
+    if shortcuts and catalog.tones is None:  # de verdad (no en pruebas): el tono de cada fondo, medido una vez (V3)
+        from .art_tone import ArtTones
+        catalog.tones = ArtTones(catalog.thumbs_dir())
+        catalog.warm_tones()
     shell = ConsoleShell(catalog, kiosk, pause_file=paused_path() if shortcuts else None)
     catalog.before_launch = shell.close_previous  # abrir algo nuevo cierra lo anterior (no queda olvidado)
     d = Deps(config=config, catalog=catalog, shell=shell, voice=VoiceController(catalog, kiosk, RokuTv(config.tv)), hub=SseHub(),

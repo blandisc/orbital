@@ -136,6 +136,11 @@ def art_version(path: str | Path, sep: str = "&") -> str:
         return ""
 
 
+def tone_path(item: LibraryItem) -> str | None:
+    """El arte cuyo tono pinta el fondo (backdrop.js): el fondo propio o, si solo hay portada, la portada."""
+    return item.hero_path or item.art_path or None
+
+
 class Catalog:
     def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None,
                  credentials: Credentials | None = None, stremio_client: stremio_api.StremioAPI | None = None,
@@ -147,6 +152,7 @@ class Catalog:
         self.events = EventBus()
         self.store = ItemStore()
         self.steam_root: Path | None = None
+        self.tones = None  # ArtTones (art_tone.py): el tono de cada arte, medido una vez; solo de verdad (create_app)
         self.esde: esde.EsdeLibrary | None = None
         # Emuladores en uso: los de config.yaml + los detectados automáticamente.
         self.emulators = list(config.emulators)
@@ -423,6 +429,7 @@ class Catalog:
             self.library_watch.accept()  # lo que hay ahora ya está escaneado: el vigilante no lo vuelve a pedir
         log.info("Catálogo: %d elementos", len(found))
         self.warm_covers()
+        self.warm_tones()
         self.scrape_art(background=True)
         self.watch.refresh_stremio(background=True)
         self.watch.refresh_trakt(background=True, force=True)
@@ -617,7 +624,17 @@ class Catalog:
         # Una película o serie: su nombre en tu idioma (Stremio guarda el original en inglés).
         if item.source == "stremio" and item.extra.get("meta_id"):
             data["title"] = self.names.name(item.extra.get("kind"), item.extra["meta_id"]) or data["title"]
+        # V3: el tono de su fondo, si ya se midió (si no, el cliente lo saca él mismo, como antes).
+        if self.tones is not None and (tone := self.tones.peek(tone_path(item))):
+            data["art_tone"] = tone
         return data
+
+    def warm_tones(self) -> None:
+        """Mide en segundo plano el tono del fondo de toda la biblioteca (V3); lo ya medido no se repite."""
+        if self.tones is None:
+            return
+        paths = [Path(p) for i in self.store.all() if (p := tone_path(i))]
+        threading.Thread(target=self.tones.warm, args=(paths,), daemon=True, name="art-tones").start()
 
     def last_played(self, item: LibraryItem) -> float | None:
         """La última vez que se jugó: lo que registró Orbital o, en Steam, lo que registró Steam."""
