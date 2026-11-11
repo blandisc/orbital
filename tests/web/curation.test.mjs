@@ -31,3 +31,15 @@ test("el arte que elegiste llega a los estantes ya cargados (Recomendadas…), y
   assert.deepEqual(unkeyOf(keyOf("chart:netflix", "movie")), { id: "chart:netflix", kind: "movie" });
   assert.deepEqual(unkeyOf(keyOf("recs", null)), { id: "recs", kind: null });
 });
+
+test("el héroe de Películas y series dice solo el año: sin Trakt, géneros ni duración (Fernando, 11 nov 2026)", async () => {
+  const { curatedItem } = await import("../../orbital/web/js/core/curation.js");
+  const item = curatedItem({ meta_id: "tt1", kind: "movie", title: "X", year: 2024, rating: 8.1, genres: ["Drama"], runtime: 120, overview: "Una frase." });
+  assert.equal(item.extra.year, 2024);
+  // Lo que pone el héroe: deshecho T10 (el renglón de datos y la oración de la sinopsis).
+  assert.deepEqual([item.extra.trakt, item.extra.genres, item.extra.minutes], [undefined, undefined, undefined]);
+  const { readFileSync } = await import("node:fs");
+  const hero = readFileSync(new URL("../../orbital/web/js/components/hero.js", import.meta.url), "utf8");
+  assert.match(hero, /item\.source === "cinemeta" \? \[extra\.episode, extra\.year\]/);
+  assert.doesNotMatch(hero, /traktScore|firstSentence/);
+});

@@ -25,9 +25,8 @@ export function curatedItem(item, { rowTitle = null } = {}) {
     subtitle: [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
     // El destacado no pone el nombre de una lista de Trakt o de un complemento («En «RT: Certified Fresh»»), como el iPhone;
     // «N.º 1 en Netflix», «Recomendada» y «En tendencia» sí se quedan.
-    // T10 (10 nov 2026): el héroe pone un renglón de datos (año, Trakt, géneros, duración); antes solo salía el año.
+    // El héroe dice solo el año (Fernando, 11 nov 2026: deshace T10, que ponía Trakt, géneros y duración).
     extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo,
-      trakt: item.rating ?? undefined, genres: item.genres ?? undefined, minutes: item.runtime ?? undefined,
       eyebrow: item.in_list ? undefined : why },
   };
 }

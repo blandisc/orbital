@@ -136,17 +136,6 @@ export function softHyphens(text, min = 11) {
 }
 
 /**
- * La primera oración de una sinopsis (el héroe de Películas y series, T10): hasta el primer «.», «!» o «?» seguido de espacio
- * y mayúscula, para no cortar en «Dr.» o «3.5». Si la primera es muy corta (menos de 40 letras), se queda la segunda también.
- */
-export function firstSentence(text) {
-  const clean = String(text || "").replace(/\s+/g, " ").trim();
-  const ends = [...clean.matchAll(/[.!?…](?=\s+[«"¿¡(]?[A-ZÁÉÍÓÚÑ])/g)].map((m) => m.index + 1);
-  const cut = ends.find((at) => at >= 40);
-  return cut ? clean.slice(0, cut) : clean;
-}
-
-/**
  * R2 (11 nov 2026): la etiqueta de arriba (`Eyebrow`, en turquesa) dice el PORQUÉ («Seguir viendo», «En Mi lista», «En
  * tendencia», «Sale hoy · 19:00»), nunca un dato: el tipo («Película», «Serie»), el año, la temporada y el episodio
  * («T1 E3»), lo que queda o lo que dura van en la línea de datos. Lo que parece dato no pasa: devuelve null.
