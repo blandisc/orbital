@@ -4,12 +4,17 @@ reinicio), lo último que elegiste para un título en un lugar es lo que cuenta 
 seguidos a la misma lista van en un solo envío (G3-A, 10 nov 2026).
 
 Un elemento: {"target": «watchlist» | «hidden» | id de una lista, "imdb", "kind", "add", "sections"?}.
+
+También lo que el reproductor no pudo avisarle a Trakt (F4, como WatchService del iPhone): una película o un episodio que
+terminaste entra como vista (HISTORY, con la hora en que terminaste) y un avance a medias como PROGRESS (`start` y, 2 s
+después, `pause` con ese avance, solo si Trakt no tiene uno más nuevo de otro aparato).
 """
 
 from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 
 from .library import trakt as trakt_api
@@ -21,7 +26,9 @@ WATCHLIST, HIDDEN = "watchlist", "hidden"
 # Ola 3 (O3-B): una vista que entra o las que salen de tu historial (`imdb` es su llave única: título y momento, o los ids)
 # y tu nota con VIP. Cada una va sola, no en lote.
 HISTORY, NOTE = "history", "note"
-SINGLE = (HIDDEN, HISTORY, NOTE)
+PROGRESS = "progress"  # un avance del reproductor que Trakt no recibió (`imdb` es la llave del video: tt1 o tt1:2:5)
+SINGLE = (HIDDEN, HISTORY, NOTE, PROGRESS)
+PROGRESS_GAP = 2.0  # s entre el `start` y la `pause` (Trakt los ordena por hora), como el respaldo de scrobble.py
 
 
 def retryable(exc: Exception) -> bool:
@@ -40,6 +47,7 @@ class TraktOutbox:
         self._load, self._save = load, save
         self._lock = threading.Lock()
         self._flushing = False
+        self.sleep: Callable[[float], None] = time.sleep
 
     @property
     def pending(self) -> list[dict]:
@@ -71,6 +79,21 @@ class TraktOutbox:
         with self._lock:
             items = [i for i in self._load() or [] if i not in done]
             self._save(items or None)
+
+    def _send_progress(self, t: trakt_api.Trakt, item: dict) -> None:
+        """El avance que quedó pendiente, salvo que Trakt ya tenga uno más nuevo (lo viste en otro aparato después)."""
+        playback = getattr(t, "playback", None)
+        rows = playback() if callable(playback) else None
+        newer = (rows.get(item["imdb"]) or {}).get("paused_at") if isinstance(rows, dict) else None
+        if isinstance(newer, (int, float)) and newer >= float(item.get("at") or 0):
+            log.info("Trakt: ya tiene un avance más nuevo de %s; no mando el viejo", item["imdb"])
+            return
+        progress = float(item.get("progress") or 0)
+        t.scrobble("start", item["video"], progress)
+        self.sleep(PROGRESS_GAP)
+        t.scrobble("pause", item["video"], progress)
+        if hasattr(t, "forget_playback"):
+            t.forget_playback()
 
     def flush(self, t: trakt_api.Trakt | None) -> int:
         """Manda lo pendiente, en orden. Se detiene al primer error que se puede reintentar; lo que no se puede (lista
@@ -108,6 +131,8 @@ class TraktOutbox:
                             t.remove_viewings(item.get("ids") or [])
                     elif item["target"] == NOTE:
                         t.set_note(item["kind"], item["imdb"], item.get("text") or "", item.get("note_id"))
+                    elif item["target"] == PROGRESS:
+                        self._send_progress(t, item)
                     else:
                         t.set_items(item["target"], [(i["kind"], i["imdb"]) for i in run], bool(item.get("add")))
                     sent += len(run)

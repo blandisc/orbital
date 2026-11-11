@@ -532,6 +532,9 @@ class ForYou:
         from .gestor import Gestor
 
         self.gestor = Gestor(self)  # el gestor tipo Trakt (G1–G4), como el iPhone
+        scrobbler = getattr(getattr(catalog, "watch", None), "scrobbler", None)
+        if scrobbler is not None:  # lo que el reproductor no pudo avisarle a Trakt espera en la misma cola (F4)
+            scrobbler.outbox = self.gestor.outbox
 
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)

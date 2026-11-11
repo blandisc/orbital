@@ -475,7 +475,7 @@ class Trakt:
         if status == 401:
             raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
         if status not in (200, 201, 409):
-            raise TraktError(f"Trakt respondió HTTP {status}")
+            raise TraktError(f"Trakt respondió HTTP {status}", status)  # con su código: la cola decide si reintenta
 
     # --- guardar (como «Guardar en…» del iPhone) -------------------------------------------------
     def _send(self, method: str, path: str, body: dict | None = None, errors: dict[int, TraktError] | None = None):

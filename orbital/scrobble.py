@@ -5,6 +5,10 @@ punto (otra vez `start`, o `pause` si estaba en pausa) y se cerró (`stop`, con 
 visto desde 80 %). Aquí se traducen a `POST /scrobble/{acción}` en un hilo aparte y EN ORDEN: la red nunca
 detiene el video. Un fallo se dice una sola vez por video en el registro y queda en `snapshot()` para Ajustes.
 
+Un aviso que falla por la red o porque Trakt está ocupado o caído no se pierde (F4, como el iPhone): pasa a la cola de
+Trakt (trakt_outbox.py). Lo que terminaste entra a tu historial con la hora en que terminaste; un avance a medias se
+manda después si Trakt no tiene uno más nuevo. Un `start` no se guarda («Viendo ahora» de hace una hora no sirve).
+
 Nunca hay scrobble de TV en vivo (el reproductor no lo avisa y aquí tampoco se acepta), ni sin Trakt conectado.
 
 Las mismas reglas que el iPhone (desacoplar Stremio, §5; probadas contra Trakt el 29 oct):
@@ -24,6 +28,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
+from . import trakt_outbox
 from .library import stremio_api
 from .library import trakt as trakt_api
 
@@ -96,6 +101,7 @@ class TraktScrobbler:
         self.clock = clock
         self.sleep = sleep
         self.on_saved: Callable[[], None] | None = None  # Trakt guardó un punto o un visto (watch.py relee Seguir viendo)
+        self.outbox: trakt_outbox.TraktOutbox | None = None  # la cola de Trakt (foryou.py la conecta): lo que falla, espera
         self._checkpointed: str | None = None  # el video cuyo último aviso fue un respaldo (lo siguiente lleva `start`)
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="trakt-scrobble")  # uno a la vez, en orden
         self._lock = threading.Lock()
@@ -121,12 +127,14 @@ class TraktScrobbler:
             planned = plan(action, meta, position, duration)
             if target is None or planned is None:
                 return
-            self._pool.submit(self._send, trakt, action, target, planned, str(meta.get("video_id") or ""), label(meta))
+            key = trakt_api.playback_key(kind, meta_id, meta.get("video_id")) or meta_id
+            self._pool.submit(self._send, trakt, action, target, planned, str(meta.get("video_id") or ""), label(meta),
+                              (kind, key))
         except Exception:  # noqa: BLE001
             log.exception("Error preparando el scrobble")
 
     def _send(self, trakt: trakt_api.Trakt, action: str, target: dict, planned: tuple[list[str], float], session: str,
-              title: str) -> None:
+              title: str, video: tuple[str, str] | None = None) -> None:
         steps, progress = planned
         try:
             if action in ("pause", "stop") and self._checkpointed == session:
@@ -149,6 +157,7 @@ class TraktScrobbler:
                 self._error = str(exc) or "Trakt no respondió"
             if first:
                 log.warning("No pude avisarle a Trakt de «%s» (%s): %s", title, action, exc)
+            self._queue(action, target, progress, video, exc)
             return
         with self._lock:
             if session != self._session:
@@ -156,6 +165,26 @@ class TraktScrobbler:
             self._error = None
             self._last = {"title": title, "action": action, "at": self.clock()}
         log.info("Trakt: %s %s al %.1f %%", "+".join(steps), title, progress)
+        if self.outbox is not None and self.outbox.pending:  # Trakt contesta otra vez: lo que esperaba, ya
+            try:
+                self.outbox.flush(trakt)
+            except Exception:  # noqa: BLE001 - la cola nunca tumba el reproductor
+                log.exception("Trakt: no pude mandar lo pendiente")
+
+    def _queue(self, action: str, target: dict, progress: float, video: tuple[str, str] | None, exc: Exception) -> None:
+        """Lo que no llegó por la red (o con Trakt ocupado) espera en la cola; un `start` o un error definitivo, no."""
+        if self.outbox is None or video is None or action == "start" or not trakt_outbox.retryable(exc):
+            return
+        kind, key = video
+        at = self.clock()
+        if action == "stop" and progress >= WATCHED_BY_TRAKT:  # lo terminaste: una vista con su hora real
+            self.outbox.discard(lambda i: not (i.get("target") == trakt_outbox.PROGRESS and i.get("imdb") == key))
+            self.outbox.enqueue({"target": trakt_outbox.HISTORY, "imdb": f"{key}@{at:.0f}", "kind": kind, "add": True,
+                                 "video": target, "at": at})
+        else:  # a medias: el último avance de ese video (el de antes se reemplaza)
+            self.outbox.enqueue({"target": trakt_outbox.PROGRESS, "imdb": key, "kind": kind, "add": True, "video": target,
+                                 "progress": progress, "at": at})
+        log.info("Trakt: «%s» queda en la cola hasta que Trakt conteste", key)
 
     # --- para Ajustes ---------------------------------------------------------------------------
     def snapshot(self) -> dict:
