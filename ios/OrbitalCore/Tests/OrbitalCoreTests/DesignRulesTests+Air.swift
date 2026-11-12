@@ -3,12 +3,14 @@ import XCTest
 /// El aire parejo (Fernando, 11 nov 2026: «"Guardar / Viendo" como que tiene muy poco espacio abajo… establecer una regla
 /// para que ya no vuelva a pasar»). Regla en `docs/ios-interfaz.md` § «Aire parejo»: todo contenedor con fondo tiene el mismo
 /// aire arriba y abajo de su contenido, y ese aire sale de un token. Estas pruebas la cuidan:
-/// - las tarjetas de acción (ícono + nombre + estado) salen de una sola pieza, `ActionTileLabel`, y nadie las arma a mano;
-/// - esa pieza usa un solo relleno vertical (`padding(.vertical, …)` de un token) y reserva el renglón del estado;
+/// - las tarjetas de acción (ícono + nombre, en un renglón) salen de una sola pieza, `ActionTileLabel`, y nadie las arma a mano;
+/// - esa pieza usa un solo relleno vertical (`padding(.vertical, …)` de un token) y no tiene renglón de estado (F1, 12 nov
+///   2026: ese renglón dejaba huecos bajo «Descargar» y «Tráiler»; lo cuida también `DesignRulesTests+Actions.swift`);
 /// - en `Design/`, un contenedor con fondo no lleva rellenos distintos arriba y abajo sin `ds-exception: <motivo>`.
 extension DesignRulesTests {
     /// Las pantallas con tarjetas de acción: deben armarlas con la pieza del catálogo.
-    static let actionTileScreens = ["Screens/TitleView.swift", "Screens/TitleView+Estado.swift", "Screens/MiMediaView.swift",
+    static let actionTileScreens = ["Screens/TitleView.swift", "Screens/TitleView+Estado.swift", "Screens/TitleView+Descargas.swift",
+                                    "Screens/TitleView+Watched.swift", "Screens/MiMediaView.swift",
                                     "Design/Remote.swift", "Screens/RemoteSheet.swift"]
 
     func testActionTilesComeFromTheCatalog() throws {
@@ -31,7 +33,9 @@ extension DesignRulesTests {
         let piece = String(text[start.lowerBound..<end])
         XCTAssertTrue(piece.contains("padding(.vertical, metrics.pad)"), "`ActionTileLabel` debe tener un solo relleno vertical (arriba = abajo) de su token")
         XCTAssertFalse(piece.range(of: #"padding\(\.(top|bottom)"#, options: .regularExpression) != nil, "`ActionTileLabel` no lleva rellenos sueltos arriba o abajo")
-        XCTAssertTrue(piece.contains("reservesDetail"), "`ActionTileLabel` debe reservar el renglón del estado cuando la fila lo pide")
+        // F1: un renglón. Sin `detail` ni renglón reservado: el estado lo dicen el nombre y el ícono («Guardada», lleno).
+        XCTAssertNil(piece.range(of: #"\bdetail\b|reservesDetail"#, options: .regularExpression), "`ActionTileLabel` no lleva renglón de estado (F1: un solo renglón)")
+        XCTAssertTrue(piece.contains("lineLimit(1)"), "el nombre de la tarjeta de la ficha va en un solo renglón")
     }
 
     /// Los rellenos de arriba y de abajo de cada contenedor con fondo en `Design/`: deben ser los mismos.

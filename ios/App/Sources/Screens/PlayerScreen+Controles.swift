@@ -17,7 +17,7 @@ extension PlayerScreen {
             PlayerFailureView(failure: model.failure ?? .sourceDied, isEpisode: model.request?.kind == "series",
                               retry: { Task { await model.retry() } },
                               infuse: model.source == nil ? nil : { Task { await openInInfuse() } },
-                              chooseVersion: model.sourceChoices.count > 1 ? { openDock(nil, version: true) } : nil,
+                              chooseVersion: model.sourceChoices.count > 1 ? { openDock(version: true) } : nil,
                               online: env.isOnline,
                               openDownloads: { Task { await close(); env.openTab = AppEnvironment.downloadsTab } },
                               cause: model.cause,
@@ -217,7 +217,7 @@ extension PlayerScreen {
                     .accessibilityIdentifier("player-episodes")
             }
             SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
-                           open: { openDock(.subtitles) },
+                           open: { openDock() },
                            toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
@@ -265,7 +265,7 @@ extension PlayerScreen {
             // «Audio y subtítulos» ya no va aquí: se abre con el botón de subtítulos de la barra (era la misma hoja dos veces).
             // «Episodios» va solo en su botón de la barra de arriba (no también aquí).
             if model.sourceChoices.count > 1 {
-                PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(nil, version: true) }
+                PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(version: true) }
                     .accessibilityIdentifier("player-versions")
             }
             // La velocidad, aquí como el zoom: cada toque la siguiente (antes vivía escondida en «Ajustes del video»).

@@ -23,16 +23,16 @@ struct DownloadRing: View {
     }
 }
 
-/// La tarjeta de acción, una sola pieza para toda la app: ícono arriba, el nombre abajo y, si hace falta, un renglón chico de
-/// estado («En Mi lista», «Viendo»). En la ficha (Guardar, Descargar, Tráiler), en «Mi media» (Ver, Descargar) y en las
-/// teclas del control (`style: .key`). Llena su parte del renglón; activa (Guardada, Descargada) se tiñe del color del arte;
-/// con `progress`, el ícono lleva el anillo de la descarga. Es solo la etiqueta: quien la usa la pone en un `Button`, un
-/// `Link` o un `Menu`.
+/// La tarjeta de acción, una sola pieza para toda la app: ícono arriba y el nombre abajo, en UN renglón. En la ficha (Guardar,
+/// Descargar, Vista, Tráiler), en «Mi media» (Ver, Descargar) y en las teclas del control (`style: .key`). Llena su parte del
+/// renglón; activa (Guardada, Vista, Lista) se tiñe de su color; con `progress`, el ícono lleva el anillo de la descarga. Es
+/// solo la etiqueta: quien la usa la pone en un `Button`, un `Link` o un `Menu`.
 ///
-/// Aire parejo (Fernando, 11 nov 2026: «"Guardar / Viendo" como que tiene muy poco espacio abajo»): el contenido lleva el
-/// mismo relleno arriba y abajo (`DS.ActionTile`, un solo `padding(.vertical, …)`) y queda al centro del alto mínimo; si la
-/// fila puede llevar un renglón de estado (`actionTileRow(reservesDetail:)`), todas las tarjetas lo reservan: miden lo mismo,
-/// los íconos quedan a la misma altura y los nombres en la misma línea. Regla en docs/ios-interfaz.md § «Aire parejo».
+/// Aire parejo (Fernando, 11 nov 2026): el contenido lleva el mismo relleno arriba y abajo (`DS.ActionTile`, un solo
+/// `padding(.vertical, …)`) y queda al centro del alto mínimo. F1 (Fernando, 12 nov 2026: «descargar y tráiler tiene mucho
+/// espacio vacío abajo»): ya no hay renglón de estado debajo del nombre; el estado lo dice el propio nombre y el ícono
+/// («Guardada» con el marcador lleno) y el detalle va al tocar. Así todas miden lo mismo sin reservar huecos. Reglas en
+/// docs/ios-interfaz.md § «Aire parejo» y § «Las acciones de un título».
 struct ActionTileLabel: View {
     enum Style { case title, key }
     var style: Style = .title
@@ -43,13 +43,8 @@ struct ActionTileLabel: View {
     var tint: Color = DS.accent
     /// DB1: cuántos tienes (los episodios de una serie en el iPhone), en la esquina.
     var badge: Int? = nil
-    /// El estado en letra chica bajo el nombre («En Mi lista», «Viendo»): el botón no cambia de nombre (revisión del 11 nov:
-    /// «Viendo» en el botón parecía un estado, no una puerta).
-    var detail: Text? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
-    /// La fila reserva el renglón del estado (alguna de sus tarjetas lo lleva): las demás dejan su lugar vacío.
-    @Environment(\.actionTileReservesDetail) private var reservesDetail
     /// Cuánto crece la letra del ícono (Dynamic Type).
     @ScaledMetric(relativeTo: .headline) private var iconScale: CGFloat = 1
 
@@ -73,7 +68,9 @@ struct ActionTileLabel: View {
             .frame(width: style == .title ? iconBox : nil, height: iconBox)
             names
         }
-        .padding(.horizontal, style == .key ? DS.Space.s1 : 0)   // el nombre de una tecla no toca la orilla: parte en dos antes
+        // El nombre no toca la orilla (12 nov 2026: «Guardada» y «Descargar» la tocaban con letra grande en el SE): una tecla
+        // parte en dos antes; en la ficha, si los cuatro ya no caben así, la fila pasa a 2×2.
+        .padding(.horizontal, DS.Space.s1)
         .padding(.vertical, metrics.pad)
         // Una tecla llena el alto de su fila (la fila lleva `fixedSize`): todas miden lo mismo aunque una parta su nombre en dos.
         .frame(maxWidth: .infinity, minHeight: metrics.minHeight, maxHeight: style == .key ? .infinity : nil)
@@ -106,30 +103,39 @@ struct ActionTileLabel: View {
                     .minimumScaleFactor(DS.Size.statScale).fixedSize(horizontal: false, vertical: true)
             }
         case .title:
-            VStack(spacing: 0) {
-                title.font(DS.TextRecipe.badge.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                    .contentTransition(.numericText())
-                if let detail {
-                    detail.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                } else if reservesDetail {
-                    // El lugar del estado, vacío: con la letra del estado, para que mida lo mismo con cualquier tamaño.
-                    Text(verbatim: " ").font(DS.TextRecipe.caption.font).accessibilityHidden(true)
-                }
-            }
+            // Un solo renglón, siempre (F1): nada de estado debajo. Mide lo que mide su nombre completo (no se encoge a medias):
+            // así la fila de la ficha sabe cuándo ya no caben los cuatro y pasa a 2×2, en vez de achicar solo «Descargar».
+            // Con letra de accesibilidad la ficha ya va en 2×2 y ahí sí se encoge si hace falta.
+            title.font(DS.TextRecipe.badge.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)
+                .contentTransition(.numericText())
         }
     }
 }
 
-extension EnvironmentValues {
-    /// Ver `actionTileRow(reservesDetail:)`.
-    @Entry var actionTileReservesDetail = false
-}
+/// La fila de tarjetas de acción: todas del mismo ancho, el que pide el nombre más largo. Si así no caben, dice que no (mide
+/// más de lo que le dan) y quien la usa pasa a 2×2 con `ViewThatFits`. Un `HStack` repartía el ancho según cada nombre
+/// (12 nov 2026, SE con letra XXXL: «Guardada» y «Descargar» anchas, «Vista» y «Tráiler» angostas).
+struct ActionTileRow: Layout {
+    var spacing: CGFloat = DS.Space.s2
 
-extension View {
-    /// Una fila de tarjetas de acción donde alguna lleva (o puede llevar) el renglón del estado: todas lo reservan, así miden
-    /// lo mismo y el ícono y el nombre quedan a la misma altura en las tres.
-    func actionTileRow(reservesDetail: Bool) -> some View {
-        environment(\.actionTileReservesDetail, reservesDetail)
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard !subviews.isEmpty else { return .zero }
+        let gaps = spacing * CGFloat(subviews.count - 1)
+        let need = (subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0) * CGFloat(subviews.count) + gaps
+        let width = proposal.width.map { max($0, need) } ?? need
+        let each = (width - gaps) / CGFloat(subviews.count)
+        let height = subviews.map { $0.sizeThatFits(ProposedViewSize(width: each, height: nil)).height }.max() ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard !subviews.isEmpty else { return }
+        let each = (bounds.width - spacing * CGFloat(subviews.count - 1)) / CGFloat(subviews.count)
+        for (index, view) in subviews.enumerated() {
+            view.place(at: CGPoint(x: bounds.minX + CGFloat(index) * (each + spacing), y: bounds.minY), anchor: .topLeading,
+                       proposal: ProposedViewSize(width: each, height: bounds.height))
+        }
     }
 }
 

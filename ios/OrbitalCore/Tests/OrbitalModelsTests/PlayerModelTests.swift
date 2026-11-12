@@ -586,6 +586,89 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.calls.last, "play", "suena lo que pediste")
     }
 
+    // MARK: volver a la app nunca te hace esperar para seguir (queja de Fernando, 12 nov: «que se reproduzca inmediatamente»)
+    /// Pausado en `pos`, a segundo plano y de vuelta. `hang`: el motor se queda rearmando (salida larga: soltó el video).
+    private func pausedAndBack(_ rig: Rig, at pos: Double = 601, hang: Bool) async throws -> Task<Void, Never> {
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(pos - 1))
+        await rig.model.handle(rig.playing(pos))
+        await rig.model.pause()
+        await rig.model.handle(rig.playing(pos, state: .paused))
+        rig.model.appDidEnterBackgroundFully()
+        rig.engine.hangRestore = hang
+        let back = Task { await rig.model.appDidBecomeActive() }
+        if hang { try await Task.sleep(nanoseconds: 50_000_000) } else { await back.value }
+        return back
+    }
+
+    /// Salida corta (el motor no soltó el video): play va directo al motor, sin volver a pedir el video ni enseñar carga.
+    func testShortTripOutInPausePlaysAtOnceWithoutReloading() async throws {
+        let rig = try twoSources()
+        _ = try await pausedAndBack(rig, hang: false)
+        let loads = rig.engine.loads.count
+        await rig.model.togglePlay()
+        XCTAssertEqual(rig.engine.calls.last, "play", "el toque llega al motor al instante")
+        await rig.model.handle(rig.playing(601.5))
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none, "suena: sin carga")
+        XCTAssertEqual(rig.engine.loads.count, loads, "no se volvió a pedir el video")
+        XCTAssertFalse(rig.engine.calls.contains("stop"), "ni se soltó")
+    }
+
+    /// Salida larga: tocas play mientras el motor rearma. El toque llega al motor en ese momento (no espera a que termine), y
+    /// aunque el motor ya avance antes de terminar de rearmar (eso borra `playRequest`), al final suena: un solo toque.
+    func testPlayDuringTheRearmIsNeverLost() async throws {
+        let rig = try twoSources()
+        let back = try await pausedAndBack(rig, hang: true)
+        await rig.model.handle(rig.playing(0, state: .loading))   // a media carga el motor dice 0:00
+        await rig.model.togglePlay()
+        XCTAssertEqual(rig.engine.calls.last, "play", "el toque llega al motor ya, a media carga")
+        XCTAssertTrue(rig.model.awaitingPlayback)
+        await rig.model.handle(rig.playing(602))                   // el motor abrió y ya avanza
+        XCTAssertFalse(rig.model.awaitingPlayback)
+        await rig.engine.stop()                                    // termina de rearmar
+        await back.value
+        XCTAssertEqual(rig.engine.calls.last, "play", "suena sin tocar otra vez (antes quedaba en pausa)")
+        XCTAssertEqual(rig.model.phase, .playing)
+    }
+
+    /// A media carga el motor pasa un instante por «búfer»: tocar el play que ves sigue siendo play (antes se tomaba como pausa).
+    func testABufferingBlipWhileRearmingDoesNotTurnPlayIntoPause() async throws {
+        let rig = try twoSources()
+        let back = try await pausedAndBack(rig, hang: true)
+        await rig.model.handle(rig.playing(0, state: .buffering))
+        XCTAssertFalse(rig.model.wantsToPlay, "el botón enseña play")
+        await rig.model.togglePlay()
+        XCTAssertEqual(rig.engine.calls.last, "play")
+        XCTAssertTrue(rig.model.awaitingPlayback)
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .soon, "la carga solo si de verdad tarda")
+        await rig.model.togglePlay()                               // y si te arrepientes, pausa
+        XCTAssertEqual(rig.engine.calls.last, "pause")
+        await rig.engine.stop()
+        await back.value
+        XCTAssertEqual(rig.engine.calls.last, "stop", "lo último que pediste fue pausa: no suena solo")
+        await rig.model.tick()
+        XCTAssertNotEqual(rig.engine.calls.last, "play")
+    }
+
+    /// Salida muy larga (el enlace caducó y el motor no pudo rearmar): tocaste play, así que se pide otra vez donde ibas, se ve la
+    /// carga y suena solo en cuanto abre, sin un segundo toque.
+    func testPlayDuringARearmThatFailsReloadsAndStartsByItself() async throws {
+        let rig = try twoSources()
+        let back = try await pausedAndBack(rig, hang: true)
+        await rig.model.togglePlay()
+        await rig.model.handle(rig.playing(0, state: .loading))
+        rig.engine.restores = false
+        let loads = rig.engine.loads.count
+        await rig.engine.stop()
+        await back.value
+        XCTAssertEqual(rig.engine.loads.count, loads + 1, "se pidió otra vez")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 601, accuracy: 1, "donde ibas")
+        XCTAssertNotEqual(rig.engine.calls.last, "pause", "tocaste play: no se queda en pausa al abrir")
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "y la carga se ve")
+        await rig.model.handle(rig.playing(601.5))
+        XCTAssertEqual(rig.model.phase, .playing, "suena solo")
+    }
+
     func testIntroCanBeSkippedOnlyInsideTheIntroChapter() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

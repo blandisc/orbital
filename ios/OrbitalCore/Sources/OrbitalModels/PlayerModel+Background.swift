@@ -50,12 +50,17 @@ extension PlayerModel {
         if position > 0 { skipAnchor = position }
         // En pausa, rearmar es cosa del motor: tú ves el cuadro donde ibas y el play, sin la ruedita. Si tocas play mientras,
         // entonces sí se enseña la carga (ya querías verlo) y suena en cuanto el video está listo.
+        playWantedWhileRestoring = false
         restoringQuietly = !resume
         let restored = await engine.restoreAfterBackground(resume: resume)
         restoringQuietly = false
+        let wanted = playWantedWhileRestoring
+        playWantedWhileRestoring = false
         guard mine == generation, !closing else { return }
-        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume || playRequest != nil) }
-        if !resume, playRequest != nil { await engine.play() }   // el motor terminó de rearmar en pausa: lo que pediste
+        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume || wanted || playRequest != nil) }
+        // El motor terminó de rearmar en pausa y tocaste play mientras: suena sin otro toque. Aunque el aviso de «ya avanza»
+        // haya borrado `playRequest` a media carga (antes se perdía y había que tocar dos veces).
+        if !resume, wanted || playRequest != nil { await engine.play() }
         if hasPlayed { updateSkipIntro(snapshot) }   // en pausa el motor ya no avisa: el botón se decide con lo de ahora
     }
 

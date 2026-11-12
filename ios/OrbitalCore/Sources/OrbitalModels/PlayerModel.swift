@@ -375,10 +375,10 @@ public final class PlayerModel: ObservableModel {
                 source = own
                 var start = startAt ?? 0
                 if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
-                guard mine == generation, !closing, let url = own.playbackURL else { failedSources.insert(own.index); continue }
+                guard mine == generation, !closing, let url = own.playbackURL else { markFailed(own, "tu copia sin enlace"); continue }
                 startLoading()
                 do { try await loadVideo(url, at: start); return }
-                catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = triedAnother(); acceptingSnapshots = false; continue }
+                catch { guard mine == generation else { return }; markFailed(own, "tu copia no abrió: \(error)"); notice = triedAnother(); acceptingSnapshots = false; continue }
             }
             do {
                 if search == nil { search = SourceSearch() }
@@ -407,7 +407,7 @@ public final class PlayerModel: ObservableModel {
                 else {
                     let family = request.binge ?? (request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)?.binge)
                     // Un reintento solo prueba las que arrancan al instante: nunca le pide otra descarga a Real-Debrid (R6).
-                    found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: failedSources,
+                    found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: retrySkip,
                                                   instantOnly: !failedSources.isEmpty)
                 }
             } catch {
@@ -425,7 +425,7 @@ public final class PlayerModel: ObservableModel {
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
-            guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
+            guard let url = found.playbackURL else { markFailed(found, "sin enlace para el iPhone"); continue }
             // Ya se le pidió a Real-Debrid hace poco (se abrió y mandó su «descargando»): no se pide otra vez, se dice.
             if !found.instant, queued.contains(found.key, now: clock()) || alreadyRequested(found) {
                 lastNotice = .downloading
@@ -438,8 +438,7 @@ public final class PlayerModel: ObservableModel {
             do { try await loadVideo(url, at: start); return }
             catch {
                 guard mine == generation else { return }
-                Self.note("no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")
-                failedSources.insert(found.index)
+                markFailed(found, "no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")
                 attempts = failedSources.count
                 if failedSources.count > PlaybackRules.maxSourceRetries || remainingInstant == 0 { return fail("Ninguna versión funcionó.", .noneWorked) }
                 notice = triedAnother()
@@ -575,7 +574,7 @@ public final class PlayerModel: ObservableModel {
     // MARK: volver de segundo plano
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
     public internal(set) var reconnecting = false { didSet { if oldValue != reconnecting { changed() } } }
-    var backgrounded = false
+    var backgrounded = false, playWantedWhileRestoring = false   // tocaste play mientras se rearmaba en pausa
     var foregroundPending = false
     var backgroundPosition = 0.0
     var loadStartedAt = Date.distantPast

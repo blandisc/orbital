@@ -85,18 +85,21 @@ Fernando: «"Guardar / Viendo" como que tiene muy poco espacio abajo… establec
 - **Todo contenedor con fondo** (tarjeta, botón, cápsula, hoja) tiene **el mismo aire arriba y abajo** de su contenido, y
   ese aire sale de un token (`DS.Space.*` o el de su pieza), nunca de un número suelto. Se escribe con un solo
   `padding(.vertical, …)` (o `padding(…)`), no con un `.top` y un `.bottom` distintos.
-- **Si el contenido puede tener un renglón más** (un estado, un nombre que parte en dos), el contenedor lo contempla: crece
-  con su aire intacto (alto *mínimo*, no fijo) y, en una fila de tarjetas iguales, todas reservan ese renglón para medir lo
-  mismo y tener el ícono y el nombre a la misma altura.
-- **Tarjeta de acción** (ícono + nombre + estado opcional): una sola pieza, `ActionTileLabel` (`Design/TitleActions.swift`),
+- **Si el contenido puede tener un renglón más** (un nombre que parte en dos), el contenedor lo contempla: crece con su aire
+  intacto (alto *mínimo*, no fijo).
+- **Tarjeta de acción** (ícono + nombre, **en un solo renglón**): una sola pieza, `ActionTileLabel` (`Design/TitleActions.swift`),
   con sus medidas en `DS.ActionTile` (relleno vertical, alto mínimo y caja del ícono, que crece con la letra). La usan la
-  ficha (Guardar, Descargar, Tráiler), «Mi media» y las teclas del control (`style: .key`). La fila de la ficha avisa con
-  `actionTileRow(reservesDetail:)` cuando «Guardar» lleva su estado; las filas de teclas llevan
+  ficha (Guardar, Descargar, Vista, Tráiler), «Mi media» y las teclas del control (`style: .key`). Las filas de teclas llevan
   `fixedSize(horizontal: false, vertical: true)` para que sus teclas midan lo mismo.
-- **Lo que no se puede todo a la vez**: con el renglón de estado reservado, Descargar y Tráiler quedan con su lugar vacío
-  abajo (el ícono y el nombre alineados con los de «Guardar» mandan sobre su centrado propio).
+  El nombre **nunca toca la orilla** de su tarjeta: lleva aire a los lados (`DS.Space.s1`) en todos sus estilos; si con
+  letra grande los cuatro ya no caben así, la fila de la ficha pasa a 2×2 (12 nov 2026, «Guardada» y «Descargar» tocaban
+  la orilla en el SE con letra XXXL). El nombre no se encoge a medias: en una fila, todas las tarjetas miden lo mismo
+  (`ActionTileRow`, el ancho del nombre más largo), nunca un `HStack` que reparte según cada nombre.
+- **Sin renglón de estado** (F1, 12 nov 2026; antes «Guardar» llevaba «Viendo» abajo y la fila lo reservaba, y Descargar y
+  Tráiler quedaban con un hueco: «descargar y tráiler tiene mucho espacio vacío abajo»): el estado lo dicen el nombre y el
+  ícono («Guardada» con el marcador lleno, «Vista» en verde, el anillo de la descarga) y el detalle va al tocar.
 - Lo cuidan `DesignRulesTests+Air.swift`: que la ficha, «Mi media» y el control usen la pieza; que sus medidas no se usen
-  fuera de ella; que la pieza tenga un solo relleno vertical y reserve el estado; y que ningún contenedor con fondo de
+  fuera de ella; que la pieza tenga un solo relleno vertical y un solo renglón; y que ningún contenedor con fondo de
   `ios/App/Sources/Design` tenga distinto relleno arriba que abajo sin `ds-exception: <motivo>`.
 - Se comprueba en las capturas, midiendo: del borde de la tarjeta a lo primero que se ve, arriba y abajo (±1 pt), en el
   iPhone grande, el SE y el SE con accessibility-large en claro (`ios/scripts/bordes.sh`, pantalla `ficha-viendo`).
@@ -144,8 +147,8 @@ izquierda, entre el avance y las tarjetas, y «rompe simetría».
 - **En la ficha, el idioma y la calidad se eligen desde la zona derecha del botón principal** («Ver», «Continuar T2 E5»):
   el botón va partido (`SplitPlayButton`, `Design/SplitPlayButton.swift`, medidas en `DS.SplitPlay`). La izquierda, la
   mayor, reproduce; la derecha, más angosta, dice «🇲🇽 1080p ⌄» y abre «Versión». Cada lado se hunde por su cuenta.
-- **No existe un renglón de versión aparte.** Lo que queda bajo el botón solo informa: «quedan 20 min», «Desde el
-  principio» o un aviso («Sin versiones por ahora», «Sin conexión», lo de un pedido a la nube).
+- **No existe un renglón de versión aparte.** Lo que queda bajo el botón: la línea del avance (barra, «quedan 20 min» y ↺,
+  R1) y un aviso que solo informa («Sin versiones por ahora», «Sin conexión», lo de un pedido a la nube).
 - **El botón va entero** cuando no hay versión que elegir: sin versiones, sin red, Real-Debrid con su propio botón
   («Pedir a la nube», un pedido en camino) o la versión Orbital, que no trae «Versión» (`instantStreams`).
 - **Mientras se busca**, la zona derecha va en gris con la forma y el ancho que tendrá: el botón no cambia de ancho cuando
@@ -163,8 +166,47 @@ falle y que luego busques otra para que continúe. Es que esa no estaba disponib
 - «Saltar intro» y «Saltar resumen» solo salen con el video corriendo: nunca mientras carga, se llena o espera a arrancar.
 - Al probar otra versión, «Sigue en el mismo punto» solo se dice si la anterior ya había sonado; si nunca arrancó, «La
   anterior no estaba disponible».
+- Lo que ya suena no se cambia solo por otra versión salvo que de verdad falle: una duración corta de un momento (el motor
+  abriendo el archivo) no es el aviso de Real-Debrid, «otra versión» nunca vuelve a cargar el mismo archivo (aunque venga
+  de otro torrent) y toda versión que se da por fallida queda en la bitácora con su motivo (`markFailed`).
 
-`PlayerModelTests+Avisos.swift` lo cuida. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
+`PlayerModelTests+Avisos.swift` y `RetryOnlyWhenItFailsTests.swift` lo cuidan. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
+### Las acciones de un título (12 nov 2026)
+
+Fernando, al ver la ficha del iPhone: «integrar los dos botones que están abajo, los de descargar y vista, a estos tres de ahí
+arriba… porque no es muy consistente»; decidió «Me gusta la F1».
+
+- **Las acciones de un título viven en una sola fila de mosaicos de un renglón; no hay botones de acción sueltos en otra parte
+  de la ficha.** La fila es **Guardar · Descargar · Vista · Tráiler** (`TitleView.actionTiles`), cada uno con `ActionTileLabel`,
+  mismo alto y estilo. «Vista» solo si hay qué marcar (una película siempre; una serie con episodios) y «Tráiler» solo si lo
+  hay: la fila se reparte sin hueco (tres o cuatro). Si los nombres no caben enteros en un renglón (SE con letra grande, letra
+  de accesibilidad), pasan a 2×2; la letra no se achica para que quepan.
+- **Guardar** dice «Guardar» o, ya en alguna parte, «Guardada» (la palabra de la TV) con el marcador lleno y el color del arte.
+  En qué lista está («Viendo», «En Mi lista»…) se ve al tocarlo. «Vista» ya no va en ese menú cuando está su mosaico.
+- **Descargar** en una serie pregunta qué con el menú del sistema: este episodio, los siguientes, «Temporada N» con lo que
+  pesa lo que falta (y si no cabe) y toda la serie; «Elegir versión…» aparte. Bajando o lista, el mismo menú suma la temporada y
+  la serie. En una película, un toque baja la recomendada. Reemplaza la hoja «¿Qué descargo?» y el círculo de la temporada.
+- **Vista** en una película abre «¿Cuándo la viste?»; en una serie pregunta: este episodio, «Temporada N» (con cuántos llevas)
+  o toda la serie, y «Calificar la temporada» (con Trakt y algo visto). Toda vista: el ícono lleno y en verde.
+- **Una sola fila de estrellas a la vista**: «Tu calificación» (la película o la serie). La de la temporada se pone desde
+  «Vista» (hoja `SeasonRatingSheet`); cada capítulo conserva las suyas en su fila.
+- La TV no cambia (registro de paridad, «Distinto a propósito»). Lo cuida `DesignRulesTests+Actions.swift`.
+
+### Lo que acompaña a un control va en su misma línea (12 nov 2026)
+
+Fernando: «donde dice la temporada de la serie y donde dice X de tantos X vistos, ayúdame a centrarlo más porque está como ahí
+volando»; «tu nota… ocupa mucho espacio innecesario»; y de «Desde el principio», «una forma tal vez un poquito más estética»
+(decidió R1).
+
+- **Lo que acompaña a un control va en su misma línea, centrado con él**, no debajo ni flotando a un lado:
+  - la temporada: la cápsula «Temporada N ⌄» a la izquierda y «3 de 22 vistos» a la derecha; abajo, la barra de la temporada;
+  - «Tu calificación»: las estrellas y, al final, el botón redondo de «Tu nota» (con el más si no has escrito; resaltado si ya);
+  - bajo «Continuar» (R1): la barra (ocupa lo que sobra), «quedan 20 min» y ↺ «Desde el principio», botón redondo
+    (`DSIconButton`, 44 pt, con su nombre para VoiceOver), sin texto en color. Si no ibas a medias, la línea no existe.
+- El aviso que solo informa («Sin versiones por ahora») va en su propio renglón debajo, en gris, y la otra salida de
+  Real-Debrid («Verlo en inglés al instante», «Cancelar pedido») a su derecha, con su nombre (dice qué hace).
+- Con letra de accesibilidad, lo que no quepa baja de renglón entero («quedan…» bajo la barra), nunca cortado.
+- Lo cuida `DesignRulesTests+Actions.swift`.
 
 ### Tu idioma, aunque haya que pedirlo (12 nov 2026)
 
@@ -210,6 +252,46 @@ volumen del iPhone a donde estaba. La regla:
 - `MPVolumeView` y `outputVolume` solo se usan en `Platform/` (los botones del control y el volumen del reproductor) y en el
   gesto del reproductor. `DesignRulesTests+Volume.swift` lo cuida. En la TV no aplica.
 
+### Opciones que se eligen: renglones con palomita (S1, 11 nov 2026)
+
+Fernando: «Me gusta tu propuesta S1». En «Audio y subtítulos» del reproductor antes había cápsulas y acordeones que se partían
+en dos filas desalineadas, medían distinto y los «−» «+» no eran del mismo tamaño. La regla:
+
+- Lo que se elige de una lista (un idioma, una pista, una versión) es un **renglón con palomita** (`SubtitleRow`,
+  `SubtitleVersionRow`): ícono o bandera en una columna fija (`DS.PlayerPanel.rowLead`), el nombre y su segunda línea gris, y la
+  palomita en otra columna fija (`DS.PlayerPanel.rowMark`). Con o sin bandera, elegido o no, todos miden y se alinean igual, y
+  nunca menos de `DS.Size.touchTarget`. Nada de cápsulas (`PanelChip`, `FlowChips`), acordeones (`DisclosureGroup`) ni
+  `Capsule()` para elegir en el panel.
+- La bandera de un renglón se pinta de una sola forma: `Text.flagMark(código)` en la columna del ícono (o `Text.flag`, que es lo
+  mismo dentro de un texto). Nunca la bandera pegada al nombre en un renglón y suelta en otro.
+- Todo está a la vista: tocar un idioma lo pone; tocar el puesto abre sus versiones (no recarga); solo ‹ › cambian de versión.
+  En horizontal, en el SE o con letra grande, la lista se desplaza por dentro y «Listo» se queda fijo arriba a la derecha.
+- Los botones que van en pareja («−» «+», ‹ ›) usan `DSIconButton(…, steady: true)`: el símbolo va en un marco fijo
+  (`DS.IconButton.steadyGlyph`) y los dos miden lo mismo aunque «−» sea más angosto que «+». Mantener presionado repite
+  (`repeats: true`) y sin vibrar: el reproductor no vibra mientras ves. Vale para toda la app: las flechas de «Colecciones» y de «Tu año» también van con marco fijo.
+- Donde sí quedan cápsulas (filtros, temporadas «T1, T2…»), las de una misma fila miden lo mismo: `FlowChips` da a cada una el
+  alto de su línea y `PanelChip` lo llena; el selector de temporada usa el mismo tamaño y forma para la elegida y las demás.
+- Abierto el panel, el video no se tapa: en vertical se acomoda justo arriba del panel (`PlayerLayout.portraitRect(abovePanel:)`,
+  sin franja negra) y en horizontal el panel y el video se reparten la pantalla (`PlayerLayout.sideDock`), dentro del área segura.
+
+`DesignRulesTests+Subtitles.swift` y `PlayerLayoutTests` lo cuidan. La TV ya usa renglones con ✓: sin cambio. En el iPad el panel
+es el mismo (al lado del video).
+### Volver a la app nunca te hace esperar para seguir (12 nov 2026)
+
+Fernando: «si dejo pausado un elemento y salgo de la aplicación y regreso y le doy play, que se reproduzca inmediatamente»;
+y luego: «que no cargue de nuevo». La regla: **volver a la app nunca te hace esperar para seguir: play responde al instante
+y un solo toque basta.**
+
+- Salida corta (menos de ~30 s, lo que iOS presta antes de suspender la app): el motor no suelta el video ni su búfer; play
+  va directo al motor, sin volver a pedirlo ni enseñar carga.
+- Salida larga: AetherEngine suelta el video al vencer ese plazo (lo exige iOS al suspender la app; no hay forma de
+  conservarlo en pausa). Se rearma en cuanto vuelves, en pausa (no arranca solo ni le quita el sonido a otra app), con el
+  cuadro donde ibas y el play a la vista. Si tocas play a media carga, ese toque llega al motor en ese momento y suena en
+  cuanto abre: nunca se pierde ni se toma como pausa; la carga solo se asoma si tarda (`PlayerPresentation`, `.soon`).
+- Si el motor no puede rearmar (el enlace caducó), se pide otra vez donde ibas, se ve la carga y, si ya tocaste play, suena
+  solo al abrir.
+- `PlayerModelTests` («volver a la app nunca te hace esperar») lo cuida. En la TV no aplica (no hay segundo plano).
+
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
 Cada idea tiene un solo símbolo del sistema y vive en `DS.Symbol` (`ios/App/Sources/Design/Icons.swift`). Nunca un carácter
@@ -236,6 +318,22 @@ haya caracteres de texto usados como ícono.
 | ¿Otro título? (el nombre dice otro año) | `questionmark.circle` (`DS.Symbol.otherTitle`) | «Ver todas las versiones»: explicado una vez arriba |
 | Cambiar de versión para oír ese idioma | `arrow.triangle.swap` (`DS.Symbol.switchVersion`) | Reproductor › Audio, los idiomas de otra versión |
 | La que estás viendo | `checkmark` (`DS.Symbol.current`) | «Ir a una sección» de las listas |
+| Subtítulos apagados | `character.bubble` (`DS.Symbol.subtitlesOff`) | «Audio y subtítulos» › Apagados |
+| Buscar otro idioma | `magnifyingglass` (`DS.Symbol.otherLanguage`) | «Audio y subtítulos» › Otro idioma |
+| Sin conexión | `wifi.slash` (`DS.Symbol.offline`) | «Audio y subtítulos», sin red |
+| Sincronía de los subtítulos | `timer` (`DS.Symbol.subtitleSync`) | «Audio y subtítulos» › Sincronía |
+| Sincronizar con una línea | `text.line.first.and.arrowtriangle.forward` (`DS.Symbol.syncWithLine`) | «Audio y subtítulos» |
+| Regresar el ajuste a cero | `arrow.counterclockwise` (`DS.Symbol.resetDelay`) | Sincronía, «Volver a cero» |
+| Tamaño de los subtítulos | `textformat.size` (`DS.Symbol.subtitleSize`) | «Audio y subtítulos» › Tamaño |
+| Pista de audio | `speaker.wave.2` (`DS.Symbol.audioTrack`) | «Audio y subtítulos» › Audio |
+| Versión del video | `square.stack` (`DS.Symbol.videoVersion`) | «Audio y subtítulos» › Versión |
+| Subtítulos para sordos | `ear` (`DS.Symbol.hearingImpaired`) | Versiones de subtítulos, con la palabra |
+| Subtítulos forzados | `quote.bubble` (`DS.Symbol.forcedSubtitles`) | Versiones de subtítulos, con la palabra |
+| Una versión de subtítulos | `captions.bubble` (`DS.Symbol.subtitleVersion`) | Versiones de subtítulos |
+| Marcar como visto | `checkmark.circle` / `checkmark.circle.fill` (`DS.Symbol.watched`, `watchedFill`) | Mosaico «Vista» de la ficha (lleno y en verde: ya la viste) |
+| Volver a empezar | `arrow.counterclockwise` (`DS.Symbol.restart`) | ↺ «Desde el principio», junto al avance (R1) |
+| Tu nota | `note.text.badge.plus` / `note.text` (`DS.Symbol.addNote`, `note`) | Al final de «Tu calificación» |
+| Calificar | `star` (`DS.Symbol.rate`) | «Calificar la temporada», en el menú de «Vista» |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
 ## 4b. Bilingüe

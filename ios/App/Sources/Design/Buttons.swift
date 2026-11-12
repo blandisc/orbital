@@ -112,13 +112,20 @@ struct DSIconButton: View {
     let label: LocalizedStringKey
     var prominent = false
     var size: Size = .large
+    /// Marco fijo: el símbolo en una caja cuadrada (`DS.IconButton.steadyGlyph`), para que «−» y «+» (o ‹ ›) midan lo mismo.
+    /// Lo llevan los pares que van juntos (los pasos de «Audio y subtítulos»); `DesignRulesTests+Subtitles` lo cuida.
+    var steady = false
+    /// Mantenerlo presionado repite la acción (los pasos de sincronía y tamaño).
+    var repeats = false
     let action: () -> Void
 
     /// Un dibujo del catálogo en vez de un símbolo (la dona de «Un Simpson al azar»), con sus colores.
     var asset: String?
 
-    init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, action: @escaping () -> Void) {
-        self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size; self.action = action
+    init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, steady: Bool = false, repeats: Bool = false,
+         action: @escaping () -> Void) {
+        self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size
+        self.steady = steady; self.repeats = repeats; self.action = action
     }
 
     init(asset: String, label: LocalizedStringKey, size: Size = .large, action: @escaping () -> Void) {
@@ -126,13 +133,17 @@ struct DSIconButton: View {
         self.asset = asset
     }
 
-    private var glyph: Image { asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol) }
+    private var image: Image { asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol) }
+    @ViewBuilder private var glyph: some View {
+        if steady { image.frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) } else { image }
+    }
 
     var body: some View {
         Group {
             if prominent { Button(action: action) { glyph }.dsPrimaryButton() }
             else { Button(action: action) { glyph }.dsIconButtonLook() }
         }
+        .buttonRepeatBehavior(repeats ? .enabled : .automatic)
         .buttonBorderShape(.circle).controlSize(size.control)
         .accessibilityLabel(Text(label))
     }

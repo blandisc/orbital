@@ -11,10 +11,11 @@ extension TitleView {
         let follow = env.follow
         let _ = follow.track()
         let status = model.status(dropped: follow.hidden.contains(model.metaID))
-        // Siempre «Guardar» (decisión del 11 nov, por confirmar con Fer): el marcador se rellena si ya está en alguna parte y el
-        // estado va abajo en chico. Antes el botón se llamaba «Mi lista», «Viendo» o «Vista» según el caso.
-        let label = ActionTileLabel(title: Text("Guardar"), symbol: status == .none ? DS.Symbol.save : DS.Symbol.saved, active: status != .none, tint: artAccent,
-                                    detail: status == .none ? nil : Self.statusTitle(status))
+        // F1 (Fernando, 12 nov 2026): «Guardar» o, ya en alguna parte, «Guardada» con el marcador lleno y el color del arte, en un
+        // solo renglón. Dónde está («Viendo», «En Mi lista») se ve al tocarlo; «Vista» es su propio mosaico (antes «Viendo» y
+        // «Vista» se confundían: «¿qué diferencia tiene viendo y vista?»).
+        let label = ActionTileLabel(title: status == .none ? Text("Guardar") : Text("Guardada"), symbol: status == .none ? DS.Symbol.save : DS.Symbol.saved,
+                                    active: status != .none, tint: artAccent)
         return Group {
             if status == .none {
                 Menu { statusMenu(model, status, follow) } label: { label } primaryAction: { Task { await quickSave(model) } }
@@ -28,13 +29,6 @@ extension TitleView {
         .animation(DS.Motion.base(reduceMotion), value: status)
         .accessibilityValue(status == .none ? Text(verbatim: "") : Self.statusTitle(status))
         .accessibilityIdentifier("title-status")
-    }
-
-    /// «Guardar» lleva el renglón de su estado (ya está en alguna parte): la fila de acciones lo reserva en las tres.
-    func hasStatusLine(_ model: TitleModel) -> Bool {
-        let follow = env.follow
-        let _ = follow.track()
-        return model.status(dropped: follow.hidden.contains(model.metaID)) != .none
     }
 
     static func statusTitle(_ status: TitleStatus) -> Text {
@@ -70,8 +64,11 @@ extension TitleView {
                     Label { Text("Viendo") } icon: { Image(systemName: status == .watching ? "checkmark" : "play.circle") }
                 }
             }
-            Button { marking = series ? .series : .movie } label: {
-                Label { Text("Vista") } icon: { Image(systemName: status == .watched ? "checkmark" : "checkmark.circle") }
+            // Marcar como vista vive en su mosaico («Vista», F1): aquí solo si ese mosaico no está.
+            if !canMarkWatched(model) {
+                Button { marking = series ? .series : .movie } label: {
+                    Label { Text("Vista") } icon: { Image(systemName: status == .watched ? "checkmark" : "checkmark.circle") }
+                }
             }
             if canDrop {
                 Button { Task { status == .dropped ? await showAgain(model, follow) : await drop(model, follow) } } label: {

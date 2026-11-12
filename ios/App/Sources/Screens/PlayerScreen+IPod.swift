@@ -59,7 +59,7 @@ extension PlayerScreen {
                           back: { Task { await model.skip(-PlaybackRules.skipSeconds) } },
                           forward: { Task { await model.skip(PlaybackRules.skipSeconds) } },
                           playPause: { userTogglePlay(model) },
-                          center: { openDock(.subtitles) },
+                          center: { openDock() },
                           turn: { turnWheel($0, model) },
                           turned: { releaseWheel(model) })
                     .frame(width: layout.wheel.width, height: layout.wheel.height)

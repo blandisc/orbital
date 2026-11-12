@@ -13,6 +13,7 @@ extension PlayerModel {
         let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
         Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
         loadStartedAt = clock(); lastLoggedState = ""
+        if rd.shortDuration != nil { rd.shortDuration = nil }   // otra carga: la duración corta era de la anterior
         if source?.resolution == "4K" { ParallelPlayback.want(url) }   // varias conexiones solo en 4K
         await resumeSync?.value
         if let request {
@@ -40,7 +41,12 @@ extension PlayerModel {
 
     /// Pausa si suena o si va a sonar (cargando o pediste play y aún no avanza): antes, en búfer el botón llamaba a «play» y la
     /// pausa no hacía caso.
-    public var wantsToPlay: Bool { snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil }
+    /// Rearmando en pausa al volver a la app, lo que diga el motor a media carga no cuenta: el botón enseña play y tocarlo es
+    /// play (antes, si el motor pasaba un instante por «búfer», el toque se tomaba como pausa y se perdía).
+    public var wantsToPlay: Bool {
+        if restoringQuietly { return playRequest != nil }
+        return snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil
+    }
 
     public func togglePlay() async {
         userTouched()
@@ -52,7 +58,7 @@ extension PlayerModel {
     public func pause() async { userTouched(); playRequest = nil; settleStartup(); await engine.pause() }
 
     /// Pausaste en los primeros segundos: el arranque ya no es carga (el botón dice play al momento, sin esperar al motor).
-    func settleStartup() { if hasPlayed { playbackSettled = true } }
+    func settleStartup() { playWantedWhileRestoring = false; if hasPlayed { playbackSettled = true } }
 
     /// Pediste que sonara y todavía no avanza (sobre todo al volver de segundo plano, con el video soltado por el motor): la
     /// pantalla enseña la carga en vez del play, y si en `foregroundStallSeconds` no avanza, el video se pide otra vez ahí mismo.
@@ -60,7 +66,9 @@ extension PlayerModel {
 
     func requestPlayback() {
         guard hasPlayed, phase == .playing, !closing else { return }
-        playRequest = (clock(), snapshot.position)
+        // A media rearmada el motor dice 0: el punto de verdad es donde lo dejaste.
+        if restoringQuietly { playWantedWhileRestoring = true }
+        playRequest = (clock(), restoringQuietly ? max(snapshot.position, backgroundPosition) : snapshot.position)
     }
 
     func checkPlayRequest(now: Date) {
@@ -170,8 +178,8 @@ extension PlayerModel {
             if let language { titlePrefs.remember(metaID: request.metaID, audioTrack: language) }
         } catch {
             guard mine == generation else { return }
-            failedSources.insert(index)
-            if !goBackAfterSwitch() { await retryWithAnotherSource()?.value }
+            markFailed(choice, "la elegiste y no abrió: \(error)")
+            if !goBackAfterSwitch() { await retryWithAnotherSource("la elegiste y no abrió")?.value }
         }
     }
 
@@ -182,7 +190,7 @@ extension PlayerModel {
     func goBackAfterSwitch() -> Bool {
         guard let back = switchBack, let url = back.source.playbackURL, !closing else { return false }
         switchBack = nil
-        if let source, source.index != back.source.index { failedSources.insert(source.index) }
+        if let source, source.index != back.source.index { markFailed(source, "la elegiste y no llegó a sonar: se vuelve a la de antes") }
         generation += 1
         let mine = generation
         acceptingSnapshots = false

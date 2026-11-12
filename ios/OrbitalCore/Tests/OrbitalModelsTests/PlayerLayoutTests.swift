@@ -60,4 +60,42 @@ final class PlayerLayoutTests: XCTestCase {
             XCTAssertGreaterThan(video, phone.landscapeWidth * 0.44, "\(phone.name): queda casi la mitad para el video")
         }
     }
+
+    // MARK: «Audio y subtítulos» (S1, 11 nov 2026)
+
+    /// Vertical: el video queda justo arriba del panel (sin hueco negro) mientras cabe; si no, sube hasta arriba y nunca sale.
+    func testWithThePanelOpenTheVideoSitsRightAboveIt() {
+        let gap: CGFloat = 16
+        for phone in phones {
+            for panel in [CGFloat(180), 320, 480, 900] {
+                let rect = layout.portraitRect(abovePanel: panel, gap: gap, in: phone.portrait, aspect: 16.0 / 9.0)
+                XCTAssertGreaterThanOrEqual(rect.minY, 0, "\(phone.name) \(panel): nunca arriba de la orilla")
+                XCTAssertLessThanOrEqual(rect.maxY, phone.portrait.height + 0.5, "\(phone.name) \(panel): nunca abajo de la orilla")
+                if phone.portrait.height - panel - gap - rect.height >= 0 {
+                    XCTAssertEqual(phone.portrait.height - panel - rect.maxY, gap, accuracy: 0.5, "\(phone.name) \(panel): sin hueco entre el video y el panel")
+                } else {
+                    XCTAssertEqual(rect.minY, 0, accuracy: 0.5, "\(phone.name) \(panel): el panel no cabe, el video sube hasta arriba")
+                }
+            }
+        }
+    }
+
+    /// Horizontal: el panel dentro del área segura, de arriba abajo, y el video entero a su izquierda (sin que lo tape).
+    func testInLandscapeThePanelNeverCoversTheVideoNorLeavesTheScreen() {
+        let notch = PlayerLayout.Insets(top: 0, left: 62, bottom: 21, right: 62)
+        let plain = PlayerLayout.Insets()
+        for phone in phones {
+            let size = CGSize(width: phone.landscapeWidth, height: phone.portrait.width)
+            for insets in [notch, plain] {
+                let dock = layout.sideDock(in: size, insets: insets, margin: 16, aspect: 16.0 / 9.0)
+                XCTAssertLessThanOrEqual(dock.panel.maxX, size.width - max(insets.right, 16) + 0.5, "\(phone.name): el panel dentro del área segura")
+                XCTAssertGreaterThanOrEqual(dock.panel.minY, max(insets.top, 16) - 0.5, "\(phone.name): arriba, con su aire")
+                XCTAssertLessThanOrEqual(dock.panel.maxY, size.height - max(insets.bottom, 16) + 0.5, "\(phone.name): abajo no se corta")
+                XCTAssertLessThanOrEqual(dock.video.maxX, dock.panel.minX - 16 + 0.5, "\(phone.name): el panel no tapa el video")
+                XCTAssertGreaterThanOrEqual(dock.video.minX, max(insets.left, 16) - 0.5, "\(phone.name): el video no se pega a la orilla")
+                XCTAssertEqual(dock.panel.width, layout.sidePanelWidth(in: size.width), "\(phone.name): el mismo ancho que mide el video")
+                XCTAssertEqual(dock.video.width / dock.video.height, 16.0 / 9.0, accuracy: 0.01, "\(phone.name): en su proporción")
+            }
+        }
+    }
 }

@@ -196,6 +196,8 @@ struct PanelChip: View {
             }
             .foregroundStyle(selected ? DS.bg : DS.text)   // elegida: en el color del texto, con letra del fondo (blanca en oscuro), como toda selección
             .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+            // Toma el alto que le da su renglón (`FlowChips`): una cápsula con bandera o ícono ya no mide distinto que sus vecinas.
+            .frame(maxHeight: .infinity)
             .background(selected ? DS.text : DS.fill, in: Capsule())
         }
         .buttonStyle(.plain)
@@ -223,7 +225,7 @@ struct FlowChips: Layout {
         // Todo el ancho que le dan (si se lo dan): así un renglón lleno puede estirarse hasta la orilla (ver `placeSubviews`).
         return CGSize(width: width.isFinite ? width : widest, height: y + line)
     }
-    /// Cada renglón centra sus piezas a lo alto (una insignia con borde, más baja que una cápsula, ya no queda arriba).
+    /// Cada renglón da a sus piezas el mismo alto (el de la más alta); la que no crece queda centrada.
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var lines: [[(LayoutSubview, CGSize)]] = [[]]
         var x: CGFloat = 0
@@ -241,9 +243,11 @@ struct FlowChips: Layout {
             let used = line.map(\.1.width).reduce(0, +) + spacing * CGFloat(max(0, line.count - 1))
             let extra = (lines.count == 1 || n < lines.count - 1) && !line.isEmpty ? max(0, bounds.width - used) / CGFloat(line.count) : 0
             var lineX = bounds.minX
+            // Todas las del renglón con su mismo alto (el del más alto): antes una cápsula con bandera medía más que sus vecinas
+            // y los bordes de arriba y abajo no coincidían (regla 16, 11 nov 2026).
             for (view, size) in line {
                 let width = size.width + extra
-                view.place(at: CGPoint(x: lineX, y: y + (height - size.height) / 2), proposal: ProposedViewSize(width: width, height: size.height))
+                view.place(at: CGPoint(x: lineX, y: y + height / 2), anchor: .leading, proposal: ProposedViewSize(width: width, height: height))
                 lineX += width + spacing
             }
             y += height + spacing
