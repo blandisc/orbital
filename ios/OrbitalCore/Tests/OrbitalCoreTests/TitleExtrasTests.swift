@@ -29,7 +29,7 @@ final class TitleExtrasTests: XCTestCase {
         XCTAssertEqual(x.cast.first?.photo, "https://image.tmdb.org/t/p/w185/t.jpg")
         XCTAssertNil(x.cast.last?.photo, "sin foto: la pieza pone sus iniciales")
         XCTAssertEqual(x.crew.map(\.name), ["Denis Villeneuve", "Frank Herbert"], "dirección y guion, cada persona una vez; el montaje no")
-        XCTAssertEqual(x.certification, "B", "la de tu país (la vacía no cuenta)")
+        XCTAssertEqual(x.certification, "B", "en español, la de México (la vacía no cuenta)")
         XCTAssertEqual(x.rating, 7.8)
         XCTAssertEqual(x.trailer?.key, "trailer1", "el tráiler de YouTube, aunque venga después")
         XCTAssertEqual(x.extras.map(\.key), ["featurette1"])
@@ -39,12 +39,14 @@ final class TitleExtrasTests: XCTestCase {
         XCTAssertEqual(x.studios.map(\.name), ["Legendary Pictures"])
     }
 
-    func testCertificationFallsBackToTheUSAndSeriesUseContentRatings() {
-        XCTAssertEqual(Tmdb.parseExtras(movie, kind: "movie", region: "ES").certification, "PG-13")
+    func testCertificationFollowsTheLanguageAndSeriesUseContentRatings() {
+        XCTAssertEqual(Tmdb.parseExtras(movie, kind: "movie", region: "ES", metadataLanguage: "en").certification, "PG-13", "en inglés, la de EE. UU.")
+        XCTAssertEqual(Tmdb.parseExtras(movie, kind: "movie", region: "ES").certification, "B", "la región no cuenta: el idioma sí")
         let series: JSON = ["id": 1, "content_ratings": ["results": [["iso_3166_1": "US", "rating": "TV-MA"]]],
                             "created_by": [["id": 7, "name": "Dan Erickson"]], "networks": [["name": "Apple TV+"]]]
         let x = Tmdb.parseExtras(series, kind: "series", region: "MX")
-        XCTAssertEqual(x.certification, "TV-MA")
+        XCTAssertEqual(x.certification, "C", "en español sin la de México: TV-MA convertida")
+        XCTAssertEqual(Tmdb.parseExtras(series, kind: "series", region: "MX", metadataLanguage: "en").certification, "TV-MA")
         XCTAssertEqual(x.crew.first?.role, "Creator")
         XCTAssertEqual(x.studios.map(\.name), ["Apple TV+"], "en una serie, la cadena")
     }

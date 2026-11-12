@@ -210,8 +210,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                     "networks": [["name": "NBC"]], "created_by": [["id": 7, "name": "Greg Daniels"]],
                     "credits": ["cast": [["id": 1, "name": "Steve Carell", "character": "Michael Scott"], ["id": 2, "name": "Rainn Wilson", "character": "Dwight Schrute"],
                                          ["id": 3, "name": "John Krasinski", "character": "Jim Halpert"], ["id": 4, "name": "Jenna Fischer", "character": "Pam Beesly"]], "crew": []],
-                    "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"]]],
-                    "release_dates": ["results": [["iso_3166_1": "MX", "release_dates": [["certification": "B12"]]]]],
+                    // México y EE. UU. (la escala la elige el idioma: design/clasificaciones.json); «B12» no existe en México.
+                    "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"], ["iso_3166_1": "US", "rating": "TV-14"]]],
+                    "release_dates": ["results": [["iso_3166_1": "US", "release_dates": [["certification": "PG-13"]]]]],
                     "videos": ["results": [["site": "YouTube", "key": "LHOtME2DL4g", "type": "Trailer", "name": "Tráiler"],
                                            ["site": "YouTube", "key": "gO8N3L_aERg", "type": "Featurette", "name": "Así se hizo"]]],
                     "recommendations": ["results": [["id": 8, "name": "Parks and Recreation", "first_air_date": "2009-04-09", "poster_path": "/p.jpg"],

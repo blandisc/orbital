@@ -405,15 +405,15 @@ class DemoTmdb:
     def company_logo(self, company_id):  # sin internet: los estudios van con su nombre
         return None
 
-    def extras(self, kind, tmdb_id, region="MX"):  # la ficha: frase, clasificación y créditos de muestra
+    def extras(self, kind, tmdb_id, region="MX"):  # la ficha: frase, clasificación cruda (MX/US) y créditos de muestra
         face = lambda i, name, role: {"id": i, "name": name, "role": role, "photo": None}  # noqa: E731 - sin internet: iniciales
         if kind == "series":
-            return {"tagline": "Separa tu vida del trabajo. Para siempre.", "certification": "B15", "directors": ["Dan Erickson"],
+            return {"tagline": "Separa tu vida del trabajo. Para siempre.", "ratings": {"MX": "B15", "US": "TV-MA"}, "directors": ["Dan Erickson"],
                     "writers": [], "cast": ["Adam Scott", "Britt Lower", "Zach Cherry"],
                     "people": [face(1, "Dan Erickson", "Creación"), face(2, "Adam Scott", "Mark Scout"), face(3, "Britt Lower", "Helly R."),
                                face(4, "Zach Cherry", "Dylan G."), face(5, "Patricia Arquette", "Harmony Cobel"), face(6, "John Turturro", "Irving B.")],
                     "release": "2022-02-18", "languages": ["en"], "studios": ["Apple TV+"], "collection": None}
-        return {"tagline": "Larga vida a la lucha.", "certification": "B", "directors": ["Denis Villeneuve"],
+        return {"tagline": "Larga vida a la lucha.", "ratings": {"MX": None, "US": "PG-13"}, "directors": ["Denis Villeneuve"],
                 "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"],
                 "people": [face(7, "Denis Villeneuve", "Dirección"), face(8, "Jon Spaihts", "Guion"), face(9, "Timothée Chalamet", "Paul Atreides"),
                            face(10, "Zendaya", "Chani"), face(11, "Rebecca Ferguson", "Jessica")],

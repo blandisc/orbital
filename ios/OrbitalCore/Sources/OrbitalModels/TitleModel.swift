@@ -216,16 +216,16 @@ public final class TitleModel: ObservableModel {
     public var overview: String { services.tmdb.configured ? info.description : consoleOverview ?? info.description }
 
     /// Pide a tu Orbital la sinopsis y el tipo de logo (`/api/foryou/details`). Sin consola o sin respuesta no cambia nada.
-    /// Lo de la ficha rica: TMDB (elenco, saga, tráiler, dónde verlo…) y la calificación de Trakt, a la vez.
+    /// Lo de la ficha rica: TMDB (elenco, saga, tráiler…; la clasificación en la escala de `uiLanguage`) y la de Trakt, a la vez.
     public func loadExtras() async {
         guard metaID.hasPrefix("tt") else { return }
-        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region
+        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region, language = services.appSettings.uiLanguage
         // La calificación de Trakt: la misma que ya se enseñó en Inicio o en una lista (`TraktRatings`); solo se pide si no hay.
         let known = TraktRatings.known(metaID)
         if let known { traktRating = known }
         async let rating = known == nil ? try? trakt?.rating(kind: kind, imdb: metaID) : nil
         if tmdb.configured, let id = try? await tmdb.findID(imdb: metaID, kind: kind) {
-            extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region)
+            extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region, metadataLanguage: language)
         }
         if known == nil { traktRating = TraktRatings.note(metaID, await rating?.rating) }
     }

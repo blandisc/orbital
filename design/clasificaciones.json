@@ -1,0 +1,63 @@
+{
+  "_": "Una sola escala de clasificación por idioma, la misma en la TV y el iPhone (Fernando, 12 nov 2026: «Si pides metadatos en español, que lo hagas siempre mexicana con E1, con la conversión. Si lo pides en inglés o cualquier otra que no sea en español latino, que te dé E3.»). Se piden a TMDB la de México (MX) y la de EE. UU. (US); nunca se muestra el dato crudo de otro país. Con el idioma de las fichas en `mexican_languages` se usa la mexicana (la de MX; si no la hay, la de US convertida con `to_mexico`); con cualquier otro, la de EE. UU. (la de US; si no la hay, la de MX convertida con `to_us`). Sin ninguna de las dos (o con valores que no están en `scales`), sin clasificación. La escritura se normaliza sin mayúsculas, espacios, guiones ni puntos («B-15», «b15» → «B15»; «PG13» → «PG-13»). La TV la lee en orbital/library/certification.py; el iPhone la copia en OrbitalCore/Certification.swift y CertificationTests falla si difieren. `cases` son los ejemplos que las dos apps corren en sus pruebas.",
+  "version": 1,
+  "decisions": {
+    "TV-Y7": "AA y no A: es para niños de 7 años en adelante, sin violencia más allá de la caricatura; la A mexicana ya es para todo público con historias que un niño chico puede no entender. AA → TV-G de regreso (TV-G es para todos).",
+    "B15 en series": "TV-14: la televisión de EE. UU. no tiene un escalón entre 14 y adultos (TV-MA), y B15 no es para adultos.",
+    "D": "NC-17 en películas y TV-MA en series: las dos son «solo adultos», lo más alto de cada escala de EE. UU.",
+    "sin idioma": "Como el español: los dos ajustes vienen en «es» de fábrica.",
+    "es-US": "Español de EE. UU. cuenta como latino (es el que se habla allá y Apple lo trata como latinoamericano); es-ES y cualquier otro país fuera de América, no."
+  },
+  "mexican_languages": ["es", "es-419", "es-MX", "es-AR", "es-BO", "es-CL", "es-CO", "es-CR", "es-CU", "es-DO", "es-EC", "es-GT", "es-HN", "es-NI", "es-PA", "es-PE", "es-PR", "es-PY", "es-SV", "es-US", "es-UY", "es-VE"],
+  "scales": {
+    "mexico": ["AA", "A", "B", "B15", "C", "D"],
+    "us": {
+      "movie": ["G", "PG", "PG-13", "R", "NC-17"],
+      "series": ["TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA"]
+    }
+  },
+  "to_mexico": {
+    "movie": {"G": "AA", "PG": "A", "PG-13": "B", "R": "B15", "NC-17": "C"},
+    "series": {"TV-Y": "AA", "TV-Y7": "AA", "TV-G": "AA", "TV-PG": "A", "TV-14": "B", "TV-MA": "C"}
+  },
+  "to_us": {
+    "movie": {"AA": "G", "A": "PG", "B": "PG-13", "B15": "R", "C": "NC-17", "D": "NC-17"},
+    "series": {"AA": "TV-G", "A": "TV-PG", "B": "TV-14", "B15": "TV-14", "C": "TV-MA", "D": "TV-MA"}
+  },
+  "cases": [
+    {"why": "español con la de México: la de México", "language": "es", "kind": "movie", "mx": "B", "us": "PG-13", "expect": "B"},
+    {"why": "es-MX igual", "language": "es-MX", "kind": "series", "mx": "B15", "us": "TV-MA", "expect": "B15"},
+    {"why": "español sin México: R se convierte", "language": "es", "kind": "movie", "mx": null, "us": "R", "expect": "B15"},
+    {"why": "español sin México: PG-13 se convierte", "language": "es-MX", "kind": "movie", "mx": null, "us": "PG-13", "expect": "B"},
+    {"why": "español sin México: G se convierte", "language": "es", "kind": "movie", "mx": null, "us": "G", "expect": "AA"},
+    {"why": "español sin México: NC-17 se convierte", "language": "es", "kind": "movie", "mx": null, "us": "NC-17", "expect": "C"},
+    {"why": "español sin México: TV-14 se convierte", "language": "es", "kind": "series", "mx": null, "us": "TV-14", "expect": "B"},
+    {"why": "español sin México: TV-MA se convierte", "language": "es", "kind": "series", "mx": null, "us": "TV-MA", "expect": "C"},
+    {"why": "español sin México: TV-Y7 es AA", "language": "es", "kind": "series", "mx": null, "us": "TV-Y7", "expect": "AA"},
+    {"why": "es-419 es latino", "language": "es-419", "kind": "series", "mx": null, "us": "TV-PG", "expect": "A"},
+    {"why": "es_AR con guion bajo y sin mayúsculas es latino", "language": "es_ar", "kind": "movie", "mx": null, "us": "PG", "expect": "A"},
+    {"why": "inglés con la de EE. UU.: la de EE. UU.", "language": "en", "kind": "movie", "mx": "B", "us": "PG-13", "expect": "PG-13"},
+    {"why": "inglés con solo la de México: se convierte", "language": "en", "kind": "movie", "mx": "B15", "us": null, "expect": "R"},
+    {"why": "inglés con solo la de México, serie", "language": "en-US", "kind": "series", "mx": "B15", "us": null, "expect": "TV-14"},
+    {"why": "inglés con solo D, serie", "language": "en", "kind": "series", "mx": "D", "us": null, "expect": "TV-MA"},
+    {"why": "inglés con solo AA, película", "language": "en", "kind": "movie", "mx": "AA", "us": null, "expect": "G"},
+    {"why": "español de España: la de EE. UU.", "language": "es-ES", "kind": "movie", "mx": "B15", "us": "R", "expect": "R"},
+    {"why": "español de España con solo la de México: se convierte", "language": "es-ES", "kind": "series", "mx": "C", "us": null, "expect": "TV-MA"},
+    {"why": "francés: la de EE. UU.", "language": "fr", "kind": "movie", "mx": "A", "us": "PG", "expect": "PG"},
+    {"why": "portugués de Brasil: la de EE. UU.", "language": "pt-BR", "kind": "series", "mx": "B", "us": null, "expect": "TV-14"},
+    {"why": "sin ninguna: sin clasificación", "language": "es", "kind": "movie", "mx": null, "us": null, "expect": null},
+    {"why": "sin ninguna en inglés: sin clasificación", "language": "en", "kind": "series", "mx": null, "us": null, "expect": null},
+    {"why": "«B-15» se escribe B15", "language": "es", "kind": "movie", "mx": "B-15", "us": null, "expect": "B15"},
+    {"why": "«b15» se escribe B15", "language": "es", "kind": "series", "mx": "b15", "us": null, "expect": "B15"},
+    {"why": "«aa» se escribe AA", "language": "es", "kind": "movie", "mx": " aa ", "us": null, "expect": "AA"},
+    {"why": "«B-15» también se convierte en inglés", "language": "en", "kind": "movie", "mx": "B-15", "us": null, "expect": "R"},
+    {"why": "«PG13» se escribe PG-13", "language": "en", "kind": "movie", "mx": null, "us": "PG13", "expect": "PG-13"},
+    {"why": "«tv-ma» se escribe TV-MA y se convierte", "language": "es", "kind": "series", "mx": null, "us": "tv-ma", "expect": "C"},
+    {"why": "NR no es clasificación: sin clasificación", "language": "es", "kind": "movie", "mx": null, "us": "NR", "expect": null},
+    {"why": "Unrated en inglés con México: se convierte la de México", "language": "en", "kind": "movie", "mx": "B", "us": "Unrated", "expect": "PG-13"},
+    {"why": "un valor mexicano que no existe («B12») no cuenta: se convierte la de EE. UU.", "language": "es", "kind": "movie", "mx": "B12", "us": "PG-13", "expect": "B"},
+    {"why": "una de película en una serie no cuenta", "language": "es", "kind": "series", "mx": null, "us": "PG-13", "expect": null},
+    {"why": "vacío: sin clasificación", "language": "es", "kind": "movie", "mx": "", "us": "", "expect": null},
+    {"why": "sin idioma: español, la de casa", "language": "", "kind": "movie", "mx": null, "us": "R", "expect": "B15"}
+  ]
+}
