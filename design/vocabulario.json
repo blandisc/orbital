@@ -4,7 +4,7 @@
     { "texto": "Ver", "en": ["tv", "ios"] },
     { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Un video a medias, y el encabezado de lo que dejaste en Inicio cuando hay juegos (decidido el 2026-10-29). El botón de un juego abierto: «Volver al juego»." },
     { "texto": "Ver la serie", "en": ["tv", "ios"], "evitar": ["Ver serie"] },
-    { "texto": "Guardada", "en": ["tv"], "nota": "El botón cuando ya está guardada (la película, la serie)." },
+    { "texto": "Guardada", "en": ["tv", "ios"], "nota": "El botón cuando ya está guardada (la película, la serie). En el iPhone desde F1 (12 nov 2026): el mosaico «Guardar» dice «Guardada», sin renglón de estado debajo." },
     { "texto": "Versión", "en": ["tv", "ios"], "evitar": ["Elegir fuente", "Elegir Fuente", "Escoger fuente", "Buscar fuente", "Otra fuente"], "nota": "Lo que ves (latino 1080p). «Todas las fuentes» es solo la lista con los nombres técnicos." },
     { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },
     { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." },

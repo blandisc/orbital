@@ -26,7 +26,6 @@ struct TitleView: View {
     @State var tint = ArtTint()
     @State var sourcesFor: SourcesTarget?
     @State var rewatch: EpisodeRow?   // EV1: el visto que tocaste («Ya lo viste»)
-    @State var askingDownload = false
     /// La sinopsis completa (tocar «más»).
     @State var fullSynopsis = false
     /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
@@ -45,6 +44,8 @@ struct TitleView: View {
     /// «Tus vistas» (gestor ola 3): de qué película o capítulo; y la hoja de «Tu nota».
     @State var viewingsFor: ViewingsTarget?
     @State var noting = false
+    /// La temporada que calificas desde «Vista» (G7-A, F1).
+    @State var ratingSeason: Int?
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
@@ -159,7 +160,7 @@ struct TitleView: View {
         // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
         .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
-        .modifier(TitleViewingsAndNote(model: model, viewingsFor: $viewingsFor, noting: $noting))
+        .modifier(TitleViewingsAndNote(model: model, viewingsFor: $viewingsFor, noting: $noting, ratingSeason: $ratingSeason))
         .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             if let r = replacing {
                 DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
@@ -260,7 +261,6 @@ struct TitleView: View {
             creditLine(model)
             yourRating(model)
             yourViewings(model)
-            yourNote(model)
             if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
             if let info = letterboxdInfo, !info.reviews.isEmpty {
                 LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
@@ -285,7 +285,6 @@ struct TitleView: View {
         creditLine(model)
         yourRating(model)
         yourViewings(model)
-        yourNote(model)
         // Tu reseña en Letterboxd (si la conectaste y la reseñaste o calificaste).
         if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
         if let info = letterboxdInfo, !info.reviews.isEmpty {
@@ -345,27 +344,38 @@ struct TitleView: View {
     /// sobre papel no pasaba el contraste AA (I13, «más» de la sinopsis). En el iPad y la Mac la ficha siempre es oscura.
     var artInk: Color { scheme == .light && sizeClass != .regular ? artAccent.mix(with: DS.backdropDeep, by: DS.TitleAction.lightTextDeepen) : artAccent }
 
-    /// El botón principal (`ContinueAction`: el botón dice una sola cosa y, partido, la versión que va a sonar; el avance y
-    /// «Desde el principio» van debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su
-    /// lugar (Guardada, el anillo de la descarga): nada brinca. «Versión» se abre desde la zona derecha de «Ver» (L3, 11 nov).
+    /// El botón principal (`ContinueAction`: el botón dice una sola cosa y, partido, la versión que va a sonar; el avance y ↺
+    /// «Desde el principio» en una línea debajo, R1) y una sola fila de mosaicos de un renglón (F1, Fernando, 12 nov 2026: «Me
+    /// gusta la F1»): Guardar · Descargar · Vista · Tráiler. Cada uno cambia en su lugar (Guardada, el anillo de la descarga,
+    /// Vista en verde): nada brinca. «Versión» se abre desde la zona derecha de «Ver» (L3, 11 nov).
     private func actions(_ model: TitleModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             continueAction(model)
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
-            // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
-                      spacing: DS.Space.s2) {
-                // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
-                statusAction(model).frame(maxWidth: .infinity)
-                downloadAction(model).frame(maxWidth: .infinity)
-                if let url = model.extras?.trailer?.url {
-                    Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
-                        .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
+            // Los cuatro en un renglón si sus nombres caben enteros; si no (SE con letra grande, letra de accesibilidad), 2×2.
+            // Nunca se achica la letra para que quepan.
+            if typeSize.isAccessibilitySize { actionGrid(model) } else {
+                ViewThatFits(in: .horizontal) {
+                    ActionTileRow { actionTiles(model) }
+                    actionGrid(model)
                 }
             }
-            // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
-            .actionTileRow(reservesDetail: hasStatusLine(model))
-            .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
+        }
+        .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
+    }
+
+    private func actionGrid(_ model: TitleModel) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: 2), spacing: DS.Space.s2) { actionTiles(model) }
+    }
+
+    /// Los mosaicos de la ficha, en su orden. «Vista» solo si hay qué marcar; «Tráiler» solo si lo hay: la fila se reparte sin hueco.
+    @ViewBuilder private func actionTiles(_ model: TitleModel) -> some View {
+        statusAction(model).frame(maxWidth: .infinity)   // G1-A: un solo botón dice si la guardaste
+        downloadAction(model).frame(maxWidth: .infinity)
+        if canMarkWatched(model) { watchedAction(model).frame(maxWidth: .infinity) }
+        if let url = model.extras?.trailer?.url {
+            Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
+                .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
         }
     }
 
@@ -382,60 +392,6 @@ struct TitleView: View {
         case .choose:
             saving = true   // está en varias listas: que elijas de cuál quitarla
         }
-    }
-
-    /// Descargar: un toque baja la recomendada y el círculo se vuelve el anillo de su avance; tocar el anillo da sus opciones.
-    @ViewBuilder private func downloadAction(_ model: TitleModel) -> some View {
-        let target = model.downloadTarget
-        let fraction = model.downloadFraction(target)
-        Group {
-            switch model.downloadState(target) {
-            case .downloading?, .queued?:
-                Menu {
-                    if let fraction { Text("Lleva \(Int(fraction * 100)) %") }
-                    Button("Pausar", systemImage: "pause.fill") { if let target { Task { await model.pauseDownload(target) } } }
-                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
-                    Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
-                } label: {
-                    ActionTileLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100)) %") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
-                }
-            case .paused?, .failed?:
-                let failed = model.downloadState(target) == .failed
-                Menu {
-                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
-                    Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
-                } label: {
-                    ActionTileLabel(title: failed ? Text("Reintentar") : Text("En pausa"), symbol: failed ? "arrow.clockwise" : "play.fill", active: true, progress: fraction, tint: failed ? DS.warning : artAccent)
-                } primaryAction: {
-                    if let target { Task { await model.resumeDownload(target) } }
-                }
-            case .done?:
-                Menu {
-                    Button("Ver sin internet", systemImage: "play.fill") { start(model, videoID: target) }
-                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
-                    Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
-                } label: {
-                    // DB1: «Lista» o, en una serie, «Listos» con cuántos episodios tienes (antes «Descargada» se cortaba).
-                    ActionTileLabel(title: model.kind == "series" ? Text("Listos") : Text("Lista"), symbol: "checkmark.circle.fill", active: true, tint: artAccent,
-                                    badge: model.kind == "series" ? model.downloadedCount : nil)
-                }
-            default:
-                Menu {
-                    Button("Elegir versión…", systemImage: "list.bullet.rectangle") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
-                    if model.kind == "series" {
-                        Button("El siguiente, sin preguntar", systemImage: "arrow.down.circle") { Task { await downloadRecommended(model) } }   // DS1: la hoja tiene lo demás
-                    }
-                } label: {
-                    ActionTileLabel(title: Text("Descargar"), symbol: "arrow.down.circle", tint: artAccent, badge: model.kind == "series" ? model.downloadedCount : nil)
-                } primaryAction: {
-                    if model.kind == "series" { askingDownload = true } else { Task { await downloadRecommended(model) } }   // DS1
-                }
-                .sheet(isPresented: $askingDownload) { downloadChoice(model) }
-            }
-        }
-        .menuStyle(.button).buttonStyle(.plain)
-        .disabled(target == nil || (model.debridOffer != nil && model.recommendedSource?.instant != true))   // IOS-17, R2-A: con «Pedirlo y avisarme», apagado
-        .accessibilityIdentifier("title-download")
     }
 
     /// Un toque: la recomendada (la mejor en calidad, idioma y tamaño), y un aviso que dice cuál y deja elegir otra.
@@ -462,29 +418,16 @@ struct TitleView: View {
         }
     }
 
-    /// ET1: el selector de temporada y, debajo, «3 de 22 vistos».
+    /// La temporada en una sola línea (F1, 12 nov 2026): la cápsula «Temporada N ⌄» a la izquierda y «3 de 22 vistos» a la
+    /// derecha, centrados entre sí (antes «3 de 22 vistos» flotaba debajo y dos círculos a un lado). Bajarla y marcarla vista
+    /// viven en los mosaicos «Descargar» y «Vista».
     @ViewBuilder private func seasonHeading(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
+        HStack(alignment: .center, spacing: DS.Space.s3) {
             seasonControl(model)
-            if progress.total > 0 { Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote, color: DS.textMuted) }
-            seasonRating(model, progress)
-        }
-    }
-
-    /// ET1: ⬇︎ y ✓ (el ✓ abre «Solo la temporada / Toda la serie»; toda vista, en verde).
-    @ViewBuilder private func seasonActions(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
-        if progress.total > 0 {
-            HStack(alignment: .top, spacing: DS.Space.s2) {
-                seasonDownload(model)
-                Menu {
-                    Button("Solo la temporada \(model.selectedSeason)", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
-                    Button("Toda la serie", systemImage: "checkmark.rectangle.stack") { marking = .series }
-                } label: {
-                    SeasonActionButton(symbol: "checkmark.circle", caption: Text("Vista"), done: progress.watched == progress.total, tint: artAccent)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Marcar como vista"))
-                .accessibilityIdentifier("season-mark-watched")
+            Spacer(minLength: DS.Space.s2)
+            if progress.total > 0 {
+                Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                    .accessibilityIdentifier("season-progress")
             }
         }
     }
@@ -494,12 +437,12 @@ struct TitleView: View {
         // Un solo renglón de controles: a la izquierda la temporada en lista desplegable (Fernando, 1 nov 2026: las cápsulas
         // «T1, T2…» van solo en el reproductor; la misma pieza que Mi media y la hoja de episodios) y a la derecha la versión de
         // la serie, su cápsula gemela; abajo, el avance de la temporada.
-        // ET1 (Fernando, 9 nov): la temporada con cuántos llevas debajo, y a su lado dos botones de ícono (⬇︎ bajarla, ✓ marcarla
-        // vista) con su texto chico. La versión de la serie ya no va aquí (revisión del 11 nov: eran dos controles de versión
+        // F1 (Fernando, 12 nov): la temporada y cuántos llevas en la misma línea; bajarla y marcarla vista, en los mosaicos de
+        // arriba (antes ET1: dos círculos junto al selector). La versión de la serie ya no va aquí (revisión del 11 nov: eran dos controles de versión
         // en la misma ficha): es la zona derecha de «Continuar» (botón partido, L3), que abre la hoja «Versión».
         let progress = model.seasonProgress
         if !model.seasons.isEmpty || model.continueVideoID != nil {
-            HStack(alignment: .top, spacing: DS.Space.s3) { seasonHeading(model, progress); Spacer(minLength: DS.Space.s2); seasonActions(model, progress) }
+            seasonHeading(model, progress)
             if progress.total > 0 {
                 ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.accent)
             }

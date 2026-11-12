@@ -410,8 +410,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// El planeta solo, junto a un título o en el widget.
         static let markSmall: CGFloat = 22
-        /// ET1: el círculo de un botón de ícono del encabezado de temporada (bajar, marcar vista), con su anillo de avance.
-        static let seasonAction: CGFloat = 30
         /// Lo que una marca redonda (el jitomate) baja de la línea del título: como la «o», que cae un poco abajo de la línea,
         /// así su cuerpo queda centrado con las mayúsculas en vez de verse flotando.
         static let markOvershoot: CGFloat = 1.5

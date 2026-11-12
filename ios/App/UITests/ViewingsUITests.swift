@@ -32,12 +32,10 @@ final class ViewingsUITests: XCTestCase {
     func testTusVistasYTuNotaEnLaFicha() {
         let app = launch(["-demo-title", "movie:tt1160419"])
         // En la demo Dune aún no cuenta como vista aquí (Trakt ya tiene sus tres vistas): «Vista» desde el menú.
-        let status = app.buttons["title-status"]
-        XCTAssertTrue(status.waitForExistence(timeout: 25))
-        status.tap()
-        if !app.buttons["Vista"].waitForExistence(timeout: 3) { status.tap() }
-        XCTAssertTrue(app.buttons["Vista"].waitForExistence(timeout: 5))
-        app.buttons["Vista"].tap()
+        // F1: «Vista» es su propio mosaico (en una película, un toque).
+        let watched = app.buttons["title-watched"]
+        XCTAssertTrue(watched.waitForExistence(timeout: 25))
+        watched.tap()
         answerWhen(app)
         let viewings = app.buttons["title-your-viewings"]
         XCTAssertTrue(viewings.waitForExistence(timeout: 25), "«Tus vistas» en la ficha de una película vista")
@@ -94,18 +92,20 @@ final class ViewingsUITests: XCTestCase {
 
     func testEstrellasDeLaTemporada() {
         let app = launch(["-demo-title", "series:tt0386676"])
-        // Un capítulo visto de la temporada: aparecen sus estrellas.
-        let mark = app.buttons["Marcar como vista"].firstMatch
+        // F1: la temporada se marca y se califica desde el mosaico «Vista».
+        let mark = app.buttons["title-watched"]
         XCTAssertTrue(mark.waitForExistence(timeout: 25))
-        scrollTo(mark, in: app)
         mark.tap()
-        let season = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Solo la temporada'")).firstMatch
+        let season = app.buttons["title-watched-season"]
         XCTAssertTrue(season.waitForExistence(timeout: 5))
         season.tap()
         answerWhen(app)
+        mark.tap()
+        let rate = app.buttons["title-watched-rate-season"]
+        XCTAssertTrue(rate.waitForExistence(timeout: 10), "«Calificar la temporada» en el menú de «Vista»")
+        rate.tap()
         let stars = app.otherElements["season-rating"]
-        XCTAssertTrue(stars.waitForExistence(timeout: 25), "estrellas de la temporada bajo «N de M vistos»")
-        scrollTo(stars, in: app)
+        XCTAssertTrue(stars.waitForExistence(timeout: 10), "la hoja con las estrellas de la temporada")
         shot(app, "temporada")
     }
 

@@ -23,27 +23,13 @@ extension TitleView {
         }
     }
 
-    /// «Tu nota ›»: lo que escribiste (o «Escribe una nota») bajo tu calificación.
-    @ViewBuilder func yourNote(_ model: TitleModel) -> some View {
-        if model.canFavorite {
-            let notes = env.notes
-            let text = notes.note(model.metaID)
-            Button { noting = true } label: {
-                HStack(spacing: DS.Space.s3) {
-                    Image(systemName: "note.text").foregroundStyle(DS.textMuted)
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text("Tu nota").recipe(.secondary, color: DS.textMuted)
-                        if !text.isEmpty { Text(verbatim: text).recipe(.footnote, color: DS.text).lineLimit(2).multilineTextAlignment(.leading) }
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: text.isEmpty ? "plus" : "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
-                }
-                .frame(minHeight: DS.Size.touchTarget)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+    /// «Tu nota»: un botón redondo al final de «Tu calificación» (F1, Fernando, 12 nov 2026: «tu nota… ocupa mucho espacio
+    /// innecesario»). Con el más si no has escrito; lleno (resaltado) si ya escribiste. Abre la hoja de «Tu nota».
+    func noteButton(_ model: TitleModel) -> some View {
+        let written = !env.notes.note(model.metaID).isEmpty
+        return DSIconButton(symbol: written ? DS.Symbol.note : DS.Symbol.addNote, label: written ? "Tu nota" : "Escribir una nota", prominent: written) { noting = true }
+            .accessibilityValue(written ? Text(verbatim: env.notes.note(model.metaID)) : Text(verbatim: ""))
             .accessibilityIdentifier("title-your-note")
-        }
     }
 
     /// «Tus vistas» de un capítulo visto (mantener el dedo › «Tus vistas…»): cambiar su fecha o borrar una vista.
@@ -51,31 +37,16 @@ extension TitleView {
         guard model.canFavorite, row.watched else { return nil }
         return { viewingsFor = ViewingsTarget(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) }
     }
-
-    /// G7-A: tus estrellas de la temporada elegida, bajo «3 de 22 vistos» (con Trakt y algo visto de ella).
-    @ViewBuilder func seasonRating(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
-        if model.canFavorite, progress.watched > 0, model.seasons.first(where: { $0.season == model.selectedSeason })?.isSpecials != true {
-            let key = RatingKey.season(show: model.metaID, season: model.selectedSeason)
-            let ratings = env.ratings
-            HStack(spacing: DS.Space.s2) {
-                Text("La temporada").recipe(.footnote, color: DS.textMuted)
-                    .accessibilityLabel(Text("Tu calificación de la temporada"))
-                RatingStars(value: ratings.stars(key), size: DS.Rating.starEpisode) { stars in
-                    Task { await ratings.rate(imdb: key, kind: "series", stars: stars) }
-                }
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("season-rating")
-        }
-    }
 }
 
-/// Las hojas de «Tus vistas» y «Tu nota».
+/// Las hojas de «Tus vistas», «Tu nota» y «Calificar la temporada».
 struct TitleViewingsAndNote: ViewModifier {
     @Environment(\.titleName) var titleName
     let model: TitleModel
     @Binding var viewingsFor: ViewingsTarget?
     @Binding var noting: Bool
+    /// La temporada que se está calificando (desde el menú de «Vista»).
+    @Binding var ratingSeason: Int?
     @Environment(AppEnvironment.self) private var env
 
     func body(content: Content) -> some View {
@@ -91,7 +62,32 @@ struct TitleViewingsAndNote: ViewModifier {
                 }
                 .presentationDetents([.large])
             }
+            .sheet(isPresented: Binding(get: { ratingSeason != nil }, set: { if !$0 { ratingSeason = nil } })) {
+                SeasonRatingSheet(title: titleName(model.title, id: model.metaID, kind: model.kind), show: model.metaID, season: ratingSeason ?? model.selectedSeason)
+            }
             .task(id: model.metaID) { await env.notes.load() }
+    }
+}
+
+/// G7-A · tus estrellas de una temporada (con Trakt): la hoja chica que abre «Calificar la temporada» en el menú de «Vista».
+struct SeasonRatingSheet: View {
+    let title: String
+    let show: String
+    let season: Int
+    @Environment(AppEnvironment.self) private var env
+
+    var body: some View {
+        let ratings = env.ratings
+        let _ = ratings.track()
+        let key = RatingKey.season(show: show, season: season)
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            DSSheetHeader(title: Text("Temporada \(season)"), subtitle: Text(verbatim: title))
+            RatingStars(value: ratings.stars(key)) { stars in Task { await ratings.rate(imdb: key, kind: "series", stars: stars) } }
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("season-rating")
+        }
+        .dsSheetContent()
+        .fittedSheet()
     }
 }
 

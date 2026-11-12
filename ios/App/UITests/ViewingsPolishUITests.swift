@@ -30,15 +30,14 @@ final class ViewingsPolishUITests: XCTestCase {
 
     func testTusVistasDeUnCapitulo() {
         let app = launch(["-demo-title", "series:tt0386676"])
-        let mark = app.buttons["Marcar como vista"].firstMatch
+        let mark = app.buttons["title-watched"]   // F1: la temporada se marca desde el mosaico «Vista»
         XCTAssertTrue(mark.waitForExistence(timeout: 25))
-        scrollTo(mark, in: app)
         mark.tap()
-        // Si otra prueba ya la dejó vista, el ✓ ofrece quitarla: se cierra el menú y se sigue.
-        let season = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Solo la temporada'")).firstMatch
+        // Si otra prueba ya la dejó vista, se cierra el menú y se sigue.
+        let season = app.buttons["title-watched-season"]
         if season.waitForExistence(timeout: 5), !app.staticTexts.containing(NSPredicate(format: "label CONTAINS '22 de 22'")).firstMatch.exists {
             season.tap(); answerWhen(app)
-        } else if app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Solo la temporada'")).firstMatch.exists {
+        } else if season.exists {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
         }
         // Mantener el dedo sobre el capítulo (en el SE no cabe el «···»).
@@ -103,11 +102,9 @@ final class ViewingsPolishUITests: XCTestCase {
     /// Sin internet «Tus vistas» abre con lo que espera en la cola y lo dice; «La vi otra vez» sigue a mano (la TV lo encontró).
     func testTusVistasSinInternet() {
         let app = launch(["-demo-offline", "-demo-title", "movie:tt1160419"])
-        let status = app.buttons["title-status"]
-        XCTAssertTrue(status.waitForExistence(timeout: 25))
-        status.tap()
-        if !app.buttons["Vista"].waitForExistence(timeout: 3) { status.tap() }
-        app.buttons["Vista"].tap()
+        let watched = app.buttons["title-watched"]   // F1: «Vista» es su propio mosaico
+        XCTAssertTrue(watched.waitForExistence(timeout: 25))
+        watched.tap()
         answerWhen(app)
         let viewings = app.buttons["title-your-viewings"]
         XCTAssertTrue(viewings.waitForExistence(timeout: 10))
