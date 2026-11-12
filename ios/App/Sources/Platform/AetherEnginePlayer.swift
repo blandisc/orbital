@@ -237,6 +237,8 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     /// Hay cuadro en pantalla y el motor no quedó esperando a que lo rearmen.
     var showsVideo: Bool { !rearming && engine.hasFirstFrameReadyForDisplay && !engine.needsForegroundVideoRestore }
     private var rearming = false
+    /// Lo último que pediste (play o pausa) mientras se rearmaba: nil si no tocaste nada.
+    private var rearmIntent: Bool?
     /// La ventana de PiP se abrió mientras la app estaba fuera: el video siguió dibujándose (no hace falta pedirlo al volver).
     private var pipDuringBackground = false
     func setPictureInPictureActive(_ active: Bool) {
@@ -259,8 +261,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func setRate(_ rate: Float) async { engine.setRate(rate); currentRate = rate }
     private var currentRate: Float = 1
 
-    func play() async { engine.play() }
-    func pause() async { engine.pause() }
+    /// Tocaste play o pausa mientras se rearma el video al volver a la app: eso manda al terminar de rearmarlo.
+    func play() async { if rearming { rearmIntent = true }; engine.play() }
+    func pause() async { if rearming { rearmIntent = false }; engine.pause() }
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
     func stop() async { engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }
     // Los ids de pista son los de AetherEngine (`TrackInfo.id`), no la posición en la lista.
@@ -286,7 +289,8 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     /// Hay subtítulos de internet que la ventana de PiP aún no conoce (entran al rearmar la sesión en el mismo punto).
     private var needsNativeSubtitleReload = false
 
-    /// En segundo plano y en pausa (o tras la ventana de gracia de 15 s), AetherEngine suelta el decodificador y la conexión
+    /// En segundo plano y en pausa, pasada la ventana de gracia (la pide de 60 s, pero iOS solo presta ~30 s antes de suspender
+    /// la app), AetherEngine suelta el decodificador y la conexión
     /// (`releaseVideoPipelineForBackground`) y deja al anfitrión el rearmado: `needsForegroundVideoRestore` lo avisa y
     /// `reloadAtCurrentPosition` lo hace. Sin esto, al volver la capa quedaba sin video (negro) para siempre.
     func restoreAfterBackground(resume: Bool) async -> Bool {
@@ -307,12 +311,20 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         // Mientras se rearma, «hay video» es mentira: la marca del primer cuadro se queda puesta de antes (no la baja soltar
         // el video en segundo plano) y la pantalla quitaba el cuadro guardado antes de tiempo (y se veía negro).
         rearming = true
-        defer { rearming = false }
-        do { try await engine.reloadAtCurrentPosition() } catch { return false }
+        rearmIntent = nil
+        defer { rearming = false; rearmIntent = nil }
+        do {
+            // Soltado en segundo plano: se rearma como lo dejaste. En pausa ya no arranca solo (antes sonaba un momento, le
+            // quitaba el sonido a otra app y luego se pausaba). Si tocas play a media carga, el motor lo guarda y suena al abrir.
+            if engine.needsForegroundVideoRestore { try await engine.reloadAtCurrentPosition { $0.autoplay = resume } }
+            else { try await engine.reloadAtCurrentPosition() }
+        } catch { return false }
         // Ya abrió: un momento para que el primer cuadro llegue a la pantalla.
         try? await Task.sleep(nanoseconds: PlayerTiming.firstFrameSettle)
         if case .error = engine.state { return false }
-        if resume { engine.play() } else { engine.pause() }
+        // Lo que tocaste mientras se rearmaba manda (antes se pausaba siempre al terminar y el play se perdía: había que tocar
+        // dos veces).
+        if rearmIntent ?? resume { engine.play() } else { engine.pause() }
         if currentRate != 1 { engine.setRate(currentRate) }
         return true
     }

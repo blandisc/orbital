@@ -575,7 +575,7 @@ public final class PlayerModel: ObservableModel {
     // MARK: volver de segundo plano
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
     public internal(set) var reconnecting = false { didSet { if oldValue != reconnecting { changed() } } }
-    var backgrounded = false
+    var backgrounded = false, playWantedWhileRestoring = false   // tocaste play mientras se rearmaba en pausa
     var foregroundPending = false
     var backgroundPosition = 0.0
     var loadStartedAt = Date.distantPast

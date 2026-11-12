@@ -176,6 +176,22 @@ volumen del iPhone a donde estaba. La regla:
 - `MPVolumeView` y `outputVolume` solo se usan en `Platform/` (los botones del control y el volumen del reproductor) y en el
   gesto del reproductor. `DesignRulesTests+Volume.swift` lo cuida. En la TV no aplica.
 
+### Volver a la app nunca te hace esperar para seguir (12 nov 2026)
+
+Fernando: «si dejo pausado un elemento y salgo de la aplicación y regreso y le doy play, que se reproduzca inmediatamente»;
+y luego: «que no cargue de nuevo». La regla: **volver a la app nunca te hace esperar para seguir: play responde al instante
+y un solo toque basta.**
+
+- Salida corta (menos de ~30 s, lo que iOS presta antes de suspender la app): el motor no suelta el video ni su búfer; play
+  va directo al motor, sin volver a pedirlo ni enseñar carga.
+- Salida larga: AetherEngine suelta el video al vencer ese plazo (lo exige iOS al suspender la app; no hay forma de
+  conservarlo en pausa). Se rearma en cuanto vuelves, en pausa (no arranca solo ni le quita el sonido a otra app), con el
+  cuadro donde ibas y el play a la vista. Si tocas play a media carga, ese toque llega al motor en ese momento y suena en
+  cuanto abre: nunca se pierde ni se toma como pausa; la carga solo se asoma si tarda (`PlayerPresentation`, `.soon`).
+- Si el motor no puede rearmar (el enlace caducó), se pide otra vez donde ibas, se ve la carga y, si ya tocaste play, suena
+  solo al abrir.
+- `PlayerModelTests` («volver a la app nunca te hace esperar») lo cuida. En la TV no aplica (no hay segundo plano).
+
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
 Cada idea tiene un solo símbolo del sistema y vive en `DS.Symbol` (`ios/App/Sources/Design/Icons.swift`). Nunca un carácter

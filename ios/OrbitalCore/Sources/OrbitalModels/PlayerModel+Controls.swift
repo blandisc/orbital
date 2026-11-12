@@ -40,7 +40,12 @@ extension PlayerModel {
 
     /// Pausa si suena o si va a sonar (cargando o pediste play y aún no avanza): antes, en búfer el botón llamaba a «play» y la
     /// pausa no hacía caso.
-    public var wantsToPlay: Bool { snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil }
+    /// Rearmando en pausa al volver a la app, lo que diga el motor a media carga no cuenta: el botón enseña play y tocarlo es
+    /// play (antes, si el motor pasaba un instante por «búfer», el toque se tomaba como pausa y se perdía).
+    public var wantsToPlay: Bool {
+        if restoringQuietly { return playRequest != nil }
+        return snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil
+    }
 
     public func togglePlay() async {
         userTouched()
@@ -52,7 +57,7 @@ extension PlayerModel {
     public func pause() async { userTouched(); playRequest = nil; settleStartup(); await engine.pause() }
 
     /// Pausaste en los primeros segundos: el arranque ya no es carga (el botón dice play al momento, sin esperar al motor).
-    func settleStartup() { if hasPlayed { playbackSettled = true } }
+    func settleStartup() { playWantedWhileRestoring = false; if hasPlayed { playbackSettled = true } }
 
     /// Pediste que sonara y todavía no avanza (sobre todo al volver de segundo plano, con el video soltado por el motor): la
     /// pantalla enseña la carga en vez del play, y si en `foregroundStallSeconds` no avanza, el video se pide otra vez ahí mismo.
@@ -60,7 +65,9 @@ extension PlayerModel {
 
     func requestPlayback() {
         guard hasPlayed, phase == .playing, !closing else { return }
-        playRequest = (clock(), snapshot.position)
+        // A media rearmada el motor dice 0: el punto de verdad es donde lo dejaste.
+        if restoringQuietly { playWantedWhileRestoring = true }
+        playRequest = (clock(), restoringQuietly ? max(snapshot.position, backgroundPosition) : snapshot.position)
     }
 
     func checkPlayRequest(now: Date) {
