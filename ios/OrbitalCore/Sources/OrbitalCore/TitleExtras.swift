@@ -49,7 +49,7 @@ public struct TitleExtras: Sendable, Equatable {
     public var tmdbID: Int
     public var cast: [CastMember] = []
     public var crew: [CastMember] = []          // dirección, creación y guion
-    public var certification: String?           // «B15», «PG-13», «TV-MA»
+    public var certification: String?           // «B15» en español, «PG-13» / «TV-MA» en otro idioma (`Certification`)
     public var rating: Double?                  // TMDB, de 0 a 10
     public var votes = 0
     public var trailer: VideoClip?
@@ -97,13 +97,14 @@ extension TitleExtras {
 }
 
 extension Tmdb {
-    /// Todo lo de la ficha rica, en una petición (y la saga, si la hay, en otra).
-    public func extras(kind: String, tmdbID: Int, region: String) async throws -> TitleExtras {
+    /// Todo lo de la ficha rica, en una petición (y la saga, si la hay, en otra). `metadataLanguage` (el idioma de las fichas)
+    /// elige la escala de la clasificación; no se guarda en disco: al cambiar el idioma, la ficha siguiente ya sale en la nueva.
+    public func extras(kind: String, tmdbID: Int, region: String, metadataLanguage: String = "es") async throws -> TitleExtras {
         let path = "/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)"
         let rating = kind == "movie" ? "release_dates" : "content_ratings"
         let raw = try await get(path, [("append_to_response", "credits,\(rating),videos,recommendations,watch/providers"),
                                        ("include_video_language", "es,en,null")])
-        var out = Tmdb.parseExtras(raw, kind: kind, region: region, language: String(language.prefix(2)))
+        var out = Tmdb.parseExtras(raw, kind: kind, region: region, language: String(language.prefix(2)), metadataLanguage: metadataLanguage)
         if let id = raw["belongs_to_collection"]?["id"]?.intValue, let collection = try? await get("/collection/\(id)") {
             let parts = (collection["parts"]?.array ?? []).compactMap { Tmdb.title($0, kind: "movie") }
                 .sorted { ($0.year ?? .max) < ($1.year ?? .max) }
@@ -129,8 +130,9 @@ extension Tmdb {
         return TmdbTitle(tmdbID: id, kind: kind, title: name, poster: image(j["poster_path"], size: "w342"), year: date.count >= 4 ? Int(date.prefix(4)) : nil)
     }
 
-    /// La clasificación de tu país; si no la tiene, la de EE. UU.
-    static func certification(_ raw: JSON, kind: String, region: String) -> String? {
+    /// La clasificación en la escala del idioma de las fichas (`Certification`, design/clasificaciones.json): solo se leen la
+    /// de México y la de EE. UU.; nunca la cruda de otro país (antes, la de tu región o la de EE. UU. tal cual: «R» junto a «B»).
+    static func certification(_ raw: JSON, kind: String, metadataLanguage: String?) -> String? {
         func pick(_ country: String) -> String? {
             if kind == "movie" {
                 let rows = raw["release_dates"]?["results"]?.array?.first { $0["iso_3166_1"]?.string == country }?["release_dates"]?.array ?? []
@@ -138,10 +140,12 @@ extension Tmdb {
             }
             return raw["content_ratings"]?["results"]?.array?.first { $0["iso_3166_1"]?.string == country }?["rating"]?.nonEmptyString
         }
-        return pick(region) ?? pick("US")
+        return Certification.resolve(mx: pick("MX"), us: pick("US"), kind: kind, language: metadataLanguage)
     }
 
-    static func parseExtras(_ raw: JSON, kind: String, region: String, language: String? = nil) -> TitleExtras {
+    /// `metadataLanguage`: el idioma de las fichas (`uiLanguage`), que decide la escala de la clasificación; `language`, el de
+    /// los tráileres.
+    static func parseExtras(_ raw: JSON, kind: String, region: String, language: String? = nil, metadataLanguage: String? = "es") -> TitleExtras {
         var out = TitleExtras(tmdbID: raw["id"]?.intValue ?? 0)
         out.cast = (raw["credits"]?["cast"]?.array ?? []).prefix(20).compactMap { c in
             guard let id = c["id"]?.intValue, let name = c["name"]?.nonEmptyString else { return nil }
@@ -160,7 +164,7 @@ extension Tmdb {
             }
         }
         out.crew = Array(crew.prefix(6))
-        out.certification = certification(raw, kind: kind, region: region)
+        out.certification = certification(raw, kind: kind, metadataLanguage: metadataLanguage)
         if let v = raw["vote_average"]?.doubleValue, v > 0 { out.rating = v }
         out.votes = raw["vote_count"]?.intValue ?? 0
         let clips: [VideoClip] = (raw["videos"]?["results"]?.array ?? []).compactMap { v in

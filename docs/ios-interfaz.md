@@ -292,6 +292,17 @@ y un solo toque basta.**
   solo al abrir.
 - `PlayerModelTests` («volver a la app nunca te hace esperar») lo cuida. En la TV no aplica (no hay segundo plano).
 
+### Una sola escala de clasificación por idioma (12 nov 2026)
+
+Fernando: «Si pides metadatos en español, que lo hagas siempre mexicana […]. Si lo pides en inglés o cualquier otra que no
+sea en español latino, que te dé [la de EE. UU.]». La regla: **una sola escala de clasificación por idioma: en español, la
+mexicana; en cualquier otro, la de EE. UU.; nunca se muestra el dato crudo de otro país.**
+
+- Toda clasificación pasa por `Certification.resolve(mx:us:kind:language:)` con el idioma de las fichas (`uiLanguage`); sin
+  la de su escala, se convierte la otra (R → B15, TV-MA → C; B15 → R o TV-14). Sin ninguna de las dos, no se enseña nada.
+- La tabla y los casos son `design/clasificaciones.json` (los mismos de la TV); `CertificationTests` falla si el iPhone
+  copia otra cosa o un caso sale distinto.
+
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
 Cada idea tiene un solo símbolo del sistema y vive en `DS.Symbol` (`ios/App/Sources/Design/Icons.swift`). Nunca un carácter

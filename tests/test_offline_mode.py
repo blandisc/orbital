@@ -29,7 +29,7 @@ def test_a_title_you_already_opened_still_shows_without_internet(tmp_path, monke
 
 
 def test_the_tv_title_page_gets_tagline_rating_and_credits_like_the_iphone(monkeypatch):
-    """La ficha como el iPhone: frase, clasificación (la de tu país; si no, EE. UU.) y «Dirección · Guion» o «Creada por»."""
+    """La ficha como el iPhone: frase, clasificación (la de México y la de EE. UU., crudas) y «Dirección · Guion» o «Creada por»."""
     from orbital.library import tmdb
 
     client = tmdb.Tmdb("clave")
@@ -39,13 +39,13 @@ def test_the_tv_title_page_gets_tagline_rating_and_credits_like_the_iphone(monke
                     "cast": [{"name": "Timothée Chalamet"}, {"name": "Zendaya"}, {"name": "Rebecca Ferguson"}, {"name": "Otro"}]}}
     monkeypatch.setattr(client, "_get", lambda path, **params: movie)
     x = client.extras("movie", 693134, "MX")
-    assert x == {"tagline": "Larga vida a la lucha.", "certification": "PG-13", "directors": ["Denis Villeneuve"],
+    assert x == {"tagline": "Larga vida a la lucha.", "ratings": {"MX": None, "US": "PG-13"}, "directors": ["Denis Villeneuve"],
                  "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"], "people": [],  # sin id, sin cara
                  "release": None, "languages": [], "studios": [], "collection": None}
     show = {"tagline": "", "created_by": [{"name": "Dan Erickson"}], "content_ratings": {"results": [{"iso_3166_1": "MX", "rating": "B15"}]},
             "credits": {"crew": [], "cast": [{"name": "Adam Scott"}]}}
     monkeypatch.setattr(client, "_get", lambda path, **params: show)
-    assert client.extras("series", 95396, "MX") == {"tagline": None, "certification": "B15", "directors": ["Dan Erickson"],
+    assert client.extras("series", 95396, "MX") == {"tagline": None, "ratings": {"MX": "B15", "US": None}, "directors": ["Dan Erickson"],
                                                     "writers": [], "cast": ["Adam Scott"], "people": [],
                                                     "release": None, "languages": [], "studios": [], "collection": None}
 

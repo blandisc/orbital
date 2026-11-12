@@ -10,6 +10,7 @@ import time
 from collections.abc import Callable
 
 from ..atomic import atomic_write
+from ..library import certification
 from ..library import letterboxd as letterboxd_api
 from ..library import rawg as rawg_api
 from ..library import tmdb as tmdb_api
@@ -75,9 +76,14 @@ class _Titles(_Sources):
                 tmdb_id = self.tmdb.find_id(imdb, kind)
                 return self.tmdb.extras(kind, tmdb_id, self.region) if tmdb_id else {}
             try:
-                out.update(self.cache.get(f"extras2:{kind}:{imdb}", SLOW_TTL, load_tmdb) or {})
+                # extras3: desde el 12 nov se guarda la clasificación cruda (México y EE. UU.), no la ya elegida: al cambiar
+                # el idioma de las fichas no se queda la escala de antes (las de extras2 ya no se leen).
+                out.update(self.cache.get(f"extras3:{kind}:{imdb}", SLOW_TTL, load_tmdb) or {})
             except Exception:  # noqa: BLE001 - lo de TMDB es un extra: la ficha se ve sin él
                 log.info("Ficha: no pude leer los extras de %s", imdb)
+            ratings = out.pop("ratings", None) or {}
+            if isinstance(ratings, dict):
+                out["certification"] = certification.resolve(ratings.get("MX"), ratings.get("US"), kind, self._fichas_language())
             saga = out.get("collection")
             if isinstance(saga, dict) and saga.get("id"):
                 # «La saga» (como el iPhone): sus películas en orden, ya con IMDb para abrirlas.
@@ -92,6 +98,14 @@ class _Titles(_Sources):
             related = self._related({"imdb": imdb, "kind": kind})
             out["more"] = [video_item(e, "Más como esto") for e in related[:15]]
         return out
+
+    def _fichas_language(self) -> str:
+        """El idioma de las fichas (Ajustes, o ui.language): decide la escala de la clasificación (design/clasificaciones.json)."""
+        localizer = getattr(self.services.watch, "localizer", None)
+        try:
+            return str((localizer.language() if localizer else None) or "es")
+        except Exception:  # noqa: BLE001 - sin ajuste legible, el de fábrica
+            return "es"
 
     def title_letterboxd(self, kind: str, imdb: str) -> dict:
         """Letterboxd en la ficha, como el iPhone: su promedio (0.5–5) y sus reseñas populares (de cualquier película, sin

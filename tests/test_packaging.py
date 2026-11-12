@@ -17,7 +17,7 @@ import pytest
 from orbital import shared
 
 ROOT = Path(__file__).resolve().parents[1]
-READ_BY_PYTHON = ("streams-rules.json", "realdebrid-errors.json", "awards.json")
+READ_BY_PYTHON = ("streams-rules.json", "realdebrid-errors.json", "awards.json", "clasificaciones.json")
 
 
 def test_every_subpackage_is_listed_for_the_wheel():

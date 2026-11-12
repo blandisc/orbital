@@ -366,6 +366,12 @@ o, si no hay cápsula, su botón; el pie no la repite. El pie dice lo mismo que 
 En la lista de episodios, el que sigue lleva ▶ sobre su imagen (sin cápsula «Sigue»). La clasificación se lee
 «Clasificación B», nunca una letra suelta que parece el botón B.
 
+**Una sola escala de clasificación por idioma (12 nov 2026, Fernando).** En español, la mexicana; en cualquier otro idioma,
+la de EE. UU.; nunca se muestra el dato crudo de otro país. Sin la de su escala se convierte la otra (R → B15, TV-MA → C).
+La tabla es `design/clasificaciones.json` (la misma del iPhone); la TV la aplica en `orbital/library/certification.py` con
+el idioma de las fichas y sirve `certification` ya elegida: la web nunca elige ni convierte. `tests/test_certification.py`
+corre los casos del archivo.
+
 **La versión en un renglón.** «🇲🇽 · 1080p»: la bandera sola, sin el nombre del idioma (la bandera ya distingue latino de
 castellano; sin bandera conocida, el nombre). VoiceOver lee el nombre. Bajo «Continuar», en la cápsula de la versión de la
 serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).

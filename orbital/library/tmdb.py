@@ -431,8 +431,8 @@ class Tmdb:
         }
 
     def extras(self, kind: str, tmdb_id: int, region: str = "MX") -> dict:
-        """Lo de la ficha del iPhone que Cinemeta no trae: la frase de la película, la clasificación (la de tu país; si no,
-        la de EE. UU.) y quién la hizo («Creada por» en series; «Dirección» y «Guion» en películas)."""
+        """Lo de la ficha del iPhone que Cinemeta no trae: la frase de la película, la clasificación (la de México y la de
+        EE. UU., crudas: `certification.resolve` elige) y quién la hizo («Creada por» en series; «Dirección» y «Guion» en películas)."""
         extra = "credits,content_ratings" if kind == "series" else "credits,release_dates"
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", append_to_response=extra)
         crew = (raw.get("credits") or {}).get("crew") or [] if isinstance(raw.get("credits"), dict) else []
@@ -440,18 +440,18 @@ class Tmdb:
         creators = [c.get("name") for c in raw.get("created_by") or [] if isinstance(c, dict) and c.get("name")]
         cast = [c.get("name") for c in ((raw.get("credits") or {}).get("cast") or [])[:3] if isinstance(c, dict) and c.get("name")]
         people = credit_people(raw)
-        rating = None
+        # La clasificación cruda de México y de EE. UU. (las únicas dos que se usan): cuál se muestra lo decide el idioma
+        # de las fichas en `certification.resolve` (design/clasificaciones.json), después de la caché.
+        ratings: dict[str, str | None] = {"MX": None, "US": None}
         if kind == "series":
             rows = (raw.get("content_ratings") or {}).get("results") or []
             by = {r.get("iso_3166_1"): r.get("rating") for r in rows if isinstance(r, dict) and r.get("rating")}
-            rating = by.get(region) or by.get("US")
+            ratings = {country: by.get(country) for country in ratings}
         else:
             rows = (raw.get("release_dates") or {}).get("results") or []
-            for country in (region, "US"):
+            for country in ratings:
                 hit = next((r for r in rows if isinstance(r, dict) and r.get("iso_3166_1") == country), None)
-                rating = next((d.get("certification") for d in (hit or {}).get("release_dates") or [] if d.get("certification")), None)
-                if rating:
-                    break
+                ratings[country] = next((d.get("certification") for d in (hit or {}).get("release_dates") or [] if d.get("certification")), None)
         # «Los datos de la ficha», como el iPhone: el estreno (o el primer episodio), los idiomas, el estudio (o la cadena) y
         # la saga a la que pertenece una película.
         companies = raw.get("networks") if kind == "series" else raw.get("production_companies")
@@ -460,7 +460,7 @@ class Tmdb:
         languages = [s.get("iso_639_1") for s in spoken if isinstance(s, dict) and s.get("iso_639_1")] or \
             [code for code in raw.get("languages") or [] if isinstance(code, str)]
         saga = raw.get("belongs_to_collection")
-        return {"tagline": str(raw.get("tagline") or "").strip() or None, "certification": rating,
+        return {"tagline": str(raw.get("tagline") or "").strip() or None, "ratings": ratings,
                 "directors": creators or names({"Director"}), "writers": [] if kind == "series" else names({"Screenplay", "Writer"}),
                 "cast": cast, "people": people,
                 "release": str(raw.get("first_air_date" if kind == "series" else "release_date") or "")[:10] or None,
