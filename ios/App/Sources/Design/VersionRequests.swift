@@ -57,3 +57,35 @@ struct VersionRequestRow: View {
         .accessibilityElement(children: .contain)
     }
 }
+
+/// «Hay latino, pero hay que pedirlo a la nube» (Fernando, 12 nov, Los Simpson T11E2: «me salen puros episodios en inglés»):
+/// tu idioma existe, pero ninguna de las que arrancan al instante lo trae. Arriba de la lista, con la nube y «Pedir a la nube»
+/// (la misma acción de «Hay que pedirlas»); ya pedida, cómo va. Solo cuando pasa: si tu idioma arranca ya, no sale.
+struct VersionYoursAside: View {
+    /// «🇲🇽 latino», ya con su bandera.
+    let language: Text
+    let option: VersionOption
+    var status: DebridRequestStatus?
+    let request: () -> Void
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            IconBeside(symbol: DS.Symbol.cloud, color: DS.accent) {
+                Text("Hay \(language), pero hay que pedirlo a la nube").recipe(.labelLarge, color: DS.text).fixedSize(horizontal: false, vertical: true)
+                Text(verbatim: VersionText.facts(option, locale: locale)).recipe(.caption)
+            }
+            if let status {
+                status.accessibilityIdentifier("sources-yours-status")
+            } else {
+                Button(action: request) { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
+                    .dsSecondaryButton().controlSize(.large)
+                    .accessibilityIdentifier("sources-yours-request")
+            }
+        }
+        .padding(DS.Space.s3)
+        .dsCard(translucent: true)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("sources-yours-aside")
+    }
+}

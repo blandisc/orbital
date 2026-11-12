@@ -17,6 +17,8 @@ public final class Services: ObservableModel {
     private let detailsGate = TmdbDetailsGate(limit: 6)
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
+    /// «Revisar por dentro» el audio (12 nov): con el cliente de la app (demo y pruebas, sin internet); la app real pone `.shared`.
+    public var audioProbe: AudioProbe
     /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
     public let traktOutbox: TraktOutbox
     public let pending: PendingStore
@@ -205,6 +207,7 @@ public final class Services: ObservableModel {
                 device: OrbitalRemote.Device? = nil, deviceName: String? = nil, platform: String? = nil,
                 capabilities: Capabilities = .ultra, detailsMemo: TmdbDetailsMemo? = nil) {
         self.cacheRoot = cacheRoot
+        self.audioProbe = AudioProbe(reader: HTTPRangeReader(http: http))
         self.caches = CacheStore(directory: cacheRoot?.appendingPathComponent("models", isDirectory: true), legacy: kv)
         self.detailsMemo = detailsMemo
         let detailsGate = self.detailsGate
@@ -313,6 +316,7 @@ public final class Services: ObservableModel {
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) }, cinemeta: cinemeta)
         let prefs = titlePrefs
         Task {
+            await finder.configureNotes { PlayerModel.note($0) }   // qué dio cada complemento y cuánto tardó (12 nov)
             await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
                                    checked: { key in prefs.checkedAudio(key) },
                                    // T2 → R6; con «Tus idiomas» (N4-A) ya no: Torrentio sale de ahí, no al revés.

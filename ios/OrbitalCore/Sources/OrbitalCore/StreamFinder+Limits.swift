@@ -13,8 +13,11 @@ public struct SearchLimits: Sendable {
     /// La búsqueda entera de un video (la lista de complementos más sus respuestas), también para quien se une a una que
     /// ya iba en camino (la de la ficha, «calentar desde la ficha»).
     public var total: TimeInterval
-    public init(perAddon: TimeInterval = StreamFinder.perAddonWait, origin: TimeInterval = 4, readyLink: TimeInterval = 6, total: TimeInterval = 22) {
-        self.perAddon = perAddon; self.origin = origin; self.readyLink = readyLink; self.total = total
+    /// Cuánto se espera a los lentos cuando otro ya dio versiones (`StreamFinder.budget`); lo que traigan después se suma.
+    public var budget: TimeInterval
+    public init(perAddon: TimeInterval = StreamFinder.perAddonWait, origin: TimeInterval = 4, readyLink: TimeInterval = 6, total: TimeInterval = 22,
+                budget: TimeInterval = StreamFinder.budget) {
+        self.perAddon = perAddon; self.origin = origin; self.readyLink = readyLink; self.total = total; self.budget = budget
     }
 }
 

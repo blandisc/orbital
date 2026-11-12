@@ -208,6 +208,29 @@ volando»; «tu nota… ocupa mucho espacio innecesario»; y de «Desde el princ
 - Con letra de accesibilidad, lo que no quepa baja de renglón entero («quedan…» bajo la barra), nunca cortado.
 - Lo cuida `DesignRulesTests+Actions.swift`.
 
+### Tu idioma, aunque haya que pedirlo (12 nov 2026)
+
+Fernando, con Los Simpson T11E2 y latino primero en «Tus idiomas»: «me salen puros episodios en inglés. Y me tengo que meter a
+checar cada uno… Me salieron todas de Comet». Decidió: «Sí, vamos a hacer la 2 y la 3». La regla: **si tu idioma existe, la
+app te lo dice aunque no arranque al instante; y si un complemento no contestó, también.**
+
+- **Un complemento lento no se pierde.** «Versión» sale con lo que llegó a tiempo (el plazo de siempre) y lo del lento se
+  suma en cuanto llega, sin volver a preguntar. Si de plano no contesta: «No contestó a tiempo: Torrentio · Reintentar»
+  (`AddonQuietLine`); «Reintentar» le pregunta otra vez a todos, también al que se saltaba por fallar.
+- **Tu idioma que hay que pedir se dice arriba**: si ninguna versión de tu idioma arranca al instante pero alguna existe (en
+  la lista o en tu Torrentio sin Real-Debrid), «Hay latino, pero hay que pedirlo a la nube» con «Pedir a la nube»
+  (`VersionYoursAside`, la misma acción de R4). No sale si ya la pediste: su renglón dice cómo va.
+- **Revisar por dentro**: de las que arrancan al instante con idioma dudoso (MKV que solo dice su idioma original o nada,
+  o «Multi»/«Dual»), se leen las pistas de audio de su encabezado (un pedazo del principio, nunca el archivo), hasta 3, una
+  a la vez, nunca con el reproductor abierto ni la que estás viendo, y cada una una sola vez. Lo leído queda «Comprobado» y
+  se guarda; los demás episodios del mismo paquete salen «Lo trajo otro episodio». Solo las que arrancan al instante: pedir
+  el enlace de una «por bajar» le pide a Real-Debrid que la baje.
+- La bitácora dice por complemento cuántas trajo y en cuánto («complemento Torrentio: 50 versiones en 4,2 s (llegó tarde: se
+  suman)»), sin direcciones.
+
+Lo cuidan `LatinoNubeFinderTests`, `LatinoNubeModelTests`, `AudioProbeTests` y `DesignRulesTests+YourLanguage`. En la TV:
+pendiente (registro de paridad, LN1).
+
 ### Un botón, un estado (11 nov 2026)
 
 Fernando: «cuando abres una ficha aparece la parte blanca y la otra aparece la parte gris, en lo que se carga el botón de

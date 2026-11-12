@@ -53,6 +53,9 @@ enum AppComposition {
             // Lo de TMDB ya pedido (el mismo archivo de Caches de antes): no se pide otra vez en cada arranque.
             detailsMemo: TmdbDetailsMemo(file: AppFiles.swrCache.deletingLastPathComponent().appendingPathComponent("tmdb-details.json")))
         services.isOnline = { Connectivity.shared.isOnline }
+        services.audioProbe = .shared   // «revisar por dentro»: corta en cuanto llegan los bytes del encabezado
+        // Prendida con el OK de Fernando (12 nov 2026: «Sí, préndelo»). Leer una versión la agrega a su Real-Debrid; si da
+        // problemas se apaga con `services.audioProbe.turnOff()`.
         return services
     }
 }

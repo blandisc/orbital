@@ -324,6 +324,8 @@ public final class TitlePreferences: @unchecked Sendable {
     }
 
     public static func familyKey(_ family: String) -> String { "family:" + family }
+    /// El paquete (el torrent: su huella) de una versión: lo que trajo un episodio vale como «probable» para los demás.
+    public static func packKey(_ hash: String) -> String { "pack:" + hash.lowercased() }
 
     /// El audio comprobado de una versión, si ya la viste.
     public func checkedAudio(_ key: String) -> [AudioLanguage]? { lock.withLock { checked[key] } }
@@ -340,8 +342,11 @@ public final class TitlePreferences: @unchecked Sendable {
     /// Lo mismo con los idiomas ya resueltos («es-419» si el nombre lo decía y la pista solo dice «spa»). Con `family` (el
     /// `bingeGroup`: la misma versión en cada episodio), también para los demás episodios de esa versión (Fernando, 6 nov:
     /// decía un idioma y al abrirla traía más).
-    @discardableResult public func rememberChecked(key: String, codes: [String], family: String? = nil) -> Bool {
+    /// `pack` (la huella del torrent): lo mismo para los demás episodios de ese paquete (Fernando, 12 nov: «me tengo que meter a
+    /// checar cada uno»).
+    @discardableResult public func rememberChecked(key: String, codes: [String], family: String? = nil, pack: String? = nil) -> Bool {
         if let family, !family.isEmpty { rememberChecked(key: Self.familyKey(family), codes: codes) }
+        if let pack, !pack.isEmpty { rememberChecked(key: Self.packKey(pack), codes: codes) }
         guard !codes.isEmpty, !key.isEmpty else { return false }
         let value = codes.map { AudioLanguage($0, .checked) }
         return lock.withLock {

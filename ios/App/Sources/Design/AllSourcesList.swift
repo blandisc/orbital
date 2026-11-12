@@ -355,6 +355,7 @@ struct AllSourcesList: View {
         case .checked: Text("comprobado")
         case .name: Text("lo dice el nombre")
         case .site: Text("lo dice el sitio")
+        case .sibling: Text("lo trajo otro episodio")
         case .assumed: Text("se supone")
         }
     }

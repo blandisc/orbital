@@ -6,7 +6,8 @@ import OrbitalCore
 extension PlayerModel {
     /// Las pistas reales de esta versión: quedan «comprobadas» (la próxima vez se sabe su idioma sin adivinar).
     private func rememberCheckedAudio(_ s: EngineSnapshot) {
-        guard let source, titlePrefs.rememberChecked(key: source.key, codes: Self.realAudio(s.audioTracks, source: source), family: source.binge) else { return }
+        guard let source, titlePrefs.rememberChecked(key: source.key, codes: Self.realAudio(s.audioTracks, source: source), family: source.binge,
+                                                       pack: source.torrent?.hash) else { return }
         let finder = finder
         Task { await finder.forgetSorted() }
     }
