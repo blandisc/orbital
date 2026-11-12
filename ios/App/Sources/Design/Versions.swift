@@ -109,7 +109,7 @@ struct VersionEvidence: View {
     }
 
     private var color: Color {
-        switch evidence { case .checked, .name, .site: DS.success; case .original, .unknown, .maybe: DS.textMuted }   // I6: la duda no es riesgo
+        switch evidence { case .checked, .name, .site, .sibling: DS.success; case .original, .unknown, .maybe: DS.textMuted }   // I6: la duda no es riesgo
     }
 
     private var title: Text {
@@ -117,6 +117,7 @@ struct VersionEvidence: View {
         case .checked: Text("Comprobado")
         case .name: Text("Lo dice el nombre")
         case .site: Text("Lo dice el sitio")
+        case .sibling: Text("Lo trajo otro episodio")
         case .original: Text("Es el original")
         case .unknown: Text("No dice idioma")
         case .maybe: Text("Tal vez")
@@ -125,9 +126,10 @@ struct VersionEvidence: View {
 
     private var detail: Text {
         switch evidence {
-        case .checked: Text("Ya la viste: son las pistas de audio del archivo.")
+        case .checked: Text("Son las pistas de audio del archivo: ya la viste o la revisamos por dentro.")
         case .name: Text("El nombre del archivo dice el idioma:")
         case .site: Text("Viene de \(site), que solo sube \(language.lowercased()).")
+        case .sibling: Text("Otro episodio de esta misma versión lo trae: seguramente este también.")
         case .original: Text("Nada en el nombre lo dice: es el idioma original del título.")
         case .unknown: Text("Nada lo dice y no se sabe el idioma original: suponemos inglés.")
         case .maybe: Text("Hay pistas, pero no seguras (muchas banderas o solo «español»).")

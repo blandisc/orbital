@@ -36043,17 +36043,6 @@
         }
       }
     },
-    "Ya la viste: son las pistas de audio del archivo.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You've watched it: these are the file's audio tracks."
-          }
-        }
-      }
-    },
     "Ya lo sé": {
       "extractionState": "manual",
       "localizations": {
@@ -44484,6 +44473,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch on the TV: %@"
+          }
+        }
+      }
+    },
+    "Hay %@, pero hay que pedirlo a la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's %@, but you have to ask the cloud for it"
+          }
+        }
+      }
+    },
+    "Lo trajo otro episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another episode had it"
+          }
+        }
+      }
+    },
+    "Son las pistas de audio del archivo: ya la viste o la revisamos por dentro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These are the file's audio tracks: you watched it or we checked inside."
+          }
+        }
+      }
+    },
+    "Otro episodio de esta misma versión lo trae: seguramente este también.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another episode of this same version has it: this one most likely does too."
+          }
+        }
+      }
+    },
+    "lo trajo otro episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "another episode had it"
           }
         }
       }

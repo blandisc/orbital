@@ -184,7 +184,10 @@ struct SourcesSheet: View {
                         byLanguage(model, ui)
                     }
                     // C8: si un complemento no contestó a tiempo, se dice quién (sus versiones no están aquí).
-                    if !model.isLoading, !model.quiet.isEmpty { AddonQuietLine(names: model.quiet).padding(.top, DS.Space.s1) }
+                    if !model.isLoading, !model.quiet.isEmpty {
+                        AddonQuietLine(names: model.quiet) { Task { await model.retryQuiet(onCellular: env.connectivity.isCellular) } }
+                            .padding(.top, DS.Space.s1)
+                    }
                     // V3 · «Todas» ya no es una pestaña: un enlace al pie (y de vuelta).
                     if !model.isLoading, !model.ranked.isEmpty { allLink(model) }
                 }
@@ -200,7 +203,10 @@ struct SourcesSheet: View {
         .dsSheetContent(sides: false)   // el carrusel llega a las orillas: cada parte pone su margen
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { sheetHeight = $0 }
         .modifier(VersionSheetSizing(fitted: fittedHeight))
-        .task { await model.load(onCellular: env.connectivity.isCellular) }
+        .task {
+            model.playerOpen = { HardwareVolumeButtons.yieldsToPlayer }   // con el reproductor abierto no se revisa el audio de nada
+            await model.load(onCellular: env.connectivity.isCellular)
+        }
         .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
         .debridFlowIntro(when: request != nil && !model.toRequest.isEmpty && !showsAll)   // RX3-A: «↓ Por pedir» a la vista
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
@@ -283,6 +289,12 @@ struct SourcesSheet: View {
     /// «Por idioma»: tu idioma con su encabezado, los demás bajo «Otros idiomas», los de más allá plegados, las que hay que
     /// pedir y cuántas se esconden.
     @ViewBuilder private func byLanguage(_ model: SourcesModel, _ ui: String) -> some View {
+        // Tu idioma existe pero no arranca al instante: se dice arriba, con la acción de pedirlo (12 nov).
+        if request != nil, let yours = model.yoursToRequest {
+            let name = VersionText.inline(VersionText.name(yours.code, ui), ui)
+            VersionYoursAside(language: Text.withFlagImages(LanguageFlags.flagged(name, yours.code)), option: yours.option,
+                              status: requestStatus(yours.id), request: { ask(yours.id) })
+        }
         VersionLegend()
         VersionLanguageList(rows: model.languageRows, uiLanguage: ui) { row, option, showsLanguage in
             versionRow(row, option, showsLanguage: showsLanguage, model, ui)
