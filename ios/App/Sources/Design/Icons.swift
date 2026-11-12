@@ -59,5 +59,13 @@ extension DS {
         /// Los botones de los controles de otras consolas, en el acompañante (antes ✕ ○ □ △ ☰ ⧉ como letras).
         static let padCross = "xmark", padCircle = "circle", padSquare = "square", padTriangle = "triangle"
         static let padMenu = "line.3.horizontal", padView = "rectangle.on.rectangle"
+        /// F1 (Fernando, 12 nov 2026): marcar como visto (el mosaico «Vista» de la ficha), relleno y en verde cuando ya lo viste.
+        static let watched = "checkmark.circle", watchedFill = "checkmark.circle.fill"
+        /// R1: volver a empezar lo que ibas viendo («Desde el principio», el botón redondo junto al avance).
+        static let restart = "arrow.counterclockwise"
+        /// «Tu nota»: escribir una (con el más) o la que ya escribiste (botón redondo al final de «Tu calificación»).
+        static let addNote = "note.text.badge.plus", note = "note.text"
+        /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
+        static let rate = "star"
     }
 }

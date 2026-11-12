@@ -44586,6 +44586,83 @@
           }
         }
       }
+    },
+    "Este episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This episode"
+          }
+        }
+      }
+    },
+    "Calificar la temporada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate the season"
+          }
+        }
+      }
+    },
+    "Escribir una nota": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a note"
+          }
+        }
+      }
+    },
+    "Los siguientes %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next %lld"
+          }
+        }
+      }
+    },
+    "%@ · %@ · no cabe en tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · doesn't fit on your iPhone"
+          }
+        }
+      }
+    },
+    "faltan %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld to go"
+          }
+        }
+      }
+    },
+    "Listos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

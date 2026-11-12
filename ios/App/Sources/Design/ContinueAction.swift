@@ -3,9 +3,10 @@ import SwiftUI
 /// El botón principal de la ficha y lo que lo acompaña. El botón dice una sola cosa («▶ Continuar», «▶ Ver T2 E6», «Cargando»).
 /// Si hay versión que elegir, el botón va partido (`SplitPlayButton`, L3, Fernando, 11 nov 2026): a la derecha, la versión que
 /// va a sonar («🇲🇽 1080p ⌄») abre «Versión». No hay un renglón de versión aparte (docs/ios-interfaz.md § «La versión vive en
-/// el botón»). Debajo, si ibas a medias, la barrita de avance a todo lo ancho del botón; y un solo renglón: a la izquierda el
-/// estado en gris («quedan 50 min», o un aviso: «Sin versiones por ahora»), a la derecha la acción «Desde el principio» en
-/// color, para que se vea que se toca (pulida del 29 oct).
+/// el botón»). Debajo, si ibas a medias, UNA línea con tres piezas centradas entre sí (R1, Fernando, 12 nov 2026: «Me gusta la
+/// F1. Y vamos a ir con R1»): la barra de avance (lo que sobra), «quedan 20 min» y el botón redondo «Desde el principio» (solo
+/// el ícono, `DSIconButton`, 44 pt). Abajo, si hay, el aviso en gris a la izquierda y la otra salida (`aside`, Real-Debrid) en
+/// color a la derecha (docs/ios-interfaz.md § «Lo que acompaña a un control va en su misma línea»).
 struct ContinueAction: View {
     let title: Text
     /// nil: sin ícono («Sin conexión», «Aún sin episodios»).
@@ -22,10 +23,10 @@ struct ContinueAction: View {
     /// o una versión de la app que no deja elegir).
     var version: VersionSummary?
     let play: () -> Void
-    /// «Desde el principio»: solo si ibas a medias.
+    /// «Desde el principio»: solo si ibas a medias. Un botón redondo al final de la línea del avance.
     var restart: (() -> Void)?
-    /// La otra salida a la derecha cuando no hay «Desde el principio» (Real-Debrid, R2-A y R13): «Verlo en inglés al
-    /// instante» o «Cancelar pedido». Mismo lugar y mismo estilo: una acción en color.
+    /// La otra salida (Real-Debrid, R2-A y R13): «Verlo en inglés al instante» o «Cancelar pedido». A la derecha del aviso, en
+    /// color: dice qué hace, así que lleva su nombre (no es un ícono solo).
     var aside: (title: Text, symbol: String, action: () -> Void)?
     /// N5-A · por qué «Ver» no es la de un idioma que va antes en tu orden («La de inglés pesa 64 GB y aquí no se ve bien»):
     /// un renglón aparte, debajo del estado.
@@ -48,25 +49,13 @@ struct ContinueAction: View {
                     .accessibilityIdentifier("title-play")
                     .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
             }
-            if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
-            if left != nil || note != nil || restart != nil || aside != nil {
-                // Si no cabe todo en un renglón (aviso largo, letra grande), «quedan…» y «Desde el principio» se quedan juntos
-                // (son el mismo asunto: el avance) y el aviso baja solo.
+            if progress != nil || left != nil || restart != nil { resumeLine }
+            if note != nil || aside != nil {
+                // Si el aviso y la otra salida no caben juntos (aviso largo, letra grande), la salida baja sola.
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s3) { status(left, note); restartRow }
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        HStack(spacing: DS.Space.s3) { status(left, nil); restartRow }
-                        status(nil, note)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    // Letra de accesibilidad: ni «quedan…» y «Desde el principio» caben juntos (revisión 2: «quedan 20…»,
-                    // «Desde el…»); cada uno en su renglón, completo.
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        status(left, nil)
-                        restartButton
-                        status(nil, note)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: DS.Space.s3) { status(note); if aside != nil { Spacer(minLength: 0); asideButton } }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) { status(note); asideButton }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             if let why {
@@ -74,6 +63,27 @@ struct ContinueAction: View {
                     .accessibilityIdentifier("title-why-version")
             }
         }
+    }
+
+    /// R1: la barra (lo que sobra), «quedan 20 min» y ↺, en una sola línea y centrados entre sí. Con letra de accesibilidad,
+    /// si la barra ya no tendría su ancho mínimo, «quedan…» baja solo y la barra y ↺ siguen juntos.
+    private var resumeLine: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s3) {
+                bar.frame(minWidth: DS.TitleAction.resumeBarMin)
+                status(left).fixedSize()
+                restartButton
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                HStack(spacing: DS.Space.s3) { bar; restartButton }
+                status(left)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder private var bar: some View {
+        if let progress { DSProgress(fraction: progress) } else { Spacer(minLength: 0) }
     }
 
     private var label: some View {
@@ -88,34 +98,22 @@ struct ContinueAction: View {
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
     }
 
-    /// «quedan 50 min · Sin conexión»: cuánto falta y el aviso, en un solo texto gris (ámbar si es un problema).
-    @ViewBuilder private func status(_ left: Text?, _ note: Text?) -> some View {
-        if let text = Self.join(left, note) {
-            // Solo el aviso (sin «quedan…»): hasta dos renglones («Muchas descargas activas · Lo vuelvo a pedir cuando se
-            // libere un lugar» se cortaba a la mitad).
-            text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(left == nil ? 2 : 1)
-        }
+    /// «quedan 50 min» o el aviso, en gris (ámbar si es un problema). El aviso solo, hasta dos renglones («Muchas descargas
+    /// activas · Lo vuelvo a pedir cuando se libere un lugar» se cortaba a la mitad).
+    @ViewBuilder private func status(_ text: Text?) -> some View {
+        if let text { text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(2) }
     }
 
-    private static func join(_ a: Text?, _ b: Text?) -> Text? {
-        switch (a, b) {
-        case (let a?, let b?): Text("\(a) · \(b)")
-        case (let a?, nil): a
-        case (nil, let b?): b
-        case (nil, nil): nil
-        }
-    }
-
-    @ViewBuilder private var restartRow: some View {
-        if restart != nil || aside != nil { Spacer(minLength: 0); restartButton }
-    }
-
+    /// ↺ «Desde el principio»: de la familia de botones redondos de la app, con su nombre para VoiceOver.
     @ViewBuilder private var restartButton: some View {
         if let restart {
-            Button("Desde el principio", systemImage: "arrow.counterclockwise", action: restart)
-                .font(DS.TextRecipe.label.font).buttonStyle(.borderless).tint(ink).lineLimit(1)
+            DSIconButton(symbol: DS.Symbol.restart, label: "Desde el principio", action: restart)
                 .accessibilityIdentifier("title-restart")
-        } else if let aside {
+        }
+    }
+
+    @ViewBuilder private var asideButton: some View {
+        if let aside {
             Button(action: aside.action) { Label { aside.title } icon: { Image(systemName: aside.symbol) } }
                 .font(DS.TextRecipe.label.font).buttonStyle(.borderless).tint(ink).lineLimit(1)
                 .accessibilityIdentifier("title-aside")

@@ -10,13 +10,12 @@ final class TitleStatusUITests: XCTestCase {
         app.launch()
         let status = app.buttons["title-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 20), "la ficha tiene el botón de estado")
-        // El botón siempre se llama «Guardar»; el estado va abajo en chico (11 nov).
+        // F1 (12 nov): ya en alguna parte, el mosaico dice «Guardada» (un renglón); dónde está, al tocarlo.
         let said = status.label + " " + String(describing: status.value ?? "")
-        XCTAssertTrue(status.label.contains("Guardar"), "el botón se llama «Guardar» (dice «\(status.label)»)")
-        XCTAssertTrue(said.contains("Viendo"), "una serie a medias dice «Viendo» debajo (dice «\(said)»)")
+        XCTAssertTrue(status.label.contains("Guardada"), "el mosaico dice «Guardada» (dice «\(status.label)»)")
+        XCTAssertTrue(said.contains("Viendo"), "VoiceOver dice «Viendo» (dice «\(said)»)")
         status.tap()
-        XCTAssertTrue(app.buttons["Vista"].waitForExistence(timeout: 5), "el menú ofrece «Vista»")
-        XCTAssertTrue(app.buttons["En Mi lista"].exists, "y «En Mi lista»")
+        XCTAssertTrue(app.buttons["En Mi lista"].waitForExistence(timeout: 5), "el menú ofrece «En Mi lista»")
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "menu"; a.lifetime = .keepAlways; add(a)
     }
 

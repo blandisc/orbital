@@ -219,11 +219,11 @@ final class NewFlowsRegressionUITests: XCTestCase {
         XCTAssertTrue(yes.waitForExistence(timeout: 5), "pregunta por los anteriores")
         shot("episodio-anteriores")
         yes.tap()
-        let season = app.buttons["season-mark-watched"]
-        for _ in 0..<6 where !(season.exists && season.isHittable) { app.swipeDown(velocity: .slow) }
-        XCTAssertTrue(season.waitForExistence(timeout: 10))
-        season.tap()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Solo la temporada")).firstMatch.tap()
+        let watched = app.buttons["title-watched"]   // F1: marcar la temporada desde el mosaico «Vista»
+        for _ in 0..<6 where !(watched.exists && watched.isHittable) { app.swipeDown(velocity: .slow) }
+        XCTAssertTrue(watched.waitForExistence(timeout: 10))
+        watched.tap()
+        app.buttons["title-watched-season"].tap()
         XCTAssertTrue(app.buttons["watched-release"].waitForExistence(timeout: 10), "la temporada con «Cuando salió cada episodio»")
         shot("temporada-cuando")
     }

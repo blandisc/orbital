@@ -115,16 +115,23 @@ extension TitleView {
     }
 
     // MARK: tu calificación
-    /// «Tu calificación»: tus estrellas de Trakt en la ficha (con Trakt y un título con IMDb). Tocar la misma la quita.
+    /// «Tu calificación»: tus estrellas de Trakt en la ficha (con Trakt y un título con IMDb). Tocar la misma la quita. Al final
+    /// del mismo renglón, el botón redondo de «Tu nota» (F1, 12 nov 2026), centrado con las estrellas.
     @ViewBuilder func yourRating(_ model: TitleModel) -> some View {
         if model.canFavorite {
             let ratings = env.ratings
             let _ = ratings.track()
-            HStack(spacing: DS.Space.s3) {
-                Text("Tu calificación").recipe(.secondary, color: DS.textMuted)
-                Spacer(minLength: 0)
-                RatingStars(value: ratings.stars(model.metaID)) { stars in
-                    Task { await ratings.rate(imdb: model.metaID, kind: model.kind, stars: stars) }
+            let stars = RatingStars(value: ratings.stars(model.metaID)) { stars in
+                Task { await ratings.rate(imdb: model.metaID, kind: model.kind, stars: stars) }
+            }
+            let name = Text("Tu calificación").recipe(.secondary, color: DS.textMuted).lineLimit(1)
+            // En un renglón si cabe entero (iPad, Mac); si no, el nombre arriba y abajo las estrellas a la izquierda y la nota a
+            // la derecha, centradas entre sí (el nombre nunca parte en dos).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s3) { name.fixedSize(); Spacer(minLength: 0); stars; noteButton(model) }
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    name
+                    HStack(spacing: DS.Space.s3) { stars; Spacer(minLength: 0); noteButton(model) }
                 }
             }
             .accessibilityElement(children: .contain)   // las estrellas conservan su identificador («rating-stars»)
@@ -139,8 +146,8 @@ extension TitleView {
         return { (stars: Double?) -> Void in Task { await ratings.rate(imdb: videoID, kind: "series", stars: stars) } }
     }
 
-    /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, la barrita con cuánto falta y «Desde el principio» (como la TV,
-    /// `core/watch.js`). La versión que va a sonar va en la zona derecha del botón («🇲🇽 1080p ⌄», `playVersion`); sin
+    /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, una línea con la barrita, cuánto falta y ↺ «Desde el principio» (R1; la
+    /// TV lo dice con texto, `core/watch.js`). La versión que va a sonar va en la zona derecha del botón («🇲🇽 1080p ⌄», `playVersion`); sin
     /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga la ficha, «Cargando» entero; mientras se busca la
     /// versión de un episodio que ya se sabe, la zona derecha en gris con su ancho.
     func continueAction(_ model: TitleModel) -> ContinueAction {

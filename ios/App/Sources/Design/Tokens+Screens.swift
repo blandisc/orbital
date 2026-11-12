@@ -104,6 +104,9 @@ extension DS {
         static let heroAspectMaxLarge: CGFloat = 3
         /// «Ver» / «Continuar»: el botón sólido de la ficha (con la calidad en un segundo renglón) y su barrita de avance.
         static let primaryHeight: CGFloat = 60
+        /// R1 (12 nov 2026): lo menos que mide la barra de avance en su línea con «quedan…» y ↺; si no le queda esto (letra de
+        /// accesibilidad), «quedan…» baja de renglón.
+        static let resumeBarMin: CGFloat = 72
     }
 
     /// La entrada de la app (`LaunchSplash`): los mismos tiempos que la TV y la computadora (~1.4 s).
