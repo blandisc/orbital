@@ -5,7 +5,7 @@ import Foundation
 extension Streams {
     /// Cuánto vale el idioma que quieres según qué tan seguro es (`LANG_POINTS` de la TV): lo comprobado, lo que se dice y el
     /// original van arriba; lo que se supone, poco menos; «tal vez», apenas.
-    static let languagePoints: [AudioLanguage.Evidence: Double] = [.checked: 340, .name: 300, .site: 300, .original: 300, .unknown: 260, .maybe: 60]
+    static let languagePoints: [AudioLanguage.Evidence: Double] = [.checked: 340, .name: 300, .site: 300, .sibling: 300, .original: 300, .unknown: 260, .maybe: 60]
     /// Otro idioma pesa más que arrancar al instante (+1000): una en ruso lista no le gana a una en tu idioma que tarda.
     static let wrongLanguage = -1600.0
     /// Lo que baja «español, no dice cuál» cuando pediste latino o castellano (`STEP_UNSURE_SPANISH` de la TV y los escenarios

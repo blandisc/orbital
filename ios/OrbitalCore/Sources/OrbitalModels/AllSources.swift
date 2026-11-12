@@ -57,13 +57,14 @@ public enum AllSources {
 
     /// Cómo sabemos un idioma, en lo que importa al que elige: comprobado, lo dice el nombre o el sitio, o se supone.
     public enum EvidenceKind: Sendable, Equatable {
-        case checked, name, site, assumed
+        case checked, name, site, sibling, assumed
 
         public init(_ evidence: AudioLanguage.Evidence) {
             switch evidence {
             case .checked: self = .checked
             case .name: self = .name
             case .site: self = .site
+            case .sibling: self = .sibling
             case .original, .unknown, .maybe: self = .assumed
             }
         }

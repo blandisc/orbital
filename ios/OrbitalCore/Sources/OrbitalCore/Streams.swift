@@ -123,23 +123,25 @@ public struct AudioLanguage: Sendable, Equatable, Codable {
         case name
         /// El sitio solo sube ese idioma (Cinecalidad = latino, MejorTorrent = castellano…).
         case site
+        /// Otro episodio de esa misma versión (su paquete o su familia) ya lo trajo al abrirlo o al revisarlo: probable.
+        case sibling
         /// Nada lo dice: el idioma original del título.
         case original
         /// Nada lo dice y no se sabe el original: se supone inglés (como la TV), pero se dice que no se sabe.
         case unknown
         /// Una pista débil (muchas banderas con «Multi Audio», 🇪🇸 entre muchas).
         case maybe
-        static let order: [Evidence] = [.checked, .name, .site, .original, .unknown, .maybe]
+        static let order: [Evidence] = [.checked, .name, .site, .sibling, .original, .unknown, .maybe]
         public static func < (a: Evidence, b: Evidence) -> Bool { order.firstIndex(of: a)! < order.firstIndex(of: b)! }
         /// Sirve para poner la versión en la fila de ese idioma (lo «tal vez» va aparte).
         public var solid: Bool { self != .maybe }
         /// Qué tan seguro es, como `EVIDENCE` de la TV: el nombre y el sitio valen lo mismo.
         public var level: Int {
-            switch self { case .checked: 5; case .name, .site: 4; case .original: 3; case .unknown: 2; case .maybe: 1 }
+            switch self { case .checked: 5; case .name, .site, .sibling: 4; case .original: 3; case .unknown: 2; case .maybe: 1 }
         }
         /// El nombre de la TV («seen» es lo comprobado, «assumed» lo que se supone). Lo guardado en el teléfono no cambia.
         public var tv: String {
-            switch self { case .checked: "seen"; case .unknown: "assumed"; default: rawValue }
+            switch self { case .checked: "seen"; case .unknown: "assumed"; case .sibling: "name"; default: rawValue }
         }
     }
     public init(_ code: String, _ evidence: Evidence) { self.code = code; self.evidence = evidence }

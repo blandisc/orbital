@@ -54,19 +54,30 @@ struct AddonHealthLine: View {
 
 /// C8 · en la lista de versiones: quién no contestó a tiempo (o se saltó por no contestar antes), por su nombre, para que
 /// «no hay latino» no parezca culpa del título. Con la tortuga de «Contesta lento».
+/// Con «Reintentar» (Fernando, 12 nov: solo llegó Comet y Torrentio, que tenía el latino, no se veía): se les vuelve a
+/// preguntar a todos, también a los que se saltaban.
 struct AddonQuietLine: View {
     let names: [String]
+    var retry: (() -> Void)?
 
     var body: some View {
         let joined = names.joined(separator: " · ")
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+        HStack(alignment: .center, spacing: DS.Space.s1) {
             Image(systemName: "tortoise").foregroundStyle(DS.warning).accessibilityHidden(true)
             (names.count == 1 ? Text("No contestó a tiempo: \(joined)") : Text("No contestaron a tiempo: \(joined)"))
                 .foregroundStyle(DS.textMuted).fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let retry {
+                Button(action: retry) { Label("Reintentar", systemImage: "arrow.clockwise").foregroundStyle(DS.accent) }
+                    .buttonStyle(.plain)
+                    .frame(minHeight: DS.Size.touchTarget)
+                    .contentShape(Rectangle())
+                    .accessibilityIdentifier("sources-quiet-retry")
+            }
         }
         .font(DS.TextRecipe.caption.font)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sources-quiet")
     }
 }

@@ -337,14 +337,15 @@ enum Demo {
         // El complemento de demostración (videos de prueba), como uno que pegaste en Ajustes: antes llegaba con la cuenta de
         // mentira de Stremio y, sin ella (E1), el reproductor de la demo se quedaba sin versiones. Con `-demo-search-slow`, tres.
         if !has("-demo-signed-out") {
-            let urls = searchSlow ? slowLanes.map { "https://demo.orbital.invalid/\($0)/manifest.json" } : [addonURL]
+            let lanes = DemoLatinoNube.isOn ? DemoLatinoNube.lanes : searchSlow ? slowLanes : []
+            let urls = lanes.isEmpty ? [addonURL] : lanes.map { "https://demo.orbital.invalid/\($0)/manifest.json" }
             secrets.set(SecretKey.ownAddons, urls.joined(separator: "\n"))
         }
         if scrobble || airings || because || trakt || rate { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb || DemoViento.mode != nil { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         // `-demo-rd premium|soon|expired|free|invalid`: una clave de Real-Debrid de mentira (api.real-debrid.com la contesta la demo).
-        if realDebrid != nil || rdRequest != nil || DemoViento.mode != nil { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
+        if realDebrid != nil || rdRequest != nil || DemoViento.mode != nil || DemoLatinoNube.isOn { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
         seedKeys(secrets)   // `-demo-keys`: la llave de este aparato (K1)
         seedCX(secrets)     // `-demo-cx`: CX1-B…CX8-A
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
