@@ -9,7 +9,7 @@ struct AppMark: View {
     var small = false
 
     var body: some View {
-        let compact = WindowMetrics.size.width < DS.Size.compactWidth
+        let compact = WindowMetrics.column.width < DS.Size.compactWidth   // el encabezado va en la columna (sin el panel del control)
         let ui = env?.ui
         OrbitalWordmark(size: compact || small ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()

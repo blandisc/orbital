@@ -189,7 +189,7 @@ struct LibrarySavedView: View {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.traktLinked {
                     // En ventana ancha los cinco montones van en una fila (Historial, el quinto); en el iPhone, 2 × 2 y Historial abajo.
-                    let columns = DS.SavedBoard.columns(forWidth: WindowMetrics.size.width, tiles: Self.tiles)
+                    let columns = DS.SavedBoard.columns(forWidth: WindowMetrics.column.width, tiles: Self.tiles)
                     let historyInGrid = columns == Self.tiles
                     Group {
                         if historyInGrid {

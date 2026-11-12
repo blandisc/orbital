@@ -79,7 +79,7 @@ extension PlayerScreen {
     var dockPinned: Bool { horizontalSize == .regular && !landscape && !fillsPortrait && ipod == nil }
 
     var landscape: Bool {
-        verticalSize == .compact || (horizontalSize == .regular && WindowMetrics.size.width > WindowMetrics.size.height)
+        verticalSize == .compact || (horizontalSize == .regular && WindowMetrics.size.width > WindowMetrics.size.height)   // ds-exception: el reproductor ocupa la ventana entera
     }
 
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda de «Audio y subtítulos»). Vertical: arriba, a todo lo

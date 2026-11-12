@@ -236,7 +236,7 @@ struct VoiceChoicesCarousel: View {
             }
             ScrollView(.horizontal) {
                 LazyHStack(spacing: DS.Space.s3) {
-                    ForEach(reply.choices) { choice in card(choice).containerRelativeFrame(.horizontal) { width, _ in width * DS.Remote.choiceCardShare } }
+                    ForEach(reply.choices) { choice in card(choice).containerRelativeFrame(.horizontal) { width, _ in width * DS.Remote.choiceCardShare } }   // ds-exception: su carrusel, dentro del control
                 }
                 .scrollTargetLayout()
             }

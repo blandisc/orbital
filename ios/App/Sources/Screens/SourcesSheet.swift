@@ -376,7 +376,7 @@ private struct VersionSheetSizing: ViewModifier {
 
     func body(content: Content) -> some View {
         // Sin `if`: cambiar de rama volvería a crear la hoja (y a cargar las versiones) al terminar de medir.
-        let wide = WindowMetrics.size.width > DS.TitleAction.readableWidth ? fitted : nil
+        let wide = WindowMetrics.size.width > DS.TitleAction.readableWidth ? fitted : nil   // ds-exception: una hoja flota sobre la ventana, no va en la columna
         content.presentationDetents(fitted.map { [.height($0)] } ?? [.large]).fittedFormSizing(idealHeight: wide)
     }
 }

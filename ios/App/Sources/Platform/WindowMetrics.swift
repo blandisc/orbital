@@ -33,6 +33,17 @@ final class WindowMetrics {
         guard new.width > 0, new.height > 0, new != size else { return }
         size = new
     }
+
+    /// Lo que de verdad queda para las pantallas: la ventana menos el panel de la derecha (el control de la TV en el iPad
+    /// acostado o la Mac). Sin panel, o antes de medir, es la ventana. Lo miden las pestañas (`.tracksColumnSize()`); lo
+    /// usan la portada de Inicio y el ancho de las tiras, que con el panel abierto se calculaban con la ventana entera.
+    private(set) var measuredColumn: CGSize?
+    nonisolated static var column: CGSize { MainActor.assumeIsolated { shared.measuredColumn ?? shared.size } }
+
+    func updateColumn(_ new: CGSize) {
+        guard new.width > 0, new.height > 0, new != measuredColumn else { return }
+        measuredColumn = new
+    }
 }
 
 extension View {
@@ -44,5 +55,16 @@ extension View {
             let inset = proxy.safeAreaInsets
             return CGSize(width: proxy.size.width + inset.leading + inset.trailing, height: proxy.size.height + inset.top + inset.bottom)
         } action: { WindowMetrics.shared.update($0) }
+    }
+
+    /// Pone al día `WindowMetrics.column`: lo que miden las pestañas, sin el panel de la derecha. El panel (`.inspector`) les llega
+    /// como margen seguro a la derecha: el ancho va sin los márgenes de los lados (con ellos volvía a ser la ventana entera) y el
+    /// alto con los de arriba y abajo. Una vez, en las pestañas, antes del `.inspector`. Redondeado al punto.
+    func tracksColumnSize() -> some View {
+        onGeometryChange(for: CGSize.self) { proxy in
+            let inset = proxy.safeAreaInsets
+            return CGSize(width: proxy.size.width.rounded(),
+                          height: (proxy.size.height + inset.top + inset.bottom).rounded())
+        } action: { WindowMetrics.shared.updateColumn($0) }
     }
 }
