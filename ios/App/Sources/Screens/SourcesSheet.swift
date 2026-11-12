@@ -315,9 +315,11 @@ struct SourcesSheet: View {
             .dsCard(translucent: true)
             .tint(DS.textMuted)
         }
-        if request != nil, !model.toRequest.isEmpty {
+        // La de tu idioma ya va arriba («Hay latino, pero hay que pedirlo a la nube»): aquí no se repite.
+        let toRequest = model.toRequest.filter { $0.id != model.yoursToRequest?.id }
+        if request != nil, !toRequest.isEmpty {
             VersionRequestGroup {
-                ForEach(model.toRequest) { item in
+                ForEach(toRequest) { item in
                     let name = Streams.versionLanguageName(item.code, in: ui)
                     VersionRequestRow(title: Text("\(Text.flag(item.code))\(Text(verbatim: "\(name) · \(item.option.quality)"))"), option: item.option,
                                       status: requestStatus(item.id), request: { ask(item.id) },
