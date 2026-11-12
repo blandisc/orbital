@@ -116,15 +116,13 @@ final class PlayerStuckUITests: XCTestCase {
             XCTAssertTrue(last.isHittable, "\(step): el panel se ve entero")
             XCTAssertLessThan(gap, 80, "\(step): el panel abajo, sin espacio muerto")
         }
+        // S1 (11 nov): renglones con palomita, sin acordeones; cada idioma se pone con un toque y el panel sigue abajo.
         let row = { (name: String) in app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch }
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Inglés")).firstMatch.tap(); sleep(2); shot("d1-ingles")   // 4:3 con subtítulos y su renglón abierto: no cabe entero, se desplaza
-        row("Subtítulos").tap(); checkBottom("d2-subtitulos-cerrado")
-        row("Tamaño").tap(); checkBottom("d3-tamano-abierto")
-        row("Tamaño").tap(); checkBottom("d4-tamano-cerrado")
-        row("Subtítulos").tap(); sleep(1)
-        row("Apagados").tap(); checkBottom("d5-apagados")
-        row("Subtítulos").tap(); checkBottom("d6-apagados-cerrado")
-        last.tap(); sleep(1); shot("d7-version")
-        app.buttons["version-back"].tap(); checkBottom("d8-de-vuelta")
+        row("Inglés").tap(); checkBottom("d1-ingles")
+        row("Apagados").tap(); checkBottom("d2-apagados")
+        row("Español").tap(); checkBottom("d3-espanol")
+        XCTAssertTrue(app.descendants(matching: .any)["subtitle-dock-size"].exists, "Tamaño a la vista, sin abrir nada")
+        last.tap(); sleep(1); shot("d4-version")
+        app.buttons["version-back"].tap(); checkBottom("d5-de-vuelta")
     }
 }

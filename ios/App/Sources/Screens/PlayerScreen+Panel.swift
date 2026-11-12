@@ -6,70 +6,54 @@ import OrbitalModels
 /// El panel de «Audio y subtítulos», «Versión» y «Episodios». (Parte de `PlayerScreen`, separada por responsabilidad.)
 extension PlayerScreen {
     // MARK: subtítulos rápidos
-    /// Lo que va dentro del panel chico: episodios, sincronizar subtítulos, la versión o audio y subtítulos.
+    /// Lo que va dentro del panel chico: episodios, sincronizar subtítulos, la versión o audio y subtítulos. «Audio y
+    /// subtítulos» ya trae su desplazamiento por dentro (del alto de su lista, nunca más): aquí no se envuelve en nada.
     @ViewBuilder private func dockContent(_ model: PlayerModel) -> some View {
-        if dockState.dockPage == .episodes { episodesPage(model) }
-        else if let syncLines = dockState.syncLines { subtitleSyncView(model, lines: syncLines) }
-        else if dockState.dockPage == .version { versionPage(model) }
-        else {
-            // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
-            // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
-            ViewThatFits(in: .vertical) {
-                subtitleDockView(model)
-                // Nunca más alto que el panel: un ScrollView toma todo el alto que le dan y la tarjeta quedaba arriba con
-                // espacio muerto abajo (con un video 4:3, al cambiar de versión o de subtítulos).
-                ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
-                    .frame(maxHeight: landscape || dockState.dockNeed <= 0 ? .infinity : dockState.dockNeed)
-            }
+        Group {
+            if dockState.dockPage == .episodes { episodesPage(model) }
+            else if let syncLines = dockState.syncLines { subtitleSyncView(model, lines: syncLines) }
+            else if dockState.dockPage == .version { versionPage(model) }
+            else { subtitleDockView(model) }
         }
+        // Todo el panel recibe el toque (entre renglones pasaba al video de abajo).
+        .contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
     }
 
-    /// El panel chico: en horizontal abajo y al centro, sobre el video; en vertical bajo el video (en el lugar de los controles).
+    /// El panel chico: en horizontal a la derecha; en vertical bajo el video (en el lugar de los controles).
     func subtitleDockLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
             let rect = videoRect(in: geo.size)
-            let dock = dockContent(model)
             if landscape {
-                // A la derecha, de arriba abajo, con dos pestañas fijas: «Audio y subtítulos» y «Versión» (antes la versión no se
-                // veía: el panel cortaba su pie). El video queda a la izquierda, a la vista.
-                HStack {
-                    Spacer()
-                    VStack(spacing: DS.Space.s2) {
-                        if dockState.dockPage != .episodes { HStack(spacing: DS.Space.s2) {
-                            DSTextTabs(options: [.init(id: false, title: Text("Audio y subtítulos")), .init(id: true, title: Text("Versión"))],
-                                       selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
-                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.label.font) }
-                                .dsPrimaryButton(size: .small)
-                        } }
-                        dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
-                    }
-                    .frame(width: Self.panelWidth(in: geo.size.width))
-                }
-                .padding(DS.Space.s3)
-                .frame(maxHeight: .infinity, alignment: .top)
+                // A la derecha, de arriba abajo dentro del área segura, con las pestañas «Audio y subtítulos · Versión» y «Listo»
+                // arriba (fijas) y la lista que se desplaza por dentro. El mismo cálculo que el video (`sideDock`), sobre la
+                // pantalla entera: antes el panel medía sin el área segura y tapaba la orilla del video.
+                let panel = Self.sideDock(in: geo.size).panel
+                dockContent(model)
+                    .frame(width: panel.width, height: panel.height, alignment: .top)
+                    .position(x: panel.midX, y: panel.midY)
             } else if dockPinned {
                 // iPad de pie: fijo bajo los controles (que siguen ahí), a todo lo ancho, y el video no se mueve.
                 let top = rect.maxY + DS.PlayerPanel.handleClearance + max(controlsNeed, DS.PlayerPanel.pinnedControlsMin) + DS.Space.s4
-                dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+                dockContent(model)
                     .frame(maxHeight: max(0, geo.size.height - top - DS.Space.s2), alignment: .top)
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.top, top)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
-                // Pegado abajo y del alto que pide: chico (subtítulos apagados) no deja hueco debajo; grande, el video sube para
-                // dejarle lugar (`videoRect`) y no hace falta desplazarse. Solo si ni así cabe, se desplaza por dentro.
+                // Pegado abajo y del alto que pide; el video se acomoda justo arriba (`videoRect`), sin hueco negro. Si ni así
+                // cabe (SE, letra grande), se desplaza por dentro.
                 let top = rect.maxY + DS.Space.s4
-                // Todo el panel recibe el toque (entre las pastillas pasaba al video de abajo).
-                dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+                dockContent(model)
                     .frame(maxWidth: DS.PlayerPanel.dockWidth)
                     .frame(maxHeight: max(0, geo.size.height - top - DS.Space.s2), alignment: .bottom)
                     .padding(.horizontal, DS.Space.gutter)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .padding(.bottom, DS.Space.s2)
-                    // Lo que mediría sin límite (invisible): cuánto debe subir el video.
+                    // «Versión» mide lo que pediría sin límite (invisible): cuánto debe subir el video. «Audio y subtítulos» lo
+                    // dice solo (`onNeed`), sin dibujarse otra vez.
                     .background(alignment: .top) {
-                        if dockState.dockPage != .episodes, dockState.syncLines == nil {
-                            Group { dockState.dockPage == .version ? AnyView(versionPage(model)) : AnyView(subtitleDockView(model)) }
+                        if dockState.dockPage == .version, dockState.syncLines == nil {
+                            versionPage(model)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxWidth: DS.PlayerPanel.dockWidth).padding(.horizontal, DS.Space.gutter)
                                 .hidden().allowsHitTesting(false).accessibilityHidden(true)
@@ -80,13 +64,16 @@ extension PlayerScreen {
                     }
             }
         }
+        .ignoresSafeArea(edges: landscape ? .all : [])
         .sheet(isPresented: $dockState.dockLanguages) {
+            let locale = Locale(identifier: env.services.appSettings.uiLanguage)
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
-                               name: { LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0, SubtitleLanguage.code($0) ?? $0) }) { code in
+                               name: { code in locale.localizedString(forLanguageCode: SubtitleLanguage.code(code) ?? code)?.capitalized(with: locale) ?? code }) { code in
                 Task { await model.chooseLanguage(code) }
             }
         }
         .sheet(isPresented: $dockState.dockVersions) { subtitleVersionsSheet(model) }
+        .sheet(isPresented: $dockState.dockAudio) { audioSheet(model) }
         .task { await model.ensureSubtitleSearch() }
         .onDisappear { dockState.syncLines = nil; dockState.syncResult = nil; dockState.syncPicked = nil }
     }
@@ -112,152 +99,6 @@ extension PlayerScreen {
                          again: { withAnimation(DS.Motion.base(reduceMotion)) { startSync(model) } },
                          back: { withAnimation(DS.Motion.base(reduceMotion)) { dockState.syncLines = nil } },
                          compact: landscape, language: env.services.appSettings.uiLanguage)
-    }
-
-    /// Todas las versiones del idioma puesto: la recomendada primero, «Del video», las que ya probaste marcadas y la
-    /// traducción automática al final (así las ordena `SubtitleVersions.ranked`).
-    func subtitleVersionsSheet(_ model: PlayerModel) -> some View {
-        let uiLanguage = env.services.appSettings.uiLanguage
-        let code = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 } ?? "es"
-        let versions = model.subtitleVersions(language: code)
-        let locale = Locale(identifier: uiLanguage)
-        let name = LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code)
-        return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
-                        let selected = model.selectedVersionID == version.id
-                        let tried = model.triedVersionIDs.contains(version.id) && !selected
-                        SubtitleVersionRow(title: dockVersionTitle(version, index: index) + (index == 0 ? " · " + Strings.tr("Recomendada", language: uiLanguage) : ""),
-                                           selected: selected, fromVideo: version.fromVideo, matchesCopy: version.match >= 2, downloads: version.downloads,
-                                           loading: version.option.map { model.addedSubtitleURLs.contains($0.url) && model.addedTracks[$0.url] == nil } ?? false,
-                                           detail: tried ? "\(Strings.tr("Ya la probaste", language: uiLanguage)) · \(version.name ?? "")" : version.name) {
-                            Task { await model.selectVersion(version) }
-                        }
-                    }
-                    if versions.isEmpty {
-                        Text(model.searchingSubtitles ? "Buscando versiones en internet…" : model.subtitlesOffline ? "Sin conexión: no hay subtítulos guardados en este idioma." : "No hay subtítulos en este idioma.").recipe(.footnote)
-                    }
-                }
-                .padding(DS.Space.gutter)
-            }
-            // El título de una hoja no dibuja imágenes: sin la bandera de «español» en vez de un cuadro roto.
-            .navigationTitle(Text(verbatim: LanguageFlags.plain(String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count))))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockState.dockVersions = false } } }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-    }
-
-    /// «1080p · copia de internet», «Del video» o «Versión 3».
-    func dockVersionTitle(_ v: SubtitleVersion, index: Int) -> String {
-        let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
-        let res = v.name.flatMap { n in n.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]).map { String(n[$0]).lowercased() } }
-        let named = [res, VersionText.copyWords(v.traits.source, env.services.appSettings.uiLanguage)].compactMap { $0 }.joined(separator: " · ")
-        // Guardado con la descarga: «Español 2 · OpenSubtitles · para sordos» (la copia va debajo, en la hoja de versiones).
-        if let saved = v.saved {
-            let locale = Locale(identifier: env.services.appSettings.uiLanguage)
-            let language = LanguageFlags.flagged(locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language, v.language)
-            return ["\(language) \(v.savedNumber ?? index + 1)", saved.source,
-                    saved.hearingImpaired ? tr("para sordos") : saved.foreignOnly ? tr("forzados") : nil].compactMap { $0 }.joined(separator: " · ")
-        }
-        // Una pista del video de las que se esconden (venía puesta): dice cuál es.
-        if case .embedded(let track) = v.origin, SubtitleFilter.hides(track) {
-            let forced = track.isForced || (track.title ?? "").range(of: #"forc|forz|sign|song|carteles"#, options: [.regularExpression, .caseInsensitive]) != nil
-            return tr(forced ? "Del video · forzados" : "Del video · para sordos")
-        }
-        return v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Subtítulo %lld"), index + 1) : named)
-    }
-
-    func subtitleDockView(_ model: PlayerModel) -> some View {
-        let settings = env.services.appSettings
-        let locale = Locale(identifier: settings.uiLanguage)
-        let name = { (code: String) in LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code) }
-        let on = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 }
-        let off = model.snapshot.selectedSubtitle == nil
-        var codes = ["es", "en"]
-        if let on, !codes.contains(on) { codes.append(on) }
-        // Sin conexión: también los idiomas que sí hay (los del video y los guardados con la descarga), y los que no, apagados.
-        let offline = model.subtitlesOffline
-        if offline { codes += model.subtitleLanguages.map(\.code).filter { !codes.contains($0) }.prefix(DS.PlayerPanel.offlineExtraLanguages) }
-        var languages = [SubtitleDock.Language(id: "", title: Strings.tr("Apagados", language: settings.uiLanguage), selected: off)]
-        languages += codes.map { SubtitleDock.Language(id: $0, title: name($0), selected: !off && on == $0, unavailable: offline && !model.hasSubtitles(language: $0)) }
-        let versions = on.map { model.subtitleVersions(language: $0) } ?? []
-        let at = versions.firstIndex { $0.id == model.selectedVersionID }
-        let tr = { (k: String) in Strings.tr(k, language: settings.uiLanguage) }
-        // La etiqueta dice por qué está ahí, sin prometer de más: «Hecho para tu copia» es por el nombre de la copia (el
-        // mismo grupo), no una huella confirmada.
-        let version: SubtitleDock.Version? = off ? nil : at.map { i in
-            let v = versions[i]
-            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma versión")
-                // «Del video» ya lo dice el título: sin «Viene dentro del archivo» debajo (era lo mismo dos veces).
-                : v.fromVideo ? nil
-                : v.downloads.flatMap { $0 > 0 ? String(format: tr("%@ descargas"), $0.formatted(.number.notation(.compactName).locale(Locale(identifier: settings.uiLanguage)))) : nil }
-            return SubtitleDock.Version(title: dockVersionTitle(v, index: i), badge: badge, strong: v.match >= 2,
-                                        position: String(format: tr("Subtítulo %lld de %lld"), i + 1, versions.count))
-        } ?? SubtitleDock.Version(title: tr("Cargando…"), badge: nil, strong: false, position: "")
-        // Sin «¿Va a tiempo? Sí, va bien / Probar otra»: el subtítulo se cambia con las flechas ‹ › y la elección ya se
-        // recuerda sola al cambiarlo. Solo queda el aviso de un ajuste de tiempo recordado.
-        let check: SubtitleDock.Check? = model.restoredDelay.map { .restored($0) }
-        let tried = versions.enumerated().filter { model.triedVersionIDs.contains($0.element.id) && $0.element.id != model.selectedVersionID }
-            .map { dockVersionTitle($0.element, index: $0.offset) }
-        // Un subtítulo de imagen (PGS) no trae frases: la vista de sincronizar lo dice y deja Antes/Después.
-        let canSync = holder.engine.drawsSubtitles
-        let sizes = AppSettings.subtitleSizes
-        let sizeAt = sizes.firstIndex(of: settings.subtitleSize) ?? 1
-        let sizeNames = ["Pequeño", "Normal", "Grande", "Muy grande"].map { Strings.tr($0, language: settings.uiLanguage) }
-        func setSize(_ i: Int) { env.services.settings.update { $0.subtitleSize = sizes[i] } }
-        func step(_ d: Int) {
-            guard !versions.isEmpty else { return }
-            let next = at.map { (($0 + d) % versions.count + versions.count) % versions.count } ?? 0
-            Task { await model.selectVersion(versions[next]) }
-        }
-        // El audio: las pistas de este archivo (sin repetir idioma) y los idiomas que solo trae otra versión (seguro).
-        let ui = settings.uiLanguage
-        let audioTracks = model.snapshot.audioTracks.filter { $0.kind == .audio }
-        var seenAudio = Set<String>()
-        let audio: [SubtitleDock.Language] = audioTracks.compactMap { t in
-            let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
-            guard seenAudio.insert(code).inserted else { return nil }
-            let title = TrackChooser.audioCode(t).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
-            return .init(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
-        }
-        // Los idiomas que solo trae otra versión: sin cine ni tráileres, la más parecida a la tuya y diciendo a qué va.
-        let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
-            let speed = o.instant ? Strings.tr("en la nube", language: ui) : Strings.tr("Todavía no está en la nube", language: ui)
-            let detail = ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
-            return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
-                         selected: false, detail: detail, guessed: !o.sure)
-        }
-        let otherLanguage = Dictionary(model.otherVersionAudio(excluding: seenAudio).map { (String($0.sourceIndex), $0.code) }, uniquingKeysWith: { a, _ in a })
-        let currentAudio = audio.first { $0.selected }?.title ?? audio.first?.title ?? ""
-        let subtitleValue = off ? Strings.tr("Apagados", language: ui)
-            : [on.map(name), at.map { String(format: Strings.tr("%lld de %lld", language: ui), $0 + 1, versions.count) }].compactMap { $0 }.joined(separator: " · ")
-        return SubtitleDock(
-            audio: audio, pickAudio: { id in if let n = Int(id) { Task { await model.selectAudio(n) } } },
-            otherVersions: others, pickVersion: { id in if let n = Int(id) { pickSource(n, model, language: otherLanguage[id]) } },
-            languages: languages,
-            pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await pickSubtitleLanguage(code, model) } } },
-            otherLanguage: { dockState.dockLanguages = true },
-            version: version, loading: at == nil && !off, canStep: versions.count > 1,
-            previous: { step(-1) }, next: { step(1) },
-            allVersions: { dockState.dockVersions = true },
-            check: check, confirm: { model.confirmInSync() },
-            tryAnother: versions.count > 1 ? { Task { await model.tryAnotherVersion() } } : nil,
-            tried: tried,
-            delay: holder.engine.drawsSubtitles ? model.subtitleDelay : nil,
-            nudge: { model.nudgeSubtitles(by: $0) }, resetDelay: { model.resetSubtitleDelay() },
-            sync: canSync ? { withAnimation(DS.Motion.base(reduceMotion)) { startSync(model) } } : nil,
-            sizeName: sizeNames[sizeAt],
-            smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < sizes.count - 1 ? { setSize(sizeAt + 1) } : nil,
-            done: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false } },
-            compact: false, language: settings.uiLanguage,
-            audioValue: currentAudio, subtitleValue: subtitleValue,
-            videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .version } } : nil,
-            showsHeader: !landscape,
-            offlineNote: model.subtitlesOffline ? tr(current.localFile != nil ? "Sin conexión: solo los subtítulos del video y los guardados con la descarga." : "Sin conexión: solo los subtítulos del video.") : nil,
-            open: $dockState.dockOpens)
     }
 
     /// Tocar un idioma: pone su mejor versión; si no hay (sin red, o no existe), lo dice en vez de quedarse callado.
@@ -299,8 +140,17 @@ extension PlayerScreen {
         let ranked = model.sourceChoices.filter { $0.index == model.source?.index } + model.sourceChoices.filter { $0.index != model.source?.index }
         let rows = SourcesModel.languageRows(ranked, prefs: prefs, limitGB: env.services.appSettings.warnCellularOverGB)
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            // En horizontal ya lo dice la pestaña de arriba (y se vuelve con ella).
-            if !landscape {
+            // En horizontal, las pestañas y «Listo» arriba, como en «Audio y subtítulos» (y se vuelve con ellas).
+            if landscape {
+                HStack(spacing: DS.Space.s2) {
+                    dockTabs
+                    Spacer(minLength: DS.Space.s2)
+                    Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.label.font) }
+                        .dsPrimaryButton(size: .small)
+                        .accessibilityIdentifier("subtitle-dock-done")
+                }
+                .frame(minHeight: DS.Size.touchTarget)
+            } else {
                 HStack(spacing: DS.Space.s2) {
                     Button { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .media } } label: { Image(systemName: "chevron.left") }
                         .buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("version-back")

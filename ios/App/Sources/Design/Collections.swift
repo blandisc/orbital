@@ -248,8 +248,8 @@ struct BecauseCard<Related: View>: View {
                     HStack(spacing: DS.Space.s2) {
                         Text("\(index + 1) de \(seeds.count)").recipe(.data, color: DS.textMuted).lineLimit(1)
                         Spacer(minLength: 0)
-                        DSIconButton(symbol: "chevron.left", label: "Anterior", size: .regular) { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) }
-                        DSIconButton(symbol: "chevron.right", label: "Siguiente", size: .regular) { choose(seeds[(index + 1) % seeds.count].id) }
+                        DSIconButton(symbol: "chevron.left", label: "Anterior", size: .regular, steady: true) { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) }
+                        DSIconButton(symbol: "chevron.right", label: "Siguiente", size: .regular, steady: true) { choose(seeds[(index + 1) % seeds.count].id) }
                     }
                     .padding(.bottom, DS.Space.s2)
                 }

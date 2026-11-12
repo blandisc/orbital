@@ -368,10 +368,10 @@ struct PlayerScreen: View {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
                     // `-demo-player dock|subtitles|audio|version|subtitle-versions`: la hoja «Audio y subtítulos» (con ese renglón abierto) o «Versión».
                     switch open {
-                    case "dock", "subtitles": openDock(.subtitles)
-                    case "audio": openDock(.audio)
-                    case "version": openDock(nil, version: true)
-                    case "subtitle-versions": openDock(.subtitles); dockState.dockVersions = true   // todas las versiones del idioma puesto
+                    case "dock", "subtitles": openDock()
+                    case "audio": openDock()   // el renglón «Audio» ya está a la vista
+                    case "version": openDock(version: true)
+                    case "subtitle-versions": openDock(); dockState.dockVersions = true   // todas las versiones del idioma puesto
                     case "episodes": openEpisodes(model)   // `-demo-player episodes`: la lista de episodios
                     case "near-end": await model.seek(to: model.snapshot.duration * 0.92); hideTask?.cancel(); controlsVisible = true   // con «Siguiente» a la vista
                     case "close": await close()
@@ -553,7 +553,7 @@ struct PlayerScreen: View {
         .focusedSceneValue(\.playerCommands, PlayerCommands(
             togglePlay: { if !padlock.locked { userTogglePlay(holder.model) } },
             skip: { forward in if !padlock.locked { skip(holder.model, forward: forward) } },
-            openDock: { if !padlock.locked { openDock(nil) } },
+            openDock: { if !padlock.locked { openDock() } },
             close: { if !padlock.locked { Task { await close() } } }))
         .onDisappear {
             // Quitado de la pantalla sin cerrarse (otra pantalla lo reemplazó): el video no sigue sonando por detrás (29 oct: dos

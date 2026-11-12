@@ -76,10 +76,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// apagado sigue gris»). Antes, el tinte de la app lo dejaba casi blanco con la bolita blanca y Ajustes usaba el verde.
     /// Lo pone `DSSwitchStyle` en toda la app (`OrbitalApp`), no cada pantalla.
     static let switchOn = brandMoon
-    /// Lo que ya está o salió bien («conectado», «Este va bien» de los subtítulos) y la letra sobre
-    /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
+    /// Lo que ya está o salió bien («conectado»): cambia con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
     static let success = role(.success)
-    static let onSuccess = role(.onSuccess)
     /// Lo nuevo y lo de hoy («Hoy», el listón «Nuevo», el «Nuevo» del Top 10): el turquesa del puntito del logo (2 nov 2026).
     static let fresh = role(.fresh)
     static let onFresh = role(.onFresh)

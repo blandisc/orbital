@@ -44432,6 +44432,105 @@
           }
         }
       }
+    },
+    "Otro idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other language"
+          }
+        }
+      }
+    },
+    "Volver a cero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to zero"
+          }
+        }
+      }
+    },
+    "recordado para esta versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "remembered for this version"
+          }
+        }
+      }
+    },
+    "versión %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "version %lld of %lld"
+          }
+        }
+      }
+    },
+    "1 versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 version"
+          }
+        }
+      }
+    },
+    "No hay para este video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None for this video"
+          }
+        }
+      }
+    },
+    "En otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In another version"
+          }
+        }
+      }
+    },
+    "Para sordos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the hard of hearing"
+          }
+        }
+      }
+    },
+    "Forzados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forced"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

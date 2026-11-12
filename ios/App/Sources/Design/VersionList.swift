@@ -18,13 +18,16 @@ struct VersionGroupHeader: View {
 }
 
 /// Un grupo de renglones en una sola tarjeta, con una raya fina entre uno y otro (como Música o TV de Apple).
+/// `inset`: dónde empieza la raya (bajo el texto, no bajo el ícono); los renglones de «Audio y subtítulos» llevan su columna
+/// de ícono o bandera más ancha (`SubtitleRow.separatorInset`).
 struct VersionGroup<Content: View>: View {
+    var inset: CGFloat = DS.Space.s3 + DS.Version.mark
     @ViewBuilder let content: Content
     var body: some View {
         VStack(spacing: 0) {
             Group(subviews: content) { rows in
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                    if index > 0 { Rectangle().fill(DS.hairline).frame(height: DS.Stroke.hairline).padding(.leading, DS.Space.s3 + DS.Version.mark) }
+                    if index > 0 { Rectangle().fill(DS.hairline).frame(height: DS.Stroke.hairline).padding(.leading, inset) }
                     row
                 }
             }

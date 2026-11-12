@@ -115,8 +115,11 @@ extension DS {
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
         static let episodeThumb: CGFloat = 112
-        /// El ancho del nombre del tamaño de subtítulos («Muy grande») entre − y +: no brinca al cambiar.
-        static let sizeValue: CGFloat = 88
+        /// «Audio y subtítulos» en renglones (S1, Fernando, 11 nov 2026): la columna del ícono o la bandera a la izquierda y la de
+        /// la palomita a la derecha. Fijas: con o sin bandera, elegido o no, todos los renglones miden y se alinean igual.
+        static let rowLead: CGFloat = 28, rowMark: CGFloat = 24
+        /// El panel en horizontal: el aire entre el video y el panel, y del panel a las orillas (o al área segura).
+        static let sideGap = DS.Space.s4
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando; < 0 es arriba, bajo el área segura).
         /// En el iPad de pie (ancho regular) el video abre a media pantalla: arriba dejaba ~600 pt de negro abajo.
         static let regularCenter = 0.5
@@ -147,6 +150,12 @@ extension DS {
         static let topScrimHeight: CGFloat = 170
         /// El cuadro que se guarda al irse a segundo plano (para tenerlo a la vista al volver): lo más grande que se guarda.
         static let frozenFrameMax = CGSize(width: 1920, height: 1080)
+    }
+
+    /// Un `DSIconButton` con marco fijo (`steady`): el símbolo va en una caja cuadrada, así «−» y «+» (o ‹ ›) miden lo mismo
+    /// aunque un dibujo sea más bajo que el otro (antes el «−» salía más chico que el «+»).
+    enum IconButton {
+        static let steadyGlyph: CGFloat = 20
     }
 
     /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).

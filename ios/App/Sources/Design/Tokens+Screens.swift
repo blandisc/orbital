@@ -21,8 +21,6 @@ extension DS {
     /// la lleven), lo ancho de lo que se ve al mantener presionado un renglón y el punto de «cómo sabemos el idioma».
     enum Version {
         static let mark: CGFloat = 16, preview: CGFloat = 320, dot: CGFloat = 8
-        /// Un idioma que se supone (no lo dice el nombre ni se comprobó): borde punteado.
-        static let guessLine: CGFloat = 1, guessDash: CGFloat = 4
     }
 
     /// «Todas las fuentes» (`AllSourcesList`): el punto de qué tan rápido arranca (turquesa: ya está en Real-Debrid; ámbar:
