@@ -54,8 +54,8 @@ enum AppComposition {
             detailsMemo: TmdbDetailsMemo(file: AppFiles.swrCache.deletingLastPathComponent().appendingPathComponent("tmdb-details.json")))
         services.isOnline = { Connectivity.shared.isOnline }
         services.audioProbe = .shared   // «revisar por dentro»: corta en cuanto llegan los bytes del encabezado
-        // Apagada en la app de verdad (la demostración arma sus servicios arriba) hasta el OK de Fernando: leer una versión la agrega a su Real-Debrid (sin probar).
-        services.audioProbe.turnOff()
+        // Prendida con el OK de Fernando (12 nov 2026: «Sí, préndelo»). Leer una versión la agrega a su Real-Debrid; si da
+        // problemas se apaga con `services.audioProbe.turnOff()`.
         return services
     }
 }
