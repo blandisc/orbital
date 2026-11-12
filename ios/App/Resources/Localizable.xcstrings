@@ -44432,6 +44432,50 @@
           }
         }
       }
+    },
+    "Un toque y empieza en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One tap and it starts on the TV"
+          }
+        }
+      }
+    },
+    "Nada en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing on the TV"
+          }
+        }
+      }
+    },
+    "Prueba a decirle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try saying"
+          }
+        }
+      }
+    },
+    "Ver en la TV: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch on the TV: %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

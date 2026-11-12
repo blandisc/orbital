@@ -7,7 +7,7 @@ import OrbitalModels
 /// (`TouchPad`), sus teclas (`RemoteKey`) y «Escribir» cuando la TV tiene dónde.
 struct RemoteSheet: View {
     @Environment(\.titleName) var titleName
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
@@ -27,6 +27,8 @@ struct RemoteSheet: View {
     @State private var settling: Task<Void, Never>?
     /// La primera medida va directa (la hoja abre ya de su alto); la espera es solo para lo que cambia después.
     @State private var measuredOnce = false
+    /// El alto del panel del iPad (`panel`): su contenido mide al menos eso y el control llega al borde de abajo.
+    @State var panelHeight: CGFloat = 0
     @State private var text = ""
     /// Lo que ya tiene la TV de lo que escribiste (para mandar solo la diferencia).
     @State private var sentText = ""
@@ -54,37 +56,34 @@ struct RemoteSheet: View {
     @State private var showsPad = false
     /// El póster, el nombre y la voz son los mismos en las dos alturas: viajan de un lugar al otro (`remoteMorph`).
     @Namespace private var morph
-    @Environment(AppEnvironment.self) private var env
+    @Environment(AppEnvironment.self) var env
 
     var body: some View {
         let model = tvNow.model
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                if let close {
-                    DSSheetHeader(title: Text("Control de la TV")) {
-                        DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close).accessibilityIdentifier("remote-panel-close")
-                    }
-                }
-                VStack(alignment: .leading, spacing: DS.Remote.blockGap) {
-                    header(model)
-                        // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                            if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
+        Group {
+            // iPad y Mac (CT2, 11 nov 2026): en el panel de la derecha, arriba lo que suena y abajo el control (`panel`).
+            if let close { panel(model, close: close) } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DS.Remote.blockGap) {   // ds-exception: la hoja del control no lleva título; sus bloques van a su ritmo
+                        header(model)
+                            // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                                if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
+                            }
+                        // Lo completo se funde en su lugar (la voz, que ya estaba, se desliza a su sitio: `remoteMorph`). Antes subía
+                        // desde abajo mientras lo de arriba cambiaba de forma, y parecía que todo desaparecía y volvía.
+                        if large { full(model).transition(.opacity) }
+                        else {
+                            Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
+                                .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
                         }
-                    // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
-                    // Lo completo se funde en su lugar (la voz, que ya estaba, se desliza a su sitio: `remoteMorph`). Antes subía
-                    // desde abajo mientras lo de arriba cambiaba de forma, y parecía que todo desaparecía y volvía.
-                    if large { full(model).transition(.opacity) }
-                    else {
-                        Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
-                            .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
                     }
+                    .dsSheetContent()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0 + DS.Remote.sheetAllowance, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
                 }
+                .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
             }
-            .dsSheetContent()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0 + DS.Remote.sheetAllowance, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
         }
-        .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
         .presentationContentInteraction(.resizes)   // deslizar mueve la hoja primero y luego el contenido (antes se peleaban)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
@@ -200,7 +199,7 @@ struct RemoteSheet: View {
     }
 
     /// Mandar una frase tal cual (la pista, la guía, «otro»), como si la hubieras dicho.
-    private func say(_ model: TVNowModel, _ phrase: String) {
+    func say(_ model: TVNowModel, _ phrase: String) {
         lastSaid = phrase
         answer(model) { await $0.handle(phrase) }
     }
@@ -370,7 +369,7 @@ struct RemoteSheet: View {
     static let reveal = AnyTransition.asymmetric(insertion: .opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top)),
                                                  removal: .opacity)
 
-    private func voice(_ model: TVNowModel) -> some View {
+    func voice(_ model: TVNowModel) -> some View {
         // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…». La misma pieza en la hoja corta y estirada.
         var hint = model.hints.isEmpty ? nil : model.hints[hintIndex % model.hints.count]
         #if DEBUG
@@ -397,7 +396,7 @@ struct RemoteSheet: View {
                             checkConnection: { Task { issue = nil; issue = await model.diagnoseConnection() } }))
     }
 
-    @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
+    @ViewBuilder func volume(_ model: TVNowModel) -> some View {
         // El volumen de la TV: − · barra · +, y silencio; con un video, + y − en el orden del mando (V5-B).
         VolumeControl(volume: model.volume,
                       down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
@@ -408,7 +407,7 @@ struct RemoteSheet: View {
     }
 
     /// Reproduciendo: la línea de tiempo (o el mapa de sustos), los botones del reproductor y sus pistas.
-    @ViewBuilder private func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
+    @ViewBuilder func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
         let series = now.kind == "series"
         // El mapa abierto va fuera del reloj de la barra (que vuelve a pintar cada segundo): ahí adentro su entrada y su
         // salida se cortaban a medias.
@@ -469,18 +468,6 @@ struct RemoteSheet: View {
         .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
     }
 
-    /// «0:53 para el siguiente susto» (o que ya no quedan).
-    private func nextScare(_ scares: [JumpScare], position: Double) -> some View {
-        let next = scares.first { $0.time > position }
-        let text = next.map { Text("\(Duration.seconds(Int($0.time - position)).formatted(.time(pattern: .minuteSecond))) para el siguiente susto") }
-            ?? Text("Ya no quedan sustos")
-        return HStack(spacing: DS.Space.s1) {
-            text.recipe(.footnote, color: DS.textMuted).monospacedDigit().lineLimit(1)
-            Spacer(minLength: DS.Space.s2)
-            Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
-        }
-    }
-
     @ViewBuilder private func trackMenu(_ model: TVNowModel, title: Text, symbol: String, action: String, tracks: [OrbitalRemote.NowPlaying.Track],
                                         fallback: OrbitalRemote.InputAction, legendKey: String) -> some View {
         if tracks.isEmpty {
@@ -509,13 +496,8 @@ struct RemoteSheet: View {
         }
     }
 
-    /// Lo primero del nombre de una pista («Inglés · Subtítulos · de Netflix» → «Inglés»).
-    static func shortTrack(_ label: String) -> String {
-        label.components(separatedBy: " · ").first.map { $0.trimmingCharacters(in: .whitespaces) }.flatMap { $0.isEmpty ? nil : $0 } ?? label
-    }
-
     /// En vivo: canal anterior y siguiente, grandes, y silencio.
-    private func liveDeck(_ model: TVNowModel) -> some View {
+    func liveDeck(_ model: TVNowModel) -> some View {
         HStack(spacing: DS.Space.s2) {
             RemoteKey(symbol: "chevron.up", title: Text("Canal siguiente")) { Task { await model.control("channel_up") } }
             RemoteKey(symbol: "chevron.down", title: Text("Canal anterior")) { Task { await model.control("channel_down") } }
@@ -544,7 +526,7 @@ struct RemoteSheet: View {
     }
 
     /// Navegar la interfaz de la TV: las secciones, el pad (tocar elige) y las teclas con lo que hace cada una.
-    @ViewBuilder private func navigation(_ model: TVNowModel) -> some View {
+    @ViewBuilder func navigation(_ model: TVNowModel, growing: Bool = false) -> some View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
@@ -556,13 +538,12 @@ struct RemoteSheet: View {
                 }
             }
             key(model, "chevron.right.2", nil, Text("Siguiente"), .nextsection)
-   
+        }
         .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
-    }
         TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
-            // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
-            .frame(height: DS.Remote.padHeightFitted)   // en un SE, más bajito: las teclas de abajo y «Escribir» caben
+            // Por el alto de la pantalla (en un SE, más bajito); en el panel del iPad crece con lo que le sobra (`growing`).
+            .frame(minHeight: DS.Remote.padHeightFitted, maxHeight: growing ? .infinity : DS.Remote.padHeightFitted)
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.backward", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
             key(model, "bolt", "alt", Text("Atajo"), .alt)   // lo que haga en esa pantalla lo dice la leyenda
@@ -582,7 +563,7 @@ struct RemoteSheet: View {
     }
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
-    private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
+    func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
         RemoteTextField(text: $text, autoFocus: autoFocus) {
             let typed = text
             sentText = text   // lo que espera mandarse ya va aquí (no reemplaza el campo después de buscar)

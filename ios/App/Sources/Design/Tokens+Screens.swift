@@ -550,6 +550,8 @@ extension DS {
         static let touchGlow: CGFloat = 72
         /// Cuánto se espera a que dejes de escribir para mandar el texto a la TV.
         static let typeDebounce = UInt64(0.35 * 1e9)
+        /// El panel del iPad con la tele en reposo: cuántos de «Seguir viendo» enseña arriba del control (CT2).
+        static let panelContinueCount = 4
     }
 
     /// El mosaico de «Para ti» (equivalente a `foryou-mosaic` en la TV): columnas, cuánto crece la enfocada
