@@ -59,4 +59,44 @@ public struct PlayerLayout: Sendable {
 
     /// El panel de la derecha en horizontal: su ancho, pero nunca más de `panelShare` del total (en un SE o mini quedaba poco video).
     public func sidePanelWidth(in total: CGFloat) -> CGFloat { min(panelWidth, total * panelShare) }
+
+    /// Vertical con un panel pegado abajo («Audio y subtítulos», que mide `panel` con su aire de abajo): el video justo arriba
+    /// de él, a `gap`, sin hueco negro entre los dos (antes se quedaba arriba y, con el panel chico, sobraban ~200 pt de negro).
+    /// Si el panel no deja lugar, el video sube hasta la orilla de arriba (y el panel se desplaza por dentro); nunca sale de
+    /// la pantalla.
+    public func portraitRect(abovePanel panel: CGFloat, gap: CGFloat, in size: CGSize, aspect: Double) -> CGRect {
+        let height = portraitHeight(in: size, aspect: aspect)
+        let y = min(max(0, size.height - panel - gap - height), max(0, size.height - height))
+        return CGRect(x: 0, y: y, width: size.width, height: height)
+    }
+
+    /// Las orillas que no se tapan (el área segura de la ventana).
+    public struct Insets: Sendable, Equatable {
+        public var top: CGFloat, left: CGFloat, bottom: CGFloat, right: CGFloat
+        public init(top: CGFloat = 0, left: CGFloat = 0, bottom: CGFloat = 0, right: CGFloat = 0) {
+            self.top = top; self.left = left; self.bottom = bottom; self.right = right
+        }
+    }
+
+    /// Horizontal con el panel a la derecha: dónde va el panel y dónde el video.
+    public struct SideDock: Sendable, Equatable {
+        public let panel: CGRect
+        public let video: CGRect
+    }
+
+    /// Horizontal con el panel: el panel a la derecha, de arriba abajo dentro del área segura (a `margin` de cada orilla), y
+    /// el video en su proporción, centrado en lo que queda a la izquierda y a `margin` del panel. Los dos salen del mismo
+    /// cálculo y del mismo tamaño (la pantalla entera): antes el panel medía su ancho sin el área segura, el video con ella,
+    /// y el panel tapaba la orilla derecha del video y se cortaba abajo.
+    public func sideDock(in size: CGSize, insets: Insets, margin: CGFloat, aspect: CGFloat) -> SideDock {
+        let width = sidePanelWidth(in: size.width)
+        let top = max(insets.top, margin), bottom = max(insets.bottom, margin)
+        let panel = CGRect(x: size.width - max(insets.right, margin) - width, y: top, width: width, height: max(0, size.height - top - bottom))
+        let left = max(insets.left, margin)
+        let free = CGRect(x: left, y: 0, width: max(0, panel.minX - margin - left), height: size.height)
+        let ratio = aspect.isFinite && aspect > 0 ? aspect : wideAspect
+        let width2 = min(free.width, free.height * ratio)
+        let height = width2 / ratio
+        return SideDock(panel: panel, video: CGRect(x: free.midX - width2 / 2, y: free.midY - height / 2, width: width2, height: height))
+    }
 }

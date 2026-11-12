@@ -14,7 +14,6 @@ final class PlayerDockState {
     var episodeSeasons: [Season] = []
     /// Viendo un archivo descargado, los episodios que también están bajados (los demás no se pueden poner).
     var playableEpisodes: Set<String>?
-    var dockOpens: SubtitleDock.Section? = .subtitles
     var versionShowsAll = false
     /// Una versión que Real-Debrid aún no tiene: se pregunta antes de abrirla (puede tardar o no abrir).
     var slowPick: Int?
@@ -22,6 +21,8 @@ final class PlayerDockState {
     var dockLanguages = false
     /// «Todas las versiones» desde el panel chico: media hoja (el video sigue a la vista arriba).
     var dockVersions = false
+    /// «Audio» desde el panel chico: las pistas de este archivo y los idiomas que solo trae otra versión (media hoja).
+    var dockAudio = false
     /// «Sincronizar con una línea»: las frases congeladas (nil: no está abierto), la que tocaste y el ajuste que quedó.
     var syncLines: [SubtitleLine]?
     var syncPicked: Double?

@@ -93,12 +93,8 @@ extension PlayerScreen {
         }
         if landscape && dockState.subtitleDock {
             // Con el panel: el cuadro completo, en su proporción y centrado en lo que queda libre a la izquierda (sin
-            // pegarse a la orilla ni quedar bajo el panel).
-            let left = Self.windowSafeArea.left + DS.Space.s4
-            let free = CGRect(x: left, y: 0, width: max(0, size.width - Self.panelWidth(in: size.width) - DS.Space.s4 * 3 - left), height: size.height)
-            let width = min(free.width, free.height * DS.Poster.stillAspect)
-            let height = width / DS.Poster.stillAspect
-            return CGRect(x: free.midX - width / 2, y: free.midY - height / 2, width: width, height: height)
+            // pegarse a la orilla ni quedar bajo el panel). El mismo cálculo que coloca el panel (`sideDock`).
+            return Self.sideDock(in: size).video
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
         if ipod != nil { return IPodLayout(in: size, aspect: portraitAspect).video }   // dentro de la pantalla del iPod
@@ -106,11 +102,11 @@ extension PlayerScreen {
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
         var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? openingCenter, aspect: portraitAspect)
-        // Con «Audio y subtítulos» abierto, si no cabe abajo, el video sube lo justo (hasta la orilla) y el panel se ve entero.
+        // Con «Audio y subtítulos» abierto, el video justo arriba del panel (pegado abajo): sin hueco negro entre los dos si el
+        // panel es chico; si no cabe, el video sube hasta la orilla y el panel se desplaza por dentro (`PlayerLayout`, S1).
         // (La vista de sincronizar con una frase no se mide: con la medida de otra página el video subía de más o de menos.)
         if dockState.subtitleDock && !dockPinned && dockState.dockPage != .episodes && dockState.syncLines == nil && dockState.dockNeed > 0 {
-            let room = size.height - band.maxY - DS.Space.s4 - DS.Space.s2
-            band.origin.y -= min(max(0, dockState.dockNeed - room), band.minY)
+            band = PlayerLayout.app.portraitRect(abovePanel: dockState.dockNeed + DS.Space.s2, gap: DS.Space.s4, in: size, aspect: portraitAspect)
         }
         return band
     }
@@ -157,8 +153,13 @@ extension PlayerScreen {
     /// Vertical con «Recortar»: el video a pantalla completa.
     var fillsPortrait: Bool { !landscape && ipod == nil && zoom == .fill }
 
-    /// El panel de la derecha en horizontal (`PlayerLayout.sidePanelWidth`).
-    static func panelWidth(in total: CGFloat) -> CGFloat { PlayerLayout.app.sidePanelWidth(in: total) }
+    /// En horizontal con el panel: dónde va el panel (a la derecha, dentro del área segura) y el video (`PlayerLayout.sideDock`),
+    /// medidos sobre la pantalla entera (el video y el panel ignoran el área segura y la cuentan aquí).
+    static func sideDock(in size: CGSize) -> PlayerLayout.SideDock {
+        let safe = windowSafeArea
+        return PlayerLayout.app.sideDock(in: size, insets: .init(top: safe.top, left: safe.left, bottom: safe.bottom, right: safe.right),
+                                         margin: DS.PlayerPanel.sideGap, aspect: DS.Poster.stillAspect)
+    }
 
     /// El iPod se ve en vertical.
     var ipod: IPodFace? { landscape ? nil : IPodFace(rawValue: ipodFace) }
@@ -191,9 +192,8 @@ extension PlayerScreen {
         withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }
     }
 
-    /// Abre la hoja «Audio y subtítulos» con un renglón abierto, o directo en «Versión».
-    func openDock(_ section: SubtitleDock.Section?, version: Bool = false) {
-        dockState.dockOpens = section
+    /// Abre «Audio y subtítulos» (todo a la vista: ya no hay renglones que se abren), o directo en «Versión».
+    func openDock(version: Bool = false) {
         withAnimation(DS.Motion.base(reduceMotion)) {
             moreOpen = false; controlsVisible = false; dockState.dockPage = version ? .version : .media; dockState.subtitleDock = true
         }

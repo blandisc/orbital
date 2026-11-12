@@ -1424,6 +1424,11 @@ TRANSLATIONS = {
     "Lo pediste desde la TV": "You requested it from the TV",
     "También lo que pides en la TV": "Also what you request on the TV",
     "Si lo pediste en la TV con tu misma cuenta, este iPhone te avisa cuando lo note: al abrir la app o cuando iOS lo deja revisar, a veces minutos o una hora después.": "If you requested it on the TV with the same account, this iPhone lets you know once it notices: when you open the app, or when iOS lets it check, sometimes minutes or an hour later.",
+    # S1 (Fernando, 11 nov): «Audio y subtítulos» en renglones con palomita.
+    "Otro idioma": "Other language", "Volver a cero": "Reset to zero", "recordado para esta versión": "remembered for this version",
+    "versión %lld de %lld": "version %lld of %lld", "1 versión": "1 version", "No hay para este video": "None for this video",
+    "En otra versión": "In another version", "Para sordos": "For the hard of hearing", "Forzados": "Forced",
+    "Pequeño": "Small", "Muy grande": "Extra large", "en la nube": "in the cloud", "Todavía no está en la nube": "Not in the cloud yet",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
@@ -1462,7 +1467,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta", "UnavailableCause", "DebridRequestWords")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "Cinemeta", "UnavailableCause", "DebridRequestWords")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).

@@ -49,6 +49,13 @@ extension DS {
         static let switchVersion = "arrow.triangle.swap"
         /// La que estás viendo (una lista de secciones): antes «✓» como letra.
         static let current = "checkmark"
+        /// «Audio y subtítulos» del reproductor (S1, 11 nov 2026): un ícono por renglón. Apagados es la burbuja vacía, la misma
+        /// del botón de subtítulos con ellos apagados.
+        static let subtitlesOff = "character.bubble", otherLanguage = "magnifyingglass", offline = "wifi.slash"
+        static let subtitleSync = "timer", syncWithLine = "text.line.first.and.arrowtriangle.forward", resetDelay = "arrow.counterclockwise"
+        static let subtitleSize = "textformat.size", audioTrack = "speaker.wave.2", videoVersion = "square.stack"
+        /// Las versiones de subtítulos para sordos y las de solo lo que no se entiende (forzados): ícono y palabra.
+        static let hearingImpaired = "ear", forcedSubtitles = "quote.bubble", subtitleVersion = "captions.bubble"
         /// Los botones de los controles de otras consolas, en el acompañante (antes ✕ ○ □ △ ☰ ⧉ como letras).
         static let padCross = "xmark", padCircle = "circle", padSquare = "square", padTriangle = "triangle"
         static let padMenu = "line.3.horizontal", padView = "rectangle.on.rectangle"
