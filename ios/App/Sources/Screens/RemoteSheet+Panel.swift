@@ -24,7 +24,9 @@ extension RemoteSheet {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
             }
-            .dsSheetContent()
+            // Sin el margen de abajo de las hojas: el panel ya guarda el lugar de la barra de inicio, y sumados quedaba más
+            // aire abajo que a los lados.
+            .dsSheetContent(bottom: false)
             // Al menos el alto del panel: lo que sobra se lo queda el pad y el control llega al borde de abajo.
             .frame(minHeight: panelHeight, alignment: .top)
         }
@@ -74,7 +76,8 @@ extension RemoteSheet {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             voice(model)
             volume(model)
-            navigation(model, growing: true)
+            // Con el reproductor arriba, sus botones ya dicen Salir, subtítulos, audio y Versión: aquí no se repiten.
+            navigation(model, growing: true, contextKeys: model.context != .player)
             typing(model, autoFocus: model.context == .typing || model.textField == true)
         }
         .frame(maxHeight: .infinity, alignment: .bottom)

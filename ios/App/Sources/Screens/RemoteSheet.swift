@@ -526,7 +526,9 @@ struct RemoteSheet: View {
     }
 
     /// Navegar la interfaz de la TV: las secciones, el pad (tocar elige) y las teclas con lo que hace cada una.
-    @ViewBuilder func navigation(_ model: TVNowModel, growing: Bool = false) -> some View {
+    /// `contextKeys: false` (el panel del iPad con el reproductor arriba): sin Atrás/Atajo/Opciones, que ahí repetían «Salir»,
+    /// «Audio y subtítulos» y «Versión» de la tarjeta de arriba (Fernando, 11 nov: «vamos a pulir sus detalles»).
+    @ViewBuilder func navigation(_ model: TVNowModel, growing: Bool = false, contextKeys: Bool = true) -> some View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
@@ -544,12 +546,14 @@ struct RemoteSheet: View {
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (en un SE, más bajito); en el panel del iPad crece con lo que le sobra (`growing`).
             .frame(minHeight: DS.Remote.padHeightFitted, maxHeight: growing ? .infinity : DS.Remote.padHeightFitted)
-        HStack(spacing: DS.Space.s2) {
-            key(model, "chevron.backward", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
-            key(model, "bolt", "alt", Text("Atajo"), .alt)   // lo que haga en esa pantalla lo dice la leyenda
-            key(model, "ellipsis", "options", Text("Opciones"), .options)
+        if contextKeys {
+            HStack(spacing: DS.Space.s2) {
+                key(model, "chevron.backward", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
+                key(model, "bolt", "alt", Text("Atajo"), .alt)   // lo que haga en esa pantalla lo dice la leyenda
+                key(model, "ellipsis", "options", Text("Opciones"), .options)
+            }
+            .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
         }
-        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
         HStack(spacing: DS.Space.s2) {
             // Saltan 5 en la fila de la TV (la leyenda «De 5 en 5» de la TV era igual en las dos, A16). Antes «5 atrás» sin
             // unidad y con los íconos de pista anterior/siguiente, justo bajo «Anterior / Siguiente» (revisión del 11 nov).
