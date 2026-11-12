@@ -451,7 +451,7 @@ struct PlayerScreen: View {
             // Una versión falló y se prueba otra: se dice (antes cambiaba a escondidas y solo se veía la carga más tiempo).
             if case .triedAnotherSource(let attempt, let total)? = value {
                 return show(PlayerNotice(title: String(format: Strings.tr("Probando otra versión (%lld de %lld)…", language: ui0), attempt, total),
-                                         detail: Strings.tr("La anterior no respondió. Sigue en el mismo punto.", language: ui0), tone: .info))
+                                         detail: Strings.tr(model.retriedAfterPlaying ? "La anterior se cortó. Sigue en el mismo punto." : "La anterior no estaba disponible.", language: ui0), tone: .info))
             }
             if value == .notReadyOnRealDebrid {
                 return show(PlayerNotice(title: Strings.tr("Todavía no está en la nube", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))

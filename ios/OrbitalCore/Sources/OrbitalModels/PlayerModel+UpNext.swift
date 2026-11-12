@@ -34,7 +34,10 @@ extension PlayerModel {
         // aplica (salía «Saltar intro» a media película al regresar a la app).
         // Y hasta que el video corre de verdad (`playbackSettled`, lo mismo que quita la carga del botón grande): el motor dice
         // «suena» con casi nada en el búfer y el botón salía con el video aún cargando (30 oct).
-        if s.state == .loading || !playbackSettled || reconnecting || backgrounded || restoringQuietly { skipIntroTo = nil; return }
+        // Tampoco mientras el video se llena o espera a arrancar tras un salto (la carga del botón grande): «Saltar intro» con
+        // el video aún cargando no tiene qué saltar (Fernando, 12 nov 2026: «que no salga hasta que ya esté cargada la serie»).
+        let loadingNow = s.state == .loading || s.state == .buffering || awaitingPlayback || phase == .preparing || !hasPlayed
+        if loadingNow || !playbackSettled || reconnecting || backgrounded || restoringQuietly { skipIntroTo = nil; return }
         // De vuelta a la app, el motor rearmado dice un momento 0:00 y luego, en pausa, ya no avisa: el botón salía con la intro
         // ya pasada y se quedaba (31 oct). Hasta que la posición coincide con donde ibas, no hay botón.
         if let anchor = skipAnchor {

@@ -19569,13 +19569,24 @@
         }
       }
     },
-    "La anterior no respondió. Sigue en el mismo punto.": {
+    "La anterior no estaba disponible.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The previous one didn't respond. Same spot."
+            "value": "The previous one wasn't available."
+          }
+        }
+      }
+    },
+    "La anterior se cortó. Sigue en el mismo punto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The previous one cut out. Same spot."
           }
         }
       }

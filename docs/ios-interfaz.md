@@ -155,6 +155,17 @@ izquierda, entre el avance y las tarjetas, y «rompe simetría».
 - Lo cuidan `DesignRulesTests+Version.swift`: `title-sources` solo en la pieza, `ContinueAction` sin otro selector, la
   ficha abre «Versión» solo por puertas conocidas (cada una con su porqué), y la pieza con su token y aire parejo.
 
+### El reproductor no ofrece ni promete lo que no hay (12 nov 2026)
+
+Fernando: «que no salga saltar intro hasta que ya esté cargada la serie» y, del aviso al probar otra versión, «no es como que
+falle y que luego busques otra para que continúe. Es que esa no estaba disponible».
+
+- «Saltar intro» y «Saltar resumen» solo salen con el video corriendo: nunca mientras carga, se llena o espera a arrancar.
+- Al probar otra versión, «Sigue en el mismo punto» solo se dice si la anterior ya había sonado; si nunca arrancó, «La
+  anterior no estaba disponible».
+
+`PlayerModelTests+Avisos.swift` lo cuida. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
+
 ### Un botón, un estado (11 nov 2026)
 
 Fernando: «cuando abres una ficha aparece la parte blanca y la otra aparece la parte gris, en lo que se carga el botón de

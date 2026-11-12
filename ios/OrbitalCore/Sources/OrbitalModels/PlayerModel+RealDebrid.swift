@@ -111,6 +111,11 @@ extension PlayerModel {
     /// Las que quedan por probar en un reintento (las que arrancan al instante y no han fallado).
     var remainingInstant: Int { sourceChoices.filter { $0.instant && !failedSources.contains($0.index) }.count }
 
+    /// ¿La versión que falló ya había sonado? Solo entonces «Sigue en el mismo punto» dice algo cierto. Si nunca arrancó (lo
+    /// común: Real-Debrid no la tenía lista), no hay punto que conservar: «La anterior no estaba disponible» (Fernando, 12 nov
+    /// 2026: «no es como que falle y que luego busques otra para que continúe. Es que esa no estaba disponible»).
+    public var retriedAfterPlaying: Bool { lastGoodPosition > 0 }
+
     /// «Probando otra versión (2 de 3)»: el intento que sigue y cuántos habrá en total, contando solo las que se van a
     /// probar (las que arrancan al instante, hasta `maxSourceRetries + 1`). Así el número del aviso es el de verdad.
     func triedAnother() -> PlayerNotice {
