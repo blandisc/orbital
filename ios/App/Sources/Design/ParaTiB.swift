@@ -91,7 +91,7 @@ struct MosaicCover: View {
     }
 
     /// Cuántas columnas lleva el muro en esta ventana (`DS.ParaTiB.coverColumns(forWidth:)`): ocho, o más en ventana ancha.
-    private var columns: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.size.width) }
+    private var columns: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.column.width) }   // lo que le queda a la pantalla (sin el panel del control)
 
     private var still: Bool {
         #if DEBUG

@@ -440,7 +440,7 @@ extension DS {
         static let tabUnderline: CGFloat = 3
         /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
         /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
-        static var width: CGFloat { min(maxWidth, (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
+        static var width: CGFloat { min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
         static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius = DS.Radius.xxl
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius = DS.Radius.logo(34), glow: CGFloat = 18

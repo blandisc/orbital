@@ -92,7 +92,7 @@ struct HomeHeader: View {
             Spacer(minLength: DS.Space.s2)
             // SX1: mientras eliges, la cápsula se recoge a la derecha hasta quedar solo tu foto, apagada; tocarla cierra.
             // En un iPhone chico (SE) ni tu foto cabe junto al selector abierto: se va del todo y regresa al elegir.
-            if !(kindOpen && WindowMetrics.size.width < DS.KindPill.narrowScreen) {
+            if !(kindOpen && WindowMetrics.column.width < DS.KindPill.narrowScreen) {
             capsule(stories)
                 .opacity(kindOpen ? DS.Opacity.dimmed : 1)
                 // al cerrar, regresa un instante después de que la pastilla se encoge: nunca se enciman
@@ -107,7 +107,7 @@ struct HomeHeader: View {
         // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad
         // acostado con el control abierto (que encoge Inicio) el encabezado era más ancho que su columna y empujaba todo
         // fuera de la pantalla: «bital», «iendo» (revisión 2 del 11 nov).
-        .containerRelativeFrame(.horizontal)
+        .containerRelativeFrame(.horizontal)   // ds-exception: en la barra de arriba (safeAreaBar) el panel no cuenta: probado con el control abierto
     }
 
     /// La cápsula: el control y tu foto (se hace a un lado mientras eliges en el selector, SX1).
@@ -164,7 +164,7 @@ struct HomeHeader: View {
         .padding(.horizontal, DS.Space.gutter)
         .padding(.vertical, DS.Space.s2)
         // Como el renglón de siempre: nunca más ancho que su lugar (R4: en el SE los círculos se salían por las dos orillas).
-        .containerRelativeFrame(.horizontal)
+        .containerRelativeFrame(.horizontal)   // ds-exception: en la barra de arriba (safeAreaBar) el panel no cuenta: probado con el control abierto
     }
 
     /// Deslizar a la izquierda abre, a la derecha cierra; mientras, todo sigue al dedo.

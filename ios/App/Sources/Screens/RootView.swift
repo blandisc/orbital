@@ -296,7 +296,7 @@ struct MainTabs: View {
 
     /// Ventana ancha (iPad horizontal, Mac): el control va en un panel fijo a la derecha y se navega a la vez. Angosta (iPad
     /// de pie, dos apps en pantalla): la tarjeta. En el iPhone el ancho nunca es regular: la hoja de siempre.
-    private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }
+    private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }   // ds-exception: decide si hay panel: mide la ventana
 
     /// La ficha como panel a la derecha: con ancho regular (iPad de pie o acostado, Mac). En el iPhone, a pantalla completa.
     /// Ya no: desde FE1 (4 nov 2026) la ficha del iPad y la Mac se abre a pantalla completa, como en el iPhone.
@@ -583,5 +583,10 @@ struct BannerView: View {
 
 /// La barra de pestañas arriba de entrada en el iPad (DK1); aparte, para que el cuerpo de la raíz compile a tiempo.
 private struct TabBarFirst: ViewModifier {
-    func body(content: Content) -> some View { content.defaultAdaptableTabBarPlacement(.tabBar) }
+    func body(content: Content) -> some View {
+        #if DEBUG
+        if Demo.isOn, Demo.has("-demo-sidebar") { return content.defaultAdaptableTabBarPlacement(.sidebar) }   // la barra lateral abierta (capturas)
+        #endif
+        return content.defaultAdaptableTabBarPlacement(.tabBar)
+    }
 }

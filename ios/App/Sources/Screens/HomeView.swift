@@ -140,9 +140,9 @@ struct HomeView: View {
             lowerRows(model, kind: kind, picks: picks, pending: pending)
             // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
         }
-        // El ancho es el de la pantalla, siempre (I2): si una fila pide más (letra grande, el SE), no empuja la página entera
-        // a la izquierda y el margen se queda donde va.
-        .containerRelativeFrame(.horizontal, alignment: .leading)
+        // El ancho es el de la columna (I2, `WindowMetrics.column`): si una fila pide más (letra grande, el SE), no empuja la página.
+        // Ni `containerRelativeFrame` ni medir el ScrollView: con el control abierto los dos cuentan el panel (docs/ios-interfaz.md).
+        .frame(width: WindowMetrics.column.width, alignment: .leading)
         .refreshOrbitHost()   // la luna de tirar para actualizar
         .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
         .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
@@ -294,7 +294,6 @@ struct HomeView: View {
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
     /// Cuántos de «Destacado» van en la portada.
-
     private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(HomeModel.heroCount)) }
 
     /// El que está al frente de la portada (el fondo toma su color).
@@ -315,7 +314,7 @@ struct HomeView: View {
         return ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                    hero(s).containerRelativeFrame(.horizontal).id(i)   // mantener y mover: la portada se inclina
+                    hero(s).containerRelativeFrame(.horizontal).id(i)   // ds-exception: mide el carrusel (ya del ancho de la página). Mantener y mover: se inclina
                 }
             }
             .scrollTargetLayout()

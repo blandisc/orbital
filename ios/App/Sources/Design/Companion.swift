@@ -57,7 +57,7 @@ struct CompanionPanel<Content: View>: View {
         .frame(height: DS.Companion.panelHeight, alignment: .topLeading)
         // Casi todo el ancho (`width` ya descuenta los márgenes del carrusel): la siguiente solo asoma su orilla, `peek`
         // (antes asomaba media tarjeta con el texto cortado a media palabra).
-        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }
+        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }   // ds-exception: el carrusel del acompañante, en su hoja (no en la columna)
         .dsCard(.card)
     }
 }

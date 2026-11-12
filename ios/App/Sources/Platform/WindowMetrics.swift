@@ -57,12 +57,13 @@ extension View {
         } action: { WindowMetrics.shared.update($0) }
     }
 
-    /// Pone al día `WindowMetrics.column`: lo que miden las pestañas (con sus márgenes seguros), sin el panel de la derecha.
-    /// Una vez, en las pestañas, antes del `.inspector`. Redondeado al punto: el panel al abrirse no repinta cada cuadro.
+    /// Pone al día `WindowMetrics.column`: lo que miden las pestañas, sin el panel de la derecha. El panel (`.inspector`) les llega
+    /// como margen seguro a la derecha: el ancho va sin los márgenes de los lados (con ellos volvía a ser la ventana entera) y el
+    /// alto con los de arriba y abajo. Una vez, en las pestañas, antes del `.inspector`. Redondeado al punto.
     func tracksColumnSize() -> some View {
         onGeometryChange(for: CGSize.self) { proxy in
             let inset = proxy.safeAreaInsets
-            return CGSize(width: (proxy.size.width + inset.leading + inset.trailing).rounded(),
+            return CGSize(width: proxy.size.width.rounded(),
                           height: (proxy.size.height + inset.top + inset.bottom).rounded())
         } action: { WindowMetrics.shared.updateColumn($0) }
     }
