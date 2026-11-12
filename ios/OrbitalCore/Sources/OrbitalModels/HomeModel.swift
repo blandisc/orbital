@@ -251,7 +251,7 @@ public final class HomeModel: ObservableModel {
     }
 
     /// Lo del teléfono, con los nombres en tu idioma.
-    func showLibrary() async {
+    public func showLibrary() async {
         let all = await services.watch.withReturning(await services.watch.library())
         let continueItems = all.filter { w in
             guard w.inContinue else { return false }

@@ -458,7 +458,7 @@ final class DesignRulesTests: XCTestCase {
     /// la voz dentro del control.
     func testSheetsWithAGrabberHaveNoCloseButton() throws {
         let files = try sources()
-        let noSwipe: Set<String> = ["MatchDeckScreen.swift", "WrappedView.swift", "Stories.swift", "RemoteSheet.swift", "TitlePanel.swift", "VoiceRow.swift"]
+        let noSwipe: Set<String> = ["MatchDeckScreen.swift", "WrappedView.swift", "Stories.swift", "RemoteSheet.swift", "RemoteSheet+Panel.swift", "TitlePanel.swift", "VoiceRow.swift"]
         var problems = hits(#"DSSheetHeader\([^\n]*close:"#, in: files).map { $0 + " (la hoja se cierra jalándola)" }
         problems += hits(#"(DSIconButton\(symbol: "xmark", label: "Cerrar"|Button\("Cerrar", systemImage: "xmark")"#, in: files,
                          skip: { noSwipe.contains($0.name) }).map { $0 + " (una hoja con asa no lleva ✕)" }
