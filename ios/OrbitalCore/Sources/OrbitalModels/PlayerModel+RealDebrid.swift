@@ -12,6 +12,8 @@ struct PlayerDebridState {
     var requestedNext: String?
     /// Sin ninguna versión: lo que dijo tu Torrentio sin Real-Debrid (R4): existe (10, con su torrent) o nadie lo tiene (11).
     var lookupCause: (cause: UnavailableCause, torrent: Source?)?
+    /// Una duración corta que se está viendo (¿el aviso de «descargando» o el motor aún abriendo?): cuánto y desde cuándo.
+    var shortDuration: (seconds: Double, since: Date)?
 }
 
 /// Real-Debrid en el reproductor (R5, R6, D5): los avisos de Torrentio, los reintentos que no piden descargas y la causa en
@@ -109,7 +111,7 @@ extension PlayerModel {
     }
 
     /// Las que quedan por probar en un reintento (las que arrancan al instante y no han fallado).
-    var remainingInstant: Int { sourceChoices.filter { $0.instant && !failedSources.contains($0.index) }.count }
+    var remainingInstant: Int { let skip = retrySkip; return sourceChoices.filter { $0.instant && !skip.contains($0.index) }.count }
 
     /// ¿La versión que falló ya había sonado? Solo entonces «Sigue en el mismo punto» dice algo cierto. Si nunca arrancó (lo
     /// común: Real-Debrid no la tenía lista), no hay punto que conservar: «La anterior no estaba disponible» (Fernando, 12 nov

@@ -163,8 +163,11 @@ falle y que luego busques otra para que continúe. Es que esa no estaba disponib
 - «Saltar intro» y «Saltar resumen» solo salen con el video corriendo: nunca mientras carga, se llena o espera a arrancar.
 - Al probar otra versión, «Sigue en el mismo punto» solo se dice si la anterior ya había sonado; si nunca arrancó, «La
   anterior no estaba disponible».
+- Lo que ya suena no se cambia solo por otra versión salvo que de verdad falle: una duración corta de un momento (el motor
+  abriendo el archivo) no es el aviso de Real-Debrid, «otra versión» nunca vuelve a cargar el mismo archivo (aunque venga
+  de otro torrent) y toda versión que se da por fallida queda en la bitácora con su motivo (`markFailed`).
 
-`PlayerModelTests+Avisos.swift` lo cuida. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
+`PlayerModelTests+Avisos.swift` y `RetryOnlyWhenItFailsTests.swift` lo cuidan. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
 
 ### Un botón, un estado (11 nov 2026)
 
