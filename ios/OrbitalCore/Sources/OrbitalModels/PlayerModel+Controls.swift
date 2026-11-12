@@ -13,6 +13,7 @@ extension PlayerModel {
         let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
         Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
         loadStartedAt = clock(); lastLoggedState = ""
+        if rd.shortDuration != nil { rd.shortDuration = nil }   // otra carga: la duración corta era de la anterior
         if source?.resolution == "4K" { ParallelPlayback.want(url) }   // varias conexiones solo en 4K
         await resumeSync?.value
         if let request {
@@ -170,8 +171,8 @@ extension PlayerModel {
             if let language { titlePrefs.remember(metaID: request.metaID, audioTrack: language) }
         } catch {
             guard mine == generation else { return }
-            failedSources.insert(index)
-            if !goBackAfterSwitch() { await retryWithAnotherSource()?.value }
+            markFailed(choice, "la elegiste y no abrió: \(error)")
+            if !goBackAfterSwitch() { await retryWithAnotherSource("la elegiste y no abrió")?.value }
         }
     }
 
@@ -182,7 +183,7 @@ extension PlayerModel {
     func goBackAfterSwitch() -> Bool {
         guard let back = switchBack, let url = back.source.playbackURL, !closing else { return false }
         switchBack = nil
-        if let source, source.index != back.source.index { failedSources.insert(source.index) }
+        if let source, source.index != back.source.index { markFailed(source, "la elegiste y no llegó a sonar: se vuelve a la de antes") }
         generation += 1
         let mine = generation
         acceptingSnapshots = false

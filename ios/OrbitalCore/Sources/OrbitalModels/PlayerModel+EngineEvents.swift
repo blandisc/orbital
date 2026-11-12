@@ -25,21 +25,24 @@ extension PlayerModel {
             // Una fuente que se corta (antes o después de empezar) se cambia por otra en el mismo punto, como en Orbital.
             // El cambio corre aparte: así los avisos repetidos del mismo fallo, que ya están en cola, se descartan mientras se carga la otra.
             // La que elegiste a mano y no llegó a sonar: se vuelve a la tuya.
-            _ = message
-            if !goBackAfterSwitch() { retryWithAnotherSource() }
+            if !goBackAfterSwitch() { retryWithAnotherSource("el motor falló: \(message)") }
             return
         }
         // El aviso de Real-Debrid (una versión que aún no tiene): no es el título. Nunca cuenta como visto, terminado ni pasa
         // al siguiente episodio; se vuelve a la tuya (si la cambiaste a mano) o se prueba otra.
         // En cualquier momento, aunque ya «sonó»: el motor puede empezar antes de saber cuánto dura (así se colaba el aviso de
         // ElfHosted, «Not ready yet», hasta el minuto). Un video de segundos nunca es el episodio.
-        if isPlaceholder(s) {
-            if let source { failedSources.insert(source.index); queued.mark(source.key, at: clock()) }   // ya quedó pedida: no se vuelve a pedir
+        // Una versión que ya está en Real-Debrid y dice una duración corta: puede ser el motor abriendo el archivo (lo que lleva
+        // leído); no se cambia por otra hasta que la duración se mantiene (`confirmedPlaceholder`), y mientras no se toma nada.
+        if confirmedPlaceholder(s) {
+            let why = String(format: "el aviso de Real-Debrid: dura %.0f s", s.duration)
+            if let source { markFailed(source, why); queued.mark(source.key, at: clock()) }   // ya quedó pedida: no se vuelve a pedir
             lastNotice = .downloading
             notice = .notReadyOnRealDebrid
-            if !goBackAfterSwitch() { retryWithAnotherSource() }
+            if !goBackAfterSwitch() { retryWithAnotherSource(why) }
             return
         }
+        if rd.shortDuration != nil { return }
         if !hasPlayed, acceptingSnapshots, "\(s.state)" != lastLoggedState {   // antes de sonar: cada cambio del motor, con su tiempo
             lastLoggedState = "\(s.state)"
             Self.note(String(format: "motor: %@ (%.1f s)", lastLoggedState, clock().timeIntervalSince(loadStartedAt)))
@@ -103,9 +106,10 @@ extension PlayerModel {
             transition = Task { [weak self] in await self?.appDidBecomeActive() }
         }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
-            Self.note("no arrancó en \(Int(PlaybackRules.startupTimeout)) s")
+            let why = "no arrancó en \(Int(PlaybackRules.startupTimeout)) s"
+            Self.note(why)
             if goBackAfterSwitch() { return }
-            _ = retryWithAnotherSource()   // corre aparte: el reloj sigue revisando
+            _ = retryWithAnotherSource(why)   // corre aparte: el reloj sigue revisando
             return
         }
         // En pausa la cuenta de «Siguiente» también se detiene (antes, al seguir, saltaba de golpe).
@@ -126,15 +130,14 @@ extension PlayerModel {
     }
 
     /// Cambia a otra fuente en el mismo punto. Marca el cambio de forma síncrona (lo que el motor diga ahora se ignora) y carga aparte.
-
-    /// Cambia a otra fuente en el mismo punto. Marca el cambio de forma síncrona (lo que el motor diga ahora se ignora) y carga aparte.
+    /// `why`: por qué falló la que se deja (queda en la bitácora). Nunca vuelve a la misma (ni al mismo archivo con otro enlace).
     @discardableResult
-    func retryWithAnotherSource() -> Task<Void, Never>? {
+    func retryWithAnotherSource(_ why: String = "no volvió a abrir") -> Task<Void, Never>? {
         guard !retrying, !closing else { return transition }
         guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
         retrying = true; acceptingSnapshots = false; startupDeadline = nil
-        Self.note("otra versión (ya fallaron \(failedSources.count + 1))")
-        if let source { failedSources.insert(source.index) }
+        markFailed(source, why)
+        Self.note("otra versión (ya fallaron \(failedSources.count))")
         attempts = failedSources.count
         // Solo quedan las que Real-Debrid tendría que bajar: no se prueban (cada una sería otra descarga en tu cuenta, R6).
         guard failedSources.count <= PlaybackRules.maxSourceRetries, sourceChoices.isEmpty || remainingInstant > 0 else {
