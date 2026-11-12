@@ -20,6 +20,13 @@ public final class AudioProbe: @unchecked Sendable {
 
     public init(reader: RangeReader) { self.reader = reader }
 
+    /// Apagada no revisa nada. Así sale la app de verdad hasta que Fernando lo apruebe: pedir el enlace de una versión para
+    /// leerla la agrega a su cuenta de Real-Debrid, y eso no se ha probado con su cuenta (12 nov 2026). Lo ya comprobado al
+    /// reproducir y «Lo trajo otro episodio» siguen funcionando.
+    public var isOn: Bool { lock.withLock { on } }
+    public func turnOff() { lock.withLock { on = false } }
+    private var on = true
+
     /// Otra forma de leer (la demostración, las pruebas).
     public func use(_ reader: RangeReader) { lock.withLock { self.reader = reader } }
 

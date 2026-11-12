@@ -28,6 +28,7 @@ extension SourcesModel {
     /// rehace. Se corta al cerrar «Versión» (la tarea se cancela) o si se abre el reproductor.
     func probeAudio(onCellular: Bool, mine: Int) async {
         let probe = services.audioProbe
+        guard probe.isOn else { return }
         let playing = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
         let picks = AudioProbe.candidates(ranked, wanted: prefs.wanted, tried: probe.tried).filter { $0.key != playing }
         for source in picks {
