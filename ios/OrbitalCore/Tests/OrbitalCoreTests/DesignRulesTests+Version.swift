@@ -55,4 +55,16 @@ extension DesignRulesTests {
         XCTAssertNil(piece.range(of: #"padding\(\.(top|bottom)"#, options: .regularExpression), "`SplitPlayButton` no lleva rellenos sueltos arriba o abajo")
         XCTAssertTrue(piece.contains("fixedSize(horizontal: false, vertical: true)"), "los dos lados del botón miden lo mismo de alto")
     }
+
+    /// Un botón, un estado (Fernando, 11 nov 2026: «aparece la parte blanca y la otra aparece la parte gris, en lo que se
+    /// carga el botón de reproducir»): el botón partido nunca tiene un lado apagado y el otro prendido, y mientras carga la
+    /// ficha o no hay qué ver, el botón va entero (sin zona de versión).
+    func testSplitPlayButtonHasOneState() throws {
+        let files = try sources(["Design", "Screens"])
+        let split = try XCTUnwrap(files.first { $0.name == "SplitPlayButton.swift" })
+        let offs = split.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") && $0.contains(".disabled(!enabled)") }.count
+        XCTAssertEqual(offs, 2, "Los dos lados de `SplitPlayButton` se apagan con el mismo `enabled`")
+        check(hits(#"enabled: false.*version:|version:.*enabled: false"#, in: files),
+              "Un botón apagado («Cargando», «Aún sin episodios», «Sale el…») va entero: sin `version:`")
+    }
 }

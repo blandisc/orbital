@@ -43,7 +43,8 @@ struct SplitPlayButton<Title: View>: View {
                 .frame(minWidth: DS.Size.touchTarget, maxHeight: .infinity)
             }
             // Mientras se busca no se apaga (apagado, el sistema la pintaba de otro gris): el toque no hace nada todavía.
-            .dsSolidPrimaryButton(shape: .roundedRectangle(radius: .zero))
+            // Los dos lados se apagan juntos: uno gris y otro blanco se ve roto (regla «Un botón, un estado»).
+            .dsSolidPrimaryButton(shape: .roundedRectangle(radius: .zero)).disabled(!enabled)
             .accessibilityLabel(version.accessibilityLabel)
             .accessibilityIdentifier("title-sources")
             .overlay(alignment: .leading) { divider }

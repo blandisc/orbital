@@ -141,7 +141,8 @@ extension TitleView {
 
     /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, la barrita con cuánto falta y «Desde el principio» (como la TV,
     /// `core/watch.js`). La versión que va a sonar va en la zona derecha del botón («🇲🇽 1080p ⌄», `playVersion`); sin
-    /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga, «Cargando» y la zona en gris: nada brinca.
+    /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga la ficha, «Cargando» entero; mientras se busca la
+    /// versión de un episodio que ya se sabe, la zona derecha en gris con su ancho.
     func continueAction(_ model: TitleModel) -> ContinueAction {
         let label = model.continueLabel
         let go = { play(model) }
@@ -152,7 +153,9 @@ extension TitleView {
             return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: playVersion(model, languageName: nil, pending: true), play: go)
+            // Entero mientras carga la ficha: partido, un lado salía gris (apagado) y el otro blanco, y si al final no
+            // había episodios la zona de la versión aparecía y se iba (Fernando, 11 nov: «aparece la parte blanca y la otra gris»).
+            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, play: go)
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }
@@ -167,7 +170,9 @@ extension TitleView {
         // Sin versiones o sin respuesta: el aviso abajo y el botón entero (no hay versión que elegir).
         let note: Text? = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (!env.isOnline ? Text("Sin conexión") : model.offersInstant ? Text("Tus complementos no contestan") : Text("La búsqueda de versiones no contesta"))   // edición: el primero solo con instantStreams
             : nil
-        let pending = note == nil && model.recommendedSource == nil
+        // Buscando de verdad (`.unknown`): si la búsqueda ya contestó y ninguna versión sirve para «Ver», el botón va entero
+        // (antes la zona derecha se quedaba en gris para siempre).
+        let pending = note == nil && model.recommendedSource == nil && model.sourceCheck == .unknown
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, note: note,
                               version: playVersion(model, languageName: languageName, pending: pending),
