@@ -55,10 +55,37 @@ no cada agente.
   grande, íconos por `DS.Symbol`, ediciones `plus` y `orbital` compilando, bitácora «No llegó a Trakt», `StoredFile`).
   En `f58964dd`: «Pruebas» y «App del iPhone» en verde, `tv-estable` al día; núcleo del iPhone 1,416 pruebas, web 337,
   humo 38, servidor 2,199 en la Mac (más los 17 propios de Windows). No hubo tercera calificación.
-- **Sigue abierto:** recorrido de la Mac (pantalla bloqueada); V9; F3 (tokens de una sola fuente); `core/menus.js`,
-  reproductor, voz y `server.py` sin partir; dos pruebas de humo intermitentes en Windows (`test_long_list`,
-  `test_moving_feels_instant`); ~20 textos de la edición `orbital`; el desplazamiento de Inicio en iPad con el control
-  abierto; idioma colado en episodios; el cierre `EXC_BAD_ACCESS` de la ficha sin reproducir (remedio preventivo y
+- **11–12 nov, después del cierre (decisiones de Fernando y correcciones; cada una dejó su regla y su prueba, regla 16 de
+  la casa):**
+  - Deshecho a petición suya: datos de más en el destacado de «Películas y series» de la TV (queda el año), el puntito
+    «Nuevo» (vuelve la cinta, TV e iPhone) y la tarjeta de calificar del iPhone (vuelve la pastilla flotante, D2-A deshecha).
+  - Servidor: partidos `player_ui`, `voice`, `player_screen`, `player`, `server`, `library/trakt`, `library/streams` y
+    `catalog` (el mayor archivo ya no pasa de ~600 líneas); rutas lentas con `@slow`; F3 hecho (tokens generados de un solo
+    archivo, `scripts/generar_tokens.py`).
+  - iPhone: V9 (repintado fino) hecho en la ficha; L3 («Vamos L3»): la versión vive en el botón partido; «Aire parejo»;
+    «Un botón, un estado»; «El volumen no se mueve solo»; S1 («Me gusta tu propuesta S1»): «Audio y subtítulos» en
+    renglones con palomita, vertical y horizontal; F1 + R1 («Me gusta la F1. Y vamos a ir con R1»): una fila de mosaicos
+    de un renglón (Guardar · Descargar · Vista · Tráiler), la temporada en una línea, «Tu nota» como botón y ↺ junto al
+    avance.
+  - iPad: Inicio ya no se recorre con el control abierto («Lo que le queda a la pantalla»); CT2 («Vamos con CT2»): el
+    panel del control con lo que suena arriba y el control anclado abajo. La Mac no tiene control de la TV.
+  - Reproductor del iPhone: «Saltar intro» solo con el video corriendo; el aviso de otra versión ya no promete «el mismo
+    punto» si la anterior nunca arrancó; la «otra versión» falsa tras sonar (una duración corta pasajera se tomaba por el
+    aviso de Real-Debrid) corregida, con toda falla anotada en la bitácora; el play tocado al volver a la app ya no se
+    pierde.
+  - Versiones: un complemento lento ya no se pierde (el corte a los 3 s tiraba a Torrentio y con él el latino);
+    «Versión» dice «Hay latino, pero hay que pedirlo a la nube» y «No contestó a tiempo · Reintentar»; revisar el audio
+    por dentro (hasta 3 versiones al instante) prendido con el OK de Fernando («Sí, préndelo»): agrega esas versiones a
+    su Real-Debrid, vigilar.
+  - Las dos apps: una sola escala de clasificación por idioma (`design/clasificaciones.json`): en español latino la
+    mexicana (con conversión), en cualquier otro la de EE. UU.
+- **Pendiente en la TV (12 nov):** el complemento lento y los avisos de latino (registro de paridad, LN1); que el
+  reintento no reabra el mismo archivo desde otro torrent (`orbital/watch/playback.py:355-358`); revisar el texto del
+  aviso al probar otra versión.
+- **Sin comprobar en el iPhone real (12 nov):** la barra de volumen, el regreso a la app en pausa tras una salida larga,
+  la revisión del audio con su cuenta, Los Simpson T11 E2 con latino, y un tráiler de verdad en la fila de mosaicos.
+- **Sigue abierto:** recorrido de la Mac (pantalla bloqueada); el reproductor sin convertir en V9; dos pruebas de humo intermitentes en Windows (`test_long_list`,
+  `test_moving_feels_instant`); ~20 textos de la edición `orbital`; idioma colado en episodios; el cierre `EXC_BAD_ACCESS` de la ficha sin reproducir (remedio preventivo y
   `ios/scripts/abrir-fichas.sh`). `main` sin protección en GitHub (decisión de Fernando).
 - **Decisiones tomadas sobre la marcha, por confirmar con Fernando:** botón «Guardar» en el iPhone (estado en chico
   debajo); en la TV «Recientes» en vez de «Jugados», consolas en orden fijo, «Nuevo» como puntito.
