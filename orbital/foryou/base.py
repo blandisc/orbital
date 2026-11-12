@@ -84,7 +84,7 @@ SKIP_ADDONS = ("cinemeta", "torrent", "opensubtitles", "local files")
 
 TRAKT_ADDON = "trakt integration"
 
-# Tus favoritos de Trakt (películas y series). Otro nombre que «favorites»: esa es la categoría de tus JUEGOS (catalog.py).
+# Tus favoritos de Trakt (películas y series). Otro nombre que «favorites»: esa es la categoría de tus JUEGOS (catalog/base.py).
 TRAKT_FAVORITES = "trakt-favorites"
 
 

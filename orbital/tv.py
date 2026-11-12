@@ -51,7 +51,7 @@ def cache_dir(config: Config) -> Path | None:
 class TvServices:
     """Lo único que la TV en vivo usa de Orbital (antes recibía el Catalog entero): Watch (el reproductor), las
     sesiones y el Launcher (abrir mpv como un juego más), avisar a la interfaz y el «Para ti» de ahora (su Trakt, para
-    «Tus canales»). catalog.py lo arma con `TvServices.of(catalog)`; los canales de Orbital (synthetic.py) usan lo mismo."""
+    «Tus canales»). catalog/ lo arma con `TvServices.of(catalog)`; los canales de Orbital (synthetic.py) usan lo mismo."""
 
     def __init__(self, *, watch: Watch, sessions: Sessions, launcher: Launcher, notify: Callable[[dict], None],
                  foryou: Callable[[], ForYou | None]) -> None:
