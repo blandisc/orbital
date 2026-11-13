@@ -30,7 +30,7 @@ struct SaveView: View {
         .scrollBounceBehavior(.basedOnSize)
         .onAppear { if reserved == nil { reserved = reservedRows(m) } }
         .task { if m.lists == nil { await m.loadLists() } }
-        .alert("Nueva lista", isPresented: $naming) {
+        .alert("Nueva lista", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
             TextField("Nombre", text: $newName)
             Button("Crear") { let name = newName.trimmingCharacters(in: .whitespacesAndNewlines); newName = ""; Task { await m.createList(named: name) } }
                 .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

@@ -86,7 +86,7 @@ struct AddonsSettings: View {
                 }
             }
         }
-        .confirmationDialog(Text(verbatim: removing.map { String(format: Strings.tr("¿Quitar «%@»?", language: env.services.appSettings.uiLanguage), $0.name) } ?? ""),
+        .confirmationDialog(Text(verbatim: removing.map { String(format: Strings.tr("¿Quitar «%@»?", language: env.services.appSettings.uiLanguage), $0.name) } ?? ""),   // ds-exception: confirmación destructiva corta
                             isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible, presenting: removing) { addon in
             Button(model.isLastSource(addon.id) ? "Quitar de todos modos" : "Quitar complemento", role: .destructive) { remove(addon, model) }
             Button("Cancelar", role: .cancel) {}

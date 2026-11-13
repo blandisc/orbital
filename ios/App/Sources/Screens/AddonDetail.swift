@@ -76,13 +76,13 @@ struct AddonDetail: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: addon.name)).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .confirmationDialog(Text("¿Quitar «\(addon.name)»?"), isPresented: $confirmRemove, titleVisibility: .visible) {
+        .confirmationDialog(Text("¿Quitar «\(addon.name)»?"), isPresented: $confirmRemove, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
             Button(model.isLastSource(addon.id) ? "Quitar de todos modos" : "Quitar complemento", role: .destructive) { dismiss(); remove(addon) }
             Button("Cancelar", role: .cancel) {}
         } message: {
             AddonRemoveMessage(last: model.isLastSource(addon.id), tv: env.services.orbital.isConfigured)
         }
-        .confirmationDialog(Text("Te quedarás sin fuentes"), isPresented: $turningOffLast, titleVisibility: .visible) {
+        .confirmationDialog(Text("Te quedarás sin fuentes"), isPresented: $turningOffLast, titleVisibility: .visible) {   // ds-exception: advertencia antes de apagar el último complemento (sí o no)
             Button("Apagar de todos modos", role: .destructive) { Task { await model.setEnabled(addon.id, false) } }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Es tu único complemento de video prendido. Apagado, no podrás ver nada hasta prenderlo. Tu configuración se queda.") }

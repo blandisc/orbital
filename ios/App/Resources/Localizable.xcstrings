@@ -44707,6 +44707,50 @@
           }
         }
       }
+    },
+    "Ver otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch again"
+          }
+        }
+      }
+    },
+    "Ya lo viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already watched it"
+          }
+        }
+      }
+    },
+    "Otra versión o idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another version or language"
+          }
+        }
+      }
+    },
+    "T%lld E%lld · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S%lld E%lld · %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

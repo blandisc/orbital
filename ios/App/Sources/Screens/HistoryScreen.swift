@@ -104,7 +104,7 @@ struct HistoryScreen: View {
                 NavigationStack { TitleView(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster)) }
             }
         }
-        .confirmationDialog(Text("¿Quitar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {
+        .confirmationDialog(Text("¿Quitar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
             Button("Quitar", role: .destructive) { cleanRepeats() }
         } message: { Text("De cada título se queda la primera vista.") }
     }

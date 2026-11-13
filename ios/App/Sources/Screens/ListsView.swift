@@ -89,7 +89,7 @@ struct ListsView: View {
     var body: some View {
         ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
             .onAppear { Perf.mark("xtab.appear") }   // con `-perf`: de tocar Explorar a verla
-            .alert("Nueva lista", isPresented: $naming) {
+            .alert("Nueva lista", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
                 TextField("Nombre", text: $newListName)
                 Button("Crear") { createList() }
                     .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

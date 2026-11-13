@@ -127,7 +127,7 @@ struct RootView: View {
             .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
                 ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
             }
-            .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
+            .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {   // ds-exception: sí o no que llega al volver de Infuse sobre lo que esté abierto (una hoja en la raíz no se vería encima de otra)
                 Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
                 Button("No", role: .cancel) { env.askFinished = nil }
             } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }

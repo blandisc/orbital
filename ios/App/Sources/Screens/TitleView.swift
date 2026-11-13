@@ -107,7 +107,7 @@ struct TitleView: View {
         .task { await model.loadConsoleDetails() }
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
-        .modifier(RewatchDialog(row: $rewatch, version: rewatchVersion(model), again: { startEpisode(model, videoID: $0) }, versions: openVersions, unwatch: { id in Task { await model.unmarkWatched(id) } }))
+        .modifier(RewatchCard(row: $rewatch, version: rewatchVersion(model), again: { startEpisode(model, videoID: $0) }, versions: openVersions, unwatch: { id in Task { await model.unmarkWatched(id) } }))
     }
 
     /// Lo que la ficha carga al abrir.

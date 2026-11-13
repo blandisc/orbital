@@ -72,7 +72,7 @@ struct LetterboxdSettings: View {
                 else { problem = nil; env.notify("Tu historial de Letterboxd ya está en Orbital", detail: "\(model.entries.count) películas", tone: .success) }
             }
         }
-        .confirmationDialog("¿Desconectar Letterboxd?", isPresented: $confirmDisconnect, titleVisibility: .visible) {
+        .confirmationDialog("¿Desconectar Letterboxd?", isPresented: $confirmDisconnect, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
             Button("Desconectar", role: .destructive) { model.disconnect(); typed = "" }
         }
     }

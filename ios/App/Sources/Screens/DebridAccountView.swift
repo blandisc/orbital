@@ -218,7 +218,7 @@ struct DebridAccountView: View {
             Button("Quitar", role: .destructive) { confirmRemove = true }
                 // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir
                 // Orbital). IOS-17: en el botón, para que en el iPad la pregunta salga junto a «Quitar» y no pegada arriba.
-                .confirmationDialog("¿Quitar tu clave?", isPresented: $confirmRemove, titleVisibility: .visible) {
+                .confirmationDialog("¿Quitar tu clave?", isPresented: $confirmRemove, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
                     Button(role: .destructive) { Task { await model.remove() } } label: { DeviceWords.text("Solo de este iPhone", mac: "Solo de esta Mac") }
                         .accessibilityIdentifier("debrid-remove-here")
                     Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
