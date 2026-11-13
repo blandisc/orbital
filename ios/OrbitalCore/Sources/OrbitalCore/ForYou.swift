@@ -239,6 +239,7 @@ public actor ForYou {
                            logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
         s.genres = e.genres
         s.traktRating = e.rating
+        s.addedAt = e.listedAt
         return s
     }
 

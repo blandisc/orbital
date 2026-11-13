@@ -37,6 +37,9 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var tmdbRating: Double?
     /// El promedio de Letterboxd (0.5–5), si se pidió (el filtro avanzado al ordenar o filtrar por Letterboxd).
     public var letterboxdRating: Double?
+    /// Cuándo lo agregaste a la lista (`listed_at` de Trakt en Mi lista y tus listas; `listedAt` de Mi lista en el teléfono):
+    /// «Agregadas: más recientes» y «más viejas». nil en lo que no es una lista tuya o se guardó antes de que viajara.
+    public var addedAt: Date?
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,

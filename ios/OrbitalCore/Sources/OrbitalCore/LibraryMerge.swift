@@ -100,12 +100,14 @@ public enum LibraryMerge {
         let onTrakt = Dictionary(trakt.map { ($0.imdb, $0) }, uniquingKeysWith: { a, _ in a })
         for (id, entry) in entries where id.hasPrefix("tt") {
             let want = pending[id] ?? (onTrakt[id] != nil)
-            if entry.inList != want { entries[id]?.inList = want; entries[id]?.listedAt = want ? now : nil }
+            // Cuándo entró: la fecha de Trakt (`listed_at`) si viene de allá; lo que agregaste aquí, ahora.
+            let listed = pending[id] == nil ? onTrakt[id]?.listedAt?.timeIntervalSince1970 : nil
+            if entry.inList != want { entries[id]?.inList = want; entries[id]?.listedAt = want ? listed ?? now : nil }
         }
-        // Lo nuevo de Trakt entra en su orden (el más reciente primero): una marca por puesto para que el orden se conserve.
+        // Lo nuevo de Trakt entra con su fecha; sin ella, en su orden (el más reciente primero): una marca por puesto.
         for (rank, item) in trakt.enumerated() where entries[item.imdb] == nil && pending[item.imdb] != false {
             var e = make(item.imdb, kind: item.kind, name: item.title)
-            e.inList = true; e.listedAt = now - Double(rank)
+            e.inList = true; e.listedAt = item.listedAt?.timeIntervalSince1970 ?? now - Double(rank)
             entries[item.imdb] = e
         }
     }

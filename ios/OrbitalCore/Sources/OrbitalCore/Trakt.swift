@@ -337,7 +337,7 @@ public actor Trakt {
     public func publicListItems(user: String, slug: String) async throws -> [TraktEntry] {
         let safe = { (part: String) in !part.isEmpty && part.range(of: #"^[\w.-]+$"#, options: .regularExpression) != nil }
         guard safe(user), safe(slug) else { throw TraktError.invalid("Lista inválida") }
-        return TraktParsing.typed(try await get("/users/\(user)/lists/\(slug)/items", auth: false, [("extended", "full")])?.array)
+        return TraktParsing.typed(try await get("/users/\(user)/lists/\(slug)/items", auth: false, [("extended", "full")])?.array).map { var e = $0; e.listedAt = nil; return e }   // no es tuya: sin «Agregadas»
     }
 
     /// Lo que más se está viendo ahora; con `genres` («science-fiction»), solo de ese género («Por género» en Buscar).

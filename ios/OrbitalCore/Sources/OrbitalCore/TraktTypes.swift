@@ -43,6 +43,8 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var rating: Double?
     /// Cuándo lo viste (solo en el historial: «Porque viste» dice «la viste hace 3 días»).
     public var watchedAt: Date?
+    /// Cuándo lo agregaste a la lista (`listed_at` de la fila: Mi lista, tus listas y favoritos).
+    public var listedAt: Date?
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -201,7 +203,8 @@ public enum TraktParsing {
         var found: [TraktEntry] = [], seen = Set<String>()
         for row in rows ?? [] {
             guard let typeName = row["type"]?.string, let kind = ["movie": "movie", "show": "series"][typeName],
-                  let item = entry(row[typeName], kind: kind), seen.insert(item.imdb).inserted else { continue }
+                  var item = entry(row[typeName], kind: kind), seen.insert(item.imdb).inserted else { continue }
+            item.listedAt = row["listed_at"]?.string.flatMap(date)   // con o sin milésimas; una fecha rota, sin fecha
             found.append(item)
         }
         return found

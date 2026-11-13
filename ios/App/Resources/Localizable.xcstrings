@@ -11123,6 +11123,28 @@
         }
       }
     },
+    "Agregadas: más recientes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added: newest"
+          }
+        }
+      }
+    },
+    "Agregadas: más viejas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added: oldest"
+          }
+        }
+      }
+    },
     "Años": {
       "extractionState": "manual",
       "localizations": {

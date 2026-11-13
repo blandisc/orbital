@@ -2,12 +2,13 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Cómo se ordena una lista abierta.
-enum ListSort: String, CaseIterable {
-    case added, best, imdb, trakt, letterboxd, newest, oldest, title, shortest
+/// El nombre de cada orden de una lista abierta (los órdenes viven en `OrbitalModels.ListSort`). La TV usa los mismos nombres
+/// (`orbital/web/js/components/list-screen.js` › SORTS); «Agregadas…» le falta (registro de paridad).
+extension ListSort {
     var label: LocalizedStringKey {
         switch self {
         case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"; case .letterboxd: "Mejor calificadas en Letterboxd"
+        case .addedNewest: "Agregadas: más recientes"; case .addedOldest: "Agregadas: más viejas"
         case .shortest: "Más cortas primero"
         case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
@@ -62,6 +63,7 @@ struct ListFilter: Equatable {
         }
         switch sort {
         case .added: return kept
+        case .addedNewest, .addedOldest: return ListSort.byAdded(kept, newestFirst: sort == .addedNewest)
         case .best: return kept.sorted { (Self.rating($0, imdb: imdb) ?? 0) > (Self.rating($1, imdb: imdb) ?? 0) }
         case .shortest: return kept.sorted { ($0.runtime ?? Int.max) < ($1.runtime ?? Int.max) }
         case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
@@ -127,7 +129,7 @@ struct SortableGrid<Cell: View>: View {
         self.watched = watched ?? { await shared.watchedIDs() }
         self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
         self.letterboxdRatings = { items in await shared.letterboxdRatings(items.filter { $0.kind == "movie" }.map(\.imdb)) }
-        _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
+        _sort = State(initialValue: ListSort.saved(listID: listID))
     }
 
     var body: some View {
@@ -154,7 +156,7 @@ struct SortableGrid<Cell: View>: View {
         .toolbar {
             if bar == nil { ToolbarItem(placement: .topBarTrailing) { menu } }
         }
-        .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
+        .onChange(of: sort) { _, new in ListSort.remember(new, listID: listID) }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
         // También cuando llega la lista: si entraste con el orden de IMDb guardado, la lista todavía venía vacía.
         .task(id: needsIMDb ? items.count : -1) {
@@ -184,20 +186,8 @@ struct SortableGrid<Cell: View>: View {
 
     private var genres: [String] { ListFilter.commonGenres(items.map(\.genres)) }
 
-    /// Los órdenes que tienen sentido aquí: IMDb si se puede pedir; Trakt si la lista trae su calificación.
-    private var sorts: [ListSort] {
-        ListSort.allCases.filter { s in
-            switch s {
-            case .imdb: imdbRatings != nil
-            case .trakt: items.contains { $0.traktRating != nil }
-            case .letterboxd: items.contains { $0.kind == "movie" }   // Letterboxd califica películas
-            case .shortest: items.contains { $0.runtime != nil }
-            // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
-            case .added, .oldest: false
-            default: true
-            }
-        }
-    }
+    /// Los órdenes que tienen sentido aquí (los mismos en toda lista; uno que no aplica no aparece).
+    private var sorts: [ListSort] { ListSort.offered(for: items, imdbAvailable: imdbRatings != nil) }
 }
 
 /// El botón de ordenar y filtrar de una lista abierta (arriba a la derecha): el mismo en todo «Ver todo» y en las colecciones
