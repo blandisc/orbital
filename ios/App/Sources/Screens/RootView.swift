@@ -538,9 +538,8 @@ struct MainTabs: View {
         if Demo.open?.hasPrefix("settings") == true || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
         if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
-        let library = AppEnvironment.downloadsTab   // `-demo-open history` / `vistas`: Guardado › Historial o Vistas (capturas)
-        if Demo.open == "history" { tab = library; paths[library].append(HistoryRoute()) }
-        if Demo.open == "vistas" { tab = library; paths[library].append(SavedStateRoute(status: TitleStatus.watched.rawValue)) }
+        // `-demo-open history` / `vistas`: Guardado › Vistas › Historial o Vistas (capturas; la pestaña la elige `LibrarySavedView`).
+        if Demo.open == "history" || Demo.open == "vistas" { tab = AppEnvironment.downloadsTab }
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title {
             let route = TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)

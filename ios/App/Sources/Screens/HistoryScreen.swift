@@ -6,8 +6,9 @@ import OrbitalModels
 /// con su hora. Las repetidas (el mismo título o capítulo con menos de una hora de otra) salen marcadas y se borran juntas;
 /// tocar uno cambia su fecha, deslizarlo (o «Editar») lo borra y «Agregar» busca algo que viste fuera de Orbital. Es la
 /// quinta pila de Guardado (D7-A). docs/producto/live-activity-2026-11-08/gestor-ola3.html
-struct HistoryRoute: Hashable {}
-
+///
+/// GD2 (Fernando, 13 nov 2026: «Pestañas, como la tele»): vive dentro de Guardado › Vistas › Historial, con las pestañas arriba
+/// (`header`) y, en su renglón, «Agregar» y «Editar» con ícono (antes era una pantalla aparte con los botones en la barra).
 struct HistoryScreen: View {
     @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,22 +19,35 @@ struct HistoryScreen: View {
     @State private var adding = false
     @State private var picked: SearchResult?
     @State private var confirmRepeats = false
+    /// «Editar»: borrar varios con el «−» de cada renglón.
+    @State private var editMode: EditMode = .inactive
+    /// Las pestañas de Guardado (y el selector de Vistas), arriba de todo.
+    let header: AnyView?
 
     private var language: String { env.services.appSettings.uiLanguage }
 
-    init() {
+    init(header: AnyView? = nil) {
         let services = AppEnvironment.shared.services
+        self.header = header
         _history = State(wrappedValue: ModelObserver(HistoryModel(services, monthName: Self.monthName(services))))
     }
 
     /// «Noviembre», «Octubre 2025», en el idioma de la app de ahora (el mismo encabezado de mes que Vistas, I5).
     private static func monthName(_ services: Services) -> @MainActor (Date) -> String {
-        { SavedStateScreen.month($0, language: services.appSettings.uiLanguage) }
+        { SavedPileContent.month($0, language: services.appSettings.uiLanguage) }
     }
 
     var body: some View {
         let model = history.model
         List {
+            Section {
+                // Las pestañas y el renglón de controles en un solo renglón: sin el aire de dos.
+                VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                    if let header { header }
+                    controls(model)
+                }
+                .listHeadRow()
+            }
             ForEach(model.months) { month in
                 Section {
                     // Borrar deslizando el renglón o con «Editar» (D7-A, 10 nov): sin un bote rojo en cada uno.
@@ -71,18 +85,9 @@ struct HistoryScreen: View {
             }
         }
         .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Backdrop())   // el cielo del resto de la app (I5)
-        .navigationTitle(Text("Historial")).navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { adding = true } label: { Label("Agregar", systemImage: "plus") }
-                    .accessibilityIdentifier("history-add")
-            }
-            if !model.entries.isEmpty {
-                ToolbarItem(placement: .topBarTrailing) { EditButton().accessibilityIdentifier("history-edit") }
-            }
-        }
+        .listHeadRows()
+        .scrollContentBackground(.hidden)   // el cielo lo pone la Biblioteca, el mismo en todo Guardado
+        .environment(\.editMode, $editMode)
         .refreshable { await model.reload() }
         .task { await model.loadIfNeeded() }
         .onChange(of: language) { model.monthName = Self.monthName(env.services) }   // los meses en el idioma nuevo
@@ -110,6 +115,28 @@ struct HistoryScreen: View {
     }
 
     @State private var pickedReady: SearchResult?
+
+    /// El renglón bajo las pestañas: «Agregar» (algo que viste fuera de Orbital) y «Editar», con ícono, a la derecha.
+    private func controls(_ model: HistoryModel) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            Spacer(minLength: 0)
+            if editMode != .active {
+                Button { adding = true } label: { ListBarIcon(symbol: "plus") }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Agregar"))
+                    .accessibilityIdentifier("history-add")
+            }
+            if !model.entries.isEmpty {
+                Button { withAnimation(DS.Motion.base(reduceMotion)) { editMode = editMode == .active ? .inactive : .active } } label: {
+                    ListBarIcon(symbol: editMode == .active ? DS.Symbol.done : "checklist", on: editMode == .active)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(editMode == .active ? Text("Listo") : Text("Editar"))
+                .accessibilityIdentifier("history-edit")
+            }
+        }
+        .padding(.horizontal, DS.Space.gutter)
+    }
 
     /// «Ayer · 21:30 · Repetida» en un renglón; si no cabe (letra grande), «Repetida» en el suyo: un renglón nunca empieza
     /// con «·» (revisión del 11 nov).

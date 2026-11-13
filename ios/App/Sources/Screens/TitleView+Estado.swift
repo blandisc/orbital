@@ -47,7 +47,7 @@ extension TitleView {
         case .inList: "bookmark.fill"
         case .watching: "play.circle.fill"
         case .watched: "checkmark.circle.fill"
-        case .dropped: "eye.slash"
+        case .dropped: "eye.slash.fill"   // un estado: relleno, como los demás (GD2: antes el único de contorno)
         }
     }
 

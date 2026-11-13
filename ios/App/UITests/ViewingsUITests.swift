@@ -111,17 +111,20 @@ final class ViewingsUITests: XCTestCase {
 
     func testHistorialYRepetidas() {
         let app = launch(["-demo-tab", "3"])
-        let watched = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Vistas'")).firstMatch
-        XCTAssertTrue(watched.waitForExistence(timeout: 20), "«Vistas» en el tablero")
+        let watched = app.buttons["saved-tab-watched"]
+        XCTAssertTrue(watched.waitForExistence(timeout: 20), "la pestaña «Vistas» de Guardado")
         watched.tap()
-        let history = app.buttons["saved-history"]
-        XCTAssertTrue(history.waitForExistence(timeout: 10), "el reloj de «Historial» en Vistas")
+        let history = app.buttons["Historial"]
+        XCTAssertTrue(history.waitForExistence(timeout: 10), "«Historial» dentro de Vistas (GD2)")
         history.tap()
         let repeatRow = app.descendants(matching: .any)["history-row-repeat"]
         XCTAssertTrue(repeatRow.waitForExistence(timeout: 10), "Dune repetida el mismo día")
         shot(app, "historial")
-        app.buttons["history-clean-repeats"].tap()
-        let confirm = app.buttons["Borrar"]
+        // GD2: el historial vive bajo las pestañas de Guardado; «Quitar … repetidas» queda al final de la lista.
+        let clean = app.buttons["history-clean-repeats"]
+        for _ in 0..<4 where !clean.isHittable { app.swipeUp() }
+        clean.tap()
+        let confirm = app.buttons["Quitar"]   // la confirmación dice «Quitar» (D7-A: limpieza, no borrar)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         confirm.tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: repeatRow)

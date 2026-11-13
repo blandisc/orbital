@@ -99,10 +99,11 @@ struct SortableGrid<Cell: View>: View {
     /// Cómo vas con cada título (por IMDb), donde se sabe: el menú ofrece «Estado» (Por ver · A medias · Vistas) en lugar de
     /// «Ocultar lo que ya vi» (Biblioteca › Guardado).
     var states: [String: WatchState]?
-    /// El renglón de arriba de la pantalla, con el botón de ordenar y filtrar adentro en vez de en la barra (Guardado, FG1-A:
-    /// «Mi lista ⌃⌄» a la izquierda y Todo · Películas · Series y el botón a la derecha; Fernando, 4 nov 2026). Debajo, solo
-    /// lo filtrado en cápsulas. nil: el botón va arriba a la derecha, en la barra, como en toda lista abierta.
-    var bar: ((ListFilterMenu) -> AnyView)?   // ds-exception: el renglón lo arma la pantalla
+    /// El renglón de arriba de la pantalla, con ordenar y filtrar adentro en vez de en la barra (Guardado, GD2, Fernando, 13 nov
+    /// 2026: «un renglón bajo las pestañas: a la izquierda el orden elegido, a la derecha los controles con ícono»). Recibe el
+    /// orden (`ListSortMenu`, con su nombre a la vista) y el filtro (`ListFilterMenu`, sin «Ordenar»: ya está a la izquierda).
+    /// Debajo, solo lo filtrado en cápsulas. nil: el botón va arriba a la derecha, en la barra, como en toda lista abierta.
+    var bar: ((ListBarParts) -> AnyView)?   // ds-exception: el renglón lo arma la pantalla
     /// «Ordenar › A mano…» (G4-A, 10 nov 2026): en tus listas de Trakt y Mi lista, abre su modo con agarraderas.
     var manualOrder: (() -> Void)?
     /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
@@ -120,7 +121,7 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
-         states: [String: WatchState]? = nil, bar: ((ListFilterMenu) -> AnyView)? = nil, manualOrder: (() -> Void)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+         states: [String: WatchState]? = nil, bar: ((ListBarParts) -> AnyView)? = nil, manualOrder: (() -> Void)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = collections
         self.states = states; self.bar = bar; self.manualOrder = manualOrder
         self.hideWatchedAvailable = collections.traktLinked && states == nil
@@ -135,7 +136,7 @@ struct SortableGrid<Cell: View>: View {
     var body: some View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd, states: states ?? [:])
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            if let bar { bar(menu) }
+            if let bar { bar(ListBarParts(sort: sortMenu, filters: menu)) }
             if filter.isActive { ListFilterChips(filter: $filter) }
             // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
             // calificada que estaba abajo nunca subía, sin saber por qué).
@@ -173,11 +174,18 @@ struct SortableGrid<Cell: View>: View {
         }
     }
 
+    /// Con el renglón de la pantalla (`bar`), el orden va aparte a la izquierda y este menú solo filtra.
     private var menu: ListFilterMenu {
-        ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
-                       showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating,
-                       manualOrder: manualOrder.map { open in { sort = .added; open() } })
+        ListFilterMenu(sort: $sort, filter: $filter, sorts: bar == nil ? sorts : [], genres: genres, decades: decades, showsKindFilter: showsKindFilter,
+                       showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating && bar == nil,
+                       manualOrder: bar == nil ? manualOrderAction : nil)
     }
+
+    private var sortMenu: ListSortMenu {
+        ListSortMenu(sort: $sort, sorts: sorts, loading: rating, manualOrder: manualOrderAction)
+    }
+
+    private var manualOrderAction: (() -> Void)? { manualOrder.map { open in { sort = .added; open() } } }
 
     /// IMDb se pide solo si el orden o la calificación mínima la usan.
     private var needsIMDb: Bool { sort == .best || sort == .imdb || filter.minRating != nil }
@@ -188,6 +196,61 @@ struct SortableGrid<Cell: View>: View {
 
     /// Los órdenes que tienen sentido aquí (los mismos en toda lista; uno que no aplica no aparece).
     private var sorts: [ListSort] { ListSort.offered(for: items, imdbAvailable: imdbRatings != nil) }
+}
+
+/// Lo que `SortableGrid` le da al renglón de la pantalla: el orden a la vista y el filtro.
+struct ListBarParts {
+    let sort: ListSortMenu
+    let filters: ListFilterMenu
+}
+
+/// El orden elegido a la vista, a la izquierda del renglón de una lista (Guardado, GD2): «↕ Agregadas: más recientes». Un toque
+/// abre los mismos órdenes de toda lista (`ListSort.offered`) y, en tus listas, «A mano…». Si no cabe el nombre (SE, letra
+/// grande), solo el ícono (VoiceOver lee el orden).
+struct ListSortMenu: View {
+    @Binding var sort: ListSort
+    var sorts: [ListSort]
+    /// Mientras llegan las calificaciones: la ruedita en lugar del ícono.
+    var loading = false
+    var manualOrder: (() -> Void)?
+
+    var body: some View {
+        if !sorts.isEmpty || manualOrder != nil {
+            Menu {
+                // Elegir otra vez el orden activo lo quita (la lista vuelve a ir como llega).
+                ForEach(sorts, id: \.self) { option in
+                    Button { sort = sort == option ? .added : option } label: {
+                        if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
+                    }
+                }
+                if let manualOrder {
+                    Divider()
+                    Button(action: manualOrder) { Label("A mano…", systemImage: "line.3.horizontal") }
+                        .accessibilityIdentifier("sort-manual")
+                }
+            } label: {
+                ViewThatFits(in: .horizontal) {
+                    label(named: true)
+                    label(named: false)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Ordenar"))
+            .accessibilityValue(Text(sort.label))
+            .accessibilityIdentifier("list-sort")
+        }
+    }
+
+    private func label(named: Bool) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            if loading { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono (el renglón no se mueve)
+            else { Image(systemName: "arrow.up.arrow.down").foregroundStyle(DS.textMuted) }
+            if named { Text(sort.label).lineLimit(1).foregroundStyle(DS.text) }
+        }
+        .font(DS.TextRecipe.label.font)
+        .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget, alignment: .leading)
+        .contentShape(Rectangle())
+    }
 }
 
 /// El botón de ordenar y filtrar de una lista abierta (arriba a la derecha): el mismo en todo «Ver todo» y en las colecciones

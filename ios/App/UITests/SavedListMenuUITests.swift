@@ -1,7 +1,7 @@
 import XCTest
 
 /// G4-A (Fernando, 10 nov 2026: «Vamos con tus sugerencias»): el «···» de una lista tuya cambia su nombre y la borra; Mi lista
-/// se ordena a mano desde «Ordenar y filtrar»; el tablero suma «Nueva lista».
+/// se ordena a mano desde su orden; la pestaña «Listas» (GD2, 13 nov 2026) suma «Nueva lista».
 final class SavedListMenuUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
@@ -13,8 +13,11 @@ final class SavedListMenuUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
+        let lists = app.buttons["saved-tab-lists"]
+        XCTAssertTrue(lists.waitForExistence(timeout: 20), "la pestaña «Listas»")
+        lists.tap()
         let newList = app.buttons["saved-new-list"]
-        XCTAssertTrue(newList.waitForExistence(timeout: 20), "«Nueva lista» al final de Tus listas")
+        XCTAssertTrue(newList.waitForExistence(timeout: 10), "«Nueva lista» al final de las listas")
         let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Para ver con Ana'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         row.tap()
@@ -46,15 +49,15 @@ final class SavedListMenuUITests: XCTestCase {
         shot(app, "borrar")
         app.sheets.buttons["Borrar lista"].exists ? app.sheets.buttons["Borrar lista"].tap() : confirm.tap()
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Borraste'")).firstMatch.waitForExistence(timeout: 5), "el aviso")
-        XCTAssertTrue(newList.waitForExistence(timeout: 5), "de vuelta al tablero")
+        XCTAssertTrue(newList.waitForExistence(timeout: 5), "de vuelta a «Listas»")
         XCTAssertFalse(app.buttons.containing(NSPredicate(format: "label CONTAINS 'Con Ana'")).firstMatch.exists, "la lista ya no está")
-        shot(app, "tablero")
-        app.buttons.containing(NSPredicate(format: "label CONTAINS 'En Mi lista'")).firstMatch.tap()
-        XCTAssertTrue(app.buttons["list-controls"].waitForExistence(timeout: 10))
+        shot(app, "listas")
+        app.buttons["saved-tab-mylist"].tap()
+        let sort = app.buttons["list-sort"]
+        XCTAssertTrue(sort.waitForExistence(timeout: 10), "el orden, a la izquierda del renglón")
         XCTAssertFalse(more.exists, "Mi lista no lleva «···»")
-        app.buttons["list-controls"].tap()
-        app.buttons["Ordenar"].tap()
-        XCTAssertTrue(app.buttons["A mano…"].waitForExistence(timeout: 3), "Mi lista se ordena a mano desde Ordenar")
+        sort.tap()
+        XCTAssertTrue(app.buttons["A mano…"].waitForExistence(timeout: 3), "Mi lista se ordena a mano desde su orden")
         shot(app, "mi-lista-a-mano")
     }
 }

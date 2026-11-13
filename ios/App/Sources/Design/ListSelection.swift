@@ -93,24 +93,31 @@ private struct SelectableModifier: ViewModifier {
     }
 }
 
-/// «Editar» · «Listo» y «+» arriba (⌘E, ⌘N); mientras eliges, ⌘A elige todas y Esc sale.
-struct ListSelectToolbar: ToolbarContent {
+/// «Editar» y «+» como íconos, a la derecha del renglón de una lista (Guardado, GD2, 13 nov 2026: «a la derecha los controles
+/// con ícono»; antes «Editar» y «Listo» eran texto en una cápsula de la barra). ⌘E entra y sale, ⌘N agrega; mientras eliges,
+/// el ícono se vuelve la palomita de «Listo», ⌘A elige todas y Esc sale.
+struct ListSelectButtons: View {
     let selection: ListSelection
     var add: (() -> Void)?
     var all: [String] = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if let add {
-                Button(action: add) { Label("Agregar", systemImage: "plus") }
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {   // con letra grande los íconos crecen: nunca pegados
+            if let add, !selection.editing {
+                Button(action: add) { ListBarIcon(symbol: "plus") }
+                    .buttonStyle(.plain)
                     .keyboardShortcut("n", modifiers: .command)
+                    .accessibilityLabel(Text("Agregar"))
                     .accessibilityIdentifier("list-add")
             }
             Button { withAnimation(DS.Motion.base(reduceMotion)) { selection.editing.toggle() } } label: {
-                Text(selection.editing ? "Listo" : "Editar").fontWeight(selection.editing ? .semibold : .regular)
+                ListBarIcon(symbol: selection.editing ? DS.Symbol.done : "checklist", on: selection.editing)
             }
+            .buttonStyle(.plain)
             .keyboardShortcut("e", modifiers: .command)
+            .accessibilityLabel(selection.editing ? Text("Listo") : Text("Editar"))
+            .accessibilityHint(selection.editing ? Text(verbatim: "") : Text("Elegir varios"))
             .accessibilityIdentifier("list-edit")
             .background {
                 if selection.editing {
@@ -120,6 +127,21 @@ struct ListSelectToolbar: ToolbarContent {
                 }
             }
         }
+    }
+}
+
+/// Un ícono del renglón de una lista (ordenar y filtrar, elegir varios, agregar): el mismo tamaño y su lugar táctil de 44 pt,
+/// sin cápsula. `on`: lo que está activo (eligiendo, un filtro puesto) va en el acento.
+struct ListBarIcon: View {
+    let symbol: String
+    var on = false
+    var body: some View {
+        Image(systemName: symbol)
+            .font(DS.TextRecipe.section.font)
+            .foregroundStyle(on ? DS.accent : DS.text)
+            .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
+            .contentShape(Rectangle())
+            .contentTransition(.symbolEffect(.replace))
     }
 }
 
