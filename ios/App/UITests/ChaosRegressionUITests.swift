@@ -19,7 +19,7 @@ final class ChaosRegressionUITests: XCTestCase {
         super.tearDown()
     }
 
-    private let base = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because",
+    private let base = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because",
                         "-demo-mode", "lists", "-demo-no-idle", "-demo-free-tabs"]
 
     private func launch(tab: Int, appearance: String = "dark", _ extra: [String] = []) {

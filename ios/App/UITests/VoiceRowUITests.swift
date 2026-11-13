@@ -16,7 +16,7 @@ final class VoiceRowUITests: XCTestCase {
 
     private func open(_ args: [String]) {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-tv-now"] + args
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-tv-now"] + args
         app.launch()
     }
 

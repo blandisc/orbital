@@ -67,5 +67,10 @@ extension DS {
         static let addNote = "note.text.badge.plus", note = "note.text"
         /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
         static let rate = "star"
+        /// «¿Para el resto de la serie también?» (13 nov 2026): «Sí, desde aquí» (de este episodio en adelante) y «Solo este
+        /// episodio» (uno nada más).
+        static let fromHereOn = "arrow.right.circle", onlyThisOne = "1.circle"
+        /// «¿Sigues viendo?» › «Salir»: cerrar el reproductor (la misma ✕ de su barra de arriba).
+        static let leavePlayer = "xmark"
     }
 }

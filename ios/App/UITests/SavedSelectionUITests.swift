@@ -7,7 +7,7 @@ final class SavedSelectionUITests: XCTestCase {
 
     func testElegirVariosYQuitarlosDeUnaVez() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let list = app.buttons.containing(NSPredicate(format: "label CONTAINS 'En Mi lista'")).firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 20))

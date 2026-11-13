@@ -18,7 +18,7 @@ final class IPadKeyboardUITests: XCTestCase {
 
     private func open(_ args: [String]) {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-free-tabs"] + args
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-free-tabs"] + args
         app.launch()
     }
 

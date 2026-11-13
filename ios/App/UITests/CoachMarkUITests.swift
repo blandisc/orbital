@@ -13,7 +13,7 @@ final class CoachMarkUITests: XCTestCase {
     override func tearDown() { app.terminate() }
 
     private func launch(_ args: [String]) {
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-free-tabs", "-demo-coach"] + args
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-free-tabs", "-demo-coach"] + args
         app.launch()
     }
 
@@ -54,7 +54,7 @@ final class CoachMarkUITests: XCTestCase {
 
     /// Fer, 4 nov: el botón de Ajustes los trae de vuelta, aunque no hayas hecho la guía nueva.
     func testSettingsButtonBringsThemBack() {
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-free-tabs", "-demo-tab", "3", "-demo-open", "settings"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-free-tabs", "-demo-tab", "3", "-demo-open", "settings"]
         app.launch()
         // Desde el 11 nov, dentro de Ajustes › Aprende (una sola entrada).
         let learn = app.buttons["settings-learn"]

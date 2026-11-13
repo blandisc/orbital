@@ -8,7 +8,7 @@ final class HomePicksUITests: XCTestCase {
 
     func testSugerenciasParaTiSeDeslizaYSeToca() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "0",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "0",
                                "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle"]
         app.launch()
         let head = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Sugerencias para ti'")).firstMatch

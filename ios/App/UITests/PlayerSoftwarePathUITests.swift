@@ -30,7 +30,7 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         let video = try XCTUnwrap(env["DEMO_VIDEO"], "sin DEMO_VIDEO: corre scripts/ios_software_path.sh")
         let tag = env["DEMO_SOFTWARE"] == "1" ? "software" : "nativo"
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
                                "-demo-video", video] + (tag == "software" ? ["-demo-software-path"] : [])
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
@@ -72,7 +72,7 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         let video = try XCTUnwrap(env["DEMO_VIDEO"], "sin DEMO_VIDEO: corre scripts/ios_software_path.sh")
         let tag = env["DEMO_SOFTWARE"] == "1" ? "software" : "nativo"
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
                                "-demo-player-portrait", "-demo-video", video] + (tag == "software" ? ["-demo-software-path"] : [])
         XCUIDevice.shared.orientation = .portrait
         app.launch()
@@ -93,7 +93,7 @@ final class PlayerSoftwarePathUITests: XCTestCase {
     /// Abre el MKV servido desde la Mac en vertical, con el video a la altura `center` (-1: donde abre).
     private func launch(_ center: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
                                "-demo-player-portrait", "-demo-video", env["DEMO_VIDEO"] ?? "", "-player-portrait-center", center]
             + (env["DEMO_SOFTWARE"] == "1" ? ["-demo-software-path"] : [])
         XCUIDevice.shared.orientation = .portrait

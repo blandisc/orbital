@@ -10,7 +10,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
 
     private func launch(tab: Int, _ extra: [String] = []) {
         app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "\(tab)",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "\(tab)",
                                "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle"] + extra
         app.launch()
     }

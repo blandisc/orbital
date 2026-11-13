@@ -32,6 +32,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         #endif
         guard let engine = try? AetherEngine() else { return nil }
         self.engine = engine
+        #if DEBUG
+        if Demo.isOn, Demo.mute { engine.volume = 0; NSLog("[orbital-demo-mute] AetherEngine volumen=%.1f", engine.volume) }   // `-demo-mute`
+        #endif
         // En pausa y en segundo plano el motor suelta el video tras este plazo; al volver hay que rearmarlo (un instante de
         // negro). iOS da ~30 s y soltarlo tarda ~3.5 s: con 25 s casi cualquier vuelta rápida a otra app regresa sin rearmar.
         engine.backgroundTeardownGraceSeconds = PlayerTiming.backgroundGrace
@@ -90,7 +93,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             do {
                 try await engine.load(url: local, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
                 pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
-                engine.play()
+                engine.play(); demoMuteAfterLoad()
                 return
             } catch {
                 releaseProxy()
@@ -102,7 +105,16 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         await EnginePrewarm.settle(url)
         try await engine.load(url: url, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
         pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
-        engine.play()
+        engine.play(); demoMuteAfterLoad()
+    }
+
+    /// `-demo-mute`: ya abierto, el volumen del motor sigue en 0 (lo repite sobre el reproductor que acaba de armar).
+    private func demoMuteAfterLoad() {
+        #if DEBUG
+        guard Demo.isOn, Demo.mute else { return }
+        engine.volume = 0
+        NSLog("[orbital-demo-mute] AetherEngine ya abierto, volumen=%.1f", engine.volume)
+        #endif
     }
 
     /// La variante de español que pediste («es-419» o «es-ES»), si pediste una.

@@ -18,7 +18,7 @@ final class PlayerRotationUITests: XCTestCase {
 
     func testThePlayerFollowsTheDeviceAndTheLockFreezesIt() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         sleep(9)

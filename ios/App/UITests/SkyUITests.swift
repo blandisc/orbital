@@ -6,7 +6,7 @@ final class SkyUITests: XCTestCase {
 
     private func launch(tab: Int, appearance: String, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-tab", "\(tab)", "-demo-mode", "lists",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-tab", "\(tab)", "-demo-mode", "lists",
                                "-demo-appearance", appearance, "-demo-no-idle"] + extra
         app.launch()
         return app

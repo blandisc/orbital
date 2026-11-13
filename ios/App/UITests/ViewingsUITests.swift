@@ -11,7 +11,7 @@ final class ViewingsUITests: XCTestCase {
 
     func launch(_ extra: [String]) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark"] + extra
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark"] + extra
         app.launch()
         return app
     }

@@ -6,7 +6,7 @@ final class TitleStatusUITests: XCTestCase {
 
     func testUnaSerieQueVasViendoAbreElMenuDelEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-title", "series:tt0386676"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-title", "series:tt0386676"]
         app.launch()
         let status = app.buttons["title-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 20), "la ficha tiene el botón de estado")
@@ -22,7 +22,7 @@ final class TitleStatusUITests: XCTestCase {
     /// G2-A: Biblioteca › Guardado es un tablero; «Vistas» abre lo visto por mes y «En Mi lista», tu lista.
     func testGuardadoEsUnTableroQueAbreCadaEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
         XCTAssertTrue(watched.waitForExistence(timeout: 20), "el tablero tiene «Vistas»")
@@ -42,7 +42,7 @@ final class TitleStatusUITests: XCTestCase {
     /// «Mover a…»: mantener el dedo sobre un póster de Vistas lo regresa a Mi lista, con aviso y «Deshacer».
     func testMantenerElDedoMueveAOtroEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
         XCTAssertTrue(watched.waitForExistence(timeout: 20))

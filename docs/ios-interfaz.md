@@ -256,9 +256,30 @@ diálogos del sistema.**
   destructivo o de desconectar («¿Quitar…?», «¿Desconectar Trakt?»), las que piden un nombre (el campo de texto del sistema) y
   «¿Terminaste de verlo?» (llega al volver de Infuse sobre lo que esté abierto). Los `Menu` que se despliegan del propio botón
   («Descargar», «Vista») no son diálogos y se quedan.
-- Pendientes (en archivos de otra tarea): las dos preguntas de «Versión» (`SourcesSheet`) y las dos del reproductor
-  (`PlayerScreen`); la prueba conoce cuántas hay en cada uno.
-- Lo cuida `DesignRulesTests+Dialogs.swift`: un `confirmationDialog`, `alert` o `actionSheet` nuevo falla si no lleva su porqué.
+- **«Versión»** (13 nov, Fernando: «Sí, también conviértelos en la tarjeta, los otros tres diálogos»): «¿Para el resto de la
+  serie también?» con «Los siguientes episodios, en 🇲🇽 latino.» en gris, «Sí, desde aquí» grande (`DS.Symbol.fromHereOn`) y
+  «Solo este episodio» (`DS.Symbol.onlyThisOne`); cerrarla no abre nada, como antes. El pedido que baja en la nube («Ver cómo
+  va»): arriba cómo va y cuánto falta y, si hay, «Ver Inglés · 1080p, ya arranca» grande; ya no lleva «Esperar a que llegue»
+  (era el «Cancelar»: esperar es cerrarla, el pedido sigue igual). «Ver Inglés…» puede traer luego la de la serie: corre cuando
+  la tarjeta ya se cerró.
+- **En el reproductor** es la misma tarjeta, pero flotando sobre el video (`ChoiceSheet(floating: true)`, de vidrio como sus
+  paneles) y no una hoja: en horizontal la hoja de iOS sube a todo el alto y tapa el video. La pone `PlayerScreen+Preguntas.swift`
+  encima de todo (también del candado), con el video oscurecido detrás: abajo en vertical (donde van los controles), al centro
+  en horizontal, dentro del área segura y, si no cabe (SE acostado, letra grande), se desplaza por dentro. No pausa nada que
+  antes no se pausara y no vibra.
+  - «¿Sigues viendo?» («Llevas tres episodios seguidos.»): «Seguir viendo» grande y «Salir» (`DS.Symbol.leavePlayer`). Llega tras
+    tres episodios seguidos sin tocar la pantalla, con el video en pausa; no tiene cuenta atrás y no se cierra sin contestar
+    (tocar fuera no hace nada; Esc es «Salir», como en la del sistema).
+  - «Real-Debrid aún no tiene esta versión» (al elegir en «Versión» una que hay que bajar): «Abrirla de todos modos» grande
+    (`DS.Symbol.cloud`); tocar fuera, Esc o el escape de VoiceOver es «Mejor no» y sigue la que ves.
+  - Mientras está «¿Sigues viendo?», la tarjeta de «Siguiente episodio» no se dibuja (se encimaba debajo).
+  - Banderas de demostración: `-demo-player-state still-watching` y `-demo-player-state slow-pick`; en «Versión»,
+    `-demo-open sources-series` (con `-demo-title series:…`).
+- **Las pruebas del reproductor en el simulador van en silencio: `-demo-mute`** (Fernando, 13 nov 2026: el video de prueba
+  sonaba por las bocinas de la Mac). Pone en 0 el volumen del motor (AetherEngine y AVPlayer), sin tocar el del sistema; todo
+  lanzamiento de demostración de `ios/App/UITests` la lleva y `DesignRulesTests+DemoMute` lo revisa.
+- Lo cuida `DesignRulesTests+Dialogs.swift`: un `confirmationDialog`, `alert` o `actionSheet` nuevo falla si no lleva su porqué;
+  ya no quedan pendientes, y también revisa que las de «Versión» y el reproductor sigan siendo tarjetas.
   En la TV: igual (sus elecciones ya son hojas propias).
 
 ### Lo que acompaña a un control va en su misma línea (12 nov 2026)
@@ -435,6 +456,9 @@ haya caracteres de texto usados como ícono.
 | Volver a empezar | `arrow.counterclockwise` (`DS.Symbol.restart`) | ↺ «Desde el principio», junto al avance (R1) |
 | Tu nota | `note.text.badge.plus` / `note.text` (`DS.Symbol.addNote`, `note`) | Al final de «Tu calificación» |
 | Calificar | `star` (`DS.Symbol.rate`) | «Calificar la temporada», en el menú de «Vista» |
+| De este episodio en adelante | `arrow.right.circle` (`DS.Symbol.fromHereOn`) | «¿Para el resto de la serie también?» › «Sí, desde aquí» |
+| Solo este episodio | `1.circle` (`DS.Symbol.onlyThisOne`) | «¿Para el resto de la serie también?» |
+| Salir del reproductor | `xmark` (`DS.Symbol.leavePlayer`) | «¿Sigues viendo?» › «Salir» (la ✕ de la barra del reproductor) |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
 ### Lo que crece no choca (13 nov 2026)

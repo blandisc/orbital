@@ -22,7 +22,7 @@ final class IPadLayoutUITests: XCTestCase {
     private func open(_ args: [String], _ orientation: UIDeviceOrientation) {
         app.terminate()
         XCUIDevice.shared.orientation = orientation
-        app.launchArguments = ["-demo", "-demo-no-idle"] + args
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle"] + args
         app.launch()
     }
 

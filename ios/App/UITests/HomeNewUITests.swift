@@ -8,7 +8,7 @@ final class HomeNewUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-because", "-demo-airings", "-demo-tab", "0", "-demo-appearance", "dark", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-because", "-demo-airings", "-demo-tab", "0", "-demo-appearance", "dark", "-demo-no-idle"]
         app.launch()
     }
 

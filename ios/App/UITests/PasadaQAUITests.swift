@@ -4,7 +4,7 @@ import XCTest
 /// Verifican lo mínimo (que la app responda); el veredicto del movimiento es el video.
 final class PasadaQAUITests: XCTestCase {
     private var app: XCUIApplication!
-    private let base = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-appearance", "dark"]
+    private let base = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-appearance", "dark"]
 
     private func launch(_ extra: [String]) {
         app = XCUIApplication()

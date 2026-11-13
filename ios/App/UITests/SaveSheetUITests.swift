@@ -6,7 +6,7 @@ final class SaveSheetUITests: XCTestCase {
     func testFixedRowsDoNotMoveWhenTheListsArrive() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-title", "series:tt0386676", "-demo-open", "save"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-title", "series:tt0386676", "-demo-open", "save"]
         app.launch()
 
         let watchlist = app.buttons["save-fixed-myList"]

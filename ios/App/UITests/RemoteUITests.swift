@@ -4,7 +4,7 @@ import XCTest
 final class RemoteUITests: XCTestCase {
     func testTheStretchedSheetHasThePadAndKeysAndTheyWork() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-tv-now", "-demo-open", "remote-full", "-demo-appearance", "dark"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tv-now", "-demo-open", "remote-full", "-demo-appearance", "dark"]
         app.launch()
         let pad = app.descendants(matching: .any)["Pad de la TV"]
         XCTAssertTrue(pad.waitForExistence(timeout: 20), "estirada, la hoja trae el pad")
@@ -35,7 +35,7 @@ final class RemoteUITests: XCTestCase {
     /// Sin nada en la TV, bajar el control lo cierra (antes se quedaba atorado en una hoja corta vacía).
     func testWithNothingOnTheTVPullingDownClosesTheRemote() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-open", "remote-idle", "-demo-appearance", "dark"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-open", "remote-idle", "-demo-appearance", "dark"]
         app.launch()
         let pad = app.descendants(matching: .any)["Pad de la TV"]
         XCTAssertTrue(pad.waitForExistence(timeout: 20), "sin nada en la TV abre el control completo")
@@ -53,7 +53,7 @@ final class RemoteUITests: XCTestCase {
     /// Sin nada en la TV no hay accesorio abajo (ni doble fila): el control se abre desde el botón junto al avatar.
     func testWithNothingOnTheTVTheRemoteLivesNextToTheAvatar() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark"]
         app.launch()
         let button = app.buttons["home-remote"]
         XCTAssertTrue(button.waitForExistence(timeout: 20), "el botón del control, en la barra de Inicio")
@@ -66,7 +66,7 @@ final class RemoteUITests: XCTestCase {
     /// reacomoda lo de adentro (antes uno se iba, el otro llegaba y la hoja brincaba).
     func testSwitchingToThePadKeepsTheSameSheet() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-tv-horror", "-demo-open", "remote-full", "-demo-appearance", "dark", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tv-horror", "-demo-open", "remote-full", "-demo-appearance", "dark", "-demo-no-idle"]
         app.launch()
         let toggle = app.buttons["remote-pad-button"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 20), "reproduciendo, el botón para moverte por la TV")

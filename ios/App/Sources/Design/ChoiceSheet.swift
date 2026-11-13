@@ -31,6 +31,9 @@ struct ChoiceCard {
 
 struct ChoiceSheet: View {
     let card: ChoiceCard
+    /// En el reproductor (13 nov 2026): la misma tarjeta flotando sobre el video, de vidrio como sus paneles, y no una hoja
+    /// (en horizontal la hoja de iOS sube a todo el alto y tapa el video). La pone y la quita `PlayerScreen+Preguntas.swift`.
+    var floating = false
     /// Lo que pasa al tocar una acción: la cierra y la corre al terminar de cerrarse (`choiceSheet(item:)`).
     let choose: (ChoiceAction) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -38,7 +41,32 @@ struct ChoiceSheet: View {
     /// suyo, igual al de los lados: si no, el último renglón tocaba la orilla (SE, 13 nov).
     @State private var bottomInset: CGFloat = 0
 
+    init(card: ChoiceCard, floating: Bool = false, choose: @escaping (ChoiceAction) -> Void) {
+        self.card = card
+        self.floating = floating
+        self.choose = choose
+    }
+
     var body: some View {
+        if floating {
+            content
+                .padding(DS.Space.gutter)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(card.id)
+        } else {
+            content
+                // Al pie solo el margen del iPhone, como «¿Cuándo la viste?» (con el aire de las hojas quedaba un hueco abajo).
+                .dsSheetContent(bottom: false)
+                .padding(.bottom, bottomInset > 0 ? 0 : DS.Space.gutter)
+                .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomInset = $0 }
+                .accessibilityElement(children: .contain)   // cada acción conserva su identificador
+                .accessibilityIdentifier(card.id)
+                .fittedSheet()
+        }
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             header
             if let primary = card.primary { primaryButton(primary) }
@@ -51,13 +79,6 @@ struct ChoiceSheet: View {
                 }
             }
         }
-        // Al pie solo el margen del iPhone, como «¿Cuándo la viste?» (con el aire de las hojas quedaba un hueco abajo).
-        .dsSheetContent(bottom: false)
-        .padding(.bottom, bottomInset > 0 ? 0 : DS.Space.gutter)
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomInset = $0 }
-        .accessibilityElement(children: .contain)   // cada acción conserva su identificador
-        .accessibilityIdentifier(card.id)
-        .fittedSheet()
     }
 
     /// La imagen a la izquierda y el nombre con su línea gris; con letra de accesibilidad, la imagen arriba (no aprieta el texto).

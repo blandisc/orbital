@@ -28,7 +28,7 @@ class GuideUITestCase: XCTestCase {
 
     func launch(_ args: [String]) {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle"] + args + (shots != nil ? ["-demo-appearance", "dark"] : [])
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle"] + args + (shots != nil ? ["-demo-appearance", "dark"] : [])
         app.launch()
     }
 

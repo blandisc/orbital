@@ -11,7 +11,7 @@ final class WidgetGalleryUITests: XCTestCase {
         // Primero Inicio (deja «Lo siguiente para ti», «Lo nuevo de lo tuyo» y «Los Simpson en la tele») y luego Explorar (deja las
         // listas del mosaico). Cada uno espera a que se bajen y reduzcan las imágenes.
         let app = XCUIApplication()
-        let base = ["-demo", "-demo-widget", "sample", "-demo-no-idle", "-demo-console", "-demo-trakt", "-demo-mode", "lists"]
+        let base = ["-demo", "-demo-mute", "-demo-widget", "sample", "-demo-no-idle", "-demo-console", "-demo-trakt", "-demo-mode", "lists"]
         app.launchArguments = base + ["-demo-tab", "0"]
         app.launch()
         sleep(15)
@@ -54,7 +54,7 @@ final class WidgetGalleryUITests: XCTestCase {
     /// inicio y la pantalla bloqueada.
     func testCaptureTheTVLiveActivity() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-tv-now", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tv-now", "-demo-no-idle"]
         app.launch()
         sleep(12)
         XCUIDevice.shared.press(.home)

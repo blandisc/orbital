@@ -206,26 +206,54 @@ struct SourcesSheet: View {
         .task {
             model.playerOpen = { HardwareVolumeButtons.yieldsToPlayer }   // con el reproductor abierto no se revisa el audio de nada
             await model.load(onCellular: env.connectivity.isCellular)
+            #if DEBUG
+            demoSeriesAsk(model)
+            #endif
         }
         .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
         .debridFlowIntro(when: request != nil && !model.toRequest.isEmpty && !showsAll)   // RX3-A: «↓ Por pedir» a la vista
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
-        .confirmationDialog(Text("¿Para el resto de la serie también?"), isPresented: Binding(get: { seriesAsk != nil }, set: { if !$0 { seriesAsk = nil } }),
-                            titleVisibility: .visible, presenting: seriesAsk) { ask in
-            Button("Sí, desde aquí") { finish(ask.source, ask.purpose, forSeries: ask.code) }
-            Button("Solo este episodio") { finish(ask.source, ask.purpose, forSeries: nil) }
-        } message: { ask in
-            Text("Los siguientes episodios, en \(VersionText.inline(VersionText.name(ask.code, ui), ui)).")
-        }
-        .confirmationDialog(Text(verbatim: waiting.flatMap { requestStatus($0.id)?.title } ?? ""),
-                            isPresented: Binding(get: { waiting != nil }, set: { if !$0 { waiting = nil } }), titleVisibility: .visible, presenting: waiting) { _ in
-            // RX2-A: esperar la tuya o ver ya otra que arranca.
-            if let instead = instantInstead(model, ui) { Button(action: instead.action) { instead.title } }
-            Button("Esperar a que llegue", role: .cancel) { waiting = nil }
-        } message: { item in
-            if let detail = requestStatus(item.id, full: true)?.detail { Text(verbatim: detail) }
-        }
+        // Las dos preguntas son tarjetas de la app (Fernando, 13 nov 2026: «también conviértelos en la tarjeta»). Lo que
+        // eliges corre cuando la tarjeta ya se cerró: «Ver Inglés…» puede traer después la de la serie sin chocar con ella.
+        .choiceSheet(item: $seriesAsk) { ask in seriesCard(ask, ui) }
+        .choiceSheet(item: $waiting) { item in waitingCard(item, model, ui) }
     }
+
+    /// V3 · «¿Para el resto de la serie también?»: «Sí, desde aquí» (la serie sigue en ese idioma) o «Solo este episodio».
+    /// Cerrarla sin elegir no abre nada, como antes.
+    private func seriesCard(_ ask: SeriesAsk, _ ui: String) -> ChoiceCard {
+        ChoiceCard(title: Text("¿Para el resto de la serie también?"),
+                   detail: Text("Los siguientes episodios, en \(VersionText.inline(VersionText.name(ask.code, ui), ui))."),
+                   primary: ChoiceAction(id: "series-from-here", title: Text("Sí, desde aquí"), symbol: DS.Symbol.fromHereOn) {
+                       finish(ask.source, ask.purpose, forSeries: ask.code)
+                   },
+                   options: [ChoiceAction(id: "series-only-this", title: Text("Solo este episodio"), symbol: DS.Symbol.onlyThisOne) {
+                       finish(ask.source, ask.purpose, forSeries: nil)
+                   }],
+                   id: "series-ask-card")
+    }
+
+    /// RX2-A · una ya pedida que baja en la nube: arriba cómo va («Bajando en la nube · 34 %» y cuánto falta) y, si hay, la
+    /// que ya arranca en tus idiomas. Esperar es cerrarla (deslizar, tocar fuera o Esc): el pedido sigue igual.
+    private func waitingCard(_ item: Waiting, _ model: SourcesModel, _ ui: String) -> ChoiceCard {
+        let status = requestStatus(item.id, full: true)
+        return ChoiceCard(title: Text(verbatim: status?.title ?? ""), detail: status?.detail.map { Text(verbatim: $0) },   // no-es-título: el estado del pedido
+                          primary: instantInstead(model, ui).map { instead in
+                              ChoiceAction(id: "request-instead", title: instead.title, symbol: "play.fill", run: instead.action)   // no-es-título: «Ver Inglés · 1080p, ya arranca»
+                          },
+                          id: "request-waiting-card")
+    }
+
+    #if DEBUG
+    /// `-demo-open sources-series`: en un episodio, como tocar una versión en otro idioma que el de la serie (trae la tarjeta
+    /// «¿Para el resto de la serie también?» sin tocar la pantalla).
+    private func demoSeriesAsk(_ model: SourcesModel) {
+        guard Demo.isOn, Demo.open == "sources-series", episode,
+              let row = model.languageRows.first(where: { !speaksSeries($0.code) && $0.options.contains { $0.cached } }),
+              let option = row.options.first(where: \.cached), let source = model.source(option.id) else { return }
+        pick(source, .watch, code: row.code)
+    }
+    #endif
 
     /// V3 · el enlace del pie: «Ver todas las versiones · 34» o, ya en «Todas», volver a la lista por idioma.
     private func allLink(_ model: SourcesModel) -> some View {

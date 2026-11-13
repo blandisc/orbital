@@ -151,7 +151,7 @@ extension PlayerModel {
     #if DEBUG
 
     /// Solo para el modo demostración: pone el reproductor en un estado difícil de alcanzar en el simulador
-    /// («skip-intro», «error», «upnext»).
+    /// («skip-intro», «error», «upnext», «still-watching»).
     public func demoState(_ kind: String) {
         demoPinned = true
         switch kind {
@@ -164,6 +164,9 @@ extension PlayerModel {
             upNextDeadline = nil   // que no avance solo mientras se captura
             upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: kind == "upnext" ? Int(PlaybackRules.upNextCountdown) - 3 : 0,
                             thumbnail: episodeThumbnail(next), downloading: kind == "upnext" ? nil : 63)
+        case "still-watching":   // «¿Sigues viendo?» como tras tres episodios seguidos: en pausa, esperando la respuesta
+            stillWatchingPrompt = true; upNextDeadline = nil
+            Task { await engine.pause() }
         case "not-in-debrid": fail("Todavía no está en la nube.", .noSources); rd.lookupCause = (.notInDebrid(language: wantedLanguage.isEmpty ? "es-419" : wantedLanguage), nil)
         default: break
         }
