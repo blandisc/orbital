@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 import OrbitalCore
 
 // Piezas de «Lo que ves» (docs/producto/muvy-busqueda-premios/prototipo-wrapped.html): la tarjeta de Para ti, un dato
@@ -90,13 +89,16 @@ struct WatchingBars: View {
     }
 }
 
-/// «Día por día» (Fernando, 31 oct 2026, opción B): solo el mapa de calor como GitHub, en grande (una columna por semana,
-/// de lunes a domingo, del azul del logo según cuánto viste). Se desliza de lado hacia atrás en el tiempo y abre en lo de
-/// hoy; arriba, la letra de cada mes (y el año en enero). Tocar un día abre debajo lo que viste; tocarlo otra vez lo cierra.
+/// «Día por día» (Fernando, 31 oct 2026, opción B): el mapa de calor como GitHub (una columna por semana, de lunes a
+/// domingo, del azul del logo según cuánto viste), en un `DSWeekStrip`: abre en lo de hoy con semanas enteras a la vista y
+/// se desliza hacia atrás (13 nov 2026: antes abría cortado y en el otro extremo). Hoy lleva borde; abajo, la leyenda.
+/// Tocar un día abre debajo lo que viste; tocarlo otra vez lo cierra.
 struct WatchingZoomMap: View {
     @Environment(\.titleName) var titleName
     let plays: [TraktPlay]
     let locale: Locale
+    /// El ancho que le queda (la columna sin sus márgenes): de ahí sale el tamaño de las casillas.
+    let available: CGFloat
     @State private var day: Date?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let calendar: Calendar = {
@@ -109,7 +111,10 @@ struct WatchingZoomMap: View {
         let byDay = Dictionary(grouping: plays) { calendar.startOfDay(for: $0.at) }
         let minutes = byDay.mapValues { $0.reduce(0) { $0 + $1.minutes } }
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-            map(minutes)
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                map(minutes)
+                DSHeatLegend(steps: [0, 1, 2, 3].map { fill($0, 3) })
+            }
             if let day {
                 // Se asoma desde debajo del mapa (apenas baja y crece un poco, fundiéndose), sin brincar desde arriba; otro
                 // día se funde sobre el anterior (Fernando, 31 oct 2026).
@@ -137,47 +142,25 @@ struct WatchingZoomMap: View {
         let firstWeek = calendar.dateInterval(of: .weekOfYear, for: earliest)?.start ?? earliest
         let weeks = (calendar.dateComponents([.weekOfYear], from: firstWeek, to: thisWeek).weekOfYear ?? 0) + 1
         let most = max(minutes.values.max() ?? 0, 1)
-        let pitch = DS.Watching.heatCell + DS.Watching.heatGap
-        return ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: DS.Watching.heatGap) {
-                ForEach(0..<weeks, id: \.self) { w in
-                    let monday = calendar.date(byAdding: .weekOfYear, value: w, to: firstWeek) ?? firstWeek
-                    VStack(spacing: DS.Watching.heatGap) {
-                        // La letra del mes en la semana en que empieza (y el año en enero).
-                        Text(verbatim: label(monday)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
-                            .lineLimit(1).fixedSize().frame(width: DS.Watching.heatCell, height: DS.Watching.yearLabel, alignment: .leading)
-                        ForEach(0..<7, id: \.self) { d in
-                            let date = calendar.date(byAdding: .day, value: d, to: monday) ?? monday
-                            let inside = date <= today
-                            let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-                            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
-                                .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
-                                .dsSelectionRing(chosen, radius: DS.Radius.xs)
-                                .frame(width: DS.Watching.heatCell, height: DS.Watching.heatCell)
-                                .contentShape(Rectangle())
-                                .onTapGesture { if inside { day = chosen ? nil : date } }
-                                .accessibilityHidden(!inside || (minutes[date] ?? 0) == 0)
-                                .accessibilityLabel(Text(date, format: .dateTime.weekday(.wide).day().month(.wide)))
-                                .accessibilityValue(Text("\((minutes[date] ?? 0) / 60) h"))
-                                .accessibilityAddTraits(.isButton)
-                        }
-                    }
-                    .frame(width: DS.Watching.heatCell)
-                }
-            }
+        let calendar = calendar, locale = locale
+        let monday = { (w: Int) in calendar.date(byAdding: .weekOfYear, value: w, to: firstWeek) ?? firstWeek }
+        return DSWeekStrip(weeks: weeks, available: available, weekdays: DSWeekStrip<EmptyView>.weekdayLetters(locale: locale),
+                           label: { DSWeekStrip<EmptyView>.monthLabel(monday($0), calendar: calendar, locale: locale) }) { w, d, _ in
+            let date = calendar.date(byAdding: .day, value: d, to: monday(w)) ?? today
+            let inside = date <= today
+            let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
+            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
+                .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
+                .overlay { if date == today { DSWeekStripToday() } }
+                .dsSelectionRing(chosen, radius: DS.Radius.xs)
+                .contentShape(Rectangle())
+                .onTapGesture { if inside { day = chosen ? nil : date } }
+                .accessibilityHidden(!inside || ((minutes[date] ?? 0) == 0 && date != today))
+                .accessibilityLabel(date == today ? Text("Hoy") : Text(date, format: .dateTime.weekday(.wide).day().month(.wide)))
+                .accessibilityValue(Text(verbatim: Strings.duration(minutes[date] ?? 0)))
+                .accessibilityAddTraits(.isButton)
         }
-        .defaultScrollAnchor(.trailing, for: .initialOffset)   // abre en lo de hoy
-        .defaultScrollAnchor(.leading, for: .alignment)   // si cabe entero (iPad, Mac), pegado a la izquierda y no a la derecha con un hueco
-        .frame(height: DS.Watching.yearLabel + 8 * pitch)
         .accessibilityIdentifier("watching-heatmap")
-    }
-
-    /// «O» al empezar octubre; «2026» en la semana de enero.
-    private func label(_ monday: Date) -> String {
-        guard let sunday = calendar.date(byAdding: .day, value: 6, to: monday),
-              let first = calendar.dateInterval(of: .month, for: sunday)?.start, first >= monday else { return "" }
-        if calendar.component(.month, from: first) == 1 { return String(calendar.component(.year, from: first)) }
-        return String(first.formatted(.dateTime.month(.narrow).locale(locale)))
     }
 
     /// El día: cada título una vez, con sus episodios.
@@ -243,86 +226,57 @@ enum WatchingDay {
     }
 }
 
-/// Los géneros como una dona (Fernando, 31 oct 2026): cada uno de su color (los de las listas, `DS.Watching.genreColors`) y
-/// al lado su nombre y su parte del total. En el centro, el que tocas (en la dona o en la lista); sin tocar, el principal.
-/// Lo que no cabe en cinco va junto en «Otros».
+/// «Tus géneros» (13 nov 2026, antes una dona de cinco colores): barras de mayor a menor, cada una con su nombre y su parte
+/// del total en el mismo renglón y la barra debajo, todas del azul del logo (el del mapa de arriba; el largo dice cuánto, no
+/// el color). Se ven cinco; lo demás va junto en «Otros», al final y en gris. Crecen desde la izquierda al llegar (nada con
+/// «Reducir movimiento»). VoiceOver: «Comedia, 34 %».
 struct WatchingGenres: View {
     let genres: [(name: String, count: Int)]
+    let locale: Locale
     let name: (String) -> String
-    @State private var picked: String?
-    @State private var angle: Int?
-    /// La dona se arma al llegar (gira y crece desde el centro), al abrir y al cambiar de periodo.
-    @State private var built = false
+    /// Las barras crecen al llegar, al abrir y al cambiar de periodo.
+    @State private var grown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private struct Slice: Identifiable { let id: String; let label: Text; let count: Int; let color: Color }
+    private struct Row: Identifiable { let id: String; let label: Text; let count: Int; let rest: Bool }
 
     var body: some View {
         let total = max(1, genres.reduce(0) { $0 + $1.count })
-        let shown = genres.prefix(DS.Watching.genreColors.count)
-        let rest = genres.dropFirst(shown.count).reduce(0) { $0 + $1.count }
-        let slices = shown.enumerated().map { i, g in Slice(id: g.name, label: Text(verbatim: name(g.name)), count: g.count, color: DS.Watching.genreColors[i]) }
-            + (rest > 0 ? [Slice(id: "_rest", label: Text("Otros"), count: rest, color: DS.fillStrong)] : [])
-        let current = slices.first { $0.id == picked } ?? slices.first
-        HStack(spacing: DS.Space.s5) {
-            Chart(slices) { s in
-                SectorMark(angle: .value("count", s.count), innerRadius: .ratio(DS.Watching.donutHole), angularInset: DS.Watching.donutGap)
-                    .foregroundStyle(s.color).cornerRadius(DS.Radius.xs)
-                    .opacity(current == nil || current?.id == s.id ? 1 : DS.Opacity.faint)
-            }
-            .chartLegend(.hidden)
-            .chartAngleSelection(value: $angle)
-            .onChange(of: angle) { _, value in
-                // El ángulo tocado → la rebanada (se suman las cuentas hasta pasarlo).
-                guard let value else { return }
-                var sum = 0
-                picked = slices.first { sum += $0.count; return value < sum }?.id ?? picked
-            }
-            .chartBackground { proxy in
-                GeometryReader { geo in
-                    if let current, let plot = proxy.plotFrame {
-                        let frame = geo[plot]
-                        // Al centro exacto de la dona: el porcentaje pegado a su número y el nombre debajo.
-                        VStack(spacing: 0) {
-                            // En un renglón: el % más chico, pegado a la cifra, y si no cabe se encoge (con «38%» el % caía abajo).
-                            Text("\(Text(verbatim: "\(current.count * 100 / total)"))\(Text(verbatim: "%").font(DS.TextRecipe.cardTitle.font))")
-                                .font(DS.TextRecipe.stat.font).foregroundStyle(current.color)
-                                .monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
-                            current.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                        }
-                        .frame(width: frame.width * DS.Watching.donutHole * DS.Watching.donutLabel)
-                        .position(x: frame.midX, y: frame.midY)
+        let sorted = genres.sorted { $0.count > $1.count }
+        let shown = sorted.prefix(DS.Watching.genresShown)
+        let rest = sorted.dropFirst(shown.count).reduce(0) { $0 + $1.count }
+        let rows = shown.map { Row(id: $0.name, label: Text(verbatim: name($0.name)), count: $0.count, rest: false) }
+            + (rest > 0 ? [Row(id: "_rest", label: Text("Otros"), count: rest, rest: true)] : [])
+        let most = max(rows.map(\.count).max() ?? 1, 1)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            ForEach(Array(rows.enumerated()), id: \.element.id) { i, row in
+                let share = Double(row.count) / Double(total)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                        row.label.recipe(.secondary).lineLimit(2)
+                        Spacer(minLength: DS.Space.s2)
+                        Text(share, format: .percent.precision(.fractionLength(0)).locale(locale)).recipe(.data, color: DS.textMuted)
                     }
-                }
-            }
-            .frame(width: DS.Watching.donut, height: DS.Watching.donut)
-            .rotationEffect(.degrees(built || reduceMotion ? 0 : DS.Watching.donutTurn))
-            .scaleEffect(built || reduceMotion ? 1 : DS.Watching.donutStart)
-            .opacity(built ? 1 : 0)
-            .onChange(of: genres.map(\.name), initial: true) { _, _ in
-                built = false
-                Task { @MainActor in withAnimation(DS.Motion.enter(reduceMotion) ?? DS.Motion.fade) { built = true } }
-            }
-            .dsFeedback(.selection, trigger: picked)
-            .animation(DS.Motion.fade, value: picked)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                ForEach(slices) { s in
-                    Button { picked = s.id } label: {
-                        HStack(spacing: DS.Space.s2) {
-                            Circle().fill(s.color).frame(width: DS.Watching.genreDot, height: DS.Watching.genreDot)
-                            s.label.recipe(.footnote, color: current?.id == s.id ? DS.text : DS.textMuted).lineLimit(1)
-                            Spacer(minLength: DS.Space.s1)
-                            Text(verbatim: "\(s.count * 100 / total)%").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                    Capsule().fill(DS.fill)
+                        .overlay(alignment: .leading) {
+                            GeometryReader { geo in   // el largo de la barra: su parte del renglón
+                                Capsule().fill(row.rest ? DS.fillStrong : DS.orbitalBlue)
+                                    .frame(width: max(DS.Watching.genreBar, geo.size.width * CGFloat(row.count) / CGFloat(most) * (grown ? 1 : 0)))
+                                    .animation(DS.Motion.enter(reduceMotion)?.delay(Double(i) * DS.Watching.barStagger), value: grown)
+                            }
                         }
-                        .frame(minHeight: DS.Watching.genreRow)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(current?.id == s.id ? .isSelected : [])
+                        .frame(height: DS.Watching.genreBar)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(row.label)
+                .accessibilityValue(Text(share, format: .percent.precision(.fractionLength(0)).locale(locale)))
             }
         }
-        .accessibilityElement(children: .contain)
+        .frame(maxWidth: DS.Watching.genresWidth, alignment: .leading)   // en el iPad el nombre y su valor no se alejan
+        .onChange(of: genres.map(\.name), initial: true) { _, _ in
+            grown = reduceMotion
+            Task { @MainActor in grown = true }   // en el siguiente cuadro: así crecen y no aparecen ya hechas
+        }
     }
 }
 
