@@ -61,12 +61,29 @@ struct DSTextTabs<ID: Hashable>: View {
     @Binding var selection: ID
     /// La rayita de la elegida (blanca; turquesa solo en Inicio).
     var mark: Color = DS.text
+    /// Sin `ViewThatFits` (`adapts` en falso): dos o tres pestañas cortas que caben con su ícono hasta xxxLarge; con letra de
+    /// accesibilidad, solo los íconos (con su nombre para VoiceOver). Para encabezados que se miden muy seguido, como el de
+    /// una hoja que cambia de alto (Decide por mí): ahí medir cinco formas en cada pasada colgaba la app.
+    var adapts = true
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La rayita es una sola y viaja a la elegida (antes saltaba: se apagaba en una y se encendía en la otra).
+    @Namespace private var markSpace
 
     var body: some View {
         // Si con la letra grande no caben los nombres, solo los íconos (cada uno con su nombre para VoiceOver): nunca se sale
         // de la pantalla (antes «T… Pe…» quedaba cortado por la orilla izquierda).
         // I13 · antes de quedarse solo con íconos, los nombres sin ícono: en un SE «Descargas · Mi media · Guardado» no cabía
         // con ícono y la Biblioteca se quedaba sin palabras.
+        Group {
+            if adapts { fitted } else { tabs(titles: !typeSize.isAccessibilitySize) }
+        }
+        // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
+        .animation(DS.Motion.fade, value: selection)
+        .dsFeedback(.selection, trigger: selection)
+    }
+
+    private var fitted: some View {
         ViewThatFits(in: .horizontal) {
             tabs(titles: true)
             // R4: antes de soltar los íconos, más juntas (en el SE «Descargas · Mi media · Guardado» con ícono cabe así).
@@ -85,9 +102,6 @@ struct DSTextTabs<ID: Hashable>: View {
                 tabs(titles: false)
             }
         }
-        // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
-        .animation(DS.Motion.fade, value: selection)
-        .dsFeedback(.selection, trigger: selection)
     }
 
     private func tabs(titles: Bool, icons: Bool = true, spacing: CGFloat = DS.Space.s5) -> some View {
@@ -108,7 +122,12 @@ struct DSTextTabs<ID: Hashable>: View {
                         .accessibilityValue(option.badge.flatMap { $0 > 0 ? Text("\($0) bajando") : nil } ?? Text(verbatim: ""))
                         .font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(on ? DS.text : DS.textMuted)
-                        Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
+                        ZStack {
+                            Capsule().fill(.clear)
+                            // Con «Reducir movimiento» no viaja: se enciende en la nueva.
+                            if on { Capsule().fill(mark).matchedGeometryEffect(id: reduceMotion ? AnyHashable(option.id) : AnyHashable("mark"), in: markSpace) }
+                        }
+                        .frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
                     }
                     .padding(.vertical, DS.Space.s1)
                     .contentShape(Rectangle())
@@ -355,69 +374,57 @@ struct KindPill: View {
     }
 }
 
-/// Al apretar, el ícono se hunde tantito, en cuanto lo tocas.
-/// Los filtros de ícono (pulido de DE2, 13 nov 2026: «Decide por mí»): una pastilla de vidrio con un círculo por filtro, la
-/// misma forma y tamaño que el selector de tipo (`KindPill`), para que el renglón se lea como una sola familia. Va con
-/// `DSFilterIcon` adentro.
-struct DSFilterPill<Content: View>: View {
-    @ViewBuilder var content: () -> Content
+/// «Filtros» (Fernando, 13 nov 2026: un solo botón en lugar de cuatro íconos): el mismo círculo de vidrio y tamaño que el
+/// selector de tipo (`KindPill`), para que el renglón se lea como una familia. Con algo puesto, el círculo se llena de su
+/// tinte (`tint`) creciendo con un resorte corto, lleva cuántos hay en un numerito y el teléfono da un toque ligero; el
+/// símbolo salta cuando cambia la cuenta. Abre la hoja de filtros. Con «Reducir movimiento», el relleno solo se funde.
+struct DSFiltersButton: View {
+    /// Cuántos filtros hay puestos (0: ninguno).
+    let count: Int
+    var tint: Color = DS.DecideLive.refine
+    let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s1) { content() }
-            .padding(DS.Space.s1 / 2)
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // círculos de tamaño fijo, como los del tipo
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .fixedSize()
-            .accessibilityElement(children: .contain)
-    }
-}
-
-/// Un filtro de ícono dentro de `DSFilterPill`: puesto, su círculo se llena en blanco (como lo elegido en `KindPill`) y, si
-/// junta varios («Afinar»), lleva su numerito en la esquina. Abre un menú (`menu`) o hace algo (`action`). Lo puesto se dice
-/// además en una línea debajo del renglón (Fernando: íconos, no cápsulas de texto); VoiceOver dice su nombre y lo puesto.
-struct DSFilterIcon<Options: View>: View {
-    let symbol: String
-    let label: Text
-    /// Lo puesto en palabras («1 h», «Ligero»); nil: sin filtro.
-    var value: Text?
-    var count = 0
-    var action: (() -> Void)?
-    @ViewBuilder var menu: () -> Options
-
-    private var on: Bool { value != nil || count > 0 }
-    private var glyph: some View {
-        Image(systemName: symbol).font(DS.TextRecipe.section.font)
-            .foregroundStyle(on ? DS.bg : DS.text)
-            .frame(width: DS.KindPill.open, height: DS.KindPill.open)
-            .background { if on { Circle().fill(DS.text) } }
-            .overlay(alignment: .topTrailing) {
-                if count > 0 {
-                    Text(verbatim: "\(count)").recipe(.badge, color: DS.onFresh).monospacedDigit()
-                        .padding(.horizontal, DS.Space.s1)
-                        .background(DS.fresh, in: Capsule())
-                        .fixedSize()
-                        .offset(x: DS.Space.s1, y: -DS.Space.s1)
+        let on = count > 0
+        Button(action: action) {
+            Image(systemName: DS.Symbol.refine).font(DS.TextRecipe.section.font)
+                .foregroundStyle(on ? DS.DecideLive.onTint : DS.text)
+                .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? 0 : count)
+                .frame(width: DS.KindPill.open, height: DS.KindPill.open)
+                .background {
+                    Circle().fill(tint)
+                        .scaleEffect(on || reduceMotion ? 1 : DS.DecideLive.fillFrom)
+                        .opacity(on ? 1 : 0)
                 }
-            }
-            .contentShape(Circle())
-    }
-
-    var body: some View {
-        Group {
-            if let action { Button(action: action) { glyph }.buttonStyle(KindPillPress()) }
-            else { Menu { menu() } label: { glyph }.menuStyle(.button).buttonStyle(KindPillPress()) }
+                .overlay(alignment: .topTrailing) {
+                    if on {
+                        Text(verbatim: "\(count)").recipe(.badge, color: DS.bg).monospacedDigit()
+                            .padding(.horizontal, DS.Space.s1)
+                            .background(DS.text, in: Capsule())
+                            .fixedSize()
+                            .offset(x: DS.Space.s1, y: -DS.Space.s1)
+                            .contentTransition(.numericText())
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .animation(DS.Motion.grow(reduceMotion) ?? DS.Motion.fade, value: on)
+                .animation(DS.Motion.fade, value: count)
+                .contentShape(Circle())
         }
-        .accessibilityLabel(label)
-        .accessibilityValue(value ?? (count > 0 ? Text("\(count) puestos") : Text("Sin filtro")))
+        .buttonStyle(KindPillPress())
+        .padding(DS.Space.s1 / 2)
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // círculo de tamaño fijo, como los del tipo
+        .accessibilityShowsLargeContentViewer()
+        .glassEffect(.regular.interactive(), in: Circle())
+        .fixedSize()
+        .dsFeedback(.impact(weight: .light), trigger: on)
+        .accessibilityLabel(Text("Filtros"))
+        .accessibilityValue(on ? Text("\(count) puestos") : Text("Sin filtro"))
     }
 }
 
-extension DSFilterIcon where Options == EmptyView {
-    init(symbol: String, label: Text, value: Text? = nil, count: Int = 0, action: @escaping () -> Void) {
-        self.init(symbol: symbol, label: label, value: value, count: count, action: action) { EmptyView() }
-    }
-}
-
+/// Al apretar, el ícono se hunde tantito, en cuanto lo tocas.
 private struct KindPillPress: ButtonStyle {   // ds-exception: el hundido del segmento; la pastilla es vidrio nativo
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

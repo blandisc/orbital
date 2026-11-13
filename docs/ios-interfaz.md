@@ -464,6 +464,12 @@ haya caracteres de texto usados como ícono.
 | Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
 | Tres que caben (tres carteles lado a lado) | `rectangle.split.3x1` (`DS.Symbol.decideTrio`) | «Decide por mí», su primera pestaña |
 | Una por una (el mazo) | `rectangle.portrait.on.rectangle.portrait.angled` (`DS.Symbol.decideDeck`) | «Decide por mí», su segunda pestaña |
+| Filtros (abre la hoja de filtros) | `slider.horizontal.3` (`DS.Symbol.refine`) | «Decide por mí», el botón «Filtros» de las dos pestañas y lo de afinar en la línea de lo puesto |
+| Duración | `clock` (`DS.Symbol.filterTime`) | «Decide por mí» › Filtros › Duración, y en la línea de lo puesto |
+| Ánimo (sin elegir) | `face.smiling` (`DS.Symbol.filterMood`) | Lo mismo; elegido, el ícono de su ánimo |
+| Calificación | la estrella de calificar (`DS.Symbol.filterRating`, igual a `rate`) | «Decide por mí» › Filtros › Calificación y Letterboxd |
+| Barajar | `shuffle` (`DS.Symbol.shuffle`) | «Tres que caben» |
+| Paso · Guardar · Para hoy | `xmark`, `heart.fill`, `star.fill` (`DS.Symbol.matchPass`, `matchKeep`, `matchTonight`) | «Una por una»: los botones y el sello de la carta |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 | El mosaico | `square.grid.3x3` (`DS.Symbol.mosaic`) | La chapa de la portada de Explorar, el mosaico vacío. Solo él usa la cuadrícula de 3×3 (MO1) |
 | «Lo que ves» | `chart.bar.xaxis` (`DS.Symbol.whatYouWatch`) | El índice de Explorar (antes la cuadrícula rellena, que se confundía con el mosaico) |
@@ -517,7 +523,7 @@ tiempo de la hora solo ordenaba.
 - **Sin red no se culpa a los filtros**: «Sin conexión · Reintentar» (`DecideModel.empty`: sin conexión, sin sugerencias o por
   los filtros; solo el último ofrece qué quitar). El mazo y su tarjeta de Explorar dicen lo mismo, y la tarjeta no desaparece.
 - «Mi lista», Favoritos, «Tus series» y tus listas van bajo «Tus listas» en «De qué listas», no bajo «Sugerencias».
-- La hoja lleva ✕; con letra de accesibilidad el tipo y los filtros van en dos renglones y la hoja se abre completa si no cabe.
+- La hoja lleva ✕; con letra de accesibilidad la cuenta baja bajo el título y la hoja se abre completa si no cabe.
 
 ### Lo que quitas se puede deshacer (13 nov 2026)
 
@@ -540,10 +546,13 @@ tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de l
 DE2 (Fernando: «Construye DE1 y DE2 para ver cómo se ven»): «¿Qué vemos?» tenía dos puertas en Explorar (el dado de la barra y
 la tarjeta «¿Qué vemos hoy?») que llevaban a dos pantallas con filtros distintos.
 
-- **Una pregunta tiene una sola puerta y un solo nombre**: «Decide por mí» (tarjeta `DecideDoor` en Explorar, el mismo renglón
-  `DecideHomeRow` en Inicio). Adentro, las maneras de contestarla son pestañas (`DSTextTabs`): «Tres que caben» y «Una por
+- **Una pregunta tiene una sola puerta y un solo nombre**: «Decide por mí» (tarjeta `DecideDoor` en Explorar, la misma tarjeta
+  con el mismo abanico de carteles en Inicio, `DecideHomeRow`; el abanico sale de lo mismo que alimenta la hoja,
+  `ParaTiModel.decideFan`). **La puerta abre la hoja donde estás**: desde Inicio, sobre Inicio (`DecideSheet`, 13 nov 2026;
+  antes te mandaba a Explorar), con lo mismo que en Explorar (`decidePool`: «Porque viste», el mosaico y cada estante que se
+  ve); si aún no carga, la hoja dice que carga en vez de abrirse vacía. Adentro, las maneras de contestarla son pestañas (`DSTextTabs`): «Tres que caben» y «Una por
   una», con los nombres de la TV.
-- **Las pestañas de una misma pregunta comparten sus filtros**: lo que pones en «Afinar» filtra las dos
+- **Las pestañas de una misma pregunta comparten sus filtros**: lo que pones en «Filtros» filtra las dos
   (`DecideModel.deckPool`); el tiempo y el ánimo son solo de «Tres que caben» (son de esta noche).
 - No se agrega otra puerta (otro botón en la barra, otra tarjeta) a algo que ya tiene la suya.
 
@@ -555,14 +564,23 @@ Fernando, al quedarse con DE2: «Solamente ayúdame a pulir dentro de las tres q
 crudas». Arriba había cuatro renglones (la cuenta, las pestañas, el tipo y una rejilla de cápsulas «⏱ Cualquier duración ⌄»)
 y las dos pestañas tenían filtros distintos y en otro lugar.
 
-- **Un renglón de controles por hoja**, debajo de sus pestañas y el mismo en todas ellas: el tipo (`DSKindFilter`) a la
-  izquierda y los filtros a la derecha como íconos de una sola familia (`DSFilterIcon`: el círculo de vidrio de
-  `DSIconButton`). Una pestaña enseña solo los filtros que le aplican (el mazo: calificación y «Afinar»), en el mismo lugar.
-  Si no cabe (SE, letra grande), el tipo arriba y los íconos debajo; nunca cortados.
-- **Puesto se ve**: el ícono se llena del tinte de Orbital, y el que junta varios («Afinar») lleva su numerito. Sin cápsulas
-  de texto.
-- **Lo puesto se dice en una línea** debajo del renglón («1 h · Ligero · 7+ · Comedia»), y tocarla ofrece quitar cada filtro
-  o todos. Sin nada puesto, la línea no existe (no queda «Sin filtros» ni un hueco).
+- **Un renglón de controles por hoja**, debajo de sus pestañas y **idéntico en todas ellas**: el tipo (`DSKindFilter`) a la
+  izquierda y **un solo botón «Filtros»** a la derecha (`DSFiltersButton`, el mismo círculo de vidrio que la pastilla del
+  tipo; Fernando, 13 nov 2026: en lugar de cuatro íconos), con el mismo ícono, lugar y numerito en las dos pestañas. Siempre
+  en un renglón: los dos son de tamaño fijo (hasta xxxLarge) y caben juntos aun en un SE.
+- **Una sola hoja de filtros** (`DecideFilters`), por secciones con los encabezados de dos niveles: «Esta noche» (duración y
+  ánimo), «Qué tan buena» (calificación, según quién, Letterboxd, fama, premios), «Qué tipo» (géneros, época) y «De dónde»
+  (listas, lo ya visto). En una pestaña donde una sección no aplica (el mazo: «Esta noche») se ve apagada y lo dice; nunca
+  desaparece lo que cuenta en el numerito. Las opciones son baldosas con ícono **y nombre** (`DecideChoice`) o con su arte
+  (`DecideTile`), con cuántas quedan; arriba, cuántas opciones quedan mientras eliges; abajo «Ver N»; arriba a la derecha
+  «Quitar filtros» (todo menos el tipo). Se aplica al regresar, y solo si cambió algo.
+  Las baldosas de una fila miden lo mismo: en la fila angosta (ánimo, cuatro) el nombre reserva dos renglones
+  (`reservesTwoLines`), porque la rejilla perezosa no iguala altos y «Para pensar» quedaba más alta que las demás.
+- **Puesto se ve**: el botón se llena de su tinte y lleva cuántos hay; cada sección tiene el suyo (`DS.DecideLive`). Sin
+  cápsulas de texto.
+- **Lo puesto se dice en una línea** debajo del renglón («1 h · Ligero · 7+ · Comedia», cada parte con el color de su
+  sección), y tocarla ofrece «Cambiar filtros», quitar cada uno o todos. Sin nada puesto, la línea no existe (no queda «Sin
+  filtros» ni un hueco).
 - **La cuenta va junto al título** («128 opciones»), no en su propio renglón.
 
 ### Los datos no se enciman con el arte; lo elegido crece (13 nov 2026)
@@ -586,6 +604,63 @@ encogían y apagaban.
 
 Lo cuida `DesignRulesTests+Decide.swift` (`testOneControlRowPerSheet`, `testDataDoesNotSitOnTheArt`). En la TV no cambia: su
 carta ya lleva el nombre debajo del póster; revisar que sus filtros vayan en un solo renglón queda en el registro de paridad.
+
+### Decide se siente vivo (13 nov 2026)
+
+Fernando: «Pon un toque de color, hazlos más bonitos… poner una animación, una interacción». Lo que se toca en «Decide por
+mí» responde, sin adornos que distraigan:
+
+- **Cada filtro con su color** (`DS.DecideLive`: duración, ánimo, calificación y lo demás), sacado de los tintes de las listas;
+  nunca el turquesa, que es de la voz y del porqué. Elegir llena la baldosa creciendo con un resorte corto
+  (`DS.Motion.grow`), el ícono da un saltito (`symbolEffect(.bounce)`, una vez) y el teléfono marca la selección.
+- **Barajar**: los tres salen encogiéndose uno tras otro y los nuevos entran subiendo en cascada; el ícono salta. Detrás de los
+  tres, un resplandor suave del color del cartel elegido (`ArtTint`, el mismo de la ficha).
+- **El mazo**: la carta se inclina al arrastrarla, su sello crece con el avance, las de atrás van subiendo, el teléfono da un
+  toque al cruzar el umbral y la carta sale con la velocidad del dedo; los botones de abajo se encienden del color de su lado.
+  Un botón manda la carta igual que el dedo.
+- **Las pestañas**: la rayita viaja a la elegida y el contenido entra de su lado (`tabTransition`) con un fundido; el
+  encabezado se queda quieto.
+- Todo con `DS.Motion`, solo propiedades baratas (escala, opacidad, desplazamiento), interrumpible, sin animaciones sin fin;
+  con «Reducir movimiento», fundidos.
+
+### Cambiar de tipo no vuelve a barajar (13 nov 2026)
+
+Fernando: al pasar de Todo a Películas y regresar salían otros tres. **Lo que ves con cada tipo se recuerda mientras la hoja
+está abierta** (`DecideModel.switchKind`): volver a un tipo regresa los mismos tres y la misma elegida, también al ir y venir de
+pestaña. Solo «Barajar» o cambiar otro filtro barajan. El mazo no necesita memoria: su orden es fijo por día y lo que pasaste
+o guardaste no vuelve. Lo cuida `DecideKindMemoryTests`.
+
+### ViewThatFits no se anida ni vive bajo alineación por línea base (13 nov 2026)
+
+La 2291–2293 se colgaba al abrir «Una por una» (registro 0x8BADF00D: el hilo principal atorado en `explicitAlignment` de
+`ViewThatFits` dentro de pilas por línea base, varios niveles). `ViewThatFits` mide cada rama; si adentro hay otro, una pila
+por línea base o una guía de alineación, o si vive dentro de una pila alineada por línea base o por `.sectionTitle`, cada
+pregunta de alineación vuelve a medirlo todo, y en una hoja que cambia de alto eso pasa en cada cuadro.
+
+- **Un `ViewThatFits` por rama, nunca uno dentro de otro, sin pilas por línea base ni guías de alineación adentro y nunca
+  dentro de una pila alineada por línea base.** Para elegir forma, decide por el tamaño de letra (`dynamicTypeSize`) o con una
+  pieza de `Layout`.
+- En un encabezado que se mide muy seguido (la hoja de Decide), ningún `ViewThatFits`: las pestañas usan `adapts: false`.
+- Arreglados también el encabezado de sección (`DSSectionHead` con sello), las fuentes («Recomendada») y los sustos del control.
+
+Lo cuida `DesignRulesTests+Layout.swift` (`testViewThatFitsIsNotNestedNorUnderBaseline`) en todo `ios/App/Sources`.
+
+### Un gesto de contenido nunca tapa los controles de la hoja (13 nov 2026)
+
+Fernando, la 2291: «de "Una por una" ya no deja regresar a "Tres que caben"». **Los controles de una hoja (título, pestañas,
+filtros) son uno solo, se quedan quietos y van encima del contenido**: lo que se arrastra o sale volando (la carta del mazo)
+nunca les quita los toques. En Decide el encabezado es el mismo para las dos pestañas, con `zIndex` sobre el contenido, y
+cambia solo lo de abajo. Lo cuidan `testContentGestureNeverCoversSheetControls` y `DecideTabsUITests` (ida y vuelta, después
+de arrastrar una carta y abriendo «Filtros» en las dos pestañas, con tiempos límite).
+
+### En una hoja, lo que crece cede ante los controles (13 nov 2026)
+
+Fernando, en su 17 Pro: «hay que pulir el tamaño de los botones debajo porque se comen, se cortan con la tarjeta». **Los
+controles y sus nombres apartan su alto primero; lo que crece (la carta, un cartel) toma lo que sobra** y se achica guardando
+su forma. En el mazo los cuatro botones y los datos de la carta se acomodan antes y la carta toma el resto
+(`MatchDeckLayout`, en una pasada, sin estados que se persigan), con cualquier letra (ya no se desliza a un alto fijo), y el
+mazo se queda sobre el área segura. Nada se encima ni se recorta. Lo cuidan `testGrowingContentYieldsToControls` y
+`DecideTabsUITests` (los datos terminan antes que los botones y los botones caben en la pantalla, también con letra grande).
 
 ### La puerta de algo grande es grande y tiene nombre (13 nov 2026)
 

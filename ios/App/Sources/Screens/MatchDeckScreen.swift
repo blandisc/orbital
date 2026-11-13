@@ -14,16 +14,21 @@ struct MatchDeckScreen: View {
     var filtered = false
     /// «Reintentar» sin red: lo que se sugiere, pedido otra vez (F2/F8).
     var reload: (() async -> [Suggestion])?
+    /// Cuántas cartas quedan de verdad (sin lo visto, guardado ni pasado): la cuenta junto al título dice esto, no el montón.
+    var onCount: ((Int) -> Void)?
     let onOpenTitle: (TitleRoute) -> Void
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
     @State private var command: MatchCommand?
     /// Lo que trajo «Reintentar» (si no, `pool`).
     @State private var reloaded: [Suggestion]?
+    /// Hacia dónde va la carta de arriba: los botones se encienden de su color.
+    @State private var pull = MatchPull()
+    /// El saltito del símbolo de cada botón cuando la carta sale por él (con el botón o con el dedo).
+    @State private var kicks: [MatchCommand: Int] = [:]
     private var items: [Suggestion] { reloaded ?? pool }
 
     var body: some View {
@@ -40,15 +45,12 @@ struct MatchDeckScreen: View {
                 } else if model.cards.isEmpty {
                     emptyState(model).frame(maxHeight: .infinity).overlay(alignment: .bottom) { deckNotices }   // la última que guardaste
                 } else {
-                    // Con letra de accesibilidad el mazo se desliza (a un alto fijo) para que los botones y sus nombres quepan.
-                    if typeSize.isAccessibilitySize {
-                        ScrollView { VStack(spacing: DS.Space.s4) { deck(model, cardsHeight: DS.Match.compactDeck); actions(model) } }
-                            .scrollBounceBehavior(.basedOnSize)
-                            .overlay(alignment: .bottom) { deckNotices }
-                    } else {
-                        deck(model).frame(maxHeight: .infinity).overlay(alignment: .bottom) { deckNotices }
-                        actions(model)
-                    }
+                    // La carta cede (Fernando, 13 nov 2026: «los botones se comen, se cortan con la tarjeta»): los botones y sus
+                    // nombres apartan su alto primero, los datos de la carta el suyo (`MatchDeckLayout`) y la carta toma lo que
+                    // sobra, con la forma de su póster. Igual con letra grande (antes ahí el mazo se deslizaba a un alto fijo y
+                    // los botones quedaban fuera de la pantalla). Regla «En una hoja, lo que crece cede ante los controles».
+                    deck(model).frame(maxHeight: .infinity).layoutPriority(-1).overlay(alignment: .bottom) { deckNotices }
+                    actions(model)
                 }
             } else {
                 skeleton
@@ -58,6 +60,7 @@ struct MatchDeckScreen: View {
         // salía hasta cerrarlo); va abajo, encima de Paso · Para hoy · Guardar · Ver (`deckNotices`).
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
         .onChange(of: poolKey) { reloaded = nil; Task { await model?.replacePool(pool) } }
+        .onChange(of: model.map { $0.loaded ? $0.cards.count : -1 }, initial: true) { _, count in if let count, count >= 0 { onCount?(count) } }
         .task {
             if model == nil {
                 let m = MatchDeckModel(env.services, pool: items, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
@@ -74,15 +77,15 @@ struct MatchDeckScreen: View {
         .accessibilityIdentifier("match-deck")
     }
 
-    private func deck(_ model: MatchDeckModel, cardsHeight: CGFloat? = nil) -> some View {
+    private func deck(_ model: MatchDeckModel) -> some View {
         MatchDeck(cards: model.cards,
                   genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
                   command: $command,
+                  pull: pull,
                   onSave: { s in save(s, model) },
                   onDiscard: { s in discard(s, model) },
                   onTonight: { s in tonight(s, model) },
-                  onOpen: { s in onOpenTitle(s.route) },
-                  cardsHeight: cardsHeight)
+                  onOpen: { s in onOpenTitle(s.route) })
     }
 
     /// Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
@@ -106,8 +109,10 @@ struct MatchDeckScreen: View {
     /// Sin cartas, con el porqué: sin red («Reintentar»), por los filtros de «Afinar», o porque ya las recorriste (como el
     /// aviso de Tinder cuando se acaban los matches, Fernando, 3 nov 2026).
     @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
-        if items.isEmpty, filtered, env.isOnline {
-            DSEmptyState(symbol: DS.Symbol.decide, title: Text("Ninguna con estos filtros"), message: Text("Prueba quitando un filtro en «Afinar»."))
+        if filtered, env.isOnline, items.isEmpty || model.saved.isEmpty {
+            // Con filtros: no hay ninguna (o las que cumplen ya las viste, las guardaste o las pasaste). Antes decía «Se
+            // acabaron tus matches» con «27 opciones» arriba sin haber visto ninguna.
+            DSEmptyState(symbol: DS.Symbol.decide, title: Text("Ninguna con estos filtros"), message: Text("Prueba quitando un filtro."))
                 .accessibilityIdentifier("match-filtered")
         } else if items.isEmpty {
             // Sin red lo dice así, con «Reintentar» (F2/F8: antes «Aún no hay propuestas», como si no tuvieras sugerencias).
@@ -129,6 +134,7 @@ struct MatchDeckScreen: View {
 
     /// Guarda (en «Tu match perfecto» de Trakt o en Mi lista) y lo dice, con «Deshacer» (antes el «+» la guardaba sin avisar y no se sabía qué había pasado).
     private func save(_ s: Suggestion, _ model: MatchDeckModel) {
+        kicks[.save, default: 0] += 1
         Task { await model.save(s) }
         env.notify(model.savesToTrakt ? "Guardada en Tu match perfecto" : "Guardada en Mi lista", detail: s.title, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
             Task { await model.undo(s) }
@@ -137,6 +143,7 @@ struct MatchDeckScreen: View {
 
     /// «Para hoy» (arriba o la ★): guardada y primero en Mi lista hoy; el aviso ofrece verla ya y deshacerlo (F5).
     private func tonight(_ s: Suggestion, _ model: MatchDeckModel) {
+        kicks[.tonight, default: 0] += 1
         Task { await model.saveForTonight(s) }
         env.notify("Para hoy", detail: s.title, tone: .success, actionTitle: "Ver ya", actionSymbol: "play.fill", perform: {
             onPlay(s.route)
@@ -145,6 +152,7 @@ struct MatchDeckScreen: View {
 
     /// «Paso» (izquierda o ✕): no vuelve en un mes, y se puede deshacer (F5: antes no tenía vuelta).
     private func discard(_ s: Suggestion, _ model: MatchDeckModel) {
+        kicks[.discard, default: 0] += 1
         model.discard(s)
         env.notify("Paso", detail: s.title, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { model.undoDiscard(s) }
     }
@@ -154,28 +162,27 @@ struct MatchDeckScreen: View {
         BannerView().padding(.horizontal, -DS.Space.gutter).padding(.bottom, DS.Space.s2)
     }
 
-    /// Paso · Para hoy · Guardar · Ver (✕ · ★ · ♥ · ▶): cuatro círculos iguales de la familia de `DSIconButton`, repartidos de
-    /// margen a margen, cada uno con su nombre debajo. Los tres primeros hacen salir volando la carta y llevan el color de su
-    /// sello (lo único con color: dice hacia dónde se va); «Ver» reproduce la de arriba (pulido de DE2: antes ▶ flotaba sobre
-    /// el arte).
+    /// Paso · Para hoy · Guardar · Ver (✕ · ★ · ♥ · ▶): cuatro círculos iguales (`MatchActionButton`), repartidos de margen
+    /// a margen, cada uno con su nombre debajo. Los tres primeros hacen salir volando la carta y llevan el color de su sello
+    /// (lo único con color: dice hacia dónde se va); se encienden mientras arrastras hacia su lado y su símbolo salta cuando la
+    /// carta sale por ellos. «Ver» reproduce la de arriba (pulido de DE2: antes ▶ flotaba sobre el arte).
     private func actions(_ model: MatchDeckModel) -> some View {
         // Repartidos con el mismo hueco entre ellos y los de las puntas en los márgenes.
         HStack(alignment: .top, spacing: 0) {
             action(Text("Paso"), id: "match-discard") {
-                DSIconButton(symbol: "xmark", label: "Paso", size: .large, steady: true) { command = .discard }.foregroundStyle(DS.Match.pass)
+                MatchActionButton(command: .discard, symbol: DS.Symbol.matchPass, label: "Paso", tint: DS.Match.pass, pull: pull, kick: kicks[.discard] ?? 0) { command = .discard }
             }
             Spacer(minLength: DS.Space.s2)
             action(Text("Para hoy"), id: "match-tonight") {
-                DSIconButton(symbol: "star.fill", label: "Para hoy", size: .large, steady: true) { command = .tonight }.foregroundStyle(DS.Match.tonight)
+                MatchActionButton(command: .tonight, symbol: DS.Symbol.matchTonight, label: "Para hoy", tint: DS.Match.tonight, pull: pull, kick: kicks[.tonight] ?? 0) { command = .tonight }
             }
             Spacer(minLength: DS.Space.s2)
             action(Text("Guardar"), id: "match-save") {
-                DSIconButton(symbol: "heart.fill", label: "Guardar", size: .large, steady: true) { command = .save }.foregroundStyle(DS.Match.keep)
+                MatchActionButton(command: .save, symbol: DS.Symbol.matchKeep, label: "Guardar", tint: DS.Match.keep, pull: pull, kick: kicks[.save] ?? 0) { command = .save }
             }
             Spacer(minLength: DS.Space.s2)
             action(Text("Ver"), id: "match-play") {
-                DSIconButton(symbol: "play.fill", label: "Ver", size: .large, steady: true) { if let s = model.cards.first { onPlay(s.route) } }
-                    .foregroundStyle(DS.text)
+                MatchActionButton(command: nil, symbol: "play.fill", label: "Ver", tint: DS.text, pull: pull) { if let s = model.cards.first { onPlay(s.route) } }
             }
         }
         .frame(maxWidth: DS.Match.cardMax)   // en el iPad, del ancho de la carta: no se van a las orillas de la hoja

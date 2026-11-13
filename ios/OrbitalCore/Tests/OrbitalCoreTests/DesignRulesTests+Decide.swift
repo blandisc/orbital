@@ -7,13 +7,14 @@ extension DesignRulesTests {
         try XCTUnwrap(files.first { $0.name == name }, "falta \(name)").lines.joined(separator: "\n")
     }
 
-    /// Un filtro que se ve puesto, filtra: la cápsula del tiempo enseña el que elegiste (`shownTime`) o «Cualquier duración»,
-    /// nunca el de la hora (`m.time`), que solo ordena (F3: decía «1 h» y salían películas de tres horas).
+    /// Un filtro que se ve puesto, filtra: la baldosa del tiempo se ve elegida solo con el que elegiste (`shownTime`), nunca
+    /// con el de la hora (`m.time`), que solo ordena (F3: decía «1 h» y salían películas de tres horas).
     func testAFilterThatLooksOnFilters() throws {
         let files = try sources()
+        let pages = try file("DecideFilterPages.swift", in: files)
+        XCTAssertTrue(pages.contains("let on = m.shownTime == t"), "La baldosa del tiempo se ve puesta solo con el que elegiste")
         let controls = try file("DecideControls.swift", in: files)
-        XCTAssertTrue(controls.contains("words.timeTitle(m)") && controls.contains("value: m.shownTime.map"),
-                      "El ícono del tiempo dice el que elegiste o «Cualquier duración» y se ve puesto solo entonces")
+        XCTAssertTrue(controls.contains("let t = m.shownTime"), "la línea de lo puesto dice solo el tiempo que elegiste")
         check(hits(#"timeName\(m\.time\)|selected: m\.timeChosen"#, in: files), "Ningún filtro enseña puesto el tiempo de la hora (no filtra)")
         let words = try file("DecideWords.swift", in: files)
         XCTAssertTrue(words.contains("if let t = m.shownTime"), "«Nada con…» no culpa al tiempo que no elegiste")
@@ -71,41 +72,58 @@ extension DesignRulesTests {
         check(hits(#"symbol: "dice"|systemName: "dice""#, in: files, skip: { allowed.contains($0.name) }), "El dado solo para «Decide por mí»")
     }
 
-    /// Una pregunta, una puerta (DE2): «Decide por mí» se abre solo desde `DecideDoor` (Explorar y, con `DecideHomeRow`,
-    /// Inicio); adentro, «Tres que caben» y «Una por una» son pestañas de la misma hoja y el mazo ya no es su propia pantalla.
+    /// Una pregunta, una puerta (DE2): «Decide por mí» se abre solo desde `DecideDoor` (Explorar e Inicio), siempre con la
+    /// misma hoja (`DecideSheet`, que arma `DecideView` con lo de Explorar) sobre la pantalla donde estás: Inicio ya no te
+    /// manda a Explorar (13 nov 2026). Las dos puertas llevan el mismo abanico (`decideFan`). Adentro, «Tres que caben» y
+    /// «Una por una» son pestañas de la misma hoja y el mazo ya no es su propia pantalla.
     func testOneQuestionOneDoor() throws {
         let files = try sources()
-        check(hits(#"DecideView\("#, in: files, skip: { $0.name == "DecideView.swift" }).filter { !$0.hasPrefix("Screens/ParaTiView.swift") },
-              "«Decide por mí» se abre solo desde Explorar (ParaTiView), con su puerta")
+        check(hits(#"DecideView\("#, in: files, skip: { $0.name == "DecideView.swift" }).filter { !$0.hasPrefix("Screens/DecideSheet.swift") },
+              "«Decide por mí» se arma solo en `DecideSheet`")
+        check(hits(#"DecideSheet\("#, in: files).filter { !$0.hasPrefix("Screens/ParaTiView.swift") && !$0.hasPrefix("Screens/DecideHomeRow.swift") },
+              "La hoja se abre desde las dos puertas: Explorar e Inicio")
         check(hits(#"MatchDeckScreen\("#, in: files, skip: { $0.name == "MatchDeckScreen.swift" }).filter { !$0.hasPrefix("Screens/DecideView.swift") },
               "El mazo vive dentro de «Decide por mí» («Una por una»), no en otra pantalla")
         check(hits(#"MatchTeaser|"¿Qué vemos hoy\?"|DS\.Symbol\.decide\) *\}.*ToolbarItem|ToolbarItem[^\n]*DS\.Symbol\.decide"#, in: files),
               "Sin otra puerta: ni «¿Qué vemos hoy?» ni el dado en la barra")
+        check(hits(#"openDecide"#, in: try sources(["App", "Design", "Screens"])), "Inicio abre la hoja ahí mismo: sin saltar a Explorar")
         let decide = try file("DecideView.swift", in: files)
         XCTAssertTrue(decide.contains(#"Text("Tres que caben")"#) && decide.contains(#"Text("Una por una")"#), "las dos pestañas, con los nombres de la TV")
-        XCTAssertTrue(decide.contains("m.deckPool()"), "el mazo usa los filtros de «Afinar»")
+        XCTAssertTrue(decide.contains("m.deckPool()"), "el mazo usa los mismos filtros")
         let paraTi = try file("ParaTiView.swift", in: files)
         XCTAssertFalse(paraTi.contains("fullScreenCover"), "sin la pantalla aparte del mazo")
-        XCTAssertTrue(paraTi.contains("env.ui.openDecide"), "la puerta de Inicio llega aquí")
+        let explore = try file("ListsView.swift", in: files), home = try file("DecideHomeRow.swift", in: files)
+        XCTAssertTrue(explore.contains("model.decideFan()") && home.contains(".decideFan()"), "la misma puerta con el mismo abanico en Explorar y en Inicio")
     }
 
-    /// Una hoja, un renglón de controles (pulido de DE2, Fernando, 13 nov 2026: «las veo un poco crudas»): las dos pestañas usan
-    /// el mismo `DecideControls` (tipo y filtros de ícono `DSFilterIcon`, sin cápsulas de texto) y lo puesto se dice en una
-    /// línea que solo existe si hay algo puesto. La cuenta va junto al título.
+    /// Una hoja, un renglón de controles (Fernando, 13 nov 2026): las dos pestañas usan el mismo `DecideControls`, con el tipo
+    /// y un solo botón «Filtros» (`DSFiltersButton`, el mismo número en las dos), que abre una sola hoja de filtros por
+    /// secciones (`DecideFilters`). Lo puesto se dice en una línea que solo existe si hay algo puesto. La cuenta va junto al
+    /// título.
     func testOneControlRowPerSheet() throws {
         let files = try sources()
         let decide = try file("DecideView.swift", in: files)
         XCTAssertEqual(decide.components(separatedBy: "DecideControls(").count - 1, 1, "un solo renglón de controles, en el encabezado de las dos pestañas")
         XCTAssertFalse(decide.contains("DSCapsuleLabel") || decide.contains("Grid("), "sin rejilla de cápsulas de filtros")
         let controls = try file("DecideControls.swift", in: files)
-        XCTAssertFalse(controls.contains("DSCapsuleLabel"), "los filtros son íconos de una familia, no cápsulas de texto")
-        XCTAssertGreaterThanOrEqual(controls.components(separatedBy: "DSFilterIcon(").count - 1, 4, "tiempo, ánimo, calificación y «Afinar»")
-        XCTAssertTrue(controls.contains("if !deck { timeMenu(m); moodMenu(m) }"), "el mazo enseña solo los filtros que le aplican, en el mismo renglón")
+        XCTAssertFalse(controls.contains("DSCapsuleLabel"), "sin cápsulas de texto")
+        XCTAssertEqual(controls.components(separatedBy: "DSFiltersButton(").count - 1, 1, "un solo botón «Filtros»")
+        XCTAssertFalse(controls.contains("timeMenu") || controls.contains("ratingMenu"), "sin los menús de cada filtro")
+        XCTAssertFalse(controls.contains("deck ? tonight"), "el mismo número en las dos pestañas")
         XCTAssertTrue(controls.contains("if !parts.isEmpty { setLine("), "sin nada puesto, la línea de lo puesto no existe")
-        XCTAssertTrue(controls.contains(#"Button("Quitar filtros""#), "la línea de lo puesto ofrece quitarlo")
+        XCTAssertTrue(controls.contains(#"Button("Quitar filtros""#) && controls.contains(#"Button("Cambiar filtros""#), "la línea ofrece quitarlo o cambiarlo")
+        let pages = try file("DecideFilterPages.swift", in: files)
+        for section in ["Esta noche", "Qué tan buena", "Qué tipo", "De dónde"] {
+            XCTAssertTrue(pages.contains(#"DSSectionHead(title: "\#(section)", level: .section)"#), "la hoja de filtros, por secciones: \(section)")
+        }
+        XCTAssertTrue(pages.contains("DecideChoice(") && pages.contains(#"Button("Quitar filtros")"#) && pages.contains("decide-filters-count"),
+                      "baldosas con nombre, «Quitar filtros» y cuántas quedan")
+        XCTAssertTrue(pages.contains("m.filtersSignature != opened"), "al salir se baraja solo si cambió algo")
+        XCTAssertTrue(pages.contains("columns(4)") == pages.contains("reservesTwoLines: true"), "la fila de cuatro baldosas reserva dos renglones: todas del mismo alto")
         let header = try XCTUnwrap(decide.components(separatedBy: "private func header(").dropFirst().first)
         let title = try XCTUnwrap(header.components(separatedBy: "DSTextTabs(").first)
         XCTAssertTrue(title.contains("{ countText(m, count); close }"), "la cuenta va junto al título, no en su propio renglón")
+        check(hits(#"DSFilterIcon|DSFilterPill"#, in: files), "Sin los cuatro íconos de antes")
     }
 
     /// Los datos no se enciman con el arte; lo elegido crece (pulido de DE2): la carta del mazo es solo arte del tamaño del
@@ -123,7 +141,8 @@ extension DesignRulesTests {
         XCTAssertTrue(mazo.contains("DS.Match.behindPeek"), "las que siguen asoman")
         XCTAssertFalse(mazo.contains("DS.Motion.spring"), "la carta regresa sin rebote")
         let deck = try file("MatchDeckScreen.swift", in: files)
-        XCTAssertEqual(deck.components(separatedBy: "steady: true").count - 1, 4, "Paso · Para hoy · Guardar · Ver: cuatro círculos iguales")
+        XCTAssertEqual(deck.components(separatedBy: "MatchActionButton(").count - 1, 4, "Paso · Para hoy · Guardar · Ver: cuatro círculos iguales")
+        XCTAssertTrue(try file("MatchActions.swift", in: files).contains("steady: true"), "del mismo tamaño siempre")
         XCTAssertTrue(deck.contains(#"id: "match-play""#), "«Ver» es un botón de la fila")
         let decide = try file("DecideView.swift", in: files)
         XCTAssertFalse(decide.contains("dsSelectionRing") || decide.contains("DS.Opacity.dimmed"), "sin marco blanco ni las otras apagadas")

@@ -28,6 +28,9 @@ final class AppEnvironment {
     @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
     /// Premios, tus listas de Trakt y «Por año»: uno para toda la app (cambiar entre mosaico y listas no lo vuelve a pedir todo).
     @ObservationIgnored lazy var collections = CollectionsModel(services)
+    /// Lo que se sugiere en Explorar (`ParaTiModel`): uno para toda la app. Explorar lo pinta y «Decide por mí» lo usa desde
+    /// cualquier puerta (Explorar o Inicio) sin cargarlo dos veces ni abrirse vacío.
+    @ObservationIgnored lazy var paraTi = ModelObserver(ParaTiModel(self.services))
     /// Lo que ves y el Wrapped: uno para toda la app (el historial se trae una vez y se cuenta por periodo).
     @ObservationIgnored lazy var watching: WatchingModel = {
         let model = WatchingModel(services)

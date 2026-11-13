@@ -2,8 +2,8 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-// Piezas de «Decide por mí»: el mosaico de un género o una época, los tres carteles y el renglón de una lista (los filtros
-// de la hoja son `DSFilterIcon`, en `Buttons.swift`).
+// Piezas de «Decide por mí»: el mosaico de un género o una época, la baldosa de una opción de la hoja de filtros, los tres
+// carteles y el renglón de una lista (el botón «Filtros» del encabezado es `DSFiltersButton`, en `Filters.swift`).
 
 /// Un género o una época en «Afinar»: un mosaico con su imagen (generada con Grok Imagine, viene con la app: sale al
 /// instante y sin red), un velo abajo y el nombre. Con carácter al elegir: el elegido crece un poco con rebote, se enciende un
@@ -81,12 +81,77 @@ struct DecideTile: View {
     }
 }
 
+/// Una opción de la hoja de filtros de «Decide por mí» (duración, ánimo, calificación): su ícono arriba, su nombre y cuántas
+/// quedan, en una baldosa de la familia de `FilterLogoChoice` (Fernando, 13 nov 2026: «opciones como baldosas o íconos CON
+/// nombre»). Elegida, se llena del tinte de su sección (`tint`, `DS.DecideLive`) creciendo con un resorte corto, el ícono da
+/// un saltito y el teléfono marca la selección; tocarla otra vez la quita. Sin nada que dejar (y sin estar puesta) no se toca
+/// (F13). Con «Reducir movimiento», el relleno solo se funde.
+struct DecideChoice: View {
+    let symbol: String
+    let title: Text
+    /// Cuántas quedarían con ella (nil: aún no se sabe).
+    var count: Int?
+    let tint: Color
+    let selected: Bool
+    var enabled = true
+    /// Una fila angosta (cuatro) reserva dos renglones de nombre: las tarjetas de una fila miden lo mismo aunque una parta.
+    var reservesTwoLines = false
+    let toggle: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous)
+        let ink = selected ? DS.DecideLive.onTint : DS.text
+        Button(action: toggle) {
+            VStack(spacing: DS.Space.s1) {
+                Image(systemName: symbol).font(DS.TextRecipe.section.font)
+                    .foregroundStyle(selected ? DS.DecideLive.onTint : tint)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? false : selected)
+                title.recipe(.label, color: ink).lineLimit(2, reservesSpace: reservesTwoLines).multilineTextAlignment(.center).minimumScaleFactor(DS.Size.statScale)
+                if let count {
+                    Text(verbatim: "\(count)").recipe(.caption, color: selected ? DS.DecideLive.onTint : DS.textMuted).monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+            }
+            .padding(.horizontal, DS.Space.s2)
+            .padding(.vertical, DS.Space.s3)
+            .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
+            .background {
+                shape.fill(DS.fill)
+                shape.fill(tint)
+                    .scaleEffect(selected || reduceMotion ? 1 : DS.DecideLive.fillFrom)
+                    .opacity(selected ? 1 : 0)
+            }
+            .overlay(shape.strokeBorder(selected ? .clear : DS.hairline, lineWidth: DS.Stroke.hairline))
+            .clipShape(shape)
+            .contentShape(shape)
+            .animation(DS.Motion.grow(reduceMotion) ?? DS.Motion.fade, value: selected)
+        }
+        .buttonStyle(DSPressStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : DS.Opacity.dimmed)
+        .dsFeedback(.selection, trigger: selected)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityValue(count.map { Text("\($0) opciones") } ?? Text(verbatim: ""))
+    }
+}
+
 /// Los carteles de «Tres que caben», un solo juego: cada uno mide un tercio del renglón aunque sean uno o dos, van centrados
 /// (F4, 13 nov 2026: antes dos dejaban un hueco a la derecha y uno, dos huecos) y sobre la misma base (pulido de DE2).
 struct DecideTrioLayout: Layout {
     var spacing: CGFloat = DS.Space.s3
     /// Tres lugares, como `DecideModel.trio` (aquí fijo: el Layout no vive en el actor principal).
     private let slots: CGFloat = 3
+
+    /// Al barajar, cada cartel nuevo entra subiendo desde un poco más chico, uno tras otro (`DS.DecideLive.shuffleStagger`),
+    /// con el resorte de lo que crece. Lo que se va ya salió (DecideView lo encoge y apaga antes de pedir los nuevos), así que
+    /// se quita en el acto: nunca hay seis carteles peleando por tres lugares. Con «Reducir movimiento», solo un fundido.
+    @MainActor static func shuffle(index: Int, reduceMotion: Bool) -> AnyTransition {
+        guard let grow = DS.Motion.grow(reduceMotion) else { return .asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .identity) }
+        let arrive = AnyTransition.scale(scale: DS.DecideLive.shuffleFrom, anchor: .bottom)
+            .combined(with: .offset(y: DS.DecideLive.shuffleRise)).combined(with: .opacity)
+        return .asymmetric(insertion: arrive.animation(grow.delay(Double(index) * DS.DecideLive.shuffleStagger)), removal: .identity)
+    }
 
     private func slot(_ width: CGFloat) -> CGFloat { max(0, (width - spacing * (slots - 1)) / slots) }
 

@@ -146,13 +146,12 @@ extension DS {
         /// Las de atrás: cuánto más chicas (desde su orilla de abajo) y cuánto asoma cada una por abajo; el giro al arrastrar.
         static let behindShrink: CGFloat = 0.05, behindPeek = DS.Space.s3, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
-        /// La carta mide lo que el póster; en el iPad y la Mac no pasa de este ancho. Con letra de accesibilidad el mazo se
-        /// desliza y el lugar de las cartas mide `compactDeck`.
-        static let cardMax: CGFloat = 440, compactDeck: CGFloat = 420
-        /// Debajo de la carta: cuántos géneros dice su línea y el logo de Trakt; el sello («GUARDAR», «PASO»): su giro, orilla e
-        /// interletrado.
+        /// La carta mide lo que el póster y cede el alto que haga falta a sus datos y a los botones; en el iPad y la Mac no
+        /// pasa de este ancho.
+        static let cardMax: CGFloat = 440
+        /// Debajo de la carta: cuántos géneros dice su línea y el logo de Trakt; el sello («Guardar», «Paso»): su giro y su orilla.
         static let genres = 3, ratingLogo: CGFloat = 16
-        static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5
+        static let stampTilt: Double = 12, stampLine: CGFloat = 3
         /// Los cuatro botones con su nombre debajo.
         static let actionLabelGap = DS.Space.s2
         /// Cada dirección con su color, como Tinder (Fernando, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» (arriba)

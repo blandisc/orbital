@@ -54,9 +54,25 @@ extension DecideModel {
 
     /// Elegir el tiempo (nil: cualquier duración; vuelve el de la hora, solo para ordenar).
     public func chooseTime(_ t: Time?) async {
-        if let t { time = t; timeChosen = true } else { time = Self.contextTime(services.now()); timeChosen = false }
+        setTime(t)
         await apply()
     }
+
+    /// Lo mismo sin barajar todavía (la hoja de filtros aplica todo junto al salir).
+    public func setTime(_ t: Time?) {
+        if let t { time = t; timeChosen = true } else { time = Self.contextTime(services.now()); timeChosen = false }
+    }
+
+    /// «Quitar filtros»: todo menos el tipo (que se ve en su pastilla), igual en las dos pestañas. Sin barajar: quien llama
+    /// decide cuándo (`apply`).
+    public func clearFilters() {
+        genres = []; decades = []; includeWatched = false; sourceIDs = []; fame = .any; awards = []
+        minRating = 0; minLetterboxd = 0; mood = nil
+        setTime(nil)
+    }
+
+    /// Una firma de los filtros puestos: la hoja de filtros solo vuelve a barajar al salir si cambió algo.
+    public var filtersSignature: String { filtersKey }
 
     /// «Barajar» solo si hay más de las que ya se ven (con una o dos no haría nada; F4).
     public var canShuffle: Bool { count() > picks.count }

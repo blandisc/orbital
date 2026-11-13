@@ -70,6 +70,11 @@ extension DS {
         /// El dado es solo «Decide por mí», el sorteo (DE1, 13 nov 2026: antes también «Temporadas» de la dona y «Repartido por
         /// décadas»). Las temporadas de la dona son una pila con ▶; repartir por épocas, la línea del tiempo.
         static let decideTrio = "rectangle.split.3x1", decideDeck = "rectangle.portrait.on.rectangle.portrait.angled"
+        /// Los filtros de «Decide por mí» (cada uno con su tinte, `DS.DecideLive`): la duración, el ánimo, la calificación (la
+        /// misma estrella de calificar) y «Afinar»; y «Barajar» los tres carteles.
+        static let filterTime = "clock", filterMood = "face.smiling", filterRating = rate, refine = "slider.horizontal.3", shuffle = "shuffle"
+        /// Las tres salidas de una carta del mazo, en el botón y en su sello: Paso, Guardar y «Para hoy».
+        static let matchPass = "xmark", matchKeep = "heart.fill", matchTonight = "star.fill"
         static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
         /// MO1 (Fernando, 13 nov 2026): el mosaico, la cuadrícula de 3×3, solo para él (su puerta en la portada de Explorar).
         /// «Lo que ves» lleva sus barras (antes la misma cuadrícula, rellena) y «Todo» del selector su 2×2 (`KindGlyph.all`).
