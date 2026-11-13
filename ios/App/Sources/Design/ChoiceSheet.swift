@@ -81,19 +81,27 @@ struct ChoiceSheet: View {
         }
     }
 
-    /// La principal: el botón sólido de la app a todo lo ancho, con su segunda línea («🇲🇽 Español») debajo del nombre.
+    /// La principal: el botón sólido de la app a todo lo ancho, del alto de «Ver» en la ficha, con su detalle («🇲🇽 Latino»)
+    /// en el mismo renglón. Antes el detalle iba debajo y el botón salía muy alto (Fernando, 13 nov 2026: «estaba muy grande
+    /// el botón de ver otra vez»). Solo si no cabe en un renglón (letra grande, SE) el detalle baja.
     private func primaryButton(_ action: ChoiceAction) -> some View {
-        Button { choose(action) } label: {
-            VStack(spacing: DS.Space.s1) {
-                Label { action.title } icon: { Image(systemName: action.symbol) }
-                    .font(DS.TextRecipe.cardTitle.font)
-                if let detail = action.detail { detail.font(DS.TextRecipe.footnote.font) }
+        let name = Label { action.title } icon: { Image(systemName: action.symbol) }.font(DS.TextRecipe.cardTitle.font)
+        return Button { choose(action) } label: {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) {
+                    name
+                    if let detail = action.detail { detail.font(DS.TextRecipe.secondary.font) }
+                }
+                .lineLimit(1)
+                VStack(spacing: DS.Space.s1) {
+                    name
+                    if let detail = action.detail { detail.font(DS.TextRecipe.footnote.font) }
+                }
+                .multilineTextAlignment(.center)
             }
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Space.s2)
+            .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
         }
-        .dsSolidPrimaryButton().controlSize(.large)
+        .dsSolidPrimaryButton()
         .accessibilityIdentifier(action.id)
     }
 }
