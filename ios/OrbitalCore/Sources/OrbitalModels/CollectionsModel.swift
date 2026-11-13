@@ -53,6 +53,7 @@ public final class CollectionsModel: ObservableModel {
         myList = await services.watch.library().filter(\.inLibrary).sorted { (listed[$0.id] ?? 0) > (listed[$1.id] ?? 0) }.compactMap { w in
             guard w.type == "movie" || w.type == "series" else { return nil }
             var s = Suggestion(art: w.id, kind: w.type, title: w.name, year: nil, reason: .inList("Mi lista"))
+            s.addedAt = listed[w.id].flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }   // «Agregadas: más recientes»
             if let poster = w.poster, !poster.isEmpty { s.poster = poster }
             return s
         }

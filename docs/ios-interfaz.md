@@ -319,6 +319,16 @@ en dos filas desalineadas, medían distinto y los «−» «+» no eran del mism
 
 `DesignRulesTests+Subtitles.swift` y `PlayerLayoutTests` lo cuidan. La TV ya usa renglones con ✓: sin cambio. En el iPad el panel
 es el mismo (al lado del video).
+
+### Toda lista ofrece los mismos órdenes; uno que no aplica no aparece (13 nov 2026)
+
+Fernando: «Que en mis listas también pueda ordenar por agregadas más recientemente o menos recientemente a la lista». Los
+órdenes de «Ordenar y filtrar» salen de un solo lugar, `OrbitalModels.ListSort.offered`, con los datos de la lista: «Agregadas:
+más recientes» y «Agregadas: más viejas» solo donde hay cuándo lo agregaste (`Suggestion.addedAt`: Mi lista y tus listas, no
+Viendo, Vistas, Las dejé ni las listas de otros), IMDb si se puede pedir, Trakt si trae su calificación. Nunca una opción muerta.
+Cada lista recuerda su orden con `ListSort.saved`/`remember`; ninguna pantalla arma su propia lista de órdenes ni guarda el orden
+por su lado. Lo que no trae fecha va al final en el orden en que venía, y elegir un orden no toca tu orden a mano de Trakt.
+`ListSortTests` y `DesignRulesTests+ListSort.swift` lo cuidan.
 ### Volver a la app nunca te hace esperar para seguir (12 nov 2026)
 
 Fernando: «si dejo pausado un elemento y salgo de la aplicación y regreso y le doy play, que se reproduzca inmediatamente»;

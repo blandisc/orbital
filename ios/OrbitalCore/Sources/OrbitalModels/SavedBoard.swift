@@ -41,7 +41,8 @@ public struct SavedBoard: Equatable, Sendable {
         // casi nunca está a la vez en Mi lista y en Viendo; las dejadas sí salen.
         board.inList = watchlist.filter { !hidden.contains($0.imdb) }
         func suggestion(_ imdb: String) -> Suggestion? {
-            if let s = watchlist.first(where: { $0.imdb == imdb }) { return s }
+            // Viendo, Vistas y Las dejé no tienen «agregada» (es de Mi lista): sin la fecha, no ofrecen ese orden.
+            if var s = watchlist.first(where: { $0.imdb == imdb }) { s.addedAt = nil; return s }
             guard let info = watched.info[imdb] else {
                 return hiddenNames[imdb].map { Suggestion(art: imdb, kind: "series", title: $0, year: nil, reason: .watching) }
             }
