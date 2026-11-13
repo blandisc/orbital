@@ -105,7 +105,7 @@ struct Mosaic: View {
             if runtime.isEmpty {
                 if loading { DSLoadingState() }
                 else {
-                    DSEmptyState(symbol: "square.grid.3x3", title: Text("No pude armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
+                    DSEmptyState(symbol: DS.Symbol.mosaic, title: Text("No pude armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
                         if let retry { Button("Reintentar", action: retry) }
                     }
                 }

@@ -67,5 +67,12 @@ extension DS {
         static let addNote = "note.text.badge.plus", note = "note.text"
         /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
         static let rate = "star"
+        /// MO1 (Fernando, 13 nov 2026): el mosaico, la cuadrícula de 3×3, solo para él (su puerta en la portada de Explorar).
+        /// «Lo que ves» lleva sus barras (antes la misma cuadrícula, rellena) y «Todo» del selector su 2×2 (`KindGlyph.all`).
+        static let mosaic = "square.grid.3x3", whatYouWatch = "chart.bar.xaxis"
+        /// «Toda la serie» al descargar: las temporadas apiladas (antes la cuadrícula del mosaico).
+        static let wholeSeries = "square.stack.3d.up"
+        /// Cerrar lo que ocupa toda la pantalla y regresar (el mosaico en el iPad y la Mac, F1; el panel de una ficha).
+        static let close = "xmark"
     }
 }

@@ -76,20 +76,49 @@ enum AwardNames {
 /// El arranque de una parte grande de Para ti, como en una revista (Fernando, 30 oct 2026, opción S2): un rótulo chico en
 /// mayúsculas con su línea fina hasta la orilla («GÉNEROS ———») y debajo un título que dice algo («Del terror a la
 /// comedia»). Sin colores ni íconos: el aire y la línea separan. Pone su propio margen a los lados.
-struct DSChapterHead: View {
+/// X1 (Fernando, 13 nov 2026: el selector de Explorar «está ahí como volando»): el control de la sección (`accessory`, el
+/// selector de tipo de «Lo que se ve hoy») va en el renglón del rótulo, a la derecha y centrado con él, en lugar de la línea
+/// fina. Si no cabe (SE, letra grande), baja entero a su propio renglón bajo el rótulo con su línea; nunca cortado.
+struct DSChapterHead<Accessory: View>: View {
     let label: Text
     /// El ícono de la sección (el mismo del índice de arriba), en el azul de Orbital, a la izquierda del rótulo.
     var symbol: String? = nil
     /// Sin título, solo el rótulo con su línea (Fernando, 31 oct 2026: en Para ti basta el rótulo).
     var title: Text? = nil
+    let accessory: Accessory
+
+    init(label: Text, symbol: String? = nil, title: Text? = nil, @ViewBuilder accessory: () -> Accessory) {
+        self.label = label; self.symbol = symbol; self.title = title; self.accessory = accessory()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSChapterLabel(label: label, symbol: symbol)
+            if Accessory.self == EmptyView.self {
+                DSChapterLabel(label: label, symbol: symbol)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: DS.Space.s3) {
+                        DSChapterLabel(label: label, symbol: symbol, line: false).fixedSize().accessibilityElement(children: .combine)
+                        Spacer(minLength: 0)
+                        accessory
+                    }
+                    VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                        DSChapterLabel(label: label, symbol: symbol).accessibilityElement(children: .combine)
+                        accessory
+                    }
+                }
+            }
             if let title { title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader) }
         }
         .padding(.horizontal, DS.Space.gutter)
-        .accessibilityElement(children: .combine)
+        // Solo el rótulo (y su título) se leen juntos; un control al lado se toca por su cuenta.
+        .accessibilityElement(children: Accessory.self == EmptyView.self ? .combine : .contain)
+    }
+}
+
+extension DSChapterHead where Accessory == EmptyView {
+    init(label: Text, symbol: String? = nil, title: Text? = nil) {
+        self.init(label: label, symbol: symbol, title: title) { EmptyView() }
     }
 }
 
@@ -98,6 +127,8 @@ struct DSChapterHead: View {
 struct DSChapterLabel: View {
     let label: Text
     var symbol: String?
+    /// La línea fina hasta la orilla; sin ella cuando un control de la sección ocupa su lugar (X1).
+    var line = true
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
@@ -106,7 +137,7 @@ struct DSChapterLabel: View {
             // Sin `fixedSize`: con letra de accesibilidad el rótulo en mayúsculas era más ancho que la pantalla y ensanchaba toda
             // la página (Explorar). Gana el lugar a la línea y, si no cabe, baja a un segundo renglón.
             DSGroupLabel(title: label).lineLimit(2).fixedSize(horizontal: false, vertical: true).layoutPriority(1)
-            Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
+            if line { Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline) }
         }
     }
 }

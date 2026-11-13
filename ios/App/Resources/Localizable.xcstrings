@@ -25693,6 +25693,28 @@
         }
       }
     },
+    "Pasea por tus %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wander your %lld"
+          }
+        }
+      }
+    },
+    "Abre el mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the mosaic"
+          }
+        }
+      }
+    },
     "Pasear por el mosaico": {
       "extractionState": "manual",
       "localizations": {

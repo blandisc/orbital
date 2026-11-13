@@ -17,6 +17,7 @@ Cómo se mantiene:
 | Decisión | En el iPhone | En la TV |
 |---|---|---|
 | La sección de descubrir se llama **Explorar** | Ya (31 oct) | Ya (ola 1; la voz entiende «Explorar» y «Para ti») |
+| MO1 · la puerta del mosaico (Fernando, 13 nov 2026: «Vamos con MO1»): el mosaico sale de la barra de arriba; su puerta es la portada inclinada de Explorar con su chapa «Pasea por tus 96», que se endereza al tocarla o al jalar más allá de «actualizar», y se endereza sola la primera vez. Siempre una flecha para salir (también en el iPad). «Lo que ves» lleva otro ícono (`chart.bar.xaxis`); la cuadrícula 3×3 es solo del mosaico. X1: el selector de tipo de «Lo que se ve hoy» va en el renglón de su rótulo, a la derecha | Ya | Distinto a propósito: en la TV Explorar **es** el mosaico (no hay puerta que descubrir) y el selector de tipo no vive en un rótulo |
 | Las listas (Plataformas, Premios, Años…) | En Explorar | **Se quedan en Películas y series**: en la TV conviven juegos y video, y Explorar es el mosaico |
 | Películas y series es el Inicio del iPhone (Seguir viendo, Lo nuevo de lo tuyo, Por lo que viste, Top 10, Mi lista) | — | Ya (ola 2: arriba; las listas siguen abajo; sin Mi media de OneDrive, decisión de Fernando) |
 | Filtro avanzado | En Buscar | Ya (ola 3: ☰ › Filtro avanzado; formato, género, época, calificación, fama, dónde verla y país, cada uno con su color del arcoíris). Distinto a propósito: en filas con ‹ › (el mando) en vez de mosaicos, y sin premios ni estudios (están en Películas y series y en Colecciones) |

@@ -138,7 +138,8 @@ struct ListsView: View {
                     // Los del mosaico primero y luego los de los estantes, sin repetir: la lista solo crece mientras carga (antes
                     // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
                     let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))
-                    if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall) { model.mode = .mosaic }.perfTag("paraTi.hero") }
+                    // MO1: la portada es la puerta del mosaico (su chapa dice cuántas piezas trae); sin piezas no promete nada.
+                    if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall, count: model.mosaic.count, settled: !model.isLoading) { model.mode = .mosaic }.perfTag("paraTi.hero") }
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
@@ -147,12 +148,15 @@ struct ListsView: View {
                     // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                     if !generalShelves.isEmpty || model.showsFirstSkeleton {
-                        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                            DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol)
+                        // X1 (Fernando, 13 nov 2026: «está ahí como volando»): el selector en el renglón de su rótulo, a la derecha.
+                        Group {
                             if model.hasKindSplit {
-                                DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
-                                    .padding(.horizontal, DS.Space.gutter)
+                                DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol) {
+                                    DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
+                                                               set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
+                                }
+                            } else {
+                                DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol)
                             }
                         }
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
@@ -200,7 +204,11 @@ struct ListsView: View {
             atTop = top
             if !top { restReady = true }   // deslizaste: lo de abajo ya hace falta
         }
-        .orbitalRefreshable { [model] in await model.refresh() }   // tirar para actualizar, con la luna de Orbital
+        // Tirar para actualizar, con la luna de Orbital. MO1: jalar más (desde la portada, arriba del todo) y soltar abre el mosaico.
+        .orbitalRefreshable(beyond: model.mosaic.isEmpty ? nil : DS.ParaTiB.doorPull, onBeyond: { [model] in
+            MosaicCover.cameFromMosaic = true
+            model.mode = .mosaic
+        }) { [model] in await model.refresh() }
         // Lo de arriba ya se ve (o ya no va a llegar): entonces lo de abajo. Al volver del mosaico, de una vez.
         .onChange(of: !generalShelves.isEmpty || (!model.isLoading && !model.lists.isEmpty), initial: true) { _, ready in
             if ready { restReady = true }
@@ -213,11 +221,7 @@ struct ListsView: View {
                 Button(action: onDecide) { Image(systemName: "dice") }
                     .accessibilityLabel(Text("Decide por mí")).accessibilityIdentifier("paraTi-decide")
             }
-            // I10 · el mosaico, en la barra con los demás (antes, un círculo blanco suelto sobre el muro).
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { model.mode = .mosaic } label: { Image(systemName: "square.grid.3x3") }
-                    .accessibilityLabel(Text("Pasear por el mosaico")).accessibilityIdentifier("paraTi-walk-mosaic")
-            }
+            // MO1 (13 nov 2026): el mosaico ya no vive en la barra; su puerta es la portada (`MosaicCover`, con su chapa).
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }

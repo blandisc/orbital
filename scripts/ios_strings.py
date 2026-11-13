@@ -423,6 +423,8 @@ TRANSLATIONS = {
     "Lo que ves": "What you watch",
     "Todas las formas de encontrar qué ver": "Every way to find something to watch",
     "Pasear por el mosaico": "Wander the mosaic",
+    # MO1: la portada es la puerta del mosaico (Fernando, 13 nov 2026).
+    "Pasea por tus %lld": "Wander your %lld", "Abre el mosaico": "Opens the mosaic",
     "¿Qué vemos hoy?": "What should we watch today?",
     "Quitar %@ de tus canales": "Remove %@ from your channels",
     "Añadir %@ a tus canales": "Add %@ to your channels",
