@@ -77,10 +77,10 @@ final class ViewingsPolishUITests: XCTestCase {
 
     func testAgregarAlHistorial() {
         let app = launch(["-demo-tab", "3"])
-        let watched = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Vistas'")).firstMatch
+        let watched = app.buttons["saved-tab-watched"]
         XCTAssertTrue(watched.waitForExistence(timeout: 20))
         watched.tap()
-        app.buttons["saved-history"].tap()
+        app.buttons["Historial"].tap()
         let add = app.buttons["history-add"]
         XCTAssertTrue(add.waitForExistence(timeout: 10))
         add.tap()
@@ -118,11 +118,11 @@ final class ViewingsPolishUITests: XCTestCase {
 
     func testSinInternet() {
         let app = launch(["-demo-offline", "-demo-tab", "3"])
-        let watched = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Vistas'")).firstMatch
+        let watched = app.buttons["saved-tab-watched"]
         if watched.waitForExistence(timeout: 20) {
             watched.tap()
-            if app.buttons["saved-history"].waitForExistence(timeout: 5) {
-                app.buttons["saved-history"].tap()
+            if app.buttons["Historial"].waitForExistence(timeout: 5) {
+                app.buttons["Historial"].tap()
                 XCTAssertTrue(app.staticTexts["No pude traer tu historial"].waitForExistence(timeout: 10), "lo dice, no un vacío")
                 XCTAssertTrue(app.buttons["Reintentar"].exists)
             }

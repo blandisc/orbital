@@ -4,7 +4,12 @@ import OrbitalModels
 // Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
 // puerta de «Decide por mí».
 
-/// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo, con su porqué y «Pasear por el mosaico».
+/// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo. MO1 (Fernando, 13 nov 2026: «lo saquemos de
+/// la barra de menú… y lo pongamos de manera creativa abajo»): la portada es la puerta del mosaico. Lleva su chapa
+/// («Pasea por tus 96», `MosaicDoorBadge`), toda se toca (se hunde un poco, `DS.Motion.press`) y al abrirse el muro se
+/// endereza y crece antes de que entre el mosaico; al volver hace el camino inverso. La primera vez se endereza sola un
+/// momento y regresa (nunca con «Reducir movimiento»). Jalar la orilla de arriba más allá de «actualizar» también la abre
+/// (`orbitalRefreshable(beyond:)`). Sin piezas en el mosaico (`count` 0) no promete nada: sin chapa y no se toca.
 /// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
 /// cortaba en seco); el espacio de la página no cambia. Cada vez que llegan otros pósters salen en otro orden, y el muro
 /// se desliza despacio sobre su diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
@@ -13,21 +18,67 @@ struct MosaicCover: View {
     /// El muro de la última vez (de qué pósters salió y su orden), en `ParaTiModel`: sobrevive a que la pantalla se vuelva
     /// a armar. El orden lo decide `CoverWall` (OrbitalModels, con pruebas).
     let memory: CoverWallMemory
+    /// Cuántas piezas trae el mosaico (lo que dice la chapa). 0: la portada no es puerta.
+    var count = 0
+    /// Ya llegó lo que se sugiere: el aviso de la primera vez espera esto (si no, el muro se revolvía en medio del aviso).
+    var settled = true
     let onWalk: () -> Void
     @State private var order: [String]
     @State private var onScreen = true
+    /// 0…1: qué tan abierta (derecha y crecida) está, por un toque o por el aviso de la primera vez. Lo que se jala lo suma
+    /// `CoverOpening`.
+    @State private var opening: CGFloat
+    @State private var walking: Task<Void, Never>?
+    @AppStorage(MosaicCover.hintKey) private var hintSeen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.perfTag) private var perfTag
+    /// Ya se vio que la portada se abre sola (una vez, en los ajustes locales).
+    static let hintKey = "mosaic-door-hint-seen"
+    /// Se abrió para entrar al mosaico: al volver, la portada sale derecha y se inclina (el camino inverso).
+    @MainActor static var cameFromMosaic = false
 
-    init(posters: [String], memory: CoverWallMemory, onWalk: @escaping () -> Void) {
+    init(posters: [String], memory: CoverWallMemory, count: Int = 0, settled: Bool = true, onWalk: @escaping () -> Void) {
         self.posters = posters
         self.memory = memory
+        self.count = count
+        self.settled = settled
         self.onWalk = onWalk
         // Al volver del mosaico (o de otra pestaña) el muro de antes ya en el primer cuadro: sin un instante vacío.
         _order = State(initialValue: memory.order(for: posters, size: DS.ParaTiB.coverPosters))
+        _opening = State(initialValue: MosaicCover.cameFromMosaic ? 1 : 0)
+    }
+
+    private var isDoor: Bool { count > 0 }
+
+    /// Cómo entra y sale el mosaico: crece desde arriba (donde estaba la portada) con un fundido; con «Reducir movimiento»,
+    /// solo el fundido.
+    static func mosaicTransition(_ reduce: Bool) -> AnyTransition {
+        reduce ? .opacity : .scale(scale: DS.ParaTiB.doorEnterScale, anchor: .top).combined(with: .opacity)
     }
 
     var body: some View {
+        Group {
+            if isDoor {
+                Button(action: walk) { cover }
+                    .buttonStyle(MosaicDoorPress())
+                    .accessibilityLabel(Text("Pasea por tus \(count)"))
+                    .accessibilityHint(Text("Abre el mosaico"))
+                    .accessibilityIdentifier("paraTi-walk-mosaic")
+            } else {
+                cover
+            }
+        }
+        .overlay { demoProbe }
+        .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
+        // Otro muro solo cuando llegan pósters de verdad distintos; al volver del mosaico, el mismo de antes (Fernando,
+        // 31 oct 2026: revolverlo otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
+        .onChange(of: posters) { order = memory.order(for: posters, size: DS.ParaTiB.coverPosters) }
+        .task(id: isDoor && settled) { await returnOrHint() }
+        .onDisappear { walking?.cancel() }
+    }
+
+    /// El muro con su chapa. La chapa va anclada a la orilla de abajo de la portada, dentro de ella (no flota sobre lo demás).
+    private var cover: some View {
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: DS.ParaTiB.coverHeight)
@@ -35,23 +86,57 @@ struct MosaicCover: View {
                 // El arte ocupa más que su marco (arriba y abajo) pero no ensancha la página: se recorta a los lados. Con su
                 // propio alto (no con un margen negativo): la máscara y el recorte medían el marco de 300 y cortaban en seco
                 // todo lo que subía detrás del título y la barra (Fernando, 31 oct 2026: «ahora no se ve bien»).
-                ZStack { moving; veil }
-                    .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown)
-                    .mask { fade }
-                    .clipped()
-                    .offset(y: DS.ParaTiB.coverBleedDown)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                ZStack {
+                    moving.modifier(CoverOpening(opening: opening, door: isDoor))
+                    veil.modifier(CoverOpening(opening: opening, door: isDoor, unveil: true))
+                }
+                .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown)
+                .mask { fade }
+                .clipped()
+                .offset(y: DS.ParaTiB.coverBleedDown)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
-            // I10 (revisión del 10 nov): el botón del mosaico ya no flota suelto sobre el muro; va en la barra de arriba
-            // (`ListsView`, «Pasear por el mosaico»). Tocar el muro también entra (VoiceOver usa el de la barra).
+            .overlay(alignment: .bottomLeading) {
+                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
+            }
             .contentShape(Rectangle())
-            .onTapGesture(perform: onWalk)
-            .overlay { demoProbe }
-            .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
-            // Otro muro solo cuando llegan pósters de verdad distintos; al volver del mosaico, el mismo de antes (Fernando,
-            // 31 oct 2026: revolverlo otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
-            .onChange(of: posters) { order = memory.order(for: posters, size: DS.ParaTiB.coverPosters) }
+    }
+
+    /// Tocarla: el muro se endereza y crece (`DS.Motion.grow`) y entonces entra el mosaico. Con «Reducir movimiento», de una vez.
+    private func walk() {
+        MosaicCover.cameFromMosaic = true
+        guard let grow = DS.Motion.grow(reduceMotion) else { onWalk(); return }
+        walking?.cancel()
+        withAnimation(grow) { opening = 1 }
+        walking = Task {
+            try? await Task.sleep(for: DS.ParaTiB.doorLead)
+            guard !Task.isCancelled else { return }
+            onWalk()
+        }
+    }
+
+    /// De vuelta del mosaico, la portada se inclina otra vez (`DS.Motion.fold`). La primera vez, se endereza sola un momento y
+    /// regresa, para enseñar que se abre: una sola vez, nunca con «Reducir movimiento» ni fuera de pantalla.
+    private func returnOrHint() async {
+        if MosaicCover.cameFromMosaic || opening > 0 {
+            MosaicCover.cameFromMosaic = false
+            try? await Task.sleep(for: DS.Motion.tabSettle)
+            withAnimation(DS.Motion.fold(reduceMotion)) { opening = 0 }
+            return
+        }
+        var forced = false, quiet = reduceMotion
+        #if DEBUG
+        forced = Demo.isOn && Demo.has("-demo-door-hint")   // capturas: el aviso aunque ya se haya visto
+        quiet = quiet || (Demo.noIdle && !forced)
+        #endif
+        guard isDoor, settled, !quiet, !hintSeen || forced else { return }
+        try? await Task.sleep(for: DS.ParaTiB.doorHintDelay)
+        guard !Task.isCancelled, onScreen, opening == 0, let grow = DS.Motion.grow(reduceMotion) else { return }
+        hintSeen = true
+        withAnimation(grow) { opening = 1 }
+        try? await Task.sleep(for: DS.ParaTiB.doorHintHold)
+        withAnimation(DS.Motion.fold(reduceMotion)) { opening = 0 }
     }
 
     /// Solo en el modo demo: qué muro se armó (cuántos pósters y los primeros), para que la prueba de interfaz compruebe que
@@ -134,7 +219,7 @@ struct MosaicCover: View {
         ], startPoint: .top, endPoint: .bottom)
     }
 
-    /// Un velo bajo el porqué y el botón, para que se lean sobre cualquier póster; sigue de largo bajo los círculos.
+    /// Un velo bajo el título y la chapa, para que se lean sobre cualquier póster; sigue de largo bajo los círculos.
     private var veil: some View {
         let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
         return LinearGradient(stops: [
@@ -145,6 +230,60 @@ struct MosaicCover: View {
             .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: (up + DS.ParaTiB.coverHeight) / total),
             .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: 1),
         ], startPoint: .top, endPoint: .bottom)
+    }
+}
+
+/// MO1: lo abierta que está la portada. Endereza el muro (le quita su inclinación) y lo crece desde el centro de lo que se ve;
+/// al velo lo aclara. Suma lo que se jala la orilla de arriba (`RefreshPull.doorProgress`, siguiendo al dedo) a lo que abrió
+/// un toque o el aviso; soltada pasada la puerta, se queda abierta mientras la orilla regresa (`entering`).
+private struct CoverOpening: ViewModifier {
+    let opening: CGFloat
+    let door: Bool
+    var unveil = false
+    @Environment(RefreshPull.self) private var pull: RefreshPull?
+
+    func body(content: Content) -> some View {
+        let dragged = door ? ((pull?.entering ?? false) ? 1 : (pull?.doorProgress ?? 0)) : 0
+        let p = max(opening, dragged)
+        // El centro de lo que se ve de la portada (no el del arte, que sube mucho detrás de la barra): ahí gira y crece.
+        let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
+        let center = UnitPoint(x: 0.5, y: (up + DS.ParaTiB.coverHeight / 2) / total)
+        if unveil {
+            let left = 1 - DS.ParaTiB.doorUnveil * p   // lo que queda del velo
+            content.opacity(left)
+        } else {
+            content
+                .rotationEffect(.degrees(-DS.ParaTiB.coverTilt * p), anchor: center)
+                .scaleEffect(1 + DS.ParaTiB.doorGrow * p, anchor: center)
+        }
+    }
+}
+
+/// MO1: la chapa de la puerta del mosaico, en la orilla de abajo de la portada: la cuadrícula del mosaico (`DS.Symbol.mosaic`)
+/// y cuántas piezas trae, en vidrio. Con letra grande parte en dos renglones; nunca se corta.
+struct MosaicDoorBadge: View {
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            Image(systemName: DS.Symbol.mosaic).accessibilityHidden(true)
+            Text("Pasea por tus \(count)").lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.numericText(value: Double(count)))   // mientras llegan, el número sube sin brincar
+        }
+        .font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s4)
+        .padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .accessibilityHidden(true)   // la portada entera dice «Pasea por tus 96»
+    }
+}
+
+/// Al tocar la portada se hunde tantito, en cuanto la tocas (`DS.Motion.press`).
+private struct MosaicDoorPress: ButtonStyle {   // ds-exception: el hundido de la portada-puerta del mosaico (MO1)
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? DS.ParaTiB.doorPressed : 1)
+            .animation(DS.Motion.press, value: configuration.isPressed)
     }
 }
 

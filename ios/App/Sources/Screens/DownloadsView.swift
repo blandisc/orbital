@@ -10,7 +10,7 @@ import OrbitalModels
 /// con su avance, lo listo para ver sin conexión agrupado por título y la descarga inteligente) y, abajo, «Lo que
 /// pediste» (lo que pediste a la nube, `DownloadsCloudPart`; Fernando, 4 nov: primero el aparato). Sin Real-Debrid (Plus, App Store) solo hay la segunda
 /// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
-/// «Guardado», Mi lista y tus listas de Trakt (`LibrarySavedView`).
+/// «Guardado», lo tuyo en pestañas: Mi lista · Viendo · Vistas · Listas (`LibrarySavedView`, GD2).
 struct DownloadsView: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
@@ -50,11 +50,11 @@ struct DownloadsView: View {
         let model = observer.model
         return Group {
             switch part {
-            // iPad y Mac: la lista al centro, no estirada a todo lo ancho; Guardado también (sus montones van en un renglón y
-            // sus listas a lo ancho de Descargas: antes dos tarjetas de 1000 pt con cuatro pósters chiquitos).
+            // iPad y Mac: la lista al centro, no estirada a todo lo ancho. Guardado no: sus pósters y sus listas aprovechan el
+            // ancho con más columnas (GD2), como toda cuadrícula de la app.
             case .media: MiMediaView(observer: media) { EmptyView() }.readableListWidth()
             case .phone: phoneList(model).readableListWidth()
-            case .saved: LibrarySavedView(observer: saved).readableListWidth()
+            case .saved: LibrarySavedView(observer: saved)
             }
         }
         // Un solo fondo para las tres partes, también mientras cargan y vacías: antes solo Descargas lo traía y Mi media y
@@ -82,8 +82,6 @@ struct DownloadsView: View {
             .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
             .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
             .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
-            .navigationDestination(for: SavedStateRoute.self) { SavedStateScreen(observer: saved, status: TitleStatus(rawValue: $0.status) ?? .watching) }
-            .navigationDestination(for: HistoryRoute.self) { _ in HistoryScreen() }
     }
 
     var body: some View {

@@ -2,237 +2,167 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Una lista de Guardado abierta (Fernando, 3 nov 2026: BI1-A y BI3-A, «que sea como mi biblioteca de guardado»): tu referencia
-/// rápida. Mi lista de Trakt y, con un toque en «Mi lista ⌃⌄», cualquiera de tus listas (las mismas de Para ti); Todo ·
-/// Películas · Series (`DSKindFilter`) y el mismo «Ordenar y filtrar» de toda lista abierta (`SortableGrid`), con «Estado»:
-/// Por ver · Viendo · Vistas. Cada póster lleva su barra de avance y abre su ficha. Sin Trakt, el vacío con «Conectar
-/// Trakt»; una lista vacía, con «Explorar».
-struct SavedListScreen: View {
-    @Environment(\.titleName) var titleName
-    @Environment(AppEnvironment.self) private var env
-    var observer: ModelObserver<SavedModel>
-    /// La lista que abriste desde el tablero (Mi lista o una tuya); el menú de arriba deja cambiarla.
-    let listID: String
-    /// Las calificaciones de IMDb y Letterboxd que usa «Ordenar y filtrar» (las mismas de toda la app).
-    @State private var collections = ModelObserver(AppEnvironment.shared.collections)
-    /// "" es todo, «movie» o «series».
-    @State private var kind = ""
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// «Editar» (G3-A, 10 nov 2026): elegir varios y la barra de abajo; «+» busca qué agregar. Mi lista y tus listas de Trakt
-    /// son tuyas.
-    @State private var selection = ListSelection()
-    @State private var adding = false
-    /// «Ordenar a mano» (G4-A): desde el «···» o, en Mi lista, desde «Ordenar y filtrar».
-    @State private var reordering = false
-    private var model: SavedModel { observer.model }
+/// Las cuatro pestañas de Guardado, en el orden de la TV (GD2).
+enum SavedTab: String, CaseIterable, Hashable { case myList, watching, watched, lists }
+/// Lo que se ve dentro de «Vistas»: lo que terminaste, lo que dejaste y el diario con fecha.
+enum SavedWatchedView: String, Hashable { case watched, dropped, history }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                if model.traktLinked {   // (llega desde el tablero: con Trakt)
-                    // FG1-A (Fernando, 4 nov 2026): un solo renglón, «Mi lista ⌃⌄» a la izquierda y, a la derecha, Todo · Películas
-                    // · Series y el botón de ordenar y filtrar (el de toda lista abierta). Debajo, solo lo filtrado, en cápsulas que
-                    // se quitan con un toque. Con la lista vacía o sin respuesta, el renglón sin lo que no aplica.
-                    if !showsGrid { bar(menu: nil) }
-                    content
-                } else {
-                    noTrakt
-                }
-            }
-            .refreshOrbitHost()
-            .padding(.top, DS.Space.s2)
-            .padding(.bottom, DS.Layout.screenBottom)
-            .selectionDrag(selection)
-        }
-        .scrollBounceBehavior(.basedOnSize)
-        .orbitalRefreshable { [model] in await model.load() }
-        .perfTag("saved")
-        .safeAreaInset(edge: .bottom) {
-            if selection.editing {
-                SavedSelectionBar(model: model, selection: selection, listID: model.selected, pile: nil, items: shownItems)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .task { await model.choose(listID) }
-        .onAppear { model.refreshProgress() }   // viste algo y regresaste: la barra al día
-        .navigationBarTitleDisplayMode(.inline)   // el nombre ya va grande en «Mi lista ⌃⌄»
-        .toolbar { if model.canEdit { ListSelectToolbar(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb)) } }
-        .sheet(isPresented: $adding) { addSheet }
-        .modifier(SavedListManagement(model: model, reordering: $reordering, editing: selection.editing))
-        .onChange(of: model.selected) { selection.editing = false }
-    }
-
-    /// Lo que se ve (con Todo · Películas · Series aplicado): lo que «Todas» elige.
-    private var shownItems: [Suggestion] { kind.isEmpty ? model.items : model.items.filter { $0.kind == kind } }
-
-    private var listName: Text { model.selected == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName) }
-
-    /// Quitar con un toque (el «−», el menú): sale ya y el aviso trae «Deshacer»; si Trakt no acepta, regresa y lo dice.
-    private func remove(_ s: Suggestion) {
-        let model = model, env = env, list = model.selected, name = model.selectedName
-        Task {
-            if await model.remove(s) {
-                env.notifyListEdit(s, list: list, name: name, added: false) { Task { if model.selected == list { await model.add(s) } } }
-            } else {
-                env.notify(format: "No pude cambiar «%@»", env.listName(list, name: name), tone: .warn)
-            }
-        }
-    }
-
-    /// «Agregar a …»: un toque agrega (o quita, si ya estaba) y la cuadrícula cambia al instante.
-    private var addSheet: some View {
-        let model = model, env = env
-        return AddToListSheet(listName: listName, search: { await env.titles.searchTitles($0) },
-                              contains: { id in model.items.contains { $0.imdb == id } }) { r in
-            let s = TitleActions.suggestion(r, listID: model.selected)
-            let list = model.selected, name = model.selectedName
-            let wasIn = model.items.contains { $0.imdb == s.imdb }
-            let ok = wasIn ? await model.remove(s) : await model.add(s)
-            if !ok { env.notify(format: "No pude cambiar «%@»", env.listName(list, name: name), tone: .warn) }
-        }
-    }
-
-    /// «Mi lista ⌃⌄»: Mi lista o una de tus listas de Trakt, con un toque.
-    private var listMenu: some View {
-        DSChoiceMenu(options: model.lists.map { list in
-            list.id == SavedModel.watchlist ? .init(id: list.id, title: Text("Mi lista"), symbol: "bookmark")
-                : .init(id: list.id, title: Text(verbatim: list.name), symbol: "list.bullet")
-        }, selection: Binding(get: { model.selected }, set: { id in Task { await model.choose(id) } }), label: Text("Lista"), style: .title)
-        .accessibilityIdentifier("saved-list-menu")
-    }
-
-    @ViewBuilder private var content: some View {
-        let items = kind.isEmpty ? model.items : model.items.filter { $0.kind == kind }
-        if model.failed {
-            DSEmptyState(symbol: "exclamationmark.triangle", title: Text("No pude traer tu lista"),
-                         message: Text("Trakt no contestó.")) {
-                Button("Reintentar") { Task { await model.load() } }
-            }
-        } else if isEmpty {
-            // La lista no tiene nada: su única salida, ir a buscar qué guardar.
-            DSEmptyState(symbol: "bookmark", title: Text("Nada guardado todavía"), message: Text("En una ficha, toca Guardar y aparece aquí.")) {
-                if model.canEdit { Button("Agregar") { adding = true }.accessibilityIdentifier("saved-empty-add") }
-                Button("Explorar") { env.openTab = AppEnvironment.exploreTab }.accessibilityIdentifier("saved-empty-explore")
-            }
-        } else {
-            if selection.editing { SelectionHeader(selection: selection, all: items.map(\.imdb)) }
-            SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
-                         loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) },
-                         manualOrder: model.canEdit && model.selected == SavedModel.watchlist && items.count > 1 ? { reordering = true } : nil) { s, width in
-                poster(s, width: width)
-            }
-            .id(model.selected)   // otra lista: su propio orden y sus filtros
-        }
-    }
-
-    /// Cada póster: en Mi lista, mantener el dedo trae «Mover a…» (G2-A); en tus listas, «Quitar de esta lista».
-    @ViewBuilder private func poster(_ s: Suggestion, width: CGFloat) -> some View {
-        let link = TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
-        if model.selected == SavedModel.watchlist {
-            link.contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: .inList, model: model) } }
-                .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
-        } else {
-            link.listEditable(editing: false, listName: listName, remove: model.canEdit && !selection.editing ? { remove(s) } : nil)
-                .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
-        }
-    }
-
-    /// La cuadrícula (con su renglón de arriba) está a la vista: ni vacía ni sin respuesta.
-    private var showsGrid: Bool { !model.failed && !isEmpty }
-
-    /// «Mi lista ⌃⌄» · Todo · Películas · Series · ordenar y filtrar.
-    private func bar(menu: ListFilterMenu?) -> some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
-            if model.lists.count > 1 { listMenu }
-            Spacer(minLength: 0)
-            if showsGrid {   // sin nada en la lista, no hay qué filtrar (mientras llega, sí: no brinca)
-                DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }))
-            }
-            if let menu {
-                menu.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
-                    .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
-            }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-
-    /// Ya llegó y no trae nada.
-    private var isEmpty: Bool { model.loadedOnce && !model.loading && model.items.isEmpty }
-
-    /// Sin Trakt no hay Mi lista ni tus listas: qué es y su única salida.
-    private var noTrakt: some View {
-        DSEmptyState(symbol: "bookmark", title: Text("Lo que guardas vive en Trakt"),
-                     message: Text("Conéctalo y aquí ves Mi lista y tus listas, con cuánto llevas de cada título.")) {
-            NavigationLink(value: SettingsRoute()) { Text("Conectar Trakt") }.accessibilityIdentifier("saved-connect-trakt")
-        }
-    }
-}
-
-/// Biblioteca › Guardado como tablero (G2-A, Fernando, 9 nov 2026: «G2-A, check. Déjalo como guardado en la pestaña»): lo tuyo
-/// en cuatro estados con su cifra (En Mi lista · Viendo · Vistas · Las dejé, las mismas reglas del botón de la ficha) y,
-/// abajo, tus listas de Trakt. Cada tarjeta abre su montón completo. Sin Trakt, el vacío con «Conectar Trakt».
-/// En la TV: «Guardado» sigue siendo la fila «Mi lista» (BI-TV-A); el tablero queda pendiente en el registro de paridad.
+/// Biblioteca › Guardado en pestañas (GD2, Fernando, 13 nov 2026: «Pestañas, como la tele»; reemplaza el tablero de pilas
+/// G2-A del 9 nov). Arriba, **Mi lista · Viendo · Vistas · Listas** con ícono, nombre y cifra (`DSCountTabs`); al entrar ya ves
+/// los pósters de la primera, sin un índice antes. «Vistas» guarda adentro «Las dejé» y el Historial (el diario con fecha) en un
+/// selector de tres con ícono; «Listas», Favoritos y tus listas de Trakt en mosaico con portada, y «Nueva lista» como un mosaico
+/// más. La pestaña elegida se recuerda en este aparato. Sin Trakt, qué es y «Conectar Trakt»; sin internet, lo dice con
+/// «Reintentar» (nunca como si no tuvieras nada); una cuenta nueva, cómo se guarda.
+/// En la TV: las mismas pestañas con cifra (`saved-commands.js`); Historial dentro de Vistas y «Listas» como pestaña quedan
+/// pendientes allá (registro de paridad). En el iPad, lo mismo con más columnas.
 struct LibrarySavedView: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<SavedModel>
-    /// «Nueva lista» (G4-A): el nombre que escribes.
-    @State private var naming = false
-    @State private var newListName = ""
+    @State private var tab: SavedTab = LibrarySavedView.lastTab
+    @State private var watchedView: SavedWatchedView = LibrarySavedView.lastWatchedView
     private var model: SavedModel { observer.model }
+    static let tabKey = "library.saved.tab", watchedKey = "library.saved.watched"
+
+    /// La que dejaste en este aparato; la primera vez, Mi lista. En la demostración, `-demo-saved-tab` (o `-demo-open history` /
+    /// `vistas`, que abren Vistas).
+    private static var lastTab: SavedTab {
+        #if DEBUG
+        if Demo.isOn {
+            if Demo.open == "history" || Demo.open == "vistas" { return .watched }
+            return Demo.value(after: "-demo-saved-tab").flatMap(SavedTab.init(rawValue:)) ?? .myList
+        }
+        #endif
+        return UserDefaults.standard.string(forKey: tabKey).flatMap(SavedTab.init(rawValue:)) ?? .myList
+    }
+
+    private static var lastWatchedView: SavedWatchedView {
+        #if DEBUG
+        if Demo.isOn {
+            if Demo.open == "history" { return .history }
+            return Demo.value(after: "-demo-saved-view").flatMap(SavedWatchedView.init(rawValue:)) ?? .watched
+        }
+        #endif
+        return UserDefaults.standard.string(forKey: watchedKey).flatMap(SavedWatchedView.init(rawValue:)) ?? .watched
+    }
 
     var body: some View {
         let follow = env.follow
         let _ = follow.track()
         let board = currentBoard
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-                if model.traktLinked {
-                    // En ventana ancha los cinco montones van en una fila (Historial, el quinto); en el iPhone, 2 × 2 y Historial abajo.
-                    let columns = DS.SavedBoard.columns(forWidth: WindowMetrics.column.width, tiles: Self.tiles)
-                    let historyInGrid = columns == Self.tiles
-                    Group {
-                        if historyInGrid {
-                            // Una fila del mismo ancho y del mismo alto: las cinco pilas se arman igual.
-                            HStack(spacing: DS.Space.s2) { piles(board); history(board) }.fixedSize(horizontal: false, vertical: true)
-                        } else {
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: columns), spacing: DS.Space.s2) {
-                                piles(board)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, DS.Space.gutter)
-                    .accessibilityElement(children: .contain).accessibilityIdentifier("saved-board")
-                    if !historyInGrid {
-                        history(board)
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, DS.Space.gutter)
-                            .padding(.top, DS.Space.s2 - DS.Layout.betweenSections)   // pegada a las otras cuatro, como una más
-                    }
-                    lists
-                } else {
-                    noTrakt
-                }
+        Group {
+            if !model.traktLinked {
+                SavedMessage(model: model) { noTrakt }
+            } else if model.unreachable {
+                // Sin internet (o Trakt sin contestar) no se ve como «no tengo nada»: lo dice y ofrece «Reintentar».
+                SavedMessage(model: model) { DSErrorState(offline: !env.isOnline) { reload() } }
+            } else if isNew(board) {
+                SavedMessage(model: model) { newAccount }
+            } else {
+                content(board)
             }
-            .refreshOrbitHost()
-            .padding(.top, DS.Space.s2)
-            .padding(.bottom, DS.Layout.screenBottom)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .orbitalRefreshable { [model] in await model.load() }
+        // «¿Qué tal…?» flota sobre la barra: se le aparta su lugar abajo para que nunca tape la última fila (GD2).
+        .contentMargins(.bottom, env.ui.ratingReminderHeight, for: .scrollContent)
         .perfTag("saved")
         .task {
-            await model.load()
+            await model.load(list: SavedModel.watchlist)
             if follow.available { await follow.loadSeries() }
             announce(model.takeAutomaticChanges(currentBoard))
         }
         .onAppear { model.refreshProgress() }
+        .onChange(of: tab) { _, new in remember(new.rawValue, Self.tabKey) }
+        .onChange(of: watchedView) { _, new in remember(new.rawValue, Self.watchedKey) }
+    }
+
+    @ViewBuilder private func content(_ board: SavedBoard) -> some View {
+        let header = AnyView(self.header(board))
+        Group {
+            switch tab {
+            case .myList: SavedListContent(observer: observer, listID: SavedModel.watchlist, header: header)
+            case .watching: SavedPileContent(observer: observer, status: .watching, header: header)
+            case .watched:
+                switch shownWatchedView(board) {
+                case .history: HistoryScreen(header: header)
+                case .dropped: SavedPileContent(observer: observer, status: .dropped, header: header)
+                case .watched: SavedPileContent(observer: observer, status: .watched, header: header)
+                }
+            case .lists: SavedListsContent(observer: observer, header: header)
+            }
+        }
+        .transition(.opacity)
+    }
+
+    /// Las pestañas y, en Vistas, su selector de tres con lo que cuenta cada cifra.
+    private func header(_ board: SavedBoard) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSCountTabs(options: tabs(board), selection: $tab)
+            if tab == .watched { watchedPicker(board) }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("saved-tabs")
+    }
+
+    private func tabs(_ board: SavedBoard) -> [DSCountTabs<SavedTab>.Option] {
+        let ready = model.boardReady
+        let lists = model.lists.count   // Mi lista ya no va en «Listas»: en su lugar, Favoritos
+        return [
+            .init(id: .myList, title: Text("Mi lista"), symbol: DS.Symbol.saved, count: ready ? board.inList.count : nil, identifier: "saved-tab-mylist"),
+            .init(id: .watching, title: Text("Viendo"), symbol: TitleView.statusSymbol(.watching), count: ready ? board.watching.count : nil, identifier: "saved-tab-watching"),
+            .init(id: .watched, title: Text("Vistas"), symbol: TitleView.statusSymbol(.watched), count: ready ? board.watched.count : nil, identifier: "saved-tab-watched"),
+            .init(id: .lists, title: Text("Listas"), symbol: "list.bullet.rectangle.portrait.fill", count: ready ? lists : nil, identifier: "saved-tab-lists"),
+        ]
+    }
+
+    /// «Las dejé» en cero no ocupa lugar: el selector queda en Vistas · Historial.
+    private func shownWatchedView(_ board: SavedBoard) -> SavedWatchedView {
+        watchedView == .dropped && board.dropped.isEmpty && model.boardReady ? .watched : watchedView
+    }
+
+    /// Vistas · Las dejé · Historial y, debajo, qué cuenta lo que ves (así Historial y Vistas no parecen contradecirse).
+    private func watchedPicker(_ board: SavedBoard) -> some View {
+        let shown = shownWatchedView(board)
+        var options: [DSTextTabs<SavedWatchedView>.Option] = [.init(id: .watched, title: Text("Vistas"), symbol: TitleView.statusSymbol(.watched))]
+        if !board.dropped.isEmpty { options.append(.init(id: .dropped, title: Text("Las dejé"), symbol: TitleView.statusSymbol(.dropped))) }
+        options.append(.init(id: .history, title: Text("Historial"), symbol: "clock.fill"))
+        return VStack(alignment: .leading, spacing: DS.Space.s1) {
+            DSTextTabs(options: options, selection: Binding(get: { shown }, set: { watchedView = $0 }))
+                .accessibilityIdentifier("saved-watched-views")
+            caption(shown, board)
+                .recipe(.footnote, color: DS.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, DS.Space.gutter)
+    }
+
+    /// Qué cuenta lo que ves: Vistas son títulos terminados; Historial, cada vez que viste algo (por eso sus cifras difieren).
+    private func caption(_ shown: SavedWatchedView, _ board: SavedBoard) -> Text {
+        switch shown {
+        case .watched: board.watched.count == 1 ? Text("1 título que terminaste, por el mes en que lo viste")
+                                                : Text("\(board.watched.count) títulos que terminaste, por el mes en que los viste")
+        case .dropped: board.dropped.count == 1 ? Text("1 título que dejaste a medias") : Text("\(board.dropped.count) títulos que dejaste a medias")
+        case .history: Text("Cada vez que viste algo, con su día y su hora")
+        }
     }
 
     private var currentBoard: SavedBoard {
         let follow = env.follow
         return model.board(hidden: follow.hidden, hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
+    }
+
+    /// Una cuenta recién hecha: nada en ninguna pestaña ni en tus listas (no cinco ceros: una guía).
+    private func isNew(_ board: SavedBoard) -> Bool {
+        model.boardReady && !model.failed && board.inList.isEmpty && board.watching.isEmpty && board.stale.isEmpty
+            && board.watched.isEmpty && board.dropped.isEmpty && model.lists.count <= 1 && (model.listCounts[SavedModel.favorites] ?? 0) == 0
+    }
+
+    private func reload() { Task { await model.load(list: SavedModel.watchlist) } }
+
+    private func remember(_ value: String, _ key: String) {
+        #if DEBUG
+        if Demo.isOn { return }
+        #endif
+        UserDefaults.standard.set(value, forKey: key)
     }
 
     /// «Dune pasó a Vistas»: lo que cambió solo desde la última vez (lo terminaste en la TV, o una serie vista estrenó).
@@ -247,212 +177,49 @@ struct LibrarySavedView: View {
         }
     }
 
-    /// Cuántos montones lleva el tablero (En Mi lista, los tres estados e Historial): en ventana ancha, uno por columna.
-    static let tiles = 5
-
-    /// Las cuatro pilas con número: En Mi lista y los tres estados.
-    @ViewBuilder private func piles(_ board: SavedBoard) -> some View {
-        NavigationLink(value: SavedListRoute(id: SavedModel.watchlist)) {
-            tile(.inList, Text("En Mi lista"), board, ready: model.loadedOnce)
+    /// Un vacío enseña qué hacer: cómo se guarda y a dónde ir a buscar (GD2).
+    private var newAccount: some View {
+        DSEmptyState(symbol: DS.Symbol.save, title: Text("Aquí vive lo que guardas"),
+                     message: Text("En una ficha, toca Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV.")) {
+            Button("Explorar") { env.openTab = AppEnvironment.exploreTab }.accessibilityIdentifier("saved-empty-explore")
         }
-        ForEach([TitleStatus.watching, .watched, .dropped], id: \.self) { status in
-            NavigationLink(value: SavedStateRoute(status: status.rawValue)) { tile(status, Self.name(status), board, ready: model.loadedOnce) }
-        }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("saved-new-account")
     }
 
-    /// La quinta pila (D7-A, 10 nov): «Historial», cada vista con su fecha, a dos toques desde Biblioteca.
-    private func history(_ board: SavedBoard) -> some View {
-        NavigationLink(value: HistoryRoute()) {
-            // El número: cuántos títulos tienen fecha en tu historial (lo que hay adentro), como las otras cuatro pilas.
-            // Lo que la distingue de «Vistas» (los títulos que ya viste): cuándo fue la última vez que viste algo.
-            SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: model.loadedOnce ? board.lastWatched.count : nil,
-                           posters: [], detail: lastTime(board))
+    private var noTrakt: some View {
+        DSEmptyState(symbol: DS.Symbol.save, title: Text("Lo que guardas vive en Trakt"),
+                     message: Text("Conéctalo y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas.")) {
+            NavigationLink(value: SettingsRoute()) { Text("Conectar Trakt") }.accessibilityIdentifier("saved-connect-trakt")
         }
-        .accessibilityHint(Text("Cada vista con su fecha"))
-        .accessibilityIdentifier("saved-history")
     }
 
     static func name(_ status: TitleStatus) -> Text {
         switch status {
-        case .inList: Text("En Mi lista")
+        case .inList: Text("Mi lista")
         case .watching: Text("Viendo")
         case .watched: Text("Vistas")
         case .dropped: Text("Las dejé")
         case .none: Text(verbatim: "")
         }
     }
-
-    /// «Última vez: Ayer · 21:30» en «Historial» (nil sin nada visto todavía).
-    private func lastTime(_ board: SavedBoard) -> Text? {
-        guard let last = board.lastWatched.values.max() else { return nil }
-        return Text("Última vez: \(HistoryScreen.when(last, locale: env.uiLocale))")
-    }
-
-    private func tile(_ status: TitleStatus, _ title: Text, _ board: SavedBoard, ready: Bool) -> some View {
-        let items = board.items(status)
-        return SavedStateTile(symbol: TitleView.statusSymbol(status == .inList ? .none : status), title: title,
-                              count: ready ? items.count : nil, posters: items.map(\.poster))
-    }
-
-    /// Tus listas de Trakt, cada una con sus pósters; un toque la abre.
-    @ViewBuilder private var lists: some View {
-        let own = model.lists.filter { $0.id != SavedModel.watchlist }
-        if model.loadedOnce {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                DSSectionHead(title: Text("Tus listas"), level: .section)
-                ForEach(own) { list in
-                    NavigationLink(value: SavedListRoute(id: list.id)) {
-                        ListRow(name: list.name, detail: model.listCounts[list.id].map { $0 == 1 ? Text("1 título") : Text("\($0) títulos") } ?? Text("Lista de Trakt"),
-                                posters: model.listPosters[list.id] ?? [])
-                    }
-                    .buttonStyle(.plain)
-                }
-                // «Nueva lista» al final (G4-A): nace «Solo tú», como en «Guardar en…». Necesita internet.
-                Button { newListName = ""; naming = true } label: {
-                    Label("Nueva lista", systemImage: "plus").recipe(.label, color: DS.accent)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!env.isOnline)
-                .accessibilityIdentifier("saved-new-list")
-            }
-            .padding(.horizontal, DS.Space.gutter)
-            .alert("Nueva lista", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
-                TextField("Nombre", text: $newListName)
-                Button("Cancelar", role: .cancel) {}
-                Button("Crear") { createList(newListName) }
-                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } message: { Text("Nace «Solo tú». Puedes cambiar quién la ve en su «···».") }
-        }
-    }
-
-    private func createList(_ name: String) {
-        let model = model, env = env
-        Task {
-            switch await model.createList(named: name) {
-            case .success: env.notify(format: "Hice «%@»", name.trimmingCharacters(in: .whitespacesAndNewlines), tone: .success)
-            case .failure(let error): env.notify("No pude hacer la lista", detail: SavedListManagement.reason(error), tone: .warn)
-            }
-        }
-    }
-
-    private var noTrakt: some View {
-        DSEmptyState(symbol: "bookmark", title: Text("Lo que guardas vive en Trakt"),
-                     message: Text("Conéctalo y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas.")) {
-            NavigationLink(value: SettingsRoute()) { Text("Conectar Trakt") }.accessibilityIdentifier("saved-connect-trakt")
-        }
-    }
 }
 
-/// Mi lista o una de tus listas, abierta desde el tablero.
-struct SavedListRoute: Hashable { let id: String }
-/// Un estado del tablero (Viendo, Vistas, Las dejé), abierto completo.
-struct SavedStateRoute: Hashable { let status: String }
-
-/// Un montón del tablero completo: Viendo y Las dejé en cuadrícula (con «Ordenar y filtrar»); Vistas por mes, lo más reciente
-/// arriba.
-struct SavedStateScreen: View {
-    @Environment(\.titleName) var titleName
-    @Environment(AppEnvironment.self) private var env
-    var observer: ModelObserver<SavedModel>
-    let status: TitleStatus
-    @State private var collections = ModelObserver(AppEnvironment.shared.collections)
-    /// «Editar»: elegir varios (G3-A).
-    @State private var selection = ListSelection()
-    private var model: SavedModel { observer.model }
-
-    /// Un póster del montón: abre su ficha, mantener el dedo trae «Mover a…» y, mientras eliges, se elige.
-    private func cell(_ s: Suggestion, width: CGFloat, from: TitleStatus) -> some View {
-        TitleLink(route: s.route, progress: status == .watched ? nil : model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
-            .contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: from, model: model) } }
-            .selectable(selection, id: s.imdb, title: titleName(s.title, id: s.imdb, kind: s.kind))
-    }
-
+/// Lo que ocupa Guardado entero (sin Trakt, sin conexión, una cuenta nueva): arriba, donde empezaría la lista, y se puede jalar
+/// para volver a pedir.
+private struct SavedMessage<Content: View>: View {
+    let model: SavedModel
+    @ViewBuilder let content: Content
     var body: some View {
-        let follow = env.follow
-        let _ = follow.track()
-        let board = model.board(hidden: follow.hidden, hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
-        let items = board.items(status)
-        let every = status == .watching ? items + board.stale : items
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                if selection.editing { SelectionHeader(selection: selection, all: every.map(\.imdb)) }
-                if status == .watched, !items.isEmpty {
-                    ForEach(months(items, board), id: \.0) { month, group in
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
-                            DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection)
-                            DSPosterGrid(items: group) { s, width in cell(s, width: width, from: status) }
-                        }
-                        .padding(.horizontal, DS.Space.gutter)
-                    }
-                } else {
-                    if !items.isEmpty || board.stale.isEmpty || status != .watching {
-                        SortableGrid(listID: "saved-state:\(status.rawValue)", items: items, collections: collections.model,
-                                     loading: !model.loadedOnce, states: nil) { s, width in cell(s, width: width, from: status) }
-                        .padding(.horizontal, DS.Space.gutter)
-                    }
-                    if status == .watching, !board.stale.isEmpty { stale(board.stale) }
-                }
-            }
-            .padding(.top, DS.Space.s2)
-            .padding(.bottom, DS.Layout.screenBottom)
-            .selectionDrag(selection)
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { content }
+                .refreshOrbitHost()
+                .padding(.top, DS.Space.s2)
+                .padding(.bottom, DS.Layout.screenBottom)
         }
-        .background(Backdrop())   // el cielo del resto de la app (I5)
-        .navigationTitle(LibrarySavedView.name(status)).navigationBarTitleDisplayMode(.inline)
-        .toolbar { if !every.isEmpty || selection.editing { ListSelectToolbar(selection: selection, all: every.map(\.imdb)) } }
-        .safeAreaInset(edge: .bottom) {
-            if selection.editing {
-                SavedSelectionBar(model: model, selection: selection, listID: nil, pile: status, items: every)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .task { if !model.loadedOnce { await model.load() } }
-    }
-
-    /// «¿Las dejaste?»: las series a medias que no ves hace más de seis meses ya no cuentan en Viendo; un toque las deja todas
-    /// (o una por una, manteniendo el dedo), y si no, siguen aquí.
-    private func stale(_ shows: [Suggestion]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("¿Las dejaste?"), count: shows.count, eyebrow: Text("Hace más de seis meses que no las ves"))
-            DSPosterGrid(items: shows) { s, width in cell(s, width: width, from: .watching) }
-            if !selection.editing {
-                Button { Task { await dropAll(shows) } } label: { Label("Sí, las dejé", systemImage: "eye.slash") }
-                    .dsSecondaryButton()
-                    .accessibilityIdentifier("saved-stale-drop")
-            }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-        .accessibilityElement(children: .contain).accessibilityIdentifier("saved-stale")
-    }
-
-    private func dropAll(_ shows: [Suggestion]) async {
-        let follow = env.follow, ids = shows.map(\.imdb)
-        if let problem = await follow.hide(ids) { env.notify(problem, tone: .error); return }
-        for id in ids { await ReleaseNotifier.forget(id) }
-        env.notify(ids.count == 1 ? "La dejaste" : "Las dejaste", detail: ids.count == 1 ? shows.first.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } : nil, tone: .info,
-                   actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-            Task { _ = await follow.unhide(ids) }
-        }
-    }
-
-    /// «Noviembre», «Octubre»… (con el año si no es este): solo la primera letra en mayúscula.
-    static func month(_ date: Date, language: String) -> String {
-        let thisYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
-        let text = thisYear ? date.formatted(.dateTime.month(.wide).locale(Locale(identifier: language)))
-                            : Strings.date(date, .monthYear, language: language)
-        return text.prefix(1).uppercased() + text.dropFirst()
-    }
-
-    /// Cada vista bajo el mes en que la viste por última vez.
-    private func months(_ items: [Suggestion], _ board: SavedBoard) -> [(String, [Suggestion])] {
-        let language = env.services.appSettings.uiLanguage
-        var out: [(String, [Suggestion])] = []
-        for s in items {
-            let key = board.lastWatched[s.imdb].map { Self.month($0, language: language) } ?? Strings.tr("Sin fecha", language: language)
-            if out.last?.0 == key { out[out.count - 1].1.append(s) } else { out.append((key, [s])) }
-        }
-        return out
+        .scrollBounceBehavior(.basedOnSize)
+        .orbitalRefreshable { [model] in await model.load(list: SavedModel.watchlist) }
     }
 }
+
+/// Una de tus listas (o Favoritos), abierta desde «Listas».
+struct SavedListRoute: Hashable { let id: String }

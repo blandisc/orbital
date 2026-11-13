@@ -26,6 +26,10 @@ struct RatingReminderHost: View {
                     .frame(maxWidth: DS.Toast.maxWidth)   // en el iPad y la Mac no cruza la pantalla, como los avisos
                     .padding(.horizontal, DS.Space.gutter)
                     .transition(DS.Motion.notice(reduceMotion))
+                    // Lo que mide a la vista (con su aire hasta la barra): Guardado le aparta ese lugar abajo para que no tape la
+                    // última fila (GD2, 13 nov 2026). Al irse, cero.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height + DS.Toast.gap } action: { report($0) }
+                    .onDisappear { report(0) }
             }
         }
         .animation(DS.Motion.enter(reduceMotion), value: model.current?.imdb)
@@ -48,6 +52,13 @@ struct RatingReminderHost: View {
             }
             .presentationDetents([.medium, .large])
         }
+    }
+}
+
+extension RatingReminderHost {
+    /// Cuánto mide la pastilla a la vista (0 si no está): `AppUI.ratingReminderHeight`.
+    fileprivate func report(_ height: CGFloat) {
+        if env.ui.ratingReminderHeight != height { env.ui.ratingReminderHeight = height }
     }
 }
 

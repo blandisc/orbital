@@ -88,6 +88,24 @@ final class SavedModelTests: XCTestCase {
         await model.load()
         XCTAssertTrue(model.failed)
         XCTAssertFalse(model.loading)
+        // GD2: sin conexión nunca se ve como vacío; Guardado dice «Sin conexión» con «Reintentar».
+        XCTAssertTrue(model.unreachable, "no llegó nada: sin conexión, no «vacío»")
+        XCTAssertTrue(model.boardReady, "ya contestó (con error): las pestañas no se quedan cargando")
+    }
+
+    /// GD2: con Trakt, lo que llegó no es «sin conexión», y abrir otra lista enseña al instante lo que ya llegó de ella.
+    func testLoQueLlegoNoEsSinConexionYUnaListaVueltaSaleAlInstante() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        trakt(rig)
+        let model = SavedModel(rig.services)
+        await model.load(list: SavedModel.watchlist)
+        XCTAssertFalse(model.unreachable)
+        XCTAssertTrue(model.boardReady)
+        await model.choose("list:103")
+        XCTAssertEqual(model.items.map(\.imdb), ["tt0000009"])
+        rig.http.offline = true
+        await model.choose(SavedModel.watchlist)
+        XCTAssertEqual(model.items.count, 4, "Mi lista ya había llegado: sale de lo guardado aunque no haya internet")
     }
 
     /// Editar tus listas (Fernando, 6 nov 2026): quitar sale al instante y llega a Trakt; si Trakt no acepta, regresa a su

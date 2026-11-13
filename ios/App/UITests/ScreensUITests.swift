@@ -77,13 +77,13 @@ final class ScreensUITests: XCTestCase {
         XCTAssertEqual(title.frame, before, "el título se queda igual mientras deslizas")
     }
 
-    /// Biblioteca abre en Guardado la primera vez (BI2-A): Mi lista en cuadrícula, «Mi lista ⌃⌄» para cambiar de lista y el
-    /// mismo «Ordenar y filtrar» de toda lista, con «Estado» (BI3-A): elegir «Vistas» deja la cápsula para quitarlo.
+    /// Biblioteca abre en Guardado la primera vez (BI2-A) y Guardado abre en la pestaña «Mi lista» con sus pósters (GD2, 13 nov
+    /// 2026), con el mismo filtro de toda lista y su «Estado» (BI3-A): elegir «Vistas» deja la cápsula para quitarlo.
     func testBibliotecaAbreEnGuardadoConElFiltroDeLasListas() {
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-tab", "3", "-demo-no-idle"]
         app.launch()
         XCTAssertTrue(app.navigationBars.staticTexts["Biblioteca"].firstMatch.waitForExistence(timeout: 20), "el título")
-        XCTAssertTrue(app.buttons["saved-list-menu"].waitForExistence(timeout: 20), "«Mi lista ⌃⌄»")
+        XCTAssertTrue(app.buttons["saved-tab-mylist"].waitForExistence(timeout: 20), "las pestañas de Guardado")
         XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 20), "los pósters de Mi lista")
         let filter = app.buttons["list-controls"].firstMatch
         XCTAssertTrue(filter.waitForExistence(timeout: 10), "«Ordenar y filtrar», el de toda lista")

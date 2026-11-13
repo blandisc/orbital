@@ -68,7 +68,8 @@ struct ParaTiView: View {
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(verbatim: env.message(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic:
-                mosaicPart(m)
+                // MO1: el mosaico crece desde la portada (arriba) y al salir regresa a ella, mientras la portada se inclina otra vez.
+                mosaicPart(m).transition(MosaicCover.mosaicTransition(reduceMotion))
             case .lists: listsPart
             }
         }
@@ -87,13 +88,9 @@ struct ParaTiView: View {
         .toolbar {
             // En el mosaico, regresar a las listas a la izquierda (antes solo el botón de la derecha, que no se entendía);
             // en las listas, el logo.
-            if m.mode == .mosaic {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { m.mode = .lists } label: { Image(systemName: "chevron.backward") }
-                        .accessibilityLabel(Text("Regresar a Explorar"))
-                        .accessibilityIdentifier("paraTi-back")
-                }
-            } else if ThisDevice.platform == "iphone" {
+            if m.mode == .mosaic, ThisDevice.platform == "iphone" {
+                ToolbarItem(placement: .topBarLeading) { mosaicBack(m) }
+            } else if m.mode == .lists, ThisDevice.platform == "iphone" {
                 ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Explorar")) }
                     .sharedBackgroundVisibility(.hidden)
             }
@@ -109,7 +106,10 @@ struct ParaTiView: View {
             }
             // Sin separar el perfil: en una sola pastilla los botones caben junto al título aun en un SE («Para…» se cortaba).
             // En Listas, `ListsView` pone el índice de secciones y luego el perfil: así el perfil es siempre el último botón.
-            if m.mode == .mosaic { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
+            // F1: en el iPad y la Mac el perfil no va en el mosaico (está en Explorar, Inicio y Buscar): con él no cabía la flecha
+            // de regresar y la barra la escondía en «⋯».
+            if m.mode == .mosaic, ThisDevice.platform == "iphone" { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
+            else if m.mode == .mosaic { ToolbarItem(placement: .topBarTrailing) { mosaicBack(m) } }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -161,6 +161,14 @@ struct ParaTiView: View {
 
     /// Lo que se sugiere, para «Decide por mí»: «Porque viste», el mosaico y cada estante que se ve.
     private func decidePool(_ m: ParaTiModel) -> [Suggestion] { (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) } }
+    /// F1 (13 nov 2026): la salida del mosaico, siempre a la vista. En el iPhone, la flecha a la izquierda; en el iPad y la Mac
+    /// la barra de pestañas va en ese renglón y mandaba lo de la izquierda a «⋯» (no había salida visible, solo deslizar de
+    /// lado): ahí es «Cerrar» (✕) al final de la derecha, en el lugar del perfil.
+    private func mosaicBack(_ m: ParaTiModel) -> some View {
+        Button { m.mode = .lists } label: { Image(systemName: ThisDevice.platform == "iphone" ? "chevron.backward" : DS.Symbol.close) }
+            .accessibilityLabel(Text("Regresar a Explorar"))
+            .accessibilityIdentifier("paraTi-back")
+    }
 
     /// «¿Qué vemos?» › De dónde: «Porque viste», lo nuevo en tus plataformas y cada estante que se ve (con su nombre).
     private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {

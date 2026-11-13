@@ -441,6 +441,12 @@ haya caracteres de texto usados como ícono.
 | Tres que caben (tres carteles lado a lado) | `rectangle.split.3x1` (`DS.Symbol.decideTrio`) | «Decide por mí», su primera pestaña |
 | Una por una (el mazo) | `rectangle.portrait.on.rectangle.portrait.angled` (`DS.Symbol.decideDeck`) | «Decide por mí», su segunda pestaña |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
+| El mosaico | `square.grid.3x3` (`DS.Symbol.mosaic`) | La chapa de la portada de Explorar, el mosaico vacío. Solo él usa la cuadrícula de 3×3 (MO1) |
+| «Lo que ves» | `chart.bar.xaxis` (`DS.Symbol.whatYouWatch`) | El índice de Explorar (antes la cuadrícula rellena, que se confundía con el mosaico) |
+| Toda la serie (descargar) | `square.stack.3d.up` (`DS.Symbol.wholeSeries`) | «Descargar» de una serie (antes la cuadrícula del mosaico) |
+| Cerrar y regresar | `xmark` (`DS.Symbol.close`) | Salir del mosaico en el iPad y la Mac (F1); «Cerrar» del panel de una ficha |
+
+«Todo» del selector de tipo se queda con su 2×2 (`KindGlyph.all`): ninguna cuadrícula significa dos cosas.
 
 ### Lo que crece no choca (13 nov 2026)
 
@@ -513,6 +519,75 @@ la tarjeta «¿Qué vemos hoy?») que llevaban a dos pantallas con filtros disti
 - No se agrega otra puerta (otro botón en la barra, otra tarjeta) a algo que ya tiene la suya.
 
 Lo cuida `DesignRulesTests+Decide.swift` (`testOneQuestionOneDoor`) y `DecideDeckTests`.
+
+### La puerta de algo grande es grande y tiene nombre (13 nov 2026)
+
+Fernando, del mosaico: «lo saquemos de la barra de menú que está arriba y lo pongamos de manera creativa abajo… mejorar el
+discoverability de que hay un mosaico». Decidió MO1 («Vamos con MO1»): **la portada es la puerta**.
+
+- **Regla: nada importante vive solo como un ícono en una barra.** Una función grande (un modo, una pantalla entera) tiene una
+  puerta grande en el contenido, con su ícono y su nombre, que se toca entera y se hunde al tocarla (`DS.Motion.press`). La
+  barra de arriba es para herramientas de la pantalla (ir a una sección, el perfil), no para puertas.
+- **El mosaico:** su puerta es la portada inclinada de Explorar (`MosaicCover`). Lleva su chapa de vidrio anclada abajo a la
+  izquierda, dentro de la portada (`MosaicDoorBadge`: la cuadrícula del mosaico y «Pasea por tus 96», con el número real de
+  piezas; con letra grande parte en dos renglones). Al tocarla el muro se endereza y crece (`DS.Motion.grow`) y el mosaico
+  entra creciendo desde arriba (`MosaicCover.mosaicTransition`); al salir, el mosaico se encoge hacia arriba y la portada
+  vuelve derecha y se inclina (`DS.Motion.fold`). Con «Reducir movimiento», solo fundidos.
+- **La primera vez** (una sola, `mosaic-door-hint-seen` en los ajustes locales; nunca con «Reducir movimiento» ni fuera de
+  pantalla) la portada se endereza sola un momento (`DS.ParaTiB.doorHintHold`) y regresa: enseña que se abre. No mueve el
+  contenido: solo gira y crece el arte dentro de su marco.
+- **Jalar:** «jalar para actualizar» se queda como está y la puerta va **más allá**: jalar poco (hasta `DS.Refresh.threshold`)
+  actualiza con la luna; seguir jalando (hasta `DS.ParaTiB.doorPull`) apaga la luna y endereza la portada siguiendo al dedo;
+  soltar ahí entra al mosaico y no actualiza; soltar antes regresa (o actualiza, si pasaste la luna). Solo cuenta con el dedo
+  puesto (`RefreshPull.door`, `orbitalRefreshable(beyond:)`): la inercia no abre nada.
+- **Sin piezas** (sin red, sin sugerencias): la portada no promete un muro vacío: sin chapa, no se toca y no hay puerta al
+  jalar (F8).
+- **Siempre una salida visible** del mosaico (F1), además de deslizar de lado: en el iPhone la flecha ‹ a la izquierda; en el
+  iPad y la Mac la barra de pestañas va en ese renglón y manda lo de la izquierda a «⋯», así que ahí es ✕ «Regresar a
+  Explorar» al final de la derecha, en el lugar del perfil (el perfil sigue en Explorar, Inicio y Buscar).
+- Lo cuida `DesignRulesTests+Doors.swift`. En la TV: distinto a propósito (allá Explorar **es** el mosaico; registro de
+  paridad).
+
+### El control de una sección va en el renglón de su rótulo (13 nov 2026)
+
+Fernando, del selector Todo · Películas · Series de Explorar: «está ahí como volando». Decidió X1.
+
+- El control que filtra una sección (el selector de tipo de «Lo que se ve hoy») va **en el renglón de su rótulo, a la
+  derecha**, alineado al margen y centrado con el rótulo, en lugar de la línea fina: `DSChapterHead(label:symbol:) { control }`.
+  Es la regla «Lo que acompaña a un control va en su misma línea» aplicada a los encabezados.
+- Si no cabe (SE, letra grande), baja **entero** a su renglón bajo el rótulo con su línea (`ViewThatFits`); nunca cortado ni
+  achicado. Su comportamiento y su animación no cambian.
+- Lo cuida `DesignRulesTests+Doors.swift`.
+
+### Lo guardado se ve al entrar: pestañas, no un índice (13 nov 2026)
+
+Fernando, GD2: «Pestañas, como la tele». El tablero de Guardado (G2-A, 9 nov) era un índice: cuatro tarjetas con cifras que
+había que tocar para ver algo, y cada una abría una pantalla distinta. La regla:
+
+- **Al entrar se ven los pósters.** Guardado abre en «Mi lista» con su cuadrícula. Arriba, cuatro pestañas con ícono, cifra y
+  nombre (Mi lista · Viendo · Vistas · Listas), una sola pieza del catálogo (`DSCountTabs`). Se recuerda la última.
+- **Abajo de las pestañas, un renglón.** A la izquierda el orden elegido; a la derecha Todo · Películas · Series, filtrar,
+  agregar y «Editar», todos con ícono. Lo que no aplica no aparece (Vistas va por mes: sin orden).
+- **Lo de una pestaña vive dentro de ella.** «Vistas» trae Vistas · Las dejé · Historial con una frase que dice qué cuenta
+  cada una («3 títulos que terminaste…», «Cada vez que viste algo…»): la cifra de Vistas son títulos; el Historial, vistas.
+- **Una lista abierta es la misma pantalla de lista** y lleva el mismo cielo que el resto de Guardado.
+
+### Sin conexión nunca se ve como vacío (13 nov 2026)
+
+Sin internet (o con Trakt sin contestar) una pantalla no dice «no tienes nada»: dice «Sin conexión» con «Reintentar»
+(`DSErrorState`). Se revisa **antes** de decidir que algo está vacío: en el modelo, «no llegó» (`failed`, `unreachable`) es
+distinto de «llegó vacío». Lo que ya se tenía se sigue viendo; el aviso sale solo cuando no hay nada que enseñar.
+
+### Un vacío enseña qué hacer (13 nov 2026)
+
+Un vacío trae su ícono, qué pasa y **un botón a dónde ir** («Explorar», «Agregar», «Buscar qué ver», «Conectar Trakt»), no solo
+un letrero. Una cuenta nueva ve una sola guía para todo Guardado, no cuatro pestañas vacías; una pestaña en cero que no aplica
+(«Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo (`ratingReminderHeight`) para no tapar lo
+último de la pantalla.
+
+`DesignRulesTests+Saved.swift` lo cuida: Guardado usa `DSCountTabs` con sus cuatro pestañas en orden y sin el tablero ni sus
+pantallas por estado, revisa «sin conexión» antes que «vacío» (también en una lista abierta), cada `DSEmptyState` de Guardado
+lleva símbolo y botón, deja lugar a «¿Qué tal…?» y las listas abiertas llevan el cielo (`Backdrop`).
 
 ## 4b. Bilingüe
 

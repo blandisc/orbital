@@ -584,12 +584,16 @@ extension DS {
         static let swipeBack: CGFloat = 80
     }
 
-    /// Biblioteca › Guardado por estado (G2-A, 9 nov 2026): las cuatro tarjetas y sus mini pósters.
-    enum SavedBoard {
-        static let columns = 2
-        /// En ventana ancha (iPad, Mac) los montones van en un solo renglón (dos columnas estiradas: un iPhone agrandado).
-        static func columns(forWidth width: CGFloat, tiles: Int) -> Int { width > TitleAction.readableWidth ? tiles : columns }
-        static let miniPoster: CGFloat = 26
-        static let miniPosters = 4
+    /// Biblioteca › Guardado en pestañas (GD2, Fernando, 13 nov 2026: «Pestañas, como la tele»; reemplaza el tablero G2-A).
+    enum Saved {
+        /// Tus listas en mosaico: dos columnas en el iPhone; en ventana ancha (iPad, Mac), las que quepan de `listTileMin`.
+        static let listColumns = 2
+        static let listTileMin: CGFloat = 180
+        static func listColumns(forWidth width: CGFloat) -> Int {
+            max(listColumns, Int((width - DS.Space.gutter * 2 + DS.Space.s3) / (listTileMin + DS.Space.s3)))
+        }
+        /// La portada de una lista, cuadrada (dos columnas sin que cada una ocupe media pantalla): cuatro pósters en 2 × 2, dos
+        /// lado a lado o uno entero (nunca un hueco).
+        static let coverPosters = 4, coverAspect: CGFloat = 1
     }
 }

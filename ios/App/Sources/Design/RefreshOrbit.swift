@@ -43,6 +43,17 @@ struct RefreshOrbit: View {
     var pull: CGFloat = 0
     var distance: CGFloat = 0
     var refreshing = false
+    /// MO1: cuánto más hay que jalar para pasar de «actualizar» a una puerta (la portada de Explorar abre el mosaico), y si ya
+    /// se pasó con el dedo puesto (al soltar entra en vez de actualizar). Sin puerta, nil.
+    var beyond: CGFloat?
+    var door = false
+    /// 0…1 de «actualizar» a la puerta: la luna se apaga y lo que abre la puerta (la portada) se endereza con esto.
+    var doorProgress: CGFloat {
+        guard let beyond, beyond > DS.Refresh.threshold else { return 0 }
+        return min(1, max(0, (distance - DS.Refresh.threshold) / (beyond - DS.Refresh.threshold)))
+    }
+    /// Se soltó pasada la puerta: lo que se abre se queda abierto mientras la orilla regresa.
+    var entering = false
 }
 
 /// El hueco de la luna, detrás del contenido de la lista (no alrededor de la lista: una capa encima o detrás de ella le impedía
@@ -59,6 +70,7 @@ private struct RefreshOrbitHost: ViewModifier {
             .background(alignment: .top) {
                 if let state, state.pull > 0 || refreshing {
                     RefreshOrbit(pull: state.pull, refreshing: refreshing)
+                        .opacity(refreshing ? 1 : 1 - state.doorProgress)   // más allá, la luna cede a la puerta
                         .offset(y: refreshing ? DS.Space.s2 : -(state.distance + DS.Refresh.mark) / 2)
                         .allowsHitTesting(false)
                 }
@@ -68,8 +80,12 @@ private struct RefreshOrbitHost: ViewModifier {
 
 private struct OrbitalRefreshable: ViewModifier {
     let action: @Sendable () async -> Void
+    /// MO1: la puerta más allá de «actualizar» (cuánto hay que jalar y qué abre). Sin ella, solo actualiza.
+    var beyond: CGFloat?
+    var onBeyond: (() -> Void)?
     @State private var state = RefreshPull()
     @State private var armed = false
+    @State private var interacting = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
@@ -80,9 +96,21 @@ private struct OrbitalRefreshable: ViewModifier {
                 state.distance = distance
                 state.pull = min(1, distance / DS.Refresh.threshold)
                 if distance >= DS.Refresh.threshold, !state.refreshing { armed = true }
+                // La puerta solo con el dedo puesto: lo que la inercia estira al regresar no abre nada.
+                if interacting, let beyond { state.door = distance >= beyond }
             }
-            // Se actualiza al soltar (no en cuanto llega al umbral, como el sistema): da tiempo de arrepentirse.
+            .onChange(of: beyond, initial: true) { _, new in state.beyond = new }
+            // Se actualiza al soltar (no en cuanto llega al umbral, como el sistema): da tiempo de arrepentirse. Soltar pasada
+            // la puerta entra en vez de actualizar.
             .onScrollPhaseChange { _, phase in
+                interacting = phase == .interacting
+                if !interacting, state.door, let onBeyond {
+                    state.door = false
+                    armed = false
+                    state.entering = true
+                    onBeyond()
+                    return
+                }
                 guard armed, phase != .interacting else { return }
                 armed = false
                 start()
@@ -105,6 +133,11 @@ extension View {
     /// Tirar para actualizar con la marca de Orbital (`RefreshOrbit`), en lugar de `.refreshable`, en la lista. Su contenido
     /// lleva `.refreshOrbitHost()`, donde se pinta la luna.
     func orbitalRefreshable(_ action: @escaping @Sendable () async -> Void) -> some View { modifier(OrbitalRefreshable(action: action)) }
+    /// MO1: lo mismo, con una puerta más allá: jalar poco actualiza; jalar hasta `beyond` (con el dedo puesto) y soltar llama
+    /// `onBeyond` y no actualiza (la portada de Explorar abre el mosaico). `beyond` nil: sin puerta.
+    func orbitalRefreshable(beyond: CGFloat?, onBeyond: @escaping () -> Void, _ action: @escaping @Sendable () async -> Void) -> some View {
+        modifier(OrbitalRefreshable(action: action, beyond: beyond, onBeyond: onBeyond))
+    }
     /// Donde se pinta la luna de `orbitalRefreshable`: el contenido de la lista (lo de adentro del `ScrollView`).
     func refreshOrbitHost() -> some View { modifier(RefreshOrbitHost()) }
 }

@@ -145,7 +145,7 @@ struct RatingReminder: View {
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
             Spacer(minLength: 0)
             if more > 0 {
-                Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted) }
+                Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }   // nunca letra por letra
                     .accessibilityIdentifier("rating-reminder-more")
             }
             DSIconButton(symbol: "xmark", label: "No calificar esta", size: .small, action: onDismiss)

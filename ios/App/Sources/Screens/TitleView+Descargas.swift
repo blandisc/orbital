@@ -107,7 +107,7 @@ extension TitleView {
             Button { Task { await report(model.download(allMissing), model) } } label: {
                 Text("Toda la serie")
                 allMissing.isEmpty ? Text("En el iPhone") : size(Text("faltan \(allMissing.count)"), model.estimatedBytes(episodes: allMissing.count))
-                Image(systemName: "square.grid.3x3")
+                Image(systemName: DS.Symbol.wholeSeries)
             }
             .disabled(allMissing.isEmpty)
             .accessibilityIdentifier("download-series")
