@@ -89,6 +89,13 @@ no cada agente.
   `ios/scripts/abrir-fichas.sh`). `main` sin protección en GitHub (decisión de Fernando).
 - **Decisiones tomadas sobre la marcha, por confirmar con Fernando:** botón «Guardar» en el iPhone (estado en chico
   debajo); en la TV «Recientes» en vez de «Jugados», consolas en orden fijo, «Nuevo» como puntito.
+- **13 nov, iPhone (mezclado e instalado):** las preguntas de «Versión» y del reproductor son tarjetas propias
+  (`ChoiceSheet`, `a6aebdd3`); las pruebas del reproductor van en silencio (`-demo-mute`); el arte de la ficha se funde con el
+  fondo al bajar (AR1, regla «El arte nunca enseña su orilla»); Explorar con la portada como puerta del mosaico (MO1) y el
+  selector en su renglón (X1); Guardado en pestañas (GD2); «Decide por mí» en dos pestañas pulidas (DE2: un renglón de
+  controles con filtros en íconos, datos fuera del arte); «Día por día» y «Tus géneros»; listas ordenadas por «Agregadas».
+  **Sin comprobar en aparato:** el zoom de la ficha al reproductor con AR1, los toques y gestos de «Decide por mí», el mazo
+  vacío con filtros puestos. **Pendiente en la TV:** lo anotado en `paridad-registro.md` (Guardado, canal, Decide, latino).
 - **Pendiente de Fernando:** desbloquear la Mac para correr el recorrido `OrbitalMac` (la app de Mac compila pero nadie la
   ha usado). **Pendiente de ver en aparatos reales:** vigilante con un juego abierto, barrido de mpv, velocidad con tarjeta
   gráfica en la Legion Go, letra grande y pantalla dividida en un iPad físico.
