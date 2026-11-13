@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalModels
 
 // Piezas de «¿Qué vemos?»: el mosaico de un género o una época y el renglón de una lista (los filtros de la hoja son
 // `DSCapsuleLabel`, las mismas cápsulas de toda la app).
@@ -19,10 +20,12 @@ struct DecideTile: View {
     var count: Int?
     let height: CGFloat
     var era = false
+    /// F13: sin nada que dejar (y sin estar puesto) no se toca: gris y apagado (nunca «Documental · 0» tocable).
+    var enabled = true
     let toggle: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View { bodyContent.pointerHover(.lift) }
+    var body: some View { bodyContent.pointerHover(.lift).disabled(!enabled) }
     @ViewBuilder private var bodyContent: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         Button(action: toggle) {
@@ -30,7 +33,7 @@ struct DecideTile: View {
                 // La imagen llena su celda y se recorta a ella (sin esto su ancho natural estiraba la columna y se encimaban).
                 Color.clear.overlay {
                     Image(image).resizable().scaledToFill().accessibilityHidden(true)
-                        .saturation(dimmed ? DS.Decide.dimSaturation : 1)
+                        .saturation(dimmed || !enabled ? DS.Decide.dimSaturation : 1)
                         .scaleEffect(selected ? DS.Decide.artZoom : 1)   // la imagen se acerca un poco al elegir
                 }
                 .clipped()
@@ -66,7 +69,7 @@ struct DecideTile: View {
                 }
             }
             .glow(selected ? DS.text.opacity(DS.Decide.glowOpacity) : .clear)
-            .opacity(dimmed ? DS.Opacity.dimmed : 1)
+            .opacity(dimmed || !enabled ? DS.Opacity.dimmed : 1)
             .scaleEffect(selected ? DS.Decide.chosenScale : 1)
             .animation(DS.Motion.pop(reduceMotion), value: selected)
             .animation(DS.Motion.base(reduceMotion), value: dimmed)
@@ -75,6 +78,33 @@ struct DecideTile: View {
         .buttonStyle(.plain)
         .dsFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// Los carteles de «Tres que caben»: cada uno mide un tercio del renglón aunque sean uno o dos, y van centrados (F4, 13 nov
+/// 2026: antes dos dejaban un hueco a la derecha y uno, dos huecos).
+struct DecideTrioLayout: Layout {
+    var spacing: CGFloat = DS.Space.s3
+    /// Tres lugares, como `DecideModel.trio` (aquí fijo: el Layout no vive en el actor principal).
+    private let slots: CGFloat = 3
+
+    private func slot(_ width: CGFloat) -> CGFloat { max(0, (width - spacing * (slots - 1)) / slots) }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        let w = slot(width)
+        let height = subviews.map { $0.sizeThatFits(ProposedViewSize(width: w, height: nil)).height }.max() ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let w = slot(bounds.width)
+        let used = w * CGFloat(subviews.count) + spacing * CGFloat(max(0, subviews.count - 1))
+        var x = bounds.minX + (bounds.width - used) / 2
+        for view in subviews {
+            view.place(at: CGPoint(x: x, y: bounds.midY), anchor: .leading, proposal: ProposedViewSize(width: w, height: nil))
+            x += w + spacing
+        }
     }
 }
 

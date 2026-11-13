@@ -1,12 +1,12 @@
 import SwiftUI
-import NaturalLanguage
 import OrbitalCore
 import OrbitalModels
 
-/// «¿Qué vemos?»: dos niveles y un solo verbo («Barajar»). La hoja corta: tres carteles con su porqué, «Ver» y «Barajar», y
+/// «Decide por mí»: dos niveles y un solo verbo («Barajar»). La hoja corta: tres carteles con su porqué, «Ver» y «Barajar», y
 /// debajo una fila de filtros que se aplican al tocarlos (tiempo, ánimo, películas o series) con cuántas opciones quedan.
 /// «Más filtros» es su propia página (géneros, época, de qué listas, bien calificada en IMDb, Trakt o TMDB, lo ya visto), y
-/// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, qué quitar.
+/// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, dice por qué: sin
+/// conexión (con «Reintentar»), sin sugerencias, o qué filtro quitar.
 struct DecideView: View {
     @Environment(\.titleName) var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,15 +18,22 @@ struct DecideView: View {
     @State private var path: [Page] = []
     /// El alto de la hoja corta: el de su contenido, medido (sin hueco abajo).
     @State private var quickHeight: CGFloat = DS.Decide.quickHeight
+    /// El contenido no cabe en la hoja corta (letra grande): se abre completa y se desliza (F6).
+    @State private var overflows = false
     /// Si la elegida es una serie, el capítulo con que empieza «Ver» (el que vas o el primero), para decirlo en el botón.
     @State private var seriesStart: AppEnvironment.SeriesStart?
     let open: (TitleRoute) -> Void
+    /// «Reintentar» sin red: lo que se sugiere, pedido otra vez por quien abrió la hoja.
+    var reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))?
 
-    init(pool: [Suggestion], sources: [DecideModel.Source] = [], open: @escaping (TitleRoute) -> Void) {
+    init(pool: [Suggestion], sources: [DecideModel.Source] = [], reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))? = nil,
+         open: @escaping (TitleRoute) -> Void) {
         _observer = State(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
+        self.reload = reload
         self.open = open
     }
 
+    private var words: DecideWords { DecideWords(language: env.services.appSettings.uiLanguage) }
     private var language: String { env.services.appSettings.uiLanguage }
 
     /// La imagen del mosaico de un género (en `Assets.xcassets/Decide`).
@@ -44,10 +51,15 @@ struct DecideView: View {
                     }
                 }
         }
-        .presentationDetents(path.isEmpty ? [.height(quickHeight)] : [.large])
+        .presentationDetents(path.isEmpty && !overflows ? [.height(quickHeight)] : [.large])
         .fittedFormSizing(idealHeight: path.isEmpty ? quickHeight : WindowMetrics.size.height * DS.Sheet.maxShare)
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
+        // «No me interesa · Deshacer» dentro de la hoja (la hoja tapa la raíz, que es donde van los avisos).
+        .overlay(alignment: .bottom) { BannerView().padding(.bottom, DS.Space.s2) }
+        .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
+        .onAppear { env.ui.coverShowsNotices = true }
+        .onDisappear { env.ui.coverShowsNotices = false }
         .task {
             m.warmPosters = { await ImagePipeline.shared.warmPosters($0) }
             if m.pick == nil { await m.quick() }
@@ -71,43 +83,39 @@ struct DecideView: View {
                 filterRow(m)
             }
             .dsSheetContent()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, WindowMetrics.size.height * DS.Sheet.maxShare) }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in
+                let most = WindowMetrics.size.height * DS.Sheet.maxShare
+                quickHeight = min(h, most)
+                overflows = h > most
+            }
         }
         .scrollBounceBehavior(.basedOnSize)
     }
 
-    /// «¿Qué vemos?» con cuántas opciones quedan y, a la derecha, «Todo ⌄» (películas o series), el mismo de Para ti.
+    /// «Decide por mí» con cuántas opciones quedan y ✕; debajo, «Todo · Películas · Series», el mismo de toda la app.
     private func header(_ m: DecideModel) -> some View {
         let count = m.count()
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                DSSheetHeader(title: Text("Decide por mí"))
-                Text(verbatim: optionsLine(m, count))
+                DSSheetHeader(title: Text("Decide por mí")) {
+                    DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { dismiss() }
+                        .accessibilityIdentifier("decide-close")
+                }
+                Text(verbatim: words.optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
             }
-            // Las mismas pestañas de toda la app, debajo del título (antes un menú junto a él).
             DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }))
                 .accessibilityIdentifier("decide-kind")
         }
     }
 
-    /// «4 opciones · de «Terror de octubre»» (de dónde salen, si elegiste listas).
-    private func optionsLine(_ m: DecideModel, _ count: Int) -> String {
-        var line = count > 0 ? String(format: Strings.tr(count == 1 ? "%lld opción" : "%lld opciones", language: language), count)
-                             : Strings.tr("Ninguna con estos filtros", language: language)
-        let lists = m.chosenSourceNames
-        if lists.count == 1 { line += " · " + String(format: Strings.tr("de «%@»", language: language), lists[0]) }
-        else if lists.count > 1 { line += " · " + String(format: Strings.tr("de %lld listas", language: language), lists.count) }
-        return line
-    }
-
     /// Tres carteles lado a lado (la elegida, resaltada); debajo, su nombre, sus datos y por qué verla; luego Ver, Barajar y «⋯».
     @ViewBuilder private func proposal(_ m: DecideModel) -> some View {
         if let s = m.pick {
-            let facts = why(s, m)
-            // Siempre tres lugares (aunque queden una o dos): un solo cartel ya no ocupa todo el ancho ni empuja los filtros.
-            HStack(spacing: DS.Space.s3) {
+            let facts = words.why(s, m)
+            // Cada cartel mide un tercio aunque queden uno o dos, centrados y sin huecos (F4).
+            DecideTrioLayout {
                 ForEach(m.picks) { option in
                     let chosen = option.imdb == s.imdb
                     // Tocar otro cartel lo elige; tocar el elegido abre su ficha (la de la serie o la película).
@@ -118,71 +126,25 @@ struct DecideView: View {
                             .opacity(chosen ? 1 : DS.Opacity.dimmed)
                     }
                     .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
                     .accessibilityLabel(Text(verbatim: option.title))
                     .accessibilityHint(chosen ? Text("Abre la ficha") : Text(verbatim: ""))
                     .accessibilityAddTraits(chosen ? .isSelected : [])
                     .accessibilityIdentifier(chosen ? "decide-chosen" : "decide-option")
-                }
-                ForEach(m.picks.count..<max(m.picks.count, DecideModel.trio), id: \.self) { _ in
-                    Color.clear.aspectRatio(DS.Poster.aspect, contentMode: .fit).frame(maxWidth: .infinity).accessibilityHidden(true)
                 }
             }
             .dsFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)).recipe(.cardTitle).lineLimit(1)
                 if !facts.isEmpty { Text(verbatim: facts).recipe(.label, color: DS.accent).lineLimit(1) }
-                if let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
+                if let pitch = words.pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
             }
             .contentShape(Rectangle())
             .onTapGesture { dismiss(); open(s.route) }
-            // Lado a lado y del mismo tamaño; con letra de accesibilidad, uno debajo del otro.
-            let buttonsLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s3))
-            buttonsLayout {
-                // Ver ahora: la película, o en una serie el capítulo en que vas (el primero si no la has empezado). La ficha,
-                // tocando el cartel o el nombre.
-                let start = seriesStart?.metaID == s.imdb ? seriesStart : nil
-                Button {
-                    dismiss()
-                    Task { await env.play(s, from: start) }
-                } label: {
-                    Group {
-                        // Una serie se propone completa, no un capítulo (Fernando, 2 nov 2026): «Ver la serie» o «Continuar la
-                        // serie», y arranca donde vas (el primero si no la has empezado).
-                        if s.kind == "series" {
-                            Label { start?.isResume == true ? Text("Continuar la serie") : Text("Ver la serie") } icon: { Image(systemName: "play.fill") }
-                        } else {
-                            Label("Ver", systemImage: "play.fill")
-                        }
-                    }
-                    .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                    .frame(maxWidth: .infinity)
-                    .contentTransition(.opacity)
-                }
-                .dsPrimaryButton().controlSize(.large)
-                .accessibilityIdentifier("decide-watch")
-                // Lo que se espera (rara vez: los siguientes ya están listos) se ve en el botón, no encima de los carteles.
-                Button { Task { await m.next() } } label: {
-                    HStack(spacing: DS.Space.s2) {
-                        if m.isLoading {
-                            ProgressView().controlSize(.small)   // ds-exception: la ruedita va dentro del botón que la pidió
-                        } else { Image(systemName: "shuffle") }
-                        Text("Barajar").lineLimit(1)
-                    }
-                    .foregroundStyle(DS.text).frame(maxWidth: .infinity)
-                }
-                .dsGlassButton().controlSize(.large).disabled(m.isLoading)
-                .accessibilityIdentifier("decide-shuffle")
-                DSMoreMenu {
-                    Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { Task { await m.notInterested() } }
-                    Button("Hoy no", systemImage: "moon.zzz") { Task { await m.skipToday() } }
-                    Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
-                }
-            }
-        } else if m.exhausted || (m.picks.isEmpty && !m.isLoading && m.activeFilters > 0) {
-            nothing(m)
+            actions(m, s)
+        } else if let empty = m.empty {
+            nothing(m, empty)
         } else {
-            HStack(spacing: DS.Space.s3) {
+            DecideTrioLayout {
                 ForEach(0..<DecideModel.trio, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
                 }
@@ -191,67 +153,158 @@ struct DecideView: View {
         }
     }
 
-    /// Nada cumple: con qué, y los dos cambios que más abren («Quitar Terror · 6», «Con 1 h · 3»).
-    private func nothing(_ m: DecideModel) -> some View {
-        let relax = m.relaxations()
-        return VStack(spacing: DS.Space.s3) {
-            Image(systemName: "dice").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
-            Text(verbatim: String(format: Strings.tr("Nada con %@", language: language), activeSummary(m))).recipe(.cardTitle).multilineTextAlignment(.center)
-            Text("Prueba quitando un filtro.").recipe(.footnote).multilineTextAlignment(.center)
-            HStack(spacing: DS.Space.s2) {
-                ForEach(Array(relax.enumerated()), id: \.offset) { index, item in
-                    let title = Text(verbatim: "\(relaxName(item.relax, m)) · \(item.count)")
-                    if index == 0 {
-                        Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsPrimaryButton()
+    /// Ver · Barajar · ⋯ (lado a lado y del mismo tamaño; con letra de accesibilidad, uno debajo del otro).
+    private func actions(_ m: DecideModel, _ s: Suggestion) -> some View {
+        let buttonsLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s3))
+        return buttonsLayout {
+            // Ver ahora: la película, o en una serie el capítulo en que vas (el primero si no la has empezado).
+            let start = seriesStart?.metaID == s.imdb ? seriesStart : nil
+            Button {
+                dismiss()
+                Task { await env.play(s, from: start) }
+            } label: {
+                Group {
+                    // Una serie se propone completa, no un capítulo (Fernando, 2 nov 2026).
+                    if s.kind == "series" {
+                        Label { start?.isResume == true ? Text("Continuar la serie") : Text("Ver la serie") } icon: { Image(systemName: "play.fill") }
                     } else {
-                        Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsGlassButton()
+                        Label("Ver", systemImage: "play.fill")
+                    }
+                }
+                .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .frame(maxWidth: .infinity)
+                .contentTransition(.opacity)
+            }
+            .dsPrimaryButton().controlSize(.large)
+            .accessibilityIdentifier("decide-watch")
+            // Lo que se espera se ve en el botón; con una o dos opciones no hay a qué barajar (F4).
+            Button { Task { await m.next() } } label: {
+                HStack(spacing: DS.Space.s2) {
+                    if m.isLoading {
+                        ProgressView().controlSize(.small)   // ds-exception: la ruedita va dentro del botón que la pidió
+                    } else { Image(systemName: "shuffle") }
+                    Text("Barajar").lineLimit(1)
+                }
+                .foregroundStyle(m.canShuffle ? DS.text : DS.textFaint).frame(maxWidth: .infinity)
+            }
+            .dsGlassButton().controlSize(.large).disabled(m.isLoading || !m.canShuffle)
+            .accessibilityIdentifier("decide-shuffle")
+            DSMoreMenu {
+                Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { remove(m, s, dismissed: true) }
+                Button("Hoy no", systemImage: "moon.zzz") { remove(m, s, dismissed: false) }
+                Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
+            }
+        }
+    }
+
+    /// Lo que quitas se puede deshacer (F5): «Ya no te la sugiero · Deshacer» o «Hoy no · Deshacer».
+    private func remove(_ m: DecideModel, _ s: Suggestion, dismissed: Bool) {
+        Task {
+            if dismissed { await m.notInterested() } else { await m.skipToday() }
+            env.notify(dismissed ? "Ya no te la sugiero" : "Hoy no", detail: titleName(s.title, id: s.imdb, kind: s.kind), tone: .info,
+                       actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await m.undoRemoval() } }
+        }
+    }
+
+    /// Nada que proponer, con el porqué (F2): sin conexión o sin sugerencias, «Reintentar»; por los filtros, los dos
+    /// cambios que más abren («Quitar Terror · 6», «Con 1 h · 3»).
+    @ViewBuilder private func nothing(_ m: DecideModel, _ empty: DecideModel.Empty) -> some View {
+        switch empty {
+        case .offline, .nothingSuggested:
+            VStack(spacing: DS.Space.s3) {
+                Image(systemName: empty == .offline ? DS.Symbol.offline : "rectangle.stack").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
+                (empty == .offline ? Text("Sin conexión") : Text("Aún no hay sugerencias")).recipe(.cardTitle).multilineTextAlignment(.center)
+                (empty == .offline ? Text("Cuando vuelva el internet, aquí salen tres de tus sugerencias.") : Text("Cuando Explorar cargue sus listas, aquí salen."))
+                    .recipe(.footnote).multilineTextAlignment(.center)
+                if let reload {
+                    Button { Task { let fresh = await reload(); await m.retry(pool: fresh.pool, sources: fresh.sources) } } label: {
+                        Label("Reintentar", systemImage: "arrow.clockwise")
+                    }
+                    .dsGlassButton().controlSize(.large)
+                    .accessibilityIdentifier("decide-retry")
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Space.s5)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("decide-offline")
+        case .filters:
+            let relax = m.relaxations()
+            VStack(spacing: DS.Space.s3) {
+                Image(systemName: DS.Symbol.decide).font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
+                Text(verbatim: String(format: Strings.tr("Nada con %@", language: language), words.activeSummary(m))).recipe(.cardTitle).multilineTextAlignment(.center)
+                Text("Prueba quitando un filtro.").recipe(.footnote).multilineTextAlignment(.center)
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(Array(relax.enumerated()), id: \.offset) { index, item in
+                        let title = Text(verbatim: "\(words.relaxName(item.relax, m)) · \(item.count)")
+                        if index == 0 {
+                            Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsPrimaryButton()
+                        } else {
+                            Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsGlassButton()
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Space.s5)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("decide-nothing")
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Space.s5)
-        .accessibilityIdentifier("decide-nothing")
     }
 
     // MARK: los filtros (se aplican al tocarlos)
-    /// Cuatro cápsulas parejas (las mismas «Todo ⌄» de toda la app), en dos renglones: siempre caben y quedan alineadas.
-    private func filterRow(_ m: DecideModel) -> some View {
-        Grid(horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
-            GridRow {
-                Menu {
-                    ForEach(DecideModel.Time.allCases, id: \.self) { t in
-                        Button { m.time = t; m.timeChosen = true; Task { await m.apply() } } label: {
-                            optionLabel(timeName(t), count: m.count(strictTime: true) { $0.time = t }, selected: m.time == t)
-                        }
-                    }
-                } label: { DSCapsuleLabel(title: Text(verbatim: timeName(m.time)), symbol: "clock", selected: m.timeChosen, stretch: true, trailing: "chevron.down") }
-                .accessibilityIdentifier("decide-time")
-                Menu {
-                    Button { m.mood = nil; Task { await m.apply() } } label: {
-                        optionLabel(Strings.tr("Lo que sea", language: language), count: m.count { $0.mood = nil }, selected: m.mood == nil)
-                    }
-                    ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
-                        Button { m.mood = mood; Task { await m.apply() } } label: {
-                            optionLabel(Strings.tr(moodLabel(mood), language: language), count: m.count { $0.mood = mood }, selected: m.mood == mood, symbol: moodSymbol(mood))
-                        }
-                    }
-                } label: {
-                    DSCapsuleLabel(title: m.mood.map { Text(LocalizedStringKey(moodLabel($0))) } ?? Text("Ánimo"), symbol: m.mood.map(moodSymbol) ?? "face.smiling",
-                                   selected: m.mood != nil, stretch: true, trailing: "chevron.down")
-                }
-                .accessibilityIdentifier("decide-mood")
-            }
-            GridRow {
-                ratingMenu(m)
-                Button { path.append(.more) } label: {
-                    DSCapsuleLabel(title: m.moreFilters > 0 ? Text("Más filtros · \(m.moreFilters)") : Text("Más filtros"), symbol: "slider.horizontal.3",
-                                   selected: m.moreFilters > 0, stretch: true)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("decide-more")
+    /// Cuatro cápsulas parejas (las mismas «Todo ⌄» de toda la app), en dos renglones; con letra de accesibilidad, una por
+    /// renglón (F6: antes «Calificación» y «Más filtros» quedaban fuera de la hoja).
+    @ViewBuilder private func filterRow(_ m: DecideModel) -> some View {
+        if typeSize.isAccessibilitySize {
+            VStack(spacing: DS.Space.s2) { timeMenu(m); moodMenu(m); ratingMenu(m); moreButton(m) }
+        } else {
+            Grid(horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
+                GridRow { timeMenu(m); moodMenu(m) }
+                GridRow { ratingMenu(m); moreButton(m) }
             }
         }
+    }
+
+    /// «Cualquier duración» hasta que eliges uno (F3: un filtro que se ve puesto, filtra).
+    private func timeMenu(_ m: DecideModel) -> some View {
+        Menu {
+            Button { Task { await m.chooseTime(nil) } } label: {
+                optionLabel(Strings.tr("Cualquier duración", language: language), count: m.count(strictTime: false), selected: m.shownTime == nil)
+            }
+            ForEach(DecideModel.Time.allCases, id: \.self) { t in
+                Button { Task { await m.chooseTime(t) } } label: {
+                    optionLabel(words.timeName(t), count: m.count(strictTime: true) { $0.time = t }, selected: m.shownTime == t)
+                }
+            }
+        } label: { DSCapsuleLabel(title: Text(verbatim: words.timeTitle(m)), symbol: "clock", selected: m.shownTime != nil, stretch: true, trailing: "chevron.down") }
+        .accessibilityIdentifier("decide-time")
+    }
+
+    private func moodMenu(_ m: DecideModel) -> some View {
+        Menu {
+            Button { m.mood = nil; Task { await m.apply() } } label: {
+                optionLabel(Strings.tr("Lo que sea", language: language), count: m.count { $0.mood = nil }, selected: m.mood == nil)
+            }
+            ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
+                Button { m.mood = mood; Task { await m.apply() } } label: {
+                    optionLabel(Strings.tr(words.moodLabel(mood), language: language), count: m.count { $0.mood = mood }, selected: m.mood == mood, symbol: words.moodSymbol(mood))
+                }
+            }
+        } label: {
+            DSCapsuleLabel(title: m.mood.map { Text(LocalizedStringKey(words.moodLabel($0))) } ?? Text("Ánimo"), symbol: m.mood.map(words.moodSymbol) ?? "face.smiling",
+                           selected: m.mood != nil, stretch: true, trailing: "chevron.down")
+        }
+        .accessibilityIdentifier("decide-mood")
+    }
+
+    private func moreButton(_ m: DecideModel) -> some View {
+        Button { path.append(.more) } label: {
+            DSCapsuleLabel(title: m.moreFilters > 0 ? Text("Más filtros · \(m.moreFilters)") : Text("Más filtros"), symbol: "slider.horizontal.3",
+                           selected: m.moreFilters > 0, stretch: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("decide-more")
     }
 
     /// «★ Calificación»: el mínimo (con cuántas quedan) y según qué plataformas (basta con que una llegue).
@@ -279,7 +332,7 @@ struct DecideView: View {
             Section(Strings.tr("Letterboxd · solo películas", language: language)) {
                 ForEach(DecideModel.letterboxdSteps, id: \.self) { r in
                     Button { m.minLetterboxd = r; Task { await m.apply() } } label: {
-                        let title = r == 0 ? Strings.tr("Cualquiera", language: language) : "\(Self.stars(r))+"
+                        let title = r == 0 ? Strings.tr("Cualquiera", language: language) : "\(DecideWords.stars(r))+"
                         if m.letterboxdReady { optionLabel(title, count: m.count { $0.minLetterboxd = r }, selected: m.minLetterboxd == r) }
                         else if m.minLetterboxd == r { Label { Text(verbatim: title) } icon: { Image(systemName: "checkmark") } }
                         else { Text(verbatim: title) }
@@ -287,23 +340,10 @@ struct DecideView: View {
                 }
             }
         } label: {
-            DSCapsuleLabel(title: Text(verbatim: ratingTitle(m)), symbol: "star",
+            DSCapsuleLabel(title: Text(verbatim: words.ratingTitle(m)), symbol: "star",
                            selected: m.minRating > 0 || m.minLetterboxd > 0, stretch: true, trailing: "chevron.down")
         }
         .accessibilityIdentifier("decide-rating")
-    }
-
-    /// «7+», «3.5★» o «7+ · 3.5★»; sin mínimo, «Calificación».
-    private func ratingTitle(_ m: DecideModel) -> String {
-        var parts: [String] = []
-        if m.minRating > 0 { parts.append(String(format: "%.0f+", m.minRating)) }
-        if m.minLetterboxd > 0 { parts.append("\(FilterText.number(m.minLetterboxd))★") }
-        return parts.isEmpty ? Strings.tr("Calificación", language: language) : parts.joined(separator: " · ")
-    }
-
-    /// «★★★½»: las estrellas de Letterboxd.
-    static func stars(_ value: Double) -> String {
-        String(repeating: "★", count: Int(value)) + (value.truncatingRemainder(dividingBy: 1) >= 0.5 ? "½" : "")
     }
 
     private func ratingSourceName(_ s: DecideModel.RatingSource) -> String {
@@ -318,85 +358,5 @@ struct DecideView: View {
             else if let symbol { Label { text } icon: { Image(systemName: symbol) } }
             else { text }
         }
-    }
-
-    // MARK: textos
-    /// La primera frase de su sinopsis (o lo que quepa en dos renglones): por qué verla.
-    private func pitch(_ s: Suggestion) -> String? {
-        let text = s.overview.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
-        // Solo en el idioma de la app: una sinopsis en inglés en la app en español se esconde (los datos de arriba bastan).
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(text)
-        if let found = recognizer.dominantLanguage, found.rawValue != language { return nil }
-        if let end = text.firstIndex(where: { ".!?".contains($0) }), text.distance(from: text.startIndex, to: end) > DS.Decide.pitchMin {
-            return String(text[...end])
-        }
-        return text
-    }
-
-    /// «58 min · IMDb 8.4 · Ligero»: lo que se puede comprobar.
-    private func why(_ s: Suggestion, _ m: DecideModel) -> String {
-        var parts: [String] = []
-        // En una serie, lo que dura un capítulo («42 min por episodio», como la TV): se propone la serie, no un capítulo.
-        if s.kind == "series" { parts.append(m.minutes.map { String(format: Strings.tr("%@ por episodio", language: language), "\($0) min") } ?? Strings.tr("Serie", language: language)) }
-        else if let minutes = m.minutes { parts.append("\(minutes) min") }
-        if let r = m.imdbRating { parts.append(String(format: "IMDb %.1f", r)) }
-        else if let r = TraktRatings.shown(s.imdb, fallback: s.traktRating) { parts.append("Trakt \(TraktRatings.percent(r))\u{00A0}%") }
-        if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
-        return parts.joined(separator: " · ")
-    }
-
-    /// «Terror + 30 min»: lo puesto, en corto.
-    private func activeSummary(_ m: DecideModel) -> String {
-        var parts = m.genres.sorted().map { genreName($0, language: language) }
-        if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
-        if let k = m.kind { parts.append(kindName(k)) }
-        if !m.decades.isEmpty { parts.append(m.decades.sorted(by: >).map { decadeName($0) }.joined(separator: ", ")) }
-        if m.minRating > 0 { parts.append(String(format: "%.0f+", m.minRating)) }
-        if m.minLetterboxd > 0 { parts.append("\(FilterText.number(m.minLetterboxd))★ Letterboxd") }
-        if m.fame != .any { parts.append(Strings.tr(Self.fameKey(m.fame), language: language)) }
-        if !m.awards.isEmpty { parts.append(Strings.tr("Premios", language: language)) }
-        if m.timeChosen || parts.isEmpty { parts.append(timeName(m.time)) }
-        return parts.joined(separator: " + ")
-    }
-
-    /// El nombre de «Qué tan conocida» como clave de texto (para «Quitar Joyas ocultas»).
-    static func fameKey(_ f: AdvancedFilter.Fame) -> String {
-        switch f { case .gems: "Joyas ocultas"; case .classics: "Las de siempre"; case .niche: "Para pocos"; case .blockbusters: "Taquilleras"; case .any: "Cualquiera" }
-    }
-
-    private func relaxName(_ r: DecideModel.Relax, _ m: DecideModel) -> String {
-        let tr = { (k: String) in Strings.tr(k, language: language) }
-        switch r {
-        case .genre(let g): return String(format: tr("Quitar %@"), genreName(g, language: language))
-        case .mood: return tr("Cualquier ánimo")
-        case .kind: return tr("Películas y series")
-        case .decades: return tr("Cualquier época")
-        case .rating: return tr("Sin mínimo")
-        case .time(let t): return String(format: tr("Con %@"), timeName(t))
-        case .lists: return tr("De todo lo sugerido")
-        case .letterboxd: return String(format: tr("Quitar %@"), "Letterboxd")
-        case .fame: return String(format: tr("Quitar %@"), tr(Self.fameKey(m.fame)))
-        case .awards: return String(format: tr("Quitar %@"), tr("Premios"))
-        }
-    }
-
-    private func timeName(_ t: DecideModel.Time) -> String {
-        switch t { case .short: Strings.tr("30 min", language: language); case .hour: Strings.tr("1 h", language: language); case .long: Strings.tr("2 h o más", language: language) }
-    }
-
-    private func kindName(_ k: String?) -> String {
-        switch k { case "movie": Strings.tr("Películas", language: language); case "series": Strings.tr("Series", language: language); default: Strings.tr("Películas y series", language: language) }
-    }
-
-    private func decadeName(_ d: Int) -> String { d == 1980 ? Strings.tr("Antes de los 90", language: language) : "\(d)s" }
-
-    private func moodSymbol(_ m: DecideModel.Mood) -> String {
-        switch m { case .light: "sun.max"; case .intense: "bolt"; case .think: "lightbulb"; case .together: "heart" }
-    }
-
-    private func moodLabel(_ m: DecideModel.Mood) -> String {
-        switch m { case .light: "Ligero"; case .intense: "Intenso"; case .think: "Para pensar"; case .together: "En pareja" }
     }
 }

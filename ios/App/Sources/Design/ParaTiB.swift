@@ -151,6 +151,8 @@ struct MosaicCover: View {
 /// «¿Qué vemos hoy?»: la entrada a encontrar tu match (tres pósters en abanico, el porqué y cómo se usa).
 struct MatchTeaser: View {
     let posters: [String]
+    /// Sin red y sin pósters: lo dice en vez de prometer cartas.
+    var offline = false
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -165,7 +167,8 @@ struct MatchTeaser: View {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
                     Text("¿Qué vemos hoy?").recipe(.section)
-                    Text("A la derecha la guardas, a la izquierda no.").recipe(.footnote, color: DS.textMuted)
+                    (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("A la derecha la guardas, a la izquierda no."))
+                        .recipe(.footnote, color: DS.textMuted)
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
@@ -188,7 +191,8 @@ struct PosterFan: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            ForEach(Array(posters.prefix(DS.ParaTiB.matchFan).enumerated().reversed()), id: \.offset) { i, url in
+            // Sin pósters (sin red), la forma del abanico en gris: la tarjeta no cambia de tamaño.
+            ForEach(Array((posters.isEmpty ? Array(repeating: "", count: DS.ParaTiB.matchFan) : posters).prefix(DS.ParaTiB.matchFan).enumerated().reversed()), id: \.offset) { i, url in
                 PosterView(url: url, title: "")
                     .frame(width: width)
                     .rotationEffect(.degrees(Double(i) * DS.ParaTiB.deckTurn))

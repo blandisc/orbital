@@ -7,6 +7,8 @@ import OrbitalModels
 /// con `onPlay` para que la pantalla de afuera la reproduzca.
 struct MatchDeckScreen: View {
     let pool: [Suggestion]
+    /// «Reintentar» sin red: lo que se sugiere, pedido otra vez (F2/F8).
+    var reload: (() async -> [Suggestion])?
     let onOpenTitle: (TitleRoute) -> Void
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
@@ -15,6 +17,9 @@ struct MatchDeckScreen: View {
     @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
     @State private var command: MatchCommand?
+    /// Lo que trajo «Reintentar» (si no, `pool`).
+    @State private var reloaded: [Suggestion]?
+    private var items: [Suggestion] { reloaded ?? pool }
 
     var body: some View {
         // La cuenta se lee aquí, no dentro del encabezado: en iOS 27 el encabezado no se volvía a pintar al guardar (su
@@ -41,7 +46,7 @@ struct MatchDeckScreen: View {
             }
             if let model {
                 let _ = model.track()
-                if model.loaded, !pool.isEmpty { filters(model) }
+                if model.loaded, !items.isEmpty { filters(model) }
                 if !model.loaded {
                     skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
                 } else if model.cards.isEmpty {
@@ -51,7 +56,7 @@ struct MatchDeckScreen: View {
                               genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
                               command: $command,
                               onSave: { s in save(s, model) },
-                              onDiscard: { model.discard($0) },
+                              onDiscard: { s in discard(s, model) },
                               onTonight: { s in tonight(s, model) },
                               onOpen: { s in dismiss(); onOpenTitle(s.route) },
                               onPlay: { s in dismiss(); onPlay(s.route) })
@@ -72,7 +77,7 @@ struct MatchDeckScreen: View {
         .onDisappear { env.ui.coverShowsNotices = false }
         .task {
             if model == nil {
-                let m = MatchDeckModel(env.services, pool: pool, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
+                let m = MatchDeckModel(env.services, pool: items, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
                 model = m
                 await m.load()
             }
@@ -111,8 +116,16 @@ struct MatchDeckScreen: View {
     /// Al final del mazo, como el aviso de Tinder cuando se acaban los matches (Fernando, 3 nov 2026): se acabaron, y para ver
     /// más, cambia tus filtros (los de arriba). Con algo filtrado, el botón los quita de un toque.
     @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
-        if pool.isEmpty {
-            DSEmptyState(symbol: "rectangle.stack", title: Text("Aún no hay propuestas"), message: Text("Cuando Para ti cargue sus listas, aquí salen."))
+        if items.isEmpty {
+            // Sin red lo dice así, con «Reintentar» (F2/F8: antes «Aún no hay propuestas», como si no tuvieras sugerencias).
+            let offline = !env.isOnline
+            DSEmptyState(symbol: offline ? DS.Symbol.offline : "rectangle.stack", title: offline ? Text("Sin conexión") : Text("Aún no hay propuestas"),
+                         message: offline ? Text("Cuando vuelva el internet, aquí salen tus cartas.") : Text("Cuando Para ti cargue sus listas, aquí salen.")) {
+                if let reload {
+                    Button { Task { let fresh = await reload(); reloaded = fresh; await model.replacePool(fresh) } } label: { Label("Reintentar", systemImage: "arrow.clockwise") }
+                        .accessibilityIdentifier("match-retry")
+                }
+            }
         } else {
             let saved: Text? = model.saved.isEmpty ? nil : (model.savesToTrakt ? Text("Guardaste \(model.saved.count) en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count) en Mi lista."))
             let hint = model.isFiltered ? Text("Si quieres ver más, cambia tus filtros.") : Text("Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.")
@@ -132,12 +145,18 @@ struct MatchDeckScreen: View {
         }
     }
 
-    /// «Para hoy» (arriba o la ★): guardada y primero en Mi lista hoy; el aviso ofrece verla ya.
+    /// «Para hoy» (arriba o la ★): guardada y primero en Mi lista hoy; el aviso ofrece verla ya y deshacerlo (F5).
     private func tonight(_ s: Suggestion, _ model: MatchDeckModel) {
         Task { await model.saveForTonight(s) }
-        env.notify("Para hoy", detail: s.title, tone: .success, actionTitle: "Ver ya", actionSymbol: "play.fill") {
+        env.notify("Para hoy", detail: s.title, tone: .success, actionTitle: "Ver ya", actionSymbol: "play.fill", perform: {
             dismiss(); onPlay(s.route)
-        }
+        }, secondTitle: "Deshacer", secondSymbol: "arrow.uturn.backward", second: { Task { await model.undo(s) } })
+    }
+
+    /// «Paso» (izquierda o ✕): no vuelve en un mes, y se puede deshacer (F5: antes no tenía vuelta).
+    private func discard(_ s: Suggestion, _ model: MatchDeckModel) {
+        model.discard(s)
+        env.notify("Paso", detail: s.title, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { model.undoDiscard(s) }
     }
 
     /// Paso · Para hoy · Guardar (✕ · ★ · ♥, como Tinder), cada uno con su nombre debajo y su color; los tres hacen salir

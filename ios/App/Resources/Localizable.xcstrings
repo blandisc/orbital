@@ -44795,6 +44795,83 @@
           }
         }
       }
+    },
+    "Cualquier duración": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any length"
+          }
+        }
+      }
+    },
+    "Ya no te la sugiero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I won't suggest it again"
+          }
+        }
+      }
+    },
+    "Aún no hay sugerencias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No suggestions yet"
+          }
+        }
+      }
+    },
+    "Cuando vuelva el internet, aquí salen tres de tus sugerencias.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you're back online, three of your suggestions show up here."
+          }
+        }
+      }
+    },
+    "Cuando Explorar cargue sus listas, aquí salen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They show up here once Explore loads its lists."
+          }
+        }
+      }
+    },
+    "Cuando vuelva el internet, aquí salen tus cartas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you're back online, your cards show up here."
+          }
+        }
+      }
+    },
+    "Sin conexión por ahora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline for now."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

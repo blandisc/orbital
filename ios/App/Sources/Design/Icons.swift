@@ -67,5 +67,8 @@ extension DS {
         static let addNote = "note.text.badge.plus", note = "note.text"
         /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
         static let rate = "star"
+        /// El dado es solo «Decide por mí», el sorteo (DE1, 13 nov 2026: antes también «Temporadas» de la dona y «Repartido por
+        /// décadas»). Las temporadas de la dona son una pila con ▶; repartir por épocas, la línea del tiempo.
+        static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
     }
 }

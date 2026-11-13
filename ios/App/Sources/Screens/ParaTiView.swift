@@ -145,7 +145,7 @@ struct ParaTiView: View {
         }
         .fullScreenCover(isPresented: $matching) {
             let pool = m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }
-            MatchDeckScreen(pool: pool, onOpenTitle: { openTitle = $0 },
+            MatchDeckScreen(pool: pool, reload: { await m.refresh(); return m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) } }, onOpenTitle: { openTitle = $0 },
                             onPlay: { route in
                                 // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
                                 if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } }
@@ -153,11 +153,15 @@ struct ParaTiView: View {
                             })
         }
         .sheet(isPresented: $deciding) {
-            DecideView(pool: (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }, sources: decideSources(m)) { openTitle = $0 }
+            DecideView(pool: decidePool(m), sources: decideSources(m),
+                       reload: { await m.refresh(); return (decidePool(m), decideSources(m)) }) { openTitle = $0 }
         }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }
+
+    /// Lo que se sugiere, para «Decide por mí»: «Porque viste», el mosaico y cada estante que se ve.
+    private func decidePool(_ m: ParaTiModel) -> [Suggestion] { (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) } }
 
     /// «¿Qué vemos?» › De dónde: «Porque viste», lo nuevo en tus plataformas y cada estante que se ve (con su nombre).
     private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {
@@ -175,11 +179,12 @@ struct ParaTiView: View {
             case "popular": Strings.tr("Lo más popular", language: language)
             default: plan.title.isEmpty ? plan.id : plan.title
             }
-            out.append(.init(id: plan.id, name: name, origin: suggested, items: m.items(for: plan)))
+            out.append(.init(id: plan.id, name: name, origin: DecideModel.origin(ofShelf: plan.id), items: m.items(for: plan)))   // F7: «Mi lista» es tuya
         }
         // Todas tus listas (tienes muchas): las que aún no se abren se piden solo si las eliges.
         for list in m.traktLists where !out.contains(where: { $0.id == list.id }) && !list.title.isEmpty {
-            let origin = list.source.isEmpty ? (list.group == .mine ? "Trakt" : suggested) : list.source
+            let yours = list.group == .mine || DecideModel.origin(ofShelf: list.id) == DecideModel.yoursOrigin
+            let origin = yours ? DecideModel.yoursOrigin : list.source.isEmpty ? suggested : list.source
             out.append(.init(id: list.id, name: list.title, origin: origin, items: m.items(for: list), load: m.decideLoader(for: list)))
         }
         return out

@@ -435,6 +435,9 @@ haya caracteres de texto usados como ícono.
 | Volver a empezar | `arrow.counterclockwise` (`DS.Symbol.restart`) | ↺ «Desde el principio», junto al avance (R1) |
 | Tu nota | `note.text.badge.plus` / `note.text` (`DS.Symbol.addNote`, `note`) | Al final de «Tu calificación» |
 | Calificar | `star` (`DS.Symbol.rate`) | «Calificar la temporada», en el menú de «Vista» |
+| Decide por mí (el sorteo), y nada más | `dice` (`DS.Symbol.decide`) | La entrada de «Decide por mí» y su vacío por filtros |
+| Las temporadas de la dona (de cuáles sale el episodio) | `rectangle.stack.badge.play` (`DS.Symbol.channelSeasons`) | Inicio › Canales › la dona › Temporadas |
+| Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
 ### Lo que crece no choca (13 nov 2026)
@@ -456,6 +459,44 @@ cápsula se salía de su margen. La regla, para todo lo que se abre junto a otra
 
 `DesignRulesTests+Motion.swift` lo cuida: `grow` con rebote ≤ 0.1 y más lento que `fold`, `enterScale` ≥ 0.75, y el selector
 de tipo (`KindPill`, la misma pieza en Inicio, Explorar y las listas) y la cápsula de Inicio sin resortes con rebote.
+
+### Un filtro que se ve puesto, filtra (13 nov 2026)
+
+Fernando, al pedir el pulido de «Decide por mí» (DE1): «Construye DE1 y DE2 para ver cómo se ven. Antes de decidir». La
+auditoría (F3) encontró que la cápsula del tiempo decía «⏱ 1 h» y el menú lo marcaba, pero salían películas de tres horas: el
+tiempo de la hora solo ordenaba.
+
+- **Lo que se ve puesto es lo que filtra.** Un filtro que la app propone sola (el tiempo según la hora) ordena, pero no se
+  enseña puesto: la cápsula dice «Cualquier duración» hasta que eliges uno, y el menú trae «Cualquier duración» para volver.
+  «Nada con…» nombra solo lo que tú pusiste (antes culpaba al «1 h» que no elegiste).
+- **Una opción que no deja nada no se toca** («Documental · 0», «Óscar · 0»): va gris y apagada; si ya estaba puesta, sí se
+  puede quitar (`DecideModel.offered`).
+- **Las opciones de un filtro llevan ícono o arte**, no cápsulas de solo texto: géneros y épocas son mosaicos con su imagen
+  (las épocas en la misma cuadrícula de tres: «2020s» y «90s» miden lo mismo), «Fama» es el cuadro del filtro avanzado
+  (`FameQuadrant`, con cuántas quedan en cada esquina) y «Premios» las estatuillas (`FilterLogoChoice`). De qué listas usa las
+  pestañas de texto (`DSTextTabs`).
+- **Sin huecos ni botones que no hacen nada**: con una o dos opciones los carteles miden lo mismo y van centrados
+  (`DecideTrioLayout`); «Barajar» se apaga si no hay más (`canShuffle`).
+- **Sin red no se culpa a los filtros**: «Sin conexión · Reintentar» (`DecideModel.empty`: sin conexión, sin sugerencias o por
+  los filtros; solo el último ofrece qué quitar). El mazo y su tarjeta de Explorar dicen lo mismo, y la tarjeta no desaparece.
+- «Mi lista», Favoritos, «Tus series» y tus listas van bajo «Tus listas» en «De qué listas», no bajo «Sugerencias».
+- La hoja lleva ✕; con letra de accesibilidad los filtros van uno por renglón y la hoja se abre completa si no cabe.
+
+### Lo que quitas se puede deshacer (13 nov 2026)
+
+Mismo pedido (F5): «No me interesa» era para siempre (quita la sugerencia de Para ti y de la TV) y no tenía vuelta; en el mazo
+solo «Guardar» tenía «Deshacer».
+
+- **Todo lo que aparta algo de lo que te proponen avisa con «Deshacer»**: «No me interesa» («Ya no te la sugiero · Deshacer») y
+  «Hoy no» en Decide; «Paso» y «Para hoy» («Para hoy · Ver ya · ↩︎») en el mazo, como «Guardar». Deshacer lo regresa a su
+  lugar y vuelve a sugerirse.
+- **Lo que sale del aparato espera a que ya no se pueda deshacer**: a la TV se le avisa «No me interesa» al quitar otra o al
+  cerrar la hoja (`DecideModel.commitDismissals`), nunca en el momento.
+- Los avisos de una hoja o pantalla completa van dentro de ella (`BannerView` con `coverShowsNotices`), no detrás.
+- El dado es solo «Decide por mí» (tabla de íconos).
+
+Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
+tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.
 
 ## 4b. Bilingüe
 

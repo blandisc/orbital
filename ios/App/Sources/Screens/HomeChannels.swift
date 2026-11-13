@@ -194,7 +194,7 @@ struct ChannelsSheet: View {
             DSSectionHead(title: Text("Un Simpson al azar"), level: .section)
             NavigationLink { SimpsonsSeasonsPage() } label: {
                 HStack(spacing: DS.Space.s2) {
-                    SettingsRow(title: "Temporadas", symbol: "dice", tint: DS.ListTint.watching,
+                    SettingsRow(title: "Temporadas", symbol: DS.Symbol.channelSeasons, tint: DS.ListTint.watching,
                                 value: SimpsonsSeasonsSection.summary(env.services.appSettings.simpsonsSeasons))
                     Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
                 }

@@ -455,10 +455,11 @@ final class DesignRulesTests: XCTestCase {
     /// Una hoja con asa no lleva además una ✕ para cerrar: se jala hacia abajo (Fernando, 4 nov 2026: «tiene una X; quítala,
     /// ya tiene la barrita»). `DSSheetHeader` ya no la pone. La ✕ «Cerrar» solo va donde no se puede deslizar para cerrar:
     /// pantalla completa (el mazo, tu año, las historias), los paneles fijos (el control de la TV a la derecha, la ficha) y las tarjetas de
-    /// la voz dentro del control.
+    /// la voz dentro del control. «Decide por mí» sí la lleva: lo pidió Fernando el 13 nov 2026 (DE1, «la hoja lleva ✕»).
     func testSheetsWithAGrabberHaveNoCloseButton() throws {
         let files = try sources()
-        let noSwipe: Set<String> = ["MatchDeckScreen.swift", "WrappedView.swift", "Stories.swift", "RemoteSheet.swift", "RemoteSheet+Panel.swift", "TitlePanel.swift", "VoiceRow.swift"]
+        let noSwipe: Set<String> = ["MatchDeckScreen.swift", "WrappedView.swift", "Stories.swift", "RemoteSheet.swift", "RemoteSheet+Panel.swift", "TitlePanel.swift", "VoiceRow.swift",
+                                    "DecideView.swift"]
         var problems = hits(#"DSSheetHeader\([^\n]*close:"#, in: files).map { $0 + " (la hoja se cierra jalándola)" }
         problems += hits(#"(DSIconButton\(symbol: "xmark", label: "Cerrar"|Button\("Cerrar", systemImage: "xmark")"#, in: files,
                          skip: { noSwipe.contains($0.name) }).map { $0 + " (una hoja con asa no lleva ✕)" }

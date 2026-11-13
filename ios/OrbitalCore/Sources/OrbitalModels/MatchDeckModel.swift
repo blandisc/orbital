@@ -29,7 +29,7 @@ public final class MatchDeckModel: ObservableModel {
     static let savedKey = "match-saved"
 
     private let services: Services
-    private let pool: [Suggestion]
+    private var pool: [Suggestion]
     private let watchedSource: @MainActor () async -> Set<String>
     private let clock: @Sendable () -> Date
     private let titles: TitleActions
@@ -39,6 +39,12 @@ public final class MatchDeckModel: ObservableModel {
     public init(_ services: Services, pool: [Suggestion], titles: TitleActions? = nil, watched: @escaping @MainActor () async -> Set<String>, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.services = services; self.pool = pool; self.titles = titles ?? TitleActions(services); self.watchedSource = watched; self.clock = clock
         super.init()
+    }
+
+    /// Otro montón (Reintentar sin red, o los filtros de «Afinar» de Decide por mí): el mazo se vuelve a armar.
+    public func replacePool(_ newPool: [Suggestion]) async {
+        pool = newPool
+        if loaded { rebuild(); await fillGenres() } else { await load() }
     }
 
     public func load() async {
@@ -203,6 +209,15 @@ public final class MatchDeckModel: ObservableModel {
         var all = discardedDates.filter { clock().timeIntervalSince($0.value) < Self.discardFor }
         all[s.imdb] = clock()
         services.kv.set(Self.discardedKey, data: try? JSONEncoder().encode(all))
+    }
+
+    /// «Deshacer» del aviso de «Paso» (F5, 13 nov 2026): vuelve a salir y la carta regresa arriba del mazo.
+    public func undoDiscard(_ s: Suggestion) {
+        var all = discardedDates
+        guard all.removeValue(forKey: s.imdb) != nil else { return }
+        services.kv.set(Self.discardedKey, data: try? JSONEncoder().encode(all))
+        cards.removeAll { $0.imdb == s.imdb }
+        cards.insert(s, at: 0)
     }
 
     /// Lo guardado desde el mazo, para siempre (hasta «Deshacer»).

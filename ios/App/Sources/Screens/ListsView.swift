@@ -7,7 +7,7 @@ import OrbitalModels
 struct ListsView: View {
     @Environment(\.titleName) var titleName
     var observer: ModelObserver<ParaTiModel>
-    /// «Decide por mí», el sorteo (en un iPhone angosto vive en el índice de arriba).
+    /// «Decide por mí», el sorteo (el dado de la barra; en un iPhone angosto, iOS lo pasa al «⋯» de la barra).
     var onDecide: () -> Void = {}
     /// «¿Qué vemos hoy?»: el mazo de Encuentra tu match perfecto.
     var onMatch: () -> Void = {}
@@ -140,9 +140,10 @@ struct ListsView: View {
                     let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))
                     if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall) { model.mode = .mosaic }.perfTag("paraTi.hero") }
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
-                    // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
+                    // Sin pósters (sin red, o sin TMDB ni Trakt) la tarjeta sigue y lo dice (F8: antes desaparecía mientras el dado y
+                    // el mosaico seguían en la barra); adentro, «Sin conexión · Reintentar».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
-                    if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
+                    if !fan.isEmpty || !model.showsFirstSkeleton { MatchTeaser(posters: fan, offline: !env.isOnline, onOpen: onMatch) }
                     // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
                     // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {

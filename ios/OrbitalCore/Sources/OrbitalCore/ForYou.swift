@@ -95,6 +95,12 @@ public actor ForYou {
         kv.set("foryou-dismissed", data: try? JSONEncoder().encode(Array(dismissed)))
     }
 
+    /// Deshace `dismiss` («No me interesa · Deshacer» de Decide por mí).
+    public func undismiss(_ imdb: String) {
+        dismissed.remove(imdb)
+        kv.set("foryou-dismissed", data: try? JSONEncoder().encode(Array(dismissed)))
+    }
+
     /// «No recomendar por esta»: ese título ya no sale en el mazo de «Por lo que viste» ni se usa para recomendar.
     public func stopSeeding(_ imdb: String) {
         unseeded.insert(imdb)

@@ -125,14 +125,15 @@ final class NewFlowsRegressionUITests: XCTestCase {
         XCTAssertTrue(card.waitForExistence(timeout: 10), "se cierra y vuelve a Para ti")
     }
 
-    /// «Decide por mí» abre el sorteo (en un iPhone angosto vive en el menú del índice).
+    /// «Decide por mí» abre el sorteo: el dado de la barra (en un iPhone angosto iOS lo pasa al «⋯» de la barra; el índice
+    /// de secciones nunca lo tuvo, F14).
     func testDecidePorMiAbreElSorteo() {
         launch(tab: 1)
         XCTAssertTrue(app.buttons["paraTi-match"].waitForExistence(timeout: 20))
-        let dice = app.buttons["Decide por mí"]
+        let dice = app.buttons["paraTi-decide"]
         if dice.exists && dice.isHittable { dice.tap() } else {
-            app.buttons["paraTi-sections"].tap()
-            app.buttons["Decide por mí"].tap()
+            app.navigationBars.buttons.element(boundBy: app.navigationBars.buttons.count - 1).tap()   // el «⋯» de la barra
+            app.buttons["Decide por mí"].firstMatch.tap()
         }
         XCTAssertTrue(app.buttons["decide-watch"].waitForExistence(timeout: 15), "se abre el sorteo, no el mazo")
         XCTAssertFalse(any("match-deck").exists)
