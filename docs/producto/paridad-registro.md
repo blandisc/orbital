@@ -52,6 +52,7 @@ Cómo se mantiene:
 | Pie de tres pistas y ☰ | — | Ya (ola 1: `capHints`; «Atrás» y «Volver a…» se dejan de dibujar primero, y «Volver a…» está en ☰ con «Home en el mando») |
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Ya (ola 3: en la ficha, en Opciones y en el aviso al terminar, con Y) |
 | «Lo que ves» reemplaza a «Tu año» | Ya | Distinto a propósito: solo en el iPhone (Fernando, 1 nov 2026: «no la pongas en escritorio»; la TV ya no la tiene) |
+| «Día por día» y «Tus géneros» pulidos (Fernando, 13 nov 2026: «aparece como rota… tienes que darle a la derecha»): el mapa abre en hoy con semanas enteras (`DSWeekStrip`) y los géneros son barras de un color con nombre y valor en su renglón. Reglas «Lo que se desplaza a lo ancho…» y «una gráfica, un color» | Ya (iPhone y iPad; también «Tu año») | Distinto a propósito: la TV no tiene «Lo que ves» (fila de arriba). Si algún día una tira o gráfica de la TV se desliza a lo ancho, aplica la misma regla |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |
 | «Por género»: 20 géneros con el mismo arte (Grok Imagine) en Buscar, la TV y el filtro avanzado (31 oct, tarde) | Ya (20) | Ya (19: «Musical» no está en el catálogo de Stremio, distinto a propósito) |
 | «No recomendar por esta»: dejar picado el mazo de «Por lo que viste» | Ya | Ya (ola 2: Opciones en uno de tus títulos de «Porque viste»; Y deshace). Se recuerda en cada aparato, como el iPhone |

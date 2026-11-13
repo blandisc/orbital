@@ -173,9 +173,8 @@ extension DS {
     enum Watching {
         /// De qué escala parte el detalle de un día del mapa al asomarse.
         static let dayFrom: CGFloat = 0.97
-        /// Al llegar los números: cada barra crece un poco después de la anterior (s); la dona se arma girando desde estos
-        /// grados y creciendo desde esta escala.
-        static let barStagger: Double = 0.03, donutTurn: Double = -90, donutStart: CGFloat = 0.7
+        /// Al llegar los números: cada barra crece un poco después de la anterior (s).
+        static let barStagger: Double = 0.03
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         /// En el iPad y la Mac la portada va en esta proporción (ancho / alto): el arte llena sin bordes (`ArtFit`).
@@ -186,21 +185,36 @@ extension DS {
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35
-        /// El mapa de calor (`WatchingZoomMap`, opción B): al menos 53 semanas, cada cuadro y su separación, y el renglón de las
-        /// letras de los meses.
-        static let yearWeeks = 53, heatCell: CGFloat = 16, heatGap = DS.Space.s1, yearLabel: CGFloat = 16
-        /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
-        /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
-        static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8   // ds-exception: la rendija entre rebanadas de la dona
-        /// Lo apagado de las rebanadas que no tocaste y el alto de cada renglón de la leyenda (se tocan).
-        static let genreRow: CGFloat = 28
-        static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
+        /// El mapa de calor (`WatchingZoomMap`, en un `DSWeekStrip`): al menos 53 semanas.
+        static let yearWeeks = 53
+        /// «Tus géneros» (13 nov 2026): barras de mayor a menor, cuántos géneros se ven (el resto va junto en «Otros») y el
+        /// grueso de cada barra y lo más ancho que crecen en el iPad y la Mac (el nombre y su valor no se alejan).
+        static let genresShown = 5, genreBar: CGFloat = 8, genresWidth: CGFloat = 560
         /// El carrusel de «Cómo calificas»: el ancho de cada póster.
         static let starPoster: CGFloat = 92
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45
         /// La parte izquierda de la pantalla que regresa a la historia anterior (el resto avanza), como en Instagram.
         static let backZone: CGFloat = 0.3
+    }
+
+    /// Un mapa de semanas (`DSWeekStrip`): la casilla que se busca en el iPhone, la más chica con la que se ve el año entero
+    /// sin deslizar (iPad, Mac) y la más grande; la separación, la columna de las letras de los días y el cuadrito de la
+    /// leyenda.
+    enum WeekStrip {
+        static let cell: CGFloat = 18, minCell: CGFloat = 12, maxCell: CGFloat = 24, gap = DS.Space.s1
+        static let dayColumn: CGFloat = 14, swatch: CGFloat = 12
+
+        /// Cuánto mide cada casilla para que quepan semanas enteras en `available`: todas si caben con al menos `minCell`; si
+        /// no, las que quepan de unos `cell`, estiradas para llenar el ancho sin dejar una a medias.
+        static func fit(available: CGFloat, weeks: Int) -> (cell: CGFloat, width: CGFloat, scrolls: Bool) {
+            let room = max(available, cell), count = CGFloat(max(weeks, 1))
+            let all = ((room - (count - 1) * gap) / count).rounded(.down)
+            if all >= minCell { let c = min(all, maxCell); return (c, count * c + (count - 1) * gap, false) }
+            let shown = max(1, ((room + gap) / (cell + gap)).rounded(.down))
+            let c = ((room - (shown - 1) * gap) / shown).rounded(.down)
+            return (c, shown * c + (shown - 1) * gap, true)
+        }
     }
 
     /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsShowcase`): el alto de una estatuilla (en
@@ -296,7 +310,7 @@ extension DS {
 
     /// «Tu año»: el mapa de calor (una columna por semana) y sus colores.
     enum YearMap {
-        static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2   // ds-exception: celdas de 9 pt de un mapa de 365 días
+        static let radius: CGFloat = 2   // ds-exception: la esquina de una casilla de un mapa de 365 días
         /// El aro del día elegido y el póster de lo que viste ese día.
         static let ring: CGFloat = 1.5, dayPoster: CGFloat = 40
         /// Los colores de la app (Fernando, 30 oct 2026: el morado y el azul no estaban en ningún otro lado): series en turquesa,

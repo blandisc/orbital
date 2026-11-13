@@ -121,6 +121,24 @@ salía ~20 pt más ancha, recorrida a la izquierda y cortada de los dos lados.
   remote-idle` en «Orbital QA iPad 13» de pie (ventana de 1032: ya sale el panel) y en «Orbital QA iPad» acostado;
   `-demo-sidebar` (solo Debug) abre la barra lateral.
 
+### Lo que se desplaza a lo ancho (13 nov 2026)
+
+Fernando, de «Día por día» en «Lo que ves»: «aparece como rota, o sea, no se ve completa, tienes que darle a la derecha cuando
+la abres». El mapa abría en el extremo equivocado (`defaultScrollAnchor(.trailing)` con una lista perezosa y con el historial
+que llega después de abrir) y cortaba una semana a la mitad en la orilla.
+
+- **Regla: lo que se desplaza a lo ancho abre mostrando lo importante completo, y dice que hay más.** Lo importante es lo de
+  hoy (o lo elegido); «completo» es sin una columna o tarjeta a medias en la orilla de la columna; «dice que hay más» es un
+  desvanecido en la orilla de lo que queda atrás (o la tarjeta que se asoma en un carrusel de orilla a orilla).
+- Los mapas de semanas son una pieza, `DSWeekStrip` (`Design/WeekStrip.swift`, medidas en `DS.WeekStrip`): las casillas salen
+  del ancho que le queda (`WindowMetrics.column`), caben semanas enteras, abre en la de hoy por su id (también cuando llega
+  más historial), se detiene por semanas, desvanece lo de atrás y, si todo cabe (iPad, Mac), no se desliza. Arriba, el mes
+  abreviado («oct», el año en enero); a la izquierda, L, X y V; hoy con borde; debajo, «Hoy» y «Menos ▢▢▢▢ Más».
+- **Gráficas: una gráfica, un color; el nombre y el valor en el mismo renglón.** Para comparar pocas categorías, barras de
+  mayor a menor (no dona ni pastel); se ven cinco y el resto va en «Otros», en gris. El color es el azul del mapa
+  (`DS.orbitalBlue`); el largo dice cuánto. VoiceOver lee «Comedia, 34 %».
+- Lo cuida `DesignRulesTests+Strips.swift`. En la TV: el registro de paridad dice qué pasa allá.
+
 ### Un panel alto no deja el fondo vacío (11 nov 2026)
 
 Fernando, sobre el control de la TV abierto como columna a la derecha del iPad: «no tiene caso tener todo ese espacio vacío

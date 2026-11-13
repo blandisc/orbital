@@ -40,9 +40,7 @@ struct YearView: View {
                             Text("\(r.movies) películas · \(r.episodes) episodios").recipe(.footnote, color: DS.textMuted)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        ScrollView(.horizontal, showsIndicators: false) { heatMap(r) }
-                            .defaultScrollAnchor(.trailing, for: .initialOffset)   // lo reciente a la vista
-                            .defaultScrollAnchor(.leading, for: .alignment)   // si cabe entero (iPad, Mac), a la izquierda
+                        heatMap(r)   // abre en lo de hoy, con semanas enteras (`DSWeekStrip`)
                         HStack(spacing: DS.Space.s4) {
                             legend(DS.YearMap.movies, Text("Películas")); legend(DS.YearMap.series, Text("Series")); legend(DS.YearMap.both, Text("Las dos"))
                         }
@@ -92,46 +90,34 @@ struct YearView: View {
 
     private func legend(_ color: Color, _ text: Text) -> some View {
         HStack(spacing: DS.Space.s1) {
-            RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous).fill(color).frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
+            RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous).fill(color).frame(width: DS.WeekStrip.swatch, height: DS.WeekStrip.swatch)
             text.recipe(.caption)
         }
     }
 
-    /// Una columna por semana (de lunes a domingo), del 1 de enero a hoy.
+    /// Una columna por semana (de lunes a domingo), del 1 de enero a hoy, en un `DSWeekStrip` (abre en lo de hoy).
     private func heatMap(_ r: YearInReview) -> some View {
-        let cal = Calendar.current
+        let cal: Calendar = { var c = Calendar.current; c.firstWeekday = 2; return c }()
         let today = cal.startOfDay(for: Date())
         let start = cal.date(from: DateComponents(year: r.year, month: 1, day: 1)) ?? today
         let firstWeekday = (cal.component(.weekday, from: start) + 5) % 7   // lunes = 0
         let days = (cal.dateComponents([.day], from: start, to: today).day ?? 0) + 1
         let weeks = (firstWeekday + days + 6) / 7
-        return HStack(alignment: .top, spacing: DS.YearMap.gap) {
-            ForEach(0..<weeks, id: \.self) { w in
-                VStack(spacing: DS.YearMap.gap) {
-                    ForEach(0..<7, id: \.self) { d in
-                        let offset = w * 7 + d - firstWeekday
-                        let day = cal.date(byAdding: .day, value: offset, to: start) ?? start
-                        RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous)
-                            .fill(offset < 0 || day > today ? Color.clear : color(r.days[day]))
-                            .frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
-                            .overlay {
-                                if let selectedDay, cal.isDate(day, inSameDayAs: selectedDay), offset >= 0 {
-                                    Color.clear.dsSelectionRing(true, radius: DS.YearMap.radius, width: DS.YearMap.ring)
-                                        .padding(-DS.YearMap.ring)
-                                }
-                            }
-                    }
-                }
-            }
-        }
-        // Las casillas son chicas: el toque elige la más cercana (no hace falta atinarle exacta).
-        .contentShape(Rectangle())
-        .onTapGesture { point in
-            let pitch = DS.YearMap.cell + DS.YearMap.gap
-            let w = Int(point.x / pitch), d = min(6, max(0, Int(point.y / pitch)))
+        let locale = env.uiLocale
+        let monday = { (w: Int) in cal.date(byAdding: .day, value: w * 7 - firstWeekday, to: start) ?? start }
+        // La tarjeta lleva su relleno dentro de los márgenes de la pantalla.
+        return DSWeekStrip(weeks: weeks, available: WindowMetrics.column.width - 2 * (DS.Space.gutter + DS.Space.s4),
+                           weekdays: DSWeekStrip<EmptyView>.weekdayLetters(locale: locale),
+                           label: { DSWeekStrip<EmptyView>.monthLabel(monday($0), calendar: cal, locale: locale) }) { w, d, _ in
             let offset = w * 7 + d - firstWeekday
-            guard offset >= 0, let day = cal.date(byAdding: .day, value: offset, to: start), day <= today else { return }
-            selectedDay = day
+            let day = cal.date(byAdding: .day, value: offset, to: start) ?? start
+            let inside = offset >= 0 && day <= today
+            RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous)
+                .fill(inside ? color(r.days[day]) : Color.clear)
+                .overlay { if day == today { DSWeekStripToday() } }
+                .dsSelectionRing(inside && selectedDay.map { cal.isDate(day, inSameDayAs: $0) } == true, radius: DS.YearMap.radius, width: DS.YearMap.ring)
+                .contentShape(Rectangle())
+                .onTapGesture { if inside { selectedDay = day } }
         }
         .dsFeedback(.selection, trigger: selectedDay)
         .accessibilityElement(children: .ignore)

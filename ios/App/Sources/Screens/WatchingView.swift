@@ -176,10 +176,10 @@ struct WatchingView: View {
         }
         // Un solo mapa con zoom: año → mes → día (Fernando, 31 oct 2026, Z1). «Tu año» vive aquí adentro.
         section(Text("Día por día"), symbol: "calendar") {
-            WatchingZoomMap(plays: model.plays, locale: env.uiLocale)
+            WatchingZoomMap(plays: model.plays, locale: env.uiLocale, available: WindowMetrics.column.width - 2 * DS.Space.gutter)
         }
         // «Cuándo ves», fuera (Fernando, 31 oct 2026): repetía lo del calendario.
-        if !s.genres.isEmpty { section(Text("Tus géneros"), symbol: "theatermasks") { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
+        if !s.genres.isEmpty { section(Text("Tus géneros"), symbol: "theatermasks") { WatchingGenres(genres: s.genres, locale: env.uiLocale) { WatchingText.genre($0, language: language) } } }
         ratings
         // El Wrapped, apagado por ahora (Fernando, 31 oct 2026): `WrappedView` sigue lista para volver.
     }
