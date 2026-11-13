@@ -283,12 +283,14 @@ struct KindPill: View {
         .background {
             if open {
                 Circle().fill(DS.text)
+                    .padding(DS.KindPill.markInset)   // el círculo cabe holgado en su lugar: nunca toca la orilla de la pastilla
                     .matchedGeometryEffect(id: kind, in: mark, isSource: false)
                     .id(reduceMotion ? kind : "")
                     .transition(.opacity.animation(DS.Motion.fadeQuick))
             }
         }
         .padding(DS.Space.s1 / 2)
+        .clipShape(Capsule())   // ni a medio viaje ni con el resorte: el círculo no se sale de la pastilla
         // Los círculos son de tamaño fijo: el ícono crece hasta xxxLarge y no más (con letra de accesibilidad se salía del
         // círculo); el nombre lo dice VoiceOver y la vista grande al mantener el dedo.
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)

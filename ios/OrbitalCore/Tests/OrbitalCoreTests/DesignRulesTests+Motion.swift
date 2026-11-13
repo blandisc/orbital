@@ -46,6 +46,12 @@ extension DesignRulesTests {
                       "KindPill abre con DS.Motion.grow y se recoge con DS.Motion.fold")
         XCTAssertTrue(pill.contains("folding?.cancel()"), "Otro toque cancela el cierre pendiente: todo se puede interrumpir")
         XCTAssertTrue(cap.contains("DS.Motion.fold(reduceMotion)"), "La cápsula de Inicio cede su lugar con DS.Motion.fold")
+        // Lo elegido se ve un momento antes de recogerse, y el círculo nunca se sale de la pastilla (13 nov 2026).
+        let tokens = files.map { $0.lines.joined(separator: "\n") }.joined(separator: "\n")
+        let settle = try XCTUnwrap(tokens.firstMatch(of: /static let settle: Duration = \.milliseconds\((\d+)\)/))
+        XCTAssertGreaterThanOrEqual(Int(settle.1) ?? 0, 500, "La pastilla espera al menos medio segundo antes de recogerse (DS.KindPill.settle)")
+        XCTAssertTrue(pill.contains(".padding(DS.KindPill.markInset)") && pill.contains(".clipShape(Capsule())"),
+                      "El círculo de lo elegido es más chico que su lugar y la pastilla recorta lo que se salga")
         // Ya no existe el resorte con rebote que usaba el selector.
         check(hits(#"DS\.Motion\.morph\b"#, in: files), "DS.Motion.morph ya no existe: usa DS.Motion.grow (crece) o DS.Motion.fold (cede)")
     }
