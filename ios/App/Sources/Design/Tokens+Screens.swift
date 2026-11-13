@@ -149,18 +149,18 @@ extension DS {
         /// Cuántas cartas de las que siguen se piden de antemano.
         static let prefetch = 6
         static let hintFrom = 0.15, hintRamp = 3.0
-        static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
+        /// Las de atrás: cuánto más chicas (desde su orilla de abajo) y cuánto asoma cada una por abajo; el giro al arrastrar.
+        static let behindShrink: CGFloat = 0.05, behindPeek = DS.Space.s3, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
-        /// La carta es un póster: alto entre ancho.
-        static let cardAspect: CGFloat = 1.5
-        /// Lo menos alta que queda la carta (alto entre ancho) cuando el mazo es más ancho que cualquier iPhone (`wideDeck`: iPad,
-        /// Mac). En el iPhone la carta sigue llenando el ancho, como siempre (en el SE es más baja que esto).
-        static let cardAspectMin: CGFloat = 1.3, wideDeck: CGFloat = 500
-        /// La carta: cuántos géneros, su relleno, el logo de Trakt y el sello («MI LISTA», «PASO»): su giro, orilla e interletrado.
-        static let genres = 3, chipFill = 0.18, ratingLogo: CGFloat = 16
+        /// La carta mide lo que el póster; en el iPad y la Mac no pasa de este ancho. Con letra de accesibilidad el mazo se
+        /// desliza y el lugar de las cartas mide `compactDeck`.
+        static let cardMax: CGFloat = 440, compactDeck: CGFloat = 420
+        /// Debajo de la carta: cuántos géneros dice su línea y el logo de Trakt; el sello («GUARDAR», «PASO»): su giro, orilla e
+        /// interletrado.
+        static let genres = 3, ratingLogo: CGFloat = 16
         static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5
-        /// Los botones con su nombre debajo y el contador de guardadas.
-        static let actionLabelGap = DS.Space.s2, actionRow: CGFloat = 72, veilFrom = 0.35
+        /// Los cuatro botones con su nombre debajo.
+        static let actionLabelGap = DS.Space.s2
         /// Cada dirección con su color, como Tinder (Fernando, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» (arriba)
         /// en el azul de Orbital. La carta se tiñe de ese color al arrastrarla, hasta `tintMax`.
         static let pass = DS.danger, keep = DS.success, tonight = DS.orbitalBlue
@@ -359,15 +359,14 @@ extension DS {
     enum Decide {
         /// El alto de la hoja corta antes de medirse.
         static let quickHeight: CGFloat = 470
-        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues.
-        static let otherScale: CGFloat = 0.92
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
         /// Los carteles apilados de una lista en «De qué listas».
         static let listPoster: CGFloat = 44
         /// Los mosaicos de «Afinar»: alto de un género y de una época, y a qué tamaño se baja su arte.
         static let genreTile: CGFloat = 60, eraTile: CGFloat = 80
-        /// Elegir un mosaico: crece un poco (y su imagen se acerca), anillo con brillo; los demás pierden color.
+        /// Elegir un mosaico o uno de los tres carteles: crece un poco (el mosaico, además, acerca su imagen, anillo con brillo y
+        /// los demás pierden color; el cartel, solo crece desde abajo con su sombra).
         static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowOpacity: Double = 0.55
         static let dimSaturation: Double = 0.4, eraTracking: CGFloat = -0.5
     }

@@ -11,15 +11,29 @@ struct DecideWords {
 
     private func tr(_ key: String) -> String { Strings.tr(key, language: language) }
 
-    /// «4 opciones · de «Terror de octubre»» (de dónde salen, si elegiste listas).
+    /// «4 opciones» (de dónde salen lo dice la línea de lo puesto, `setParts`).
     func optionsLine(_ m: DecideModel, _ count: Int) -> String {
         // Sin red o sin sugerencias no se culpa a los filtros (F2).
         if count == 0, let empty = m.empty, empty != .filters { return tr(empty == .offline ? "Sin conexión" : "Aún no hay sugerencias") }
-        var line = count > 0 ? String(format: tr(count == 1 ? "%lld opción" : "%lld opciones"), count) : tr("Ninguna con estos filtros")
+        return count > 0 ? String(format: tr(count == 1 ? "%lld opción" : "%lld opciones"), count) : tr("Ninguna con estos filtros")
+    }
+
+    /// Lo puesto, en orden y en corto («1 h», «Ligero», «7+», «Comedia», «de «Terror de octubre»»): la línea debajo del
+    /// renglón de controles (pulido de DE2). En el mazo (`deck`) no van el tiempo ni el ánimo: no le aplican.
+    func setParts(_ m: DecideModel, deck: Bool) -> [String] {
+        var parts: [String] = []
+        if !deck, let t = m.shownTime { parts.append(timeName(t)) }
+        if !deck, let mood = m.mood { parts.append(tr(moodLabel(mood))) }
+        if m.minRating > 0 || m.minLetterboxd > 0 { parts.append(ratingTitle(m)) }
+        parts += m.genres.sorted().map { genreName($0, language: language) }
+        if !m.decades.isEmpty { parts.append(m.decades.sorted(by: >).map { decadeName($0) }.joined(separator: ", ")) }
+        if m.fame != .any { parts.append(tr(Self.fameKey(m.fame))) }
+        if !m.awards.isEmpty { parts.append(tr("Premios")) }
         let lists = m.chosenSourceNames
-        if lists.count == 1 { line += " · " + String(format: tr("de «%@»"), lists[0]) }
-        else if lists.count > 1 { line += " · " + String(format: tr("de %lld listas"), lists.count) }
-        return line
+        if lists.count == 1 { parts.append(String(format: tr("de «%@»"), lists[0])) }
+        else if lists.count > 1 { parts.append(String(format: tr("de %lld listas"), lists.count)) }
+        if m.includeWatched { parts.append(tr("Incluir lo que ya vi")) }
+        return parts
     }
 
     /// La primera frase de su sinopsis (o lo que quepa en dos renglones): por qué verla.

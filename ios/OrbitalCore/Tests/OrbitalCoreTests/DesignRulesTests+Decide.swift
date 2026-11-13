@@ -11,9 +11,9 @@ extension DesignRulesTests {
     /// nunca el de la hora (`m.time`), que solo ordena (F3: decía «1 h» y salían películas de tres horas).
     func testAFilterThatLooksOnFilters() throws {
         let files = try sources()
-        let decide = try file("DecideView.swift", in: files)
-        XCTAssertTrue(decide.contains("words.timeTitle(m)") && decide.contains("selected: m.shownTime != nil"),
-                      "La cápsula del tiempo dice el que elegiste o «Cualquier duración» y se ve puesta solo entonces")
+        let controls = try file("DecideControls.swift", in: files)
+        XCTAssertTrue(controls.contains("words.timeTitle(m)") && controls.contains("value: m.shownTime.map"),
+                      "El ícono del tiempo dice el que elegiste o «Cualquier duración» y se ve puesto solo entonces")
         check(hits(#"timeName\(m\.time\)|selected: m\.timeChosen"#, in: files), "Ningún filtro enseña puesto el tiempo de la hora (no filtra)")
         let words = try file("DecideWords.swift", in: files)
         XCTAssertTrue(words.contains("if let t = m.shownTime"), "«Nada con…» no culpa al tiempo que no elegiste")
@@ -87,5 +87,46 @@ extension DesignRulesTests {
         let paraTi = try file("ParaTiView.swift", in: files)
         XCTAssertFalse(paraTi.contains("fullScreenCover"), "sin la pantalla aparte del mazo")
         XCTAssertTrue(paraTi.contains("env.ui.openDecide"), "la puerta de Inicio llega aquí")
+    }
+
+    /// Una hoja, un renglón de controles (pulido de DE2, Fernando, 13 nov 2026: «las veo un poco crudas»): las dos pestañas usan
+    /// el mismo `DecideControls` (tipo y filtros de ícono `DSFilterIcon`, sin cápsulas de texto) y lo puesto se dice en una
+    /// línea que solo existe si hay algo puesto. La cuenta va junto al título.
+    func testOneControlRowPerSheet() throws {
+        let files = try sources()
+        let decide = try file("DecideView.swift", in: files)
+        XCTAssertEqual(decide.components(separatedBy: "DecideControls(").count - 1, 1, "un solo renglón de controles, en el encabezado de las dos pestañas")
+        XCTAssertFalse(decide.contains("DSCapsuleLabel") || decide.contains("Grid("), "sin rejilla de cápsulas de filtros")
+        let controls = try file("DecideControls.swift", in: files)
+        XCTAssertFalse(controls.contains("DSCapsuleLabel"), "los filtros son íconos de una familia, no cápsulas de texto")
+        XCTAssertGreaterThanOrEqual(controls.components(separatedBy: "DSFilterIcon(").count - 1, 4, "tiempo, ánimo, calificación y «Afinar»")
+        XCTAssertTrue(controls.contains("if !deck { timeMenu(m); moodMenu(m) }"), "el mazo enseña solo los filtros que le aplican, en el mismo renglón")
+        XCTAssertTrue(controls.contains("if !parts.isEmpty { setLine("), "sin nada puesto, la línea de lo puesto no existe")
+        XCTAssertTrue(controls.contains(#"Button("Quitar filtros""#), "la línea de lo puesto ofrece quitarlo")
+        let header = try XCTUnwrap(decide.components(separatedBy: "private func header(").dropFirst().first)
+        let title = try XCTUnwrap(header.components(separatedBy: "DSTextTabs(").first)
+        XCTAssertTrue(title.contains("{ countText(m, count); close }"), "la cuenta va junto al título, no en su propio renglón")
+    }
+
+    /// Los datos no se enciman con el arte; lo elegido crece (pulido de DE2): la carta del mazo es solo arte del tamaño del
+    /// póster, sus datos van debajo (`MatchCardInfo`) en una línea sin cápsulas, «Ver» es el cuarto botón (no flota sobre el
+    /// arte) y en «Tres que caben» la elegida crece con su sombra, sin marco ni las otras apagadas.
+    func testDataDoesNotSitOnTheArt() throws {
+        let files = try sources()
+        let mazo = try file("MazoMatch.swift", in: files)
+        let card = try XCTUnwrap(mazo.components(separatedBy: "struct MatchCard: View").dropFirst().first?.components(separatedBy: "struct MatchCardInfo").first)
+        for drawn in ["ArtVeil", "recipe(", "DSIconButton", "TraktRatings", "Capsule()"] {
+            XCTAssertFalse(card.contains(drawn), "la carta del mazo no lleva \(drawn) encima del arte: los datos van debajo")
+        }
+        XCTAssertTrue(mazo.contains("w / DS.Poster.aspect"), "la carta mide lo que su póster: el arte la llena, sin franjas")
+        XCTAssertTrue(mazo.contains("MatchCardInfo(suggestion:") && mazo.contains("reservesSpace: true"), "los datos debajo, con su lugar apartado")
+        XCTAssertTrue(mazo.contains("DS.Match.behindPeek"), "las que siguen asoman")
+        XCTAssertFalse(mazo.contains("DS.Motion.spring"), "la carta regresa sin rebote")
+        let deck = try file("MatchDeckScreen.swift", in: files)
+        XCTAssertEqual(deck.components(separatedBy: "steady: true").count - 1, 4, "Paso · Para hoy · Guardar · Ver: cuatro círculos iguales")
+        XCTAssertTrue(deck.contains(#"id: "match-play""#), "«Ver» es un botón de la fila")
+        let decide = try file("DecideView.swift", in: files)
+        XCTAssertFalse(decide.contains("dsSelectionRing") || decide.contains("DS.Opacity.dimmed"), "sin marco blanco ni las otras apagadas")
+        XCTAssertTrue(decide.contains("DS.Motion.grow(reduceMotion)") && decide.contains(".bottomLeading"), "la elegida crece desde su base, hacia adentro")
     }
 }

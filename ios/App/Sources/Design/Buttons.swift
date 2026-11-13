@@ -117,15 +117,17 @@ struct DSIconButton: View {
     var steady = false
     /// Mantenerlo presionado repite la acción (los pasos de sincronía y tamaño).
     var repeats = false
+    /// Lo que pidió aún no llega («Barajar»): la ruedita en lugar del ícono, en el mismo círculo.
+    var busy = false
     let action: () -> Void
 
     /// Un dibujo del catálogo en vez de un símbolo (la dona de «Un Simpson al azar»), con sus colores.
     var asset: String?
 
     init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, steady: Bool = false, repeats: Bool = false,
-         action: @escaping () -> Void) {
+         busy: Bool = false, action: @escaping () -> Void) {
         self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size
-        self.steady = steady; self.repeats = repeats; self.action = action
+        self.steady = steady; self.repeats = repeats; self.busy = busy; self.action = action
     }
 
     init(asset: String, label: LocalizedStringKey, size: Size = .large, action: @escaping () -> Void) {
@@ -135,7 +137,8 @@ struct DSIconButton: View {
 
     private var image: Image { asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol) }
     @ViewBuilder private var glyph: some View {
-        if steady { image.frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) } else { image }
+        if busy { ProgressView().controlSize(.small).frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) }   // ds-exception: la ruedita va dentro del botón que la pidió
+        else if steady { image.frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) } else { image }
     }
 
     var body: some View {

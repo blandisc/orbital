@@ -45191,6 +45191,28 @@
           }
         }
       }
+    },
+    "Sin filtro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No filter"
+          }
+        }
+      }
+    },
+    "Filtros puestos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters on"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

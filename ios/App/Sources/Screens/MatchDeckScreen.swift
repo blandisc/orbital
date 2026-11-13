@@ -2,9 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Una por una», el mazo de «Decide por mí» (DE2: antes «¿Qué vemos hoy?», su propia pantalla): en medio el mazo y abajo
-/// Paso · Para hoy · Guardar. `pool`: lo que deja pasar «Afinar». Tocar una carta abre su ficha (`onOpenTitle`); ▶ avisa con
-/// `onPlay` para que la pantalla de afuera la reproduzca. Vive dentro de la hoja de «Decide por mí», que pone el encabezado,
+/// «Una por una», el mazo de «Decide por mí» (DE2: antes «¿Qué vemos hoy?», su propia pantalla): en medio el mazo (con los
+/// datos de la de arriba debajo de su carta) y abajo Paso · Para hoy · Guardar · Ver. `pool`: lo que deja pasar «Afinar».
+/// Tocar una carta abre su ficha (`onOpenTitle`); «Ver» avisa con `onPlay` para que la pantalla de afuera la reproduzca. Vive dentro de la hoja de «Decide por mí», que pone el encabezado,
 /// la ✕ y los filtros (los mismos de «Tres que caben»).
 struct MatchDeckScreen: View {
     let pool: [Suggestion]
@@ -18,6 +18,7 @@ struct MatchDeckScreen: View {
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
     @State private var command: MatchCommand?
@@ -39,24 +40,22 @@ struct MatchDeckScreen: View {
                 } else if model.cards.isEmpty {
                     emptyState(model).frame(maxHeight: .infinity).overlay(alignment: .bottom) { deckNotices }   // la última que guardaste
                 } else {
-                    MatchDeck(cards: model.cards,
-                              genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
-                              command: $command,
-                              onSave: { s in save(s, model) },
-                              onDiscard: { s in discard(s, model) },
-                              onTonight: { s in tonight(s, model) },
-                              onOpen: { s in onOpenTitle(s.route) },
-                              onPlay: { s in onPlay(s.route) })
-                        .frame(maxHeight: .infinity)
-                        .overlay(alignment: .bottom) { deckNotices }
-                    actions(model)
+                    // Con letra de accesibilidad el mazo se desliza (a un alto fijo) para que los botones y sus nombres quepan.
+                    if typeSize.isAccessibilitySize {
+                        ScrollView { VStack(spacing: DS.Space.s4) { deck(model, cardsHeight: DS.Match.compactDeck); actions(model) } }
+                            .scrollBounceBehavior(.basedOnSize)
+                            .overlay(alignment: .bottom) { deckNotices }
+                    } else {
+                        deck(model).frame(maxHeight: .infinity).overlay(alignment: .bottom) { deckNotices }
+                        actions(model)
+                    }
                 }
             } else {
                 skeleton
             }
         }
         // «Guardada en Tu match perfecto · Deshacer» al momento (el mazo tapa la raíz, que es donde van los avisos, y antes
-        // salía hasta cerrarlo); va abajo, encima de Paso · Ver ya · Guardar (`deckNotices`).
+        // salía hasta cerrarlo); va abajo, encima de Paso · Para hoy · Guardar · Ver (`deckNotices`).
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
         .onChange(of: poolKey) { reloaded = nil; Task { await model?.replacePool(pool) } }
         .task {
@@ -73,6 +72,17 @@ struct MatchDeckScreen: View {
         }
         .accessibilityElement(children: .contain)   // cada botón conserva su identificador
         .accessibilityIdentifier("match-deck")
+    }
+
+    private func deck(_ model: MatchDeckModel, cardsHeight: CGFloat? = nil) -> some View {
+        MatchDeck(cards: model.cards,
+                  genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
+                  command: $command,
+                  onSave: { s in save(s, model) },
+                  onDiscard: { s in discard(s, model) },
+                  onTonight: { s in tonight(s, model) },
+                  onOpen: { s in onOpenTitle(s.route) },
+                  cardsHeight: cardsHeight)
     }
 
     /// Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
@@ -139,28 +149,36 @@ struct MatchDeckScreen: View {
         env.notify("Paso", detail: s.title, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { model.undoDiscard(s) }
     }
 
-    /// Paso · Para hoy · Guardar (✕ · ★ · ♥, como Tinder), cada uno con su nombre debajo y su color; los tres hacen salir
-    /// volando la carta. «Ver ya» es el ▶ de la carta.
     /// Los avisos del mazo, abajo, justo encima de los botones: al alcance del pulgar. Se quitan deslizándolos hacia arriba.
     private var deckNotices: some View {
         BannerView().padding(.horizontal, -DS.Space.gutter).padding(.bottom, DS.Space.s2)
     }
 
+    /// Paso · Para hoy · Guardar · Ver (✕ · ★ · ♥ · ▶): cuatro círculos iguales de la familia de `DSIconButton`, repartidos de
+    /// margen a margen, cada uno con su nombre debajo. Los tres primeros hacen salir volando la carta y llevan el color de su
+    /// sello (lo único con color: dice hacia dónde se va); «Ver» reproduce la de arriba (pulido de DE2: antes ▶ flotaba sobre
+    /// el arte).
     private func actions(_ model: MatchDeckModel) -> some View {
-        HStack(alignment: .top, spacing: DS.Space.s6) {
+        // Repartidos con el mismo hueco entre ellos y los de las puntas en los márgenes.
+        HStack(alignment: .top, spacing: 0) {
             action(Text("Paso"), id: "match-discard") {
-                DSIconButton(symbol: "xmark", label: "Paso", size: .large) { command = .discard }
-                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.pass)
+                DSIconButton(symbol: "xmark", label: "Paso", size: .large, steady: true) { command = .discard }.foregroundStyle(DS.Match.pass)
             }
+            Spacer(minLength: DS.Space.s2)
             action(Text("Para hoy"), id: "match-tonight") {
-                DSIconButton(symbol: "star.fill", label: "Para hoy", size: .large) { command = .tonight }
-                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.tonight)
+                DSIconButton(symbol: "star.fill", label: "Para hoy", size: .large, steady: true) { command = .tonight }.foregroundStyle(DS.Match.tonight)
             }
+            Spacer(minLength: DS.Space.s2)
             action(Text("Guardar"), id: "match-save") {
-                DSIconButton(symbol: "heart.fill", label: "Guardar", size: .large) { command = .save }
-                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.keep)
+                DSIconButton(symbol: "heart.fill", label: "Guardar", size: .large, steady: true) { command = .save }.foregroundStyle(DS.Match.keep)
+            }
+            Spacer(minLength: DS.Space.s2)
+            action(Text("Ver"), id: "match-play") {
+                DSIconButton(symbol: "play.fill", label: "Ver", size: .large, steady: true) { if let s = model.cards.first { onPlay(s.route) } }
+                    .foregroundStyle(DS.text)
             }
         }
+        .frame(maxWidth: DS.Match.cardMax)   // en el iPad, del ancho de la carta: no se van a las orillas de la hoja
         .frame(maxWidth: .infinity)
         .dsFeedback(.impact(flexibility: .soft), trigger: model.cards.first?.imdb)
     }
@@ -168,10 +186,8 @@ struct MatchDeckScreen: View {
     private func action(_ name: Text, id: String, @ViewBuilder button: () -> some View) -> some View {
         VStack(spacing: DS.Match.actionLabelGap) {
             button().accessibilityLabel(name).accessibilityIdentifier(id)
-                .frame(height: DS.Match.actionRow)   // el mismo renglón para los tres: los nombres quedan parejos
             // En un renglón aunque la letra sea grande (antes «Guar-dar» en dos).
             name.recipe(.badge, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale).accessibilityHidden(true)
         }
     }
-
 }

@@ -2,8 +2,8 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-// Piezas de «¿Qué vemos?»: el mosaico de un género o una época y el renglón de una lista (los filtros de la hoja son
-// `DSCapsuleLabel`, las mismas cápsulas de toda la app).
+// Piezas de «Decide por mí»: el mosaico de un género o una época, los tres carteles y el renglón de una lista (los filtros
+// de la hoja son `DSFilterIcon`, en `Buttons.swift`).
 
 /// Un género o una época en «Afinar»: un mosaico con su imagen (generada con Grok Imagine, viene con la app: sale al
 /// instante y sin red), un velo abajo y el nombre. Con carácter al elegir: el elegido crece un poco con rebote, se enciende un
@@ -81,8 +81,8 @@ struct DecideTile: View {
     }
 }
 
-/// Los carteles de «Tres que caben»: cada uno mide un tercio del renglón aunque sean uno o dos, y van centrados (F4, 13 nov
-/// 2026: antes dos dejaban un hueco a la derecha y uno, dos huecos).
+/// Los carteles de «Tres que caben», un solo juego: cada uno mide un tercio del renglón aunque sean uno o dos, van centrados
+/// (F4, 13 nov 2026: antes dos dejaban un hueco a la derecha y uno, dos huecos) y sobre la misma base (pulido de DE2).
 struct DecideTrioLayout: Layout {
     var spacing: CGFloat = DS.Space.s3
     /// Tres lugares, como `DecideModel.trio` (aquí fijo: el Layout no vive en el actor principal).
@@ -102,7 +102,8 @@ struct DecideTrioLayout: Layout {
         let used = w * CGFloat(subviews.count) + spacing * CGFloat(max(0, subviews.count - 1))
         var x = bounds.minX + (bounds.width - used) / 2
         for view in subviews {
-            view.place(at: CGPoint(x: x, y: bounds.midY), anchor: .leading, proposal: ProposedViewSize(width: w, height: nil))
+            // Sobre la misma base: si un póster llega más bajo, no flota a media altura.
+            view.place(at: CGPoint(x: x, y: bounds.maxY), anchor: .bottomLeading, proposal: ProposedViewSize(width: w, height: nil))
             x += w + spacing
         }
     }
