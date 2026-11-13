@@ -160,6 +160,14 @@ extension PlayerScreen {
             }
             DSTextTabs(options: [.init(id: false, title: Text("Por idioma")), .init(id: true, title: Text("Todas las fuentes"))], selection: $dockState.versionShowsAll)
             ScrollView {
+                // Tu idioma no arranca al instante pero existe (13 nov, la ruleta de Los Simpson): arriba, con «Pedir a la nube»,
+                // como «Versión» de la ficha.
+                if !dockState.versionShowsAll, let yours = model.yoursToRequest {
+                    let name = VersionText.inline(VersionText.name(yours.code, ui), ui)
+                    VersionYoursAside(language: Text.withFlagImages(LanguageFlags.flagged(name, yours.code)), option: yours.option,
+                                      status: yoursStatus(model), request: { Task { await requestYoursFromPlayer(model) } })
+                        .padding(.bottom, DS.Space.s3)
+                }
                 if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
                                    primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui, prefs: prefs)
@@ -177,6 +185,17 @@ extension PlayerScreen {
         }
         .padding(DS.Space.s4)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+    }
+
+    /// Ya pediste la de tu idioma: su estado en lugar del botón (nunca pedirla otra vez).
+    func yoursStatus(_ model: PlayerModel) -> DebridRequestStatus? {
+        let requests = env.services.debridRequests
+        let _ = requests.track()
+        guard let hash = model.yoursToRequestHash, let found = requests.request(hash: hash) else { return nil }
+        let tr = { (key: String) in Strings.tr(key, language: env.services.appSettings.uiLanguage) }
+        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: DebridRequestWords.title(found, tr),
+                                   fraction: found.state == .downloading ? Double(found.percent) / 100 : nil,
+                                   warn: DebridRequestWords.isTrouble(found, now: Date()), ok: found.state == .ready)
     }
 
     /// El idioma puesto, en corto («es»); nil: apagados.

@@ -37,12 +37,22 @@ extension StreamFinder {
         do {
             let streams = try await http.getJSON(url, timeout: Self.slowAfter)?["streams"]?.array ?? []
             health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
+            // Lo que trajo, contado (sin direcciones ni claves): la próxima vez la bitácora dice por qué dio 0 (13 nov).
+            let report = AddonAnswerReport(streams: streams, addonName: addon.name, addonURL: addon.url)
+            note("complemento \(addon.name): \(report.line)")
+            // Puros torrents de un complemento con Real-Debrid: la dirección va sin tu clave. No es «no tiene»: se rearma.
+            if report.torrentsInsteadOfLinks {
+                note("complemento \(addon.name): \(report.onlyTorrent) entradas sin enlace: la dirección va sin tu clave")
+                keylessAnswers.insert(addon.url)
+                return nil
+            }
             let found = streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
             // M6: si solo da torrents, el iPhone no puede reproducir nada de él (la TV sí).
             if !found.isEmpty { health?.answered(addon.url, onlyTorrents: AddonTorrents.onlyTorrents(found.map { ($0["url"]?.string, $0["infoHash"]?.string) })) }
             return found
         } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") && !Self.busy(error) {
             health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
+            note("complemento \(addon.name): \(error.description) (cuenta como «no tiene ese video»)")
             return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red
         } catch {
             if !Task.isCancelled { health?.fail(addon.url) }   // no esperarlo porque otro ya contestó no es un fallo

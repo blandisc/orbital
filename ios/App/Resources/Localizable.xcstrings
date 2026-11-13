@@ -1,6 +1,28 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "No está en %@ al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not instantly in %@"
+          }
+        }
+      }
+    },
+    "Se puede pedir a la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can request it from the cloud"
+          }
+        }
+      }
+    },
     "No encontré un archivo de este título": {
       "extractionState": "manual",
       "localizations": {

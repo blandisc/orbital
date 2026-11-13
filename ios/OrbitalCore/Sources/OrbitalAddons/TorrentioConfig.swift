@@ -58,6 +58,14 @@ public enum TorrentioConfig {
         return parts
     }
 
+    /// Las opciones de una dirección de Torrentio sin ninguna clave, en su orden (`order`): solo esas, nunca lo demás que
+    /// traiga la dirección (para la bitácora). nil si no es un Torrentio.
+    public static func publicOptions(_ url: String) -> String? {
+        guard var options = parse(url)?.options else { return nil }
+        options.verbatim = []
+        return parts(options).filter { part in order.contains { part.hasPrefix("\($0)=") } }.joined(separator: "|")
+    }
+
     /// La dirección del manifiesto con tu clave al final (`realdebrid=…`). nil sin clave.
     public static func manifestURL(base: String = AddonCatalog.torrentioBase, options: AddonOptions, token: String?) -> String? {
         guard let token, !token.isEmpty, let key = token.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else { return nil }

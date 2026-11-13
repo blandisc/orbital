@@ -65,6 +65,9 @@ public enum PlayerNotice: Sendable, Equatable {
     case switchFailedBack
     /// Real-Debrid aún no tiene esa versión (mandó su video corto de «descargando» en lugar de la película).
     case notReadyOnRealDebrid
+    /// Ninguna versión en tu idioma arranca al instante (va la mejor que hay), pero tu idioma existe para pedirlo a la nube
+    /// (13 nov, la ruleta de Los Simpson): «No está en latino al instante» con «Versión», donde se pide.
+    case yoursOnlyByRequest(language: String)
     /// Un subtítulo de la API de OpenSubtitles no se pudo bajar (sin cuenta, sin cuota de hoy o sin respuesta).
     case openSubtitles(String)
 }
