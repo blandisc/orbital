@@ -1,6 +1,6 @@
 import XCTest
 
-/// El mazo «¿Qué vemos hoy?» se desliza a los dos lados (Fernando, 31 oct 2026: «lo intenté dar a la derecha y no funciona»).
+/// El mazo («Una por una», dentro de «Decide por mí») se desliza a los dos lados (Fernando, 31 oct 2026: «lo intenté dar a la derecha y no funciona»).
 final class MatchDeckSwipeUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 

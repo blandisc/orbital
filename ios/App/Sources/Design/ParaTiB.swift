@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalModels
 
 // Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
-// tarjeta de «¿Qué vemos hoy?».
+// puerta de «Decide por mí».
 
 /// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo, con su porqué y «Pasear por el mosaico».
 /// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
@@ -148,26 +148,38 @@ struct MosaicCover: View {
     }
 }
 
-/// «¿Qué vemos hoy?»: la entrada a encontrar tu match (tres pósters en abanico, el porqué y cómo se usa).
-struct MatchTeaser: View {
-    let posters: [String]
-    /// Sin red y sin pósters: lo dice en vez de prometer cartas.
+/// «Decide por mí»: la única puerta (DE2, Fernando, 13 nov 2026). Tres pósters en abanico (en Inicio, el dado), «Para cuando
+/// no sabes qué ver» y las dos maneras de adentro, «Tres que caben · Una por una». Antes eran dos puertas: el dado de la barra
+/// y la tarjeta «¿Qué vemos hoy?».
+struct DecideDoor: View {
+    /// Sin pósters (Inicio, o sin red): el dado.
+    var posters: [String] = []
+    /// Sin red y sin pósters: lo dice en vez de prometer opciones.
     var offline = false
+    var id = "paraTi-decide"
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado, «¿Qué vemos» no cabía y ensanchaba toda
-        // la página de Explorar (el botón del mosaico quedaba fuera de la orilla; ChaosRegressionUITests, letra máxima).
+        // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado no cabía y ensanchaba toda la página de
+        // Explorar (ChaosRegressionUITests, letra máxima).
         let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s4))
                                                   : AnyLayout(HStackLayout(spacing: DS.Space.s4))
         Button(action: onOpen) {
             layout {
-                PosterFan(posters: posters, width: DS.ParaTiB.deckPoster)
+                if posters.isEmpty {
+                    Image(systemName: DS.Symbol.decide).font(DS.TextRecipe.title.font).foregroundStyle(DS.accent)
+                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                } else {
+                    PosterFan(posters: posters, width: DS.ParaTiB.deckPoster)
+                }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
-                    Text("¿Qué vemos hoy?").recipe(.section)
-                    (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("A la derecha la guardas, a la izquierda no."))
+                    // En el SE, junto al abanico, se cortaba («…no sabes qu…»): se achica un poco en vez de cortarse.
+                    Eyebrow(text: Text("Para cuando no sabes qué ver"), reason: true).minimumScaleFactor(DS.Size.statScale)
+                    // El dado una sola vez: junto al nombre si hay pósters; si no, ya es el ícono de la izquierda.
+                    if posters.isEmpty { Text("Decide por mí").recipe(.section) }
+                    else { Label { Text("Decide por mí") } icon: { Image(systemName: DS.Symbol.decide) }.recipe(.section) }
+                    (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("Tres que caben · Una por una"))
                         .recipe(.footnote, color: DS.textMuted)
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -180,11 +192,11 @@ struct MatchTeaser: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, DS.Space.gutter)
-        .accessibilityIdentifier("paraTi-match")
+        .accessibilityIdentifier(id)
     }
 }
 
-/// Tres pósters en abanico, el primero al frente y los otros asomando girados detrás («¿Qué vemos hoy?», «La temporada»).
+/// Tres pósters en abanico, el primero al frente y los otros asomando girados detrás («Decide por mí», «La temporada»).
 struct PosterFan: View {
     let posters: [String]
     let width: CGFloat

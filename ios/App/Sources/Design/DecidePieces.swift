@@ -5,7 +5,7 @@ import OrbitalModels
 // Piezas de «¿Qué vemos?»: el mosaico de un género o una época y el renglón de una lista (los filtros de la hoja son
 // `DSCapsuleLabel`, las mismas cápsulas de toda la app).
 
-/// Un género o una época en «Más filtros»: un mosaico con su imagen (generada con Grok Imagine, viene con la app: sale al
+/// Un género o una época en «Afinar»: un mosaico con su imagen (generada con Grok Imagine, viene con la app: sale al
 /// instante y sin red), un velo abajo y el nombre. Con carácter al elegir: el elegido crece un poco con rebote, se enciende un
 /// anillo con brillo en el color de Orbital y su ✓; los demás se apagan un poco mientras haya algo elegido. Arriba a la
 /// izquierda, cuántas opciones tiene. `era`: el nombre en grande al centro (las décadas).

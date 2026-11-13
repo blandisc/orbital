@@ -60,6 +60,8 @@ final class AppUI {
     var openStory: String?
     /// Abrir la búsqueda avanzada (el botón final de su historia).
     var openAdvancedFilter = false
+    /// Abrir «Decide por mí» en Explorar (la misma puerta desde Inicio, DE2).
+    var openDecide = false
     /// «Atrás» de la barra de menús (⌘[): regresa una pantalla en la pestaña que ves.
     var goBack = false
     /// Tocaste «Buscar» estando ya en Buscar: se abre el campo con el teclado listo.

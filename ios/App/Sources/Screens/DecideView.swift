@@ -2,9 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Decide por mí»: dos niveles y un solo verbo («Barajar»). La hoja corta: tres carteles con su porqué, «Ver» y «Barajar», y
-/// debajo una fila de filtros que se aplican al tocarlos (tiempo, ánimo, películas o series) con cuántas opciones quedan.
-/// «Más filtros» es su propia página (géneros, época, de qué listas, bien calificada en IMDb, Trakt o TMDB, lo ya visto), y
+/// «Decide por mí»: una sola puerta con dos maneras (DE2, 13 nov 2026), como la TV: «Tres que caben» (tres carteles con su
+/// porqué, «Ver» y «Barajar») y «Una por una» (el mazo). Debajo, filtros que se aplican al tocarlos (tiempo, ánimo, películas
+/// o series) con cuántas opciones quedan; los dos comparten los de «Afinar». «Afinar» es su propia página (géneros, época, de qué listas, bien calificada en IMDb, Trakt o TMDB, lo ya visto), y
 /// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, dice por qué: sin
 /// conexión (con «Reintentar»), sin sugerencias, o qué filtro quitar.
 struct DecideView: View {
@@ -16,6 +16,8 @@ struct DecideView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     enum Page: Hashable { case more, lists }
     @State private var path: [Page] = []
+    /// «Tres que caben» o «Una por una» (el mazo).
+    @State private var mode: DecideModel.Mode = .trio
     /// El alto de la hoja corta: el de su contenido, medido (sin hueco abajo).
     @State private var quickHeight: CGFloat = DS.Decide.quickHeight
     /// El contenido no cabe en la hoja corta (letra grande): se abre completa y se desliza (F6).
@@ -42,7 +44,7 @@ struct DecideView: View {
     var body: some View {
         let m = observer.model
         NavigationStack(path: $path) {
-            root(m)
+            Group { if mode == .deck { deckRoot(m) } else { root(m) } }
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Page.self) { page in
                     switch page {
@@ -51,12 +53,13 @@ struct DecideView: View {
                     }
                 }
         }
-        .presentationDetents(path.isEmpty && !overflows ? [.height(quickHeight)] : [.large])
-        .fittedFormSizing(idealHeight: path.isEmpty ? quickHeight : WindowMetrics.size.height * DS.Sheet.maxShare)
+        .presentationDetents(path.isEmpty && !overflows && mode == .trio ? [.height(quickHeight)] : [.large])
+        .fittedFormSizing(idealHeight: path.isEmpty && mode == .trio ? quickHeight :WindowMetrics.size.height * DS.Sheet.maxShare)
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
         // «No me interesa · Deshacer» dentro de la hoja (la hoja tapa la raíz, que es donde van los avisos).
-        .overlay(alignment: .bottom) { BannerView().padding(.bottom, DS.Space.s2) }
+        // En el mazo los avisos van sobre sus botones (los pone él).
+        .overlay(alignment: .bottom) { if mode == .trio { BannerView().padding(.bottom, DS.Space.s2) } }
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
         .onAppear { env.ui.coverShowsNotices = true }
         .onDisappear { env.ui.coverShowsNotices = false }
@@ -71,7 +74,31 @@ struct DecideView: View {
         }
         #if DEBUG
         .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { path = l == "3" ? [.more, .lists] : l == "2" ? [.more] : [] } }
+        .task { if Demo.isOn, Demo.value(after: "-demo-decide-tab") == "deck" || Demo.open == "match" { mode = .deck } }
         #endif
+    }
+
+    // MARK: «Una por una»
+    /// El mazo con los mismos filtros (DE2): el tipo arriba, la calificación y «Afinar» debajo; el tiempo y el ánimo son de
+    /// «Tres que caben». Al cambiar un filtro, el mazo se vuelve a barajar con lo que queda.
+    private func deckRoot(_ m: DecideModel) -> some View {
+        let pool = m.deckPool()
+        return VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+            header(m)
+            Grid(horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
+                if typeSize.isAccessibilitySize { GridRow { ratingMenu(m) }; GridRow { moreButton(m) } }
+                else { GridRow { ratingMenu(m); moreButton(m) } }
+            }
+            MatchDeckScreen(pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
+                            reload: reload.map { load in { let fresh = await load(); await m.retry(pool: fresh.pool, sources: fresh.sources); return m.deckPool() } },
+                            onOpenTitle: { dismiss(); open($0) },
+                            onPlay: { route in
+                                // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
+                                dismiss()
+                                if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } } else { open(route) }
+                            })
+        }
+        .dsSheetContent()
     }
 
     // MARK: la hoja corta
@@ -92,9 +119,10 @@ struct DecideView: View {
         .scrollBounceBehavior(.basedOnSize)
     }
 
-    /// «Decide por mí» con cuántas opciones quedan y ✕; debajo, «Todo · Películas · Series», el mismo de toda la app.
+    /// «Decide por mí» con cuántas opciones quedan y ✕; debajo, las dos maneras y «Todo · Películas · Series», el mismo de
+    /// toda la app.
     private func header(_ m: DecideModel) -> some View {
-        let count = m.count()
+        let count = mode == .deck ? m.deckPool().count : m.count()
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 DSSheetHeader(title: Text("Decide por mí")) {
@@ -105,6 +133,10 @@ struct DecideView: View {
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
             }
+            DSTextTabs(options: [.init(id: DecideModel.Mode.trio, title: Text("Tres que caben"), symbol: DS.Symbol.decideTrio),
+                                 .init(id: .deck, title: Text("Una por una"), symbol: DS.Symbol.decideDeck)],
+                       selection: $mode.animation(DS.Motion.base(reduceMotion)))
+                .accessibilityIdentifier("decide-mode")
             DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }))
                 .accessibilityIdentifier("decide-kind")
         }
@@ -254,7 +286,7 @@ struct DecideView: View {
 
     // MARK: los filtros (se aplican al tocarlos)
     /// Cuatro cápsulas parejas (las mismas «Todo ⌄» de toda la app), en dos renglones; con letra de accesibilidad, una por
-    /// renglón (F6: antes «Calificación» y «Más filtros» quedaban fuera de la hoja).
+    /// renglón (F6: antes «Calificación» y «Afinar» quedaban fuera de la hoja).
     @ViewBuilder private func filterRow(_ m: DecideModel) -> some View {
         if typeSize.isAccessibilitySize {
             VStack(spacing: DS.Space.s2) { timeMenu(m); moodMenu(m); ratingMenu(m); moreButton(m) }
@@ -300,7 +332,7 @@ struct DecideView: View {
 
     private func moreButton(_ m: DecideModel) -> some View {
         Button { path.append(.more) } label: {
-            DSCapsuleLabel(title: m.moreFilters > 0 ? Text("Más filtros · \(m.moreFilters)") : Text("Más filtros"), symbol: "slider.horizontal.3",
+            DSCapsuleLabel(title: m.moreFilters > 0 ? Text("Afinar · \(m.moreFilters)") : Text("Afinar"), symbol: "slider.horizontal.3",
                            selected: m.moreFilters > 0, stretch: true)
         }
         .buttonStyle(.plain)

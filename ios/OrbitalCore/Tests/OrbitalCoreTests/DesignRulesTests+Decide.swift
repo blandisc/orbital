@@ -66,9 +66,26 @@ extension DesignRulesTests {
     /// El dado es solo «Decide por mí» (`DS.Symbol.decide`): «Temporadas» de la dona y «Repartido por décadas» tienen el suyo.
     func testTheDiceIsOnlyDecide() throws {
         let files = try sources(["Design", "Screens"])
-        // Las entradas de la barra (Explorar y el mosaico) aún lo escriben tal cual hasta DE2.
-        let allowed: Set<String> = ["Icons.swift", "ListsView.swift", "ParaTiView.swift"]
+        let allowed: Set<String> = ["Icons.swift"]
         check(hits(#""dice(\.fill)?""#, in: files, skip: { allowed.contains($0.name) }), "El dado solo para «Decide por mí»: usa DS.Symbol.decide")
         check(hits(#"symbol: "dice"|systemName: "dice""#, in: files, skip: { allowed.contains($0.name) }), "El dado solo para «Decide por mí»")
+    }
+
+    /// Una pregunta, una puerta (DE2): «Decide por mí» se abre solo desde `DecideDoor` (Explorar y, con `DecideHomeRow`,
+    /// Inicio); adentro, «Tres que caben» y «Una por una» son pestañas de la misma hoja y el mazo ya no es su propia pantalla.
+    func testOneQuestionOneDoor() throws {
+        let files = try sources()
+        check(hits(#"DecideView\("#, in: files, skip: { $0.name == "DecideView.swift" }).filter { !$0.hasPrefix("Screens/ParaTiView.swift") },
+              "«Decide por mí» se abre solo desde Explorar (ParaTiView), con su puerta")
+        check(hits(#"MatchDeckScreen\("#, in: files, skip: { $0.name == "MatchDeckScreen.swift" }).filter { !$0.hasPrefix("Screens/DecideView.swift") },
+              "El mazo vive dentro de «Decide por mí» («Una por una»), no en otra pantalla")
+        check(hits(#"MatchTeaser|"¿Qué vemos hoy\?"|DS\.Symbol\.decide\) *\}.*ToolbarItem|ToolbarItem[^\n]*DS\.Symbol\.decide"#, in: files),
+              "Sin otra puerta: ni «¿Qué vemos hoy?» ni el dado en la barra")
+        let decide = try file("DecideView.swift", in: files)
+        XCTAssertTrue(decide.contains(#"Text("Tres que caben")"#) && decide.contains(#"Text("Una por una")"#), "las dos pestañas, con los nombres de la TV")
+        XCTAssertTrue(decide.contains("m.deckPool()"), "el mazo usa los filtros de «Afinar»")
+        let paraTi = try file("ParaTiView.swift", in: files)
+        XCTAssertFalse(paraTi.contains("fullScreenCover"), "sin la pantalla aparte del mazo")
+        XCTAssertTrue(paraTi.contains("env.ui.openDecide"), "la puerta de Inicio llega aquí")
     }
 }

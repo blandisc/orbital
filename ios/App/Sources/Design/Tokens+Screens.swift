@@ -365,7 +365,7 @@ extension DS {
         static let pitchMin = 40
         /// Los carteles apilados de una lista en «De qué listas».
         static let listPoster: CGFloat = 44
-        /// Los mosaicos de «Más filtros»: alto de un género y de una época, y a qué tamaño se baja su arte.
+        /// Los mosaicos de «Afinar»: alto de un género y de una época, y a qué tamaño se baja su arte.
         static let genreTile: CGFloat = 60, eraTile: CGFloat = 80
         /// Elegir un mosaico: crece un poco (y su imagen se acerca), anillo con brillo; los demás pierden color.
         static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowOpacity: Double = 0.55

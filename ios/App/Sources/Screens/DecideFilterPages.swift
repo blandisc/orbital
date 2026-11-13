@@ -2,11 +2,11 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-// Las páginas de «Decide por mí» que se abren desde la hoja: «Más filtros» y «De qué listas» (separadas de DecideView por
+// Las páginas de «Decide por mí» que se abren desde la hoja: «Afinar» y «De qué listas» (separadas de DecideView por
 // tamaño, 2 nov 2026).
 
-// MARK: - Más filtros
-/// «Más filtros»: géneros, época, qué tan conocida, premios, de qué listas y lo ya visto. Cuenta
+// MARK: - Afinar
+/// «Afinar» (compartido por «Tres que caben» y «Una por una»): géneros, época, qué tan conocida, premios, de qué listas y lo ya visto. Cuenta
 /// cuántas quedan mientras eliges; «Ver N» regresa y lo aplica.
 struct DecideMoreFilters: View {
     let model: DecideModel
@@ -76,7 +76,7 @@ struct DecideMoreFilters: View {
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
             .accessibilityIdentifier("decide-more-done")
         }
-        .navigationTitle(Text("Más filtros")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(Text("Afinar")).navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Limpiar") { Task { await m.clearMoreFilters() } }.disabled(m.moreFilters == 0) } }
         // Al volver (con «Ver», deslizando o con ‹), los carteles ya son de lo elegido.
         .onDisappear { Task { await m.apply() } }

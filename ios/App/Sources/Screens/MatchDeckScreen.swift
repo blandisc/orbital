@@ -2,17 +2,21 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «¿Qué vemos hoy?» a pantalla completa (Para ti la presenta con `.fullScreenCover`): arriba los cuatro ánimos, en medio el
-/// mazo y abajo ✕ ▶ ＋. `pool`: lo que Para ti ya tiene a la mano. Tocar una carta abre su ficha (`onOpenTitle`); ▶ avisa
-/// con `onPlay` para que la pantalla de afuera la reproduzca.
+/// «Una por una», el mazo de «Decide por mí» (DE2: antes «¿Qué vemos hoy?», su propia pantalla): en medio el mazo y abajo
+/// Paso · Para hoy · Guardar. `pool`: lo que deja pasar «Afinar». Tocar una carta abre su ficha (`onOpenTitle`); ▶ avisa con
+/// `onPlay` para que la pantalla de afuera la reproduzca. Vive dentro de la hoja de «Decide por mí», que pone el encabezado,
+/// la ✕ y los filtros (los mismos de «Tres que caben»).
 struct MatchDeckScreen: View {
     let pool: [Suggestion]
+    /// Cambia cuando cambian los filtros: el mazo se vuelve a barajar con `pool`.
+    var poolKey = ""
+    /// Hay filtros puestos en «Afinar»: sin cartas, se dice que es por ellos.
+    var filtered = false
     /// «Reintentar» sin red: lo que se sugiere, pedido otra vez (F2/F8).
     var reload: (() async -> [Suggestion])?
     let onOpenTitle: (TitleRoute) -> Void
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
@@ -27,26 +31,9 @@ struct MatchDeckScreen: View {
         let savedCount = model.map { $0.track(); return $0.saved.count } ?? 0
         let savesToTrakt = model?.savesToTrakt ?? false
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
-                DSSheetHeader(title: Text("¿Qué vemos hoy?")) {
-                    // Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
-                    if savedCount > 0 {
-                        Label { Text(verbatim: "\(savedCount)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
-                            .recipe(.label, color: DS.text).tint(DS.brandMoon)
-                            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-                            .background(DS.fill, in: Capsule())
-                            .contentTransition(.numericText())
-                            .accessibilityLabel(savesToTrakt ? Text("\(savedCount) guardadas en Tu match perfecto") : Text("\(savedCount) guardadas en Mi lista"))
-                            .accessibilityIdentifier("match-saved-count")
-                    }
-                    DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { dismiss() }
-                        .accessibilityIdentifier("match-close")
-                }
-            }
+            if savedCount > 0 { savedBadge(savedCount, savesToTrakt) }
             if let model {
                 let _ = model.track()
-                if model.loaded, !items.isEmpty { filters(model) }
                 if !model.loaded {
                     skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
                 } else if model.cards.isEmpty {
@@ -58,8 +45,8 @@ struct MatchDeckScreen: View {
                               onSave: { s in save(s, model) },
                               onDiscard: { s in discard(s, model) },
                               onTonight: { s in tonight(s, model) },
-                              onOpen: { s in dismiss(); onOpenTitle(s.route) },
-                              onPlay: { s in dismiss(); onPlay(s.route) })
+                              onOpen: { s in onOpenTitle(s.route) },
+                              onPlay: { s in onPlay(s.route) })
                         .frame(maxHeight: .infinity)
                         .overlay(alignment: .bottom) { deckNotices }
                     actions(model)
@@ -68,13 +55,10 @@ struct MatchDeckScreen: View {
                 skeleton
             }
         }
-        .padding(DS.Space.gutter)
-        .background(Backdrop())
         // «Guardada en Tu match perfecto · Deshacer» al momento (el mazo tapa la raíz, que es donde van los avisos, y antes
         // salía hasta cerrarlo); va abajo, encima de Paso · Ver ya · Guardar (`deckNotices`).
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
-        .onAppear { env.ui.coverShowsNotices = true }
-        .onDisappear { env.ui.coverShowsNotices = false }
+        .onChange(of: poolKey) { reloaded = nil; Task { await model?.replacePool(pool) } }
         .task {
             if model == nil {
                 let m = MatchDeckModel(env.services, pool: items, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
@@ -91,6 +75,17 @@ struct MatchDeckScreen: View {
         .accessibilityIdentifier("match-deck")
     }
 
+    /// Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
+    private func savedBadge(_ savedCount: Int, _ savesToTrakt: Bool) -> some View {
+        Label { Text(verbatim: "\(savedCount)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
+            .recipe(.label, color: DS.text).tint(DS.brandMoon)
+            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+            .background(DS.fill, in: Capsule())
+            .contentTransition(.numericText())
+            .accessibilityLabel(savesToTrakt ? Text("\(savedCount) guardadas en Tu match perfecto") : Text("\(savedCount) guardadas en Mi lista"))
+            .accessibilityIdentifier("match-saved-count")
+    }
+
     /// La carta en gris mientras carga.
     private var skeleton: some View {
         RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).fill(DS.fill)   // ds-exception: esqueleto con la forma de la carta, no una caja
@@ -98,25 +93,13 @@ struct MatchDeckScreen: View {
             .accessibilityLabel(Text("Cargando"))
     }
 
-    /// Sin cartas: si nunca hubo propuestas lo dice así; si ya las recorriste, lo dice distinto.
-    /// Películas o series y el género (Fernando, 3 nov 2026): el mazo cambia al momento.
-    private func filters(_ model: MatchDeckModel) -> some View {
-        @Bindable var model = model
-        let language = env.services.appSettings.uiLanguage
-        return HStack(alignment: .center, spacing: DS.Space.s3) {
-            DSKindFilter(kind: $model.kind)
-            Spacer(minLength: 0)
-            if !model.genres.isEmpty || model.genre != nil {
-                DSGenreMenu(genres: model.genres, selection: $model.genre) { model.genreName($0, language: language) }
-            }
-        }
-        .animation(DS.Motion.fade, value: model.cards.map(\.imdb))
-    }
-
-    /// Al final del mazo, como el aviso de Tinder cuando se acaban los matches (Fernando, 3 nov 2026): se acabaron, y para ver
-    /// más, cambia tus filtros (los de arriba). Con algo filtrado, el botón los quita de un toque.
+    /// Sin cartas, con el porqué: sin red («Reintentar»), por los filtros de «Afinar», o porque ya las recorriste (como el
+    /// aviso de Tinder cuando se acaban los matches, Fernando, 3 nov 2026).
     @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
-        if items.isEmpty {
+        if items.isEmpty, filtered, env.isOnline {
+            DSEmptyState(symbol: DS.Symbol.decide, title: Text("Ninguna con estos filtros"), message: Text("Prueba quitando un filtro en «Afinar»."))
+                .accessibilityIdentifier("match-filtered")
+        } else if items.isEmpty {
             // Sin red lo dice así, con «Reintentar» (F2/F8: antes «Aún no hay propuestas», como si no tuvieras sugerencias).
             let offline = !env.isOnline
             DSEmptyState(symbol: offline ? DS.Symbol.offline : "rectangle.stack", title: offline ? Text("Sin conexión") : Text("Aún no hay propuestas"),
@@ -128,12 +111,9 @@ struct MatchDeckScreen: View {
             }
         } else {
             let saved: Text? = model.saved.isEmpty ? nil : (model.savesToTrakt ? Text("Guardaste \(model.saved.count) en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count) en Mi lista."))
-            let hint = model.isFiltered ? Text("Si quieres ver más, cambia tus filtros.") : Text("Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.")
-            DSEmptyState(symbol: "rectangle.stack", title: Text("Se acabaron tus matches"),
-                         message: saved.map { $0 + Text(verbatim: " ") + hint } ?? hint) {
-                if model.isFiltered { Button("Quitar filtros") { model.genre = nil; model.kind = "" } }
-            }
-            .accessibilityIdentifier("match-empty")
+            let hint = Text("Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.")
+            DSEmptyState(symbol: "rectangle.stack", title: Text("Se acabaron tus matches"), message: saved.map { $0 + Text(verbatim: " ") + hint } ?? hint)
+                .accessibilityIdentifier("match-empty")
         }
     }
 
@@ -149,7 +129,7 @@ struct MatchDeckScreen: View {
     private func tonight(_ s: Suggestion, _ model: MatchDeckModel) {
         Task { await model.saveForTonight(s) }
         env.notify("Para hoy", detail: s.title, tone: .success, actionTitle: "Ver ya", actionSymbol: "play.fill", perform: {
-            dismiss(); onPlay(s.route)
+            onPlay(s.route)
         }, secondTitle: "Deshacer", secondSymbol: "arrow.uturn.backward", second: { Task { await model.undo(s) } })
     }
 

@@ -44872,6 +44872,72 @@
           }
         }
       }
+    },
+    "Tres que caben": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three that fit"
+          }
+        }
+      }
+    },
+    "Una por una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One by one"
+          }
+        }
+      }
+    },
+    "Tres que caben · Una por una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three that fit · One by one"
+          }
+        }
+      }
+    },
+    "Afinar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune"
+          }
+        }
+      }
+    },
+    "Afinar · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune · %lld"
+          }
+        }
+      }
+    },
+    "Prueba quitando un filtro en «Afinar».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try removing a filter in “Fine-tune”."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

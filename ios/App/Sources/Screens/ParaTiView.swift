@@ -14,10 +14,8 @@ struct ParaTiView: View {
     @State private var focused: Suggestion?
     /// Una ficha abierta desde la franja del mosaico («Ver la serie»).
     @State private var openTitle: TitleRoute?
-    /// «Decide por mí» abierto.
+    /// «Decide por mí» abierto (su puerta en Listas o la de Inicio; adentro, «Tres que caben» y «Una por una»).
     @State private var deciding = false
-    /// «¿Qué vemos hoy?» · Encuentra tu match perfecto: el mazo a pantalla completa (la tarjeta de Listas).
-    @State private var matching = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
@@ -58,9 +56,9 @@ struct ParaTiView: View {
         .onDisappear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
     }
 
-    /// Las listas (con su «Decidir» y «Match»).
+    /// Las listas (con la puerta de «Decide por mí»).
     private var listsPart: some View {
-        ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true })
+        ListsView(observer: model, onDecide: { deciding = true })
             .onAppear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
     }
 
@@ -99,13 +97,7 @@ struct ParaTiView: View {
                 ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Explorar")) }
                     .sharedBackgroundVisibility(.hidden)
             }
-            // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
-            // En Listas el dado lo pone `ListsView` (junto a su índice y el perfil: tres, como aquí).
-            if m.mode == .mosaic {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
-                }
-            }
+            // «Decide por mí» ya no está en la barra: tiene una sola puerta, en Listas y en Inicio (DE2, 13 nov 2026).
             // Sin botón de mosaico ↔ listas (Fernando, 31 oct 2026): al mosaico se entra con «Pasear por el mosaico» de la
             // portada y se sale con la flecha de la izquierda o deslizando de lado.
             // «Actualizar»: en Listas, deslizando hacia abajo; el mosaico no se desliza, así que ahí es un botón.
@@ -128,7 +120,7 @@ struct ParaTiView: View {
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
             if Demo.isOn, Demo.mode == "mosaic" { m.mode = .mosaic }
             if Demo.isOn, Demo.open == "decide" { Task { try? await Task.sleep(for: .seconds(4)); deciding = true } }   // cuando ya cargó lo que se sugiere
-            if Demo.isOn, Demo.open == "match" { Task { try? await Task.sleep(for: .seconds(4)); matching = true } }   // el mazo «¿Qué vemos hoy?»
+            if Demo.isOn, Demo.open == "match" { Task { try? await Task.sleep(for: .seconds(4)); deciding = true } }   // con -demo-decide-tab deck, el mazo
             if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
             // De vuelta a la pestaña: primero termina el salto de la barra y luego, si hace falta, se refresca.
@@ -143,18 +135,25 @@ struct ParaTiView: View {
             let lists = WidgetListsPublisher.lists(from: m)
             if lists.contains(where: { !$0.posters.isEmpty }) { WidgetListsPublisher.publish(lists) }
         }
-        .fullScreenCover(isPresented: $matching) {
-            let pool = m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }
-            MatchDeckScreen(pool: pool, reload: { await m.refresh(); return m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) } }, onOpenTitle: { openTitle = $0 },
-                            onPlay: { route in
-                                // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
-                                if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } }
-                                else { openTitle = route }
-                            })
+        // La puerta de Inicio (DE2): llega aquí y abre la hoja. Primero el cambio de pestaña y lo que se sugiere; luego la
+        // hoja (antes salía encima de Inicio y vacía). El cambio de pestaña puede crear esta vista dos veces: las dos piden
+        // la hoja y el pedido se apaga cuando la hoja ya se ve, no antes (si no, la que queda viva no la abría).
+        .onChange(of: env.ui.openDecide, initial: true) { _, open in
+            guard open else { return }
+            m.mode = .lists
+            Task {
+                // La carga la lanza la propia pestaña: aquí solo se espera a que haya listas, unos segundos a lo más.
+                for _ in 0..<8 {
+                    try? await Task.sleep(for: DS.Motion.tabSettle)
+                    if !m.lists.isEmpty || m.hasLoaded { break }
+                }
+                if env.ui.openDecide { deciding = true }
+            }
         }
         .sheet(isPresented: $deciding) {
             DecideView(pool: decidePool(m), sources: decideSources(m),
                        reload: { await m.refresh(); return (decidePool(m), decideSources(m)) }) { openTitle = $0 }
+                .onAppear { env.ui.openDecide = false }
         }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)

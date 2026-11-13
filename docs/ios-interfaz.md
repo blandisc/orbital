@@ -438,6 +438,8 @@ haya caracteres de texto usados como ícono.
 | Decide por mí (el sorteo), y nada más | `dice` (`DS.Symbol.decide`) | La entrada de «Decide por mí» y su vacío por filtros |
 | Las temporadas de la dona (de cuáles sale el episodio) | `rectangle.stack.badge.play` (`DS.Symbol.channelSeasons`) | Inicio › Canales › la dona › Temporadas |
 | Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
+| Tres que caben (tres carteles lado a lado) | `rectangle.split.3x1` (`DS.Symbol.decideTrio`) | «Decide por mí», su primera pestaña |
+| Una por una (el mazo) | `rectangle.portrait.on.rectangle.portrait.angled` (`DS.Symbol.decideDeck`) | «Decide por mí», su segunda pestaña |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
 ### Lo que crece no choca (13 nov 2026)
@@ -497,6 +499,20 @@ solo «Guardar» tenía «Deshacer».
 
 Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
 tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.
+
+### Una pregunta, una puerta (13 nov 2026)
+
+DE2 (Fernando: «Construye DE1 y DE2 para ver cómo se ven»): «¿Qué vemos?» tenía dos puertas en Explorar (el dado de la barra y
+la tarjeta «¿Qué vemos hoy?») que llevaban a dos pantallas con filtros distintos.
+
+- **Una pregunta tiene una sola puerta y un solo nombre**: «Decide por mí» (tarjeta `DecideDoor` en Explorar, el mismo renglón
+  `DecideHomeRow` en Inicio). Adentro, las maneras de contestarla son pestañas (`DSTextTabs`): «Tres que caben» y «Una por
+  una», con los nombres de la TV.
+- **Las pestañas de una misma pregunta comparten sus filtros**: lo que pones en «Afinar» filtra las dos
+  (`DecideModel.deckPool`); el tiempo y el ánimo son solo de «Tres que caben» (son de esta noche).
+- No se agrega otra puerta (otro botón en la barra, otra tarjeta) a algo que ya tiene la suya.
+
+Lo cuida `DesignRulesTests+Decide.swift` (`testOneQuestionOneDoor`) y `DecideDeckTests`.
 
 ## 4b. Bilingüe
 

@@ -303,7 +303,7 @@ final class DesignTests: XCTestCase {
                         (#"format: \.dateTime|\.formatted\(\)|DateFormatter\(\)|NumberFormatter\(\)"#, "número o fecha con el formato del teléfono: Strings.count / Strings.date (en el idioma de la app)"),
                         // Un nombre por cosa (glosario en docs/sistema-de-diseno.md).
                         (#"(?i)"[^"]*\btu watchlist\b[^"]*""#, "«tu watchlist»: en el iPhone se llama «Mi lista»"),
-                        (#""¿Qué vemos\?""#, "«¿Qué vemos?»: el sorteo es «Decide por mí» (y el mazo, «¿Qué vemos hoy?»)"),
+                        (#""¿Qué vemos\?""#, "«¿Qué vemos?»: es «Decide por mí» (y el mazo, «Una por una»)"),
                         (#""Intentar de nuevo""#, "«Intentar de nuevo»: el botón es «Reintentar»"),
                         (#"(?i)"[^"]*\btu repisa\b[^"]*""#, "«tu repisa»: la pantalla se llama «Colecciones»"),
                     ]

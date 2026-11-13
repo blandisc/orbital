@@ -69,6 +69,7 @@ extension DS {
         static let rate = "star"
         /// El dado es solo «Decide por mí», el sorteo (DE1, 13 nov 2026: antes también «Temporadas» de la dona y «Repartido por
         /// décadas»). Las temporadas de la dona son una pila con ▶; repartir por épocas, la línea del tiempo.
+        static let decideTrio = "rectangle.split.3x1", decideDeck = "rectangle.portrait.on.rectangle.portrait.angled"
         static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
     }
 }
