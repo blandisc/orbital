@@ -48,7 +48,10 @@ struct ListGridView: View {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     let items = model.items(for: plan)
-                    if items.isEmpty && !model.isLoading(shelf: plan) {
+                    if items.isEmpty && !model.isLoading(shelf: plan) && !env.isOnline {
+                        // Sin conexión nunca se ve como vacío (GD2): lo dice y ofrece «Reintentar».
+                        DSErrorState(offline: true) { Task { await model.load() } }
+                    } else if items.isEmpty && !model.isLoading(shelf: plan) {
                         DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"))
                     } else if plan.style == .top10 {
                         // Un ranking se lee en su orden: sin ordenar ni filtrar.

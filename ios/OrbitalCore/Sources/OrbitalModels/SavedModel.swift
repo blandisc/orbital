@@ -39,6 +39,9 @@ public final class SavedModel: ObservableModel {
     public internal(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
     /// Ya se pidió una vez (antes de eso no se enseña el vacío).
     public private(set) var loadedOnce = false { didSet { if loadedOnce != oldValue { changed() } } }
+    /// Ya llegó todo una vez (Mi lista, lo que viste y tus listas): las cifras de las pestañas y la guía de una cuenta nueva
+    /// esperan a esto (antes, «Vistas 0» se asomaba mientras llegaba lo visto).
+    public private(set) var boardReady = false { didSet { if boardReady != oldValue { changed() } } }
 
     let services: Services
 
@@ -50,8 +53,18 @@ public final class SavedModel: ObservableModel {
 
     public var traktLinked: Bool { services.trakt?.linked ?? false }
 
-    /// Mi lista (o la que elegiste), tus listas y lo que viste, a la vez.
-    public func load() async {
+    /// Favoritos (♥ en «Guardar en…»): una lista más de la pestaña «Listas» (GD2), que se abre como las tuyas.
+    public static let favorites = ForYou.favoritesList
+
+    /// Trakt no contestó y no hay nada que enseñar (sin internet, o Trakt caído): Guardado lo dice con «Reintentar»; nunca se ve
+    /// como si no tuvieras nada guardado (GD2, Fernando, 13 nov 2026; antes, sin internet salían cinco ceros).
+    public var unreachable: Bool { loadedOnce && !loading && failed && items.isEmpty && watchlist.isEmpty }
+
+    /// Mi lista (o la que elegiste), tus listas y lo que viste, a la vez. `list`: la que se ve desde ya (Guardado abre en Mi
+    /// lista aunque la última vez vieras otra).
+    public func load(list: String? = nil) async {
+        if let list, list != selected { select(list); items = cached[list] ?? [] }
+        defer { boardReady = true }
         guard traktLinked, let trakt = services.trakt else { items = []; lists = [SavedList(id: Self.watchlist, name: "")]; loadedOnce = true; return }
         refreshProgress()
         let forYou = services.forYou
@@ -62,7 +75,7 @@ public final class SavedModel: ObservableModel {
         await loadItems()
         if let found = await mine { watchlist = await localized(found) }
         lists = [SavedList(id: Self.watchlist, name: "")] + (await own).map { SavedList(id: "list:\($0.id)", name: $0.name) }
-        if !lists.contains(where: { $0.id == selected }) {   // la borraste en Trakt: de vuelta a Mi lista
+        if selected != Self.favorites, !lists.contains(where: { $0.id == selected }) {   // la borraste en Trakt: de vuelta a Mi lista
             select(Self.watchlist)
             await loadItems()
         }
@@ -74,24 +87,31 @@ public final class SavedModel: ObservableModel {
     /// Los pósters y la cifra de cada una de tus listas, a la vez (salen de la misma caché que Para ti).
     private func loadListPreviews() async {
         let forYou = services.forYou
-        let ids = lists.map(\.id).filter { $0 != Self.watchlist }
+        let ids = lists.map(\.id).filter { $0 != Self.watchlist } + [Self.favorites]
         let found = await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for id in ids { group.addTask { (id, try? await forYou.items(listID: id)) } }
             var out: [String: [Suggestion]] = [:]
             for await (id, items) in group { if let items { out[id] = items } }
             return out
         }
-        listPosters = found.mapValues { Array($0.prefix(3).map(\.poster)) }
+        listPosters = found.mapValues { Array($0.prefix(Self.coverPosters).map(\.poster)) }
         listCounts = found.mapValues(\.count)
     }
 
-    /// Cambiar de lista (un toque): se recuerda y se pide la nueva.
+    /// Los pósters de la portada de cada lista (2 × 2 en «Listas»).
+    static let coverPosters = 4
+
+    /// Cambiar de lista (un toque): se recuerda y se pide la nueva. Lo que ya se vio de ella sale al instante mientras llega
+    /// (volver de una lista a la pestaña Mi lista no enseña la ruedita).
     public func choose(_ id: String) async {
         guard id != selected else { return }
         select(id)
-        items = []
+        items = cached[id] ?? []
         await loadItems()
     }
+
+    /// Lo último que llegó de cada lista.
+    private var cached: [String: [Suggestion]] = [:]
 
     private func select(_ id: String) {
         selected = id
@@ -113,6 +133,7 @@ public final class SavedModel: ObservableModel {
             let named = await localized(found)
             guard id == selected, !Task.isCancelled, items == found else { return }
             items = named
+            cached[id] = named
         } catch {
             guard id == selected else { return }
             failed = items.isEmpty
@@ -214,6 +235,7 @@ public final class SavedModel: ObservableModel {
             let (i, saved) = removed.removeValue(forKey: s.imdb) ?? (0, s)
             items.insert(saved, at: min(i, items.count))
         }
+        cached[selected] = items
     }
 
     /// Cómo vas con un título: vista (Trakt), a medias (Trakt o el avance de este aparato) o por ver.

@@ -87,5 +87,13 @@ extension DS {
         static let matchFan = 3
         /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.
         static let seasonPoster: CGFloat = 76, seasonGlow: Double = 0.35, rowShift: CGFloat = 14
+        /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba
+        /// para entrar (más allá de «actualizar», `DS.Refresh.threshold`: lo corto actualiza, lo largo entra). Al abrirse el muro
+        /// se endereza, crece `doorGrow` y su velo se aclara `doorUnveil`; el mosaico entra desde `doorEnterScale`, arriba.
+        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.1, doorUnveil: Double = 0.5, doorEnterScale: CGFloat = 0.92
+        /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
+        /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
+        static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)
+        static let doorHintDelay: Duration = .milliseconds(1200), doorHintHold: Duration = .milliseconds(650)
     }
 }

@@ -38,6 +38,8 @@ final class AppUI {
     var redate: RedateRequest?
     /// Biblioteca › Descargas está a la vista: la marca de la pestaña no sale (ya lo estás viendo).
     var seeingDownloads = false
+    /// Lo que mide «¿Qué tal…?» flotando sobre la barra (0 si no está): Guardado le aparta ese lugar abajo (GD2).
+    var ratingReminderHeight: CGFloat = 0
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
     /// V9: lo que hacen el botón del control de Inicio y abrir una ficha en el panel (iPad, Mac), por ventana (`window`). Las

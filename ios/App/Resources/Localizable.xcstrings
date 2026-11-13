@@ -25693,6 +25693,28 @@
         }
       }
     },
+    "Pasea por tus %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wander your %lld"
+          }
+        }
+      }
+    },
+    "Abre el mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the mosaic"
+          }
+        }
+      }
+    },
     "Pasear por el mosaico": {
       "extractionState": "manual",
       "localizations": {
@@ -44869,6 +44891,237 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offline for now."
+          }
+        }
+      }
+    },
+    "%lld títulos que dejaste a medias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld titles you dropped halfway"
+          }
+        }
+      }
+    },
+    "%lld títulos que terminaste, por el mes en que los viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld titles you finished, by the month you watched them"
+          }
+        }
+      }
+    },
+    "1 título que dejaste a medias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 title you dropped halfway"
+          }
+        }
+      }
+    },
+    "1 título que terminaste, por el mes en que lo viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 title you finished, by the month you watched it"
+          }
+        }
+      }
+    },
+    "Aquí vive lo que guardas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything you save lives here"
+          }
+        }
+      }
+    },
+    "Cada vez que viste algo, con su día y su hora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every time you watched something, with its day and time"
+          }
+        }
+      }
+    },
+    "Desde «Guardar en…»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From “Save to…”"
+          }
+        }
+      }
+    },
+    "Elegir varios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose several"
+          }
+        }
+      }
+    },
+    "En una ficha, toca Guardar y luego Favoritos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On a title, tap Save and then Favorites."
+          }
+        }
+      }
+    },
+    "En una ficha, toca Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On a title, tap Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+          }
+        }
+      }
+    },
+    "Esta lista está vacía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list is empty"
+          }
+        }
+      }
+    },
+    "Lo que dejes a medias, desde su ficha o manteniendo el dedo en su póster, aparece aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you drop halfway, from its page or by holding its poster, shows up here."
+          }
+        }
+      }
+    },
+    "Lo que empieces a ver, aquí o en la TV, aparece aquí con cuánto llevas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you start watching, here or on the TV, shows up here with how far you are."
+          }
+        }
+      }
+    },
+    "Lo que termines, aquí o en la TV, aparece aquí por mes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you finish, here or on the TV, shows up here by month."
+          }
+        }
+      }
+    },
+    "Mantén presionado para moverlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold to move it"
+          }
+        }
+      }
+    },
+    "Mi lista está vacía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My List is empty"
+          }
+        }
+      }
+    },
+    "Nace «Solo tú»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts as “Only you”"
+          }
+        }
+      }
+    },
+    "Nada a medias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing halfway"
+          }
+        }
+      }
+    },
+    "Necesita internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs internet"
+          }
+        }
+      }
+    },
+    "No has dejado nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven’t dropped anything"
+          }
+        }
+      }
+    },
+    "Todavía no terminas nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven’t finished anything yet"
           }
         }
       }

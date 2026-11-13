@@ -21,7 +21,7 @@ enum CollectionSection: CaseIterable, Hashable {
         case .forYou: "flame.fill"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
         case .seasons: "leaf"; case .genres: "theatermasks"
         case .years: "calendar"; case .trakt: "list.bullet.rectangle"; case .addons: "puzzlepiece.extension"
-        case .yourYear: "square.grid.3x3.fill"
+        case .yourYear: DS.Symbol.whatYouWatch
         }
     }
 }
