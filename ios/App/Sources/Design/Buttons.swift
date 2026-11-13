@@ -119,15 +119,19 @@ struct DSIconButton: View {
     var repeats = false
     /// Lo que pidió aún no llega («Barajar»): la ruedita en lugar del ícono, en el mismo círculo.
     var busy = false
+    /// Cada vez que cambia, el símbolo da un saltito (al barajar, al mandar una carta): dice «ya lo hice» sin palabras. Nunca
+    /// con «Reducir movimiento».
+    var kick = 0
     let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Un dibujo del catálogo en vez de un símbolo (la dona de «Un Simpson al azar»), con sus colores.
     var asset: String?
 
     init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, steady: Bool = false, repeats: Bool = false,
-         busy: Bool = false, action: @escaping () -> Void) {
+         busy: Bool = false, kick: Int = 0, action: @escaping () -> Void) {
         self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size
-        self.steady = steady; self.repeats = repeats; self.busy = busy; self.action = action
+        self.steady = steady; self.repeats = repeats; self.busy = busy; self.kick = kick; self.action = action
     }
 
     init(asset: String, label: LocalizedStringKey, size: Size = .large, action: @escaping () -> Void) {
@@ -135,7 +139,10 @@ struct DSIconButton: View {
         self.asset = asset
     }
 
-    private var image: Image { asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol) }
+    private var image: some View {
+        (asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol))
+            .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? 0 : kick)
+    }
     @ViewBuilder private var glyph: some View {
         if busy { ProgressView().controlSize(.small).frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) }   // ds-exception: la ruedita va dentro del botón que la pidió
         else if steady { image.frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) } else { image }

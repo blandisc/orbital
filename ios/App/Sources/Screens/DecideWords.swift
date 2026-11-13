@@ -25,7 +25,13 @@ struct DecideWords {
         if !deck, let t = m.shownTime { parts.append(timeName(t)) }
         if !deck, let mood = m.mood { parts.append(tr(moodLabel(mood))) }
         if m.minRating > 0 || m.minLetterboxd > 0 { parts.append(ratingTitle(m)) }
-        parts += m.genres.sorted().map { genreName($0, language: language) }
+        return parts + refineParts(m)
+    }
+
+    /// Lo puesto en «Afinar», en corto («Comedia», «90s», «de «Terror de octubre»»): en la línea de lo puesto va junto, con el
+    /// ícono y el tinte de «Afinar».
+    func refineParts(_ m: DecideModel) -> [String] {
+        var parts = m.genres.sorted().map { genreName($0, language: language) }
         if !m.decades.isEmpty { parts.append(m.decades.sorted(by: >).map { decadeName($0) }.joined(separator: ", ")) }
         if m.fame != .any { parts.append(tr(Self.fameKey(m.fame))) }
         if !m.awards.isEmpty { parts.append(tr("Premios")) }

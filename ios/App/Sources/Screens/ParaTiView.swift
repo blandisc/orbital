@@ -14,11 +14,13 @@ struct ParaTiView: View {
     @State private var focused: Suggestion?
     /// Una ficha abierta desde la franja del mosaico («Ver la serie»).
     @State private var openTitle: TitleRoute?
-    /// «Decide por mí» abierto (su puerta en Listas o la de Inicio; adentro, «Tres que caben» y «Una por una»).
+    /// «Decide por mí» abierto desde su puerta en Listas (la de Inicio abre la misma hoja sobre Inicio; adentro, «Tres que
+    /// caben» y «Una por una»).
     @State private var deciding = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
+    /// El mismo `ParaTiModel` de toda la app (`env.paraTi`): «Decide por mí» lo usa también desde Inicio.
+    init() { _model = State(wrappedValue: AppEnvironment.shared.paraTi) }
 
     /// El mosaico con su pie (la pieza elegida). Aparte del cuerpo: el compilador de la CI (Xcode 26.3) no alcanzaba a revisarlo.
     private func mosaicPart(_ m: ParaTiModel) -> some View {
@@ -135,32 +137,11 @@ struct ParaTiView: View {
             let lists = WidgetListsPublisher.lists(from: m)
             if lists.contains(where: { !$0.posters.isEmpty }) { WidgetListsPublisher.publish(lists) }
         }
-        // La puerta de Inicio (DE2): llega aquí y abre la hoja. Primero el cambio de pestaña y lo que se sugiere; luego la
-        // hoja (antes salía encima de Inicio y vacía). El cambio de pestaña puede crear esta vista dos veces: las dos piden
-        // la hoja y el pedido se apaga cuando la hoja ya se ve, no antes (si no, la que queda viva no la abría).
-        .onChange(of: env.ui.openDecide, initial: true) { _, open in
-            guard open else { return }
-            m.mode = .lists
-            Task {
-                // La carga la lanza la propia pestaña: aquí solo se espera a que haya listas, unos segundos a lo más.
-                for _ in 0..<8 {
-                    try? await Task.sleep(for: DS.Motion.tabSettle)
-                    if !m.lists.isEmpty || m.hasLoaded { break }
-                }
-                if env.ui.openDecide { deciding = true }
-            }
-        }
-        .sheet(isPresented: $deciding) {
-            DecideView(pool: decidePool(m), sources: decideSources(m),
-                       reload: { await m.refresh(); return (decidePool(m), decideSources(m)) }) { openTitle = $0 }
-                .onAppear { env.ui.openDecide = false }
-        }
+        .sheet(isPresented: $deciding) { DecideSheet { openTitle = $0 } }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }
 
-    /// Lo que se sugiere, para «Decide por mí»: «Porque viste», el mosaico y cada estante que se ve.
-    private func decidePool(_ m: ParaTiModel) -> [Suggestion] { (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) } }
     /// F1 (13 nov 2026): la salida del mosaico, siempre a la vista. En el iPhone, la flecha a la izquierda; en el iPad y la Mac
     /// la barra de pestañas va en ese renglón y mandaba lo de la izquierda a «⋯» (no había salida visible, solo deslizar de
     /// lado): ahí es «Cerrar» (✕) al final de la derecha, en el lugar del perfil.
@@ -168,33 +149,6 @@ struct ParaTiView: View {
         Button { m.mode = .lists } label: { Image(systemName: ThisDevice.platform == "iphone" ? "chevron.backward" : DS.Symbol.close) }
             .accessibilityLabel(Text("Regresar a Explorar"))
             .accessibilityIdentifier("paraTi-back")
-    }
-
-    /// «¿Qué vemos?» › De dónde: «Porque viste», lo nuevo en tus plataformas y cada estante que se ve (con su nombre).
-    private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {
-        let language = env.services.appSettings.uiLanguage
-        var out: [DecideModel.Source] = []
-        let suggested = "Sugerencias"
-        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), origin: suggested, items: because.items)) }
-        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), origin: suggested, items: m.newOnPlatforms)) }
-        for plan in m.visibleShelves {
-            let name: String = switch plan.id {
-            case "watchlist": Strings.tr("Mi lista", language: language)
-            case "mine": Strings.tr("Tus series", language: language)
-            case "recs": Strings.tr("Recomendadas", language: language)
-            case "trend": Strings.tr("En tendencia", language: language)
-            case "popular": Strings.tr("Lo más popular", language: language)
-            default: plan.title.isEmpty ? plan.id : plan.title
-            }
-            out.append(.init(id: plan.id, name: name, origin: DecideModel.origin(ofShelf: plan.id), items: m.items(for: plan)))   // F7: «Mi lista» es tuya
-        }
-        // Todas tus listas (tienes muchas): las que aún no se abren se piden solo si las eliges.
-        for list in m.traktLists where !out.contains(where: { $0.id == list.id }) && !list.title.isEmpty {
-            let yours = list.group == .mine || DecideModel.origin(ofShelf: list.id) == DecideModel.yoursOrigin
-            let origin = yours ? DecideModel.yoursOrigin : list.source.isEmpty ? suggested : list.source
-            out.append(.init(id: list.id, name: list.title, origin: origin, items: m.items(for: list), load: m.decideLoader(for: list)))
-        }
-        return out
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.

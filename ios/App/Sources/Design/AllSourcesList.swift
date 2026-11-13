@@ -193,15 +193,16 @@ struct AllSourcesList: View {
     private func summary(_ source: Source) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             // Con letra grande, «Recomendada» baja a su propia línea en vez de partir la calidad en tres (ni «Recomen-dada»).
+            // Sin línea base dentro de `ViewThatFits` (regla «ViewThatFits no se anida ni vive bajo alineación por línea base»).
             ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                HStack(spacing: DS.Space.s2) {
                     factsLine(source).fixedSize()
                     Spacer(minLength: DS.Space.s2)
                     if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon).lineLimit(1) }
                     addonMark(source)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                    HStack(spacing: DS.Space.s2) {
                         factsLine(source)
                         Spacer(minLength: DS.Space.s2)
                         addonMark(source)

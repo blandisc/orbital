@@ -45213,6 +45213,61 @@
           }
         }
       }
+    },
+    "Esta noche": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tonight"
+          }
+        }
+      }
+    },
+    "Qué tan buena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How good"
+          }
+        }
+      }
+    },
+    "Qué tipo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What kind"
+          }
+        }
+      }
+    },
+    "Solo en «Tres que caben»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only in “Three that fit”"
+          }
+        }
+      }
+    },
+    "Cambiar filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change filters"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

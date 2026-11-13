@@ -3,9 +3,9 @@ import OrbitalCore
 import OrbitalModels
 
 /// «Decide por mí»: una sola puerta con dos maneras (DE2, 13 nov 2026), como la TV: «Tres que caben» (tres carteles con su
-/// porqué, «Ver» y «Barajar») y «Una por una» (el mazo). Arriba, un renglón de controles que se aplican al tocarlos
-/// (`DecideControls`: películas o series, tiempo, ánimo, calificación y «Afinar») con cuántas opciones quedan junto al
-/// título. «Afinar» es su propia página (géneros, época, de qué listas, bien calificada en IMDb, Trakt o TMDB, lo ya visto), y
+/// porqué, «Ver» y «Barajar») y «Una por una» (el mazo). Arriba, un renglón de controles (`DecideControls`: películas o
+/// series y un solo botón «Filtros») con cuántas opciones quedan junto al título. «Filtros» es su propia página
+/// (`DecideFilters`: duración, ánimo, calificación, géneros, época, fama, premios, de dónde y lo ya visto, por secciones), y
 /// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, dice por qué: sin
 /// conexión (con «Reintentar»), sin sugerencias, o qué filtro quitar.
 struct DecideView: View {
@@ -19,8 +19,12 @@ struct DecideView: View {
     @State private var path: [Page] = []
     /// «Tres que caben» o «Una por una» (el mazo).
     @State private var mode: DecideModel.Mode = .trio
-    /// El alto del contenido de la hoja corta, medido (sin hueco abajo).
-    @State private var contentHeight: CGFloat = 0
+    /// El alto del encabezado y el de los tres carteles con sus botones, medidos: la hoja corta mide eso (sin hueco abajo).
+    @State private var headerHeight: CGFloat = 0
+    @State private var trioHeight: CGFloat = 0
+    private var contentHeight: CGFloat {
+        headerHeight > 0 && trioHeight > 0 ? DS.Space.sheetTop + headerHeight + DS.Layout.titleToContent + trioHeight : 0
+    }
     private var quickHeight: CGFloat {
         contentHeight > 0 ? min(contentHeight - bottomInset, WindowMetrics.size.height * DS.Sheet.maxShare) : DS.Decide.quickHeight
     }
@@ -31,6 +35,17 @@ struct DecideView: View {
     @State private var overflows = false
     /// Si la elegida es una serie, el capítulo con que empieza «Ver» (el que vas o el primero), para decirlo en el botón.
     @State private var seriesStart: AppEnvironment.SeriesStart?
+    /// Las cartas que de verdad quedan en el mazo (las dice `MatchDeckScreen`): la cuenta de «Una por una».
+    @State private var deckCount: Int?
+    /// Barajar: las tres salen (en cascada) antes de pedir las nuevas, que entran igual; y el ícono salta.
+    @State private var leaving = false
+    @State private var shuffles = 0
+    /// El color del cartel elegido (`ArtTint`, el mismo cálculo y la misma memoria que el fondo de la ficha): un resplandor
+    /// suave detrás de los tres.
+    @State private var art = ArtTint()
+    @Environment(\.colorScheme) private var scheme
+    /// Esta vez que se abrió la hoja: su contenido entra escalonado una sola vez.
+    @State private var opened = UUID().uuidString
     let open: (TitleRoute) -> Void
     /// «Reintentar» sin red: lo que se sugiere, pedido otra vez por quien abrió la hoja.
     var reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))?
@@ -51,11 +66,11 @@ struct DecideView: View {
     var body: some View {
         let m = observer.model
         NavigationStack(path: $path) {
-            Group { if mode == .deck { deckRoot(m) } else { root(m) } }
+            sheet(m)
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Page.self) { page in
                     switch page {
-                    case .more: DecideMoreFilters(model: m, openLists: { path.append(.lists) }, done: { path.removeAll() })
+                    case .more: DecideFilters(model: m, deck: mode == .deck, openLists: { path.append(.lists) }, done: { path.removeAll() })
                     case .lists: DecideListPicker(model: m, done: { path.removeLast() })
                     }
                 }
@@ -76,6 +91,7 @@ struct DecideView: View {
             if m.pick == nil { await m.quick() }
         }
         .onDisappear { m.stop() }
+        .task(id: m.pick?.poster) { await art.load(m.pick?.poster) }
         .task(id: m.pick?.imdb) {
             guard let s = m.pick, s.kind == "series" else { return seriesStart = nil }
             seriesStart = await env.seriesStart(s)
@@ -88,61 +104,99 @@ struct DecideView: View {
         #endif
     }
 
-    // MARK: «Una por una»
-    /// El mazo con los mismos filtros (DE2): el tipo arriba, la calificación y «Afinar» debajo; el tiempo y el ánimo son de
-    /// «Tres que caben». Al cambiar un filtro, el mazo se vuelve a barajar con lo que queda.
-    private func deckRoot(_ m: DecideModel) -> some View {
-        let pool = m.deckPool()
-        return VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+    // MARK: la hoja
+    /// El encabezado (título, pestañas y controles) es uno solo y se queda quieto; debajo cambia el contenido de la pestaña,
+    /// entrando de su lado (`tabTransition`). El encabezado va encima (`zIndex`): ningún gesto ni carta del contenido lo
+    /// tapa (regla «Un gesto de contenido nunca tapa los controles de la hoja»; Fernando, 13 nov 2026: «ya no deja
+    /// regresar»). Antes cada pestaña traía su propio encabezado y la rayita de las pestañas no podía viajar.
+    private func sheet(_ m: DecideModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             header(m)
-            MatchDeckScreen(pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
-                            reload: reload.map { load in { let fresh = await load(); await m.retry(pool: fresh.pool, sources: fresh.sources); return m.deckPool() } },
-                            onOpenTitle: { dismiss(); open($0) },
-                            onPlay: { route in
-                                // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
-                                dismiss()
-                                if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } } else { open(route) }
-                            })
+                .zIndex(1)   // ds-exception: el encabezado va encima del contenido (regla «Un gesto de contenido nunca tapa los controles»)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { h in if h != headerHeight { headerHeight = h } }
+            ZStack(alignment: .top) {
+                if mode == .deck { deckBody(m).transition(tabTransition(.deck)) } else { trioBody(m).transition(tabTransition(.trio)) }
+            }
+            .frame(maxHeight: mode == .deck || overflows ? .infinity : nil, alignment: .top)
+            .entrance("decide-\(opened)-content", order: 3)
         }
-        .dsSheetContent()
-        .ignoresSafeArea(.container, edges: .bottom)   // el aire de abajo es el de los lados (Aire parejo)
+        .dsSheetContent(bottom: false)   // cada pestaña pone su aire de abajo
+        .frame(maxHeight: .infinity, alignment: .top)
+        // «Tres que caben» baja hasta la orilla con el aire de los lados (Aire parejo); el mazo se queda sobre el área segura:
+        // sus botones y sus nombres nunca bajo la barrita de inicio.
+        .ignoresSafeArea(.container, edges: mode == .trio ? .bottom : [])
     }
 
-    // MARK: la hoja corta
-    private func root(_ m: DecideModel) -> some View {
+    /// Cada pestaña entra de su lado y sale hacia él («Tres que caben» a la izquierda, «Una por una» a la derecha), con un
+    /// fundido; se puede interrumpir a medias. Con «Reducir movimiento», solo el fundido.
+    private func tabTransition(_ tab: DecideModel.Mode) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .offset(x: tab == .deck ? DS.DecideLive.tabShift : -DS.DecideLive.tabShift).combined(with: .opacity)
+    }
+
+    // MARK: «Una por una»
+    /// El mazo con los mismos filtros (DE2): el tipo y «Filtros» arriba (en su hoja, solo lo que le aplica); el tiempo y el
+    /// ánimo son de «Tres que caben». Al cambiar un filtro, el mazo se vuelve a barajar con lo que queda.
+    private func deckBody(_ m: DecideModel) -> some View {
+        let pool = m.deckPool()
+        return MatchDeckScreen(pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
+                               reload: reload.map { load in { let fresh = await load(); await m.retry(pool: fresh.pool, sources: fresh.sources); return m.deckPool() } },
+                               onCount: { deckCount = $0 },
+                               onOpenTitle: { dismiss(); open($0) },
+                               onPlay: { route in
+                                   // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
+                                   dismiss()
+                                   if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } } else { open(route) }
+                               })
+            .padding(.bottom, DS.Space.s4)
+    }
+
+    // MARK: «Tres que caben»
+    /// Los tres carteles y sus botones. Se desliza solo si no cabe (letra grande, F6); el alto de la hoja es el del
+    /// encabezado más esto, medido (sin hueco abajo).
+    private func trioBody(_ m: DecideModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                header(m)
-                proposal(m)
-            }
-            .dsSheetContent()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in
-                contentHeight = h
-                overflows = h > WindowMetrics.size.height * DS.Sheet.maxShare
-            }
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { proposal(m) }
+                .padding(.bottom, DS.Space.s4)
+                // Solo un cambio de verdad mueve el alto de la hoja: medio punto de ida y vuelta no vuelve a pedirle tamaño
+                // (la hoja mide su contenido y el contenido se acomoda a la hoja; sin este piso podían perseguirse).
+                .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { h in if h != trioHeight { trioHeight = h } }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .ignoresSafeArea(.container, edges: .bottom)   // el aire de abajo es el de los lados (Aire parejo)
+        .scrollClipDisabled()   // la sombra de la elegida y el resplandor no se cortan en el margen
+        .frame(height: overflows || trioHeight == 0 ? nil : trioHeight)
+        .onChange(of: contentHeight, initial: true) {
+            let over = contentHeight > WindowMetrics.size.height * DS.Sheet.maxShare
+            if over != overflows { overflows = over }
+        }
     }
 
     /// «Decide por mí» con cuántas opciones quedan junto al título y ✕; debajo, las dos maneras y un solo renglón de controles
     /// (`DecideControls`: el tipo y los filtros de ícono, con lo puesto dicho en una línea). El mismo en las dos pestañas.
     private func header(_ m: DecideModel) -> some View {
-        let count = mode == .deck ? m.deckPool().count : m.count()
+        let count = mode == .deck ? deckCount ?? m.deckPool().count : m.count()
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            // La cuenta junto al título; si con la letra grande no caben en un renglón, debajo de él (el título no se parte).
-            ViewThatFits(in: .horizontal) {
-                DSSheetHeader(title: Text("Decide por mí")) { countText(m, count); close }
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    DSSheetHeader(title: Text("Decide por mí")) { close }
-                    countText(m, count)
+            // La cuenta junto al título; con letra de accesibilidad, debajo de él (el título no se parte). Se decide por el tamaño
+            // de letra, no con `ViewThatFits`: medir dos encabezados alineados por línea base en cada pasada congelaba la hoja
+            // (0x8BADF00D, 13 nov 2026; regla «ViewThatFits no se anida ni vive bajo alineación por línea base»).
+            Group {
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        DSSheetHeader(title: Text("Decide por mí")) { close }
+                        countText(m, count)
+                    }
+                } else {
+                    DSSheetHeader(title: Text("Decide por mí")) { countText(m, count); close }
                 }
             }
+            .entrance("decide-\(opened)-title", order: 0)
             DSTextTabs(options: [.init(id: DecideModel.Mode.trio, title: Text("Tres que caben"), symbol: DS.Symbol.decideTrio),
                                  .init(id: .deck, title: Text("Una por una"), symbol: DS.Symbol.decideDeck)],
-                       selection: $mode.animation(DS.Motion.base(reduceMotion)))
+                       selection: $mode.animation(DS.Motion.base(reduceMotion)), adapts: false)
                 .accessibilityIdentifier("decide-mode")
-            DecideControls(model: m, deck: mode == .deck, openMore: { path.append(.more) })
+                .entrance("decide-\(opened)-tabs", order: 1)
+            DecideControls(model: m, deck: mode == .deck, openFilters: { path.append(.more) })
+                .entrance("decide-\(opened)-controls", order: 2)
         }
     }
 
@@ -171,14 +225,20 @@ struct DecideView: View {
                     // Tocar otro cartel lo elige; tocar el elegido abre su ficha (la de la serie o la película).
                     // Un solo juego: mismo tamaño y misma base. La elegida crece un poco desde abajo y se levanta con su sombra
                     // (`grow`); la que deja de serlo se recoge (`fold`). Sin marco ni las otras apagadas (pulido de DE2).
+                    // Se hunde tantito al apretarlo (`DSPressStyle`). Al barajar sale encogiéndose y la nueva entra subiendo, una
+                    // tras otra (`DecideTrioLayout.shuffle`).
                     Button { if chosen { dismiss(); open(option.route) } else { m.select(option) } } label: {
                         PosterView(url: option.poster, title: option.title)
                             .shadow(chosen ? DS.Elevation.high : DS.Elevation.high.color(.clear))
                             .scaleEffect(chosen ? DS.Decide.chosenScale : 1, anchor: anchor)
                             .animation(chosen ? DS.Motion.grow(reduceMotion) : DS.Motion.fold(reduceMotion), value: chosen)
-                            .zIndex(chosen ? 1 : 0)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSPressStyle())
+                    .zIndex(chosen ? 1 : 0)
+                    .scaleEffect(leaving ? DS.DecideLive.shuffleFrom : 1, anchor: .bottom)
+                    .opacity(leaving ? 0 : 1)
+                    .animation(DS.Motion.fold(reduceMotion)?.delay(Double(index) * DS.DecideLive.shuffleStagger), value: leaving)
+                    .transition(DecideTrioLayout.shuffle(index: index, reduceMotion: reduceMotion))
                     .accessibilityLabel(Text(verbatim: option.title))
                     .accessibilityHint(chosen ? Text("Abre la ficha") : Text(verbatim: ""))
                     .accessibilityAddTraits(chosen ? .isSelected : [])
@@ -186,6 +246,7 @@ struct DecideView: View {
                 }
             }
             .padding(.top, DS.Space.s2)   // lo que crece la elegida, sin encimarse en los controles
+            .background { glow }
             .dsFeedback(.selection, trigger: s.imdb)
             // Sus datos al margen, con el mismo alto siempre (los renglones se apartan aunque vengan vacíos): al cambiar de
             // elegida el texto se funde y nada brinca.
@@ -222,9 +283,10 @@ struct DecideView: View {
                 dismiss()
                 Task { await env.play(s, from: start) }
             } label: {
+                // Una serie se propone completa, no un capítulo (Fernando, 2 nov 2026). Con letra de accesibilidad dice solo «Ver»
+                // (antes «Ver la se…» cortado); se decide por el tamaño de letra, sin `ViewThatFits`.
                 Group {
-                    // Una serie se propone completa, no un capítulo (Fernando, 2 nov 2026).
-                    if s.kind == "series" {
+                    if s.kind == "series", !typeSize.isAccessibilitySize {
                         Label { start?.isResume == true ? Text("Continuar la serie") : Text("Ver la serie") } icon: { Image(systemName: "play.fill") }
                     } else {
                         Label("Ver", systemImage: "play.fill")
@@ -237,7 +299,7 @@ struct DecideView: View {
             .dsPrimaryButton().controlSize(.large)
             .accessibilityIdentifier("decide-watch")
             // Lo que se espera se ve en el botón; con una o dos opciones no hay a qué barajar (F4).
-            DSIconButton(symbol: "shuffle", label: "Barajar", steady: true, busy: m.isLoading) { Task { await m.next() } }
+            DSIconButton(symbol: DS.Symbol.shuffle, label: "Barajar", steady: true, busy: m.isLoading, kick: shuffles) { shuffle(m) }
                 .disabled(m.isLoading || !m.canShuffle)
                 .accessibilityIdentifier("decide-shuffle")
             DSMoreMenu {
@@ -246,6 +308,31 @@ struct DecideView: View {
                 Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
             }
         }
+    }
+
+    /// Barajar de verdad: los tres salen encogiéndose uno tras otro, se piden los nuevos y entran subiendo en cascada
+    /// (`DecideTrioLayout.shuffle`). Se puede volver a tocar a medias. Con «Reducir movimiento», solo se funden.
+    private func shuffle(_ m: DecideModel) {
+        shuffles += 1
+        Task {
+            if !reduceMotion {
+                leaving = true   // cada cartel lleva su propia animación, escalonada
+                try? await Task.sleep(for: DS.DecideLive.leave)
+            }
+            await m.next()
+            leaving = false
+        }
+    }
+
+    /// Un resplandor suave del color del cartel elegido detrás de los tres (`ArtTint`): en oscuro su tono claro, en claro ese
+    /// tono sobre el papel. Cambia con un fundido al elegir otro.
+    private var glow: some View {
+        let tone = art.colors.map { scheme == .dark ? $0.accent : $0.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix) } ?? .clear
+        return RadialGradient(colors: [tone.opacity(DS.DecideLive.glow), .clear], center: .center, startRadius: 0, endRadius: DS.DecideLive.glowReach)
+            .padding(-DS.Space.s8)
+            .animation(DS.Motion.tint(reduceMotion) ?? DS.Motion.fade, value: art.colors)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     /// Lo que quitas se puede deshacer (F5): «Ya no te la sugiero · Deshacer» o «Hoy no · Deshacer».

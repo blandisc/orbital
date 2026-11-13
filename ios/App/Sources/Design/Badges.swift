@@ -163,6 +163,7 @@ struct DSSectionHead: View {
     /// Una fila de descubrir en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): el título un paso más chico
     /// (`sectionQuiet`), para que lo tuyo pese más (Fernando, 2 nov 2026, C5).
     var quiet = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
          level: Level = .subsection, symbol: String? = nil, quiet: Bool = false) {
@@ -237,16 +238,19 @@ struct DSSectionHead: View {
                         SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] - DS.Size.markOvershoot }   // el jitomate, centrado con las mayúsculas
                         if chevron { Text(Image(systemName: "chevron.forward")).recipe(quiet ? .sectionQuiet : .section, color: DS.textMuted).accessibilityHidden(true) }
                     }
-                } else { ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                        titleLine(1)
-                        if let source { SourceBadge(source: source) }
+                } else if let source {
+                    // El sello con nombre: al lado del título; con letra de accesibilidad, debajo. Sin `ViewThatFits`: aquí
+                    // vive bajo la alineación del título (`.sectionTitle`) y medir cada rama en cada pasada congelaba la
+                    // hoja de filtros de Decide (0x8BADF00D, 13 nov 2026). Regla «ViewThatFits no se anida ni vive bajo
+                    // alineación por línea base».
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: DS.Space.s1) { titleLine(3); SourceBadge(source: source) }
+                    } else {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) { titleLine(2); SourceBadge(source: source).fixedSize() }
                     }
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        titleLine(2)
-                        if let source { SourceBadge(source: source) }
-                    }
-                } }
+                } else {
+                    titleLine(2)   // un renglón si cabe, dos si no (lo mismo que elegía `ViewThatFits`)
+                }
                 if level == .subsection, eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)

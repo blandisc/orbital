@@ -377,8 +377,9 @@ private struct ScareStatus: View {
         let left = scares.filter { $0.time > position }
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             let majorCount = left.filter(\.major).count
+            // Sin línea base dentro de `ViewThatFits` (regla «ViewThatFits no se anida ni vive bajo alineación por línea base»).
             ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) {
+                HStack {
                     Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle).fixedSize()
                     Spacer()
                     summary(left: left.count, major: majorCount)

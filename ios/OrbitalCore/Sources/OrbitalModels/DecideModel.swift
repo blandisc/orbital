@@ -130,6 +130,11 @@ public final class DecideModel: ObservableModel {
     public internal(set) var lastRemoval: Removal? { didSet { changed() } }
     /// Lo que dijiste «No me interesa» y aún no se le avisa a la TV (se puede deshacer hasta que se avisa).
     var pendingDismissals: [String] = []
+    /// Lo que se veía con cada tipo (Todo, Películas, Series) mientras la hoja está abierta: ir y volver de tipo regresa
+    /// los mismos tres (Fernando, 13 nov 2026). Solo «Barajar» o cambiar un filtro barajan otra vez (`setKind`).
+    struct KindMemory { var picks: [Suggestion]; var pick: Suggestion?; var shown: Set<String>; var order: [Suggestion]; var exhausted: Bool }
+    var kindMemory: [String: KindMemory] = [:]
+    var keepingKinds = false
 
     public init(_ services: Services, pool: [Suggestion], sources: [Source] = []) {
         self.services = services
@@ -252,6 +257,7 @@ public final class DecideModel: ObservableModel {
 
     /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
     public func quick() async {
+        kindMemory = [:]
         let following = pool.filter { $0.reason == .watching }.shuffled()
         order = following + pool.filter { $0.reason != .watching }.shuffled()
         // Los carteles de las primeras candidatas empiezan a bajar ya (mientras se decide).
@@ -419,6 +425,7 @@ public final class DecideModel: ObservableModel {
 
     /// Aplicar lo elegido al momento (los filtros ya no esperan un botón): otros tres que cumplan.
     public func apply() async {
+        if !keepingKinds { kindMemory = [:] }   // otro filtro: lo que se recordaba de cada tipo ya no es de estos filtros
         dropUpcoming()
         shown = []
         exhausted = false
