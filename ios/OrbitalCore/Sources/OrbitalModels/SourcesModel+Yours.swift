@@ -57,9 +57,10 @@ extension SourcesModel {
     /// en tu idioma para pedir (de tu lista o de lo que existe sin Real-Debrid). La mejor, en el orden de la recomendación. Lo
     /// que ya pediste y sigue en camino no se vuelve a ofrecer (ya dice cómo va en su renglón).
     public static func yoursToRequest(_ ranked: [Source], rows: [LanguageRow], prefs: Preferences, limitGB: Double, inCloud: Set<Int> = []) -> RequestableVersion? {
-        let yourRows = rows.filter { $0.code == prefs.wanted || ($0.yours && $0.code != "es") }
-        let instantYours = yourRows.contains { row in row.options.contains { $0.speed != .realDebridMustDownload && !$0.otherTitle } }
-        guard !instantYours, !inCloud.contains(where: { id in ranked.contains { $0.index == id && speaksYours($0, prefs: prefs) } }) else { return nil }
+        // Una sola regla con el reproductor (`YourLanguageNow`): solo cuenta lo que arranca ya y suena seguro en tu idioma; un
+        // «español» sin variante, un «Multi» o un «tal vez» no esconden este renglón (13 nov). Las filas ya no deciden.
+        _ = rows
+        guard !YourLanguageNow.available(ranked, prefs: prefs), !inCloud.contains(where: { id in ranked.contains { $0.index == id && speaksYours($0, prefs: prefs) } }) else { return nil }
         guard let pick = ranked.first(where: { s in
             !s.cached && s.debrid && !hidden(s) && !s.refused && !s.isOtherTitle && s.torrent != nil && speaksYours(s, prefs: prefs)
         }) else { return nil }

@@ -113,8 +113,10 @@ struct PlayerScreen: View {
         var switchTitle: String? = nil
         /// «Avisos apagados»: el arreglo es «Ajustes» (los avisos de la app en Ajustes del iPhone; P5-A, como en la ficha).
         var opensNotificationSettings = false
+        /// «No está en latino al instante»: el arreglo es «Versión» del reproductor (ahí se pide a la nube).
+        var opensVersion = false
         let id = UUID()
-        var hasAction: Bool { showsDownloads || switchTo != nil || opensNotificationSettings }
+        var hasAction: Bool { showsDownloads || switchTo != nil || opensNotificationSettings || opensVersion }
     }
     /// Lo que espera turno. Subtítulos y zoom se quedan con el último; los demás, todos, en orden.
     enum QueuedNotice {
@@ -456,9 +458,7 @@ struct PlayerScreen: View {
             if value == .notReadyOnRealDebrid {
                 return show(PlayerNotice(title: Strings.tr("Todavía no está en la nube", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
             }
-            if case .openSubtitles(let why)? = value {
-                return show(PlayerNotice(title: Strings.tr("Ese subtítulo no se pudo bajar", language: ui0), detail: why, tone: .warn))
-            }
+            if let other = otherNotice(value, ui0) { return show(other) }   // subtítulos, «No está en latino al instante»
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
             let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
             // Corto, para que quepa con su botón: «No trae latino · Sus pistas: inglés y castellano · Cambiar».

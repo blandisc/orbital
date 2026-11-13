@@ -82,6 +82,9 @@ public actor StreamFinder {
     var lateTasks: [String: (asked: UUID, task: Task<Bool, Never>)] = [:]
     /// «Reintentar» de «No contestó a tiempo»: la siguiente búsqueda de ese video les pregunta a todos, también a los saltados.
     var askEveryone: Set<String> = []
+    /// Los complementos con Real-Debrid que contestaron puros torrents (la dirección iba sin tu clave): la búsqueda rearma
+    /// tus complementos y les pregunta otra vez, una vez.
+    var keylessAnswers: Set<String> = []
     /// La bitácora del reproductor (`player-log.txt`): qué dio cada complemento y cuánto tardó (Fernando, 12 nov: solo llegó
     /// Comet y la bitácora no decía por qué). Sin direcciones: solo el nombre del complemento.
     var note: @Sendable (String) -> Void = { _ in }
@@ -166,7 +169,9 @@ public actor StreamFinder {
         var (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
         // Alguno no contestó (o se saltó por no contestar antes) y nadie dio nada: no se sabe si hay. Se pregunta otra vez a
         // todos, también a los saltados, antes de decir nada.
-        if Self.unsure(results, skipped: skippedByHealth["\(kind):\(videoID)"] ?? []) {
+        if Self.unsure(results, skipped: skippedByHealth["\(kind):\(videoID)"] ?? []) || serving.contains(where: { keylessAnswers.contains($0.url) }) {
+            let rebuild = serving.contains { keylessAnswers.contains($0.url) }
+            if rebuild { keylessAnswers = []; await registry.invalidate(); note("se rearman tus complementos y se pregunta otra vez") }
             (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: true, everyone: true)
         }
         let failed = results.contains { $0 == nil }

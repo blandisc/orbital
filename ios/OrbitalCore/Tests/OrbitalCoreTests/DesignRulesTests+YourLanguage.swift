@@ -21,4 +21,18 @@ extension DesignRulesTests {
         let quietLines = hits(#"AddonQuietLine\("#, in: files) { $0.name == "AddonPieces.swift" }
         check(quietLines.filter { !$0.contains("retry") }, "Cada «No contestó a tiempo» ofrece «Reintentar»")
     }
+
+    /// 13 nov 2026 (la ruleta de Los Simpson, el widget y el Centro de control abren el reproductor directo): «Versión» del
+    /// reproductor dice lo mismo que la de la ficha, con la misma pieza, y el aviso «No está en … al instante» lleva a ella.
+    func testThePlayerSaysYourLanguageMustBeRequestedToo() throws {
+        let files = try sources(["Design", "Screens"])
+        let panel = try XCTUnwrap(files.first { $0.name == "PlayerScreen+Panel.swift" }).lines.joined(separator: "\n")
+        XCTAssertNotNil(panel.range(of: #"model\.yoursToRequest[\s\S]{0,300}VersionYoursAside\("#, options: .regularExpression),
+                        "«Versión» del reproductor enseña `VersionYoursAside` cuando el modelo dice que tu idioma hay que pedirlo")
+        let notices = try XCTUnwrap(files.first { $0.name == "PlayerScreen+RealDebrid.swift" }).lines.joined(separator: "\n")
+        XCTAssertNotNil(notices.range(of: #"\.yoursOnlyByRequest[\s\S]{0,400}opensVersion: true"#, options: .regularExpression),
+                        "«No está en … al instante» lleva a «Versión» (la acción que ya existe), no es un texto sin salida")
+        let gestures = try XCTUnwrap(files.first { $0.name == "PlayerScreen+Gestos.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(gestures.contains("notice.opensVersion ? { openDock(version: true) }"), "el botón del aviso abre «Versión»")
+    }
 }

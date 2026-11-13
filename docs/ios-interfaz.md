@@ -226,10 +226,21 @@ app te lo dice aunque no arranque al instante; y si un complemento no contestó,
   se guarda; los demás episodios del mismo paquete salen «Lo trajo otro episodio». Solo las que arrancan al instante: pedir
   el enlace de una «por bajar» le pide a Real-Debrid que la baje.
 - La bitácora dice por complemento cuántas trajo y en cuánto («complemento Torrentio: 50 versiones en 4,2 s (llegó tarde: se
-  suman)»), sin direcciones.
+  suman)»), sin direcciones; y qué mandó: entradas, con enlace, solo torrent, avisos por tipo, el «HTTP 4xx» si lo hubo, las
+  opciones de Torrentio sin claves y si la dirección lleva tu clave (`AddonAnswerReport`). Al elegir versión, en qué idioma
+  quedó y si había alguna en tu idioma al instante («sin es-419 al instante: 30 en, 5 fr»).
+- **El reproductor directo también lo dice** (13 nov, Fernando: «Sobre todo pasa cuando le doy a la ruleta esta de los
+  Simpsons, ya sea que entre por widget o por control panel»): la ruleta, el widget, el Centro de control y «Continuar»
+  siguen abriendo la mejor que hay (la regla de elección no cambia), pero si ninguna de tu idioma arranca al instante
+  (`YourLanguageNow`: solo evidencia sólida; un «español» sin variante, un «Multi» o un «tal vez» no cuentan) y existe para
+  pedir, avisa una vez «No está en latino al instante · Versión», y «Versión» del reproductor la ofrece arriba con «Pedir a
+  la nube», como la de la ficha.
+- **Puros torrents no son «no hay»**: si un complemento con Real-Debrid (lo dice su dirección o su nombre, «Torrentio RD»)
+  manda entradas y ninguna con enlace, la dirección va sin tu clave: se dice en la bitácora, se rearman tus complementos y se
+  le pregunta otra vez; si sigue igual, sale como «No contestó a tiempo», nunca como lista vacía guardada.
 
-Lo cuidan `LatinoNubeFinderTests`, `LatinoNubeModelTests`, `AudioProbeTests` y `DesignRulesTests+YourLanguage`. En la TV:
-pendiente (registro de paridad, LN1).
+Lo cuidan `LatinoNubeFinderTests`, `LatinoNubeModelTests`, `LatinoRuletaTests`, `TorrentioSinClaveTests`, `AudioProbeTests` y
+`DesignRulesTests+YourLanguage`. En la TV: pendiente (registro de paridad, LN1).
 
 ### Un botón, un estado (11 nov 2026)
 

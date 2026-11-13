@@ -14,6 +14,8 @@ struct PlayerDebridState {
     var lookupCause: (cause: UnavailableCause, torrent: Source?)?
     /// Una duración corta que se está viendo (¿el aviso de «descargando» o el motor aún abriendo?): cuánto y desde cuándo.
     var shortDuration: (seconds: Double, since: Date)?
+    /// Tu idioma no arranca al instante, pero existe para pedir (lo que tu Torrentio sin Real-Debrid dice que hay): la mejor.
+    var yours: (version: RequestableVersion, source: Source)?
 }
 
 /// Real-Debrid en el reproductor (R5, R6, D5): los avisos de Torrentio, los reintentos que no piden descargas y la causa en
@@ -97,10 +99,11 @@ extension PlayerModel {
 
     /// «Pedirlo y avisarme» desde el reproductor (R7): la versión «por bajar» que ya se abrió (Real-Debrid ya la conoce) o el
     /// mejor torrent que exista. Nunca la pide dos veces.
-    public func requestFromDebrid() async -> DebridRequestsModel.Outcome? {
+    /// `yours`: la de tu idioma que hay que pedir («Hay latino, pero hay que pedirlo a la nube» de «Versión»).
+    public func requestFromDebrid(yours: Bool = false) async -> DebridRequestsModel.Outcome? {
         guard let requests = debridRequests, let request else { return nil }
         let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-        let pick = rd.pendingSource ?? rd.lookupCause?.torrent
+        let pick = yours ? rd.yours?.source : rd.pendingSource ?? rd.lookupCause?.torrent
         let numbers = episodeNumbers(request.videoID)
         let outcome = await requests.request(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle,
                                              season: numbers?.season, episode: numbers?.episode, prefs: prefs, preferred: pick?.torrent,

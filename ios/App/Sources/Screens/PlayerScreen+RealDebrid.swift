@@ -8,6 +8,25 @@ import UserNotifications
 extension PlayerScreen {
     private var ui: String { env.services.appSettings.uiLanguage }
 
+    /// Los avisos del modelo que no caben en `PlayerScreen`: el subtítulo que no se bajó y «No está en latino al instante»
+    /// (13 nov, la ruleta de Los Simpson): tu idioma existe, pero hay que pedirlo; «Versión» lleva a donde se pide.
+    func otherNotice(_ value: OrbitalModels.PlayerNotice?, _ ui: String) -> PlayerNotice? {
+        switch value {
+        case .openSubtitles(let why)?:
+            return PlayerNotice(title: Strings.tr("Ese subtítulo no se pudo bajar", language: ui), detail: why, tone: .warn)
+        case .yoursOnlyByRequest(let code)?:
+            let name = VersionText.inline(code == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(code, in: ui), ui)
+            return PlayerNotice(title: String(format: Strings.tr("No está en %@ al instante", language: ui), name),
+                                detail: Strings.tr("Se puede pedir a la nube", language: ui), tone: .info, opensVersion: true)
+        default: return nil
+        }
+    }
+
+    /// «Pedir a la nube» de «Hay latino, pero hay que pedirlo a la nube» en «Versión» del reproductor.
+    func requestYoursFromPlayer(_ model: PlayerModel) async {
+        await withNotifications { off in await sendFromPlayer(model, off: off, notifies: DebridRequestNotifier.canNotify, yours: true) }
+    }
+
     /// R7: lo pide (la versión «por bajar» que ya se abrió, o el mejor torrent que exista) y dice qué contestó Real-Debrid. La
     /// primera vez, antes de la pregunta de iOS, la misma explicación que en la ficha (P4-A).
     func requestFromPlayer(_ model: PlayerModel) async {
@@ -15,8 +34,8 @@ extension PlayerScreen {
     }
 
     /// `notifies` (IOS-8): con «Ahora no» no se promete «Te aviso cuando esté listo».
-    private func sendFromPlayer(_ model: PlayerModel, off: Bool, notifies: Bool) async {
-        guard let outcome = await model.requestFromDebrid() else { return }
+    private func sendFromPlayer(_ model: PlayerModel, off: Bool, notifies: Bool, yours: Bool = false) async {
+        guard let outcome = await model.requestFromDebrid(yours: yours) else { return }
         let tr = { (key: String) in Strings.tr(key, language: ui) }
         switch outcome {
         case .requested(let request):
