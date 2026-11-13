@@ -4,12 +4,10 @@ import XCTest
 /// picas un episodio ya visto, que créate una tarjeta, que no aparezca esta notificación como del sistema, toda fea»). Regla
 /// en `docs/ios-interfaz.md` § «Las preguntas son tarjetas de la app».
 extension DesignRulesTests {
-    /// Diálogos del sistema que viven en archivos de otra tarea en curso (el buscador de versiones y el reproductor): cuántos
-    /// hay hoy en cada uno y por qué siguen. Uno más ahí también falla.
-    static let pendingDialogs: [String: (count: Int, why: String)] = [
-        "SourcesSheet.swift": (2, "«¿Para el resto de la serie también?» y lo de un pedido a la nube: pendientes de pasar a tarjeta cuando se libere «Versión»"),
-        "PlayerScreen.swift": (2, "«Real-Debrid aún no tiene esta versión» (pendiente de tarjeta) y «¿Sigues viendo?» (sí o no sobre el video)"),
-    ]
+    /// Diálogos del sistema pendientes de pasar a tarjeta, por archivo: cuántos hay y por qué siguen. Uno más ahí también falla.
+    /// Vacío desde el 13 nov 2026: las dos de «Versión» (`SourcesSheet`) y las dos del reproductor (`PlayerScreen`) ya son
+    /// tarjetas (Fernando: «Sí, también conviértelos en la tarjeta, los otros tres diálogos»).
+    static let pendingDialogs: [String: (count: Int, why: String)] = [:]
 
     /// Un `confirmationDialog`, `alert` o `actionSheet` nuevo es una tarjeta de la app (`ChoiceSheet`). Los que se quedan
     /// (confirmaciones cortas y destructivas, pedir un nombre, un sí o no que llega sobre lo que esté abierto) llevan
@@ -55,5 +53,38 @@ extension DesignRulesTests {
         let option = try XCTUnwrap(try sources(["Design"]).first { $0.name == "WatchedWhenSheet.swift" }).lines.joined(separator: "\n")
         let row = try XCTUnwrap(option.range(of: "struct WatchedOption")).lowerBound
         XCTAssertTrue(option[row...].contains(".padding(.vertical, DS.Space."), "`WatchedOption` lleva su aire vertical (aire parejo con letra grande)")
+    }
+
+    /// «Versión»: «¿Para el resto de la serie también?» y el pedido que baja en la nube («Ver Inglés…, ya arranca») son
+    /// tarjetas (13 nov), con las mismas salidas de antes y sin «Cancelar» ni «Esperar a que llegue» (esperar es cerrarla).
+    func testVersionQuestionsAreAppCards() throws {
+        let file = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "SourcesSheet.swift" })
+        let code = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        XCTAssertTrue(code.contains(".choiceSheet(item: $seriesAsk)") && code.contains(".choiceSheet(item: $waiting)"), "las dos preguntas de «Versión» son `ChoiceSheet`")
+        XCTAssertTrue(code.contains("forSeries: ask.code") && code.contains("forSeries: nil"), "«Sí, desde aquí» y «Solo este episodio» hacen lo de siempre")
+        XCTAssertFalse(code.contains("confirmationDialog(") || code.contains(".alert("), "«Versión» no vuelve a los diálogos del sistema")
+        XCTAssertFalse(code.contains("\"Esperar a que llegue\"") || code.contains("\"Cancelar\""), "sin «Cancelar»: la tarjeta se cierra deslizándola, tocando fuera o con Esc")
+    }
+
+    /// El reproductor: «¿Sigues viendo?» y «Real-Debrid aún no tiene esta versión» son la misma tarjeta flotando sobre el video
+    /// (en horizontal una hoja de iOS sube a todo el alto), encima de todo, sin vibrar, y «¿Sigues viendo?» no se cierra sin
+    /// contestar (el siguiente episodio espera en pausa, como antes).
+    func testPlayerQuestionsAreFloatingCards() throws {
+        let screens = try sources(["Screens"])
+        let player = try XCTUnwrap(screens.first { $0.name == "PlayerScreen.swift" }).lines.joined(separator: "\n")
+        XCTAssertFalse(player.contains("confirmationDialog(") || player.contains(".alert("), "el reproductor no vuelve a los diálogos del sistema")
+        XCTAssertTrue(player.contains("questionLayer(model)"), "las preguntas van en el escenario del reproductor")
+        XCTAssertTrue(player.contains("dismissPlayerQuestion()"), "Esc cierra primero la pregunta, no el reproductor")
+        let file = try XCTUnwrap(screens.first { $0.name == "PlayerScreen+Preguntas.swift" })
+        let code = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        XCTAssertTrue(code.contains("ChoiceSheet(card: card, floating: true)"), "la misma tarjeta de la app, flotando")
+        XCTAssertTrue(code.contains("still-watching-card") && code.contains("slow-pick-card"), "las dos preguntas del reproductor son tarjetas")
+        XCTAssertTrue(code.contains("confirmStillWatching()") && code.contains("await close()") && code.contains("switchSource(to: index)"), "las mismas salidas de antes")
+        XCTAssertTrue(code.contains("guard dockState.slowPick != nil else { return false }"), "«¿Sigues viendo?» no se cierra tocando fuera")
+        XCTAssertTrue(code.contains("ScrollView") && code.contains("ViewThatFits(in: .vertical)"), "si no cabe (horizontal, letra grande) se desplaza, nunca cortada")
+        for haptic in [".sensoryFeedback", "FeedbackGenerator", "Haptics."] { XCTAssertFalse(code.contains(haptic), "el reproductor no vibra (\(haptic))") }
+        XCTAssertFalse(code.contains(".sheet("), "en el reproductor la pregunta no es una hoja")
+        let piece = try XCTUnwrap(try sources(["Design"]).first { $0.name == "ChoiceSheet.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(piece.contains("var floating = false") && piece.contains(".glassEffect("), "flotando, de vidrio como los paneles del reproductor")
     }
 }

@@ -7,7 +7,7 @@ final class SavedSelectionUITests: XCTestCase {
 
     func testElegirVariosYQuitarlosDeUnaVez() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let edit = app.buttons["list-edit"]   // GD2: Guardado abre en Mi lista
         XCTAssertTrue(edit.waitForExistence(timeout: 20))

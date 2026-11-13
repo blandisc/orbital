@@ -8,7 +8,7 @@ final class HomeStoriesUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-rd", "premium"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-rd", "premium"]
         app.launch()
     }
 
@@ -38,7 +38,7 @@ final class HomeStoriesUITests: XCTestCase {
     /// Fernando, 4 nov: «cuando bajas y le picas X, truenan». Abiertas, ya abajo, la ✕ regresa el encabezado sin trabarse.
     func testClosingAfterScrollingDownDoesNotHang() {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-rd", "premium", "-demo-stories-open"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-rd", "premium", "-demo-stories-open"]
         app.launch()
         XCTAssertTrue(app.buttons["home-stories-close"].waitForExistence(timeout: 20))
         for _ in 0..<3 { app.swipeUp() }
@@ -69,7 +69,7 @@ final class HomeStoriesUITests: XCTestCase {
     /// Tu turno: en «Ver a tu manera», la tarjeta del doble toque espera tu gesto; al darlo, sigue sola.
     func testYourTurnWaitsForTheGestureAndThenMovesOn() {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-rd", "premium", "-demo-story", "watch"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-rd", "premium", "-demo-story", "watch"]
         app.launch()
         let deck = app.descendants(matching: .any)["story-deck"].firstMatch
         XCTAssertTrue(deck.waitForExistence(timeout: 20))

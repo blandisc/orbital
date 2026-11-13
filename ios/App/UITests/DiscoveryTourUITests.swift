@@ -20,7 +20,7 @@ final class DiscoveryTourUITests: XCTestCase {
 
     private func launch(_ args: [String]) {
         app.terminate()
-        app.launchArguments = ["-demo", "-demo-no-idle"] + args
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle"] + args
         app.launch()
     }
 

@@ -12,7 +12,7 @@ final class ScreensUITests: XCTestCase {
     /// Para ti › Listas con tu Orbital: el Top 10 de Netflix y las tendencias de Disney+ llevan la cifra grande.
     /// «Tus plataformas»: cada una en su tarjeta (Netflix y Disney+); al tocar Netflix, sus rankings con la cifra grande.
     func testPlatformsOpenTheirRankingsWithTheBigNumbers() {
-        app.launchArguments = ["-demo", "-demo-console", "-demo-tab", "1", "-demo-mode", "lists", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-console", "-demo-tab", "1", "-demo-mode", "lists", "-demo-no-idle"]
         app.launch()
         let netflix = app.buttons["platform-netflix"]
         // Explorar es perezoso: Plataformas se arma al acercarse (bajo la portada y «Lo que se ve hoy»).
@@ -32,7 +32,7 @@ final class ScreensUITests: XCTestCase {
 
     /// Buscar › Explora: cada género con su imagen fija (sin esperar a la red) y al tocarlo, su lista aparece pronto.
     func testExploreGenresHaveArtAndOpenQuickly() {
-        app.launchArguments = ["-demo", "-demo-tab", "2"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2"]
         app.launch()
         let action = app.descendants(matching: .any)["art-tile-genre-action"]
         if !action.waitForExistence(timeout: 10) { app.swipeUp() }
@@ -49,7 +49,7 @@ final class ScreensUITests: XCTestCase {
     /// 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»); antes esta prueba pedía que se
     /// escondiera.
     func testSearchBarStaysOnScroll() {
-        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
         let field = revealSearchField()
         XCTAssertTrue(field.exists, "la barra a la vista al abrir")
@@ -63,7 +63,7 @@ final class ScreensUITests: XCTestCase {
 
     /// Descargas vacía: no hay nada que bajar, así que deslizar no mueve nada (antes el título se encogía).
     func testEmptyDownloadsDoesNotScroll() {
-        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "downloads", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "3", "-demo-library", "downloads", "-demo-no-idle"]
         app.launch()
         let empty = app.staticTexts["Nada descargado"]
         XCTAssertTrue(empty.waitForExistence(timeout: 20), "el vacío de Descargas")
@@ -80,7 +80,7 @@ final class ScreensUITests: XCTestCase {
     /// Biblioteca abre en Guardado la primera vez (BI2-A) y Guardado abre en la pestaña «Mi lista» con sus pósters (GD2, 13 nov
     /// 2026), con el mismo filtro de toda lista y su «Estado» (BI3-A): elegir «Vistas» deja la cápsula para quitarlo.
     func testBibliotecaAbreEnGuardadoConElFiltroDeLasListas() {
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tab", "3", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tab", "3", "-demo-no-idle"]
         app.launch()
         XCTAssertTrue(app.navigationBars.staticTexts["Biblioteca"].firstMatch.waitForExistence(timeout: 20), "el título")
         XCTAssertTrue(app.buttons["saved-tab-mylist"].waitForExistence(timeout: 20), "las pestañas de Guardado")
@@ -101,7 +101,7 @@ final class ScreensUITests: XCTestCase {
     /// La 1774 (Fernando, 4 nov 2026): en Mi media sus selectores funcionan (Todo · Películas · Series · Sin ver y «Más ›
     /// Ver carpetas») y la hoja de un pedido de Real-Debrid no trae ✕ (se jala hacia abajo).
     func testMiMediaSelectorsAndRequestSheetWithoutClose() {
-        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "media", "-demo-onedrive", "linked", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "3", "-demo-library", "media", "-demo-onedrive", "linked", "-demo-no-idle"]
         app.launch()
         let movies = app.buttons["Películas"].firstMatch
         XCTAssertTrue(movies.waitForExistence(timeout: 20), "el filtro de Mi media")
@@ -115,7 +115,7 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars.element(boundBy: 0).buttons.firstMatch.waitForExistence(timeout: 5), "abrió las carpetas")
         app.terminate()
 
-        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "downloads", "-demo-rd", "premium", "-demo-rd-request", "all",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "3", "-demo-library", "downloads", "-demo-rd", "premium", "-demo-rd-request", "all",
                                "-demo-rd-sheet", "ready", "-demo-no-idle"]
         app.launch()
         XCTAssertTrue(app.buttons["debrid-watch-now"].waitForExistence(timeout: 20), "la hoja del pedido listo")
@@ -125,7 +125,7 @@ final class ScreensUITests: XCTestCase {
     /// Mi media sin carpeta (todo cabe): deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
     func testShortMiMediaDoesNotScroll() {
         for drive in ["unlinked"] {
-            app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-media", "-demo-onedrive", drive, "-demo-no-idle"]
+            app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "3", "-demo-media", "-demo-onedrive", drive, "-demo-no-idle"]
             app.launch()
             let title = app.navigationBars.staticTexts["Biblioteca"].firstMatch
             XCTAssertTrue(title.waitForExistence(timeout: 20), "el título (\(drive))")
@@ -157,7 +157,7 @@ final class ScreensUITests: XCTestCase {
     func testSearchBarStaysAtTheBottomWithTV() { searchBarAtTheBottom(tv: true) }
 
     private func searchBarAtTheBottom(tv: Bool) {
-        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"] + (tv ? ["-demo-tv-now"] : [])
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2", "-demo-no-idle"] + (tv ? ["-demo-tv-now"] : [])
         app.launch()
         XCTAssertTrue(revealSearchField().exists, "la barra a la vista al abrir")
         sleep(2)
@@ -175,7 +175,7 @@ final class ScreensUITests: XCTestCase {
 
     /// Buscar › «Ver todo» de lo más popular hoy: abre la lista completa, un título se abre y se regresa, y funciona otra vez.
     func testPopularSeeAllOpens() {
-        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
         // El encabezado entero es el botón; «Ver todo» es la flecha junto al título (su pista, no su nombre).
         let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Lo más popular hoy'")).firstMatch
@@ -199,7 +199,7 @@ final class ScreensUITests: XCTestCase {
 
     /// Ajustes › «Un Simpson al azar»: las clásicas por omisión; tocar una temporada la agrega y «Las clásicas» la regresa.
     func testSimpsonsSeasonsPicker() {
-        app.launchArguments = ["-demo", "-demo-open", "settings", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-open", "settings", "-demo-no-idle"]
         app.launch()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Un Simpson al azar'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20), "el renglón «Un Simpson al azar»")
@@ -226,7 +226,7 @@ final class ScreensUITests: XCTestCase {
     func testTypedFieldStaysOnScroll() { openFieldStaysOnScroll(typing: "the") }
 
     private func openFieldStaysOnScroll(typing text: String?) {
-        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
         app.launch()
         let tab = app.tabBars.buttons["Buscar"]
         XCTAssertTrue(tab.waitForExistence(timeout: 20), "la lupa en la barra")
@@ -246,7 +246,7 @@ final class ScreensUITests: XCTestCase {
     func testSecondTapOnMinimizedSearchTabOpensTheField() { secondTapOpensTheField(minimized: true) }
 
     private func secondTapOpensTheField(minimized: Bool) {
-        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
         app.launch()
         if minimized { sleep(3); app.swipeUp(); sleep(1); shot("g-minimized") }
         let tab = app.tabBars.buttons["Buscar"]

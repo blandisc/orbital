@@ -74,5 +74,10 @@ extension DS {
         static let wholeSeries = "square.stack.3d.up"
         /// Cerrar lo que ocupa toda la pantalla y regresar (el mosaico en el iPad y la Mac, F1; el panel de una ficha).
         static let close = "xmark"
+        /// «¿Para el resto de la serie también?» (13 nov 2026): «Sí, desde aquí» (de este episodio en adelante) y «Solo este
+        /// episodio» (uno nada más).
+        static let fromHereOn = "arrow.right.circle", onlyThisOne = "1.circle"
+        /// «¿Sigues viendo?» › «Salir»: cerrar el reproductor (la misma ✕ de cerrar: una idea, un ícono).
+        static let leavePlayer = close
     }
 }

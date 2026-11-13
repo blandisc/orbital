@@ -184,6 +184,9 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true
+        #if DEBUG
+        if Demo.isOn, Demo.mute { player.isMuted = true; player.volume = 0; NSLog("[orbital-demo-mute] AVPlayer silenciado=%d", player.isMuted ? 1 : 0) }   // `-demo-mute`
+        #endif
         let interval = CMTime(seconds: 0.25, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in MainActor.assumeIsolated { self?.publish() } }
         controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.publish() } }

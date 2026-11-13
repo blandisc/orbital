@@ -13,7 +13,7 @@ final class MosaicUITests: XCTestCase {
 
     /// Con `idle: false` el mosaico no se mueve solo: lo que se mida es solo del dedo.
     private func launch(idle: Bool = false) {
-        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "mosaic", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "1", "-demo-mode", "mosaic", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
         app.launch()
         XCTAssertTrue(mosaic.waitForExistence(timeout: 20), "el mosaico aparece")
         XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20), "con piezas")
@@ -49,7 +49,7 @@ final class MosaicUITests: XCTestCase {
     /// «Pasear por el mosaico» desde Listas, volver a Listas y entrar otra vez: el mosaico vuelve a tener piezas (el error
     /// del 31 oct 2026: la segunda vez ya no cargaba).
     func testWalkTheMosaicTwice() {
-        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle"]
         app.launch()
         let walk = app.buttons["paraTi-walk-mosaic"]
         for round in 1...2 {
@@ -64,7 +64,7 @@ final class MosaicUITests: XCTestCase {
     /// Fernando, 31 oct 2026: «entras y sales y se queda negro». Con la animación de reposo (como en su iPhone): entrar,
     /// esperar a que se ponga en reposo, salir (a las listas, a otra pestaña, a una ficha) y volver.
     func testMosaicComesBackAfterLeaving() {
-        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
         app.launch()
         let walk = app.buttons["paraTi-walk-mosaic"]
         func snap(_ name: String) { let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a) }
@@ -82,7 +82,7 @@ final class MosaicUITests: XCTestCase {
     /// (Fernando, 31 oct 2026: «cuando entras se sigue; si sales, desaparece»). Con el vaivén encendido, como en su iPhone.
     /// Se mide en la captura: la franja del muro varía mucho de brillo con pósters y casi nada si está negra.
     func testCoverWallAfterWalking() {
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
         app.launch()
         let walk = app.buttons["paraTi-walk-mosaic"], probe = app.otherElements["paraTi-cover-wall"]
         func snap(_ name: String) -> XCUIScreenshot {

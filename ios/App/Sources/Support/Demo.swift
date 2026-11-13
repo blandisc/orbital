@@ -142,10 +142,15 @@ enum Demo {
     /// `-demo-player dock|subtitles|audio|version|close`: ya reproduciendo, abre «Audio y subtítulos» (con Subtítulos o Audio
     /// abierto) o «Versión»; `close` cierra el reproductor.
     static var player: String? { value(after: "-demo-player") }
-    /// `-demo-player-state skip-intro|error|upnext|locked`: ya reproduciendo, pone «Saltar intro», el error, la tarjeta de
-    /// «Siguiente episodio» o el bloqueo (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
+    /// `-demo-player-state skip-intro|error|upnext|locked|still-watching|slow-pick`: ya reproduciendo, pone «Saltar intro», el
+    /// error, la tarjeta de «Siguiente episodio», el bloqueo, «¿Sigues viendo?» o «Real-Debrid aún no tiene esta versión»
+    /// (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
     static var playerState: String? { value(after: "-demo-player-state") }
     static var playerPortrait: Bool { has("-demo-player-portrait") }
+    /// `-demo-mute`: el reproductor de demostración no suena (volumen del motor en 0). Solo el motor: no toca el volumen del
+    /// sistema ni la sesión de audio. Las pruebas del reproductor en el simulador van en silencio (Fernando, 13 nov 2026: el
+    /// video de prueba sonaba por las bocinas de la Mac).
+    static var mute: Bool { has("-demo-mute") }
     /// `-demo-widget sample|empty|live`: lo que enseña el widget «Lo siguiente para ti» (por omisión un snapshot de ejemplo; `empty`,
     /// sin nada pendiente; `live`, el que arma Inicio con la biblioteca de demostración).
     static var widget: String? { value(after: "-demo-widget") }

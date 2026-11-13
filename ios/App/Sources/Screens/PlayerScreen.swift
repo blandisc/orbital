@@ -286,7 +286,7 @@ struct PlayerScreen: View {
             // IOS-16: nunca sobre la pantalla de un pedido o de un error (se encimaba con «Avisarme cuando esté»).
             // Ni mientras carga (Fernando, 6 nov): con la ruedita los controles se ven aunque estén «escondidos» y la tarjeta salía
             // dos veces, la de los controles y esta.
-            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed, model.phase != .preparing {
+            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed, model.phase != .preparing, !model.stillWatchingPrompt {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)
@@ -306,6 +306,8 @@ struct PlayerScreen: View {
                     }
                 }
             }
+            // «¿Sigues viendo?» y «Real-Debrid aún no tiene esta versión»: tarjetas de la app sobre todo lo demás.
+            questionLayer(model)
         }
     }
 
@@ -391,7 +393,7 @@ struct PlayerScreen: View {
                 }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
-                    if state == "padlock.locked" { lock() } else { model.demoState(state) }
+                    if state == "padlock.locked" { lock() } else if !demoQuestion(state, model) { model.demoState(state) }
                 }
                 if Demo.isOn, let gesture = Demo.gesture {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -519,17 +521,6 @@ struct PlayerScreen: View {
         let _ = BodyCount.tick("player", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = holder.model
         tracked(model)   // en partes (`dressed`, `alive`, `tracked`): de una pieza, el Swift de la CI no la revisaba a tiempo
-        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {   // edición: solo al elegir una por pedir (instantStreams)
-            Button("Abrirla de todos modos") {
-                if let index = dockState.slowPick { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }; Task { await model.switchSource(to: index) } }
-                dockState.slowPick = nil
-            }
-            Button("Mejor no", role: .cancel) { dockState.slowPick = nil }
-        } message: { Text("Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.") }
-        .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
-            Button("Seguir viendo") { Task { await model.confirmStillWatching() } }   // «Seguir» a secas es seguir una serie (Follow)
-            Button("Salir", role: .cancel) { Task { await close() } }
-        } message: { Text("Llevas tres episodios seguidos.") }
         // Con «Audio y subtítulos» abierto la tarjeta de «Siguiente» no se ve: su cuenta se detiene (no cambia de episodio a escondidas).
         .onChange(of: dockState.subtitleDock) { _, open in
             holder.model.panelOpen = open
@@ -554,7 +545,7 @@ struct PlayerScreen: View {
             togglePlay: { if !padlock.locked { userTogglePlay(holder.model) } },
             skip: { forward in if !padlock.locked { skip(holder.model, forward: forward) } },
             openDock: { if !padlock.locked { openDock() } },
-            close: { if !padlock.locked { Task { await close() } } }))
+            close: { if !dismissPlayerQuestion(), !padlock.locked { Task { await close() } } }))   // Esc: primero la pregunta
         .onDisappear {
             // Quitado de la pantalla sin cerrarse (otra pantalla lo reemplazó): el video no sigue sonando por detrás (29 oct: dos
             // episodios de Los Simpson a la vez). `close` no hace nada si ya se cerró.

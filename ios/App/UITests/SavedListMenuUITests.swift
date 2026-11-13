@@ -11,7 +11,7 @@ final class SavedListMenuUITests: XCTestCase {
 
     func testElMenuDeUnaListaTuya() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let lists = app.buttons["saved-tab-lists"]
         XCTAssertTrue(lists.waitForExistence(timeout: 20), "la pestaña «Listas»")

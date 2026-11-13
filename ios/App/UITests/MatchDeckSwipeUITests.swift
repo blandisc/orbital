@@ -6,7 +6,7 @@ final class MatchDeckSwipeUITests: XCTestCase {
 
     func testElMazoGuardaAlDeslizarALaDerecha() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "1",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-tmdb", "-demo-console", "-demo-airings", "-demo-because", "-demo-tab", "1",
                                "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle", "-demo-open", "match"]
         app.launch()
         let deck = app.descendants(matching: .any).matching(identifier: "match-deck").firstMatch

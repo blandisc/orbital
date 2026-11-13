@@ -5,7 +5,7 @@ import XCTest
 final class PlayerHardeningUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
                                "-demo-player-portrait"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()

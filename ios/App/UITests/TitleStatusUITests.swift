@@ -6,7 +6,7 @@ final class TitleStatusUITests: XCTestCase {
 
     func testUnaSerieQueVasViendoAbreElMenuDelEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-title", "series:tt0386676"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-title", "series:tt0386676"]
         app.launch()
         let status = app.buttons["title-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 20), "la ficha tiene el botón de estado")
@@ -23,7 +23,7 @@ final class TitleStatusUITests: XCTestCase {
     /// historial, y «Mi lista» regresa a tu lista.
     func testGuardadoSonPestanasConCadaEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let watched = app.buttons["saved-tab-watched"]
         XCTAssertTrue(watched.waitForExistence(timeout: 20), "las pestañas tienen «Vistas»")
@@ -40,7 +40,7 @@ final class TitleStatusUITests: XCTestCase {
     /// «Mover a…»: mantener el dedo sobre un póster de Vistas lo regresa a Mi lista, con aviso y «Deshacer».
     func testMantenerElDedoMueveAOtroEstado() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
         let watched = app.buttons["saved-tab-watched"]
         XCTAssertTrue(watched.waitForExistence(timeout: 20))

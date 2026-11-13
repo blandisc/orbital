@@ -4,7 +4,7 @@ import XCTest
 final class PlayerPanelUITests: XCTestCase {
     func testAudioAndSubtitlesOpensFromTheSubtitleButtonWithItsVersionTab() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         sleep(9)
@@ -31,7 +31,7 @@ final class PlayerPanelUITests: XCTestCase {
     /// «Episodios» (solo el ícono): abre la lista bajo el video, con el que suena marcado; tocar otro lo pone.
     func testEpisodesButtonOpensTheListAndPlaysThePickedEpisode() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
                                "-demo-player-portrait"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
@@ -57,7 +57,7 @@ final class PlayerPanelUITests: XCTestCase {
     /// En vertical (abierta con `-demo-player audio`): bajo el video, con su título y «Listo», que la cierra.
     func testAudioAndSubtitlesInPortrait() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
                                "-demo-player-portrait", "-demo-player", "audio"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
@@ -72,7 +72,7 @@ final class PlayerPanelUITests: XCTestCase {
     /// La tarjeta de «Siguiente episodio» no se ve.
     func testLockShowsAnUnlockButtonAndHidesUpNext() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
                                "-demo-player-state", "upnext"]
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
@@ -105,7 +105,7 @@ final class PlayerPanelUITests: XCTestCase {
     /// El zoom: al tocarlo sale el aviso con el modo nuevo (se captura justo después del toque).
     func testZoomShowsItsToast() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         sleep(9)
@@ -122,7 +122,7 @@ final class PlayerPanelUITests: XCTestCase {
     /// El «⋯» ya no repite «Audio y subtítulos» (era la misma hoja que el botón de subtítulos).
     func testTheMoreMenuDoesNotRepeatAudioAndSubtitles() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play", "-demo-player-portrait"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play", "-demo-player-portrait"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         sleep(8)

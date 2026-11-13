@@ -15,7 +15,7 @@ final class PlayerStuckUITests: XCTestCase {
     private func launch() throws -> XCUIApplication {
         let video = try XCTUnwrap(env["DEMO_VIDEO"], "sin DEMO_VIDEO: corre scripts/ios_software_path.sh")
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
                                "-demo-player-portrait", "-demo-versions", "-demo-video", video]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
@@ -77,7 +77,7 @@ final class PlayerStuckUITests: XCTestCase {
     /// episodio» y letra muy grande. Todo dentro de la pantalla (antes se salían por abajo).
     func testTheControlsBelowTheVideoNeverLeaveTheScreen() {
         let app = XCUIApplication()
-        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
                                "-demo-player-portrait", "-demo-player-state", "upnext", "-player-portrait-center", "0",
                                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"]
         XCUIDevice.shared.orientation = .portrait
