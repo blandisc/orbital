@@ -14,6 +14,9 @@ public final class MatchDeckModel: ObservableModel {
     public var kind = "" { didSet { if kind != oldValue { rebuild() } } }
     /// Un género del mazo (su nombre en español, el de `Vocabulary`); nil, todos.
     public var genre: String? { didSet { if genre != oldValue { rebuild() } } }
+    /// La que va primero (el cartel elegido en «Tres que caben» al pasar a «Una por una», Fernando, 13 nov 2026): si está en el
+    /// mazo sube arriba y el resto conserva su orden del día (no se vuelve a barajar). nil: el orden del día.
+    public var lead: String? { didSet { if lead != oldValue, loaded { rebuild() } } }
     /// Los géneros que hay en el mazo (del tipo elegido), los que más salen primero.
     public private(set) var genres: [String] = [] { didSet { changed() } }
     /// Un nombre tal cual llegó para cada género (para nombrarlo en inglés).
@@ -138,7 +141,15 @@ public final class MatchDeckModel: ObservableModel {
         genreSamples = samples
         genres = counts.keys.sorted { counts[$0]! != counts[$1]! ? counts[$0]! > counts[$1]! : $0 < $1 }
         if let g = genre, counts[g] == nil { genre = nil; return }   // el didSet vuelve a armar el mazo
-        cards = Self.filter(deck, kind: kind, genre: genre)
+        cards = Self.leading(Self.filter(deck, kind: kind, genre: genre), lead)
+    }
+
+    /// El mazo con `lead` arriba (si está); lo demás en su orden.
+    public nonisolated static func leading(_ cards: [Suggestion], _ lead: String?) -> [Suggestion] {
+        guard let lead, let at = cards.firstIndex(where: { $0.imdb == lead }), at > 0 else { return cards }
+        var out = cards
+        out.insert(out.remove(at: at), at: 0)
+        return out
     }
 
     /// Guardar la de arriba (derecha o ＋).

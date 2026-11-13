@@ -31,18 +31,26 @@ struct DecideFilters: View {
 
     private var language: String { env.services.appSettings.uiLanguage }
     private var words: DecideWords { DecideWords(language: language) }
-    /// Tres por renglón (cuatro el ánimo); con letra de accesibilidad, dos, para que los nombres quepan enteros.
-    private func columns(_ n: Int) -> [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: typeSize.isAccessibilitySize ? 2 : n)
+    /// Tres columnas en toda la hoja (el ánimo, cuatro, en dos por dos: las mismas orillas que las demás); con letra de
+    /// accesibilidad, dos, para que los nombres quepan enteros.
+    private var wide: Int { typeSize.isAccessibilitySize ? 2 : 3 }
+    private var pairs: Int { 2 }
+
+    /// Lo que dice una baldosa: cuántas quedarían si eliges esa, con lo demás puesto (`DecideModel.tally`); nil mientras no
+    /// se sabe (nunca «0»). Se calcula aquí, en cada pasada de la hoja, no dentro de cada baldosa: así siempre es el de ahora.
+    private func tally(_ m: DecideModel, strictTime: Bool? = nil, _ change: (inout DecideModel.Filters) -> Void) -> DecideModel.Tally {
+        m.tally(deck: deck, strictTime: strictTime, change)
     }
 
     var body: some View {
+        let _ = BodyCount.tick("decide-filters", why: Self._printChanges)   // cuántas veces se pinta (`-perf-bodies`)
         let m = observer.model
-        let count = deck ? m.deckPool().count : m.count()
-        let unknown = count == 0 ? m.unknownCount() : 0
+        let total = m.tally(deck: deck)
+        let count = total.known
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-                Text(verbatim: words.optionsLine(m, count)).recipe(.footnote).monospacedDigit().contentTransition(.numericText())
+                Text(verbatim: count == 0 && total.pending > 0 ? Strings.tr("Buscando opciones…", language: language) : words.optionsLine(m, count))
+                    .recipe(.labelLarge, color: DS.text).monospacedDigit().contentTransition(.numericText())
                     .animation(DS.Motion.fade, value: count)
                     .accessibilityIdentifier("decide-filters-count")
                 tonight(m)
@@ -52,10 +60,12 @@ struct DecideFilters: View {
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2).padding(.bottom, DS.Space.s4)
         }
-        .safeAreaInset(edge: .bottom) {
+        // «Ver N» flota abajo con el mismo margen de los lados; lo que pasa por debajo se funde (no queda un renglón a medias
+        // tapado por el botón; regla «Un botón fijo abajo deja ver lo que pasa debajo»).
+        .safeAreaBar(edge: .bottom) {
             Button { done() } label: {
                 Text(count > 0 ? String(format: Strings.tr("Ver %lld", language: language), count)
-                     : unknown > 0 ? Strings.tr("Buscando opciones…", language: language) : Strings.tr("Sin opciones con eso", language: language))
+                     : total.pending > 0 ? Strings.tr("Buscando opciones…", language: language) : Strings.tr("Sin opciones con eso", language: language))
                     .contentTransition(.numericText())
                     .frame(maxWidth: .infinity)
             }
@@ -63,12 +73,16 @@ struct DecideFilters: View {
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
             .accessibilityIdentifier("decide-more-done")
         }
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
         .navigationTitle(Text("Filtros")).navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Quitar filtros") { m.clearFilters() }
-                    .disabled(!hasFilters(m))
-                    .accessibilityIdentifier("decide-filters-clear")
+            // Discreto y solo cuando hay algo que quitar (antes un botón de vidrio grande, apagado casi siempre).
+            if hasFilters(m) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { m.clearFilters() } label: { Text("Quitar filtros").recipe(.labelLarge, color: DS.text) }
+                        .accessibilityIdentifier("decide-filters-clear")
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .onAppear { if opened == nil { opened = m.filtersSignature } }
@@ -84,29 +98,27 @@ struct DecideFilters: View {
     /// En «Una por una» se ve pero apagada (el mazo es para guardar, no para esta noche): lo puesto sigue a la vista y cuenta
     /// en el botón «Filtros», que es el mismo en las dos pestañas.
     @ViewBuilder private func tonight(_ m: DecideModel) -> some View {
+        let times = Dictionary(uniqueKeysWithValues: DecideModel.Time.allCases.map { t in (t, tally(m, strictTime: true) { $0.time = t }) })
+        let moods = Dictionary(uniqueKeysWithValues: DecideModel.Mood.allCases.map { mood in (mood, tally(m) { $0.mood = mood }) })
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             DSSectionHead(title: "Esta noche", level: .section)
             if deck { Text("Solo en «Tres que caben»").recipe(.caption, color: DS.textFaint) }
             Group {
             DSSectionHead(title: "Duración")
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.Time.allCases, id: \.self) { t in
-                    let on = m.shownTime == t
-                    let count = m.count(strictTime: true) { $0.time = t }
-                    DecideChoice(symbol: DS.Symbol.filterTime, title: Text(verbatim: words.timeName(t)), count: count, tint: DS.DecideLive.time,
-                                 selected: on, enabled: DecideModel.offered(count, selected: on)) { m.setTime(on ? nil : t) }
-                        .accessibilityIdentifier("decide-time-\(t.rawValue)")
-                }
+            DecideChoiceGrid(items: DecideModel.Time.allCases, columns: wide) { t in
+                let on = m.shownTime == t
+                let n = times[t]
+                DecideChoice(symbol: DS.Symbol.filterTime, title: Text(verbatim: words.timeName(t)), count: n?.shown, tint: DS.DecideLive.time,
+                             selected: on, enabled: on || n?.open == true) { m.setTime(on ? nil : t) }
+                    .accessibilityIdentifier("decide-time-\(t.rawValue)")
             }
             DSSectionHead(title: "Ánimo").padding(.top, DS.Space.s3)
-            LazyVGrid(columns: columns(4), spacing: DS.Space.s2) {
-                ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
-                    let on = m.mood == mood
-                    let count = m.count { $0.mood = mood }
-                    DecideChoice(symbol: words.moodSymbol(mood), title: Text(LocalizedStringKey(words.moodLabel(mood))), count: count, tint: DS.DecideLive.mood,
-                                 selected: on, enabled: DecideModel.offered(count, selected: on), reservesTwoLines: true) { m.mood = on ? nil : mood }
-                        .accessibilityIdentifier("decide-mood-\(mood.rawValue)")
-                }
+            DecideChoiceGrid(items: DecideModel.Mood.allCases, columns: pairs) { mood in
+                let on = m.mood == mood
+                let n = moods[mood]
+                DecideChoice(symbol: words.moodSymbol(mood), title: Text(LocalizedStringKey(words.moodLabel(mood))), count: n?.shown, tint: DS.DecideLive.mood,
+                             selected: on, enabled: on || n?.open == true) { m.mood = on ? nil : mood }
+                    .accessibilityIdentifier("decide-mood-\(mood.rawValue)")
             }
             }
             .disabled(deck)
@@ -116,40 +128,39 @@ struct DecideFilters: View {
 
     // MARK: Qué tan buena
     @ViewBuilder private func quality(_ m: DecideModel) -> some View {
+        let steps = DecideModel.ratingSteps.filter { $0 > 0 }, boxd = DecideModel.letterboxdSteps.filter { $0 > 0 }
+        let ratings = Dictionary(uniqueKeysWithValues: steps.map { r in (r, tally(m) { $0.minRating = r }) })
+        let letterboxd = Dictionary(uniqueKeysWithValues: boxd.map { r in (r, tally(m) { $0.minLetterboxd = r }) })
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             DSSectionHead(title: "Qué tan buena", level: .section)
             DSSectionHead(title: "Calificación")
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.ratingSteps.filter { $0 > 0 }, id: \.self) { r in
-                    let on = m.minRating == r
-                    let count = m.count { $0.minRating = r }
-                    DecideChoice(symbol: DS.Symbol.filterRating, title: Text(verbatim: String(format: "%.0f+", r)), count: count, tint: DS.DecideLive.rating,
-                                 selected: on, enabled: DecideModel.offered(count, selected: on)) { m.minRating = on ? 0 : r }
-                        .accessibilityIdentifier("decide-rating-\(Int(r))")
-                }
+            DecideChoiceGrid(items: steps, columns: wide) { r in
+                let on = m.minRating == r
+                let n = ratings[r]
+                DecideChoice(symbol: DS.Symbol.filterRating, title: Text(verbatim: String(format: "%.0f+", r)), count: n?.shown, tint: DS.DecideLive.rating,
+                             selected: on, enabled: on || n?.open == true) { m.minRating = on ? 0 : r }
+                    .accessibilityIdentifier("decide-rating-\(Int(r))")
             }
             Text("Según (basta una)").recipe(.caption, color: DS.textFaint)
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.RatingSource.allCases, id: \.self) { source in
-                    let on = m.ratingSources.contains(source)
-                    let usable = source != .tmdb || env.services.tmdb.configured
-                    FilterLogoChoice(title: Text(verbatim: ratingSourceName(source)), selected: on) {
-                        if !on { m.ratingSources.insert(source) } else if m.ratingSources.count > 1 { m.ratingSources.remove(source) }
-                    } logo: { Image("rating-\(source.rawValue)").resizable().scaledToFit() }
-                    .disabled(!usable).opacity(usable ? 1 : DS.Opacity.dimmed)
-                }
+            DecideChoiceGrid(items: DecideModel.RatingSource.allCases, columns: wide) { source in
+                let on = m.ratingSources.contains(source)
+                let usable = source != .tmdb || env.services.tmdb.configured
+                FilterLogoChoice(title: Text(verbatim: ratingSourceName(source)), selected: on) {
+                    if !on { m.ratingSources.insert(source) } else if m.ratingSources.count > 1 { m.ratingSources.remove(source) }
+                } logo: { Image("rating-\(source.rawValue)").resizable().scaledToFit().frame(maxWidth: DS.Filter.ratingLogo) }
+                .disabled(!usable).opacity(usable ? 1 : DS.Opacity.dimmed)
+                .accessibilityIdentifier("decide-source-\(source.rawValue)")
             }
             DSSectionHead(title: "Letterboxd · solo películas").padding(.top, DS.Space.s3)
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.letterboxdSteps.filter { $0 > 0 }, id: \.self) { r in
-                    let on = m.minLetterboxd == r
-                    let count = m.letterboxdReady ? m.count { $0.minLetterboxd = r } : nil
-                    DecideChoice(symbol: DS.Symbol.filterRating, title: Text(verbatim: "\(DecideWords.stars(r))+"), count: count, tint: DS.DecideLive.rating,
-                                 selected: on, enabled: count.map { DecideModel.offered($0, selected: on) } ?? true) {
-                        m.minLetterboxd = on ? 0 : r
-                        m.fetchLetterboxdInBackground()
-                    }
+            DecideChoiceGrid(items: boxd, columns: wide) { r in
+                let on = m.minLetterboxd == r
+                let n = letterboxd[r]
+                DecideChoice(symbol: DS.Symbol.filterRating, title: Text(verbatim: "\(DecideWords.stars(r))+"), count: n?.shown, tint: DS.DecideLive.rating,
+                             selected: on, enabled: on || n?.open == true) {
+                    m.minLetterboxd = on ? 0 : r
+                    m.fetchLetterboxdInBackground()
                 }
+                .accessibilityIdentifier("decide-letterboxd-\(Int(r * 10))")
             }
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { fame(m) }.padding(.top, DS.Space.s3)
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { awards(m) }.padding(.top, DS.Space.s3)
@@ -162,36 +173,36 @@ struct DecideFilters: View {
 
     // MARK: Qué tipo
     @ViewBuilder private func kindOf(_ m: DecideModel) -> some View {
+        let genres = Dictionary(uniqueKeysWithValues: DecideModel.genreChoices.map { g in (g, tally(m) { $0.genres = [g] }) })
+        let eras = Dictionary(uniqueKeysWithValues: DecideModel.decadeChoices.map { d in (d, tally(m) { $0.decades = [d] }) })
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             DSSectionHead(title: "Qué tipo", level: .section)
             DSSectionHead(title: "Géneros")
             Text("Elige uno o varios · el número es cuántas hay").recipe(.caption, color: DS.textFaint)
-            // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.genreChoices, id: \.self) { g in
-                    let count = m.count { $0.genres = [g] }
-                    DecideTile(title: Text(verbatim: genreName(g, language: env.language)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g),
-                               dimmed: !m.genres.isEmpty && !m.genres.contains(g), count: count,
-                               height: DS.Decide.genreTile, enabled: DecideModel.offered(count, selected: m.genres.contains(g))) {
-                        if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
-                    }
+            // Mosaicos con el arte de tus sugerencias de cada género.
+            DecideChoiceGrid(items: DecideModel.genreChoices, columns: wide) { g in
+                let on = m.genres.contains(g)
+                let n = genres[g]
+                DecideTile(title: Text(verbatim: genreName(g, language: env.language)), image: DecideView.tileImage(genre: g), selected: on,
+                           dimmed: !m.genres.isEmpty && !on, count: n?.shown,
+                           height: DS.Decide.genreTile, enabled: on || n?.open == true) {
+                    if on { m.genres.remove(g) } else { m.genres.insert(g) }
                 }
+                .accessibilityIdentifier("decide-genre-\(g)")
             }
-            .id(m.genres)   // que se redibuje al elegir (ver `FlowChips`)
             .onChange(of: m.genres) { m.resolveUnknown() }
             DSSectionHead(title: "Época").padding(.top, DS.Space.s3)
             // En la misma cuadrícula de tres que los géneros: «2020s» y «90s» del mismo tamaño (F12).
-            LazyVGrid(columns: columns(3), spacing: DS.Space.s2) {
-                ForEach(DecideModel.decadeChoices, id: \.self) { d in
-                    let count = m.count { $0.decades = [d] }
-                    DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), image: "decide-era-\(d)",
-                               selected: m.decades.contains(d), dimmed: !m.decades.isEmpty && !m.decades.contains(d),
-                               count: count, height: DS.Decide.eraTile, era: true, enabled: DecideModel.offered(count, selected: m.decades.contains(d))) {
-                        if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
-                    }
+            DecideChoiceGrid(items: DecideModel.decadeChoices, columns: wide) { d in
+                let on = m.decades.contains(d)
+                let n = eras[d]
+                DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), image: "decide-era-\(d)",
+                           selected: on, dimmed: !m.decades.isEmpty && !on,
+                           count: n?.shown, height: DS.Decide.eraTile, era: true, enabled: on || n?.open == true) {
+                    if on { m.decades.remove(d) } else { m.decades.insert(d) }
                 }
+                .accessibilityIdentifier("decide-era-\(d)")
             }
-            .id(m.decades)
             .onChange(of: m.decades) { m.resolveUnknown() }
         }
     }
@@ -212,7 +223,7 @@ struct DecideFilters: View {
         DSSectionHead(title: "Fama")
         if env.services.tmdb.configured {
             // El mismo cuadro del filtro avanzado (fama × calificación), con cuántas quedan en cada esquina cuando ya se sabe.
-            let counts = m.fameReady ? Dictionary(uniqueKeysWithValues: [AdvancedFilter.Fame.gems, .classics, .niche, .blockbusters].map { f in (f, m.count { $0.fame = f }) }) : nil
+            let counts = m.fameReady ? Dictionary(uniqueKeysWithValues: [AdvancedFilter.Fame.gems, .classics, .niche, .blockbusters].map { f in (f, m.tally(deck: deck) { $0.fame = f }.known) }) : nil
             FameQuadrant(selected: m.fame, counts: counts) { f in
                 m.fame = f
                 m.fetchFameInBackground()
@@ -225,19 +236,18 @@ struct DecideFilters: View {
     /// «Premios»: cada uno con su estatuilla (la misma pieza del filtro avanzado) y cuántas de tus sugerencias ganaron; uno que
     /// no deja nada no se toca (F13).
     @ViewBuilder private func awards(_ m: DecideModel) -> some View {
+        let counts = Dictionary(uniqueKeysWithValues: FilterCatalog.awards.map { id in (id, tally(m) { $0.awards = [id] }) })
         DSSectionHead(title: "Premios")
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
-            ForEach(FilterCatalog.awards, id: \.self) { id in
-                let count = m.count { $0.awards = [id] }
-                let offered = DecideModel.offered(count, selected: m.awards.contains(id))
-                FilterLogoChoice(title: Text("\(AwardNames.title(id)) · \(count)"), selected: m.awards.contains(id)) {
-                    m.awards.formSymmetricDifference([id])
-                } logo: { Image("Awards/" + id).resizable().scaledToFit() }
-                .disabled(!offered).opacity(offered ? 1 : DS.Opacity.dimmed)
-                .accessibilityIdentifier("decide-award-\(id)")
-            }
+        DecideChoiceGrid(items: FilterCatalog.awards, columns: wide) { id in
+            let on = m.awards.contains(id)
+            let n = counts[id]
+            let offered = on || n?.open == true
+            FilterLogoChoice(title: n?.shown.map { Text("\(AwardNames.title(id)) · \($0)") } ?? AwardNames.title(id), selected: on) {
+                m.awards.formSymmetricDifference([id])
+            } logo: { Image("Awards/" + id).resizable().scaledToFit() }
+            .disabled(!offered).opacity(offered ? 1 : DS.Opacity.dimmed)
+            .accessibilityIdentifier("decide-award-\(id)")
         }
-        .id(m.awards)
     }
 
     /// «De dónde»: un renglón con lo elegido (abre «De qué listas») y las usadas hace poco, a un toque.
@@ -309,7 +319,7 @@ struct DecideListPicker: View {
         .scrollContentBackground(.hidden)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text(verbatim: String(format: Strings.tr("Buscar entre tus %lld listas", language: language), all.count)))
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaBar(edge: .bottom) {
             Button {
                 let ids = selection
                 done()
@@ -323,6 +333,7 @@ struct DecideListPicker: View {
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
             .accessibilityIdentifier("decide-lists-done")
         }
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
         .navigationTitle(Text("De qué listas")).navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Todas") { selection = [] }.disabled(selection.isEmpty) } }
     }

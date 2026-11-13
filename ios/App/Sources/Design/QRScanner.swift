@@ -34,7 +34,7 @@ struct QRScanner: View {
             }
             .padding(.horizontal, DS.Space.s4)
         }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom) {   // ds-exception: sobre la cámara, no sobre algo que se desliza (sin fundido)
             prompt.font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.paper)
                 .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
                 .background(DS.scrim, in: Capsule())

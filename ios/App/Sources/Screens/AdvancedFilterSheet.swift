@@ -57,7 +57,7 @@ struct AdvancedFilterSheet: View {
                 }
             }
 
-            .safeAreaInset(edge: .bottom) {
+            .safeAreaBar(edge: .bottom) {
                 actions(model)
             }
             .navigationTitle(model.filter.isEmpty ? Text("Filtros") : Text("Filtros · \(model.filter.activeCount)"))

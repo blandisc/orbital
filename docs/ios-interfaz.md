@@ -574,14 +574,65 @@ y las dos pestañas tenían filtros distintos y en otro lugar.
   desaparece lo que cuenta en el numerito. Las opciones son baldosas con ícono **y nombre** (`DecideChoice`) o con su arte
   (`DecideTile`), con cuántas quedan; arriba, cuántas opciones quedan mientras eliges; abajo «Ver N»; arriba a la derecha
   «Quitar filtros» (todo menos el tipo). Se aplica al regresar, y solo si cambió algo.
-  Las baldosas de una fila miden lo mismo: en la fila angosta (ánimo, cuatro) el nombre reserva dos renglones
-  (`reservesTwoLines`), porque la rejilla perezosa no iguala altos y «Para pensar» quedaba más alta que las demás.
+  Las baldosas de una fila miden lo mismo y todas las filas cuelgan de las mismas orillas (ver «Un número dice lo de
+  ahora»).
 - **Puesto se ve**: el botón se llena de su tinte y lleva cuántos hay; cada sección tiene el suyo (`DS.DecideLive`). Sin
   cápsulas de texto.
 - **Lo puesto se dice en una línea** debajo del renglón («1 h · Ligero · 7+ · Comedia», cada parte con el color de su
   sección), y tocarla ofrece «Cambiar filtros», quitar cada uno o todos. Sin nada puesto, la línea no existe (no queda «Sin
   filtros» ni un hueco).
 - **La cuenta va junto al título** («128 opciones»), no en su propio renglón.
+
+### Un número dice lo de ahora; las filas de opciones son parejas (13 nov 2026)
+
+Fernando, la hoja de filtros: en «Calificación» las baldosas decían «0» mientras arriba decía «33 opciones». Causa: los
+números se calculaban dentro de una rejilla perezosa (`LazyVGrid`), que guarda sus celdas de la primera vez; los datos de
+Cinemeta llegaban después (y avisaban), la cuenta de arriba subía y las baldosas no. Además, lo que llegaba antes de
+TMDB o Letterboxd creaba un detalle vacío y la calificación de IMDb ya no se pedía.
+
+- **Qué dice cada número** (`DecideModel.tally`): arriba y «Ver N», cuántas quedan con lo puesto; cada baldosa, cuántas
+  quedarían **si eliges esa**, con todo lo demás puesto (en los grupos de varias —géneros, épocas, premios— con esa sola en
+  su grupo). La baldosa elegida dice lo mismo que arriba. En «Una por una» todo cuenta como el mazo (sin tiempo ni ánimo).
+- **Un número que aún no se sabe no se enseña**: nunca un «0» que luego resulta 12 (`Tally.shown` es nil mientras falta
+  saber) y la baldosa no se apaga. Arriba dice «Buscando opciones…».
+- **Los números se calculan en el `body` de la hoja**, no dentro de una celda perezosa: una lista de opciones con números
+  va en `DecideChoiceGrid` (un `Grid`). Lo que llega en segundo plano avisa **una vez por tanda** (`describe`, cada tanda de
+  12), no una por título; elegir una propuesta junta sus tres campos en un aviso (`coalescing`).
+- **Las baldosas de una fila miden lo mismo** (ancho y alto, aunque una parta su nombre en dos renglones o aún no tenga
+  número: el renglón del número siempre se aparta) y **todas las filas usan las mismas columnas**: tres (el ánimo, dos por
+  dos); con letra de accesibilidad, dos.
+- «Quitar filtros» es texto discreto arriba a la derecha y solo aparece cuando hay algo que quitar.
+- Los logos de «Según» caben en el mismo ancho (`DS.Filter.ratingLogo`): IMDb y TMDB ya no se ven más grandes que Trakt.
+
+Lo cuidan `DecideCountsTests` (OrbitalModelsTests), `testFilterNumbersAreFreshAndRowsEven` y `DecidePolishUITests`
+(mide filas, márgenes y que arriba = «Ver N» = la baldosa elegida).
+
+### Un botón fijo abajo deja ver lo que pasa debajo (13 nov 2026)
+
+«Ver 33» tapaba a medias los logos de «Según». **Un botón o barra fija al pie de algo que se desliza va en
+`safeAreaBar(edge: .bottom)`**: lo que pasa por debajo se funde y el último renglón se puede subir por encima. Nunca
+`safeAreaInset(edge: .bottom)`, salvo sobre algo que no se desliza (la cámara del lector QR, con `ds-exception`). Arreglados
+también la guía, el filtro avanzado, «De qué listas», la barra de elegir varios de Mi lista y la de «Lo que sigue» de la
+repisa. Lo cuida `testFixedBottomButtonLetsContentShowThrough`.
+
+### Los datos son de la carta que se ve (13 nov 2026)
+
+En «Una por una», al tocar «Paso» la carta salía volando pero debajo seguía escrito su nombre un segundo, ya con la siguiente
+arriba. **Lo que describe una pieza que se va cambia en cuanto se va, no cuando el modelo la quita**: el mazo marca la que
+va volando (`leaving`) y los datos son de la primera que no se está yendo. Lo cuida `testCardInfoFollowsTheVisibleCard`.
+
+### VoiceOver dice el nombre que se lee (13 nov 2026)
+
+El cartel elegido de «Tres que caben» se anunciaba «The Office» y debajo se leía «La Oficina». **La etiqueta de accesibilidad
+de un título usa `titleName`, igual que el texto que se ve**, nunca `.title` crudo. Lo cuida `testSpokenTitleIsTheShownTitle`.
+
+### Ninguna tarea sobrevive a su vista (13 nov 2026)
+
+Tras el congelamiento de «Una por una» el registro traía un segundo cierre (`swift::AsyncTask::completeFuture` →
+`__cxa_pure_virtual`): tareas que seguían vivas después de cerrar la hoja. **Una tarea que lanza una vista se guarda y se
+cancela al desaparecer** (Barajar, la carta que sale volando) y revisa `Task.isCancelled` después de cada espera; **un
+modelo cerrado no empieza nada nuevo** (`DecideModel.stopped`: la hoja de filtros aplicaba al desaparecer aunque la hoja ya
+se hubiera cerrado). Lo cuida `testNoTaskOutlivesItsView`.
 
 ### Los datos no se enciman con el arte; lo elegido crece (13 nov 2026)
 
@@ -629,6 +680,12 @@ Fernando: al pasar de Todo a Películas y regresar salían otros tres. **Lo que 
 está abierta** (`DecideModel.switchKind`): volver a un tipo regresa los mismos tres y la misma elegida, también al ir y venir de
 pestaña. Solo «Barajar» o cambiar otro filtro barajan. El mazo no necesita memoria: su orden es fijo por día y lo que pasaste
 o guardaste no vuelve. Lo cuida `DecideKindMemoryTests`.
+
+**Del cartel a la carta, de verdad** (13 nov 2026): al pasar a «Una por una» el mazo empieza por el cartel que estaba
+elegido (si pasa los filtros del mazo; `MatchDeckModel.lead`, el resto conserva su orden del día) y ese cartel crece hasta
+volverse la carta (`matchedGeometryEffect`, `DecideView.heroKey`); de regreso, la carta de arriba vuelve a ser la elegida si
+está entre los tres. El mazo vive en la hoja (no en su pestaña): ir y volver no lo recarga. Con «Reducir movimiento», solo la
+transición de lado. Lo cuidan `DecidePolishUITests` y `MatchDeckLeadTests`.
 
 ### ViewThatFits no se anida ni vive bajo alineación por línea base (13 nov 2026)
 

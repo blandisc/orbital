@@ -8,16 +8,37 @@ extension DecideModel {
     /// que aún no se sabe (sin datos de Cinemeta) no cuenta todavía; el número sube solo cuando llegan.
     /// `strictTime`: que el tiempo filtre aunque no lo hayas elegido (los conteos del menú «Tiempo»).
     public func count(strictTime: Bool? = nil, _ change: (inout Filters) -> Void = { _ in }) -> Int {
-        let strict = strictTime ?? timeChosen
+        tally(strictTime: strictTime, change).known
+    }
+
+    /// Un conteo con lo que aún no se puede decidir aparte (13 nov 2026). `known`: las que cumplen y ya se sabe; `pending`:
+    /// las que faltan por saber (Cinemeta, TMDB o Letterboxd aún no contestan). `shown`: lo que se enseña en una baldosa:
+    /// nil mientras no se sabe nada (nunca un «0» que luego resulta 12).
+    public struct Tally: Equatable, Sendable {
+        public let known: Int, pending: Int
+        public var shown: Int? { known == 0 && pending > 0 ? nil : known }
+        /// Se puede tocar: deja algo, o aún no se sabe (no se apaga lo que tal vez sí tenga).
+        public var open: Bool { known > 0 || pending > 0 }
+    }
+
+    /// Qué cuenta cada número de la hoja de filtros (regla «Un número dice lo de ahora», 13 nov 2026): la cuenta de arriba
+    /// y «Ver N» son `tally(deck:)` con lo puesto; cada baldosa, cuántas quedarían **si eliges esa**, con todo lo demás puesto
+    /// (en los de varias —géneros, épocas, premios— con esa sola en su grupo). La baldosa elegida dice lo mismo que arriba.
+    /// `deck`: con lo que filtra el mazo (sin tiempo ni ánimo y con lo ya visto, como `deckPool`).
+    public func tally(deck: Bool = false, strictTime: Bool? = nil, _ change: (inout Filters) -> Void = { _ in }) -> Tally {
+        let strict = deck ? false : (strictTime ?? timeChosen)
         var f = filters
         change(&f)
+        if deck { f.mood = nil }
         let skipped = notToday()
-        let seen = f.includeWatched ? [] : (watched ?? [])
-        return candidatesPool.filter { s in
-            guard !skipped.contains(s.imdb), !seen.contains(s.imdb), f.kind == nil || s.kind == f.kind, let v = verdict(s, f) else { return false }
+        let seen = deck || f.includeWatched ? [] : (watched ?? [])
+        var known = 0, pending = 0
+        for s in candidatesPool where !skipped.contains(s.imdb) && !seen.contains(s.imdb) && (f.kind == nil || s.kind == f.kind) {
+            guard let v = verdict(s, f) else { pending += 1; continue }
             // El tiempo de la hora (no lo elegiste) ordena, no filtra: cuenta lo mismo que se puede proponer.
-            return v.matches && (v.fits || !strict)
-        }.count
+            if v.matches && (v.fits || !strict) { known += 1 }
+        }
+        return Tally(known: known, pending: pending)
     }
 
     /// Las listas elegidas, para decir de dónde salen («de «Terror de octubre»», «de 2 listas»).
@@ -31,7 +52,7 @@ extension DecideModel {
 
     public func resolveUnknown() {
         let f = filters
-        let unknown = candidatesPool.filter { verdict($0, f) == nil }
+        let unknown = candidatesPool.filter { verdict($0, f) == nil && details[$0.imdb]?.described != true }
         guard !unknown.isEmpty, resolving == nil else { return }
         resolving = Task { [weak self] in
             for start in stride(from: 0, to: unknown.count, by: Self.chunk) {
@@ -120,9 +141,11 @@ extension DecideModel {
             isLoading = true
             found = await trio(waitForPosters: true, briefly: waitForPosters)
         }
-        isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
-        picks = found
-        if let first = found.first { select(first) } else { pick = nil; exhausted = true }
+        coalescing {   // los tres nuevos y la elegida en un solo aviso
+            isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
+            picks = found
+            if let first = found.first { select(first) } else { pick = nil; exhausted = true }
+        }
         // La duración y la calificación llegan después, sin bloquear nada; los siguientes se preparan desde ya.
         fillUpcoming()
         enrichPicks(found)
@@ -131,7 +154,8 @@ extension DecideModel {
     /// La duración y la calificación de los tres que se ven, si faltan: llegan solas al renglón de datos.
     func enrichPicks(_ found: [Suggestion]) {
         enriching?.cancel()
-        guard found.contains(where: { details[$0.imdb] == nil }) else { return }
+        guard !stopped else { return }
+        guard found.contains(where: { details[$0.imdb]?.described != true }) else { return }
         enriching = Task { [weak self] in
             await self?.describe(found)
             guard let self, !Task.isCancelled, let current = self.pick, found.contains(where: { $0.imdb == current.imdb }) else { return }
@@ -163,9 +187,11 @@ extension DecideModel {
 
     /// Tocar uno de los tres carteles: esa es la propuesta.
     public func select(_ s: Suggestion) {
-        pick = s
-        minutes = s.runtime ?? details[s.imdb]?.minutes
-        imdbRating = details[s.imdb]?.rating
+        coalescing {   // tres campos, un solo aviso
+            pick = s
+            minutes = s.runtime ?? details[s.imdb]?.minutes
+            imdbRating = details[s.imdb]?.rating
+        }
     }
 
     /// La siguiente candidata que cabe (y la marca como enseñada); nil: no hay ninguna.
@@ -216,10 +242,10 @@ extension DecideModel {
     /// ¿Cumple? (nil: falta preguntarle a Cinemeta o a TMDB). `fits`: cabe en el tiempo.
     func verdict(_ s: Suggestion, _ f: Filters) -> (matches: Bool, fits: Bool)? {
         let d = details[s.imdb]
-        let genreList = s.genres.isEmpty ? d?.genres : s.genres
+        let genreList = s.genres.isEmpty ? (d?.described == true ? d?.genres : nil) : s.genres
         if (!f.genres.isEmpty || f.mood != nil) && genreList == nil { return nil }
         let year = s.year ?? d?.year
-        if !f.decades.isEmpty && year == nil && d == nil { return nil }
+        if !f.decades.isEmpty && year == nil && d?.described != true { return nil }
         var ok = true
         if !f.genres.isEmpty { ok = Self.matches(genreList ?? [], picked: f.genres) }
         else if let mood = f.mood { ok = Self.matches(genreList ?? [], mood) }
@@ -242,7 +268,7 @@ extension DecideModel {
             var pending = false
             for source in f.ratingSources {
                 switch source {
-                case .imdb: if let r = d?.rating { known.append(r) } else if d == nil { pending = true }
+                case .imdb: if let r = d?.rating { known.append(r) } else if d?.described != true { pending = true }
                 case .trakt: if let r = s.traktRating { known.append(r) }
                 case .tmdb: if let r = d?.tmdbRating { known.append(r) } else if d?.tmdbChecked != true && services.tmdb.configured { pending = true }
                 }
@@ -269,6 +295,7 @@ extension DecideModel {
 
     /// Al cerrar la hoja: lo que se preparaba en segundo plano ya no hace falta.
     public func stop() {
+        stopped = true
         dropUpcoming(); enriching?.cancel(); describingAll?.cancel(); describingAll = nil; ratingTMDB?.cancel(); ratingTMDB = nil
         statsTMDB?.cancel(); statsTMDB = nil; ratingLetterboxd?.cancel(); ratingLetterboxd = nil
         resolving?.cancel(); resolving = nil
@@ -326,7 +353,8 @@ extension DecideModel {
 
     func describe(_ items: [Suggestion]) async {
         let cinemeta = services.cinemeta
-        let missing = items.filter { details[$0.imdb] == nil }
+        let missing = items.filter { details[$0.imdb]?.described != true }
+        guard !missing.isEmpty else { return }
         let found = await withTaskGroup(of: (String, [String], Int?, Double?, Int?).self) { group in
             for s in missing {
                 group.addTask {
@@ -344,16 +372,21 @@ extension DecideModel {
         }
         var learned = false
         for (id, genres, minutes, rating, year) in found {
-            let old = details[id]
-            details[id] = Detail(genres: genres, minutes: minutes, rating: rating, year: year, tmdbRating: old?.tmdbRating, tmdbChecked: old?.tmdbChecked)
+            // Lo de TMDB y Letterboxd que ya estaba se queda (antes se perdía o, peor, tapaba a Cinemeta).
+            var d = details[id] ?? Detail(genres: [], minutes: nil, rating: nil, year: nil)
+            d.genres = genres; d.minutes = minutes; d.rating = rating; d.year = year; d.cinemeta = true
+            details[id] = d
             learned = learned || !genres.isEmpty || minutes != nil || rating != nil || year != nil
         }
-        if learned { saveDetails(); changed() }   // los conteos («34 opciones») suben solos
+        // Un solo aviso por tanda (no uno por título): los conteos («34 opciones», «6+ · 12») suben solos, sin tormenta de
+        // repintado. Aunque nada traiga datos se avisa: lo que estaba «por saber» ya se sabe y su baldosa deja de esperar.
+        if learned { saveDetails() }
+        if !found.isEmpty { changed() }
     }
 
     /// Se guardan solo los que trajeron algo (un fallo de red se vuelve a preguntar la próxima vez), hasta un tope.
     func saveDetails() {
-        var keep = details.filter { !$0.value.genres.isEmpty || $0.value.minutes != nil || $0.value.rating != nil || $0.value.year != nil }
+        var keep = details.filter { $0.value.described && ($0.value.cinemeta != true || !$0.value.genres.isEmpty || $0.value.minutes != nil || $0.value.rating != nil || $0.value.year != nil) }
         if keep.count > Self.detailsLimit { keep = Dictionary(uniqueKeysWithValues: keep.prefix(Self.detailsLimit).map { ($0.key, $0.value) }) }
         services.kv.set(Self.detailsKey, data: try? JSONEncoder().encode(keep))
     }

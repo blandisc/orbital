@@ -72,6 +72,9 @@ extension DS {
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
         /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
         static let awardIcon: CGFloat = 40, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
+        /// Los logos de «Según» (IMDb, Trakt, TMDB) caben en este ancho: los anchos ya no se ven más grandes que el redondo de
+        /// Trakt (mismo tamaño óptico; pulido de Decide, 13 nov 2026).
+        static let ratingLogo: CGFloat = 56
         /// Los cuadritos de lo filtrado arriba de los resultados.
         static let summarySquare: CGFloat = 64
         /// La hora de «Que acabe antes de las…»: de las 8 pm a las 3 am, en cuartos de hora.

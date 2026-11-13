@@ -118,6 +118,8 @@ struct MatchDeck: View {
     @Binding var command: MatchCommand?
     /// Hacia dónde va la de arriba y cuánto: lo leen los botones de abajo para encenderse.
     var pull: MatchPull?
+    /// Cartel → carta (`DecideView.heroKey`): la de arriba crece desde el cartel del mismo título al llegar al mazo.
+    var hero: Namespace.ID?
     let onSave: (Suggestion) -> Void
     let onDiscard: (Suggestion) -> Void
     /// Hacia arriba o la ★: «Para hoy».
@@ -134,6 +136,14 @@ struct MatchDeck: View {
     @State private var armed = false
     /// «Reducir movimiento»: la carta que sale se funde en su lugar en vez de volar.
     @State private var fading = false
+    /// La carta que sale volando (botón o dedo): se cancela si el mazo desaparece a medio vuelo (ninguna tarea sobrevive a
+    /// su vista).
+    @State private var flight: Task<Void, Never>?
+    /// La que ya va volando: sus datos ceden a los de la que sube a su lugar desde que sale, no hasta que el mazo la quita
+    /// (antes «La Oficina» seguía escrita un segundo debajo de «Avengers»).
+    @State private var leaving: String?
+    /// Para que la carta tenga siempre el mismo efecto (sin «cartel → carta» no hay espacio de nombres de la hoja).
+    @Namespace private var own
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -155,15 +165,15 @@ struct MatchDeck: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .onChange(of: geo.size, initial: true) { _, size in width = size.width; height = size.height }
             }
-            if let first = cards.first {
+            if let shown = cards.first(where: { $0.imdb != leaving }) ?? cards.first {
                 // A la orilla de la carta; con letra de accesibilidad, de margen a margen (no se corta en «En Par…»).
-                MatchCardInfo(suggestion: first, genres: genres(first))
-                    .id(first.imdb)
+                MatchCardInfo(suggestion: shown, genres: genres(shown))
+                    .id(shown.imdb)
                     .transition(.opacity)
             }
         }
-        .animation(DS.Motion.snap(reduceMotion), value: cards.first?.imdb)
-        .onChange(of: cards.first?.imdb) { dragID = nil; drag = .zero; fading = false }   // «Deshacer» la regresa a su lugar
+        .animation(DS.Motion.snap(reduceMotion), value: cards.first(where: { $0.imdb != leaving })?.imdb)
+        .onChange(of: cards.first?.imdb) { dragID = nil; drag = .zero; fading = false; leaving = nil }   // «Deshacer» la regresa a su lugar
         .dsFeedback(.impact(weight: .medium), trigger: armed) { was, now in !was && now }
         #if DEBUG
         // Capturas a medio arrastre: la de arriba se queda inclinada hacia «Guardar» con su sello y el botón encendido.
@@ -174,6 +184,7 @@ struct MatchDeck: View {
             let p = progress(drag); pull?.set(p.toward, p.amount)
         }
         #endif
+        .onDisappear { flight?.cancel(); flight = nil; leaving = nil }
         .onChange(of: command) { _, asked in
             guard let asked, let s = cards.first else { command = nil; return }
             command = nil
@@ -200,6 +211,7 @@ struct MatchDeck: View {
         let depth: CGFloat = top ? 0 : CGFloat(i) - CGFloat(min(1, progress(moved).amount))
         return MatchCard(suggestion: s, lean: lean, rise: rise)
             .frame(width: fit.width, height: fit.height)
+            .heroMatch(hero ?? own, id: s.imdb, top: top)
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
             .scaleEffect(1 - depth * DS.Match.behindShrink, anchor: .bottom)
             .offset(y: depth * DS.Match.behindPeek)
@@ -265,11 +277,13 @@ struct MatchDeck: View {
     private func fly(_ direction: Direction, _ s: Suggestion, from: CGSize, velocity: CGSize) {
         let toward: MatchCommand = switch direction { case .left: .discard; case .right: .save; case .up: .tonight }
         dragID = s.imdb
-        Task { @MainActor in
+        flight?.cancel()
+        flight = Task { @MainActor in
             if reduceMotion {
                 pull?.set(toward, 1)
-                withAnimation(DS.Motion.fade) { fading = true }
+                withAnimation(DS.Motion.fade) { fading = true; leaving = s.imdb }
                 try? await Task.sleep(for: DS.Match.flyOut)
+                guard !Task.isCancelled else { return }
             } else {
                 if from == .zero {   // desde un botón: primero se inclina y enseña el sello, como al arrastrar
                     let hint: CGSize = switch direction {
@@ -279,12 +293,14 @@ struct MatchDeck: View {
                     }
                     withAnimation(DS.Motion.base(reduceMotion)) { drag = hint; pull?.set(toward, 1) }
                     try? await Task.sleep(for: DS.Match.flyOut)
+                    guard !Task.isCancelled else { return }
                 }
                 let start = from == .zero ? drag : from
                 let target = away(direction, from: start, velocity: velocity)
                 let time = throwTime(from: start, to: target, velocity: velocity)
-                withAnimation(DS.Motion.fling(reduceMotion, duration: time)) { drag = target }
+                withAnimation(DS.Motion.fling(reduceMotion, duration: time)) { drag = target; leaving = s.imdb }
                 try? await Task.sleep(for: .seconds(time))
+                guard !Task.isCancelled else { return }
             }
             pull?.set(nil, 0)   // la carta se queda fuera (o fundida) hasta que el mazo la quita
             switch direction { case .right: onSave(s); case .left: onDiscard(s); case .up: onTonight(s) }
@@ -328,5 +344,14 @@ struct MatchDeckLayout: Layout {
         let inset = infoFullWidth ? 0 : max(0, (bounds.width - Self.fitted(CGSize(width: bounds.width, height: room), behind: behind).width) / 2)
         subviews[1].place(at: CGPoint(x: bounds.minX + inset, y: bounds.minY + room + gap),
                           proposal: ProposedViewSize(width: bounds.width - inset * 2, height: nil))
+    }
+}
+
+extension View {
+    /// La carta de arriba comparte lugar con el cartel del mismo título en «Tres que caben» (`DecideView.heroKey`): al
+    /// cambiar de pestaña uno crece hasta el otro. Todas las cartas llevan el efecto y solo cambia su clave: si se pusiera
+    /// o quitara al subir una carta, esa carta nacería otra vez y se fundiría, y por un instante asomaba la de atrás.
+    func heroMatch(_ space: Namespace.ID, id: String, top: Bool) -> some View {
+        matchedGeometryEffect(id: top ? DecideView.heroKey(id) : "decide-deck-" + id, in: space, isSource: true)
     }
 }

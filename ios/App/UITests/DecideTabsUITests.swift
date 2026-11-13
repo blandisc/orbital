@@ -86,6 +86,41 @@ final class DecideTabsUITests: XCTestCase {
         XCTAssertTrue(shuffle.waitForExistence(timeout: 10), "y de vuelta a los tres")
     }
 
+    /// La hoja de filtros (13 nov 2026): las baldosas de una fila miden lo mismo aunque una parta su nombre («Para pensar»),
+    /// y elegir una calificación deja el mismo número arriba y en «Ver N» (antes las baldosas decían «0» con «5 opciones»).
+    func testLaHojaDeFiltrosCuadraYSusFilasSonParejas() {
+        let app = launch(["-demo-tab", "1", "-demo-mode", "lists", "-demo-open", "decide"])
+        let filters = app.buttons["decide-filters"]
+        XCTAssertTrue(filters.waitForExistence(timeout: 30), "la hoja de Decide abre")
+        filters.tap()
+        let done = app.buttons["decide-more-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 8), "la hoja de filtros abre")
+        sleep(3)   // que lleguen los datos de Cinemeta de la demo
+        shot(app, "filtros-arriba")
+        let moods = ["light", "intense", "think", "together"].map { app.buttons["decide-mood-\($0)"] }.filter { $0.exists }
+        XCTAssertGreaterThanOrEqual(moods.count, 2, "las baldosas de ánimo")
+        let heights = Set(moods.map { Int($0.frame.height.rounded()) })
+        XCTAssertEqual(heights.count, 1, "las baldosas de ánimo miden lo mismo: \(moods.map { $0.frame.height })")
+        let tops = Set(moods.map { Int($0.frame.minY.rounded()) })
+        XCTAssertLessThanOrEqual(tops.count, 2, "en dos por dos, dos filas parejas")
+        let seven = app.buttons["decide-rating-7"]
+        XCTAssertTrue(seven.waitForExistence(timeout: 5))
+        // «Ver N» va fijo abajo y lo de debajo se ve a través: se sube hasta que la baldosa quede por encima (en el SE, sin
+        // esto, el toque caía en «Ver N» y cerraba los filtros).
+        for _ in 0..<3 where !seven.isHittable || seven.frame.maxY > done.frame.minY - 4 { app.swipeUp(velocity: .slow); sleep(1) }
+        if seven.isEnabled {
+            seven.tap()
+            sleep(1)
+            shot(app, "filtros-7")
+            let label = app.staticTexts["decide-filters-count"].label
+            let top = label.split(whereSeparator: { !$0.isNumber }).first.map(String.init)
+            let ver = done.label.split(whereSeparator: { !$0.isNumber }).first.map(String.init)
+            if let top, let ver { XCTAssertEqual(top, ver, "arriba («\(label)») y «\(done.label)» dicen lo mismo") }
+        }
+        app.swipeUp(); sleep(1); shot(app, "filtros-medio")
+        app.swipeUp(); sleep(1); shot(app, "filtros-abajo")
+    }
+
     func testInicioAbreLaHojaAhiMismo() {
         let app = launch(["-demo-tab", "0", "-demo-open", "home-decide"])
         let deckTab = app.buttons["Una por una"]

@@ -65,7 +65,7 @@ struct SavedListContent: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .orbitalRefreshable { [model] in await model.load() }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaBar(edge: .bottom) {
             if selection.editing {
                 SavedSelectionBar(model: model, selection: selection, listID: listID, pile: nil, items: shownItems)
                     .transition(.move(edge: .bottom).combined(with: .opacity))

@@ -58,7 +58,7 @@ extension DesignRulesTests {
     /// Una opción en 0 no se toca (F13) y las opciones de «Afinar» llevan ícono o arte, no cápsulas de solo texto.
     func testDeadOptionsAreNotTappableAndChoicesHaveIcons() throws {
         let pages = try file("DecideFilterPages.swift", in: try sources())
-        XCTAssertGreaterThanOrEqual(pages.components(separatedBy: "DecideModel.offered(").count - 1, 3, "géneros, épocas y premios usan `offered`")
+        XCTAssertGreaterThanOrEqual(pages.components(separatedBy: "n?.open == true").count - 1, 3, "géneros, épocas y premios se tocan solo si dejan algo (`Tally.open`, como `offered`)")
         XCTAssertTrue(pages.contains("FameQuadrant(selected: m.fame, counts:"), "Fama, el cuadro del filtro avanzado con sus cuentas")
         XCTAssertTrue(pages.contains("FilterLogoChoice("), "Premios con su estatuilla")
         XCTAssertFalse(pages.contains("PanelChip("), "sin cápsulas de solo texto en «Afinar»")
@@ -116,10 +116,10 @@ extension DesignRulesTests {
         for section in ["Esta noche", "Qué tan buena", "Qué tipo", "De dónde"] {
             XCTAssertTrue(pages.contains(#"DSSectionHead(title: "\#(section)", level: .section)"#), "la hoja de filtros, por secciones: \(section)")
         }
-        XCTAssertTrue(pages.contains("DecideChoice(") && pages.contains(#"Button("Quitar filtros")"#) && pages.contains("decide-filters-count"),
+        XCTAssertTrue(pages.contains("DecideChoice(") && pages.contains(#"Text("Quitar filtros")"#) && pages.contains("decide-filters-count"),
                       "baldosas con nombre, «Quitar filtros» y cuántas quedan")
         XCTAssertTrue(pages.contains("m.filtersSignature != opened"), "al salir se baraja solo si cambió algo")
-        XCTAssertTrue(pages.contains("columns(4)") == pages.contains("reservesTwoLines: true"), "la fila de cuatro baldosas reserva dos renglones: todas del mismo alto")
+        XCTAssertFalse(pages.contains("LazyVGrid"), "las opciones van en `DecideChoiceGrid` (iguala altos), no en la rejilla perezosa")
         let header = try XCTUnwrap(decide.components(separatedBy: "private func header(").dropFirst().first)
         let title = try XCTUnwrap(header.components(separatedBy: "DSTextTabs(").first)
         XCTAssertTrue(title.contains("{ countText(m, count); close }"), "la cuenta va junto al título, no en su propio renglón")
@@ -147,5 +147,59 @@ extension DesignRulesTests {
         let decide = try file("DecideView.swift", in: files)
         XCTAssertFalse(decide.contains("dsSelectionRing") || decide.contains("DS.Opacity.dimmed"), "sin marco blanco ni las otras apagadas")
         XCTAssertTrue(decide.contains("DS.Motion.grow(reduceMotion)") && decide.contains(".bottomLeading"), "la elegida crece desde su base, hacia adentro")
+    }
+
+    /// Un número dice lo de ahora (13 nov 2026: las baldosas de «6+» decían «0» con «33 opciones» arriba). Los números de la
+    /// hoja de filtros se calculan en su `body` con `tally` (lo de ahora, y nil mientras no se sabe: nunca un «0» falso), no
+    /// dentro de una rejilla perezosa que los guarda de la primera vez; las baldosas de una fila miden lo mismo
+    /// (`DecideChoiceGrid`, un `Grid`).
+    func testFilterNumbersAreFreshAndRowsEven() throws {
+        let files = try sources()
+        let pages = try file("DecideFilterPages.swift", in: files)
+        XCTAssertFalse(pages.contains("LazyVGrid") || pages.contains(".id(m.genres)") || pages.contains(".id(m.decades)"), "sin rejilla perezosa ni el truco de `.id`")
+        XCTAssertGreaterThanOrEqual(pages.components(separatedBy: "DecideChoiceGrid(").count - 1, 8, "todas las filas de opciones en `DecideChoiceGrid`")
+        XCTAssertTrue(pages.contains("m.tally(deck: deck)") && pages.contains("?.shown"), "arriba y cada baldosa con `tally`; sin saber, sin número")
+        XCTAssertFalse(pages.contains("m.count {"), "ninguna baldosa cuenta a su manera")
+        let pieces = try file("DecidePieces.swift", in: files)
+        XCTAssertTrue(pieces.contains("struct DecideChoiceGrid") && pieces.contains("Grid(horizontalSpacing"), "la rejilla que iguala altos")
+        XCTAssertTrue(pieces.contains("maxHeight: .infinity") && pieces.contains(".opacity(count == nil ? 0 : 1)"), "la baldosa llena su fila y aparta el renglón del número")
+    }
+
+    /// Un botón fijo abajo deja ver lo que pasa debajo: va en `safeAreaBar(edge: .bottom)` (lo que se desliza se funde detrás
+    /// y el último renglón se puede subir por encima), nunca en `safeAreaInset`, que lo cortaba a medias («Ver 33» tapaba los
+    /// logos de «Según»).
+    func testFixedBottomButtonLetsContentShowThrough() throws {
+        check(hits(#"\.safeAreaInset\(edge: \.bottom"#, in: try sources()), "Un botón fijo abajo va en safeAreaBar(edge: .bottom)")
+    }
+
+    /// Ninguna tarea sobrevive a su vista (el abort de `completeFuture` tras el congelamiento): Barajar y la carta que vuela se
+    /// cancelan al desaparecer, y el modelo de Decide no empieza nada después de `stop()`.
+    func testNoTaskOutlivesItsView() throws {
+        let files = try sources()
+        let decide = try file("DecideView.swift", in: files)
+        XCTAssertTrue(decide.contains("shuffling?.cancel()") && decide.contains("guard !Task.isCancelled"), "Barajar se cancela al cerrar")
+        let mazo = try file("MazoMatch.swift", in: files)
+        XCTAssertTrue(mazo.contains(".onDisappear { flight?.cancel()"), "la carta que vuela se cancela al irse el mazo")
+        XCTAssertFalse(mazo.contains("        Task { @MainActor in"), "sin tareas sueltas en el mazo")
+        let model = try String(contentsOf: repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalModels/DecideModel.swift"), encoding: .utf8)
+        XCTAssertTrue(model.contains("guard !stopped else { return }"), "nada empieza después de cerrar la hoja")
+    }
+
+    /// Los datos son de la carta que se ve (13 nov 2026): al salir volando una carta, debajo ya dicen los de la que sube a su
+    /// lugar (antes «La Oficina» seguía escrita un segundo debajo de «Avengers»).
+    func testCardInfoFollowsTheVisibleCard() throws {
+        let mazo = try file("MazoMatch.swift", in: try sources())
+        XCTAssertTrue(mazo.contains("cards.first(where: { $0.imdb != leaving })"), "los datos saltan la carta que va volando")
+        XCTAssertEqual(mazo.components(separatedBy: "leaving = s.imdb").count - 1, 2, "volando y fundiéndose, las dos marcan la que sale")
+    }
+
+    /// VoiceOver dice el nombre que se lee (13 nov 2026): el cartel elegido decía «The Office» y debajo se leía «La Oficina».
+    func testSpokenTitleIsTheShownTitle() throws {
+        let raw = try NSRegularExpression(pattern: #"accessibilityLabel\(Text\(verbatim: (option|s|suggestion|item|card)\.title\)\)"#)
+        for source in try sources() {
+            let name = source.name, text = source.lines.joined(separator: "\n")
+            let hits = raw.numberOfMatches(in: text, range: NSRange(text.startIndex..., in: text))
+            XCTAssertEqual(hits, 0, "\(name): el nombre de un título va con titleName, como el que se ve")
+        }
     }
 }

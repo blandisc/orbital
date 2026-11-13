@@ -85,17 +85,16 @@ struct DecideTile: View {
 /// quedan, en una baldosa de la familia de `FilterLogoChoice` (Fernando, 13 nov 2026: «opciones como baldosas o íconos CON
 /// nombre»). Elegida, se llena del tinte de su sección (`tint`, `DS.DecideLive`) creciendo con un resorte corto, el ícono da
 /// un saltito y el teléfono marca la selección; tocarla otra vez la quita. Sin nada que dejar (y sin estar puesta) no se toca
-/// (F13). Con «Reducir movimiento», el relleno solo se funde.
+/// (F13). Con «Reducir movimiento», el relleno solo se funde. Va en `DecideChoiceGrid`, que iguala el alto de su fila: la
+/// baldosa llena el alto que le dan y el renglón del número siempre se aparta (aunque aún no se sepa), para que ninguna brinque.
 struct DecideChoice: View {
     let symbol: String
     let title: Text
-    /// Cuántas quedarían con ella (nil: aún no se sabe).
+    /// Cuántas quedarían con ella (nil: aún no se sabe; no se enseña «0»).
     var count: Int?
     let tint: Color
     let selected: Bool
     var enabled = true
-    /// Una fila angosta (cuatro) reserva dos renglones de nombre: las tarjetas de una fila miden lo mismo aunque una parta.
-    var reservesTwoLines = false
     let toggle: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -107,15 +106,16 @@ struct DecideChoice: View {
                 Image(systemName: symbol).font(DS.TextRecipe.section.font)
                     .foregroundStyle(selected ? DS.DecideLive.onTint : tint)
                     .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? false : selected)
-                title.recipe(.label, color: ink).lineLimit(2, reservesSpace: reservesTwoLines).multilineTextAlignment(.center).minimumScaleFactor(DS.Size.statScale)
-                if let count {
-                    Text(verbatim: "\(count)").recipe(.caption, color: selected ? DS.DecideLive.onTint : DS.textMuted).monospacedDigit()
-                        .contentTransition(.numericText())
-                }
+                title.recipe(.label, color: ink).lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(DS.Size.statScale)
+                // El renglón del número siempre ocupa su lugar: sin saberlo aún, vacío (nunca «0»).
+                Text(verbatim: count.map { "\($0)" } ?? "0").recipe(.caption, color: selected ? DS.DecideLive.onTint : DS.textMuted).monospacedDigit()
+                    .contentTransition(.numericText())
+                    .opacity(count == nil ? 0 : 1)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
+            .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile, maxHeight: .infinity)
             .background {
                 shape.fill(DS.fill)
                 shape.fill(tint)
@@ -133,6 +133,31 @@ struct DecideChoice: View {
         .dsFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityValue(count.map { Text("\($0) opciones") } ?? Text(verbatim: ""))
+    }
+}
+
+/// La rejilla de las opciones de la hoja de filtros (baldosas, mosaicos y logos): todas las de una fila del mismo ancho y
+/// del mismo alto, aunque una parta su nombre en dos renglones («Para pensar») o aún no sepa su número (regla «Las
+/// baldosas de una fila miden lo mismo», 13 nov 2026). Es un `Grid`, no una rejilla perezosa: la perezosa no iguala altos y
+/// guardaba los números de la primera vez (las baldosas de «6+» se quedaban en «0» con «33 opciones» arriba). Una fila
+/// incompleta deja sus lugares vacíos: las columnas son las mismas en todas las filas.
+struct DecideChoiceGrid<Item: Hashable, Cell: View>: View {
+    let items: [Item]
+    let columns: Int
+    @ViewBuilder let cell: (Item) -> Cell
+
+    var body: some View {
+        let rows = stride(from: 0, to: items.count, by: max(1, columns)).map { Array(items[$0..<min($0 + max(1, columns), items.count)]) }
+        Grid(horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
+            ForEach(rows, id: \.self) { row in
+                GridRow {
+                    ForEach(row, id: \.self) { item in cell(item).frame(maxWidth: .infinity, maxHeight: .infinity) }
+                    ForEach(row.count..<max(row.count, columns), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity).gridCellUnsizedAxes(.vertical).accessibilityHidden(true)
+                    }
+                }
+            }
+        }
     }
 }
 

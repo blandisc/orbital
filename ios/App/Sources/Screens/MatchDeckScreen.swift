@@ -7,6 +7,12 @@ import OrbitalModels
 /// Tocar una carta abre su ficha (`onOpenTitle`); «Ver» avisa con `onPlay` para que la pantalla de afuera la reproduzca. Vive dentro de la hoja de «Decide por mí», que pone el encabezado,
 /// la ✕ y los filtros (los mismos de «Tres que caben»).
 struct MatchDeckScreen: View {
+    /// El mazo lo guarda la hoja (vive mientras la hoja está abierta, aunque cambies de pestaña).
+    @Binding var model: MatchDeckModel?
+    /// La que va arriba (el cartel elegido en «Tres que caben»), si está en el mazo.
+    var lead: String?
+    /// Cartel → carta: la de arriba comparte su lugar con el cartel del mismo título (`DecideView.heroKey`).
+    var hero: Namespace.ID?
     let pool: [Suggestion]
     /// Cambia cuando cambian los filtros: el mazo se vuelve a barajar con `pool`.
     var poolKey = ""
@@ -20,7 +26,6 @@ struct MatchDeckScreen: View {
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
     @State private var command: MatchCommand?
     /// Lo que trajo «Reintentar» (si no, `pool`).
@@ -59,11 +64,13 @@ struct MatchDeckScreen: View {
         // «Guardada en Tu match perfecto · Deshacer» al momento (el mazo tapa la raíz, que es donde van los avisos, y antes
         // salía hasta cerrarlo); va abajo, encima de Paso · Para hoy · Guardar · Ver (`deckNotices`).
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
+        .onChange(of: lead) { model?.lead = lead }
         .onChange(of: poolKey) { reloaded = nil; Task { await model?.replacePool(pool) } }
         .onChange(of: model.map { $0.loaded ? $0.cards.count : -1 }, initial: true) { _, count in if let count, count >= 0 { onCount?(count) } }
         .task {
             if model == nil {
                 let m = MatchDeckModel(env.services, pool: items, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
+                m.lead = lead
                 model = m
                 await m.load()
             }
@@ -82,6 +89,7 @@ struct MatchDeckScreen: View {
                   genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
                   command: $command,
                   pull: pull,
+                  hero: hero,
                   onSave: { s in save(s, model) },
                   onDiscard: { s in discard(s, model) },
                   onTonight: { s in tonight(s, model) },

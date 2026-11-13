@@ -93,7 +93,7 @@ struct GuidePage<Content: View>: View {
             .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaBar(edge: .bottom) {
             VStack(spacing: DS.Space.s2) {
                 Button(action: next) { primary.frame(maxWidth: .infinity) }
                     .dsPrimaryButton().controlSize(.large).disabled(!primaryEnabled)

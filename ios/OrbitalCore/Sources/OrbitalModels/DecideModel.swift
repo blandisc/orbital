@@ -117,6 +117,11 @@ public final class DecideModel: ObservableModel {
         var tmdbVotes: Int?; var tmdbAverage: Double?; var statsChecked: Bool?
         /// El promedio de Letterboxd (solo películas); `letterboxdChecked`: ya se preguntó (aunque no lo tenga).
         var letterboxd: Double?; var letterboxdChecked: Bool?
+        /// Ya se le preguntó a Cinemeta (aunque no contestara). Lo de TMDB o Letterboxd puede llegar antes y crear el detalle
+        /// vacío: sin esto, «no hay calificación de IMDb» se tomaba por sabido y los conteos de «6+» se quedaban en 0 (13 nov
+        /// 2026). Lo guardado antes de la marca trae datos de Cinemeta: cuenta como preguntado (`described`).
+        var cinemeta: Bool?
+        var described: Bool { cinemeta == true || !genres.isEmpty || minutes != nil || rating != nil || year != nil }
     }
     var details: [String: Detail] = [:]
     static let detailsKey = "decide-details", detailsLimit = 1500
@@ -223,8 +228,13 @@ public final class DecideModel: ObservableModel {
         upcoming = []
     }
 
+    /// La hoja se cerró (`stop`): nada nuevo empieza en segundo plano. Antes «Filtros» aplicaba al desaparecer aunque la hoja
+    /// ya se hubiera cerrado y dejaba tareas vivas sin dueño (el abort de `completeFuture` tras el congelamiento, 13 nov 2026).
+    public internal(set) var stopped = false
+
     /// Prepara tríos hasta tener `ahead` listos (o en camino) para los filtros de ahora.
     func fillUpcoming() {
+        guard !stopped else { return }
         let key = filtersKey
         if upcoming.contains(where: { $0.key != key }) { dropUpcoming() }
         while upcoming.count < Self.ahead {
@@ -276,7 +286,7 @@ public final class DecideModel: ObservableModel {
 
     @discardableResult
     private func describeInBackground(_ items: [Suggestion]) -> Task<Void, Never>? {
-        let missing = items.filter { details[$0.imdb] == nil }
+        let missing = items.filter { details[$0.imdb]?.described != true }
         guard !missing.isEmpty else { return nil }
         return Task(priority: .utility) { [weak self] in
             for start in stride(from: 0, to: missing.count, by: Self.chunk) {
@@ -425,6 +435,7 @@ public final class DecideModel: ObservableModel {
 
     /// Aplicar lo elegido al momento (los filtros ya no esperan un botón): otros tres que cumplan.
     public func apply() async {
+        guard !stopped else { return }
         if !keepingKinds { kindMemory = [:] }   // otro filtro: lo que se recordaba de cada tipo ya no es de estos filtros
         dropUpcoming()
         shown = []

@@ -40,6 +40,13 @@ struct DecideView: View {
     /// Barajar: las tres salen (en cascada) antes de pedir las nuevas, que entran igual; y el ícono salta.
     @State private var leaving = false
     @State private var shuffles = 0
+    /// La vuelta de «Barajar» en curso: se cancela al cerrar la hoja (ninguna tarea sobrevive a su vista).
+    @State private var shuffling: Task<Void, Never>?
+    /// El mazo vive aquí, no en su pestaña: ir y volver no lo vuelve a cargar (ni enseña su esqueleto) y el cartel elegido
+    /// puede volverse su carta de arriba (`hero`).
+    @State private var deckModel: MatchDeckModel?
+    /// Cartel → carta: el elegido de «Tres que caben» crece hasta volverse la carta de arriba del mazo, y de regreso.
+    @Namespace private var hero
     /// El color del cartel elegido (`ArtTint`, el mismo cálculo y la misma memoria que el fondo de la ficha): un resplandor
     /// suave detrás de los tres.
     @State private var art = ArtTint()
@@ -64,6 +71,7 @@ struct DecideView: View {
     static func tileImage(genre: String) -> String { "decide-genre-" + genre.replacingOccurrences(of: "-", with: "") }
 
     var body: some View {
+        let _ = BodyCount.tick("decide", why: Self._printChanges)   // cuántas veces se pinta (`-perf-bodies`)
         let m = observer.model
         NavigationStack(path: $path) {
             sheet(m)
@@ -90,7 +98,7 @@ struct DecideView: View {
             m.warmPosters = { await ImagePipeline.shared.warmPosters($0) }
             if m.pick == nil { await m.quick() }
         }
-        .onDisappear { m.stop() }
+        .onDisappear { m.stop(); shuffling?.cancel(); shuffling = nil }
         .task(id: m.pick?.poster) { await art.load(m.pick?.poster) }
         .task(id: m.pick?.imdb) {
             guard let s = m.pick, s.kind == "series" else { return seriesStart = nil }
@@ -139,7 +147,7 @@ struct DecideView: View {
     /// ánimo son de «Tres que caben». Al cambiar un filtro, el mazo se vuelve a barajar con lo que queda.
     private func deckBody(_ m: DecideModel) -> some View {
         let pool = m.deckPool()
-        return MatchDeckScreen(pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
+        return MatchDeckScreen(model: $deckModel, lead: heroID, hero: reduceMotion ? nil : hero, pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
                                reload: reload.map { load in { let fresh = await load(); await m.retry(pool: fresh.pool, sources: fresh.sources); return m.deckPool() } },
                                onCount: { deckCount = $0 },
                                onOpenTitle: { dismiss(); open($0) },
@@ -192,13 +200,34 @@ struct DecideView: View {
             .entrance("decide-\(opened)-title", order: 0)
             DSTextTabs(options: [.init(id: DecideModel.Mode.trio, title: Text("Tres que caben"), symbol: DS.Symbol.decideTrio),
                                  .init(id: .deck, title: Text("Una por una"), symbol: DS.Symbol.decideDeck)],
-                       selection: $mode.animation(DS.Motion.base(reduceMotion)), adapts: false)
+                       selection: Binding(get: { mode }, set: { switchMode(to: $0, m) }), adapts: false)
                 .accessibilityIdentifier("decide-mode")
                 .entrance("decide-\(opened)-tabs", order: 1)
             DecideControls(model: m, deck: mode == .deck, openFilters: { path.append(.more) })
                 .entrance("decide-\(opened)-controls", order: 2)
         }
     }
+
+    /// Cambiar de pestaña con continuidad (Fernando, 13 nov 2026): a «Una por una», el mazo empieza por el cartel elegido (si
+    /// pasa sus filtros) y ese cartel crece hasta ser la carta; de regreso, la carta de arriba vuelve a ser la elegida si está
+    /// entre los tres. Ni el trío ni el mazo se vuelven a barajar.
+    private func switchMode(to new: DecideModel.Mode, _ m: DecideModel) {
+        guard new != mode else { return }
+        if new == .deck {
+            let lead = m.pick.flatMap { p in m.deckPool().contains { $0.imdb == p.imdb } ? p.imdb : nil }
+            deckModel?.lead = lead
+            heroID = lead
+        } else if let top = deckModel?.cards.first, let same = m.picks.first(where: { $0.imdb == top.imdb }) {
+            m.select(same)
+            heroID = same.imdb
+        } else {
+            heroID = nil
+        }
+        withAnimation(DS.Motion.base(reduceMotion)) { mode = new }
+    }
+
+    /// El título que viaja entre el cartel y la carta (nil: transición de lado normal).
+    @State private var heroID: String?
 
     private func countText(_ m: DecideModel, _ count: Int) -> some View {
         Text(verbatim: words.optionsLine(m, count))
@@ -208,7 +237,7 @@ struct DecideView: View {
     }
 
     private var close: some View {
-        DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { dismiss() }
+        DSIconButton(symbol: "xmark", label: "Cerrar", size: .large) { dismiss() }   // del tamaño de «Filtros», en su misma orilla (≥ 44 pt)
             .accessibilityIdentifier("decide-close")
     }
 
@@ -229,6 +258,7 @@ struct DecideView: View {
                     // tras otra (`DecideTrioLayout.shuffle`).
                     Button { if chosen { dismiss(); open(option.route) } else { m.select(option) } } label: {
                         PosterView(url: option.poster, title: option.title)
+                            .matchedGeometryEffect(id: DecideView.heroKey(option.imdb), in: hero, isSource: true)
                             .shadow(chosen ? DS.Elevation.high : DS.Elevation.high.color(.clear))
                             .scaleEffect(chosen ? DS.Decide.chosenScale : 1, anchor: anchor)
                             .animation(chosen ? DS.Motion.grow(reduceMotion) : DS.Motion.fold(reduceMotion), value: chosen)
@@ -239,7 +269,7 @@ struct DecideView: View {
                     .opacity(leaving ? 0 : 1)
                     .animation(DS.Motion.fold(reduceMotion)?.delay(Double(index) * DS.DecideLive.shuffleStagger), value: leaving)
                     .transition(DecideTrioLayout.shuffle(index: index, reduceMotion: reduceMotion))
-                    .accessibilityLabel(Text(verbatim: option.title))
+                    .accessibilityLabel(Text(verbatim: titleName(option.title, id: option.imdb, kind: option.kind)))   // lo mismo que se lee debajo
                     .accessibilityHint(chosen ? Text("Abre la ficha") : Text(verbatim: ""))
                     .accessibilityAddTraits(chosen ? .isSelected : [])
                     .accessibilityIdentifier(chosen ? "decide-chosen" : "decide-option")
@@ -307,6 +337,7 @@ struct DecideView: View {
                 Button("Hoy no", systemImage: "moon.zzz") { remove(m, s, dismissed: false) }
                 Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
             }
+            .accessibilityIdentifier("decide-more")
         }
     }
 
@@ -314,15 +345,20 @@ struct DecideView: View {
     /// (`DecideTrioLayout.shuffle`). Se puede volver a tocar a medias. Con «Reducir movimiento», solo se funden.
     private func shuffle(_ m: DecideModel) {
         shuffles += 1
-        Task {
+        shuffling?.cancel()
+        shuffling = Task {
             if !reduceMotion {
                 leaving = true   // cada cartel lleva su propia animación, escalonada
                 try? await Task.sleep(for: DS.DecideLive.leave)
             }
+            guard !Task.isCancelled else { return }
             await m.next()
             leaving = false
         }
     }
+
+    /// La llave compartida del cartel y la carta de un mismo título (`matchedGeometryEffect`).
+    static func heroKey(_ imdb: String) -> String { "decide-hero-" + imdb }
 
     /// Un resplandor suave del color del cartel elegido detrás de los tres (`ArtTint`): en oscuro su tono claro, en claro ese
     /// tono sobre el papel. Cambia con un fundido al elegir otro.
