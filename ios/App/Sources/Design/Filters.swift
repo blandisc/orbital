@@ -234,10 +234,14 @@ struct DSChoiceMenu<ID: Hashable>: View {
     }
 }
 
-/// SX1 (Fernando, 9 nov): el selector de Inicio es solo el ícono de lo que ves. Al tocarlo, la misma pastilla crece con un
-/// resorte (los íconos un poco más grandes, para tocarlos fácil), los otros dos salen uno tras otro y la cápsula de al lado
-/// se recoge a la derecha hasta quedar solo tu foto. Al elegir, el círculo blanco se desliza al nuevo y la pastilla se encoge con él. Dejar el dedo
-/// encima dice su nombre; VoiceOver lo lee siempre. Con «Reducir movimiento», fundido.
+/// SX1 (Fernando, 9 nov): el selector de Inicio es solo el ícono de lo que ves. Al tocarlo, la misma pastilla crece desde
+/// donde está con un resorte que se asienta sin pasarse (`DS.Motion.grow`; los íconos un poco más grandes, para tocarlos
+/// fácil) mientras la cápsula de al lado ya se hizo a un lado (`DS.Motion.fold`, más rápido): lo que crece no choca. Las
+/// otras dos opciones nacen junto a lo que ves y entran una tras otra. Al elegir, el círculo blanco viaja al nuevo con el
+/// mismo resorte y la pastilla se recoge con él, más rápido de lo que abrió; las que sobran se apagan antes de que se
+/// cierre. Todo se puede interrumpir (otro toque a medio camino retoma desde donde va). Dejar el dedo encima dice su
+/// nombre; VoiceOver lo lee siempre. Con «Reducir movimiento», solo fundidos. Fernando, 13 nov 2026: «rebota de inmediato
+/// en los botones de arriba a la derecha… que la animación sea más suave, que tenga un poquito de física».
 struct KindPill: View {
     @Binding var kind: String
     @Binding var open: Bool
@@ -246,14 +250,16 @@ struct KindPill: View {
     var alwaysOpen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var mark
-
-    private var motion: Animation { DS.Motion.morph(reduceMotion) ?? DS.Motion.fade }
+    /// El cierre que espera a que el círculo llegue: otro toque lo cancela (nunca se cierra encima de lo que acabas de hacer).
+    @State private var folding: Task<Void, Never>?
 
     var body: some View {
         let shown = open ? options : options.filter { $0.0 == kind }
+        let picked = options.firstIndex { $0.0 == kind } ?? 0
         HStack(spacing: open ? DS.Space.s1 : 0) {
-            ForEach(Array(shown.enumerated()), id: \.element.0) { index, option in
+            ForEach(Array(shown.enumerated()), id: \.element.0) { _, option in
                 let on = kind == option.0
+                let index = options.firstIndex { $0.0 == option.0 } ?? 0
                 Button { choose(option.0) } label: {
                     Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
                         .font(DS.TextRecipe.section.font)
@@ -261,9 +267,7 @@ struct KindPill: View {
                         // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                         .foregroundStyle(on && open ? DS.bg : DS.text)
                         .frame(width: open ? DS.KindPill.open : DS.KindPill.closed, height: open ? DS.KindPill.open : DS.KindPill.closed)
-                        .background {
-                            if on && open { Circle().fill(DS.text).matchedGeometryEffect(id: "mark", in: mark) }
-                        }
+                        .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido
                         .contentShape(Circle())
                 }
                 .buttonStyle(KindPillPress())
@@ -271,10 +275,17 @@ struct KindPill: View {
                 .accessibilityLabel(open ? Text(option.1) : Text(option.1) + Text(". Cambiar entre todo, películas y series"))
                 .accessibilityIdentifier("kind-\(option.0.isEmpty ? "all" : option.0)")
                 .accessibilityAddTraits(on ? .isSelected : [])
-                .transition(.asymmetric(
-                    insertion: .scale(scale: DS.KindPill.enterScale).combined(with: .opacity)
-                        .animation(motion.delay(Double(index) * DS.Motion.entranceStep)),
-                    removal: .opacity.animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade)))   // se apaga en su lugar, sin flotar fuera
+                .transition(arrival(index: index, picked: picked))
+            }
+        }
+        // Un solo círculo blanco que viaja al elegido (antes eran dos que se cruzaban apagándose: a medio camino se veía gris).
+        // Con «Reducir movimiento» no viaja: se apaga en uno y se enciende en el otro.
+        .background {
+            if open {
+                Circle().fill(DS.text)
+                    .matchedGeometryEffect(id: kind, in: mark, isSource: false)
+                    .id(reduceMotion ? kind : "")
+                    .transition(.opacity.animation(DS.Motion.fadeQuick))
             }
         }
         .padding(DS.Space.s1 / 2)
@@ -288,6 +299,7 @@ struct KindPill: View {
         .dsFeedback(.impact(weight: .light), trigger: open)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Series o películas"))
+        .onDisappear { folding?.cancel() }
         #if DEBUG
         .task { if Demo.isOn, Demo.has("-demo-kind-open") { open = true } }   // capturas: abierta
         .task {   // capturas en video: abre, elige Series, y regresa a Todo
@@ -300,24 +312,43 @@ struct KindPill: View {
         #endif
     }
 
-    /// Cerrada abre; abierta, el círculo se desliza a lo elegido y, un instante después, se encoge con él.
+    /// Las que llegan nacen un poco más chicas del lado de lo que ves (no de la nada ni del centro) y entran una tras otra, la
+    /// más cercana primero, con el mismo resorte que abre. Las que se van solo se apagan, rápido: ya no están cuando la
+    /// pastilla termina de recogerse, así no se enciman con la que se queda.
+    private func arrival(index: Int, picked: Int) -> AnyTransition {
+        // Con «Reducir movimiento» la pastilla cambia de tamaño de una vez: lo que llega se enciende con un fundido y lo que se
+        // va se quita en el acto (apagándose quedaba encima de la cápsula, que ya regresó).
+        guard let grow = DS.Motion.grow(reduceMotion) else { return .asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .identity) }
+        let order = max(0, abs(index - picked) - 1)
+        return .asymmetric(
+            insertion: .scale(scale: DS.KindPill.enterScale, anchor: index < picked ? .trailing : .leading).combined(with: .opacity)
+                .animation(grow.delay(Double(order) * DS.KindPill.stagger)),
+            removal: .opacity.animation(DS.Motion.fadeQuick))
+    }
+
+    /// Cerrada abre; abierta, el círculo viaja a lo elegido y, cuando llega, la pastilla se recoge con él.
     private func choose(_ option: String) {
-        if alwaysOpen { withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { kind = option }; return }
-        guard open else { withAnimation(motion) { open = true }; return }
-        guard option != kind else { withAnimation(motion) { open = false }; return }
-        withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { kind = option }
-        Task {
+        folding?.cancel()
+        let grow = DS.Motion.grow(reduceMotion), fold = DS.Motion.fold(reduceMotion)
+        // Con «Reducir movimiento» el círculo no viaja: se apaga en uno y se enciende en el otro.
+        let pick = grow ?? DS.Motion.fade
+        if alwaysOpen { withAnimation(pick) { kind = option }; return }
+        guard open else { withAnimation(grow) { open = true }; return }
+        guard option != kind else { withAnimation(fold) { open = false }; return }
+        withAnimation(pick) { kind = option }
+        folding = Task {
             try? await Task.sleep(for: DS.KindPill.settle)
-            withAnimation(motion) { open = false }
+            guard !Task.isCancelled else { return }
+            withAnimation(fold) { open = false }
         }
     }
 }
 
-/// Al apretar, el ícono se hunde tantito.
+/// Al apretar, el ícono se hunde tantito, en cuanto lo tocas.
 private struct KindPillPress: ButtonStyle {   // ds-exception: el hundido del segmento; la pastilla es vidrio nativo
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? DS.KindPill.pressed : 1)
-            .animation(DS.Motion.snap(false), value: configuration.isPressed)   // ds-exception: el hundido al apretar es inmediato y breve
+            .animation(DS.Motion.press, value: configuration.isPressed)
     }
 }
