@@ -49,8 +49,9 @@ extension Trakt {
     }
 }
 
-/// Las series escondidas (SS1-A): no salen en «Series que sigues», en tus estrenos, en «Sigue viendo» ni en los avisos. Se
-/// guardan aquí (al momento) y en Trakt, que es quien manda cuando contesta.
+/// Las series escondidas (SS1-A): no salen en «Series que sigues», en tus estrenos, en los avisos ni como «siguiente episodio»
+/// de «Sigue viendo». Un episodio que dejaste a medias sí sale hasta que lo termines o lo quites (13 nov 2026,
+/// `HomeItem.shownInContinue`). Se guardan aquí (al momento) y en Trakt, que es quien manda cuando contesta.
 extension ForYou {
     public static let hiddenKey = "hidden-shows"
     public static func hidden(_ kv: KeyValueStore) -> Set<String> {

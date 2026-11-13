@@ -179,6 +179,9 @@ la ruleta de Los Simpson (`PlayRequest.offTheRecord`) ya no se ven «sin dejar r
 - Si el canal puso justo el episodio que te tocaba, cuenta como verlo en orden. Zapear (menos de 20 s) no cambia nada. Lo que
   Trakt devuelva de ese episodio (el eco) no mueve tu orden (`channelAt`).
 - Lo que sigue al terminar en el canal hereda lo mismo; «¿Sigues viendo?», el widget y el Centro de control no cambian.
+- Una serie escondida (SS1-A) no deja «siguiente episodio», pero lo que dejaste a medias (por un canal o desde la ficha) sí
+  sale en «Seguir viendo» y en el widget hasta que lo termines o lo quites (`HomeItem.shownInContinue`,
+  `FollowHideTests.testLoQueDejasteAMediasDeUnaEscondidaSiSale`).
 
 `ChannelProgressTests` (OrbitalCoreTests) y `PlayerModelTests.testChannelPlaybackHalfway…` lo cuidan. En la TV: distinto,
 pendiente (registro de paridad): sus canales de Orbital no guardan nada, ni a medias.

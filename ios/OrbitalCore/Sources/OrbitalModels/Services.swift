@@ -130,13 +130,14 @@ public final class Services: ObservableModel {
         if let airings { widgetAirings = airings }
         if let recent { widgetRecent = recent }
         guard let publish = onWidgetSnapshot else { return }
-        // Ni lo que dejaste de seguir ni lo que escondiste (SS1-A), aunque venga de una carga de antes.
+        // Ni lo que dejaste de seguir ni lo que escondiste (SS1-A), aunque venga de una carga de antes (de una escondida, solo
+        // lo que dejaste a medias).
         let hidden = ForYou.hidden(kv), off = ForYou.unfollowed(kv).union(hidden)
         let upcoming = WidgetSnapshot.timeline(recent: widgetRecent.filter { !off.contains($0.series.imdb) },
                                                upcoming: widgetAirings.filter { !off.contains($0.series.imdb) }, now: now(), episode: episodeLabel)
         // El widget y la pantalla de inicio dicen el mismo nombre que la app (la puerta de `titleNames`).
         let names = titleNames
-        let shown = widgetContinue.filter { !hidden.contains($0.metaID) }.map { item -> HomeItem in
+        let shown = widgetContinue.filter { $0.shownInContinue(hidden: hidden) }.map { item -> HomeItem in
             var item = item; item.title = names.name(item.title, id: item.metaID, kind: item.kind); return item
         }
         let named = upcoming.map { episode -> WidgetSnapshot.UpcomingEpisode in
