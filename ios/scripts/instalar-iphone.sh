@@ -19,7 +19,7 @@ PRODUCTS="$DERIVED/Build/Products/Release-iphoneos"
 
 case "$EDITION" in ultra|plus|orbital) ;; *) echo "Edición desconocida: $EDITION (ultra, plus u orbital)" >&2; exit 1 ;; esac
 [[ -f "$REPO/ios/App/Secrets.xcconfig" ]] || { echo "Falta ios/App/Secrets.xcconfig (cópialo de Secrets.example.xcconfig)" >&2; exit 1; }
-running=$(pgrep -x xcodebuild | wc -l | tr -d ' ')
+running=$( (pgrep -x xcodebuild || true) | wc -l | tr -d ' ')   # sin ninguna, pgrep sale con 1 y pipefail cortaba el script en silencio
 (( running < 2 )) || { echo "Ya hay $running compilaciones en la Mac: espera a que termine una." >&2; exit 1; }
 
 if [[ -z "$DEVICE" ]]; then
