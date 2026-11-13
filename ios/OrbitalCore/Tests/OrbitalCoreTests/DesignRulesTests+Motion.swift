@@ -52,6 +52,8 @@ extension DesignRulesTests {
         XCTAssertGreaterThanOrEqual(Int(settle.1) ?? 0, 500, "La pastilla espera al menos medio segundo antes de recogerse (DS.KindPill.settle)")
         XCTAssertTrue(pill.contains(".padding(DS.KindPill.markInset)") && pill.contains(".clipShape(Capsule())"),
                       "El círculo de lo elegido es más chico que su lugar y la pastilla recorta lo que se salga")
+        XCTAssertTrue(pill.contains("naming = true") && pill.contains("Text(name)"),
+                      "Al elegir, la pastilla dice el nombre de lo elegido antes de recogerse: un ícono solo no dice qué escogiste")
         // Ya no existe el resorte con rebote que usaba el selector.
         check(hits(#"DS\.Motion\.morph\b"#, in: files), "DS.Motion.morph ya no existe: usa DS.Motion.grow (crece) o DS.Motion.fold (cede)")
     }

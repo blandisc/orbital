@@ -252,9 +252,12 @@ struct KindPill: View {
     @Namespace private var mark
     /// El cierre que espera a que el círculo llegue: otro toque lo cancela (nunca se cierra encima de lo que acabas de hacer).
     @State private var folding: Task<Void, Never>?
+    /// Recién elegido: las otras dos se van y en su lugar se lee el nombre de lo que elegiste, un momento, antes de recogerse
+    /// (Fernando, 13 nov 2026: «si ves el ícono no sabes qué estás escogiendo»).
+    @State private var naming = false
 
     var body: some View {
-        let shown = open ? options : options.filter { $0.0 == kind }
+        let shown = open && !naming ? options : options.filter { $0.0 == kind }
         let picked = options.firstIndex { $0.0 == kind } ?? 0
         HStack(spacing: open ? DS.Space.s1 : 0) {
             ForEach(Array(shown.enumerated()), id: \.element.0) { _, option in
@@ -276,6 +279,12 @@ struct KindPill: View {
                 .accessibilityIdentifier("kind-\(option.0.isEmpty ? "all" : option.0)")
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .transition(arrival(index: index, picked: picked))
+            }
+            if open, naming, let name = options.first(where: { $0.0 == kind })?.1 {
+                Text(name).font(DS.TextRecipe.label.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+                    .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s3)
+                    .transition(.asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .opacity.animation(DS.Motion.fadeQuick)))
+                    .accessibilityHidden(true)   // el ícono ya lo dice
             }
         }
         // Un solo círculo blanco que viaja al elegido (antes eran dos que se cruzaban apagándose: a medio camino se veía gris).
@@ -335,13 +344,13 @@ struct KindPill: View {
         // Con «Reducir movimiento» el círculo no viaja: se apaga en uno y se enciende en el otro.
         let pick = grow ?? DS.Motion.fade
         if alwaysOpen { withAnimation(pick) { kind = option }; return }
-        guard open else { withAnimation(grow) { open = true }; return }
-        guard option != kind else { withAnimation(fold) { open = false }; return }
-        withAnimation(pick) { kind = option }
+        guard open else { withAnimation(grow) { naming = false; open = true }; return }
+        guard option != kind else { withAnimation(fold) { open = false; naming = false }; return }
+        withAnimation(pick) { kind = option; naming = true }
         folding = Task {
             try? await Task.sleep(for: DS.KindPill.settle)
             guard !Task.isCancelled else { return }
-            withAnimation(fold) { open = false }
+            withAnimation(fold) { open = false; naming = false }
         }
     }
 }
