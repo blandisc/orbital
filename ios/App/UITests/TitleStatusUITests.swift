@@ -19,22 +19,20 @@ final class TitleStatusUITests: XCTestCase {
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "menu"; a.lifetime = .keepAlways; add(a)
     }
 
-    /// G2-A: Biblioteca › Guardado es un tablero; «Vistas» abre lo visto por mes y «En Mi lista», tu lista.
-    func testGuardadoEsUnTableroQueAbreCadaEstado() {
+    /// GD2 (13 nov 2026, en lugar del tablero G2-A): Guardado son pestañas; «Vistas» trae lo visto por mes, «Las dejé» y el
+    /// historial, y «Mi lista» regresa a tu lista.
+    func testGuardadoSonPestanasConCadaEstado() {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
-        let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
-        XCTAssertTrue(watched.waitForExistence(timeout: 20), "el tablero tiene «Vistas»")
+        let watched = app.buttons["saved-tab-watched"]
+        XCTAssertTrue(watched.waitForExistence(timeout: 20), "las pestañas tienen «Vistas»")
         watched.tap()
-        XCTAssertTrue(app.navigationBars["Vistas"].waitForExistence(timeout: 10), "abre Vistas")
+        XCTAssertTrue(app.buttons["Historial"].waitForExistence(timeout: 10), "Vistas trae su historial adentro")
         sleep(2)
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "vistas"; a.lifetime = .keepAlways; add(a)
-        app.navigationBars.buttons.firstMatch.tap()
-        let list = app.buttons.containing(NSPredicate(format: "label CONTAINS 'En Mi lista'")).firstMatch
-        XCTAssertTrue(list.waitForExistence(timeout: 10))
-        list.tap()
-        XCTAssertTrue(app.buttons["saved-list-menu"].waitForExistence(timeout: 10) || app.navigationBars["Mi lista"].exists, "abre Mi lista")
+        app.buttons["saved-tab-mylist"].tap()
+        XCTAssertTrue(app.buttons["list-edit"].waitForExistence(timeout: 10), "regresa a Mi lista")
         sleep(2)
         let b = XCTAttachment(screenshot: app.screenshot()); b.name = "milista"; b.lifetime = .keepAlways; add(b)
     }
@@ -44,14 +42,14 @@ final class TitleStatusUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
-        let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
+        let watched = app.buttons["saved-tab-watched"]
         XCTAssertTrue(watched.waitForExistence(timeout: 20))
         watched.tap()
-        XCTAssertTrue(app.navigationBars["Vistas"].waitForExistence(timeout: 10))
+        sleep(1)   // la cuadrícula de Mi lista se va
         let poster = app.buttons.matching(identifier: "title-link").firstMatch
         XCTAssertTrue(poster.waitForExistence(timeout: 10), "hay pósters en Vistas")
         poster.press(forDuration: 1.2)
-        let move = app.buttons["Mi lista"]
+        let move = app.buttons.matching(NSPredicate(format: "label == 'Mi lista' AND identifier != 'saved-tab-mylist'")).firstMatch
         XCTAssertTrue(move.waitForExistence(timeout: 5), "el menú «Mover a…» ofrece «Mi lista»")
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "mover"; a.lifetime = .keepAlways; add(a)
         move.tap()

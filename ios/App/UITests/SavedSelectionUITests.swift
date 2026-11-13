@@ -9,11 +9,9 @@ final class SavedSelectionUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
         app.launch()
-        let list = app.buttons.containing(NSPredicate(format: "label CONTAINS 'En Mi lista'")).firstMatch
-        XCTAssertTrue(list.waitForExistence(timeout: 20))
-        list.tap()
-        let edit = app.buttons["list-edit"]
-        XCTAssertTrue(edit.waitForExistence(timeout: 10))
+        let edit = app.buttons["list-edit"]   // GD2: Guardado abre en Mi lista
+        XCTAssertTrue(edit.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 10))
         let before = app.buttons.matching(identifier: "title-link").count
         edit.tap()
         let marks = app.buttons.matching(identifier: "poster-select")
