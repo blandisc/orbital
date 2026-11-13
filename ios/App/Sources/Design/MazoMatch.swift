@@ -26,6 +26,16 @@ struct MatchCard: View {
         return lean > 0 ? (DS.Match.keep, "Guardar", abs(lean), .topLeading, -DS.Match.stampTilt) : (DS.Match.pass, "Paso", abs(lean), .topTrailing, DS.Match.stampTilt)
     }
 
+    private func genreRow(_ count: Int) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            ForEach(genres.prefix(count), id: \.self) { g in
+                Text(verbatim: g).recipe(.badge, color: DS.paper).lineLimit(1).fixedSize()
+                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
+                    .background(DS.paper.opacity(DS.Match.chipFill), in: Capsule())   // ds-exception: sobre el arte de la carta
+            }
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             Color.clear.overlay { PosterView(url: suggestion.poster, title: titleName(suggestion.title, id: suggestion.imdb, kind: suggestion.kind), aspect: nil, bleed: true).scaledToFill() }
@@ -36,13 +46,11 @@ struct MatchCard: View {
                 Text(verbatim: titleName(suggestion.title, id: suggestion.imdb, kind: suggestion.kind)).font(DS.TextRecipe.title.font).foregroundStyle(DS.paper).lineLimit(2)
                 facts.recipe(.footnote, color: DS.onArtSecondary).lineLimit(1)
                 if !genres.isEmpty {
-                    HStack(spacing: DS.Space.s1) {
-                        ForEach(genres.prefix(DS.Match.genres), id: \.self) { g in
-                            Text(verbatim: g).recipe(.badge, color: DS.paper).lineLimit(1)
-                                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
-                                .background(DS.paper.opacity(DS.Match.chipFill), in: Capsule())   // ds-exception: sobre el arte de la carta
-                        }
+                    // Los que quepan enteros, sin «Acci…» (F6, letra grande), y sin meterse bajo el ▶.
+                    ViewThatFits(in: .horizontal) {
+                        ForEach(Array(stride(from: min(genres.count, DS.Match.genres), through: 1, by: -1)), id: \.self) { n in genreRow(n) }
                     }
+                    .padding(.trailing, DS.Size.touchTarget)
                 }
             }
             .padding(DS.Space.s4)

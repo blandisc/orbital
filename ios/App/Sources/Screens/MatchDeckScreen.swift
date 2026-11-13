@@ -189,7 +189,8 @@ struct MatchDeckScreen: View {
         VStack(spacing: DS.Match.actionLabelGap) {
             button().accessibilityLabel(name).accessibilityIdentifier(id)
                 .frame(height: DS.Match.actionRow)   // el mismo renglón para los tres: los nombres quedan parejos
-            name.recipe(.badge, color: DS.textMuted).accessibilityHidden(true)
+            // En un renglón aunque la letra sea grande (antes «Guar-dar» en dos).
+            name.recipe(.badge, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale).accessibilityHidden(true)
         }
     }
 
