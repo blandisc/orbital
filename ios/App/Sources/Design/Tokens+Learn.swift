@@ -112,10 +112,17 @@ extension DS {
     /// SX1: el selector de Inicio. Cerrado, cada ícono mide `closed`; abierto crece a `open` para tocarlo fácil.
     enum KindPill {
         static let closed: CGFloat = 34, open: CGFloat = 42
-        static let enterScale: CGFloat = 0.4, pressed: CGFloat = 0.88   // ds-exception: escalas
+        /// Lo que llega nace de este tamaño junto a lo que ves (nunca de la nada: antes 0.4, un brinco); al apretar un ícono se
+        /// hunde a `pressed` (tantito: es respuesta al dedo, no un golpe).
+        static let enterScale: CGFloat = 0.8, pressed: CGFloat = 0.92   // ds-exception: escalas
         /// El ícono de series es más ancho que los otros dos; así se ven del mismo tamaño.
         static let seriesOptical: CGFloat = 0.86   // ds-exception: escala óptica
-        static let settle: Duration = .milliseconds(220)
+        /// Cada opción que llega entra este tiempo después de la anterior, empezando por la más cercana a lo que ves.
+        static let stagger: Double = 0.04
+        /// Lo que el círculo blanco viaja hacia lo elegido antes de que la pastilla se recoja con él.
+        static let settle: Duration = .milliseconds(240)
+        /// Al cerrar, la cápsula de al lado regresa este tanto después: cuando la pastilla ya le dejó el lugar.
+        static let returnDelay: Double = 0.1
         /// Más angosto que esto (iPhone SE, mini), tu foto también se hace a un lado mientras eliges.
         static let narrowScreen: CGFloat = 390
     }

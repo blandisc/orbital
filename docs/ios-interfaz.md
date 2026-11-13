@@ -437,6 +437,26 @@ haya caracteres de texto usados como ícono.
 | Calificar | `star` (`DS.Symbol.rate`) | «Calificar la temporada», en el menú de «Vista» |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
+### Lo que crece no choca (13 nov 2026)
+
+Fernando, del selector de Inicio: «como que lo tocas y como que rebota de inmediato en los botones que están arriba a la
+derecha». Era un resorte con rebote (`morph`, 0.22) y un renglón que, abierto, no cabía: el logo brincaba a la izquierda y la
+cápsula se salía de su margen. La regla, para todo lo que se abre junto a otra cosa:
+
+- **Lo de al lado cede primero.** Lo que crece usa `DS.Motion.grow` (resorte que se asienta casi sin pasarse) y lo que le
+  deja el lugar `DS.Motion.fold` (sin rebote y más rápido). Nunca dos resortes con rebote que se acercan al mismo tiempo.
+- **Abierto cabe.** El estado abierto se mide en el iPhone grande y en el SE: si no cabe, lo de al lado se va (en el SE la
+  cápsula entera) o se quita aire, nunca se ensancha el renglón.
+- **Abrir es más lento que cerrar.** Abrir con `grow`; cerrar con `fold`. Lo que sobra al cerrar se apaga rápido
+  (`DS.Motion.fadeQuick`) antes de que lo demás se recoja: no se encima.
+- **Nada nace de la nada.** Lo que llega entra desde un tamaño cercano al suyo (`DS.KindPill.enterScale`, 0.8) del lado de
+  donde sale, uno tras otro (`DS.KindPill.stagger`); lo elegido viaja (un solo círculo, no dos que se cruzan).
+- **Todo se interrumpe.** Los resortes retoman desde donde van y un cierre que espera (`Task.sleep`) se cancela con el
+  siguiente toque. Al apretar responde ya (`DS.Motion.press`). Con «Reducir movimiento», solo fundidos.
+
+`DesignRulesTests+Motion.swift` lo cuida: `grow` con rebote ≤ 0.1 y más lento que `fold`, `enterScale` ≥ 0.75, y el selector
+de tipo (`KindPill`, la misma pieza en Inicio, Explorar y las listas) y la cápsula de Inicio sin resortes con rebote.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

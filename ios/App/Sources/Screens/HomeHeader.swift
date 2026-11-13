@@ -86,20 +86,27 @@ struct HomeHeader: View {
     /// historias sin ver, tu foto lleva un anillo turquesa y tocarla las abre (tu perfil sigue junto a la ✕ de las historias).
     private var standard: some View {
         let stories = LearnModel(env.services).rings()
-        return HStack(spacing: DS.Space.s2) {
+        // Sin aire de la pila alrededor del espacio flexible (antes 8 + 8 + 8): abierto, el renglón no cabía en un iPhone
+        // grande y se ensanchaba de golpe, el logo brincaba a la izquierda y la cápsula se salía de su margen («rebota de
+        // inmediato en los botones de arriba a la derecha», Fernando, 13 nov 2026). Cerrado se ve igual que antes.
+        return HStack(spacing: 0) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
             DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
+                .padding(.leading, DS.Space.s2)
             Spacer(minLength: DS.Space.s2)
-            // SX1: mientras eliges, la cápsula se recoge a la derecha hasta quedar solo tu foto, apagada; tocarla cierra.
-            // En un iPhone chico (SE) ni tu foto cabe junto al selector abierto: se va del todo y regresa al elegir.
+            // SX1: mientras eliges, la cápsula cede su lugar ANTES de que la pastilla lo necesite (`fold`, más rápido que el
+            // `grow` de la pastilla) hasta quedar solo tu foto, apagada; tocarla cierra. Al cerrar regresa un instante después
+            // de que la pastilla se recogió: nunca se enciman. En un iPhone chico (SE) ni tu foto cabe junto al selector
+            // abierto: se va del todo y regresa al elegir.
             if !(kindOpen && WindowMetrics.column.width < DS.KindPill.narrowScreen) {
             capsule(stories)
-                .opacity(kindOpen ? DS.Opacity.dimmed : 1)
-                // al cerrar, regresa un instante después de que la pastilla se encoge: nunca se enciman
-                .animation((DS.Motion.morph(reduceMotion) ?? DS.Motion.fade).delay(kindOpen ? 0 : DS.Motion.entranceStep * 2), value: kindOpen)
+                // Lo apagado siempre con un fundido; el lugar que cede, con `fold` (con «Reducir movimiento», de una vez, igual
+                // que la pastilla: si una se acomoda al instante y la otra despacio, se enciman).
+                .animation(DS.Motion.fade) { $0.opacity(kindOpen ? DS.Opacity.dimmed : 1) }
+                .animation(DS.Motion.fold(reduceMotion)?.delay(kindOpen ? 0 : DS.KindPill.returnDelay), value: kindOpen)
                 .allowsHitTesting(!kindOpen)
-                .overlay { if kindOpen { Color.clear.contentShape(Rectangle()).onTapGesture { withAnimation(DS.Motion.morph(reduceMotion) ?? DS.Motion.fade) { kindOpen = false } } } }
-                .transition(.scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity))
+                .overlay { if kindOpen { Color.clear.contentShape(Rectangle()).onTapGesture { withAnimation(DS.Motion.fold(reduceMotion)) { kindOpen = false } } } }
+                .transition(yielding)
             }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -110,13 +117,30 @@ struct HomeHeader: View {
         .containerRelativeFrame(.horizontal)   // ds-exception: en la barra de arriba (safeAreaBar) el panel no cuenta: probado con el control abierto
     }
 
+    /// La cápsula entera, en el SE: se va hacia su orilla al abrir el selector (rápido, cediendo el lugar) y regresa cuando la
+    /// pastilla ya se recogió. Con «Reducir movimiento» se va de una vez (la pastilla también crece de una vez) y regresa
+    /// con un fundido.
+    private var yielding: AnyTransition {
+        guard let fold = DS.Motion.fold(reduceMotion) else { return .asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .identity) }
+        let shrink = AnyTransition.scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity)
+        return .asymmetric(insertion: shrink.animation(fold.delay(DS.KindPill.returnDelay)), removal: shrink.animation(fold))
+    }
+
     /// La cápsula: el control y tu foto (se hace a un lado mientras eliges en el selector, SX1).
     private func capsule(_ stories: [LearnStory]) -> some View {
+        HStack(spacing: 0) {
+            if showsRemote {
+                // Mientras eliges, el control se pliega con la cápsula (su ancho y su aire bajan a cero al mismo paso): antes
+                // se quitaba y, apagándose, quedaba un instante encima de tu foto.
+                Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
+                    .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
+                    .opacity(kindOpen ? 0 : 1)
+                    .frame(width: kindOpen ? 0 : nil, alignment: .leading)
+                    .clipped()
+                    .padding(.trailing, kindOpen ? 0 : (Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4))
+                    .accessibilityHidden(kindOpen)
+            }
             HStack(spacing: Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4) {
-                if showsRemote && !kindOpen {
-                    Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
-                        .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
-                }
                 if let first = stories.first, Self.hint == .storyInCapsule {
                     // HH3: un círculo de historia en la cápsula; tu foto sigue siendo tu perfil.
                     Button { openStories() } label: {
@@ -145,9 +169,10 @@ struct HomeHeader: View {
                     ProfileButton(avatar: avatar)
                 }
             }
-            .buttonStyle(.plain).foregroundStyle(DS.text)
-            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-            .glassEffect(.regular.interactive(), in: Capsule())
+        }
+        .buttonStyle(.plain).foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular.interactive(), in: Capsule())
     }
 
     /// Las historias en lugar de todo el encabezado, con la ✕ para regresar.

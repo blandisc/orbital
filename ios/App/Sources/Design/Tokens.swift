@@ -299,9 +299,15 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Un resorte sin rebote, para lo que cambia de alto y de forma a la vez (el control al estirarse o encogerse, los
         /// sustos al abrirse): sigue a la hoja en lugar de ir por su lado.
         static func smooth(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.slow) }
+        /// Lo que crece desde donde está y lo que viaja a su lugar (la pastilla de tipo, su círculo blanco): resorte que se
+        /// asienta casi sin pasarse, más lento que `fold`. «Lo que crece no choca» (13 nov 2026; antes `morph` rebotaba).
+        static func grow(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: growDuration, bounce: growBounce) }
+        static let growDuration = 0.42, growBounce = 0.06
+        /// Lo que cede su lugar o se recoge (la cápsula de al lado, la pastilla al cerrar): sin rebote y más rápido que `grow`.
+        static func fold(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.base) }
+        /// Lo que sobra al recogerse se apaga antes de que lo demás se cierre; y el hundido al apretar algo chico.
+        static let fadeQuick: Animation = .easeOut(duration: DesignTokens.Motion.fast), press: Animation = .smooth(duration: DesignTokens.Motion.fast)
         /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
-        /// Algo que cambia de forma y reacciona (el selector de Inicio al abrirse): resorte con un rebote apenas visible.
-        static func morph(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.22) }
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
