@@ -492,6 +492,10 @@ cápsula se salía de su margen. La regla, para todo lo que se abre junto a otra
   (`DS.Motion.fadeQuick`) antes de que lo demás se recoja: no se encima.
 - **Nada nace de la nada.** Lo que llega entra desde un tamaño cercano al suyo (`DS.KindPill.enterScale`, 0.8) del lado de
   donde sale, uno tras otro (`DS.KindPill.stagger`); lo elegido viaja (un solo círculo, no dos que se cruzan).
+- **Lo elegido se ve antes de recogerse, y cabe.** Tras elegir, la pastilla se queda abierta un momento
+  (`DS.KindPill.settle`, 900 ms; nunca menos de medio segundo) y entonces se recoge. En ese momento las otras opciones se van
+  y en su lugar se lee el nombre de lo elegido («Películas»): un ícono solo no dice qué escogiste. El círculo de lo elegido es más chico
+  que su lugar (`DS.KindPill.markInset`) y la pastilla recorta: nunca se asoma por la orilla (Fernando, 13 nov 2026).
 - **Todo se interrumpe.** Los resortes retoman desde donde van y un cierre que espera (`Task.sleep`) se cancela con el
   siguiente toque. Al apretar responde ya (`DS.Motion.press`). Con «Reducir movimiento», solo fundidos.
 
