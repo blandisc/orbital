@@ -1,8 +1,8 @@
 import SwiftUI
 import OrbitalCore
 
-/// Lo de la ficha que sigue al desplazamiento: lo que sube por debajo de la barra de arriba se desvanece (deja ver el fondo del
-/// color del arte) en vez de chocar con el reloj y los botones, y, recogido el arte, el logo (o el nombre) sale en la barra.
+/// Lo de la ficha que sigue al desplazamiento: lo que sube por debajo de la barra de arriba se desvanece despacio (deja ver el
+/// fondo que de verdad hay detrás, sin franja con orilla; `DS.TitleAction.topFade`) en vez de chocar con el reloj y los botones, y, recogido el arte, el logo (o el nombre) sale en la barra.
 /// Guarda el desplazamiento aquí y solo mientras importa (arriba, hasta que todo quedó recogido): así lo que se vuelve a
 /// pintar en cada cuadro es esto, no la ficha entera.
 struct TitleScrollChrome: ViewModifier {
@@ -15,8 +15,14 @@ struct TitleScrollChrome: ViewModifier {
 
     /// Desde aquí ya no cambia nada (todo desvanecido y el logo entero).
     private var settled: CGFloat { heroHeight * max(DS.TitleAction.fadeAt, DS.TitleAction.titleFrom + DS.TitleAction.titleSpan) }
-    /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
-    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
+    @Environment(\.colorScheme) private var scheme
+    /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido). En claro el arte es una tarjeta que empieza
+    /// bajo la barra: lo de la barra se apaga en cuanto algo llega ahí (`topFade`), y no poco a poco con todo el arte (la tarjeta
+    /// se quedaba a medias detrás de la barra, un rectángulo gris pálido; AR1, 13 nov 2026).
+    private var fade: Double {
+        let span = scheme == .light ? DS.TitleAction.topFade : heroHeight * DS.TitleAction.fadeAt
+        return Double(min(1, max(0, scrolled / max(span, 1))))
+    }
 
     func body(content: Content) -> some View {
         content
@@ -75,19 +81,24 @@ struct TitleEntrance: ViewModifier {
 
 /// El logo chico de la barra de la ficha; sin logo, el nombre. Va recortado de su margen transparente (los de metahub traen
 /// ~25 % vacío arriba y abajo) y cabe entero en su lugar: uno ancho se ajusta al espacio entre ‹ y los botones y uno alto
-/// al alto de la barra, sin cortarse ni quedar diminuto. Un logo oscuro se pinta claro (si no, no se lee sobre el arte).
+/// al alto de la barra, sin cortarse ni quedar diminuto. Un logo oscuro se pinta claro (si no, no se lee sobre el arte). En
+/// claro, sobre el papel, un logo oscuro o de color va tal cual y uno pálido cede su lugar al nombre en el color del texto
+/// («INTERSTELLAR» blanco no se leía y pintado de oscuro su brillo lo tapaba; AR1, 13 nov 2026).
 private struct BarLogo: View {
     let url: String?
     let title: String
+    @Environment(\.colorScheme) private var scheme
     @State private var trimmed: UIImage?
     @State private var failed = false
     @State private var dark = false
+    @State private var pale = false
 
     var body: some View {
         Group {
             if let u = url.flatMap(URL.init(string:)) {
                 Group {
-                    if let trimmed { Image(uiImage: trimmed).resizable().scaledToFit().brightness(dark ? 1 : 0) }
+                    if scheme == .light, pale { name }
+                    else if let trimmed { Image(uiImage: trimmed).resizable().scaledToFit().brightness(dark && scheme != .light ? 1 : 0) }
                     else if failed { name }
                     else { Color.clear }
                 }
@@ -95,6 +106,7 @@ private struct BarLogo: View {
                     trimmed = LogoTrim.cached(u)
                     if trimmed == nil { if let found = await LogoTrim.load(u) { trimmed = found } else { failed = true } }
                     dark = await LogoTone.isDark(u)
+                    pale = await LogoTone.isPale(u)
                 }
             } else { name }
         }

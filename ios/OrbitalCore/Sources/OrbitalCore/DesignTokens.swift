@@ -192,6 +192,10 @@ public enum DesignTokens {
         public static let darkLogoLuminance = 0.3
         /// …salvo que más de esta parte de sus píxeles tenga color (es un logo de color, no uno negro).
         public static let colorfulLogoShare = 0.08
+        /// Por encima de esta luminancia media (y sin color) un logo es pálido: sobre el papel del modo claro no se lee, y la barra
+        /// de la ficha dice el nombre en su lugar (AR1, 13 nov 2026). «INTERSTELLAR» (blanco con su brillo) mide 0.68 y «the
+        /// office» 0.89; el dorado de El Padrino y el naranja de Dune tienen color y van tal cual.
+        public static let paleLogoLuminance = 0.6
     }
     /// Subtítulos sobre el video: letra mínima, cuánto suben con los controles a la vista, espacio entre líneas
     /// (fracción de la letra), margen con el borde del video (fracción de su alto), sombra y contorno (fracción
