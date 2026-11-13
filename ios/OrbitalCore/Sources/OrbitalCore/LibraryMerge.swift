@@ -67,6 +67,7 @@ public enum LibraryMerge {
             e.duration = p.runtime.map { Double($0) * 60 } ?? fallbackRuntime[kind] ?? 3600
             e.position = fraction * e.duration; e.fraction = fraction
         }
+        if e.detour?.videoID != videoID { e.detour = nil }   // otro aparato siguió otro episodio: el del canal se olvida
         e.videoID = videoID; e.nextUp = false; e.hiddenAt = nil; e.updatedAt = at
         return e
     }
@@ -78,7 +79,7 @@ public enum LibraryMerge {
         if e.name.isEmpty { e.name = name }
         e.seen.formUnion(progress.completed.map(progress.videoID).filter { !unmarked.contains($0) })
         if let at = progress.lastWatchedAt?.timeIntervalSince1970, at > e.localStamp, let last = progress.last {
-            e.position = 0; e.duration = 0; e.fraction = nil; e.hiddenAt = nil; e.updatedAt = at
+            e.position = 0; e.duration = 0; e.fraction = nil; e.hiddenAt = nil; e.updatedAt = at; e.detour = nil
             if let next = progress.next { e.videoID = progress.videoID(next); e.nextUp = true }
             else { e.videoID = progress.videoID(last); e.nextUp = false }
         }

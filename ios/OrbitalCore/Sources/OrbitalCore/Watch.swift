@@ -79,10 +79,14 @@ public struct ProgressEvent: Sendable, Equatable, Codable {
     public var watched: Double       // segundos vistos desde el guardado anterior
     public var at: Double            // cuándo ocurrió (epoch)
     public var finished: Bool        // se terminó (o se pasó al siguiente): se marca como visto aunque falte un poco
+    /// Visto en un canal de Inicio o en la ruleta de Los Simpson (V2): lo de a medias se puede retomar, pero no mueve tu orden
+    /// de la serie (`LibraryEntry.channelProgress`).
+    public var channel: Bool
 
-    public init(kind: String, metaID: String, videoID: String, originalTitle: String, position: Double, duration: Double, watched: Double, at: Double, finished: Bool = false) {
+    public init(kind: String, metaID: String, videoID: String, originalTitle: String, position: Double, duration: Double, watched: Double, at: Double, finished: Bool = false,
+                channel: Bool = false) {
         self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.originalTitle = originalTitle
-        self.position = position; self.duration = duration; self.watched = watched; self.at = at; self.finished = finished
+        self.position = position; self.duration = duration; self.watched = watched; self.at = at; self.finished = finished; self.channel = channel
     }
 
     /// Tolerante con lo guardado antes: un campo nuevo no hace perder la cola entera.
@@ -93,8 +97,9 @@ public struct ProgressEvent: Sendable, Equatable, Codable {
         position = try c.decodeIfPresent(Double.self, forKey: .position) ?? 0; duration = try c.decodeIfPresent(Double.self, forKey: .duration) ?? 0
         watched = try c.decodeIfPresent(Double.self, forKey: .watched) ?? 0; at = try c.decodeIfPresent(Double.self, forKey: .at) ?? 0
         finished = try c.decodeIfPresent(Bool.self, forKey: .finished) ?? false
+        channel = try c.decodeIfPresent(Bool.self, forKey: .channel) ?? false
     }
-    enum Keys: String, CodingKey { case kind, metaID, videoID, originalTitle, position, duration, watched, at, finished }
+    enum Keys: String, CodingKey { case kind, metaID, videoID, originalTitle, position, duration, watched, at, finished, channel }
 }
 
 /// Dónde seguir: el segundo exacto (lo de este teléfono, o Trakt convertido con la duración conocida) o, si de Trakt solo se

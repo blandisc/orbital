@@ -29,8 +29,10 @@ public struct PlayRequest: Sendable {
     public var ownCopy = false
     /// Empieza en vertical (la ruleta de Los Simpson: la tele ya está de pie); girar el teléfono lo acuesta igual.
     public var startPortrait = false
-    /// Un canal de Inicio: se ve como la tele, sin guardar el avance ni avisar a Trakt (no mete capítulos sueltos en «Seguir
-    /// viendo» ni mueve el siguiente de la serie). Lo que sigue al terminar hereda lo mismo.
+    /// Un canal de Inicio o la ruleta de Los Simpson (V2, Fernando, 13 nov 2026): el canal no desordena tu serie, pero lo que
+    /// dejaste a medias siempre se puede retomar. A medias, sale en «Seguir viendo» y en el «Continuar» de la ficha; terminado,
+    /// queda visto (aquí y en Trakt) sin mover el siguiente de la serie ni dejar un «siguiente episodio». Trakt recibe su avance
+    /// como cualquier otro. Lo que sigue al terminar hereda lo mismo. Ver `LibraryEntry+Channel.swift`.
     public var offTheRecord = false
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,

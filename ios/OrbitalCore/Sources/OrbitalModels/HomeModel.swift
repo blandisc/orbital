@@ -18,6 +18,13 @@ public struct HomeItem: Sendable, Codable, Equatable, Identifiable {
     public var leftMinutes: Int
     public var nextUp: Bool            // terminaste el anterior: «Sigue: T8 E24»
     public var isNew: Bool?            // ibas al día y ya salió el episodio que sigue: «Nuevo» (opcional: la caché vieja no lo trae)
+
+    /// Un episodio (o película) que dejaste a medias, no un «siguiente».
+    public var isHalfway: Bool { !nextUp && (progress ?? 0) > 0 }
+
+    /// ¿Va en «Seguir viendo» con estas series escondidas (SS1-A)? Una escondida no deja «siguiente episodio», pero lo que
+    /// dejaste a medias (por un canal o desde la ficha) sí sale hasta que lo termines o lo quites (13 nov 2026).
+    public func shownInContinue(hidden: Set<String>) -> Bool { !hidden.contains(metaID) || isHalfway }
 }
 
 /// Inicio: «Seguir viendo» y Mi lista (lo tuyo en el teléfono, al día con Trakt). Sin red se enseña lo del teléfono, no una
@@ -117,7 +124,7 @@ public final class HomeModel: ObservableModel {
         super.init()
         if let data = services.caches.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
             let hidden = ForYou.hidden(services.kv)
-            continueWatching = cache.continueWatching.filter { !hidden.contains($0.metaID) }; myList = cache.myList
+            continueWatching = cache.continueWatching.filter { $0.shownInContinue(hidden: hidden) }; myList = cache.myList
         }
         defer {
             // Lo tuyo cambió (lo viste, lo guardaste, llegó algo de Trakt): Inicio se vuelve a armar con lo del teléfono.
@@ -264,8 +271,9 @@ public final class HomeModel: ObservableModel {
         async let continued = items(continueItems), saved = items(mine)   // las dos traducciones a la vez
         let (c, m) = await (continued, saved)
         guard !Task.isCancelled else { return }
-        let hidden = ForYou.hidden(services.kv)   // las series que escondiste (SS1-A) tampoco, ni en los estrenos ya cargados
-        continueWatching = c.filter { !dismissed.contains($0.metaID) && !hidden.contains($0.metaID) }
+        // Las series que escondiste (SS1-A) tampoco, ni en los estrenos ya cargados; salvo un episodio que dejaste a medias.
+        let hidden = ForYou.hidden(services.kv)
+        continueWatching = c.filter { !dismissed.contains($0.metaID) && $0.shownInContinue(hidden: hidden) }
         if upcoming.contains(where: { hidden.contains($0.series.imdb) }) { upcoming.removeAll { hidden.contains($0.series.imdb) } }
         if recentAirings.contains(where: { hidden.contains($0.series.imdb) }) { recentAirings.removeAll { hidden.contains($0.series.imdb) } }
         myList = m

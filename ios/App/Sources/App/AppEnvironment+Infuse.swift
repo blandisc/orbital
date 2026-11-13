@@ -65,10 +65,10 @@ extension AppEnvironment {
         case .closed:
             guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
             let r = session.request
-            guard !r.offTheRecord else { return }   // un canal de Inicio no deja avance
             let watched = max(0, seconds - session.startPosition)
+            // Un canal de Inicio (V2): a medias se retoma; terminado queda visto sin mover tu orden.
             let event = ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: seconds, duration: session.duration,
-                                      watched: min(watched, Date().timeIntervalSince(session.startedAt)), at: Date().timeIntervalSince1970)
+                                      watched: min(watched, Date().timeIntervalSince(session.startedAt)), at: Date().timeIntervalSince1970, channel: r.offTheRecord)
             await services.watch.report(event, phase: .stopped(finished: LibraryRules.finished(position: seconds, duration: session.duration, kind: r.kind)), scrobbleToTrakt: false)
             // Infuse no dice la duración: si tampoco la sabemos, se pregunta si terminaste.
             if session.duration == 0, seconds > 60 { askFinished = r }
@@ -78,7 +78,7 @@ extension AppEnvironment {
     /// «Sí, lo terminé»: se marca como visto y Stremio apunta al siguiente.
     func confirmFinished(_ request: PlayRequest) async {
         let event = ProgressEvent(kind: request.kind, metaID: request.metaID, videoID: request.videoID, originalTitle: request.originalTitle,
-                                  position: 1, duration: 1, watched: 0, at: Date().timeIntervalSince1970)
+                                  position: 1, duration: 1, watched: 0, at: Date().timeIntervalSince1970, channel: request.offTheRecord)
         await services.watch.report(event, phase: .stopped(finished: true), scrobbleToTrakt: false)
         askFinished = nil
     }

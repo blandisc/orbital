@@ -477,20 +477,20 @@ public final class PlayerModel: ObservableModel {
         guard let r = request else { return nil }
         let known = snapshot.duration > 0 ? snapshot.duration : CinemetaParsing.runtimeSeconds(r.meta.map { CinemetaParsing.describe($0).runtime } ?? "")
         return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: Self.positionToSave(LibraryRules.finite(snapshot.position), lastGood: lastGoodPosition),
-                             duration: LibraryRules.finite(known), watched: 0, at: clock().timeIntervalSince1970)
+                             duration: LibraryRules.finite(known), watched: 0, at: clock().timeIntervalSince1970, channel: r.offTheRecord)
     }
 
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
     func report(_ phase: PlaybackPhase) async {
         // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá. Un canal
-        // de Inicio tampoco: se ve como la tele.
-        guard request?.offTheRecord != true, var event = event(), !event.metaID.hasPrefix("file:") else { return }
+        // de Inicio o la ruleta sí (V2): a medias se retoma, terminado no mueve tu orden (`event.channel`).
+        guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
         let reserved: Double
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved
         if case .stopped = phase { finalReported = true }
-        if case .started = phase {} else { rememberChoice() }
+        if case .started = phase {} else if !event.channel { rememberChoice() }   // la versión del canal no es «la tuya»
         let outcome = await watch.report(event, phase: phase)
         if case .started = phase { return }
         if outcome.saved { lastSave = clock() } else { watchedUnsaved += reserved }

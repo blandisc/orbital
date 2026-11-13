@@ -167,6 +167,25 @@ Comet no lleva «|»: por eso funcionaban). Regla: toda dirección que sale de l
 catálogos, lo que existe sin Real-Debrid, la de reproducir) se arma con `addonURL` (`Net.swift`), nunca con `URL(string:)`
 directo. `AddonURLTests` lo cuida. En la TV no aplica (Python no hace eso).
 
+### El canal no desordena tu serie, pero lo que dejaste a medias siempre se puede retomar (13 nov 2026)
+
+Fernando: «cuando veo un episodio de Simpson no aparece en seguir viendo»; eligió V2 («vamos con B2»). Un canal de Inicio y
+la ruleta de Los Simpson (`PlayRequest.offTheRecord`) ya no se ven «sin dejar rastro»:
+
+- Un episodio que cortas a la mitad sale en «Seguir viendo» («T15 E12 · quedan 12 min») y el «Continuar» de la ficha lo
+  ofrece. Tu orden de la serie queda apartado (`LibraryEntry.detour`), no se pierde.
+- Al terminarlo (en el canal o desde la ficha) queda visto, aquí y en Trakt, y la serie vuelve a donde ibas en tu orden: nunca
+  deja un «siguiente: T15 E13». Quitarlo de «Seguir viendo» también regresa tu orden y saca la serie de la fila.
+- Si el canal puso justo el episodio que te tocaba, cuenta como verlo en orden. Zapear (menos de 20 s) no cambia nada. Lo que
+  Trakt devuelva de ese episodio (el eco) no mueve tu orden (`channelAt`).
+- Lo que sigue al terminar en el canal hereda lo mismo; «¿Sigues viendo?», el widget y el Centro de control no cambian.
+- Una serie escondida (SS1-A) no deja «siguiente episodio», pero lo que dejaste a medias (por un canal o desde la ficha) sí
+  sale en «Seguir viendo» y en el widget hasta que lo termines o lo quites (`HomeItem.shownInContinue`,
+  `FollowHideTests.testLoQueDejasteAMediasDeUnaEscondidaSiSale`).
+
+`ChannelProgressTests` (OrbitalCoreTests) y `PlayerModelTests.testChannelPlaybackHalfway…` lo cuidan. En la TV: distinto,
+pendiente (registro de paridad): sus canales de Orbital no guardan nada, ni a medias.
+
 ### El reproductor no ofrece ni promete lo que no hay (12 nov 2026)
 
 Fernando: «que no salga saltar intro hasta que ya esté cargada la serie» y, del aviso al probar otra versión, «no es como que

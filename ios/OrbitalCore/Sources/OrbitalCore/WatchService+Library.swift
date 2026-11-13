@@ -131,6 +131,7 @@ extension WatchService {
         let now = clock().timeIntervalSince1970
         guard let current = store.entry(metaID) else { return }
         store.update(metaID, make: { current }) { e in
+            e.dismissDetour()   // un episodio del canal a medias: tu orden de antes, fuera de la fila
             e.hiddenAt = now
             if let newEpisode { e.videoID = newEpisode; e.nextUp = false; e.position = 0 }
         }

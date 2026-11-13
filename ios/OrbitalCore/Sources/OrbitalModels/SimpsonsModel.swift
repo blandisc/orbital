@@ -93,6 +93,7 @@ public final class SimpsonsModel: ObservableModel {
         var request = PlayRequest(kind: "series", metaID: Self.seriesID, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
                                   poster: String(format: ForYou.metahubPoster, Self.seriesID), meta: draw.meta, fromStart: true)
         request.startPortrait = true
+        request.offTheRecord = true   // V2: un episodio al azar no desordena la serie; a medias, se retoma
         return request
     }
 

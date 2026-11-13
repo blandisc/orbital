@@ -91,6 +91,7 @@ final class SimpsonsModelTests: XCTestCase {
         XCTAssertEqual(request.videoID, draw.chosen.episode.id)
         XCTAssertTrue(request.fromStart)
         XCTAssertTrue(request.startPortrait)
+        XCTAssertTrue(request.offTheRecord, "V2: un episodio al azar no desordena la serie")
         XCTAssertEqual(request.episodeLabel, "T\(draw.chosen.season) · E\(draw.chosen.episode.episode) · \(draw.chosen.episode.title)")
     }
 

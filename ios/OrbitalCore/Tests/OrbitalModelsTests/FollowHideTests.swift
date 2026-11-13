@@ -127,11 +127,11 @@ final class FollowHideTests: XCTestCase {
         XCTAssertEqual(model.visibleSeries.count, 2)
     }
 
-    /// «Sigue viendo» en Inicio y el widget: sin la escondida, también la que venía guardada de antes.
+    /// «Sigue viendo» en Inicio y el widget: sin el «siguiente episodio» de la escondida, también el que venía guardado de antes.
     func testSigueViendoYElWidgetNoLaEnsenan() async throws {
         let rig = try ServicesRig()
         rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
-            $0.videoID = "tt0386676:2:5"; $0.position = 600; $0.duration = 1320; $0.updatedAt = 1_735_776_000
+            $0.videoID = "tt0386676:2:5"; $0.nextUp = true; $0.updatedAt = 1_735_776_000
         }
         var published: [WidgetSnapshot] = []
         rig.services.onWidgetSnapshot = { published.append($0) }
@@ -144,6 +144,27 @@ final class FollowHideTests: XCTestCase {
         await home.showLibrary()
         XCTAssertTrue(home.continueWatching.isEmpty, "Inicio tampoco")
         XCTAssertTrue(HomeModel(rig.services).continueWatching.isEmpty, "ni lo guardado de la vez pasada")
+    }
+
+    /// Lo que dejaste a medias de una escondida (por un canal o desde la ficha) sí sale, hasta que lo termines o lo quites
+    /// (13 nov 2026: «cuando veo un episodio de Simpson no aparece en seguir viendo»).
+    func testLoQueDejasteAMediasDeUnaEscondidaSiSale() async throws {
+        let rig = try ServicesRig()
+        rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:2:5"; $0.position = 600; $0.duration = 1320; $0.updatedAt = 1_735_776_000
+        }
+        var published: [WidgetSnapshot] = []
+        rig.services.onWidgetSnapshot = { published.append($0) }
+        ForYou.setHidden(["tt0386676"], kv: rig.kv)
+        let home = HomeModel(rig.services)
+        await home.refresh()
+        XCTAssertEqual(home.continueWatching.map(\.metaID), ["tt0386676"], "a medias: se puede terminar")
+        XCTAssertEqual(published.last?.items.map(\.metaID), ["tt0386676"], "el widget también")
+        XCTAssertEqual(HomeModel(rig.services).continueWatching.map(\.metaID), ["tt0386676"], "y lo guardado de la vez pasada")
+        await rig.services.watch.report(ProgressEvent(kind: "series", metaID: "tt0386676", videoID: "tt0386676:2:5", originalTitle: "The Office",
+                                                      position: 1320, duration: 1320, watched: 720, at: 1_735_777_000), phase: .stopped(finished: true))
+        await home.showLibrary()
+        XCTAssertTrue(home.continueWatching.isEmpty, "terminado, su «siguiente» no sale: sigue escondida")
     }
 
     func testElWidgetTampocoEnsenaSusEstrenos() throws {
