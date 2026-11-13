@@ -161,7 +161,7 @@ extension AppEnvironment {
         var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
                                   episodeLabel: episodeLabel, poster: poster, meta: meta)
         request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
-        request.offTheRecord = offTheRecord   // un canal de Inicio: sin avance ni Trakt
+        request.offTheRecord = offTheRecord   // un canal de Inicio (V2): no desordena tu serie; a medias, se retoma
         if services.appSettings.preferInfuse { await playExternal(request) } else { play(request) }
     }
 }

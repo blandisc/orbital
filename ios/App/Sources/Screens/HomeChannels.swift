@@ -83,7 +83,7 @@ struct HomeChannels: View {
             Task {
                 await env.play(kind: "series", metaID: channel.id, videoID: now.episode.videoID, title: name(channel.pick),
                                originalTitle: channel.originalTitle, episodeLabel: label(now.episode), poster: channel.pick.poster, at: now.elapsed,
-                               offTheRecord: true)   // como la tele: no cuenta como visto
+                               offTheRecord: true)   // V2: no desordena tu serie; a medias, se retoma
             }
         } label: {
             VStack(alignment: .leading, spacing: DS.Space.s2) {

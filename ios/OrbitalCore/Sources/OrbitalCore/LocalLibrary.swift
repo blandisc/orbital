@@ -29,11 +29,17 @@ public struct LibraryEntry: Sendable, Equatable, Codable {
     public var hiddenAt: Double?
     /// Cuándo se le mandó a Trakt tu avance de aquí: lo que Trakt devuelva hasta un poco después es eco de lo tuyo, no algo nuevo.
     public var pushedAt: Double?
+    /// Un episodio de un canal o de la ruleta que dejaste a medias, y dónde ibas en tu orden antes (V2, 13 nov 2026).
+    public var detour: ChannelDetour?
+    /// La última vez que un canal tocó este título: lo que Trakt devuelva de esa vez (el episodio visto ahí) no mueve tu orden.
+    public var channelAt: Double?
 
     public var hidden: Bool { hiddenAt != nil }
 
     /// Hasta cuándo lo de aquí manda: lo que llegue de Trakt con una fecha anterior es viejo (o el eco de lo que mandó este teléfono).
-    public var localStamp: Double { max(updatedAt, hiddenAt ?? 0, (pushedAt ?? 0) + LibraryMerge.echoMargin) }
+    public var localStamp: Double {
+        max(updatedAt, hiddenAt ?? 0, (pushedAt ?? 0) + LibraryMerge.echoMargin, channelAt.map { $0 + LibraryMerge.echoMargin } ?? 0)
+    }
 
     public init(metaID: String, kind: String, name: String, poster: String? = nil) {
         self.metaID = metaID; self.kind = kind; self.name = name; self.poster = poster
@@ -50,8 +56,9 @@ public struct LibraryEntry: Sendable, Equatable, Codable {
         nextUp = try c.decodeIfPresent(Bool.self, forKey: .nextUp) ?? false; seen = try c.decodeIfPresent(Set<String>.self, forKey: .seen) ?? []
         inList = try c.decodeIfPresent(Bool.self, forKey: .inList) ?? false; listedAt = try c.decodeIfPresent(Double.self, forKey: .listedAt)
         hiddenAt = try c.decodeIfPresent(Double.self, forKey: .hiddenAt); pushedAt = try c.decodeIfPresent(Double.self, forKey: .pushedAt)
+        detour = try c.decodeIfPresent(ChannelDetour.self, forKey: .detour); channelAt = try c.decodeIfPresent(Double.self, forKey: .channelAt)
     }
-    enum Keys: String, CodingKey { case metaID, kind, name, poster, videoID, position, duration, fraction, updatedAt, nextUp, seen, inList, listedAt, hiddenAt, pushedAt }
+    enum Keys: String, CodingKey { case metaID, kind, name, poster, videoID, position, duration, fraction, updatedAt, nextUp, seen, inList, listedAt, hiddenAt, pushedAt, detour, channelAt }
 
     /// Dónde ibas, de 0 a 1 (nil si no ibas a medias).
     public var progress: Double? {
@@ -78,7 +85,12 @@ public struct LibraryEntry: Sendable, Equatable, Codable {
     }
 
     /// Lo que pasa al terminar un video: queda visto y se pasa al siguiente episodio (o sale de «Seguir viendo»).
+    /// Si era el episodio del canal que dejaste a medias (lo terminaste desde la ficha), vuelves a tu orden de antes.
     public mutating func finish(videoID: String, next: String?, at: Double) {
+        if let d = detour {
+            detour = nil
+            if d.videoID == videoID { return channelFinished(videoID: videoID, at: at, restoring: d) }
+        }
         seen.insert(videoID)
         position = 0; duration = 0; fraction = nil; hiddenAt = nil; updatedAt = at
         if let next, kind == "series" { self.videoID = next; nextUp = true } else { self.videoID = videoID; nextUp = false }

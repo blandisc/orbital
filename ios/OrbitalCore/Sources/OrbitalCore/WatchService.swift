@@ -23,6 +23,9 @@ public actor WatchService {
     /// Videos cuyo último aviso fue un respaldo (`start` + `pause` mientras sonaba): la siguiente pausa o cierre llevan antes
     /// un `start`, o Trakt no movería `paused_at`.
     var afterBackup: Set<String> = []
+    /// Segundos vistos de cada episodio de un canal en esta sesión de la app: zapear (menos de `LibraryEntry.channelMinWatched`)
+    /// no lo pone en «Seguir viendo».
+    var channelSeconds: [String: Double] = [:]
 
     public init(library: LocalLibrary = LocalLibrary(), cinemeta: Cinemeta,
                 trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, queue: TraktQueue? = nil,
@@ -86,16 +89,30 @@ public actor WatchService {
     }
 
     /// El avance en el teléfono. Terminado: queda visto y la serie pasa al siguiente episodio (el de Cinemeta, ya emitido).
+    /// De un canal o la ruleta (V2): lo de a medias se guarda para retomarlo, pero terminado no mueve tu orden
+    /// (`LibraryEntry+Channel.swift`), salvo que el canal haya puesto justo el episodio que te tocaba.
     func saveLocally(_ event: ProgressEvent) async {
         let position = LibraryRules.finite(event.position), duration = LibraryRules.finite(event.duration)
         let done = event.finished || LibraryRules.finished(position: position, duration: duration, kind: event.kind)
+        let existing = store.entry(event.metaID)
+        let channel = event.channel && event.kind == "series" && !(existing?.isYourTurn(event.videoID) ?? false)
+        if channel { channelSeconds[event.videoID, default: 0] += event.watched }
+        let channelWatched = channelSeconds[event.videoID] ?? 0
+        // Zapear un canal de una serie que no tienes no la mete en tu biblioteca.
+        if channel, existing == nil, !done, channelWatched < LibraryEntry.channelMinWatched { return }
         var next: String?
-        if done, event.kind == "series", let info = try? await cinemeta.meta(kind: event.kind, id: event.metaID) {
+        if done, !channel, event.kind == "series", let info = try? await cinemeta.meta(kind: event.kind, id: event.metaID) {
             next = CinemetaParsing.nextEpisode(info, after: event.videoID, now: event.at)
         }
         store.update(event.metaID, make: { LibraryMerge.make(event.metaID, kind: event.kind, name: event.originalTitle) }) { e in
             if e.name.isEmpty { e.name = event.originalTitle }
+            if channel {
+                if done { e.channelFinished(videoID: event.videoID, at: event.at) }
+                else { e.channelProgress(videoID: event.videoID, position: position, duration: duration, watched: channelWatched, at: event.at) }
+                return
+            }
             if done { e.finish(videoID: event.videoID, next: next, at: event.at); return }
+            if e.detour?.videoID != event.videoID { e.detour = nil }   // otro episodio, en tu orden: el del canal se olvida
             e.videoID = event.videoID; e.position = position; e.duration = duration; e.fraction = nil
             e.nextUp = false; e.hiddenAt = nil; e.updatedAt = event.at
         }

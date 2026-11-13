@@ -249,18 +249,33 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertLessThan(rig.saved().map(\.watched).reduce(0, +), 20)
     }
 
-    /// Un canal de Inicio se ve como la tele: ni avance guardado ni Trakt, aunque lo veas un buen rato.
-    func testChannelPlaybackLeavesNoTrace() async throws {
+    /// V2 (Fernando, 13 nov 2026): un canal de Inicio a medias se guarda para retomarlo, marcado como del canal (tu orden queda
+    /// apartado); terminado, queda visto sin pasar al siguiente. `ChannelProgressTests` cubre las reglas de la biblioteca.
+    func testChannelPlaybackHalfwayCanBeResumedButFinishedDoesNotMoveTheSeries() async throws {
         let rig = try twoSources()
         var request = rig.request()
         request.offTheRecord = true
         await rig.model.begin(request)
         await rig.model.handle(rig.playing(10))
-        rig.clock.advance(120); await rig.model.handle(rig.playing(130)); await rig.model.tick()
-        rig.clock.advance(2); await rig.model.handle(rig.playing(132, state: .paused))
+        for step in 1...12 { rig.clock.advance(5); await rig.model.handle(rig.playing(10 + Double(step) * 5)) }   // un minuto viéndolo
+        await rig.model.tick()
+        rig.clock.advance(2); await rig.model.handle(rig.playing(72, state: .paused))
         await rig.model.close()
-        XCTAssertTrue(rig.saved().isEmpty)
-        XCTAssertNil(rig.library.entry("tt0386676"))
+        XCTAssertFalse(rig.saved().isEmpty); XCTAssertTrue(rig.saved().allSatisfy(\.channel))
+        let halfway = try XCTUnwrap(rig.library.entry("tt0386676"))
+        XCTAssertEqual(halfway.videoID, "tt0386676:1:1"); XCTAssertNotNil(halfway.detour, "a medias: sale en «Seguir viendo»")
+        XCTAssertTrue(halfway.inContinue)
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", entry: halfway, seasons: []), "tt0386676:1:1",
+                       "la ficha ofrece continuar el episodio que dejaste")
+
+        let again = try twoSources()
+        await again.model.begin(request)
+        await again.model.handle(again.playing(10))
+        again.clock.advance(1300); await again.model.handle(again.playing(1310))
+        await again.model.close()
+        let done = try XCTUnwrap(again.library.entry("tt0386676"))
+        XCTAssertTrue(done.seen.contains("tt0386676:1:1"))
+        XCTAssertFalse(done.nextUp, "no deja «Sigue: T1 E2»"); XCTAssertFalse(done.inContinue)
     }
 
     func testOpeningAndClosingWithoutWatchingDoesNotTouchTheLibrary() async throws {
