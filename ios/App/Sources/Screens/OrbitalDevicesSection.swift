@@ -45,7 +45,7 @@ struct OrbitalDevicesSection: View {
                     .accessibilityIdentifier("orbital-device-disconnect-this")
             } footer: { Text("Deja de hablar con tu TV hasta que escanees su código otra vez.") }
             .listRowBackground(DS.surface)
-            .confirmationDialog(Text("¿Desconectar este iPhone?"), isPresented: $confirmingThis, titleVisibility: .visible) {
+            .confirmationDialog(Text("¿Desconectar este iPhone?"), isPresented: $confirmingThis, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Desconectar", role: .destructive) { Task { await model.remove(me) } }
                 Button("Cancelar", role: .cancel) {}
             } message: { Text("Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.") }
@@ -115,7 +115,7 @@ private struct OrbitalDeviceSheet: View {
         }
         .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último
         .fittedSheet()
-        .confirmationDialog(Text("¿Quitar \(device.name)?"), isPresented: $confirming, titleVisibility: .visible) {
+        .confirmationDialog(Text("¿Quitar \(device.name)?"), isPresented: $confirming, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
             Button("Quitar", role: .destructive, action: remove)
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.") }

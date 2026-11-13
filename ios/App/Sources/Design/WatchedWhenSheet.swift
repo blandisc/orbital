@@ -132,6 +132,7 @@ struct WatchedOption: View {
                 if open { Image(systemName: "chevron.up").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted) }
             }
             .padding(.horizontal, DS.Space.s3)
+            .padding(.vertical, DS.Space.s2)   // con letra grande el nombre parte en dos y no toca la orilla (aire parejo)
             .frame(maxWidth: .infinity, minHeight: DS.Watched.row, alignment: .leading)
             .dsCard()
             .contentShape(shape)

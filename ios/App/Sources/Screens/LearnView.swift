@@ -69,7 +69,7 @@ struct LearnView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Aprende").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmReset, titleVisibility: .visible) {
+        .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmReset, titleVisibility: .visible) {   // ds-exception: confirmación de borrar lo visto de los avisos (sí o no)
             Button("Volver a verlos") { model.reset() }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Las historias vuelven a decir que no las has visto.") }

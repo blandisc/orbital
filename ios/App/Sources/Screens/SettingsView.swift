@@ -176,10 +176,10 @@ struct SettingsView: View {
     private func withDialogs(_ content: some View, _ s: AppSettings) -> some View {
         content
             .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
-            .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
+            .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
             } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
-            .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
+            .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
             } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
             .sheet(isPresented: $editingAvatar) { profileSheet }

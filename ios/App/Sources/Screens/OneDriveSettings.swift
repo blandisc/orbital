@@ -101,7 +101,7 @@ struct OneDriveSettings: View {
         .sheet(isPresented: $pickingFolder) {
             NavigationStack { OneDriveFolderPicker(path: "", model: model) { pickingFolder = false } }
         }
-        .confirmationDialog("¿Desconectar OneDrive?", isPresented: $confirmUnlink, titleVisibility: .visible) {
+        .confirmationDialog("¿Desconectar OneDrive?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
             Button("Desconectar", role: .destructive) { Task { await model.unlink() } }
         } message: { Text("Mi media se vacía. Lo que ya bajaste al iPhone se queda.") }
     }

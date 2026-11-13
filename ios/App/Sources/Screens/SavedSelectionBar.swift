@@ -51,7 +51,7 @@ struct SavedSelectionBar: View {
             }
             .buttonStyle(.plain).menuStyle(.button)
         }
-        .alert("Lista nueva", isPresented: $naming) {
+        .alert("Lista nueva", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
             TextField("Nombre", text: $newName)
             Button("Cancelar", role: .cancel) { newName = "" }
             Button("Crear") { let name = newName; newName = ""; run { await createAndMove(name) } }

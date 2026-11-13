@@ -318,7 +318,7 @@ struct LibrarySavedView: View {
                 .accessibilityIdentifier("saved-new-list")
             }
             .padding(.horizontal, DS.Space.gutter)
-            .alert("Nueva lista", isPresented: $naming) {
+            .alert("Nueva lista", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
                 TextField("Nombre", text: $newListName)
                 Button("Cancelar", role: .cancel) {}
                 Button("Crear") { createList(newListName) }

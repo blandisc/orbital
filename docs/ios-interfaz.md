@@ -192,6 +192,29 @@ arriba… porque no es muy consistente»; decidió «Me gusta la F1».
   «Vista» (hoja `SeasonRatingSheet`); cada capítulo conserva las suyas en su fila.
 - La TV no cambia (registro de paridad, «Distinto a propósito»). Lo cuida `DesignRulesTests+Actions.swift`.
 
+### Las preguntas son tarjetas de la app (13 nov 2026)
+
+Fernando: «Cuando le picas un episodio ya visto, que créate una tarjeta, que no aparezca esta notificación como del sistema,
+toda fea». Cambia EV1 (9 nov, «la del sistema»). La regla: **las preguntas y elecciones de la app son tarjetas de la app, no
+diálogos del sistema.**
+
+- Una elección («¿qué hago con esto?») es una `ChoiceSheet` (`Design/ChoiceSheet.swift`), presentada con `choiceSheet(item:)`:
+  hoja a la medida de lo que trae (`fittedSheet`, con `dsSheetContent`), arriba qué es (la imagen, el nombre y una línea gris),
+  la acción principal grande (`dsSolidPrimaryButton`, opcional) y las demás como renglones con ícono (`WatchedOption`, los de
+  «¿Cuándo la viste?»). Sin «Cancelar»: se cierra deslizándola, tocando fuera o con Esc. Lo que toques corre cuando la hoja ya
+  se cerró (el reproductor o «Versión» no chocan con ella).
+- **«Ya lo viste»** (tocar un episodio visto): la miniatura, «T2 E5 · nombre» y «Ya lo viste» en gris; «Ver otra vez» con la
+  versión que va a sonar («🇲🇽 Español»); «Otra versión o idioma» (`DS.Symbol.switchVersion`) y «Marcar como no visto»
+  (`DS.Symbol.watched`; no va en rojo: se puede volver a marcar). En el iPad es la misma tarjeta, centrada y a la medida.
+- Se quedan como pregunta del sistema, cada una con `ds-exception: <motivo>` en su renglón: las confirmaciones cortas de algo
+  destructivo o de desconectar («¿Quitar…?», «¿Desconectar Trakt?»), las que piden un nombre (el campo de texto del sistema) y
+  «¿Terminaste de verlo?» (llega al volver de Infuse sobre lo que esté abierto). Los `Menu` que se despliegan del propio botón
+  («Descargar», «Vista») no son diálogos y se quedan.
+- Pendientes (en archivos de otra tarea): las dos preguntas de «Versión» (`SourcesSheet`) y las dos del reproductor
+  (`PlayerScreen`); la prueba conoce cuántas hay en cada uno.
+- Lo cuida `DesignRulesTests+Dialogs.swift`: un `confirmationDialog`, `alert` o `actionSheet` nuevo falla si no lleva su porqué.
+  En la TV: igual (sus elecciones ya son hojas propias).
+
 ### Lo que acompaña a un control va en su misma línea (12 nov 2026)
 
 Fernando: «donde dice la temporada de la serie y donde dice X de tantos X vistos, ayúdame a centrarlo más porque está como ahí

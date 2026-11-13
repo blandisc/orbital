@@ -55,7 +55,7 @@ extension TitleView {
         launch(request, source: nil)
     }
 
-    /// EV1 (Fernando, 9 nov): uno sin ver empieza; uno visto pregunta «Ya lo viste» (ver otra vez, otra versión, no visto).
+    /// EV1 (Fernando, 9 nov): uno sin ver empieza; uno visto abre la tarjeta «Ya lo viste» (13 nov: ver otra vez, otra versión, no visto).
     func tapEpisode(_ model: TitleModel, _ row: EpisodeRow) {
         if row.watched { rewatch = row } else { startEpisode(model, videoID: row.id) }
     }
@@ -204,9 +204,11 @@ extension TitleView {
 
 }
 
-/// EV1: la hoja chica de un episodio que ya viste (la del sistema, abajo): ver otra vez con la versión de la serie, elegir otra
-/// versión o idioma, o marcarlo como no visto. https://claude.ai/artifact/25F8bQVYpNq1ZBzj221YVm
-struct RewatchDialog: ViewModifier {
+/// EV1: la tarjeta de un episodio que ya viste (Fernando, 13 nov 2026: «que créate una tarjeta, que no aparezca esta
+/// notificación como del sistema, toda fea»; antes, 9 nov, era la pregunta del sistema). Arriba su miniatura, «T2 E5 · nombre»
+/// y «Ya lo viste»; grande, «Ver otra vez» con la versión de la serie; debajo, otra versión o idioma y marcarlo como no visto.
+/// Es una `ChoiceSheet` (regla «Las preguntas son tarjetas de la app»). https://claude.ai/artifact/25F8bQVYpNq1ZBzj221YVm
+struct RewatchCard: ViewModifier {
     @Binding var row: EpisodeRow?
     let version: String
     let again: (String) -> Void
@@ -214,12 +216,15 @@ struct RewatchDialog: ViewModifier {
     let unwatch: (String) -> Void
 
     func body(content: Content) -> some View {
-        content.confirmationDialog(Text("Ya viste «\(row?.title ?? "")»"), isPresented: Binding(get: { row != nil }, set: { if !$0 { row = nil } }),
-                                   titleVisibility: .visible, presenting: row) { r in
-            Button { again(r.id) } label: { Label { Text("Ver otra vez · \(Text(verbatim: LanguageFlags.plain(version)))") } icon: { Image(systemName: "play.fill") } }
-            Button { versions(r.id) } label: { Label("Otra versión o idioma", systemImage: "arrow.left.arrow.right") }
-            Button { unwatch(r.id) } label: { Label("Marcar como no visto", systemImage: "circle") }
-            Button("Cancelar", role: .cancel) {}
+        content.choiceSheet(item: $row) { episode in
+            let name = episode.hasTitle ? Text("T\(episode.season) E\(episode.number) · \(Text(verbatim: episode.title))") : Text("T\(episode.season) E\(episode.number)")
+            return ChoiceCard(title: name, detail: Text("Ya lo viste"), art: episode.thumbnail,
+                              primary: ChoiceAction(id: "rewatch-again", title: Text("Ver otra vez"), detail: Text.flagged(version), symbol: "play.fill") { again(episode.id) },
+                              options: [
+                                ChoiceAction(id: "rewatch-versions", title: Text("Otra versión o idioma"), symbol: DS.Symbol.switchVersion) { versions(episode.id) },
+                                ChoiceAction(id: "rewatch-unwatch", title: Text("Marcar como no visto"), symbol: DS.Symbol.watched) { unwatch(episode.id) },
+                              ],
+                              id: "rewatch-card")
         }
     }
 }

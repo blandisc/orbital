@@ -81,7 +81,7 @@ struct TorrentioSettings: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: "Torrentio")).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .confirmationDialog("¿Volver a lo recomendado?", isPresented: $confirmReset, titleVisibility: .visible) {
+        .confirmationDialog("¿Volver a lo recomendado?", isPresented: $confirmReset, titleVisibility: .visible) {   // ds-exception: confirmación de borrar tus ajustes (sí o no)
             Button("Volver a lo recomendado", role: .destructive) { model.resetToRecommended() }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Tus idiomas, calidades y demás opciones vuelven a como vienen con Orbital.") }

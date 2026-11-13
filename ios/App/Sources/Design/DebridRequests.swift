@@ -187,7 +187,7 @@ extension View {
     /// eso iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» opuestos) o, si ya terminó, «¿Quitarlo de tu
     /// Real-Debrid?» con «Quitar» y «Cancelar» (como la TV, `debridCancelMenu`).
     func debridCancelConfirmation(isPresented: Binding<Bool>, name: String, finished: Bool, perform: @escaping () -> Void) -> some View {
-        confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?") : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {
+        confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?") : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta (cancelar o quitar un pedido), como la TV
             if finished {
                 Button("Quitar", role: .destructive, action: perform)
                 Button("Cancelar", role: .cancel) {}

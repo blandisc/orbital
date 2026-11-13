@@ -32,13 +32,13 @@ struct SavedListManagement: ViewModifier {
                     ToolbarItem(placement: .topBarTrailing) { menu }
                 }
             }
-            .alert("Cambiar nombre", isPresented: $renaming) {
+            .alert("Cambiar nombre", isPresented: $renaming) {   // ds-exception: pide un nombre: el campo de texto del sistema
                 TextField("Nombre", text: $newName)
                 Button("Cancelar", role: .cancel) {}
                 Button("Guardar") { let name = newName; run("No pude cambiar el nombre") { try await model.renameList(listID, to: name) } }
                     .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .confirmationDialog(Text("¿Borrar «\(model.selectedName)»?"), isPresented: $deleting, titleVisibility: .visible) {
+            .confirmationDialog(Text("¿Borrar «\(model.selectedName)»?"), isPresented: $deleting, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
                 Button("Borrar lista", role: .destructive) {
                     let id = listID, name = model.selectedName, dismiss = dismiss
                     run("No pude borrar la lista") {
@@ -48,7 +48,7 @@ struct SavedListManagement: ViewModifier {
                     }
                 }
             } message: { Text("No se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas.") }
-            .confirmationDialog(Text("Esta lista es «Solo tú»"), isPresented: $openToShare, titleVisibility: .visible) {
+            .confirmationDialog(Text("Esta lista es «Solo tú»"), isPresented: $openToShare, titleVisibility: .visible) {   // ds-exception: confirma un cambio de quién la ve (una sola acción)
                 Button("Abrir con el enlace y copiarlo") {
                     let id = listID
                     run("No pude cambiar quién la ve") {
