@@ -101,30 +101,31 @@ final class ChaosRegressionUITests: XCTestCase {
 
     // MARK: Ráfagas de toques
 
-    /// La tarjeta «¿Qué vemos hoy?» tocada cinco veces seguidas: un solo mazo, que se cierra.
+    /// La puerta de «Decide por mí» tocada cinco veces seguidas: una sola hoja, que se cierra; luego el mazo.
     func testRafagaEnLaTarjetaDelMazo() {
         launch(tab: 1)
-        let card = app.buttons["paraTi-match"]
+        let card = app.buttons["paraTi-decide"]
         XCTAssertTrue(card.waitForExistence(timeout: 20))
         for _ in 0..<5 { if card.exists && card.isHittable { card.tap() } }
         sleep(2)
         alive("ráfaga en la tarjeta")
         shot("rafaga-mazo")
-        let close = app.buttons["match-close"]
+        let close = app.buttons["decide-close"]
         XCTAssertTrue(close.waitForExistence(timeout: 10))
         close.tap()
         sleep(2)
-        XCTAssertFalse(any("match-deck").exists, "quedó un mazo apilado debajo")
+        XCTAssertFalse(app.buttons["decide-close"].exists, "quedó una hoja apilada debajo")
         XCTAssertTrue(card.waitForExistence(timeout: 5), "vuelve a Explorar")
         // Pasar 30 cartas muy rápido.
         card.tap()
+        app.buttons["Una por una"].firstMatch.tap()
         let deck = any("match-deck")
         XCTAssertTrue(deck.waitForExistence(timeout: 10))
         for i in 0..<30 { if deck.exists { i % 2 == 0 ? deck.swipeLeft(velocity: .fast) : deck.swipeRight(velocity: .fast) } }
         sleep(1)
         alive("30 cartas")
         shot("mazo-30-cartas")
-        if app.buttons["match-close"].exists { app.buttons["match-close"].tap() }
+        if app.buttons["decide-close"].exists { app.buttons["decide-close"].tap() }
     }
 
     /// La puerta del filtro tocada en ráfaga, y abrir/cerrar el cajón muchas veces.

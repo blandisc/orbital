@@ -44818,6 +44818,149 @@
         }
       }
     },
+    "Cualquier duración": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any length"
+          }
+        }
+      }
+    },
+    "Ya no te la sugiero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I won't suggest it again"
+          }
+        }
+      }
+    },
+    "Aún no hay sugerencias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No suggestions yet"
+          }
+        }
+      }
+    },
+    "Cuando vuelva el internet, aquí salen tres de tus sugerencias.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you're back online, three of your suggestions show up here."
+          }
+        }
+      }
+    },
+    "Cuando Explorar cargue sus listas, aquí salen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They show up here once Explore loads its lists."
+          }
+        }
+      }
+    },
+    "Cuando vuelva el internet, aquí salen tus cartas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you're back online, your cards show up here."
+          }
+        }
+      }
+    },
+    "Sin conexión por ahora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline for now."
+          }
+        }
+      }
+    },
+    "Tres que caben": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three that fit"
+          }
+        }
+      }
+    },
+    "Una por una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One by one"
+          }
+        }
+      }
+    },
+    "Tres que caben · Una por una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three that fit · One by one"
+          }
+        }
+      }
+    },
+    "Afinar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune"
+          }
+        }
+      }
+    },
+    "Afinar · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune · %lld"
+          }
+        }
+      }
+    },
+    "Prueba quitando un filtro en «Afinar».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try removing a filter in “Fine-tune”."
+          }
+        }
+      }
+    },
     "%lld títulos que dejaste a medias": {
       "extractionState": "manual",
       "localizations": {
@@ -45045,6 +45188,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "You haven’t finished anything yet"
+          }
+        }
+      }
+    },
+    "Sin filtro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No filter"
+          }
+        }
+      }
+    },
+    "Filtros puestos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters on"
           }
         }
       }

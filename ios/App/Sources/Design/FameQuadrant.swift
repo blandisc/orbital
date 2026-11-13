@@ -6,6 +6,8 @@ import OrbitalCore
 /// ellas como ejes. La elegida se pinta en el verde de este filtro; tocarla otra vez la quita.
 struct FameQuadrant: View {
     let selected: AdvancedFilter.Fame
+    /// Cuántas quedan con cada esquina (Decide por mí); una que no deja nada no se toca (F13). nil: no se cuenta.
+    var counts: [AdvancedFilter.Fame: Int]? = nil
     let pick: (AdvancedFilter.Fame) -> Void
 
     var body: some View {
@@ -36,19 +38,23 @@ struct FameQuadrant: View {
 
     private func cell(_ fame: AdvancedFilter.Fame, _ symbol: String, _ title: Text, _ detail: Text) -> some View {
         let on = selected == fame
+        let count = counts?[fame]
+        let dead = count == 0 && !on
         return Button { pick(on ? .any : fame) } label: {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.meadow : DS.textMuted)
-                title.recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                (count.map { Text("\(title) · \($0)") } ?? title).recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.quadrantCell)
             .background(on ? DS.Filter.meadowFill : DS.surface)
+            .opacity(dead ? DS.Opacity.dimmed : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(dead)
         .dsFeedback(.selection, trigger: on)
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("filter-fame-\(fame.rawValue)")

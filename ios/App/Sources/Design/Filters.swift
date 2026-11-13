@@ -345,6 +345,68 @@ struct KindPill: View {
 }
 
 /// Al apretar, el ícono se hunde tantito, en cuanto lo tocas.
+/// Los filtros de ícono (pulido de DE2, 13 nov 2026: «Decide por mí»): una pastilla de vidrio con un círculo por filtro, la
+/// misma forma y tamaño que el selector de tipo (`KindPill`), para que el renglón se lea como una sola familia. Va con
+/// `DSFilterIcon` adentro.
+struct DSFilterPill<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        HStack(spacing: DS.Space.s1) { content() }
+            .padding(DS.Space.s1 / 2)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // círculos de tamaño fijo, como los del tipo
+            .glassEffect(.regular.interactive(), in: Capsule())
+            .fixedSize()
+            .accessibilityElement(children: .contain)
+    }
+}
+
+/// Un filtro de ícono dentro de `DSFilterPill`: puesto, su círculo se llena en blanco (como lo elegido en `KindPill`) y, si
+/// junta varios («Afinar»), lleva su numerito en la esquina. Abre un menú (`menu`) o hace algo (`action`). Lo puesto se dice
+/// además en una línea debajo del renglón (Fernando: íconos, no cápsulas de texto); VoiceOver dice su nombre y lo puesto.
+struct DSFilterIcon<Options: View>: View {
+    let symbol: String
+    let label: Text
+    /// Lo puesto en palabras («1 h», «Ligero»); nil: sin filtro.
+    var value: Text?
+    var count = 0
+    var action: (() -> Void)?
+    @ViewBuilder var menu: () -> Options
+
+    private var on: Bool { value != nil || count > 0 }
+    private var glyph: some View {
+        Image(systemName: symbol).font(DS.TextRecipe.section.font)
+            .foregroundStyle(on ? DS.bg : DS.text)
+            .frame(width: DS.KindPill.open, height: DS.KindPill.open)
+            .background { if on { Circle().fill(DS.text) } }
+            .overlay(alignment: .topTrailing) {
+                if count > 0 {
+                    Text(verbatim: "\(count)").recipe(.badge, color: DS.onFresh).monospacedDigit()
+                        .padding(.horizontal, DS.Space.s1)
+                        .background(DS.fresh, in: Capsule())
+                        .fixedSize()
+                        .offset(x: DS.Space.s1, y: -DS.Space.s1)
+                }
+            }
+            .contentShape(Circle())
+    }
+
+    var body: some View {
+        Group {
+            if let action { Button(action: action) { glyph }.buttonStyle(KindPillPress()) }
+            else { Menu { menu() } label: { glyph }.menuStyle(.button).buttonStyle(KindPillPress()) }
+        }
+        .accessibilityLabel(label)
+        .accessibilityValue(value ?? (count > 0 ? Text("\(count) puestos") : Text("Sin filtro")))
+    }
+}
+
+extension DSFilterIcon where Options == EmptyView {
+    init(symbol: String, label: Text, value: Text? = nil, count: Int = 0, action: @escaping () -> Void) {
+        self.init(symbol: symbol, label: label, value: value, count: count, action: action) { EmptyView() }
+    }
+}
+
 private struct KindPillPress: ButtonStyle {   // ds-exception: el hundido del segmento; la pastilla es vidrio nativo
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

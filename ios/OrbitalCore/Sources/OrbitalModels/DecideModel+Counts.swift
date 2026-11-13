@@ -103,7 +103,9 @@ extension DecideModel {
     ///
     /// Mientras busca, los tres de antes se quedan quietos (antes el nombre cambiaba con cada búsqueda y los carteles
     /// hasta el final); los nuevos llegan juntos, con sus datos y sus carteles.
-    public func next() async {
+    /// `waitForPosters`: solo al abrir los tres esperan sus carteles un momento; «Barajar» enseña los nuevos en cuanto se saben
+    /// (F11, 13 nov 2026: sin un trío preparado tardaba ~2 s, la mitad esperando imágenes).
+    public func next(waitForPosters: Bool = false) async {
         let key = filtersKey
         var found: [Suggestion] = []
         if let ready = upcoming.first, ready.key == key {
@@ -116,7 +118,7 @@ extension DecideModel {
         if found.isEmpty {
             dropUpcoming()
             isLoading = true
-            found = await trio(waitForPosters: true)
+            found = await trio(waitForPosters: true, briefly: waitForPosters)
         }
         isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
         picks = found
@@ -139,7 +141,8 @@ extension DecideModel {
 
     /// Tres que caben, con sus datos y sus carteles. `waitForPosters`: los de ahora esperan sus carteles un momento (si la
     /// red tarda, se enseñan igual); los que se preparan por adelantado los bajan completos, sin prisa.
-    func trio(waitForPosters: Bool) async -> [Suggestion] {
+    /// `briefly` en falso (Barajar sin trío preparado): los carteles bajan por su lado y los tres se enseñan ya.
+    func trio(waitForPosters: Bool, briefly: Bool = true) async -> [Suggestion] {
         var found: [Suggestion] = []
         for _ in 0..<Self.trio {
             guard !Task.isCancelled, let p = await search(), !found.contains(where: { $0.imdb == p.imdb }) else { break }
@@ -148,6 +151,7 @@ extension DecideModel {
         guard !Task.isCancelled, let warm = warmPosters else { return found }
         let posters = found.compactMap(\.poster)
         if !waitForPosters { await warm(posters); return found }
+        if !briefly { Task { await warm(posters) }; return found }
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await warm(posters) }
             group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.posterWait * 1_000_000_000)) }
@@ -268,40 +272,47 @@ extension DecideModel {
         dropUpcoming(); enriching?.cancel(); describingAll?.cancel(); describingAll = nil; ratingTMDB?.cancel(); ratingTMDB = nil
         statsTMDB?.cancel(); statsTMDB = nil; ratingLetterboxd?.cancel(); ratingLetterboxd = nil
         resolving?.cancel(); resolving = nil
+        Task { await commitDismissals() }   // lo que dijiste «No me interesa» ya no se deshace: ahora sí a la TV
     }
 
-    /// «No me interesa» (lo mismo que en Para ti): ya no se sugiere en ningún lado (ni en la TV) y se cambia por otra.
+    /// «No me interesa» (lo mismo que en Para ti): ya no se sugiere en ningún lado y se cambia por otra. Se puede deshacer
+    /// (`undoRemoval`): a la TV se le avisa hasta que ya no se puede (al quitar otra o al cerrar la hoja; F5, 13 nov 2026).
     public func notInterested() async {
-        if let pick {
-            await services.forYou.dismiss(pick.imdb)
-            if services.orbital.isConfigured { await services.forYouRemote.dismiss(pick.imdb) }
-        }
-        await skipToday()
+        guard let pick else { return await next() }
+        await commitDismissals()
+        await services.forYou.dismiss(pick.imdb)
+        pendingDismissals.append(pick.imdb)
+        await remove(pick, dismissed: true)
     }
 
-    /// «Hoy no»: no vuelve a salir en 24 horas; y otra.
+    /// «Hoy no»: no vuelve a salir en 24 horas; y otra. También se puede deshacer.
     public func skipToday() async {
-        if let pick {
-            var skipped = notTodayRaw()
-            skipped[pick.imdb] = services.now().timeIntervalSince1970
-            services.kv.set(Self.skipKey, data: try? JSONEncoder().encode(skipped))
-            // Solo esa se cambia por otra; las otras dos se quedan.
-            let current = pick.imdb
-            let others = picks.filter { $0.imdb != current }
-            dropUpcoming()   // los preparados ya no cuentan (se piden otros abajo, sin esperar a los viejos)
-            if let fresh = await search(), !others.contains(where: { $0.imdb == fresh.imdb }) {
-                await describe([fresh])
-                await warmPosters?([fresh.poster].compactMap { $0 })
-                picks = picks.map { $0.imdb == current ? fresh : $0 }
-                select(fresh)
-            } else {
-                picks = others
-                if let first = others.first { select(first) }
-            }
-            fillUpcoming()
-            return
+        guard let pick else { return await next() }
+        await commitDismissals()
+        await remove(pick, dismissed: false)
+    }
+
+    /// Aparta la elegida (hoy no) y solo esa se cambia por otra; las otras dos se quedan. Recuerda cómo deshacerlo.
+    func remove(_ current: Suggestion, dismissed: Bool) async {
+        var skipped = notTodayRaw()
+        skipped[current.imdb] = services.now().timeIntervalSince1970
+        services.kv.set(Self.skipKey, data: try? JSONEncoder().encode(skipped))
+        let index = picks.firstIndex { $0.imdb == current.imdb } ?? 0
+        let others = picks.filter { $0.imdb != current.imdb }
+        dropUpcoming()   // los preparados ya no cuentan (se piden otros abajo, sin esperar a los viejos)
+        var replacement: String?
+        if let fresh = await search(), !others.contains(where: { $0.imdb == fresh.imdb }) {
+            await describe([fresh])
+            await warmPosters?([fresh.poster].compactMap { $0 })
+            picks = picks.map { $0.imdb == current.imdb ? fresh : $0 }
+            replacement = fresh.imdb
+            select(fresh)
+        } else {
+            picks = others
+            if let first = others.first { select(first) } else { pick = nil; exhausted = true }
         }
-        await next()
+        lastRemoval = Removal(suggestion: current, dismissed: dismissed, index: index, replacement: replacement)
+        fillUpcoming()
     }
 
     func notTodayRaw() -> [String: Double] {

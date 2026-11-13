@@ -1,6 +1,6 @@
 import XCTest
 
-/// Para ti B con toques de verdad (modo demo): la tarjeta «¿Qué vemos hoy?» abre el mazo, la portada abre el mosaico y abajo
+/// Para ti B con toques de verdad (modo demo): la puerta de «Decide por mí» abre el mazo, la portada abre el mosaico y abajo
 /// están «Lo que ves» y Colecciones. Deja capturas como adjuntos.
 final class ParaTiBUITests: XCTestCase {
     private var app: XCUIApplication!
@@ -19,10 +19,11 @@ final class ParaTiBUITests: XCTestCase {
     }
 
     func testLaTarjetaAbreElMazo() {
-        let card = app.buttons["paraTi-match"]
-        XCTAssertTrue(card.waitForExistence(timeout: 20), "la tarjeta «¿Qué vemos hoy?» está")
+        let card = app.buttons["paraTi-decide"]
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "la puerta de «Decide por mí» está")
         shot("para-ti-arriba")
         card.tap()
+        app.buttons["Una por una"].firstMatch.tap()
         XCTAssertTrue(app.otherElements["match-deck"].waitForExistence(timeout: 10), "se abre el mazo")
         for id in ["match-save", "match-discard", "match-play"] {
             XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5), "está \(id)")

@@ -106,12 +106,13 @@ final class NewFlowsRegressionUITests: XCTestCase {
 
     // MARK: Para ti
 
-    /// «¿Qué vemos hoy?»: el mazo guarda, descarta, se desliza y se cierra.
+    /// «Una por una»: el mazo guarda, descarta, se desliza y se cierra.
     func testElMazoGuardaDescartaYSeCierra() {
         launch(tab: 1)
-        let card = app.buttons["paraTi-match"]
+        let card = app.buttons["paraTi-decide"]
         XCTAssertTrue(card.waitForExistence(timeout: 20))
         card.tap()
+        app.buttons["Una por una"].firstMatch.tap()
         let deck = any("match-deck")
         XCTAssertTrue(deck.waitForExistence(timeout: 10), "se abre el mazo")
         shot("mazo")
@@ -119,22 +120,20 @@ final class NewFlowsRegressionUITests: XCTestCase {
         app.buttons["match-discard"].tap()
         deck.swipeLeft(velocity: .fast)
         deck.swipeRight(velocity: .fast)
-        XCTAssertTrue(app.buttons["match-close"].exists, "sigue el mazo tras pasar cuatro cartas")
+        XCTAssertTrue(app.buttons["decide-close"].exists, "sigue el mazo tras pasar cuatro cartas")
         shot("mazo-tras-cartas")
-        app.buttons["match-close"].tap()
+        app.buttons["decide-close"].tap()
         XCTAssertTrue(card.waitForExistence(timeout: 10), "se cierra y vuelve a Para ti")
     }
 
-    /// «Decide por mí» abre el sorteo (en un iPhone angosto vive en el menú del índice).
+    /// «Decide por mí» tiene una sola puerta (DE2): la tarjeta de Explorar abre «Tres que caben»; el dado ya no está en la barra.
     func testDecidePorMiAbreElSorteo() {
         launch(tab: 1)
-        XCTAssertTrue(app.buttons["paraTi-match"].waitForExistence(timeout: 20))
-        let dice = app.buttons["Decide por mí"]
-        if dice.exists && dice.isHittable { dice.tap() } else {
-            app.buttons["paraTi-sections"].tap()
-            app.buttons["Decide por mí"].tap()
-        }
-        XCTAssertTrue(app.buttons["decide-watch"].waitForExistence(timeout: 15), "se abre el sorteo, no el mazo")
+        let door = app.buttons["paraTi-decide"]
+        XCTAssertTrue(door.waitForExistence(timeout: 20))
+        XCTAssertFalse(app.navigationBars.buttons["Decide por mí"].exists, "sin dado en la barra")
+        door.tap()
+        XCTAssertTrue(app.buttons["decide-watch"].waitForExistence(timeout: 15), "abre en «Tres que caben»")
         XCTAssertFalse(any("match-deck").exists)
         shot("decide")
     }

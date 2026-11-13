@@ -3,14 +3,12 @@ import OrbitalCore
 import OrbitalModels
 
 /// «Para ti › Listas» (Para ti B, docs/producto/inicio-benchmark/para-ti/): la portada del mosaico, un círculo por cada
-/// parte, «¿Qué vemos hoy?», el filtro Todo · Series · Películas y los grupos de estantes (cada uno dice de dónde viene).
+/// parte, «Decide por mí», el filtro Todo · Series · Películas y los grupos de estantes (cada uno dice de dónde viene).
 struct ListsView: View {
     @Environment(\.titleName) var titleName
     var observer: ModelObserver<ParaTiModel>
-    /// «Decide por mí», el sorteo (en un iPhone angosto vive en el índice de arriba).
+    /// «Decide por mí»: su puerta, bajo la portada (adentro, «Tres que caben» y «Una por una»).
     var onDecide: () -> Void = {}
-    /// «¿Qué vemos hoy?»: el mazo de Encuentra tu match perfecto.
-    var onMatch: () -> Void = {}
     @Environment(AppEnvironment.self) private var env
     /// Premios, tus listas de Trakt, los años y Lo que ves.
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
@@ -133,7 +131,7 @@ struct ListsView: View {
             // El índice de arriba sigue saltando a cualquiera (cada grupo tiene su `id`).
             LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
-                // «¿Qué vemos hoy?». El destacado, «Porque viste» y los estrenos viven en Inicio.
+                // «Decide por mí». El destacado, «Porque viste» y los estrenos viven en Inicio.
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     // Los del mosaico primero y luego los de los estantes, sin repetir: la lista solo crece mientras carga (antes
                     // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
@@ -141,9 +139,10 @@ struct ListsView: View {
                     // MO1: la portada es la puerta del mosaico (su chapa dice cuántas piezas trae); sin piezas no promete nada.
                     if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall, count: model.mosaic.count, settled: !model.isLoading) { model.mode = .mosaic }.perfTag("paraTi.hero") }
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
-                    // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
+                    // «Decide por mí», la única puerta (DE2: antes el dado de la barra y «¿Qué vemos hoy?»). Sin pósters (sin red)
+                    // la tarjeta sigue y lo dice (F8); adentro, «Sin conexión · Reintentar».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
-                    if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
+                    if !fan.isEmpty || !model.showsFirstSkeleton { DecideDoor(posters: fan, offline: !env.isOnline, onOpen: onDecide) }
                     // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
                     // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
@@ -216,11 +215,7 @@ struct ListsView: View {
         .scrollEdgeEffectHidden(atTop, for: .top)
         // Brincar a una sección: un menú en la barra (marca en cuál estás).
         .toolbar {
-            // El dado de «Decide por mí» a la vista otra vez (Fernando, 1 nov 2026: escondido en el índice no se encontraba).
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onDecide) { Image(systemName: "dice") }
-                    .accessibilityLabel(Text("Decide por mí")).accessibilityIdentifier("paraTi-decide")
-            }
+            // DE2 (13 nov 2026): sin dado; «Decide por mí» es la tarjeta de Explorar (`DecideDoor`).
             // MO1 (13 nov 2026): el mosaico ya no vive en la barra; su puerta es la portada (`MosaicCover`, con su chapa).
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }

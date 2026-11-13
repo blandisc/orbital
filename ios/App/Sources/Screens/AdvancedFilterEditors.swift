@@ -114,7 +114,7 @@ struct FilterEditor: View {
                 Label { VStack(alignment: .leading, spacing: 0) {
                     Text("Repartido por décadas").recipe(.label, color: DS.text)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
-                } } icon: { Image(systemName: "dice").foregroundStyle(DS.Filter.amber) }
+                } } icon: { Image(systemName: DS.Symbol.spreadDecades).foregroundStyle(DS.Filter.amber) }
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .dsCard()

@@ -104,9 +104,9 @@ public final class DecideModel: ObservableModel {
     public static let genreChoices = ["comedy", "drama", "action", "thriller", "horror", "sci-fi", "animation", "romance", "documentary", "crime", "fantasy", "mystery"]
     public static let decadeChoices = [2020, 2010, 2000, 1990, 1980]
 
-    public let sources: [Source]
+    public internal(set) var sources: [Source]
     let services: Services
-    private let pool: [Suggestion]
+    var pool: [Suggestion]
     /// Lo que Cinemeta dice de cada candidata (género, duración, calificación, año). Se guarda entre aperturas: con eso los
     /// filtros se resuelven sin red y «Barajar» no espera.
     struct Detail: Codable, Equatable {
@@ -126,6 +126,10 @@ public final class DecideModel: ObservableModel {
     /// Lo que tu historial de Trakt dice que ya viste (se pide una vez por hoja).
     var watched: Set<String>?
     static let skipKey = "decide-not-today"
+    /// Lo último que apartaste («No me interesa» o «Hoy no»), para «Deshacer» (F5, 13 nov 2026).
+    public internal(set) var lastRemoval: Removal? { didSet { changed() } }
+    /// Lo que dijiste «No me interesa» y aún no se le avisa a la TV (se puede deshacer hasta que se avisa).
+    var pendingDismissals: [String] = []
 
     public init(_ services: Services, pool: [Suggestion], sources: [Source] = []) {
         self.services = services
@@ -253,7 +257,7 @@ public final class DecideModel: ObservableModel {
         // Los carteles de las primeras candidatas empiezan a bajar ya (mientras se decide).
         if let warm = warmPosters { let first = order.prefix(Self.trio * 3).map(\.poster); Task { await warm(first) } }
         await prepare()
-        await next()
+        await next(waitForPosters: true)
         describeAllInBackground()
     }
 

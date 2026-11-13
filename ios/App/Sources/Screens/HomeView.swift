@@ -137,6 +137,7 @@ struct HomeView: View {
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                 DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
             }
+            DecideHomeRow()   // «Decide por mí», la misma puerta de Explorar bajo «Seguir viendo» (DE2, 13 nov 2026)
             lowerRows(model, kind: kind, picks: picks, pending: pending)
             // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
         }

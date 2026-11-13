@@ -57,10 +57,10 @@ final class IPadLayoutUITests: XCTestCase {
     /// «¿Qué vemos?» es una tarjeta de su alto (antes salía cortada a ~70 pt) y el control abre completo.
     func testSheetsAreFullSizeCards() {
         open(["-demo-tab", "1", "-demo-open", "decide"], .portrait)
-        // «Más filtros» va al pie de la tarjeta y sale siempre (con sugerencia o con «Nada con…» si un filtro guardado no deja opciones).
-        let filters = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Más filtros'")).firstMatch
-        XCTAssertTrue(filters.waitForExistence(timeout: 40), "Decide por mí no enseña «Más filtros»")
-        XCTAssertTrue(filters.isHittable, "la tarjeta queda cortada: «Más filtros» no se alcanza")
+        // «Afinar» va al pie de la tarjeta y sale siempre (con sugerencia o con «Nada con…» si un filtro guardado no deja opciones).
+        let filters = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Afinar'")).firstMatch
+        XCTAssertTrue(filters.waitForExistence(timeout: 40), "Decide por mí no enseña «Afinar»")
+        XCTAssertTrue(filters.isHittable, "la tarjeta queda cortada: «Afinar» no se alcanza")
         shot("decidir-v")
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
         let type = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch

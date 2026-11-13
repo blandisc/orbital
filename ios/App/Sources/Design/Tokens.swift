@@ -307,7 +307,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static func fold(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.base) }
         /// Lo que sobra al recogerse se apaga antes de que lo demás se cierre; y el hundido al apretar algo chico.
         static let fadeQuick: Animation = .easeOut(duration: DesignTokens.Motion.fast), press: Animation = .smooth(duration: DesignTokens.Motion.fast)
-        /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
+        /// Un rebote más marcado y corto: elegir un mosaico («Decide por mí» › Afinar).
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.

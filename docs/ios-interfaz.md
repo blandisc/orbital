@@ -459,6 +459,11 @@ haya caracteres de texto usados como ícono.
 | De este episodio en adelante | `arrow.right.circle` (`DS.Symbol.fromHereOn`) | «¿Para el resto de la serie también?» › «Sí, desde aquí» |
 | Solo este episodio | `1.circle` (`DS.Symbol.onlyThisOne`) | «¿Para el resto de la serie también?» |
 | Salir del reproductor | `xmark` (`DS.Symbol.leavePlayer`) | «¿Sigues viendo?» › «Salir» (la ✕ de la barra del reproductor) |
+| Decide por mí (el sorteo), y nada más | `dice` (`DS.Symbol.decide`) | La entrada de «Decide por mí» y su vacío por filtros |
+| Las temporadas de la dona (de cuáles sale el episodio) | `rectangle.stack.badge.play` (`DS.Symbol.channelSeasons`) | Inicio › Canales › la dona › Temporadas |
+| Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
+| Tres que caben (tres carteles lado a lado) | `rectangle.split.3x1` (`DS.Symbol.decideTrio`) | «Decide por mí», su primera pestaña |
+| Una por una (el mazo) | `rectangle.portrait.on.rectangle.portrait.angled` (`DS.Symbol.decideDeck`) | «Decide por mí», su segunda pestaña |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 | El mosaico | `square.grid.3x3` (`DS.Symbol.mosaic`) | La chapa de la portada de Explorar, el mosaico vacío. Solo él usa la cuadrícula de 3×3 (MO1) |
 | «Lo que ves» | `chart.bar.xaxis` (`DS.Symbol.whatYouWatch`) | El índice de Explorar (antes la cuadrícula rellena, que se confundía con el mosaico) |
@@ -486,6 +491,97 @@ cápsula se salía de su margen. La regla, para todo lo que se abre junto a otra
 
 `DesignRulesTests+Motion.swift` lo cuida: `grow` con rebote ≤ 0.1 y más lento que `fold`, `enterScale` ≥ 0.75, y el selector
 de tipo (`KindPill`, la misma pieza en Inicio, Explorar y las listas) y la cápsula de Inicio sin resortes con rebote.
+
+### Un filtro que se ve puesto, filtra (13 nov 2026)
+
+Fernando, al pedir el pulido de «Decide por mí» (DE1): «Construye DE1 y DE2 para ver cómo se ven. Antes de decidir». La
+auditoría (F3) encontró que la cápsula del tiempo decía «⏱ 1 h» y el menú lo marcaba, pero salían películas de tres horas: el
+tiempo de la hora solo ordenaba.
+
+- **Lo que se ve puesto es lo que filtra.** Un filtro que la app propone sola (el tiempo según la hora) ordena, pero no se
+  enseña puesto: el ícono del tiempo no se llena ni sale en la línea de lo puesto hasta que eliges uno, y el menú trae
+  «Cualquier duración» para volver.
+  «Nada con…» nombra solo lo que tú pusiste (antes culpaba al «1 h» que no elegiste).
+- **Una opción que no deja nada no se toca** («Documental · 0», «Óscar · 0»): va gris y apagada; si ya estaba puesta, sí se
+  puede quitar (`DecideModel.offered`).
+- **Las opciones de un filtro llevan ícono o arte**, no cápsulas de solo texto: géneros y épocas son mosaicos con su imagen
+  (las épocas en la misma cuadrícula de tres: «2020s» y «90s» miden lo mismo), «Fama» es el cuadro del filtro avanzado
+  (`FameQuadrant`, con cuántas quedan en cada esquina) y «Premios» las estatuillas (`FilterLogoChoice`). De qué listas usa las
+  pestañas de texto (`DSTextTabs`).
+- **Sin huecos ni botones que no hacen nada**: con una o dos opciones los carteles miden lo mismo y van centrados
+  (`DecideTrioLayout`); «Barajar» se apaga si no hay más (`canShuffle`).
+- **Sin red no se culpa a los filtros**: «Sin conexión · Reintentar» (`DecideModel.empty`: sin conexión, sin sugerencias o por
+  los filtros; solo el último ofrece qué quitar). El mazo y su tarjeta de Explorar dicen lo mismo, y la tarjeta no desaparece.
+- «Mi lista», Favoritos, «Tus series» y tus listas van bajo «Tus listas» en «De qué listas», no bajo «Sugerencias».
+- La hoja lleva ✕; con letra de accesibilidad el tipo y los filtros van en dos renglones y la hoja se abre completa si no cabe.
+
+### Lo que quitas se puede deshacer (13 nov 2026)
+
+Mismo pedido (F5): «No me interesa» era para siempre (quita la sugerencia de Para ti y de la TV) y no tenía vuelta; en el mazo
+solo «Guardar» tenía «Deshacer».
+
+- **Todo lo que aparta algo de lo que te proponen avisa con «Deshacer»**: «No me interesa» («Ya no te la sugiero · Deshacer») y
+  «Hoy no» en Decide; «Paso» y «Para hoy» («Para hoy · Ver ya · ↩︎») en el mazo, como «Guardar». Deshacer lo regresa a su
+  lugar y vuelve a sugerirse.
+- **Lo que sale del aparato espera a que ya no se pueda deshacer**: a la TV se le avisa «No me interesa» al quitar otra o al
+  cerrar la hoja (`DecideModel.commitDismissals`), nunca en el momento.
+- Los avisos de una hoja o pantalla completa van dentro de ella (`BannerView` con `coverShowsNotices`), no detrás.
+- El dado es solo «Decide por mí» (tabla de íconos).
+
+Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
+tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.
+
+### Una pregunta, una puerta (13 nov 2026)
+
+DE2 (Fernando: «Construye DE1 y DE2 para ver cómo se ven»): «¿Qué vemos?» tenía dos puertas en Explorar (el dado de la barra y
+la tarjeta «¿Qué vemos hoy?») que llevaban a dos pantallas con filtros distintos.
+
+- **Una pregunta tiene una sola puerta y un solo nombre**: «Decide por mí» (tarjeta `DecideDoor` en Explorar, el mismo renglón
+  `DecideHomeRow` en Inicio). Adentro, las maneras de contestarla son pestañas (`DSTextTabs`): «Tres que caben» y «Una por
+  una», con los nombres de la TV.
+- **Las pestañas de una misma pregunta comparten sus filtros**: lo que pones en «Afinar» filtra las dos
+  (`DecideModel.deckPool`); el tiempo y el ánimo son solo de «Tres que caben» (son de esta noche).
+- No se agrega otra puerta (otro botón en la barra, otra tarjeta) a algo que ya tiene la suya.
+
+Lo cuida `DesignRulesTests+Decide.swift` (`testOneQuestionOneDoor`) y `DecideDeckTests`.
+
+### Una hoja, un renglón de controles; lo puesto se dice en una línea (13 nov 2026)
+
+Fernando, al quedarse con DE2: «Solamente ayúdame a pulir dentro de las tres que caben y una por una. Porque las veo un poco
+crudas». Arriba había cuatro renglones (la cuenta, las pestañas, el tipo y una rejilla de cápsulas «⏱ Cualquier duración ⌄»)
+y las dos pestañas tenían filtros distintos y en otro lugar.
+
+- **Un renglón de controles por hoja**, debajo de sus pestañas y el mismo en todas ellas: el tipo (`DSKindFilter`) a la
+  izquierda y los filtros a la derecha como íconos de una sola familia (`DSFilterIcon`: el círculo de vidrio de
+  `DSIconButton`). Una pestaña enseña solo los filtros que le aplican (el mazo: calificación y «Afinar»), en el mismo lugar.
+  Si no cabe (SE, letra grande), el tipo arriba y los íconos debajo; nunca cortados.
+- **Puesto se ve**: el ícono se llena del tinte de Orbital, y el que junta varios («Afinar») lleva su numerito. Sin cápsulas
+  de texto.
+- **Lo puesto se dice en una línea** debajo del renglón («1 h · Ligero · 7+ · Comedia»), y tocarla ofrece quitar cada filtro
+  o todos. Sin nada puesto, la línea no existe (no queda «Sin filtros» ni un hueco).
+- **La cuenta va junto al título** («128 opciones»), no en su propio renglón.
+
+### Los datos no se enciman con el arte; lo elegido crece (13 nov 2026)
+
+Mismo pulido. En «Una por una» el nombre, los datos y las cápsulas de géneros iban sobre el póster con un velo, el ▶ flotaba
+encima y la carta dejaba franjas oscuras a los lados; en «Tres que caben» la elegida llevaba un marco blanco y las otras se
+encogían y apagaban.
+
+- **El arte llena su carta**: la carta mide lo que su póster (`DS.Poster.aspect`), con las esquinas y la sombra de la carta,
+  y en el iPad no pasa de `DS.Match.cardMax`. Encima solo va lo que dice qué pasa al arrastrarla (el tinte y el sello).
+- **Los datos van debajo, alineados a la orilla de la carta** (`MatchCardInfo`): el porqué en turquesa, el nombre y una sola
+  línea «2026 · Película · Acción, Aventura, Comedia» (géneros en texto, no en cápsulas). Cada renglón aparta su lugar
+  (`reservesSpace`): al pasar de carta el texto se funde y nada brinca.
+- **Lo que sigue asoma**: las de atrás, un poco más chicas desde su orilla de abajo, se asoman `DS.Match.behindPeek` cada una.
+  Soltada antes del umbral, la carta regresa sin rebote (`DS.Motion.snap`).
+- **Las acciones son una sola familia**: Paso · Para hoy · Guardar · Ver, cuatro círculos iguales con su nombre debajo, de
+  margen a margen; el color solo en las tres que mandan la carta a un lado (el de su sello). Nada flota sobre el arte.
+- **Un juego de carteles**: los tres miden lo mismo y van sobre la misma base (`DecideTrioLayout`); la elegida crece un poco
+  desde abajo con su sombra (`DS.Motion.grow`, la otra se recoge con `fold`). Sin marco ni las otras apagadas o más chicas.
+  Sus datos van al margen con el alto apartado; Ver se estira y Barajar y «⋯» son círculos del mismo alto.
+
+Lo cuida `DesignRulesTests+Decide.swift` (`testOneControlRowPerSheet`, `testDataDoesNotSitOnTheArt`). En la TV no cambia: su
+carta ya lleva el nombre debajo del póster; revisar que sus filtros vayan en un solo renglón queda en el registro de paridad.
 
 ### La puerta de algo grande es grande y tiene nombre (13 nov 2026)
 

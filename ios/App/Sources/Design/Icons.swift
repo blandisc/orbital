@@ -67,6 +67,10 @@ extension DS {
         static let addNote = "note.text.badge.plus", note = "note.text"
         /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
         static let rate = "star"
+        /// El dado es solo «Decide por mí», el sorteo (DE1, 13 nov 2026: antes también «Temporadas» de la dona y «Repartido por
+        /// décadas»). Las temporadas de la dona son una pila con ▶; repartir por épocas, la línea del tiempo.
+        static let decideTrio = "rectangle.split.3x1", decideDeck = "rectangle.portrait.on.rectangle.portrait.angled"
+        static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
         /// MO1 (Fernando, 13 nov 2026): el mosaico, la cuadrícula de 3×3, solo para él (su puerta en la portada de Explorar).
         /// «Lo que ves» lleva sus barras (antes la misma cuadrícula, rellena) y «Todo» del selector su 2×2 (`KindGlyph.all`).
         static let mosaic = "square.grid.3x3", whatYouWatch = "chart.bar.xaxis"
