@@ -32,7 +32,7 @@ extension StreamFinder {
 
     func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)
-        guard let url = URL(string: "\(addon.base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
+        guard let url = addonURL("\(addon.base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
         let start = Date()
         do {
             let streams = try await http.getJSON(url, timeout: Self.slowAfter)?["streams"]?.array ?? []

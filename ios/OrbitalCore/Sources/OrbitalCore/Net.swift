@@ -114,6 +114,16 @@ public func stripURLs(_ message: String) -> String {
 }
 
 /// `encodeURIComponent` de JavaScript: lo que acepta un segmento de ruta sin escapar.
+/// Una dirección armada con la de un complemento, sin que el sistema la estropee. Desde iOS 17, `URL(string:)` «arregla» una
+/// cadena con algún carácter inválido codificándola ENTERA, también los «%» que ya traía: la dirección de Torrentio lleva «|»
+/// entre sus opciones, así que el `%3A` del episodio (`tt0096697%3A11%3A2`) salía `%253A` y Torrentio contestaba «no hay
+/// nada» para toda serie. Así estuvo sin latino Los Simpson (Fernando, 13 nov 2026; con películas no pasaba: su id no lleva
+/// «:»; Comet tampoco: su dirección no lleva «|»). Aquí se codifica solo lo inválido y los «%» se respetan.
+public func addonURL(_ text: String) -> URL? {
+    URL(string: text.addingPercentEncoding(withAllowedCharacters: addonURLLegal) ?? text)
+}
+private let addonURLLegal = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#@!$&'()*+,;=%")
+
 public func uriComponent(_ text: String, safe extra: String = "") -> String {
     var allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()")
     allowed.insert(charactersIn: extra)

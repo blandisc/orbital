@@ -158,6 +158,15 @@ izquierda, entre el avance y las tarjetas, y «rompe simetría».
 - Lo cuidan `DesignRulesTests+Version.swift`: `title-sources` solo en la pieza, `ContinueAction` sin otro selector, la
   ficha abre «Versión» solo por puertas conocidas (cada una con su porqué), y la pieza con su token y aire parejo.
 
+### La dirección de un complemento se arma con `addonURL` (13 nov 2026)
+
+Fernando: «sigue sin aparecer» el latino de Los Simpson. La causa de fondo: desde iOS 17, `URL(string:)` vuelve a codificar
+los «%» de una cadena que trae algún carácter inválido. La dirección de Torrentio lleva «|» entre sus opciones, así que el
+episodio `tt0096697%3A11%3A2` salía `%253A` y Torrentio contestaba vacío para TODA serie (las películas no llevan «:» y la de
+Comet no lleva «|»: por eso funcionaban). Regla: toda dirección que sale de la de un complemento (versiones, subtítulos,
+catálogos, lo que existe sin Real-Debrid, la de reproducir) se arma con `addonURL` (`Net.swift`), nunca con `URL(string:)`
+directo. `AddonURLTests` lo cuida. En la TV no aplica (Python no hace eso).
+
 ### El reproductor no ofrece ni promete lo que no hay (12 nov 2026)
 
 Fernando: «que no salga saltar intro hasta que ya esté cargada la serie» y, del aviso al probar otra versión, «no es como que

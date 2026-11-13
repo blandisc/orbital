@@ -316,7 +316,7 @@ public actor ForYou {
         guard let http else { return [] }
         let kind = entry.kinds.contains(kind) ? kind : entry.kinds[0]
         let catalog = entry.catalog.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? entry.catalog
-        guard let url = URL(string: "\(entry.base)/catalog/\(kind)/\(catalog).json") else { return [] }
+        guard let url = addonURL("\(entry.base)/catalog/\(kind)/\(catalog).json") else { return [] }
         let response = try await http.send(HTTPRequest(url: url, headers: ["User-Agent": "Orbital"], timeout: 12))
         guard response.status < 400, let json = JSON.parse(response.data) else { throw NetworkError("\(entry.addon) no respondió") }
         let reason: SuggestionReason = entry.title == "Watchlist" ? .inWatchlist : entry.title == "Recommendations" ? .recommended : .inList(entry.title)

@@ -36,7 +36,7 @@ public struct TorrentLookup: Sendable {
     /// Los torrents de ese video, del mejor al peor según tu idioma y calidad (sin CAM ni tráileres). nil si no contestó (sin
     /// red no se puede decir «nadie lo tiene»). `base`: `AddonCatalog.torrentioWithoutDebrid` de tu Torrentio.
     public func torrents(base: String, kind: String, videoID: String, prefs: Preferences, origin: TitleOrigin? = nil) async -> [Source]? {
-        guard let url = URL(string: "\(base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
+        guard let url = addonURL("\(base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
         let streams: [JSON]
         do { streams = try await http.getJSON(url, timeout: 15)?["streams"]?.array ?? [] }
         catch let error as NetworkError where error.description.hasPrefix("HTTP 4") { return [] }

@@ -84,6 +84,6 @@ public enum TorrentioProbe {
             let parts = TorrentioConfig.parts(options).filter { !$0.hasPrefix("debridoptions=") }
             base = parts.isEmpty ? AddonCatalog.torrentioBase : "\(AddonCatalog.torrentioBase)/\(parts.joined(separator: "|"))"
         }
-        return URL(string: "\(base)/stream/\(sample.kind)/\(sample.videoID).json")
+        return addonURL("\(base)/stream/\(sample.kind)/\(uriComponent(sample.videoID)).json")
     }
 }

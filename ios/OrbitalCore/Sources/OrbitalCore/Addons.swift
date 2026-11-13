@@ -136,7 +136,7 @@ public actor AddonRegistry {
     private func fetch(_ key: [String]) async throws -> [Addon] {
         var entries: [JSON] = [], found: [Addon] = [], failed = false, error: Error?
         for url in key.dropFirst() where !found.contains(where: { $0.url == url }) {
-            guard let target = URL(string: url) else { continue }
+            guard let target = addonURL(url) else { continue }
             do {
                 let manifest = try await http.getJSON(target)
                 if let addon = Addons.parseManifest(manifest, url: url) { found.append(addon); entries.append(["manifest": manifest ?? .null, "transportUrl": .string(url)]) }

@@ -103,7 +103,7 @@ public struct Source: Sendable, Equatable, Identifiable {
 
     /// La URL http(s) para reproducir. Los `infoHash` (torrent sin Real-Debrid) no se ofrecen en iOS.
     public var playbackURL: URL? {
-        guard let text = stream["url"]?.nonEmptyString, let url = URL(string: text),
+        guard let text = stream["url"]?.nonEmptyString, let url = addonURL(text),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return nil }
         return url
     }

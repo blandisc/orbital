@@ -380,7 +380,7 @@ public actor StreamFinder {
         await withTaskGroup(of: [SubtitleOption]?.self) { group in
             for base in bases {
                 group.addTask { [http] in
-                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json") else { return [] }
+                    guard let url = addonURL("\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json") else { return [] }
                     let json: JSON?
                     do { json = try await http.getJSON(url, timeout: 15) }
                     catch let error as NetworkError where error.description.hasPrefix("HTTP") { return [] }   // contestó: no es falta de red
