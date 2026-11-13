@@ -14,6 +14,12 @@ Interfaz de consola para la TV (Windows, Legion Go), en español, que se usa con
   `docs/producto/paridad-registro.md` antes de empezar; al decidir algo de una app, el commit dice qué pasa en la otra y lo
   pendiente entra al registro. `tests/web/design-parity.test.mjs` cuida el vocabulario, los tokens y la tabla espejo.
 
+## Antes de decir «listo» (app de Apple)
+
+Lee `docs/ios-entrega.md`: se mide (no a ojo), se toca (no solo capturas), se prueba en el tamaño del iPhone de Fernando
+(17 Pro, iOS 27), ante un cierre primero el registro, y el informe distingue «comprobado con toques», «hecho sin
+comprobar» y «no hecho».
+
 ## Las cuatro superficies
 
 Todo cambio en la app de escritorio se diseña y se prueba para **control, teclado, mouse y touch** (regla completa en
