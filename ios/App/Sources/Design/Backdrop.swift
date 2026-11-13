@@ -55,7 +55,7 @@ struct Backdrop: View {
     }
 
     /// El color de arriba del fondo (detrás del arte): el tono del arte en oscuro, ese tono muy claro sobre el papel en claro;
-    /// nil sin arte. El arte de la ficha se recoge hacia él (`BleedArt(collapse:)`).
+    /// nil sin arte. Es el fondo: el arte de la ficha se desvanece y lo deja ver (`BleedArt(collapses:)`), nunca un velo encima.
     static func tone(_ tint: ArtColors?, scheme: ColorScheme) -> Color? {
         guard let tint else { return nil }
         return scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
@@ -142,16 +142,26 @@ enum LogoTrim {
 enum LogoTone {
     // En el hilo principal, como `LogoTrim`: varios logos a la vez (el carrusel de Inicio enseña tres) escribían el diccionario
     // desde hilos distintos y la app se cerraba.
-    @MainActor private static var cache: [URL: Bool] = [:]
+    @MainActor private static var cache: [URL: (luminance: Double, colorful: Double)] = [:]
 
+    /// Oscuro y sin color (un logo negro): sobre el arte se pinta claro. Con color (el anillo de Dune) se respeta tal cual.
     @MainActor static func isDark(_ url: URL) async -> Bool {
+        guard let tone = await tone(url) else { return false }
+        return tone.luminance < DesignTokens.Opacity.darkLogoLuminance && tone.colorful < DesignTokens.Opacity.colorfulLogoShare
+    }
+
+    /// Pálido y sin color (un logo blanco): sobre el papel del modo claro no se lee.
+    @MainActor static func isPale(_ url: URL) async -> Bool {
+        guard let tone = await tone(url) else { return false }
+        return tone.luminance > DesignTokens.Opacity.paleLogoLuminance && tone.colorful < DesignTokens.Opacity.colorfulLogoShare
+    }
+
+    @MainActor private static func tone(_ url: URL) async -> (luminance: Double, colorful: Double)? {
         if let hit = cache[url] { return hit }
         guard let thumb = await ImagePipeline.shared.image(url, maxPixel: DS.Image.tintPixels),
-              let tone = await Task.detached(priority: .utility, operation: { thumb.opaqueTone }).value else { return false }
-        // Oscuro y sin color (un logo negro): se pinta claro. Con color (el anillo de Dune) se respeta tal cual.
-        let dark = tone.luminance < DesignTokens.Opacity.darkLogoLuminance && tone.colorful < DesignTokens.Opacity.colorfulLogoShare
-        cache[url] = dark
-        return dark
+              let tone = await Task.detached(priority: .utility, operation: { thumb.opaqueTone }).value else { return nil }
+        cache[url] = tone
+        return tone
     }
 }
 

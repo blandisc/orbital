@@ -31,25 +31,18 @@ extension DS {
         static let shownPerGroup = 3
     }
 
-    /// Al deslizar la ficha, el arte se recoge (`BleedArt(collapse:)`, aritmética en `OrbitalModels.HeroCollapse`): se queda un
-    /// poco atrás, se encoge apenas, se oscurece hacia el color del fondo con un degradado que sube desde abajo, se difumina
-    /// al final y se desvanece; el logo y la frase se van antes (no se quedan detrás de los datos).
+    /// Al deslizar la ficha, el arte se recoge (`BleedArt(collapses:)`, aritmética en `OrbitalModels.HeroCollapse`; AR1, 13 nov
+    /// 2026): se va con el contenido, se difumina y se desvanece hacia el fondo que de verdad tiene detrás (sin velo de color
+    /// encima ni parallax que lo saque de su marco); el logo y la frase se van antes (no se quedan detrás de los datos).
     enum TitleHero {
         /// El arte que respira (ficha y portada de Inicio): espera esto y se acerca a esta escala (3 %, como la TV).
         static let breatheDelay: Double = 1.5, breatheScale: CGFloat = 1.03
         /// El velo de arriba de la ficha (el arte llega sólido hasta arriba): cubre el reloj y la barra.
         static let topVeil: CGFloat = 150
-        /// Parallax (parte del desplazamiento que se queda atrás), cuánto se encoge y el desenfoque máximo (desde qué progreso).
-        static let parallax: Double = 0.4, shrink: Double = 0.05, blur: Double = 10, blurFrom: Double = 0.3
-        /// El velo parejo ya recogido, a qué progreso el degradado de abajo cubre todo y desde cuándo se desvanece el arte.
-        static let dim: Double = 0.55, riseEnd: Double = 0.8, fadeFrom: Double = 0.6
+        /// El desenfoque máximo (y desde qué progreso) y desde cuándo se desvanece el arte.
+        static let blur: Double = 10, blurFrom: Double = 0.3, fadeFrom: Double = 0.6
         /// El logo y la frase: a qué progreso ya se fueron y cuánto se encogen mientras.
         static let contentFadeEnd: Double = 0.35, contentShrink: Double = 0.06
-        /// El degradado que sube: transparente arriba (el mismo color sin opacidad, para que no se agrise), casi sólido a esta
-        /// altura y sólido al pie.
-        static let riseTopOpacity: Double = 0, riseSolidAt: Double = 0.65, riseSolidOpacity: Double = 0.9
-        /// Lo mínimo que mide el degradado (una escala de 0 no se puede invertir).
-        static let riseMin: Double = 0.001
     }
 
     /// «Guardar en…»: cuántos renglones de tus listas se ven sin desplazar (más, se desplazan dentro de su zona) y cuántos
@@ -81,8 +74,9 @@ extension DS {
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70
-        /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
-        static let topFade: CGFloat = 36, fadeAt: CGFloat = 0.85
+        /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo. Largo (AR1, 13
+        /// nov 2026; antes 36): lo que sube se va despacio, sin franja con orilla ni texto cortado a la mitad (el SE).
+        static let topFade: CGFloat = 96, fadeAt: CGFloat = 0.85
         /// El nombre en la barra: empieza a salir a esta parte del arte y termina de salir en este tramo.
         static let titleFrom: CGFloat = 0.7, titleSpan: CGFloat = 0.25
         /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).

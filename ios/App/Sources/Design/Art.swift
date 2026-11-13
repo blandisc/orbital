@@ -18,9 +18,13 @@ struct BleedArt<Content: View>: View {
     /// Sin proporción llena el espacio que le den (con un mínimo, como el destacado); con ella, esa relación (la de la ficha).
     var aspect: CGFloat?
     var minHeight: CGFloat = 0
-    /// Dentro de un `ScrollView` (la ficha): al desplazar, el arte se recoge hacia este color (el del fondo detrás del arte,
-    /// `Backdrop.tone`). Ver `DS.TitleHero` y `OrbitalModels.HeroCollapse`. nil: arte quieto (el destacado de Inicio).
-    var collapse: Color? = nil
+    /// Dentro de un `ScrollView` (la ficha): al desplazar, el arte se difumina y se desvanece hacia el fondo que de verdad
+    /// tiene detrás; nunca enseña su orilla ni lleva un color pintado encima (AR1, 13 nov 2026). Ver `DS.TitleHero` y
+    /// `OrbitalModels.HeroCollapse`. false: arte quieto (el destacado de Inicio).
+    var collapses = false
+    /// «Ver» hace crecer el video desde aquí: el origen del zoom es un marco quieto detrás del arte, no el arte (su recorte
+    /// cortaba lo que se movía al desplazar).
+    var zoom: PlayerZoomID? = nil
     /// Si el arte no carga, esta otra (`PosterView.fallback`).
     var fallback: String? = nil
     /// El título: si el marco es alto y tiene póster sin texto, va ese en vez de `url` (`TallArtPicker`).
@@ -37,7 +41,11 @@ struct BleedArt<Content: View>: View {
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var breath: CGFloat = 1
+
+    /// «Reducir movimiento» o «Reducir transparencia»: al recogerse, solo se desvanece (sin desenfoque ni estirarse).
+    private var quiet: Bool { reduceMotion || reduceTransparency }
 
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
@@ -52,16 +60,18 @@ struct BleedArt<Content: View>: View {
                     art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
                 }
             }
-            // Al recogerse: se queda un poco atrás, se encoge apenas, se difumina al final y se desvanece. Todo con
-            // `visualEffect` (en el render, sin volver a medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
-            .visualEffect { [on = collapse != nil, still = reduceMotion, raised] view, proxy in
-                let s = BleedCollapse.state(proxy, on: on, still: still, raised: raised)
-                return view.offset(y: s.offset).scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
+            // Al recogerse se va con el contenido, se difumina al final y se desvanece: deja ver el fondo de detrás, el mismo
+            // color a los dos lados (en claro, la tarjeta sube nítida). Todo con `visualEffect` (en el render, sin volver a
+            // medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
+            .visualEffect { [on = collapses, still = quiet, card = scheme != .dark, raised] view, proxy in
+                let s = BleedCollapse.state(proxy, on: on, still: still, card: card, raised: raised)
+                return view.scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
             }
-            // El logo y la frase se van con el contenido (sin parallax) y antes que el arte: no se quedan detrás de los datos.
+            .background { if let zoom { Color.clear.playerZoomSource(zoom) } }   // ds-exception: el marco quieto del zoom, no se ve
+            // El logo y la frase se van con el contenido y antes que el arte: no se quedan detrás de los datos.
             content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
-                .visualEffect { [on = collapse != nil, still = reduceMotion, raised] view, proxy in
-                    let s = BleedCollapse.state(proxy, on: on, still: still, raised: raised)
+                .visualEffect { [on = collapses, still = quiet, card = scheme != .dark, raised] view, proxy in
+                    let s = BleedCollapse.state(proxy, on: on, still: still, card: card, raised: raised)
                     return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
                 }
         }
@@ -91,23 +101,6 @@ struct BleedArt<Content: View>: View {
             .overlay(alignment: .top) {
                 if !fadesTop { ArtVeil(kind: .top, at: 1).frame(height: DS.TitleHero.topVeil).allowsHitTesting(false).accessibilityHidden(true) }
             }
-            .overlay { if let collapse { veil(collapse) } }
-    }
-
-    /// Al recogerse, el arte se oscurece hacia el color del fondo: un velo parejo que crece poco a poco y un degradado que
-    /// sube desde abajo (como Apple TV y Música). Solo cambian su opacidad y su alto, en el render.
-    private func veil(_ color: Color) -> some View {
-        ZStack {
-            color.visualEffect { [still = reduceMotion, raised] view, proxy in view.opacity(BleedCollapse.state(proxy, on: true, still: still, raised: raised).dim) }
-            LinearGradient(stops: [.init(color: color.opacity(DS.TitleHero.riseTopOpacity), location: 0), .init(color: color.opacity(DS.TitleHero.riseSolidOpacity), location: DS.TitleHero.riseSolidAt),
-                                   .init(color: color, location: 1)], startPoint: .top, endPoint: .bottom)
-                .visualEffect { [still = reduceMotion, raised] view, proxy in
-                    let rise = BleedCollapse.state(proxy, on: true, still: still, raised: raised).rise
-                    return view.scaleEffect(x: 1, y: max(rise, DS.TitleHero.riseMin), anchor: .bottom).opacity(rise > 0 ? 1 : 0)
-                }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 }
 
@@ -173,15 +166,14 @@ private enum BleedCollapse {
     nonisolated static var space: String { "bleed-art" }
 
     /// Cuánto se ha recogido el arte entero (no la capa que pregunta): su lugar en el desplazamiento y su alto salen del
-    /// espacio con nombre del arte, así el logo, el velo y el arte usan la misma cuenta.
-    nonisolated static func state(_ proxy: GeometryProxy, on: Bool, still: Bool, raised: CGFloat = 0) -> HeroCollapse {
-        let tuning = HeroCollapse.Tuning(parallax: DS.TitleHero.parallax, shrink: DS.TitleHero.shrink, blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom,
-                                         dim: DS.TitleHero.dim, riseEnd: DS.TitleHero.riseEnd, fadeFrom: DS.TitleHero.fadeFrom,
+    /// espacio con nombre del arte, así el logo y el arte usan la misma cuenta.
+    nonisolated static func state(_ proxy: GeometryProxy, on: Bool, still: Bool, card: Bool, raised: CGFloat = 0) -> HeroCollapse {
+        let tuning = HeroCollapse.Tuning(blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom, fadeFrom: DS.TitleHero.fadeFrom,
                                          contentFadeEnd: DS.TitleHero.contentFadeEnd, contentShrink: DS.TitleHero.contentShrink)
         guard on, let hero = proxy.bounds(of: .named(space)) else { return HeroCollapse.at(minY: 0, height: 1, reduceMotion: true, tuning: tuning) }
         // `bounds(of:)` es el arte entero visto desde esta capa: su origen es lo que esta capa está corrida dentro del arte.
         let top = proxy.frame(in: .scrollView).minY + hero.minY + raised
-        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, tuning: tuning)
+        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, card: card, tuning: tuning)
     }
 }
 

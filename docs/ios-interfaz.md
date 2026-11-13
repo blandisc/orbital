@@ -556,6 +556,29 @@ un letrero. Una cuenta nueva ve una sola guía para todo Guardado, no cuatro pes
 pantallas por estado, revisa «sin conexión» antes que «vacío» (también en una lista abierta), cada `DSEmptyState` de Guardado
 lleva símbolo y botón, deja lugar a «¿Qué tal…?» y las listas abiertas llevan el cielo (`Backdrop`).
 
+### El arte nunca enseña su orilla (13 nov 2026)
+
+Fernando, de la ficha: «cuando le das para abajo… sale como un color sólido que corta el póster». Decidió AR1 · «Se funde».
+El arte nunca enseña su orilla: se funde con el fondo que de verdad tiene detrás; nada de un color pintado encima.
+
+- **Sin velo de color encima.** Al bajar, el arte de la ficha (`BleedArt(collapses:)`) se desenfoca y se desvanece y deja
+  ver el `Backdrop` que ya estaba detrás: el mismo color a los dos lados de la frontera. No hay velo ni degradado del tono
+  del arte que lo cubra (eso era el «bloque» café, rojo vino u ocre con el borde recto).
+- **Nada lo recorta mientras se mueve.** El arte se va con el contenido (sin parallax ni encogido, que lo sacaban de su
+  marco o dejaban costuras a los lados). El origen del zoom hacia el reproductor (`playerZoomSource`) es un marco quieto
+  detrás del arte, no el arte: su esquina recortaba lo que se movía.
+- **Arriba, una transición larga.** Lo que sube bajo la barra se desvanece en `DS.TitleAction.topFade` (~96 pt, antes 36):
+  no queda una franja de color con orilla ni texto cortado a la mitad (el SE). En el iPad, detrás de la ficha va el mismo
+  fondo de la sala (`DS.backdropDeep`) que hay debajo del arte, sin la franja del tono.
+- **En claro** el arte es una tarjeta: sube nítida con el contenido, sin velo ni desenfoque (desenfocada se lavaba a un
+  rectángulo gris). El logo chico de la barra va en el color del texto sobre el papel (uno blanco no se leía).
+- Con «Reducir movimiento» o «Reducir transparencia», solo el desvanecido, sin desenfoque.
+
+`DesignRulesTests+ArtEdge.swift` lo cuida (sin velo ni `Backdrop.tone` sobre el arte, sin parallax ni encogido en
+`HeroCollapse`, el zoom desde un marco quieto, `topFade` ≥ 90 y el iPad sin el fondo teñido). Los otros artes grandes (el
+destacado de Inicio, la portada de una colección, «Lo que ves», una persona) no se recogen: se van con el contenido y se
+funden con máscara o velo hacia el fondo, sin recorte que se mueva. En la TV el arte ya nunca enseña su orilla.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

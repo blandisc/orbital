@@ -78,8 +78,10 @@ struct TitleView: View {
         .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: sizeClass == .regular ? nil : model.logo,
                                     title: sizeClass == .regular ? "" : model.title,
                                     buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
-        // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
-        .background(Backdrop(tint: tint.colors))
+        // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda. En el iPad y
+        // la Mac, el fondo de la sala, el mismo que hay bajo el arte: lo que sube bajo la barra se desvanece hacia él, sin la
+        // franja del tono que cortaba el arte (AR1, 13 nov 2026).
+        .background { if sizeClass == .regular { DS.backdropDeep.ignoresSafeArea() } else { Backdrop(tint: tint.colors) } }
         // iPad y Mac (FE1): siempre oscura, como la sala de la TV; el arte no se corta contra un fondo claro.
         .environment(\.colorScheme, sizeClass == .regular ? .dark : scheme)
         .navigationBarTitleDisplayMode(.inline)
@@ -177,8 +179,9 @@ struct TitleView: View {
     private func oneColumnLayout(_ model: TitleModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo; el ritmo lo lleva el stack de adentro
-                // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
-                hero(model)
+                // Al deslizar, el arte se funde (`BleedArt(collapses:)`): ver `hero`. Con su tipo borrado, como lo de abajo: el
+                // anidado de la columna no carga el del arte (el cierre EXC_BAD_ACCESS del 11 nov).
+                AnyView(hero(model))
                     .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     // Tipos borrados a propósito (11 nov 2026): el cierre EXC_BAD_ACCESS de esta columna salía al copiar el tipo
@@ -210,7 +213,7 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo
                 ZStack(alignment: .bottomLeading) {
                     // Al bajar, el arte se recoge como en el iPhone.
-                    BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind), collapse: DS.backdropDeep,
+                    BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind), collapses: true,
                              fallback: model.poster, fadesTop: false) { EmptyView() }
                         .overlay { ArtVeil(kind: .leading, strength: .deep) }
                         .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, until: DS.TitleAction.wideVeilSolid, strength: .deep) }

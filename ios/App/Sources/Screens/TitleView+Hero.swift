@@ -5,15 +5,16 @@ import OrbitalModels
 /// El arte de la ficha y la línea de datos («2021 · Película · 1 h 45 min», calificaciones, plataformas).
 extension TitleView {
     /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
-    /// Al deslizar se recoge como en Apple TV: se queda un poco atrás, se oscurece hacia el color del fondo con un degradado que
-    /// sube desde abajo, se difumina al final; el logo se va antes. Con «Reducir movimiento», solo se oscurece y se desvanece.
+    /// Al deslizar se funde (AR1, Fernando, 13 nov 2026): se va con el contenido, se difumina y se desvanece hacia el fondo que
+    /// de verdad tiene detrás, sin enseñar su orilla; el logo se va antes. En claro, la tarjeta sube nítida. Con «Reducir
+    /// movimiento» o «Reducir transparencia», solo se desvanece.
     func hero(_ model: TitleModel) -> some View {
         // El arte sube detrás del reloj y de la barra (como el Mosaico): mide lo de siempre más ese alto de arriba y se corre
         // hacia arriba lo mismo, así lo de abajo («Ver», los datos) no se mueve.
         let extra = scheme == .dark ? topInset : 0
         let aspect = contentWidth > 0 && extra > 0 ? contentWidth / (contentWidth / heroAspect + extra) : heroAspect
         return BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind),
-                 aspect: aspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
+                 aspect: aspect, collapses: true, zoom: PlayerZoomID(metaID: model.metaID, slot: "title"),   // «Ver» hace crecer el video desde el arte
                  fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false, raised: extra) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero, centered: true)
@@ -26,7 +27,6 @@ extension TitleView {
             .frame(maxWidth: .infinity)
         }
         .tiltable()   // mantener y mover: el arte se inclina con un brillo
-        .playerZoomSource(PlayerZoomID(metaID: model.metaID, slot: "title"))   // «Ver» hace crecer el video desde el arte
         .padding(.top, -extra)
     }
 

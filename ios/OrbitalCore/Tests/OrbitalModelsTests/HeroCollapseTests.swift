@@ -2,8 +2,7 @@ import XCTest
 @testable import OrbitalModels
 
 final class HeroCollapseTests: XCTestCase {
-    let tuning = HeroCollapse.Tuning(parallax: 0.4, shrink: 0.05, blur: 8, blurFrom: 0.3, dim: 0.55, riseEnd: 0.8, fadeFrom: 0.6,
-                                     contentFadeEnd: 0.35, contentShrink: 0.06)
+    let tuning = HeroCollapse.Tuning(blur: 8, blurFrom: 0.3, fadeFrom: 0.6, contentFadeEnd: 0.35, contentShrink: 0.06)
 
     func testSmoothstepIsZeroToOneWithoutJumps() {
         XCTAssertEqual(HeroCollapse.smoothstep(0, 1, -0.5), 0)
@@ -19,24 +18,23 @@ final class HeroCollapseTests: XCTestCase {
 
     func testAtRestNothingChanges() {
         let s = HeroCollapse.at(minY: 0, height: 400, reduceMotion: false, tuning: tuning)
-        XCTAssertEqual(s, HeroCollapse(progress: 0, offset: 0, scale: 1, blur: 0, dim: 0, rise: 0, artOpacity: 1, contentOpacity: 1, contentScale: 1))
+        XCTAssertEqual(s, HeroCollapse(progress: 0, scale: 1, blur: 0, artOpacity: 1, contentOpacity: 1, contentScale: 1))
     }
 
-    func testCollapsingIsMonotonicAndEndsCollapsed() {
+    /// AR1 (13 nov 2026): el arte se desenfoca y se desvanece hacia el fondo de verdad; no se encoge ni se queda atrás (eso
+    /// lo sacaba de su marco y dejaba costuras).
+    func testCollapsingIsMonotonicAndEndsFaded() {
         var last = HeroCollapse.at(minY: 0, height: 400, reduceMotion: false, tuning: tuning)
         for y in stride(from: 4.0, through: 480, by: 4) {
             let s = HeroCollapse.at(minY: -y, height: 400, reduceMotion: false, tuning: tuning)
-            XCTAssertGreaterThanOrEqual(s.progress, last.progress)
-            XCTAssertGreaterThanOrEqual(s.dim, last.dim); XCTAssertGreaterThanOrEqual(s.rise, last.rise); XCTAssertGreaterThanOrEqual(s.blur, last.blur)
+            XCTAssertGreaterThanOrEqual(s.progress, last.progress); XCTAssertGreaterThanOrEqual(s.blur, last.blur)
             XCTAssertLessThanOrEqual(s.artOpacity, last.artOpacity); XCTAssertLessThanOrEqual(s.contentOpacity, last.contentOpacity)
-            XCTAssertLessThanOrEqual(s.scale, last.scale)
+            XCTAssertEqual(s.scale, 1, "no se encoge al recogerse: sin costuras a los lados")
             // Sin saltos: de 4 en 4 pt nada cambia más de lo que permite la pendiente máxima del smoothstep (1,5 / tramo).
-            XCTAssertLessThan(abs(s.dim - last.dim), 0.02); XCTAssertLessThan(abs(s.contentOpacity - last.contentOpacity), 0.05)
+            XCTAssertLessThan(abs(s.artOpacity - last.artOpacity), 0.04); XCTAssertLessThan(abs(s.contentOpacity - last.contentOpacity), 0.05)
             last = s
         }
-        XCTAssertEqual(last.progress, 1); XCTAssertEqual(last.dim, 0.55, accuracy: 1e-9); XCTAssertEqual(last.rise, 1)
-        XCTAssertEqual(last.blur, 8, accuracy: 1e-9); XCTAssertEqual(last.artOpacity, 0); XCTAssertEqual(last.scale, 0.95, accuracy: 1e-9)
-        XCTAssertEqual(last.offset, 480 * 0.4, accuracy: 1e-9, "el parallax sigue al desplazamiento")
+        XCTAssertEqual(last.progress, 1); XCTAssertEqual(last.blur, 8, accuracy: 1e-9); XCTAssertEqual(last.artOpacity, 0)
     }
 
     func testTheLogoLeavesBeforeTheArt() {
@@ -50,16 +48,26 @@ final class HeroCollapseTests: XCTestCase {
     func testPullingDownStretchesFromTheBottom() {
         let s = HeroCollapse.at(minY: 100, height: 400, reduceMotion: false, tuning: tuning)
         XCTAssertEqual(s.scale, 1.25, accuracy: 1e-9)
-        XCTAssertEqual(s.progress, 0); XCTAssertEqual(s.offset, 0); XCTAssertEqual(s.contentOpacity, 1)
+        XCTAssertEqual(s.progress, 0); XCTAssertEqual(s.contentOpacity, 1)
     }
 
-    func testReduceMotionOnlyDimsAndFades() {
+    func testReduceMotionOnlyFades() {
         for y in [-100.0, -250, -400, 120] {
             let s = HeroCollapse.at(minY: y, height: 400, reduceMotion: true, tuning: tuning)
-            XCTAssertEqual(s.offset, 0); XCTAssertEqual(s.scale, 1); XCTAssertEqual(s.blur, 0); XCTAssertEqual(s.rise, 0); XCTAssertEqual(s.contentScale, 1)
+            XCTAssertEqual(s.scale, 1); XCTAssertEqual(s.blur, 0); XCTAssertEqual(s.contentScale, 1)
             let moving = HeroCollapse.at(minY: y, height: 400, reduceMotion: false, tuning: tuning)
-            XCTAssertEqual(s.dim, moving.dim); XCTAssertEqual(s.artOpacity, moving.artOpacity); XCTAssertEqual(s.contentOpacity, moving.contentOpacity)
+            XCTAssertEqual(s.artOpacity, moving.artOpacity); XCTAssertEqual(s.contentOpacity, moving.contentOpacity)
         }
+    }
+
+    /// En claro el arte es una tarjeta: sube nítida con el contenido, sin desenfoque ni desvanecido (se lavaba a un rectángulo gris).
+    func testTheLightCardRisesSharp() {
+        for y in [-100.0, -250, -400] {
+            let s = HeroCollapse.at(minY: y, height: 400, reduceMotion: false, card: true, tuning: tuning)
+            XCTAssertEqual(s.blur, 0); XCTAssertEqual(s.artOpacity, 1); XCTAssertEqual(s.scale, 1)
+            XCTAssertEqual(s.contentOpacity, HeroCollapse.at(minY: y, height: 400, reduceMotion: false, tuning: tuning).contentOpacity)
+        }
+        XCTAssertEqual(HeroCollapse.at(minY: 100, height: 400, reduceMotion: false, card: true, tuning: tuning).scale, 1.25, accuracy: 1e-9)
     }
 
     func testZeroHeightDoesNotDivideByZero() {
