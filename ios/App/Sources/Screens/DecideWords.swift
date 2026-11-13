@@ -13,6 +13,8 @@ struct DecideWords {
 
     /// «4 opciones · de «Terror de octubre»» (de dónde salen, si elegiste listas).
     func optionsLine(_ m: DecideModel, _ count: Int) -> String {
+        // Sin red o sin sugerencias no se culpa a los filtros (F2).
+        if count == 0, let empty = m.empty, empty != .filters { return tr(empty == .offline ? "Sin conexión" : "Aún no hay sugerencias") }
         var line = count > 0 ? String(format: tr(count == 1 ? "%lld opción" : "%lld opciones"), count) : tr("Ninguna con estos filtros")
         let lists = m.chosenSourceNames
         if lists.count == 1 { line += " · " + String(format: tr("de «%@»"), lists[0]) }
