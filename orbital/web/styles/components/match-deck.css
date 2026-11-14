@@ -45,7 +45,7 @@
 }
 .match__rating-mark { width: var(--icon-sm); height: var(--icon-sm); }
 /* Abajo, bajo el póster: por qué te la propone, el nombre, año · duración · tipo y sus géneros. */
-.match__info { position: relative; flex: none; display: grid; gap: var(--space-2); padding: var(--space-4) calc(var(--control-height) + var(--space-5)) var(--space-4) var(--space-4); }
+.match__info { position: relative; flex: none; display: grid; gap: var(--space-2); padding: var(--space-4); } /* sin el ▶ en la esquina (DE2): los datos usan todo el ancho */
 .match__name {
   font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text); /* en la carta de la tele, un paso menos que title: cabe el nombre */
@@ -57,13 +57,6 @@
   padding: calc(var(--space-1) / 2) var(--space-2); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking);
 }
-/* «Ver ya»: el ▶ de la carta, abajo a la derecha, en blanco (el principal) con el botón que lo hace. */
-.match__play {
-  right: var(--space-4); bottom: var(--space-4); display: grid; place-items: center; width: var(--control-height); height: var(--control-height);
-  border-radius: 50%; background: var(--color-primary); color: var(--color-on-primary); box-shadow: var(--shadow-card);
-}
-.match__play .icon { width: var(--icon-md); height: var(--icon-md); }
-.match__play .glyph { position: absolute; right: calc(-1 * var(--space-1)); bottom: calc(-1 * var(--space-1)); }
 /* El color de lo que va a pasar y su sello (PASO, GUARDAR, ★ PARA HOY), como Tinder; solo al decidir. */
 .match__tint { inset: 0; opacity: 0; pointer-events: none; transition: opacity var(--duration-fast) var(--ease-out); }
 .match__stamp {
@@ -84,11 +77,12 @@
 .match__card--keep { transform: translateX(120%) rotate(var(--match-stamp-tilt)); opacity: 0; }
 .match__card--tonight { transform: translateY(-110%); opacity: 0; }
 
-/* ✕ · ★ · ♥: al centro, cada uno con su color; debajo, centrados, la tecla que lo hace (← ↑ →) y su nombre (R2-7: antes
+/* ✕ · ★ · ♥ · ▶: al centro, cada uno con su color y del mismo tamaño («Ver ya» ya no va sobre la carta, DE2); debajo, centrados, la tecla que lo hace (← ↑ →) y su nombre (R2-7: antes
    la tecla colgaba de la orilla del círculo, fuera de centro). */
 .match__actions { display: flex; justify-content: center; align-items: flex-start; gap: var(--space-10); }
 .match__act .button--round { gap: var(--space-2); }
 .match__act .button__disc { margin-bottom: calc(var(--glyph-size) + var(--space-1)); }
+[data-input="touch"] .match__act .button__disc { margin-bottom: 0; } /* con el dedo no hay tecla debajo: el nombre, pegado */
 .match__act .button__glyph { right: auto; bottom: auto; top: calc(100% + var(--space-2)); left: 50%; translate: -50% 0; }
 .match__act .button--round:has(.button__glyph) .button__name { display: inline-flex; }
 .match__act--pass .button__icon { color: var(--color-match-pass); }

@@ -6,15 +6,14 @@ import { storage } from "../core/storage.js";
 import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
-import { Glyph } from "./glyph.js";
 import { DecideHead, DecideModes } from "./decide.js";
 import { EmptyState, Eyebrow } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
  * mazo de cartas con tus propuestas de hoy, sin lo que ya viste ni lo que descartaste hace poco. La carta es el póster grande
- * con su porqué, su nombre, año · duración · tipo, sus géneros, su calificación de Trakt y el ▶ de «Ver ya» (A). Abajo, ✕ · ★ ·
- * ♥ con su color: ← Paso (rojo; no vuelve en un mes), ↑ Para hoy (el azul de Orbital: guardada y primera en Mi lista hoy) y
+ * con su porqué, su nombre, año · duración · tipo, sus géneros y su calificación de Trakt. Abajo, ✕ · ★ · ♥ con su color y
+ * ▶ «Ver ya» (A): ← Paso (rojo; no vuelve en un mes), ↑ Para hoy (el azul de Orbital: guardada y primera en Mi lista hoy) y
  * → Guardar (verde; en «Tu match perfecto» de Trakt, sin Trakt en Mi lista). Al decidir, la carta se tiñe, asoma su sello y
  * sale volando hacia allá. Y su ficha · X deshace lo último. Sin ánimos (Fernando, 1 nov 2026: el mazo es uno solo, de todo).
  * Con el dedo o el ratón, los botones y la carta.
@@ -138,19 +137,20 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
         h("strong", { class: "match__name" }, c.title),
         facts && h("span", { class: "match__facts" }, facts),
         kinds.length > 0 && h("span", { class: "match__genres" }, kinds.map((g) => h("span", { class: "match__genre" }, g)))),
-      // «Ver ya»: el ▶ de la carta, con el botón que lo hace (A).
-      h("button", { class: "match__play", type: "button", tabindex: "-1", "aria-label": "Ver ya", onClick: (event) => { event.stopPropagation(); play(); } },
-        // En la esquina solo cabe un botón corto (A); «Enter» del teclado tapaba el ▶ (el pie ya lo dice).
-        svg(ICONS.play), glyphs.select && String(glyphs.select).length <= 2 && Glyph(glyphs.select, { small: true })),
       h("span", { class: "match__tint", "aria-hidden": "true" }),
       h("span", { class: "match__stamp", "aria-hidden": "true" }));
   }
 
-  /** ✕ · ★ · ♥, cada uno con su color y su nombre debajo (como el iPhone); son también la leyenda de ← ↑ →. */
+  /** ✕ · ★ · ♥ · ▶, cada uno con su color y su nombre debajo, del mismo tamaño (como el iPhone, DE2: «Ver» es un botón junto a
+   * los otros tres, no un ▶ sobre la carta que tapaba sus datos); son también la leyenda de ← ↑ → y A. */
   function paintActions() {
     const top = cards[0];
-    mount(actions, top && Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },
-      Button({ label: w.label, icon: w.icon, glyph: w.glyph, onPress: () => decide(way) }))));
+    mount(actions, top && [
+      ...Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },
+        Button({ label: w.label, icon: w.icon, glyph: w.glyph, onPress: () => decide(way) }))),
+      h("span", { class: ["match__act", "match__act--play"] },
+        Button({ label: "Ver ya", icon: "play", glyph: glyphs.select, onPress: () => play() })),
+    ]);
   }
 
   /** La carta de arriba se tiñe, asoma su sello y sale volando hacia donde la mandaste; después, lo que toca. */

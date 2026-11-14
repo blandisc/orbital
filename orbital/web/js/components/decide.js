@@ -60,6 +60,10 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
 
   let choice = { time: "", mood: "", kind: "" };
   let picks = [];
+  // DE2 (13 nov 2026): cambiar de tipo no vuelve a barajar. Lo que ya viste con cada tipo (en el mismo tiempo y ánimo) se
+  // guarda; regresar a ese tipo te devuelve esos tres. «Barajar» y «Hoy no» sí traen otros.
+  let seen = new Map();
+  const seenKey = (c) => `${c.time}|${c.mood}|${c.kind}`;
   let index = 0;
   let zone = "picks"; // "modes" | "picks" | 0..2 (una pregunta)
   let option = 0;
@@ -113,9 +117,8 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
       if (!choice.time) choice = { ...choice, time: res.time };
       picks = res.picks || [];
       index = 0;
-      lead.textContent = decideLead(picks, TIME_LEAD[choice.time] || "tu tiempo");
-      status.hidden = !!picks.length;
-      status.textContent = picks.length ? "" : "No encontré nada con eso. Cambia el tiempo o el ánimo.";
+      if (picks.length) seen.set(seenKey(choice), picks);
+      showPicks();
     } catch (err) {
       if (mine !== token) return;
       picks = [];
@@ -126,12 +129,26 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
     onChange(); // el pie: «Ver la ficha» y «Hoy no» ya aplican (antes se quedaba con el de «Buscando…»)
   }
 
-  /** Elegir una respuesta: la propuesta cambia con ella. */
+  function showPicks() {
+    lead.textContent = decideLead(picks, TIME_LEAD[choice.time] || "tu tiempo");
+    status.hidden = !!picks.length;
+    status.textContent = picks.length ? "" : "No encontré nada con eso. Cambia el tiempo o el ánimo.";
+  }
+
+  /** Elegir una respuesta: la propuesta cambia con ella; el tipo, si ya lo habías visto, regresa sus tres. */
   function answer() {
     const q = QUESTIONS[zone];
     choice = { ...choice, [q.id]: q.options[option][0] };
     onMove?.();
-    shuffle();
+    const before = q.id === "kind" ? seen.get(seenKey(choice)) : null;
+    if (!before) return shuffle();
+    token++; // lo que venía en camino ya no aplica
+    picks = before;
+    index = 0;
+    showPicks();
+    paintPicks();
+    paint();
+    onChange();
   }
 
   /** «Hoy no»: esa se va 24 horas y en su lugar llega otra. */
@@ -139,6 +156,10 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
     const p = picks[index];
     if (!p) return;
     await skip?.(p.meta_id).catch(() => {});
+    for (const [key, list] of seen) { // tampoco regresa al volver a otro tipo
+      const rest = list.filter((x) => x.meta_id !== p.meta_id);
+      if (rest.length) seen.set(key, rest); else seen.delete(key);
+    }
     shuffle();
   }
 
@@ -146,6 +167,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
     cancelExit();
     choice = { time: "", mood: "", kind: "" };
     picks = [];
+    seen = new Map();
     zone = "picks";
     index = 0;
     lead.textContent = "";
