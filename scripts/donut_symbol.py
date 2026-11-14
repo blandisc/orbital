@@ -76,7 +76,7 @@ if __name__ == "__main__":
     base.UNITS = 124.0   # redonda: un poco más chica que la marca (ancha) para que las dos se vean del mismo tamaño
     base.WEIGHTS = WEIGHTS
     text = base.template().replace("La marca de Orbital (planeta, anillo y luna). Generado por scripts/orbital_symbol.py",
-                                   "La dona de Los Simpson. Generado por scripts/donut_symbol.py")
+                                   "La dona de Los Simpson. Generado por scripts/donut_symbol.py").replace(" " + base.SIGNATURE, "")
     for target in TARGETS:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text)

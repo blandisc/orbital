@@ -834,6 +834,10 @@ de la pantalla y la app truena en cuanto llegan por otro hilo (la 2296: «truena
 desde una función `nonisolated` (o con la versión `async` del sistema) y solo vuelven a la pantalla con
 `Task { @MainActor … }`. Prueba: `DesignRulesTests+SystemCallbacks`.
 
+**La marca es una sola en toda la app.** El Centro de control y la Live Activity usan el símbolo `orbital.mark`, que sale
+del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si
+cambia la marca (`DS.Brand`), se corre el script. `testBrandSymbolMatchesTheMark` compara su firma con `Tokens.swift`.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

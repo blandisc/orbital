@@ -74,4 +74,22 @@ extension DesignRulesTests {
         XCTAssertGreaterThanOrEqual(fields, 5, "se encontraron los buscadores")
         XCTAssertEqual(bare, [], "Buscador sin borde firme arriba: lo de debajo se ve a través del campo")
     }
+
+    /// El símbolo de la marca (Centro de control y Live Activity) es la marca de hoy (13 nov 2026: «el de Activity no es el
+    /// nuevo y en el botón del panel de control tampoco»; seguía con el dibujo del 27 oct). La firma del símbolo debe decir
+    /// las mismas medidas que `DS.Brand`; si cambian, se corre `python3 scripts/orbital_symbol.py`. Y la app y la extensión
+    /// llevan el mismo.
+    func testBrandSymbolMatchesTheMark() throws {
+        let tokens = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Design/Tokens.swift"), encoding: .utf8)
+        func value(_ name: String) throws -> String {
+            let r = try XCTUnwrap(tokens.range(of: "\\b\(name): CGFloat = |\\b\(name): Double = ", options: .regularExpression), name)
+            return String(tokens[r.upperBound...].prefix { "0123456789.-".contains($0) })
+        }
+        let signature = "marca: planeta \(try value("planetRadius")) x \(try value("planetStroke")), anillo \(try value("ringRadius")) "
+            + "\(try value("ringOuter"))/\(try value("ringInner")) a \(try value("ringTilt")), hueco \(try value("ringGap"))"
+        let app = try String(contentsOf: repo.appendingPathComponent("ios/App/Resources/Assets.xcassets/orbital.mark.symbolset/orbital.mark.svg"), encoding: .utf8)
+        let widgets = try String(contentsOf: repo.appendingPathComponent("ios/App/Widgets/Symbols.xcassets/orbital.mark.symbolset/orbital.mark.svg"), encoding: .utf8)
+        XCTAssertTrue(app.contains(signature), "El símbolo de la marca no es el de hoy: corre python3 scripts/orbital_symbol.py (\(signature))")
+        XCTAssertEqual(app, widgets, "La app y la extensión llevan símbolos distintos de la marca")
+    }
 }
