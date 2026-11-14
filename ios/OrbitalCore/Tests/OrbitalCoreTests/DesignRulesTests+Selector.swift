@@ -30,8 +30,24 @@ extension DesignRulesTests {
         let files = try sources(["Screens"])
         for name in ["SavedPileContent.swift", "SavedListScreen.swift"] {
             let text = try XCTUnwrap(files.first { $0.name == name }).lines.joined(separator: "\n")
-            XCTAssertTrue(text.contains("ListControlsRow {"), "\(name): el renglón de controles va en `ListControlsRow`")
+            XCTAssertTrue(text.contains("ListControlsRow(") || text.contains("ListControlsRow {"), "\(name): el renglón de controles va en `ListControlsRow`")
+            // Las pestañas de Guardado apartan el mismo lugar a la derecha: la pastilla no brinca al cambiar de pestaña.
+            XCTAssertTrue(text.contains("ListControlsRow(reservedIcons: header == nil ? 0 : 3)"), "\(name): en Guardado, el renglón aparta sus íconos")
             XCTAssertTrue(text.contains("dense: true"), "\(name): la pastilla del renglón, compacta")
+        }
+    }
+
+    /// Cambiar de pestaña en Guardado no regresa Todo · Películas · Series a «Todo» (Fernando, 13 nov 2026): el tipo vive en
+    /// `LibrarySavedView` y cada pestaña con pastilla recibe el mismo.
+    func testSavedTabsShareTheKindFilter() throws {
+        let files = try sources(["Screens"])
+        let saved = try XCTUnwrap(files.first { $0.name == "LibrarySavedView.swift" }).lines.joined(separator: "\n")
+        let tabs = saved.components(separatedBy: "SavedListContent(").count - 1 + saved.components(separatedBy: "SavedPileContent(").count - 1
+        XCTAssertGreaterThan(tabs, 0)
+        XCTAssertEqual(saved.components(separatedBy: "sharedKind: $kind").count - 1, tabs, "cada pestaña de Guardado recibe el mismo tipo")
+        for name in ["SavedPileContent.swift", "SavedListScreen.swift"] {
+            let text = try XCTUnwrap(files.first { $0.name == name }).lines.joined(separator: "\n")
+            XCTAssertFalse(text.contains("@State private var kind"), "\(name): el tipo de Guardado no vive en cada pestaña")
         }
     }
 }

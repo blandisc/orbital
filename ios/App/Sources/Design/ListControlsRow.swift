@@ -5,6 +5,9 @@ import SwiftUI
 /// aparta su lugar: si así no cabe a lo ancho, la pastilla baja a su propio renglón, a la derecha como arriba en vez de empujar la página
 /// fuera de la pantalla (Fernando, 13 nov 2026, visto en las capturas). Se mide lo que ocupa y lo que hay, no se adivina.
 struct ListControlsRow<Sort: View, Kind: View, Trailing: View>: View {
+    /// Cuántos íconos aparta siempre a la derecha (las pestañas de Guardado: 3). Con pestañas que traen distintos íconos, la
+    /// pastilla no brinca de lugar al cambiar de pestaña (Fernando, 13 nov 2026: «como que se mueve»). 0: lo que traiga.
+    var reservedIcons = 0
     @ViewBuilder var sort: Sort
     @ViewBuilder var kind: Kind
     @ViewBuilder var trailing: Trailing
@@ -15,7 +18,14 @@ struct ListControlsRow<Sort: View, Kind: View, Trailing: View>: View {
         ControlsLayout(stack: typeSize.isAccessibilitySize) {
             VStack(spacing: 0) { sort }
             VStack(spacing: 0) { kind }
-            HStack(spacing: DS.Space.s2) { trailing }
+            ZStack(alignment: .trailing) {
+                // El lugar de los íconos más anchos que puede traer, invisible: mide con la letra que haya.
+                if reservedIcons > 0 {
+                    HStack(spacing: DS.Space.s2) { ForEach(0..<reservedIcons, id: \.self) { _ in ListBarIcon(symbol: "checklist") } }
+                        .hidden().accessibilityHidden(true)
+                }
+                HStack(spacing: DS.Space.s2) { trailing }
+            }
         }
     }
 }

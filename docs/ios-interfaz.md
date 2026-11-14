@@ -846,6 +846,12 @@ va en `ListControlsRow`: decide con el ancho que le dan y, si no cabe (un SE, le
 pastilla), la pastilla baja a su renglón. Nada de `HStack` a mano con piezas de ancho fijo: crecían más que la pantalla y los
 pósters se salían por los lados. `testListControlsUseTheMeasuredRow` lo cuida; `OneSelectorUITests` mide que nada salga.
 
+**Lo que eliges arriba se queda al cambiar de pestaña, y no se mueve.** En una pantalla con pestañas (Guardado), Todo · Películas
+· Series es uno para todas: vive en la pantalla, no en cada pestaña, y cambiar de pestaña no lo regresa a «Todo». El renglón
+aparta el lugar de sus íconos más anchos (`ListControlsRow(reservedIcons:)`), así la pastilla queda en el mismo sitio en cada
+pestaña aunque una traiga más íconos que otra (Fernando, 13 nov 2026). `testSavedTabsShareTheKindFilter` y
+`testListControlsUseTheMeasuredRow` lo cuidan.
+
 **Lo que suena en la tele siempre trae su póster.** El accesorio de la barra, la tarjeta del control y la Live Activity
 pintan el arte de la TV y, si no llega o no carga, el póster de metahub del título (`NowPlaying.artFallback`); la Live
 Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el ícono de la tele (nunca la flecha de descarga).

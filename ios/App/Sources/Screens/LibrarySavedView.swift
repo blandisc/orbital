@@ -23,6 +23,8 @@ struct LibrarySavedView: View {
     var observer: ModelObserver<SavedModel>
     @State private var tab: SavedTab = LibrarySavedView.lastTab
     @State private var watchedView: SavedWatchedView = LibrarySavedView.lastWatchedView
+    /// Todo · Películas · Series, uno para las cuatro pestañas: cambiar de pestaña no lo regresa a Todo (13 nov 2026).
+    @State private var kind = ""
     private var model: SavedModel { observer.model }
     static let tabKey = "library.saved.tab", watchedKey = "library.saved.watched"
 
@@ -80,11 +82,11 @@ struct LibrarySavedView: View {
         let header = AnyView(self.header(board))
         Group {
             switch tab {
-            case .myList: SavedListContent(observer: observer, listID: SavedModel.watchlist, header: header)
-            case .watching: SavedPileContent(observer: observer, status: .watching, header: header)
+            case .myList: SavedListContent(observer: observer, listID: SavedModel.watchlist, header: header, sharedKind: $kind)
+            case .watching: SavedPileContent(observer: observer, status: .watching, header: header, sharedKind: $kind)
             case .watched:
                 SavedPileContent(observer: observer, status: shownWatchedView(board) == .dropped ? .dropped : .watched, header: header,
-                                 watchedView: $watchedView, hasDropped: !board.dropped.isEmpty)
+                                 watchedView: $watchedView, hasDropped: !board.dropped.isEmpty, sharedKind: $kind)
             case .lists: SavedListsContent(observer: observer, header: header)
             }
         }

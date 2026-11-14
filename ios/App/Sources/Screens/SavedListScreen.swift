@@ -39,7 +39,11 @@ struct SavedListContent: View {
     var header: AnyView? = nil
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
     /// "" es todo, «movie» o «series».
-    @State private var kind = ""
+    @State private var ownKind = ""
+    /// En las pestañas de Guardado, el de todas: cambiar de pestaña no lo regresa a Todo (Fernando, 13 nov 2026).
+    var sharedKind: Binding<String>? = nil
+    private var kind: String { sharedKind?.wrappedValue ?? ownKind }
+    private func setKind(_ new: String) { if let sharedKind { sharedKind.wrappedValue = new } else { ownKind = new } }
     /// «Editar» (G3-A): elegir varios y la barra de abajo; «+» busca qué agregar.
     @State private var selection = ListSelection()
     @State private var adding = false
@@ -145,7 +149,8 @@ struct SavedListContent: View {
     /// Si no cabe a lo ancho (un SE, letra grande, el nombre de lo elegido), Todo · Películas · Series baja a su renglón.
     private func controls(_ parts: ListBarParts?) -> some View {
         let editable = model.canEdit && current && (showsGrid || selection.editing)
-        return ListControlsRow {
+        // En Guardado, la pastilla en el mismo lugar en cada pestaña.
+        return ListControlsRow(reservedIcons: header == nil ? 0 : 3) {
             if let parts { parts.sort }
         } kind: {
             if showsGrid { kindFilter }
@@ -162,7 +167,7 @@ struct SavedListContent: View {
     }
 
     private var kindFilter: some View {
-        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), dense: true)
+        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { setKind(new) } }), dense: true)
     }
 
     /// Quitar con un toque (el «−», el menú): sale ya y el aviso trae «Deshacer»; si Trakt no acepta, regresa y lo dice.

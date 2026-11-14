@@ -23,7 +23,11 @@ struct SavedPileContent: View {
     /// «Editar»: elegir varios (G3-A).
     @State private var selection = ListSelection()
     /// Todo · Películas · Series: "" es todo, «movie» o «series».
-    @State private var kind = ""
+    @State private var ownKind = ""
+    /// En las pestañas de Guardado, el de todas: cambiar de pestaña no lo regresa a Todo (Fernando, 13 nov 2026).
+    var sharedKind: Binding<String>? = nil
+    private var kind: String { sharedKind?.wrappedValue ?? ownKind }
+    private func setKind(_ new: String) { if let sharedKind { sharedKind.wrappedValue = new } else { ownKind = new } }
     private var model: SavedModel { observer.model }
     private func shown(_ list: [Suggestion]) -> [Suggestion] { kind.isEmpty ? list : list.filter { $0.kind == kind } }
 
@@ -86,7 +90,8 @@ struct SavedPileContent: View {
 
     /// Si no cabe a lo ancho (un SE, letra grande, el nombre de lo elegido), Todo · Películas · Series baja a su renglón.
     private func controls(_ parts: ListBarParts?, every: [Suggestion]) -> some View {
-        return ListControlsRow {
+        // En Guardado, la pastilla en el mismo lugar en cada pestaña.
+        return ListControlsRow(reservedIcons: header == nil ? 0 : 3) {
             if let parts { parts.sort }
         } kind: {
             kindFilter
@@ -131,7 +136,7 @@ struct SavedPileContent: View {
     }
 
     private var kindFilter: some View {
-        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), dense: true)
+        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { setKind(new) } }), dense: true)
     }
 
     /// Un póster del montón: abre su ficha, mantener el dedo trae «Mover a…» y, mientras eliges, se elige.
