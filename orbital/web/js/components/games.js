@@ -171,11 +171,15 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     const alt = alternativeRunner(item);
     const many = Number(extra.players) > 1;
     const title = h("h2", { class: ["games__title", String(item.title).length > 28 && "games__title--long"] }, item.title);
+    // El logo entra cuando ya llegó (como el destacado del Inicio, hero.js); mientras, su nombre. Antes iba de una vez y, sin
+    // estar en caché, su lugar quedaba vacío y todo lo de abajo subía y bajaba al pasar rápido (Fernando, 14 nov: de Overcooked
+    // a Metroid «los elementos desaparecen»).
     const logo = extra.logo ? h("img", { class: "games__logo", src: extra.logo, alt: item.title, decoding: "async" }) : null;
+    const ready = !!logo?.complete && logo.naturalWidth > 0;
+    if (logo && !ready) logo.addEventListener("load", () => title.isConnected && title.replaceWith(logo), { once: true });
     logo?.addEventListener("error", () => logo.replaceWith(title), { once: true });
     mount(hero,
-      Eyebrow(gameReason(item), { className: "games__reason" }),
-      logo || title,
+      h("div", { class: "games__head" }, Eyebrow(gameReason(item), { className: "games__reason" }), ready ? logo : title),
       // Los datos, como la línea del destacado del Inicio: la marca de su consola con su nombre corto («Switch», no «Nintendo
       // Switch»: el logo ya lo dice), el año, sus géneros y cuántos juegan con su ícono. Cada dato en su pieza, con su punto.
       h("p", { class: "games__facts" },
@@ -189,7 +193,9 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
         Button({ label: primaryLabel(item, options.runningId), glyph: g.select, variant: "primary", onPress: () => onAction?.("select", item) }),
         alt && item.id !== options.runningId && Button({ label: alt.name, ariaLabel: `Abrir con ${alt.name}`, glyph: g.alt, yields: true, onPress: () => onAction?.("alt", item) }),
         Button({ label: "Opciones", glyph: g.options, icon: "more", onPress: () => onAction?.("options", item) })));
-    replay(hero);
+    // El fundido corto de un juego nuevo, una vez: si aún va entrando (pasas rápido de uno a otro), sigue el que va. Antes
+    // cada tecla lo volvía a empezar desde transparente y todo el juego parpadeaba.
+    if (!hero.getAnimations?.().some((a) => a.playState === "running")) replay(hero);
   }
 
   /** Marca el foco y avisa; arriba, el juego enfocado. */

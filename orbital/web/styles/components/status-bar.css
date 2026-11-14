@@ -87,10 +87,13 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   transition: grid-template-columns var(--duration-slow) var(--ease-out), margin var(--duration-slow) var(--ease-out),
     opacity var(--duration-base) var(--ease-out) var(--delay-1);
 }
-/* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. */
+/* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. Centrado (Fernando, 14 nov): la
+   lupa (1rem) y el círculo de la tecla (1,45rem, glyph--sm) quedan concéntricos con las puntas redondas, a la misma distancia
+   de su orilla: a la derecha, el aire de arriba y abajo; a la izquierda, ese mismo más lo que la lupa es más chica (antes
+   .85rem y .5rem: todo corrido ~1,4 px a la derecha y el círculo casi tocando la orilla). */
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
-  padding: .4rem var(--space-2) .4rem .85rem; border-radius: var(--radius-pill);
+  padding: .4rem .4rem .4rem .625rem; border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
   color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
@@ -201,3 +204,6 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 [data-input="touch"] .status-bar__search-glyph { display: none; }
 [data-input="touch"] .status-bar__tab, [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-height: var(--touch-target); }
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: var(--touch-target); justify-content: center; }
+/* Sin la tecla a la derecha, «Buscar» va centrado en su pastilla con el mismo aire que la lupa del otro lado: guardaba el
+   relleno chico de junto al círculo y la palabra quedaba pegada a la orilla (18 px a la izquierda, 11 a la derecha). */
+[data-input="touch"] .status-bar__search, .status-bar__search:has(> .status-bar__search-glyph:empty) { padding-right: .625rem; }

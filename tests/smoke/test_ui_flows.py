@@ -591,6 +591,120 @@ def test_choose_version_is_whole_and_the_notice_does_not_cover(browser, server, 
     page.close()
 
 
+@pytest.mark.parametrize("count", [12, 24, 40])
+def test_choose_version_last_row_is_whole_when_it_barely_overflows(browser, server, count):  # noqa: F811
+    """Fernando, 14 nov: «la última se corta hasta abajo». Con 24 versiones en 1280×800 a la lista le sobraban 6 px, menos
+    que el fundido: al llegar abajo el desplazamiento se iba a 0 y «Ver los demás» quedaba bajo el velo. Al final de la lista,
+    la última fila se ve entera y sin fundido, le sobre poco o mucho."""
+    page = browser.new_page(viewport={"width": 1280, "height": 800})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+
+    def fewer(route):
+        res = route.fetch()
+        data = res.json()
+        data["sources"] = data["sources"][:count]
+        route.fulfill(response=res, json=data)
+
+    page.route("**/api/stremio/sources**", fewer)
+    page.goto(f"{server}/?pelicula=tt15239678")
+    ready(page)
+    page.locator("section.title:not([hidden])").wait_for(timeout=8000)
+    page.wait_for_timeout(1200)
+    page.keyboard.press("y")
+    page.locator(".sources .version").first.wait_for(timeout=8000)
+    page.wait_for_timeout(800)
+    if page.locator(".sheet__title", has_text="Así funciona").is_visible():
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(600)
+    for _ in range(14):
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(120)
+    page.wait_for_timeout(700)
+    end = page.evaluate("""() => {
+      const list = document.querySelector('.sources__list'), last = [...list.querySelectorAll('.version')].pop();
+      const a = list.getBoundingClientRect(), b = last.getBoundingClientRect();
+      return { focused: last.classList.contains('is-focused'), down: list.classList.contains('sources__list--down'),
+               bottom: a.bottom - b.bottom }; }""")
+    assert end["focused"] and not end["down"] and end["bottom"] >= -1, end
+    assert not errors, errors
+    page.close()
+
+
+def test_switching_games_fast_does_not_blink(browser, server):  # noqa: F811
+    """Fernando, 14 nov: en Switch, de Overcooked a Metroid muy rápido, «hay un parpadeo donde los elementos desaparecen».
+    Cada juego nuevo volvía a empezar el fundido del juego desde transparente, y su logo (aún sin cargar) dejaba su lugar
+    vacío y lo de abajo subía. Pasando tres juegos seguidos: el juego se desvanece a lo más una vez, siempre dice su nombre o
+    su logo y mide lo mismo, también cuando el logo llega después."""
+    page = browser.new_page(viewport={"width": 1920, "height": 1080})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    logo = (__import__("pathlib").Path(__file__).resolve().parents[2] / "orbital/web/img/consoles/switch.webp").read_bytes()
+
+    def with_logos(route):  # logos que llegan después (pasan por aquí, no están en caché), como los de SteamGridDB
+        res = route.fetch()
+        data = res.json()
+        for row in data["rows"]:
+            if row["id"].startswith("emulators:"):
+                for item in row["items"]:
+                    item.setdefault("extra", {})["logo"] = f"/logo-prueba/{abs(hash(item['id']))}.webp"
+        route.fulfill(response=res, json=data)
+
+    page.route("**/logo-prueba/**", lambda route: route.fulfill(body=logo, content_type="image/webp"))
+    page.route("**/api/library*", with_logos)
+    page.goto(server)
+    ready(page)
+    page.keyboard.press("e")  # Juegos
+    page.wait_for_timeout(1200)
+    page.keyboard.press("PageDown")  # Switch
+    page.locator(".games__fact--platform", has_text="Switch").wait_for(timeout=5000)
+    page.wait_for_timeout(1500)
+    page.evaluate("""() => { window.__frames = []; const hero = document.querySelector('.games__hero');
+      const tick = () => { window.__frames.push([+getComputedStyle(hero).opacity, hero.offsetHeight,
+        !!hero.querySelector('.games__head > :is(.games__logo, .games__title)')]); requestAnimationFrame(tick); }; tick(); }""")
+    for _ in range(2):
+        page.keyboard.press("ArrowRight")
+        page.wait_for_timeout(90)
+    page.wait_for_timeout(900)
+    frames = page.evaluate("window.__frames")
+    dips = sum(1 for prev, now in zip(frames, frames[1:], strict=False) if prev[0] >= .5 > now[0])
+    assert dips <= 1, frames
+    assert all(f[2] for f in frames), frames
+    assert len({f[1] for f in frames}) == 1, sorted({f[1] for f in frames})
+    assert not errors, errors
+    page.close()
+
+
+@pytest.mark.parametrize("modality", ["gamepad", "keyboard", "touch"])
+@pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
+def test_search_pill_is_centered(browser, server, modality, width, height):  # noqa: F811
+    """Fernando, 14 nov: «que buscar, el texto, esté bien centrado arriba». La pastilla «Buscar» de la barra: con el dedo
+    no lleva la tecla a la derecha y guardaba su relleno chico (la palabra quedaba pegada a la orilla). Lo de las puntas queda a
+    la misma distancia de cada orilla (por su centro: la lupa a la izquierda, la tecla o la palabra a la derecha) y todo,
+    centrado de arriba abajo."""
+    page = browser.new_page(viewport={"width": width, "height": height})
+    page.add_init_script(f"localStorage.setItem('orbital.modality', JSON.stringify({modality!r}))")
+    page.goto(server)
+    ready(page)
+    pill = page.evaluate("""() => {
+      const s = document.querySelector('.status-bar__search'), R = s.getBoundingClientRect();
+      const box = (el) => { if (el.tagName === 'SPAN' && !el.className) { const r = document.createRange(); r.selectNodeContents(el);
+        return r.getBoundingClientRect(); } return el.getBoundingClientRect(); };
+      const shown = [...s.children].filter((c) => getComputedStyle(c).display !== 'none' && c.getBoundingClientRect().width > 0);
+      const parts = shown.map(box);
+      const first = parts[0], last = parts[parts.length - 1];
+      return { n: parts.length, left: first.left - R.left, right: R.right - last.right,
+               leftCenter: first.left + first.width / 2 - R.left, rightCenter: R.right - (last.left + last.width / 2),
+               lastIsDisc: shown[shown.length - 1].classList.contains('status-bar__search-glyph'),
+               vertical: parts.map((p) => Math.abs((p.top - R.top) - (R.bottom - p.bottom))) }; }""")
+    if pill["lastIsDisc"]:  # la lupa y el círculo de la tecla, a la misma distancia de su orilla
+        assert abs(pill["leftCenter"] - pill["rightCenter"]) <= 2.5, pill
+    else:  # la lupa y la palabra (o la lupa sola), con el mismo aire a cada lado
+        assert abs(pill["left"] - pill["right"]) <= 1, pill
+    assert max(pill["vertical"]) <= 1, pill
+    page.close()
+
+
 def test_live_tv_with_hundreds_of_channels_arms_only_what_is_near(browser, server):  # noqa: F811
     """R3-2 (V4 en TV en vivo): con 400 canales la cuadrícula no los arma todos (lejos de la vista son huecos del alto de un
     canal), y el foco, la vista previa del enfocado, el salto de categoría, la rueda y el dedo siguen como siempre."""

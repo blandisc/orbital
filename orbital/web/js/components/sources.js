@@ -41,7 +41,9 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   list.addEventListener("scroll", edges, { passive: true });
   /** Lleva lo enfocado a la vista FUERA del fundido (3 rem, sources.css): `scrollIntoView` lo dejaba a medias bajo el velo
    *  (la fila de arriba cortada al subir; «Ver los demás» con el velo encima al llegar abajo). Cerca de una orilla, hasta
-   *  la orilla: así la primera y la última fila quedan enteras y su fundido se apaga. */
+   *  la orilla: así la primera y la última fila quedan enteras y su fundido se apaga. Hacia donde vas manda: si a la lista le
+   *  sobra menos que el fundido (6 px en 1280×800 con cuatro idiomas), «cerca de arriba» también era «cerca de abajo» y ganaba
+   *  arriba: la última fila («Ver los demás») nunca subía y se quedaba cortada bajo el velo (Fernando, 14 nov). */
   function reveal(el) {
     if (!el) return;
     const fade = 3 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
@@ -51,7 +53,9 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     if (r.top - box.top < fade) top += r.top - box.top - fade;
     else if (box.bottom - r.bottom < fade) top += r.bottom - box.bottom + fade;
     top = Math.max(0, Math.min(max, top));
-    if (top < fade) top = 0;
+    const down = top > list.scrollTop;
+    if (down && max - top < fade) top = max;
+    else if (top < fade) top = 0;
     else if (max - top < fade) top = max;
     if (Math.abs(top - list.scrollTop) > 1) list.scrollTo({ top, behavior: motion() });
   }
