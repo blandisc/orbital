@@ -56,4 +56,22 @@ extension DesignRulesTests {
         XCTAssertGreaterThan(rows, 20, "se leyeron los listones")
         XCTAssertEqual(clipped, [], "Listón que recorta lo que crece: `.scrollClipDisabled()` o `// recorta: <motivo>`")
     }
+
+    /// Un buscador que flota tapa lo que pasa por debajo (13 nov 2026): todo archivo con `.searchable(` lleva
+    /// `.scrollEdgeEffectStyle(.hard, for: .top)` en la misma pantalla.
+    func testSearchFieldsHideWhatPassesUnder() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)).allObjects
+        var fields = 0
+        var bare: [String] = []
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n")
+            for (i, line) in lines.enumerated() where line.contains(".searchable(") {
+                fields += 1
+                if !lines.contains(where: { $0.contains(".scrollEdgeEffectStyle(.hard, for: .top)") }) { bare.append("\(file.lastPathComponent):\(i + 1)") }
+            }
+        }
+        XCTAssertGreaterThanOrEqual(fields, 5, "se encontraron los buscadores")
+        XCTAssertEqual(bare, [], "Buscador sin borde firme arriba: lo de debajo se ve a través del campo")
+    }
 }

@@ -119,6 +119,7 @@ struct LanguageSearchList: View {
                     }
                 }
             }
+            .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Buscar idioma"))
             .navigationTitle(Text("Otro idioma"))
             .navigationBarTitleDisplayMode(.inline)

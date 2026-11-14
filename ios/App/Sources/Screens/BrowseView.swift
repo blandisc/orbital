@@ -102,6 +102,10 @@ struct BrowseView: View {
             else { return }
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
+        // El campo regresa con la barra al subir: con el borde suave, los filtros y los mosaicos se veían a través de él,
+        // como si el campo estuviera encima (Fernando, 13 nov 2026). Con el borde firme, lo que pasa por debajo se tapa,
+        // como en Inicio. Regla «Una barra que flota sobre contenido lo tapa».
+        .scrollEdgeEffectStyle(.hard, for: .top)
         .onScrollPhaseChange { _, phase in
             scroll.byYou = phase == .interacting || phase == .decelerating
             scroll.dragging = phase == .interacting

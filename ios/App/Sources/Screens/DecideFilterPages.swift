@@ -317,6 +317,7 @@ struct DecideListPicker: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text(verbatim: String(format: Strings.tr("Buscar entre tus %lld listas", language: language), all.count)))
         .safeAreaBar(edge: .bottom) {

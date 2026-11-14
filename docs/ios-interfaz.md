@@ -811,6 +811,13 @@ El arte nunca enseña su orilla: se funde con el fondo que de verdad tiene detr�
 destacado de Inicio, la portada de una colección, «Lo que ves», una persona) no se recogen: se van con el contenido y se
 funden con máscara o velo hacia el fondo, sin recorte que se mueva. En la TV el arte ya nunca enseña su orilla.
 
+### Un buscador que flota tapa lo que pasa por debajo (13 nov 2026)
+
+En Buscar, al subir a media página, el campo regresaba con la barra y los filtros y mosaicos se veían a través de él, como
+si estuviera encima de ellos (Fernando, 13 nov 2026). Toda pantalla con `.searchable` lleva
+`.scrollEdgeEffectStyle(.hard, for: .top)`: lo que pasa bajo la barra y el campo se tapa, como en Inicio. Prueba:
+`DesignRulesTests+SystemCallbacks` (`testSearchFieldsHideWhatPassesUnder`) y `SearchBarOverlapUITests`.
+
 ### Un listón no recorta lo que crece (13 nov 2026)
 
 Un póster de un listón que crece al picarlo, al dejarlo apretado o con el puntero se cortaba en la orilla de la fila: la caja

@@ -44,6 +44,7 @@ struct VoiceGuideView: View {
         }
         .tint(DS.accent)
         .background(Backdrop())
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una frase"))
         .navigationTitle("Lo que puedes decir").navigationBarTitleDisplayMode(.inline)
     }
@@ -186,6 +187,7 @@ private struct VoiceTopicsView: View {
         }
         .tint(DS.accent)
         .background(Backdrop())
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una frase"))
         .navigationTitle("Más frases, por tema").navigationBarTitleDisplayMode(.inline)
     }
