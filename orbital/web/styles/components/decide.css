@@ -22,5 +22,7 @@
 /* R2-7: la última pregunta («Qué») con aire sobre el pie (antes casi lo tocaba). */
 .decide__questions { display: grid; gap: var(--space-3); margin-bottom: var(--space-6); }
 .decide__question { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: var(--space-4); }
+/* «Esta noche»: el rótulo de sección del iPhone sobre Duración y Ánimo. */
+.decide__section { margin-top: var(--space-2); }
 .decide__label { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: right; }
 .decide[data-zone="questions"] .decide__picks .card { opacity: var(--opacity-away); }

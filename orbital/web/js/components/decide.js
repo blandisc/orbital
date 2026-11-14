@@ -1,7 +1,7 @@
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { duration, genres as genreNames } from "../core/format.js";
 import { Card } from "./card.js";
-import { Pill, ScreenHead } from "./ui.js";
+import { Eyebrow, Pill, ScreenHead } from "./ui.js";
 
 /**
  * «¿Qué vemos?» (como DecideView del iPhone): tres de tus sugerencias que caben en el tiempo que tienes y en tu ánimo,
@@ -20,16 +20,21 @@ export const DecideHead = () => ScreenHead({ eyebrow: "Para cuando no sabes qué
 /** Las dos pestañas; `on` la que ves, `focused` la enfocada con el mando (o null), `onPick(i)` al tocar o hacer clic. */
 export const DecideModes = (el, { on, focused = null, onPick }) => mount(el, DECIDE_MODES.map((label, i) => Pill(label, {
   on: i === on, tone: "tab", role: "tab", tabindex: "-1", className: focused === i && "is-focused", onClick: () => onPick(i) })));
+/* Las preguntas, a la vista y en el orden y con las palabras del iPhone (DE2, 13 nov 2026): primero el tipo (su renglón de
+   arriba), luego «Esta noche»: Duración y Ánimo. En la TV no van en una hoja «Filtros» (Fernando, 13 nov: «Déjalo más cómodo
+   para el mando»): con el mando se cambian sin abrir nada. Cada una empieza en «cualquiera», que con el mando es como quitarla
+   (en el iPhone se quita volviendo a tocar la elegida). «Qué tan buena» y «De dónde» son solo del iPhone. */
 const QUESTIONS = [
-  { id: "time", label: "Tiempo", options: [["short", "Media hora"], ["hour", "Una hora"], ["long", "Dos horas o más"]] },
-  { id: "mood", label: "Ánimo", options: [["", "Cualquiera"], ["light", "Ligera"], ["intense", "Intensa"], ["think", "Para pensar"], ["together", "En pareja"]] },
-  { id: "kind", label: "Qué", options: [["", "Todo"], ["series", "Series"], ["movie", "Películas"]] },
+  { id: "kind", label: "Qué tipo", options: [["", "Todo"], ["movie", "Películas"], ["series", "Series"]] },
+  { id: "time", label: "Duración", section: "Esta noche", options: [["any", "Cualquier duración"], ["short", "30 min"], ["hour", "1 h"], ["long", "2 h o más"]] },
+  { id: "mood", label: "Ánimo", options: [["", "Cualquiera"], ["light", "Ligero"], ["intense", "Intenso"], ["think", "Para pensar"], ["together", "En pareja"]] },
 ];
-const TIME_LEAD = { short: "media hora", hour: "una hora", long: "dos horas o más" };
+const TIME_LEAD = { short: "30 min", hour: "1 h", long: "2 h o más" };
 
 /** Lo que dice arriba: si no caben todas en el tiempo que tienes, lo dice (antes «caben en media hora» con películas de casi
  * dos horas). `fits` llega del servidor; sin él (un Orbital anterior), se da por bueno. */
 export function decideLead(picks, time) {
+  if (!time) return picks.length ? `${picks.length === 3 ? "Tres" : picks.length === 2 ? "Dos" : "Una"} de tus sugerencias para hoy.` : "Tres de tus sugerencias para hoy.";
   if (!picks.length) return `Tres de tus sugerencias que caben en ${time}.`;
   const fit = picks.filter((p) => p.fits !== false).length;
   if (fit === picks.length) return `${picks.length === 3 ? "Tres" : picks.length === 2 ? "Dos" : "Una"} de tus sugerencias que caben en ${time}.`;
@@ -58,7 +63,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
     DecideHead(), modes, lead,
     h("div", { class: "decide__stage" }, picksEl, h("div", { class: "decide__about" }, name, why, overview)), status, questions);
 
-  let choice = { time: "", mood: "", kind: "" };
+  let choice = { time: "any", mood: "", kind: "" };
   let picks = [];
   // DE2 (13 nov 2026): cambiar de tipo no vuelve a barajar. Lo que ya viste con cada tipo (en el mismo tiempo y ánimo) se
   // guarda; regresar a ese tipo te devuelve esos tres. «Barajar» y «Hoy no» sí traen otros.
@@ -87,12 +92,13 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
   }
 
   function paintQuestions() {
-    mount(questions, QUESTIONS.map((q, qi) => h("div", { class: "decide__question" },
+    mount(questions, QUESTIONS.flatMap((q, qi) => [q.section && h("div", { class: "decide__question" },
+      h("span", { "aria-hidden": "true" }), Eyebrow(q.section, { className: "decide__section" })), h("div", { class: "decide__question" },
       h("span", { class: "decide__label" }, q.label),
       h("div", { class: "browse__filters", role: "tablist" }, q.options.map(([value, label], oi) => Pill(label, {
         on: (choice[q.id] || "") === value, tone: "outline", className: zone === qi && oi === option && "is-focused",
         tabindex: "-1", role: "tab", onClick: () => { zone = qi; option = oi; answer(); },
-      }))))));
+      }))))]).filter(Boolean));
   }
 
   function paintModes() {
@@ -130,7 +136,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
   }
 
   function showPicks() {
-    lead.textContent = decideLead(picks, TIME_LEAD[choice.time] || "tu tiempo");
+    lead.textContent = decideLead(picks, TIME_LEAD[choice.time] || "");
     status.hidden = !!picks.length;
     status.textContent = picks.length ? "" : "No encontré nada con eso. Cambia el tiempo o el ánimo.";
   }
@@ -165,7 +171,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
 
   function open() {
     cancelExit();
-    choice = { time: "", mood: "", kind: "" };
+    choice = { time: "any", mood: "", kind: "" };
     picks = [];
     seen = new Map();
     zone = "picks";

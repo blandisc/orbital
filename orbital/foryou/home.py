@@ -164,6 +164,8 @@ class _Home(_Shelves):
                genres: list[str] | None = None, include_watched: bool = False, now: datetime | None = None) -> dict:
         """Tres propuestas (la primera es la elegida) con su porqué: duración y calificación de IMDb."""
         now = now or datetime.now().astimezone()
+        # «Cualquier duración» (DE1 del iPhone, 13 nov 2026): no filtra; el tiempo de la hora solo ordena (lo que cabe, primero).
+        anytime = time_choice == "any"
         time_choice = time_choice if time_choice in decide_api.TIMES else decide_api.context_time(now)
         mood = mood if mood in decide_api.MOODS else None
         kind = kind if kind in ("movie", "series") else None
@@ -173,7 +175,7 @@ class _Home(_Shelves):
             exclude |= set(self.watched_ids())
         pool = self._decide_pool()
         details: dict[str, dict] = {}
-        if mood or genres or time_choice != "long":
+        if mood or genres or (time_choice != "long" and not anytime):
             missing = [i for i in pool if i.get("meta_id") not in exclude and (not i.get("genres") or not i.get("runtime"))]
             details = self._decide_details(missing)
         picks = decide_api.choose(pool, time=time_choice, mood=mood, kind=kind, genres=set(genres or ()), exclude=exclude,
@@ -184,8 +186,8 @@ class _Home(_Shelves):
             d = details.get(p["meta_id"], {})
             minutes = p.get("runtime") or d.get("minutes")
             out.append({**p, "minutes": minutes, "imdb_rating": d.get("rating"), "genres": p.get("genres") or d.get("genres") or [],
-                        "fits": decide_api.fits(minutes, time_choice)})  # ¿cabe en el tiempo? (si no, es de las más cortas)
-        return {"time": time_choice, "mood": mood, "kind": kind, "picks": out}
+                        "fits": anytime or decide_api.fits(minutes, time_choice)})  # ¿cabe? (si no, es de las más cortas)
+        return {"time": "any" if anytime else time_choice, "mood": mood, "kind": kind, "picks": out}
 
     def match_deck(self, mood: str | None = None, now: float | None = None) -> list[dict]:
         """«¿Qué vemos hoy?» (como el iPhone): tus propuestas sin repetir y sin lo que ya viste, del ánimo elegido, en un orden

@@ -147,3 +147,8 @@ test("R2-8: el idioma de una reseña se reconoce por sus palabras comunes; sin b
   assert.equal(textLanguage("Oh. My. God."), null);
   assert.equal(textLanguage(""), null);
 });
+
+test("Decide: con «Cualquier duración» no promete que caben", async () => {
+  const { decideLead } = await import("../../orbital/web/js/components/decide.js");
+  assert.equal(decideLead([{}, {}, {}], ""), "Tres de tus sugerencias para hoy.");
+});

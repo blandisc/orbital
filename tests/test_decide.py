@@ -118,3 +118,12 @@ def test_when_nothing_fits_the_shortest_come_first():
     picks = decide.choose(pool, time="short", rng=random.Random(7))
     assert [p["runtime"] for p in picks] == [44, 61, 107]
     assert not any(decide.fits(p["runtime"], "short") for p in picks)
+
+
+def test_cualquier_duracion_no_filtra_y_lo_que_cabe_va_primero():
+    """DE1 del iPhone en la TV (13 nov 2026): «Cualquier duración» no deja fuera nada; el tiempo de la hora solo ordena."""
+    from orbital.decide import choose
+
+    pool = [{"meta_id": "tt1", "kind": "movie", "runtime": 150}, {"meta_id": "tt2", "kind": "movie", "runtime": 30}]
+    picks = choose(pool, time="short", count=2)
+    assert [p["meta_id"] for p in picks] == ["tt2", "tt1"]  # las dos salen; la que cabe, primero
