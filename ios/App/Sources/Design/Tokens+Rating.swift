@@ -9,6 +9,14 @@ extension DS {
     enum Rating {
         static let filled = DS.warning, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
         static let star: CGFloat = 26, starInline: CGFloat = 17, gap = DS.Space.s1
+        /// Las que se tocan en la pastilla «¿Qué tal…?» y en «Por calificar»: más grandes que las de un renglón y con más aire
+        /// entre ellas, para atinarle a la media (Fernando, 13 nov 2026: «es bien difícil atinarle»). `starInline` queda para
+        /// las que solo se leen.
+        static let starTouch: CGFloat = 24, gapTouch = DS.Space.s2
+        /// Lo que el lugar táctil sale a los lados de las estrellas: arrastrar un poco más allá de la última sigue contando.
+        static let hitSide = DS.Space.s3
+        /// La burbuja que dice cuánto llevas mientras arrastras («3½»), arriba del dedo para que no la tape.
+        static let bubbleLift: CGFloat = 34
         /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
         static let dragStart: CGFloat = 8
         /// La onda al calificar: cada estrella empieza esto después de la anterior, crece a esta escala y su toque es así de suave.

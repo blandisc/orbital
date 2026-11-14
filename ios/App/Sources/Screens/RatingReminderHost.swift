@@ -12,6 +12,8 @@ struct RatingReminderHost: View {
     @State private var showQueue = false
     /// Se va sola a los pocos segundos (para no tapar nada) y vuelve la próxima vez que abras la app.
     @State private var tucked = false
+    /// El dedo en las estrellas: mientras, no corre su tiempo (se iba a media calificación).
+    @State private var busy = false
 
     var body: some View {
         let model = env.ratings
@@ -21,7 +23,7 @@ struct RatingReminderHost: View {
                 RatingReminder(title: titleName(item.title, id: item.imdb, kind: item.kind), poster: URL(string: item.poster), more: model.more,
                                onRate: { stars in Task { await model.rate(imdb: item.imdb, kind: item.kind, stars: stars) } },
                                onDismiss: { model.dismiss(item.imdb) },
-                               onOpenQueue: { showQueue = true })
+                               onOpenQueue: { showQueue = true }, onBusy: { busy = $0 })
                     .id(item.imdb)
                     .frame(maxWidth: DS.Toast.maxWidth)   // en el iPad y la Mac no cruza la pantalla, como los avisos
                     .padding(.horizontal, DS.Space.gutter)
@@ -35,8 +37,8 @@ struct RatingReminderHost: View {
         .animation(DS.Motion.enter(reduceMotion), value: model.current?.imdb)
         .animation(DS.Motion.base(reduceMotion), value: tucked)
         // Cada título nuevo en la pastilla (o volver a la app) le da otra vez su tiempo; con la fila abierta no se va.
-        .task(id: "\(model.current?.imdb ?? "")|\(tucked)|\(showQueue)") {
-            guard model.current != nil, !tucked, !showQueue else { return }
+        .task(id: "\(model.current?.imdb ?? "")|\(tucked)|\(showQueue)|\(busy)") {
+            guard model.current != nil, !tucked, !showQueue, !busy else { return }
             try? await Task.sleep(for: DS.Rating.reminderHold)
             if !Task.isCancelled { tucked = true }
         }

@@ -852,6 +852,12 @@ aparta el lugar de sus íconos más anchos (`ListControlsRow(reservedIcons:)`), 
 pestaña aunque una traiga más íconos que otra (Fernando, 13 nov 2026). `testSavedTabsShareTheKindFilter` y
 `testListControlsUseTheMeasuredRow` lo cuidan.
 
+**Las estrellas que se tocan se atinan.** `RatingStars` aparta un lugar táctil de 44 pt de alto (y un poco a cada lado) aunque
+la estrella sea chica, y al arrastrar una burbuja arriba del dedo dice cuánto llevas («3½»). Donde calificas sin abrir nada
+(la pastilla «¿Qué tal…?» y «Por calificar»), las estrellas van en `DS.Rating.starTouch` con más aire; `starInline` es solo
+para las que se leen. La pastilla no se va sola mientras tienes el dedo encima (Fernando, 13 nov 2026: «es bien difícil
+atinarle»). `testRatingStarsAreEasyToHit` lo cuida.
+
 **Lo que suena en la tele siempre trae su póster.** El accesorio de la barra, la tarjeta del control y la Live Activity
 pintan el arte de la TV y, si no llega o no carga, el póster de metahub del título (`NowPlaying.artFallback`); la Live
 Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el ícono de la tele (nunca la flecha de descarga).

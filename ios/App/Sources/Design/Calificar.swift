@@ -4,10 +4,14 @@ import OrbitalCore
 /// Tus estrellas, como en Trakt: 5 con medias (en Trakt, 1…10). Se toca o se arrastra de lado: la mitad izquierda de una
 /// estrella es media. Volver a TOCAR tu misma calificación la quita (arrastrar y volver al mismo punto no). El arrastre va a
 /// la par del desplazamiento y solo cuenta si es de lado: empezar sobre las estrellas para bajar la ficha sí la baja.
-/// Con VoiceOver se ajusta de media en media.
+/// Con VoiceOver se ajusta de media en media. El lugar táctil mide al menos 44 pt de alto y sale un poco a los lados (aunque
+/// la estrella sea chica), y al arrastrar una burbuja arriba del dedo dice cuánto llevas («3½») (13 nov 2026).
 struct RatingStars: View {
     let value: Double?
     var size: CGFloat = DS.Rating.star
+    var gap: CGFloat = DS.Rating.gap
+    /// Avisa cuando empiezas y terminas de arrastrar (la pastilla no se va sola mientras tienes el dedo encima).
+    var onDragging: ((Bool) -> Void)? = nil
     let onChange: (Double?) -> Void
     @State private var dragging: Double?
     /// La dirección del arrastre se decide una vez, al empezar: de lado mueve las estrellas; vertical es el scroll hasta soltar.
@@ -20,19 +24,24 @@ struct RatingStars: View {
 
     var body: some View {
         let shown = dragging ?? value ?? 0
-        HStack(spacing: DS.Rating.gap) {
+        HStack(spacing: gap) {
             ForEach(1...5, id: \.self) { i in star(i, shown: shown) }
         }
         .onChange(of: value) { old, new in startWave(from: old, to: new) }
         .dsFeedback(.impact(flexibility: .soft, intensity: DS.Rating.waveIntensity), trigger: tick)
         .contentShape(Rectangle())
         .overlay {
+            // El lugar táctil, más grande que las estrellas (sin mover nada alrededor): 44 pt de alto y un poco a cada lado.
             GeometryReader { geo in
                 Color.clear.contentShape(Rectangle())
                     .gesture(tap(width: geo.size.width))
                     .simultaneousGesture(drag(width: geo.size.width))
             }
+            .padding(.horizontal, -DS.Rating.hitSide)
+            .padding(.vertical, -max(0, (DS.Size.touchTarget - size) / 2))
         }
+        .overlay { GeometryReader { geo in if let dragging { bubble(dragging, width: geo.size.width) } } }
+        .onChange(of: dragging == nil) { _, idle in onDragging?(!idle) }
         .dsFeedback(.selection, trigger: dragging) { (old: Double?, new: Double?) -> Bool in old != nil && new != nil && old != new }
         .accessibilityElement()
         .accessibilityLabel(Text("Tu calificación"))
@@ -79,7 +88,27 @@ struct RatingStars: View {
             }
     }
 
-    private func at(_ x: CGFloat, _ width: CGFloat) -> Double { RatingScale.snap(Double(x / max(1, width)) * 5) }
+    /// Dónde cae el dedo, en medias estrellas. `width` es el del lugar táctil (las estrellas más `hitSide` a cada lado).
+    private func at(_ x: CGFloat, _ width: CGFloat) -> Double {
+        let side = DS.Rating.hitSide
+        return RatingScale.snap(Double((x - side) / max(1, width - side * 2)) * 5)
+    }
+
+    /// «3½» arriba de donde va el dedo, mientras arrastras: lo que vas a dar, sin que el dedo tape las estrellas.
+    private func bubble(_ stars: Double, width: CGFloat) -> some View {
+        let whole = Int(stars), half = stars - Double(whole) >= 0.5
+        let text = whole == 0 ? "½" : "\(whole)\(half ? "½" : "")"
+        return Text(verbatim: text)
+            .recipe(.label, color: DS.text)
+            .monospacedDigit()
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+            .background(DS.surfaceRaised, in: Capsule())
+            .fixedSize()
+            .position(x: min(width, max(0, CGFloat(stars / 5) * width)), y: -DS.Rating.bubbleLift / 2)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .transition(.opacity)
+    }
 
     private func tap(width: CGFloat) -> some Gesture {
         SpatialTapGesture().onEnded { g in
@@ -119,6 +148,8 @@ struct RatingReminder: View {
     let onRate: (Double) -> Void
     let onDismiss: () -> Void
     let onOpenQueue: () -> Void
+    /// Mientras tienes el dedo en las estrellas (la pastilla no se va sola a media calificación).
+    var onBusy: (Bool) -> Void = { _ in }
     /// Lo que tocaste: las estrellas se quedan llenas y dice «Guardada» un momento antes de irse (Fernando, 6 nov: «se cerró
     /// inmediatamente y no supe si lo registró»).
     @State private var rated: Double?
@@ -130,7 +161,7 @@ struct RatingReminder: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(1)
                 HStack(spacing: DS.Space.s2) {
-                    RatingStars(value: rated, size: DS.Rating.starInline) { v in
+                    RatingStars(value: rated, size: DS.Rating.starTouch, gap: DS.Rating.gapTouch, onDragging: onBusy) { v in
                         guard let v, rated == nil else { return }
                         rated = v
                         Task { try? await Task.sleep(for: DS.Rating.savedHold); onRate(v) }
@@ -186,7 +217,7 @@ struct RatingQueue: View {
             HStack(spacing: DS.Space.s3) {
                 Text(verbatim: titleName(row.title, id: row.id)).recipe(.body).lineLimit(2)
                 Spacer(minLength: DS.Space.s2)
-                RatingStars(value: nil, size: DS.Rating.starInline) { if let v = $0 { onRate(row.id, v) } }
+                RatingStars(value: nil, size: DS.Rating.starTouch, gap: DS.Rating.gapTouch) { if let v = $0 { onRate(row.id, v) } }
             }
             .swipeActions { Button("No calificar", role: .destructive) { onDismiss(row.id) } }
         }
