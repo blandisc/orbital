@@ -65,3 +65,15 @@ test("☰ de Guardado: «Sí, las dejé» en «¿Las dejaste?», tus listas y «
   assert.equal(savedMenuOptions("in_list", lists)[1].hint, "18 títulos · solo tú");
   assert.ok(!savedMenuOptions("watched", lists).some((o) => o.label === "Sí, las dejé"));
 });
+
+test("SG1: Guardado en cuatro partes; Las dejé dentro de Vistas, el Historial en su renglón y Listas en mosaico", async () => {
+  const { SAVED_TABS, listTiles } = await import("../../orbital/web/js/app/saved-commands.js");
+  assert.deepEqual(SAVED_TABS.map(([, label]) => label), ["Mi lista", "Viendo", "Vistas", "Listas"]);
+  const lists = [{ id: 7, name: "Para ver con Ana", privacy: "private", count: 18 }];
+  assert.deepEqual(listTiles(lists).map((t) => t.title), ["Favoritos", "Para ver con Ana"]); // con listas, «Nueva lista» es el ＋
+  assert.deepEqual(listTiles([]).map((t) => t.title), ["Favoritos", "Nueva lista"]);
+  const shown = savedMenuOptions("dropped", lists, { piles: [["watched", "Vistas"], ["dropped", "Las dejé"]], pile: "dropped" });
+  assert.deepEqual(shown.slice(0, 3).map((o) => [o.label, o.value ?? ""]), [["Mostrar", ""], ["Vistas", ""], ["Las dejé", "✓"]]);
+  assert.ok(shown.some((o) => o.label === "Historial")); // con el mando, el Historial también está en ☰
+  assert.deepEqual(savedMenuOptions("lists", lists).map((o) => o.label), ["Listas", "Nueva lista"]);
+});

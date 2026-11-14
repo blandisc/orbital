@@ -10,8 +10,27 @@
  *  Las palabras son las del iPhone (`SavedSelectionBar`, `SavedMoveMenu`, `SavedListMenu`). */
 import { curatedItem } from "../core/curation.js";
 
-/** Los montones de Guardado, en el orden del tablero del iPhone, con su nombre. */
+/** Los montones de Guardado, con su nombre. */
 export const PILES = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"]];
+
+/** SG1 (Fernando, 13 nov 2026, como el iPhone): Guardado en cuatro partes, Mi lista · Viendo · Vistas · Listas. «Las dejé» va
+ *  dentro de Vistas (se elige en ☰ › Mostrar, VS2), el Historial es el reloj del renglón de Vistas y Listas es un mosaico con
+ *  Favoritos y tus listas, con ＋ para una nueva. La TV conserva sus pestañas (se cambian con el mando, LB/RB). */
+export const SAVED_TABS = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["lists", "Listas"]];
+
+/** Los mosaicos de la pestaña Listas: Favoritos, tus listas y, si no tienes ninguna, «Nueva lista» (con listas, ＋ del renglón). */
+export function listTiles(lists, { online = true } = {}) {
+  const tiles = [{ meta_id: "trakt-favorites", kind: "list", title: "Favoritos", subtitle: "Trakt",
+    command: { type: "list-open", where: "trakt-favorites", name: "Favoritos" } }];
+  for (const l of lists) {
+    tiles.push({ meta_id: `list:${l.id}`, kind: "list", title: l.name,
+      subtitle: l.count != null ? many(l.count, "1 título", "títulos") : privacyName(l.privacy), // quién la ve, en su ☰
+      command: { type: "list-open", where: `list:${l.id}`, name: l.name } });
+  }
+  if (!lists.length) tiles.push({ meta_id: "list-new", kind: "list", title: "Nueva lista", subtitle: online ? "Nace «Solo tú»" : "Necesita internet",
+    command: { type: "list-new" } });
+  return tiles;
+}
 /** «Quién la ve» (`Trakt.privacies`): Solo tú · Con el enlace · Todos en Trakt; «Solo amigos» solo si ya lo era. */
 export const PRIVACY = [["private", "Solo tú", "Nadie más la ve"], ["link", "Con el enlace", "Quien tenga el enlace"],
   ["public", "Todos en Trakt", "Sale en tu perfil"], ["friends", "Solo amigos", "Tus amigos de Trakt"]];
@@ -127,16 +146,24 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
     }
     board = found;
     lists = found.lists || [];
-    const tabs = PILES.map(([id, label]) => {
-      const raw = id === "watching" ? [...(found.watching || []), ...(found.stale || [])] : found[id] || [];
-      const items = raw.map((i) => ({ ...curatedItem(i), pile: i.pile }));
-      return { id, label: `${label} · ${items.length}`, load: () => Promise.resolve(items) };
+    const items = (ids) => ids.flatMap((id) => found[id] || []).map((i) => ({ ...curatedItem(i), pile: i.pile }));
+    const online = navigator.onLine !== false;
+    const tabs = SAVED_TABS.map(([id, label]) => {
+      if (id === "lists") {
+        const tiles = listTiles(lists, { online });
+        return { id, label: `${label} · ${lists.length + 1}`, noEdit: true, load: () => Promise.resolve(tiles),
+          tools: lists.length ? [{ label: "Nueva lista", icon: "plus", command: { type: "list-new" } }] : [] };
+      }
+      const shown = items(id === "watching" ? ["watching", "stale"] : id === "watched" ? ["watched", "dropped"] : [id]);
+      const count = shown.filter((i) => id !== "watched" || i.pile !== "dropped").length;
+      return { id, label: `${label} · ${count}`, load: () => Promise.resolve(shown),
+        ...(id === "watched" ? { piles: [["watched", "Vistas"], ["dropped", "Las dejé"]],
+          tools: [{ label: "Historial", icon: "clock", command: { type: "history", page: 1 } }] } : {}) };
     });
-    const at = Math.max(0, tabs.findIndex((t) => t.id === tab));
+    const pile = tab === "dropped" ? "dropped" : null; // «Las dejé» es Vistas con su montón
+    const at = Math.max(0, tabs.findIndex((t) => t.id === (pile ? "watched" : tab)));
     if (!ui.listScreen.isOpen) sound.play("open");
-    ui.listScreen.open({ id: "saved", title: "Guardado", source: "trakt", media: {}, tab: at,
-      // R2-9: antes «1 lista tuya en ≡»; ahora dice dónde, con la palabra del pie («M Menú»).
-      meta: lists.length ? (lists.length === 1 ? "Tu lista está en Menú" : `Tus ${lists.length} listas están en Menú`) : null,
+    ui.listScreen.open({ id: "saved", title: "Guardado", source: "trakt", media: {}, tab: at, pile,
       editable: { where: "saved", name: "Guardado", add: false }, tabs });
     renderHints();
     const changes = found.changes || [];
@@ -364,15 +391,23 @@ export function shareMenu(where, name) {
 }
 
 /** ☰ de Guardado (G2-A y G4-A): «¿Las dejaste?», tus listas (cada una se abre) y «Nueva lista». */
-export function savedMenuOptions(tabId, lists, { online = true, stale = 0 } = {}) {
+export function savedMenuOptions(tabId, lists, { online = true, stale = 0, piles = [], pile = null } = {}) {
   const out = [];
+  if (piles.length) {
+    out.push({ heading: true, label: "Mostrar" }, ...piles.map(([id, label]) => ({ icon: id === "dropped" ? "hide" : "checkCircle", label,
+      value: id === pile ? "✓" : "", command: { type: "list-pile", value: id } })));
+  }
   if ((tabId === "watching" || tabId === "stale") && stale > 0) {
     out.push({ heading: true, label: "¿Las dejaste?" },
       { icon: "hide", label: "Sí, las dejé", hint: "No las ves hace seis meses: salen de Viendo y dejan de avisarte", command: { type: "saved-stale-drop" } });
   }
-  if (tabId === "watched") {
+  if (tabId === "watched" || tabId === "dropped") {
     out.push({ heading: true, label: "Vistas" },
-      { icon: "clock", label: "Historial", hint: "Cada vez que viste algo, con las repetidas marcadas", command: { type: "history", page: 1 } });
+      { icon: "clock", label: "Historial", hint: "El reloj del renglón · cada vez que viste algo, con las repetidas marcadas", command: { type: "history", page: 1 } });
+  }
+  if (tabId === "lists") {
+    return [...out, { heading: true, label: "Listas" },
+      { icon: "plus", label: "Nueva lista", hint: online ? "El ＋ del renglón · nace «Solo tú»" : "Necesita internet", ...(online ? {} : { info: true }), command: { type: "list-new" } }];
   }
   out.push({ heading: true, label: "Tus listas" },
     ...lists.map((l) => ({ icon: "list", label: l.name, hint: [l.count != null && many(l.count, "1 título", "títulos"), lower(privacyName(l.privacy))].filter(Boolean).join(" · "),

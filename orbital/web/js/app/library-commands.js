@@ -44,6 +44,7 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
     "list-kind": async (command, context) => {
       return ui.listScreen.sorter.setKind(command.value);
     },
+    "list-pile": async (command) => ui.listScreen.sorter.setPile(command.value), // Vistas · Las dejé (SG1, VS2)
     "list-watched": async (command, context) => {
       return ui.listScreen.sorter.setHideWatched(!ui.listScreen.sorter.settings.hideWatched);
     },

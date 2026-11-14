@@ -240,7 +240,7 @@ const ui = {
     onWatch: (play) => watch(play),
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
-    onMore: (item) => openMenu(forYouMenu(item, { trakt: traktLinked() })),
+    onMore: (item) => item.command ? null : openMenu(forYouMenu(item, { trakt: traktLinked() })),
     onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => sound.play("edge"),
@@ -285,6 +285,7 @@ const ui = {
     onBatch: () => runCommand({ type: "batch-open" }), // G3-A: «Con las elegidas…»
     onReorder: (screen, ids) => saveOrder(screen.editable, ids), // G4-A: ordenar a mano
     onAdd: () => addToList(ui.listScreen.sorter.editable),
+    onTool: (command) => runCommand(command), // SG1: el reloj del Historial, ＋ Nueva lista
     onChange: () => renderHints(),
     onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
@@ -1503,6 +1504,7 @@ function backFromPerson(list) {
 
 /** Un póster de una lista abierta: su ficha. De la filmografía (TMDB) primero se busca su IMDb. */
 async function openListItem(item) {
+  if (item.command) return runCommand(item.command); // un mosaico de Listas (Guardado): abre la lista o crea una
   if (item.file) { // Mi media › Sin ficha: el archivo tal cual
     try {
       await api.onedrivePlayFile(item.file.id, item.title);
@@ -1538,9 +1540,10 @@ function listSortMenu(s) {
   const st = s.settings;
   const check = (on) => (on ? "✓" : "");
   const options = [];
-  if (s.editable) options.push(...listEditOptions(s.editable, s.editing));
+  if (s.editable && !(s.id === "saved" && s.tabId === "lists")) options.push(...listEditOptions(s.editable, s.editing));
   if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists,
-    { online: navigator.onLine !== false, stale: (s.items || []).filter((i) => i.pile === "stale").length }));
+    { online: navigator.onLine !== false, stale: (s.items || []).filter((i) => i.pile === "stale").length, piles: s.piles(), pile: s.pile }));
+  if (s.id === "saved" && s.tabId === "lists") return { title: "Guardado", options }; // los mosaicos de listas no se ordenan ni filtran
   options.push(...listManageOptions(s.editable, { online: navigator.onLine !== false }));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },

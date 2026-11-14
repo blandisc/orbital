@@ -56,7 +56,7 @@ export function chooseSort(listId, current, id) {
   return next;
 }
 
-export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBatch, onReorder, onAdd, onChange, ratings, watched }) {
+export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBatch, onReorder, onAdd, onChange, onTool, ratings, watched }) {
   const media = h("span", { class: "list-screen__media", "aria-hidden": "true" });
   const title = h("h2", { class: "list-screen__title" });
   const meta = h("span", { class: "list-screen__meta" });
@@ -82,7 +82,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   let chosen = new Set(); // los elegidos (meta_id)
   let reordering = false; // ordenar a mano (G4-A)
   let grabbed = false; // con el póster tomado: las flechas lo mueven
-  let settings = { sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
+  let settings = { sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false, pile: null };
   /** La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt), como el iPhone. */
   const score = (i) => {
     const found = [imdb[i.meta_id], i.rating].filter((v) => v > 0);
@@ -121,9 +121,13 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   /** «Editar» (o, editando, «Agregar» y «Listo»): lo mismo que X, ☰ › Agregar a esta lista y B, a la vista para el mouse
    *  y el dedo. */
   function paintTools() {
-    tools.hidden = !list.editable;
+    // SG1 (13 nov 2026): lo de la pestaña va en el renglón, a la vista para el mouse y el dedo (el reloj del Historial en
+    // Vistas, ＋ en Listas); con el mando, lo mismo está en ☰. «Editar» solo donde hay títulos que elegir.
+    const own = !editing && !reordering ? (current()?.tools || []).map((t) => Button({ label: t.label, icon: t.icon, onPress: () => onTool?.(t.command) })) : [];
+    const editable = list.editable && !current()?.noEdit;
+    tools.hidden = !editable && !own.length;
     const count = chosen.size;
-    mount(tools, !list.editable ? null : reordering
+    mount(tools, !editable ? own : reordering
       ? Button({ label: "Listo", variant: "primary", onPress: () => setReordering(false) })
       : editing
       ? [h("span", { class: "list-screen__count" }, count ? `${count} ${count === 1 ? "elegida" : "elegidas"} de ${shown.length}` : "Elige cuáles"),
@@ -131,7 +135,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
         count > 0 && Button({ label: "Con las elegidas…", onPress: () => onBatch?.(api) }),
         list.editable.add !== false && Button({ label: "Agregar", onPress: () => onAdd?.() }),
         Button({ label: "Listo", variant: "primary", onPress: () => setEditing(false) })].filter(Boolean)
-      : Button({ label: "Editar", onPress: () => setEditing(true) }));
+      : [...own, Button({ label: "Editar", onPress: () => setEditing(true) })]);
   }
 
   function setEditing(on) {
@@ -210,8 +214,12 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   }
 
   /** Lo que se ve: el orden y los filtros que elegiste (un ranking se queda en su orden). */
+  const piles = () => current()?.piles || null;
+  const pileNow = () => (piles()?.some(([id]) => id === settings.pile) ? settings.pile : piles()?.[0]?.[0] ?? null);
+
   function arrange(items) {
-    let out = items.filter((i) => (settings.kind === "all" || i.kind === settings.kind)
+    const pile = pileNow();
+    let out = items.filter((i) => (!pile || (i.pile || piles()[0][0]) === pile) && (settings.kind === "all" || i.kind === settings.kind)
       && (!settings.genre || (i.genres || []).includes(settings.genre))
       && (settings.minRating == null || (score(i) ?? 0) >= settings.minRating)
       && (settings.decade == null || Math.floor((Number(i.year) || 0) / 10) * 10 === settings.decade)
@@ -232,6 +240,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   }
 
   const activeFilters = () => [
+    piles() && pileNow() !== piles()[0][0] && piles().find(([id]) => id === pileNow())?.[1],
     settings.sort !== "default" && !ranked() && SORTS.find((s) => s.id === settings.sort)?.label,
     settings.kind !== "all" && KIND_LABEL[settings.kind],
     settings.genre && settings.genreLabel,
@@ -314,8 +323,11 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (i === tab || i < 0 || i >= list.tabs.length) return false;
     tab = i;
     index = 0;
+    if (editing) setEditing(false);
     onMove?.();
     load(i);
+    paintTools();
+    onChange?.();
     return true;
   }
 
@@ -330,7 +342,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     grabbed = false;
     chosen = new Set();
     loaded.clear();
-    settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
+    settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false,
+      pile: next.pile || null };
     paintHead();
     el.hidden = false;
     load(tab);
@@ -381,7 +394,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       if (action === "select" || action === "alt") { grabbed = !grabbed; onMove?.(); paintGrid(); onChange?.(); }
       return true;
     }
-    if (action === "alt" && list.editable) { setEditing(!editing); return true; } // X: Editar · Listo
+    if (action === "alt" && list.editable && !current()?.noEdit) { setEditing(!editing); return true; } // X: Editar · Listo
     if (action === "select" && editing) { toggleChosen(item); return true; }
     if (action === "options" && editing && chosen.size) { onBatch?.(api); return true; }
     if (action === "alt" && list.person?.biography) { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); return true; }
@@ -429,8 +442,12 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     get editable() { return list?.editable ?? null; },
     get editing() { return editing; },
     setEditing,
-    /** La pestaña que ves (en Guardado, el montón: «in_list», «watching»…). */
-    get tabId() { return current()?.id; },
+    /** La pestaña que ves (en Guardado, el montón: «in_list», «watching»…; en Vistas, el que eliges: «watched» o «dropped»). */
+    get tabId() { return piles() ? pileNow() : current()?.id; },
+    /** Los montones de esta pestaña, [[id, nombre]] (Vistas · Las dejé), o []. */
+    piles() { return piles() || []; },
+    get pile() { return pileNow(); },
+    setPile(id) { settings.pile = id; index = 0; refresh(); paintTools(); onChange?.(); },
     /** Los elegidos, en el orden en que se ven. */
     get chosen() { return shown.filter((i) => chosen.has(i.meta_id)); },
     chooseAll,
@@ -484,7 +501,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean) : [
     { glyph: g.select, label: "Ver" },
-    list?.editable && { glyph: g.alt, label: "Editar" },
+    list?.editable && !current()?.noEdit && { glyph: g.alt, label: "Editar" },
     list?.person?.biography && { glyph: g.alt, label: "Biografía" },
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
     { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
