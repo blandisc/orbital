@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalModels
 
 // Piezas de «Lo que ves» (docs/producto/muvy-busqueda-premios/prototipo-wrapped.html): la tarjeta de Para ti, un dato
 // grande, las barras del periodo, el mapa día por día y los géneros. Los colores de película, serie y las dos son los del
@@ -108,12 +109,15 @@ struct WatchingZoomMap: View {
     }()
 
     var body: some View {
-        let byDay = Dictionary(grouping: plays) { calendar.startOfDay(for: $0.at) }
-        let minutes = byDay.mapValues { $0.reduce(0) { $0 + $1.minutes } }
+        // Solo los últimos tres años y sin los «No sé cuándo» de Trakt (`WatchingHeat`): antes el mapa llegaba a 1970, se
+        // trababa al llegar a él y ese día gigante dejaba a todos los demás del mismo azul pálido (Fernando, 14 nov 2026).
+        let since = calendar.date(byAdding: .weekOfYear, value: -WatchingHeat.maxWeeks, to: Date()) ?? Date()
+        let minutes = WatchingHeat.minutes(plays, since: since, calendar: calendar)
+        let byDay = Dictionary(grouping: plays.filter { $0.at >= since }) { calendar.startOfDay(for: $0.at) }
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 map(minutes)
-                DSHeatLegend(steps: [0, 1, 2, 3].map { fill($0, 3) })
+                DSHeatLegend(steps: [0, 1, 2, 3].map(fill))
             }
             if let day {
                 // Se asoma desde debajo del mapa (apenas baja y crece un poco, fundiéndose), sin brincar desde arriba; otro
@@ -141,7 +145,7 @@ struct WatchingZoomMap: View {
         let earliest = min(minutes.keys.min() ?? today, calendar.date(byAdding: .weekOfYear, value: -(DS.Watching.yearWeeks - 1), to: thisWeek) ?? today)
         let firstWeek = calendar.dateInterval(of: .weekOfYear, for: earliest)?.start ?? earliest
         let weeks = (calendar.dateComponents([.weekOfYear], from: firstWeek, to: thisWeek).weekOfYear ?? 0) + 1
-        let most = max(minutes.values.max() ?? 0, 1)
+        let levels = WatchingHeat.levels(minutes)
         let calendar = calendar, locale = locale
         let monday = { (w: Int) in calendar.date(byAdding: .weekOfYear, value: w, to: firstWeek) ?? firstWeek }
         return DSWeekStrip(weeks: weeks, available: available, weekdays: DSWeekStrip<EmptyView>.weekdayLetters(locale: locale),
@@ -150,7 +154,7 @@ struct WatchingZoomMap: View {
             let inside = date <= today
             let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
             RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
-                .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
+                .fill(inside ? fill(levels[date] ?? 0) : .clear)
                 .overlay { if date == today { DSWeekStripToday() } }
                 .dsSelectionRing(chosen, radius: DS.Radius.xs)
                 .contentShape(Rectangle())
@@ -198,9 +202,10 @@ struct WatchingZoomMap: View {
         .accessibilityIdentifier("watching-day")
     }
 
-    private func fill(_ watched: Int, _ most: Int) -> Color {
-        guard watched > 0 else { return DS.fill }
-        return DS.orbitalBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
+    /// Nivel 0 (nada) a 3 (de tus días más fuertes), como la leyenda.
+    private func fill(_ level: Int) -> Color {
+        guard level > 0 else { return DS.fill }
+        return DS.orbitalBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(level - 1) / 2)
     }
 }
 

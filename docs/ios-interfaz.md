@@ -127,6 +127,8 @@ Fernando, de «Día por día» en «Lo que ves»: «aparece como rota, o sea, no
 la abres». El mapa abría en el extremo equivocado (`defaultScrollAnchor(.trailing)` con una lista perezosa y con el historial
 que llega después de abrir) y cortaba una semana a la mitad en la orilla.
 
+**El mapa de «Día por día» pinta por niveles y solo con fechas de verdad** (Fernando, 14 nov 2026: «se traba… no te está poniendo más fuerte los días que ves más»). Lo marcado «No sé cuándo» Trakt lo guarda en 1970: no entra al mapa, que llega a lo más tres años atrás. El tono va en tres niveles por tercios de tus días (`WatchingHeat.levels`), nunca contra el día más grande: un maratón no apaga el resto. Lo cuida `WatchingHeatTests`.
+
 - **Regla: lo que se desplaza a lo ancho abre mostrando lo importante completo, y dice que hay más.** Lo importante es lo de
   hoy (o lo elegido); «completo» es sin una columna o tarjeta a medias en la orilla de la columna; «dice que hay más» es un
   desvanecido en la orilla de lo que queda atrás (o la tarjeta que se asoma en un carrusel de orilla a orilla).
