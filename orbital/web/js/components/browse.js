@@ -67,10 +67,23 @@ export function keepInView(grid, viewport, focusId) {
   if (top < next) next = top; // el borde de arriba de la enfocada siempre gana
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;
-  // Lo que ya quedó arriba se desvanece: su nombre y su año asomaban sobre la fila de arriba del todo (en una persona, bajo su
-  // biografía). El relleno de arriba es para que la enfocada crezca, no para enseñar el renglón anterior.
-  for (const card of grid.children) card.classList.toggle("is-above", card.offsetTop < next - 1);
+  markAbove(grid, Math.max(0, next));
   fillWindow(grid, viewport);
+}
+
+/**
+ * Lo que ya quedó arriba se desvanece: su nombre y su año asomaban sobre la fila de arriba del todo (en una persona, bajo su
+ * biografía). El relleno de arriba es para que la enfocada crezca, no para enseñar el renglón anterior. Se calcula con el
+ * desplazamiento de AHORA, también el del dedo (dragScroll): marcado solo al mover el foco, al deslizar hacia abajo las
+ * portadas que el mando había dejado arriba regresaban invisibles y solo quedaba el fondo (Fernando, 13 nov 2026).
+ */
+export function markAbove(grid, shift = Number(grid.dataset.shift || 0), { whole = false } = {}) {
+  // Con el dedo (`whole`) solo se va lo que ya salió entero: el renglón que el dedo va subiendo se ve hasta la orilla, como en
+  // el celular (desvanecido al empezar a subir, la fila de arriba desaparecía en cuanto la tocabas).
+  for (const card of grid.children) {
+    const edge = whole ? card.offsetTop + card.offsetHeight : card.offsetTop;
+    card.classList.toggle("is-above", edge < shift - 1);
+  }
 }
 
 /**

@@ -227,7 +227,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const content = hero.firstElementChild ? hero.firstElementChild.offsetHeight + parseFloat(getComputedStyle(hero).paddingBottom || 0) : 0;
     const stage = Math.max(content, Math.min(room(), Math.max(12 * rem, room() - below)));
     el.style.setProperty("--home-stage", `${Math.round(stage)}px`);
-    box.classList.toggle("home__rows--more", !!next);
     setShift((row ? row.row.offsetTop : 0) - stage);
   }
 
@@ -239,6 +238,11 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const s = Math.max(-stage, Math.min(max, shift));
     scroller.dataset.shift = String(s);
     scroller.style.transform = `translateY(${-s}px)`;
+    // Lo que se desvanece abajo lo dice lo que de verdad queda cortado, no la fila enfocada: con el dedo las filas suben sin
+    // mover el foco, y las consolas se quedaban en su asomo desvanecido aunque ya estuvieran enteras a la vista (13 nov 2026).
+    const cut = (r) => !!r && r.row.offsetTop + r.row.offsetHeight - s > room() + 1;
+    box.classList.toggle("home__rows--more", cut(last));
+    el.classList.toggle("home--peek", cut(rowOf.console?.row.hidden ? null : rowOf.console));
     el.classList.toggle("home--scrolled", rowKey(focusId) !== "card");
   }
 

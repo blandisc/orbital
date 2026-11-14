@@ -6,7 +6,7 @@ import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
-import { fillFilters, fillWindow, fitBar, keepInView, replay, showFilter, windowCells } from "./browse.js";
+import { fillFilters, fillWindow, fitBar, keepInView, markAbove, replay, showFilter, windowCells } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
 import { EmptyState, Eyebrow, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
@@ -31,13 +31,31 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   const shelf = h("div", { class: "games__shelf" }, bar, viewport);
   const main = h("div", { class: "games__main" }, consoles, hero, shelf);
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => { fitBar(bar, filters); fitConsoles(); }).observe(main);
-  // Con el dedo, como en el celular: las portadas se desplazan bajo el dedo; tocar enfoca y volver a tocar abre.
-  dragScroll(viewport, grid, { extra: 48, onScroll: () => fillWindow(grid, viewport) }); // V4: lo que el dedo trae, se arma
+  // Con el dedo, como en el celular: las portadas se desplazan bajo el dedo; tocar enfoca y volver a tocar abre. Subirlas con
+  // el dedo hace lo mismo que bajar con el mando: las barras y el juego se van y quedan los juegos; de regreso arriba del todo,
+  // vuelven. Antes las portadas subían dentro de la franja de abajo y se iban enteras: solo quedaba el fondo (Fernando, 13 nov
+  // 2026, «al deslizar hacia abajo en las consolas se cortan los íconos»).
+  let dragging = false;
+  let fingered = false; // el dedo dejó la cuadrícula donde está (hasta que el foco se mueva)
+  dragScroll(viewport, grid, {
+    extra: 48,
+    onStart: () => { dragging = true; fingered = true; },
+    onEnd: () => { dragging = false; },
+    onScroll: (s, asked) => {
+      // Lo que pidió el dedo, no lo que quedó: al irse las barras, la cuadrícula gana alto y puede que ya todo quepa (queda en
+      // 0), y las barras no deben volver hasta que el dedo jale hacia abajo arriba del todo.
+      if (dragging && asked > 0) setAway(true);
+      else if (dragging && asked < 0) setAway(false);
+      markAbove(grid, s, { whole: true });
+      fillWindow(grid, viewport); // V4: lo que el dedo trae, se arma
+    },
+  });
   // Al bajar, lo de arriba se encoge y la cuadrícula gana alto: se vuelve a acomodar con lo justo de desplazamiento (si no, se
-  // quedaba el de antes y la fila de arriba salía recortada en una franja, como aplastada).
+  // quedaba el de antes y la fila de arriba salía recortada en una franja, como aplastada). Si el dedo la movió, no: el dedo
+  // manda dónde está hasta que el foco se mueva (si no, al irse las barras brincaba de regreso al enfocado).
   if (typeof ResizeObserver !== "undefined") {
     new ResizeObserver(() => {
-      if (!focusId.startsWith("game:")) return;
+      if (fingered || !focusId.startsWith("game:")) return;
       grid.dataset.shift = "0";
       keepInView(grid, viewport, focusId);
     }).observe(viewport);
@@ -194,6 +212,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     count.textContent = rowCountText(focusId.startsWith("game:") ? i + 1 : null, n, { unit: plural });
     // Más abajo de la primera fila, las barras y el juego se van y quedan los juegos (como el Apple TV al bajar).
     const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
+    fingered = false;
     setAway(!!node && node.offsetTop > (grid.firstElementChild?.offsetTop ?? 0) + 1);
     keepInView(grid, viewport, focusId);
     onFocus?.(target ? { ...target, item: target.item ?? shown } : null);

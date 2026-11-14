@@ -68,8 +68,9 @@
   transition: height var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
 }
 .home__track--consoles > .is-focused.tile--console.tile { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
-/* Arriba, las consolas solo asoman y se desvanecen hacia abajo: al bajar a ellas, el Inicio sube y se ven enteras. */
-.home:not([data-zone="console"]) .home__track--consoles {
+/* Arriba, las consolas solo asoman y se desvanecen hacia abajo: al bajar a ellas (o al subir el Inicio con el dedo) se ven
+   enteras. `home--peek` lo pone home.js cuando la fila queda cortada abajo, no según el foco. */
+.home--peek .home__track--consoles {
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 0, var(--mask-solid) var(--console-grow), transparent calc(var(--console-grow) + var(--home-peek)));
   mask-image: linear-gradient(180deg, var(--mask-solid) 0, var(--mask-solid) var(--console-grow), transparent calc(var(--console-grow) + var(--home-peek)));
 }

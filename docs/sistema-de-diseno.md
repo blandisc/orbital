@@ -787,6 +787,18 @@ letras que bajan: g, p, j, y).
   XInput) y la interfaz vuelve a tomar el mando. Solo si el servidor ve un mando XInput y todos los que ve Edge lo son. Un
   mando que XInput no ve (PlayStation, Switch Pro) no podía despertarla: el servidor lo busca con winmm cada 3 s
   (`GamepadWatcher.others`), manda `pad-wake` y la interfaz deja de soltar el suyo mientras siga conectado.
+- **Lo que el dedo desplaza se ve entero (13 nov 2026).** Con el dedo, las filas y las cuadrículas suben sin mover el foco.
+  Todo lo que se esconde, se desvanece o asoma (el asomo de Tus consolas, `.is-above` de una cuadrícula, el fundido de abajo
+  del Inicio) se calcula con **el desplazamiento de ahora**, no con lo enfocado: si no, lo que el dedo trae a la vista llega
+  invisible o cortado y solo queda el fondo (Fernando, 13 nov 2026: «al deslizar hacia abajo en las consolas se cortan los
+  íconos»; en Juegos las portadas que el mando dejó arriba regresaban con `opacity: 0`, y en el Inicio las consolas se
+  quedaban en su asomo desvanecido ya enteras a la vista). Así: (1) un `mask-image` u ocultar nunca cuelga de `[data-zone]`
+  (el foco) en una zona que se arrastra; lo pone el JS con lo que de verdad queda cortado (`home--peek`,
+  `home__rows--more` en `setShift`); (2) quien desplaza con `dragScroll` vuelve a marcar `.is-above` en su `onScroll`
+  (`markAbove(grid, s, { whole: true })`: con el dedo solo se va lo que salió entero); (3) lo que cabe no se desplaza
+  (`dragScroll` no da `extra` si nada queda fuera); (4) en Juegos, subir con el dedo hace lo de bajar con el mando: las
+  barras y el juego se van, y jalar hacia abajo arriba del todo los regresa. Prueba: `tests/web/swipe.test.mjs`
+  («lo que el dedo desplaza se ve entero»).
 - **Con el dedo, primero se enfoca y luego se abre.** El toque que cambia del mando (o el teclado) al dedo solo enfoca, aunque
   caiga en lo que ya estaba enfocado: eso lo eligió el mando, no tú (`justTouched` en `main.js`).
 - **Pistas del pie**: dicen lo que hace cada botón *aquí*; nada de pistas que no apliquen (p. ej. «Cambiar

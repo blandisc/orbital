@@ -118,7 +118,7 @@ export function dragArea(el, { axis = "y", onStart, onMove, onEnd }) {
  * contenido sigue al dedo. Comparte `data-shift` con quien la desplaza siguiendo el foco (keepInView,
  * el riel), así el foco y el dedo nunca se pelean por dónde está.
  */
-export function dragScroll(viewport, content, { axis = "y", extra = 0, onScroll } = {}) {
+export function dragScroll(viewport, content, { axis = "y", extra = 0, onScroll, onStart, onEnd } = {}) {
   let start = 0;
   const room = () => {
     const css = getComputedStyle(viewport);
@@ -127,16 +127,19 @@ export function dragScroll(viewport, content, { axis = "y", extra = 0, onScroll 
   };
   const size = () => (axis === "y" ? content.scrollHeight : content.scrollWidth);
   const set = (shift) => {
-    const max = Math.max(0, size() - room() + extra);
+    // Lo que cabe no se desplaza: el aire de más (`extra`) solo cuenta si hay algo fuera de la vista. Si no, una sola fila de
+    // portadas subía con el dedo y se quedaba cortada contra la orilla de arriba (Fernando, 13 nov 2026).
+    const over = size() - room();
+    const max = over > 0 ? over + extra : 0;
     const s = Math.max(0, Math.min(max, shift));
     content.dataset.shift = String(s);
     content.style.transform = axis === "y" ? `translateY(${-s}px)` : `translateX(${-s}px)`;
-    onScroll?.(s);
+    onScroll?.(s, shift); // también lo que pidió el dedo, sin topar (más allá de arriba del todo, negativo)
   };
   dragArea(viewport, {
     axis,
-    onStart: () => { start = Number(content.dataset.shift || 0); content.style.transition = "none"; },
+    onStart: () => { start = Number(content.dataset.shift || 0); content.style.transition = "none"; onStart?.(); },
     onMove: (d) => set(start - d),
-    onEnd: () => { content.style.transition = ""; },
+    onEnd: () => { content.style.transition = ""; onEnd?.(); },
   });
 }
