@@ -158,33 +158,6 @@ extension Label where Title == Text, Icon == Image {
     }
 }
 
-/// Un mosaico con arte y un nombre encima (géneros de Explora): el arte se tiñe de oscuro abajo para que el nombre se lea.
-struct ArtTile: View {
-    let title: Text
-    /// El arte: una imagen del catálogo de la app (los géneros: arte de Grok Imagine, dirección cinematográfica) o, si no, una de internet.
-    var asset: String? = nil
-    var art: String? = nil
-
-    var body: some View { bodyContent.pointerHover(.lift) }
-    @ViewBuilder private var bodyContent: some View {
-        ZStack(alignment: .bottomLeading) {
-            // El arte va dentro de un `overlay` de un `Color.clear`: una imagen `scaledToFill` se pide su ancho de alto × proporción
-            // y empujaba la columna más allá del margen (en un iPhone de 375 pt las dos columnas se salían y se pegaban entre sí).
-            Color.clear.overlay {
-                if let asset { Image(asset).resizable().scaledToFill() }
-                else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-            .overlay(ArtVeil(at: 0))
-            title.recipe(.cardTitle).padding(DS.Space.s3).onArt()
-        }
-        .frame(height: DS.Size.artTileHeight)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(asset.map { "art-tile-\($0)" } ?? "art-tile")
-    }
-}
-
 /// Lo que suena en tu Orbital, en el accesorio de la barra de pestañas (como el MiniPlayer de Música): el póster, el nombre,
 /// «En la TV · T1 E5» y pausa / reanudar. Vive en toda la app mientras la TV reproduce algo.
 struct TVAccessory: View {

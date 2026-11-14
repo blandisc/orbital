@@ -30,20 +30,15 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(ranked.firstMatch.waitForExistence(timeout: 20), "sus rankings, con la cifra grande")
     }
 
-    /// Buscar › Explora: cada género con su imagen fija (sin esperar a la red) y al tocarlo, su lista aparece pronto.
-    func testExploreGenresHaveArtAndOpenQuickly() {
+    /// Buscar ya no trae «Por género» (Fernando, 13 nov 2026: el filtro avanzado ya busca por género; eran dos puertas a lo
+    /// mismo). La puerta del filtro sigue arriba.
+    func testBrowseHasNoGenreShortcut() {
         app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2"]
         app.launch()
-        let action = app.descendants(matching: .any)["art-tile-genre-action"]
-        if !action.waitForExistence(timeout: 10) { app.swipeUp() }
-        XCTAssertTrue(action.waitForExistence(timeout: 10), "el género Acción con su arte fijo")
-        for genre in ["comedy", "drama", "scifi", "horror", "thriller"] {
-            XCTAssertTrue(app.descendants(matching: .any)["art-tile-genre-\(genre)"].exists, "\(genre) con su arte")
-        }
-        action.tap()
-        let start = Date()
-        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 15), "la lista del género aparece")
-        print("GENRE-OPEN \(Date().timeIntervalSince(start)) s")
+        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 20), "Buscar abrió")
+        app.swipeUp(); app.swipeUp()
+        XCTAssertFalse(app.descendants(matching: .any)["art-tile-genre-action"].exists, "«Por género» volvió a Buscar")
+        XCTAssertFalse(app.staticTexts["Por género"].exists, "«Por género» volvió a Buscar")
     }
     /// Buscar: la barra se ve al abrir y se queda al bajar y al subir. La barra de pestañas ya no se encoge (Fernando, 2 nov
     /// 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»); antes esta prueba pedía que se

@@ -434,8 +434,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let accessoryArt: CGFloat = 32   // alto del póster en el accesorio de abajo (como el de Música)
         /// La columna del símbolo en los renglones de una guía («Lo que puedes decir»): alinea los textos.
         static let iconColumn: CGFloat = 24
-        /// El alto de un mosaico con arte (géneros de Explora).
-        static let artTileHeight: CGFloat = 96
         /// Cuántos pósters de lo popular se piden al abrir la app (los del Top 10 de Buscar).
         static let searchPrefetch = 10
         /// El mejor resultado de Buscar, en grande.
@@ -550,8 +548,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// En ventanas anchas (iPad, Mac) caben más columnas: ninguna celda pasa de este ancho (con 4 fijas, en un iPad
         /// horizontal cada póster medía ~280 pt).
         static let gridCellMax: CGFloat = 160
-        /// El ancho mínimo de un mosaico de género en Buscar (dos por renglón en todo iPhone; más en el iPad).
-        static let genreTileMin: CGFloat = 160
         /// Cuántas columnas en `width` (el ancho del contenido, con sus márgenes).
         static func gridColumns(for width: CGFloat) -> Int {
             guard width >= gridWideWidth else { return gridColumns }

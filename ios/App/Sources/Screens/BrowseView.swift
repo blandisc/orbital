@@ -3,7 +3,6 @@ import OrbitalCore
 import OrbitalModels
 
 /// Un género de «Explora» al que se navega (nombre en inglés: `CatalogModel.traktGenre` lo pasa a Trakt).
-struct GenreRoute: Hashable { var genre: String }
 
 /// Cuánto se ha bajado en una lista, sin avisar a SwiftUI (no es `@Observable`).
 private final class ScrollOffset {
@@ -161,7 +160,6 @@ struct BrowseView: View {
         .openingTitles(item: $openTitle)
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
-        .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
             if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
@@ -268,7 +266,6 @@ struct BrowseView: View {
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }
-        explore
     }
 
     /// La puerta del filtro avanzado, arriba de todo (entrada A, Fernando, 31 oct 2026): los mosaicos del cajón en chiquito.
@@ -302,62 +299,6 @@ struct BrowseView: View {
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
-
-    /// «Por género»: los géneros en mosaicos con su arte, bajo un encabezado igual al de arriba (una sola pantalla, no dos).
-    private var explore: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Por género", meta: Text("Lo más popular de cada uno"))
-            // Dos en cualquier iPhone (de 343 a 408 pt de contenido); en el iPad caben 4 o 5 en vez de dos mosaicos enormes.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.genreTileMin), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
-                ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
-                    NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }
-                        .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-
-    private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
-
-    /// El arte fijo de cada género (Grok Imagine, en el catálogo de la app): se ve al instante, sin red.
-    static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
-}
-
-/// Un género de Explora: lo más popular de ese género, películas y series, en cuadrícula.
-struct GenreView: View {
-    let genre: String
-    let model: CatalogModel
-    @Environment(AppEnvironment.self) private var env
-    @State private var items: [CatalogItem] = []
-    @State private var loaded = false
-
-    var body: some View {
-        ScrollView {
-            // Con el mismo ordenar y filtrar que todo «Ver todo».
-            SortableGrid(listID: "genre:\(genre)", items: items.map(Self.suggestion), collections: env.collections, loading: !loaded) { s, width in
-                TitleLink(route: TitleRoute(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster.isEmpty ? nil : s.poster), width: width,
-                          detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
-            }
-            .padding(.top, DS.Space.s3)
-            .padding(.bottom, DS.Layout.screenBottom)
-        }
-        .background(Backdrop())
-        .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
-        .navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
-        .task {
-            // Primero lo de Trakt (se ve ya); luego los mismos títulos en tu idioma.
-            await model.genre(genre) { new in
-                items = new; loaded = true
-                ImagePipeline.shared.prefetchPosters(new.prefix(DS.Size.searchPrefetch).compactMap(\.poster))
-            }
-            loaded = true
-        }
-    }
-
-    static func suggestion(_ item: CatalogItem) -> Suggestion {
-        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, year: Int(item.year.prefix(4)), poster: item.poster ?? "", wide: "", reason: .popular)
-    }
 }
 
 /// «Lo más popular hoy» completo (desde el «Ver todo» de su franja en Explorar): con el mismo ordenar y filtrar que toda lista.
@@ -367,7 +308,7 @@ struct PopularGridView: View {
 
     var body: some View {
         ScrollView {
-            SortableGrid(listID: "popular", items: model.popular.map(GenreView.suggestion), collections: env.collections, loading: model.isLoading) { s, width in
+            SortableGrid(listID: "popular", items: model.popular.map(Self.suggestion), collections: env.collections, loading: model.isLoading) { s, width in
                 TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
             .padding(.top, DS.Space.s3)
@@ -375,5 +316,9 @@ struct PopularGridView: View {
         }
         .background(Backdrop())
         .navigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)
+    }
+
+    static func suggestion(_ item: CatalogItem) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, year: Int(item.year.prefix(4)), poster: item.poster ?? "", wide: "", reason: .popular)
     }
 }

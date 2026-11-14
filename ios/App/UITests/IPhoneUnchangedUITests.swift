@@ -35,22 +35,6 @@ final class IPhoneUnchangedUITests: XCTestCase {
         shot("control")
     }
 
-    func testBrowseShowsTwoGenresPerRow() {
-        open(["-demo-tab", "2"])
-        // Los 20 géneros empiezan Acción, Aventura, Comedia (31 oct 2026).
-        let action = app.descendants(matching: .any)["art-tile-genre-action"], adventure = app.descendants(matching: .any)["art-tile-genre-adventure"]
-        let comedy = app.descendants(matching: .any)["art-tile-genre-comedy"]
-        if !action.waitForExistence(timeout: 20) { app.swipeUp() }
-        XCTAssertTrue(comedy.waitForExistence(timeout: 20), "no salen los géneros")
-        XCTAssertEqual(action.frame.minY, adventure.frame.minY, accuracy: 2, "Acción y Aventura en el mismo renglón")
-        XCTAssertGreaterThan(comedy.frame.minY, action.frame.maxY - 2, "Comedia ya en el siguiente: dos por renglón")
-        XCTAssertGreaterThan(action.frame.width, width * 0.4, "cada género ocupa casi la mitad del ancho")
-        shot("buscar")
-        // Tocar un género abre su lista (las piezas del catálogo son enfocables para el teclado del iPad: el toque sigue igual).
-        action.tap()
-        XCTAssertTrue(app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 15), "tocar un género ya no abre su lista")
-    }
-
     /// Tocar un póster abre la ficha a pantalla completa, como siempre (el panel de la derecha es solo del iPad y la Mac).
     func testAPosterOpensTheTitleFullScreen() {
         open(["-demo-tab", "2"])

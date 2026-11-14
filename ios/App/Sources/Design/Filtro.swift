@@ -67,7 +67,7 @@ enum FilterCatalog {
         [("latam", "Latinoamérica", ["MX", "AR", "CO", "BR"]), ("europe", "Europa", ["ES", "FR", "IT", "DE", "GB", "SE", "DK"]),
          ("asia", "Asia", ["KR", "JP", "IN", "CN"])]
     }
-    /// El arte de cada género: el mismo de «Por género» en Buscar y en la TV (`genre-*`, Grok Imagine), uno distinto por
+    /// El arte de cada género: el mismo de «Por género» en la TV (`genre-*`, Grok Imagine), uno distinto por
     /// género (antes Aventura repetía Acción y Familia repetía Animación).
     static let genreArt = ["accion": "action", "aventura": "adventure", "animacion": "animation", "comedia": "comedy", "crimen": "crime",
                            "documental": "documentary", "drama": "drama", "familia": "family", "fantasia": "fantasy", "terror": "horror",

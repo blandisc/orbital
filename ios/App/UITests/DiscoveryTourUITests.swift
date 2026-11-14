@@ -25,14 +25,11 @@ final class DiscoveryTourUITests: XCTestCase {
     }
 
     func testTour() {
-        // Buscar › Género y «Lo más popular hoy» › Ver todo.
+        // Buscar › «Lo más popular hoy» › Ver todo.
         launch(["-demo-tab", "2"])
         shot("browse")
         let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Ver todo'")).firstMatch
         if seeAll.waitForExistence(timeout: 15) { seeAll.tap(); shot("popular-all"); app.navigationBars.buttons.firstMatch.tap() }
-        let action = app.descendants(matching: .any)["art-tile-genre-action"]
-        if !action.waitForExistence(timeout: 5) { app.swipeUp() }
-        if action.waitForExistence(timeout: 10) { action.tap(); _ = app.buttons["title-link"].firstMatch.waitForExistence(timeout: 15); shot("genre") }
 
         // Persona (TMDB de mentira: Steve Carell).
         launch(["-demo-tmdb", "-demo-title", "series:tt0386676"])
