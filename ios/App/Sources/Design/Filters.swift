@@ -41,31 +41,10 @@ struct DSKindFilter: View {
         if menu {
             KindPill(kind: $kind, open: open ?? .constant(false), options: options)
         } else {
-            HStack(spacing: DS.Space.s2) {
-                chosenName
-                KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
-            }
-            .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+            // KT2 (Fernando, 13 nov 2026): el nombre de lo elegido va adentro de la pastilla, a la izquierda de los íconos.
+            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
+                .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
         }
-    }
-
-    /// KT1 (Fernando, 13 nov 2026: «que muestre que estás filtrando películas o series, con letras»): el nombre de lo elegido,
-    /// a la izquierda de la pastilla. Su lugar está apartado para el nombre más largo, así que al elegir nada se mueve: los
-    /// íconos se quedan donde estaban (Fernando: «que aparezca del lado izquierdo, que no se mueva el ícono hasta el otro
-    /// lado»). Con «Todo», el lugar queda vacío.
-    private var chosenName: some View {
-        let names: [(String, LocalizedStringKey)] = [("movie", "Películas"), ("series", "Series")]
-        return ZStack(alignment: .trailing) {
-            ForEach(names, id: \.0) { Text($0.1).hidden() }
-            if let name = names.first(where: { $0.0 == kind })?.1 {
-                Text(name).foregroundStyle(DS.text).transition(.opacity.animation(DS.Motion.fadeQuick))
-            }
-        }
-        .font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
-        .lineLimit(1).fixedSize()
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("kind-name")
-        .accessibilityHidden(kind.isEmpty)
     }
 
     private var options: [(String, LocalizedStringKey)] {
@@ -306,7 +285,9 @@ struct KindPill: View {
     var body: some View {
         let shown = open && !naming ? options : options.filter { $0.0 == kind }
         let picked = options.firstIndex { $0.0 == kind } ?? 0
-        HStack(spacing: open ? DS.Space.s1 : 0) {
+        let spacing = open ? DS.Space.s1 : 0
+        HStack(spacing: spacing) {
+            nameSlot(picked: picked, spacing: spacing)
             ForEach(Array(shown.enumerated()), id: \.element.0) { _, option in
                 let on = kind == option.0
                 let index = options.firstIndex { $0.0 == option.0 } ?? 0
@@ -329,18 +310,12 @@ struct KindPill: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .transition(arrival(index: index, picked: picked))
             }
-            if open, naming, let name = options.first(where: { $0.0 == kind })?.1 {
-                Text(name).font(DS.TextRecipe.label.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-                    .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s3)
-                    .transition(.asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .opacity.animation(DS.Motion.fadeQuick)))
-                    .accessibilityHidden(true)   // el ícono ya lo dice
-            }
         }
         // Un solo círculo blanco que viaja al elegido (antes eran dos que se cruzaban apagándose: a medio camino se veía gris).
         // Con «Reducir movimiento» no viaja: se apaga en uno y se enciende en el otro.
         .background {
             if open {
-                Capsule().fill(DS.text)   // un círculo con «Todo»; con KT1 se estira bajo el nombre de lo elegido
+                Capsule().fill(DS.text)   // el círculo de lo elegido (el nombre va aparte, a su izquierda: KT2)
                     .padding(DS.KindPill.markInset)   // el círculo cabe holgado en su lugar: nunca toca la orilla de la pastilla
                     .matchedGeometryEffect(id: kind, in: mark, isSource: false)
                     .id(reduceMotion ? kind : "")
@@ -372,13 +347,47 @@ struct KindPill: View {
         #endif
     }
 
+    /// KT2 (Fernando, 13 nov 2026: «que diga adentro de la pastilla película, todo, serie… que sea a la izquierda del
+    /// punto», y que con Series el ícono no se vaya hasta la izquierda): el nombre de lo elegido, adentro de la pastilla y a la
+    /// izquierda de los íconos, en toda la app.
+    /// - Siempre abierta: su lugar está apartado para el nombre más largo, así que al elegir nada se mueve; el nombre nuevo se
+    ///   funde sobre el anterior.
+    /// - Inicio, recién elegido: las otras opciones se van y el nombre ocupa su lugar a la izquierda de lo elegido, con al menos
+    ///   el ancho de lo que había a su izquierda: el círculo se queda donde lo tocaste (con Series, ya no brinca hasta la
+    ///   orilla) y después la pastilla se recoge con él.
+    @ViewBuilder private func nameSlot(picked: Int, spacing: CGFloat) -> some View {
+        let names = Self.names.filter { name in options.contains { $0.0 == name.0 } }
+        let chosen = names.first { $0.0 == kind }?.1
+        if alwaysOpen {
+            ZStack(alignment: .trailing) {
+                ForEach(names, id: \.0) { Text($0.1).hidden() }
+                if let chosen {
+                    Text(chosen).id(kind).transition(.opacity.animation(DS.Motion.fade))
+                }
+            }
+            .modifier(KindName())
+        } else if open, naming, let chosen {
+            let left = max(0, CGFloat(picked) * (cell + spacing) - spacing - DS.KindPill.nameInset)
+            Text(chosen)
+                .frame(minWidth: left, alignment: .trailing)
+                .modifier(KindName())
+                .transition(.asymmetric(
+                    insertion: .scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity)
+                        .animation(DS.Motion.fade),
+                    removal: .opacity.animation(DS.Motion.fadeQuick)))
+        }
+    }
+
+    /// Los nombres sin cifras («Películas 12» es para VoiceOver en Buscar; adentro de la pastilla solo el nombre).
+    private static let names: [(String, LocalizedStringKey)] = [("", "Todo"), ("movie", "Películas"), ("series", "Series")]
+
     /// Las que llegan nacen un poco más chicas del lado de lo que ves (no de la nada ni del centro) y entran una tras otra, la
     /// más cercana primero, con el mismo resorte que abre. Las que se van solo se apagan, rápido: ya no están cuando la
     /// pastilla termina de recogerse, así no se enciman con la que se queda.
     private func arrival(index: Int, picked: Int) -> AnyTransition {
         // Con «Reducir movimiento» la pastilla cambia de tamaño de una vez: lo que llega se enciende con un fundido y lo que se
         // va se quita en el acto (apagándose quedaba encima de la cápsula, que ya regresó).
-        guard let grow = DS.Motion.grow(reduceMotion) else { return .asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .identity) }
+        guard let grow = DS.Motion.grow(reduceMotion)?.speed(DS.KindPill.pace) else { return .asymmetric(insertion: .opacity.animation(DS.Motion.fade), removal: .identity) }
         let order = max(0, abs(index - picked) - 1)
         return .asymmetric(
             insertion: .scale(scale: DS.KindPill.enterScale, anchor: index < picked ? .trailing : .leading).combined(with: .opacity)
@@ -389,7 +398,8 @@ struct KindPill: View {
     /// Cerrada abre; abierta, el círculo viaja a lo elegido y, cuando llega, la pastilla se recoge con él.
     private func choose(_ option: String) {
         folding?.cancel()
-        let grow = DS.Motion.grow(reduceMotion), fold = DS.Motion.fold(reduceMotion)
+        // Más suave (Fernando, 13 nov 2026: «que le hagas un poquito más suave la transición»): las mismas curvas, más pausadas.
+        let grow = DS.Motion.grow(reduceMotion)?.speed(DS.KindPill.pace), fold = DS.Motion.fold(reduceMotion)?.speed(DS.KindPill.pace)
         // Con «Reducir movimiento» el círculo no viaja: se apaga en uno y se enciende en el otro.
         let pick = grow ?? DS.Motion.fade
         if alwaysOpen { withAnimation(pick) { kind = option }; return }
@@ -401,6 +411,19 @@ struct KindPill: View {
             guard !Task.isCancelled else { return }
             withAnimation(fold) { open = false; naming = false }
         }
+    }
+}
+
+/// La letra del nombre de lo elegido adentro de la pastilla de tipo (KT2): la misma en Inicio y en las demás pantallas.
+private struct KindName: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
+            .foregroundStyle(DS.text)
+            .lineLimit(1).fixedSize()
+            .padding(.leading, DS.KindPill.nameInset)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("kind-name")
     }
 }
 

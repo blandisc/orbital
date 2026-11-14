@@ -124,9 +124,14 @@ extension DS {
         /// Lo que la pastilla se queda abierta tras elegir: el círculo llega, se ve un momento en su lugar y entonces se recoge
         /// (Fernando, 13 nov 2026: «debería pasar un poquito más tiempo antes de volverse a comprimir»; antes 240 ms). En ese
         /// momento se lee el nombre de lo elegido, por eso alcanza para leer una palabra.
-        static let settle: Duration = .milliseconds(900)
+        static let settle: Duration = .milliseconds(1100)
         /// El círculo blanco es este tanto más chico que su lugar, por lado: cabe dentro de la pastilla con aire.
         static let markInset = DS.Space.s1 / 2
+        /// El aire entre la orilla de la pastilla y el nombre de lo elegido (KT2).
+        static let nameInset = DS.Space.s3
+        /// La pastilla abre, viaja y se recoge con las curvas de siempre (`DS.Motion.grow`/`fold`), a este paso: más pausada,
+        /// para que se sienta suave (Fernando, 13 nov 2026).
+        static let pace = 0.8   // ds-exception: velocidad relativa de una animación
         /// Al cerrar, la cápsula de al lado regresa este tanto después: cuando la pastilla ya le dejó el lugar.
         static let returnDelay: Double = 0.1
         /// Más angosto que esto (iPhone SE, mini), tu foto también se hace a un lado mientras eliges.
