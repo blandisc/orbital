@@ -30,13 +30,13 @@ extension DesignRulesTests {
         ] { XCTAssertTrue(code.contains(needle), "DSWeekStrip: \(why) (`\(needle)`)") }
     }
 
-    /// Una gráfica, un color: «Tus géneros» son barras de un solo color con el nombre y el valor en su renglón; nada de donas
-    /// de colores ni de `Charts` en «Lo que ves».
-    func testGenreChartIsOneColorWithNameAndValueTogether() throws {
+    /// «Tus géneros» son barras con el nombre y el valor en su renglón, cada género de su color (Fernando, 14 nov 2026: «dale
+    /// un color distinto a cada uno»; antes, del 13 nov, uno solo); nada de donas ni de `Charts` en «Lo que ves».
+    func testGenreChartIsBarsWithNameAndValueTogether() throws {
         let file = try XCTUnwrap(try sources(["Design"]).first { $0.name == "LoQueVes.swift" })
         let code = file.lines.joined(separator: "\n")
         XCTAssertFalse(code.contains("SectorMark") || code.contains("import Charts"), "«Tus géneros» va en barras, no en dona")
-        XCTAssertFalse(code.contains("genreColors"), "«Tus géneros» lleva un solo color (el largo dice cuánto), no uno por género")
+        XCTAssertTrue(code.contains("DS.Watching.genreColors["), "«Tus géneros»: un color por género, de los tokens (`DS.Watching.genreColors`)")
         XCTAssertTrue(code.contains(".accessibilityValue(Text(share, format: .percent"), "VoiceOver lee el nombre y su parte: «Comedia, 34 %»")
     }
 }

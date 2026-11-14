@@ -17,7 +17,7 @@ struct DSWeekStrip<Cell: View>: View {
     let available: CGFloat
     /// Lo que va arriba de cada semana («oct», «2026» en enero, o nada).
     let label: (Int) -> String
-    /// Las siete letras de los días, del lunes al domingo (solo se dicen lunes, miércoles y viernes, como en GitHub).
+    /// Las siete letras de los días, del lunes al domingo (se dicen lunes, miércoles, viernes y domingo: Fernando, 14 nov 2026).
     let weekdays: [String]
     @ViewBuilder let cell: (_ week: Int, _ day: Int, _ size: CGFloat) -> Cell
     @State private var position: ScrollPosition
@@ -61,12 +61,12 @@ struct DSWeekStrip<Cell: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// L, X y V a la izquierda, a la altura de su renglón (debajo del renglón de los meses).
+    /// L, X, V y D a la izquierda, a la altura de su renglón (debajo del renglón de los meses).
     private func days(_ size: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: DS.WeekStrip.gap) {
             Text(verbatim: " ").font(DS.TextRecipe.caption.font).lineLimit(1).fixedSize()
             ForEach(0..<7, id: \.self) { d in
-                Text(verbatim: d % 2 == 0 && d < 6 && weekdays.indices.contains(d) ? weekdays[d] : "")
+                Text(verbatim: d % 2 == 0 && weekdays.indices.contains(d) ? weekdays[d] : "")
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     .frame(width: dayColumn, height: size, alignment: .leading)
             }

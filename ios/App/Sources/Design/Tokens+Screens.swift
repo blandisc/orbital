@@ -183,6 +183,9 @@ extension DS {
         /// «Tus géneros» (13 nov 2026): barras de mayor a menor, cuántos géneros se ven (el resto va junto en «Otros») y el
         /// grueso de cada barra y lo más ancho que crecen en el iPad y la Mac (el nombre y su valor no se alejan).
         static let genresShown = 5, genreBar: CGFloat = 8, genresWidth: CGFloat = 560
+        /// Un color por género, en orden de mayor a menor (Fernando, 14 nov 2026: «dale un color distinto a cada uno»): los de
+        /// las listas, de brillo parecido para que ninguno grite; «Otros» va en gris.
+        static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
         /// El carrusel de «Cómo calificas»: el ancho de cada póster.
         static let starPoster: CGFloat = 92
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96

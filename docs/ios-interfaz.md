@@ -135,7 +135,7 @@ que llega después de abrir) y cortaba una semana a la mitad en la orilla.
 - Los mapas de semanas son una pieza, `DSWeekStrip` (`Design/WeekStrip.swift`, medidas en `DS.WeekStrip`): las casillas salen
   del ancho que le queda (`WindowMetrics.column`), caben semanas enteras, abre en la de hoy por su id (también cuando llega
   más historial), se detiene por semanas, desvanece lo de atrás y, si todo cabe (iPad, Mac), no se desliza. Arriba, el mes
-  abreviado («oct», el año en enero); a la izquierda, L, X y V; hoy con borde; debajo, «Hoy» y «Menos ▢▢▢▢ Más».
+  abreviado («oct», el año en enero); a la izquierda, L, X, V y D (14 nov 2026); hoy con borde; debajo, «Hoy» y «Menos ▢▢▢▢ Más».
 - **Gráficas: una gráfica, un color; el nombre y el valor en el mismo renglón.** Para comparar pocas categorías, barras de
   mayor a menor (no dona ni pastel); se ven cinco y el resto va en «Otros», en gris. El color es el azul del mapa
   (`DS.orbitalBlue`); el largo dice cuánto. VoiceOver lee «Comedia, 34 %».

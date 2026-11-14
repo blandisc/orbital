@@ -232,8 +232,8 @@ enum WatchingDay {
 }
 
 /// «Tus géneros» (13 nov 2026, antes una dona de cinco colores): barras de mayor a menor, cada una con su nombre y su parte
-/// del total en el mismo renglón y la barra debajo, todas del azul del logo (el del mapa de arriba; el largo dice cuánto, no
-/// el color). Se ven cinco; lo demás va junto en «Otros», al final y en gris. Crecen desde la izquierda al llegar (nada con
+/// del total en el mismo renglón y la barra debajo, cada género de su color (`DS.Watching.genreColors`, Fernando, 14 nov 2026;
+/// el largo dice cuánto). Se ven cinco; lo demás va junto en «Otros», al final y en gris. Crecen desde la izquierda al llegar (nada con
 /// «Reducir movimiento»). VoiceOver: «Comedia, 34 %».
 struct WatchingGenres: View {
     let genres: [(name: String, count: Int)]
@@ -265,7 +265,7 @@ struct WatchingGenres: View {
                     Capsule().fill(DS.fill)
                         .overlay(alignment: .leading) {
                             GeometryReader { geo in   // el largo de la barra: su parte del renglón
-                                Capsule().fill(row.rest ? DS.fillStrong : DS.orbitalBlue)
+                                Capsule().fill(row.rest ? DS.fillStrong : DS.Watching.genreColors[i % DS.Watching.genreColors.count])
                                     .frame(width: max(DS.Watching.genreBar, geo.size.width * CGFloat(row.count) / CGFloat(most) * (grown ? 1 : 0)))
                                     .animation(DS.Motion.enter(reduceMotion)?.delay(Double(i) * DS.Watching.barStagger), value: grown)
                             }
