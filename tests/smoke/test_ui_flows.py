@@ -151,6 +151,58 @@ def test_focused_piece_is_never_cut(browser, server, width, height):  # noqa: F8
     assert not page.errors, page.errors
 
 
+def test_touched_piece_is_never_cut(browser, server):  # noqa: F811
+    """«Un listón no recorta lo que crece» (iPhone, 13 nov 2026) en la TV con el dedo: el póster que asoma en la orilla de una
+    fila, tocado, crece entero (la fila se corre); y lo que el dedo sube en Inicio y en Juegos no se queda invisible
+    (docs/sistema-de-diseno.md § 5, «Lo que el dedo desplaza se ve entero»)."""
+    context = browser.new_context(viewport={"width": 1280, "height": 800}, has_touch=True)
+    page = context.new_page()
+    with_videos(page)
+    page.goto(server)
+    ready(page)
+    cdp = context.new_cdp_session(page)
+
+    def touch(kind, x=0, y=0):
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y}]})
+
+    def tap(x, y, wait=1500):
+        touch("touchStart", x, y)
+        page.wait_for_timeout(60)
+        touch("touchEnd")
+        page.wait_for_timeout(wait)
+
+    def drag(y1, y2, x=380):
+        touch("touchStart", x, y1)
+        for i in range(1, 13):
+            touch("touchMove", x, y1 + (y2 - y1) * i / 12)
+            page.wait_for_timeout(16)
+        touch("touchEnd")
+        page.wait_for_timeout(1500)
+
+    cuts = {}
+    for name, x, y in [("Inicio · la orilla de A continuación", 1180, 520)]:
+        tap(x, y)
+        if found := page.evaluate(FOCUS_CLIP):
+            cuts[name] = found
+    drag(600, 300, x=640)  # el Inicio sube con el dedo: las consolas, enteras y sin su asomo desvanecido
+    assert page.evaluate("() => !document.querySelector('.home').classList.contains('home--peek')")
+    tap(784, 63, wait=2000)  # Películas y series
+    tap(1240, 560)
+    if found := page.evaluate(FOCUS_CLIP):
+        cuts["Películas y series · la orilla de una fila"] = found
+    page.keyboard.press("q")  # Juegos, en una tele chica (varias filas): bajar con el mando, regresar con el dedo
+    page.set_viewport_size({"width": 760, "height": 560})
+    page.wait_for_timeout(2000)
+    for key in ("ArrowDown", "ArrowDown", "ArrowDown"):
+        page.keyboard.press(key)
+        page.wait_for_timeout(500)
+    drag(250, 500)
+    hidden = page.evaluate("() => [...document.querySelectorAll('.games__grid > .is-above')].length")
+    assert not cuts, cuts
+    assert not hidden, f"{hidden} portadas invisibles tras deslizar hacia abajo en Juegos"
+    context.close()
+
+
 @pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
 def test_search_looks_like_the_rest(browser, server, width, height):  # noqa: F811
     """P4-3 (10 nov): Buscar con el teclado alfabético de 7 columnas, sugerencias con la caja vacía (lo que estás viendo y
