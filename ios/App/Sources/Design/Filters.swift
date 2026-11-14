@@ -352,14 +352,14 @@ struct KindPill: View {
     /// izquierda de los íconos, en toda la app.
     /// - Siempre abierta: su lugar está apartado para el nombre más largo, así que al elegir nada se mueve; el nombre nuevo se
     ///   funde sobre el anterior.
-    /// - Inicio, recién elegido: las otras opciones se van y el nombre ocupa su lugar a la izquierda de lo elegido, con al menos
+    /// - Inicio, recién elegido: las otras opciones se van y el nombre ocupa su lugar a la izquierda de lo elegido, centrado en al menos
     ///   el ancho de lo que había a su izquierda: el círculo se queda donde lo tocaste (con Series, ya no brinca hasta la
     ///   orilla) y después la pastilla se recoge con él.
     @ViewBuilder private func nameSlot(picked: Int, spacing: CGFloat) -> some View {
         let names = Self.names.filter { name in options.contains { $0.0 == name.0 } }
         let chosen = names.first { $0.0 == kind }?.1
         if alwaysOpen {
-            ZStack(alignment: .trailing) {
+            ZStack {   // centrado en su lugar, como en Inicio
                 ForEach(names, id: \.0) { Text($0.1).hidden() }
                 if let chosen {
                     Text(chosen).id(kind).transition(.opacity.animation(DS.Motion.fade))
@@ -367,10 +367,10 @@ struct KindPill: View {
             }
             .modifier(KindName())
         } else if open, naming, let chosen {
-            let left = max(0, CGFloat(picked) * (cell + spacing) - spacing - DS.KindPill.nameInset)
+            let left = max(0, CGFloat(picked) * (cell + spacing) - spacing)
             Text(chosen)
-                .frame(minWidth: left, alignment: .trailing)
                 .modifier(KindName())
+                .frame(minWidth: left)   // centrado en el lugar que dejan las otras (Fernando, 14 nov: «muy pegado a la derecha»)
                 .transition(.asymmetric(
                     insertion: .scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity)
                         .animation(DS.Motion.fade),
@@ -421,7 +421,7 @@ private struct KindName: ViewModifier {
             .font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
             .foregroundStyle(DS.text)
             .lineLimit(1).fixedSize()
-            .padding(.leading, DS.KindPill.nameInset)
+            .padding(.horizontal, DS.KindPill.nameInset / 2)   // aire igual a los dos lados: el nombre queda centrado en su lugar
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("kind-name")
     }

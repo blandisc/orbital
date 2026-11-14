@@ -23,8 +23,8 @@ extension DesignRulesTests {
         XCTAssertTrue(filters.contains("private func nameSlot(") && filters.contains("Text($0.1).hidden()"),
                       "La pastilla de tipo dice «Todo», «Películas» o «Series» adentro, a la izquierda de los íconos, con su lugar apartado: los íconos no se mueven (KT2)")
         XCTAssertFalse(filters.contains("chosenName"), "El nombre de lo elegido ya no va afuera de la pastilla (KT2)")
-        XCTAssertTrue(filters.contains(".frame(minWidth: left, alignment: .trailing)"),
-                      "En Inicio, el nombre ocupa lo que había a la izquierda de lo elegido: con Series el círculo no brinca a la orilla (KT2)")
+        XCTAssertTrue(filters.contains(".frame(minWidth: left)"),
+                      "En Inicio, el nombre ocupa lo que había a la izquierda de lo elegido: centrado en ese lugar; con Series el círculo no brinca a la orilla (KT2)")
     }
 
     /// El renglón de controles de una lista decide con el ancho que le dan (con «Series» en la pastilla, un `HStack` a mano se
