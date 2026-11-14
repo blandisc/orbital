@@ -13,26 +13,40 @@ struct HomeBecause: View {
 
     var body: some View {
         let _ = model.track()
-        if let because = model.because, !model.seeds.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: Text("Por lo que viste"), eyebrow: Text("Según el título que elijas"), quiet: true)
-                    .padding(.horizontal, DS.Space.gutter)
-                card(because)
+        // Con un tipo en la barra, el mazo es solo de ese tipo (Fernando, 14 nov 2026: con «Series» salía «La Llegada» y
+        // «Trakt aún no relaciona nada»: Trakt relaciona películas con películas y series con series, así que una película
+        // de base nunca da series).
+        let pool = model.seeds.filter(fits)
+        Group {
+            if let because = model.because, !pool.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    DSSectionHead(title: Text("Por lo que viste"), eyebrow: Text("Según el título que elijas"), quiet: true)
+                        .padding(.horizontal, DS.Space.gutter)
+                    card(because, pool: pool)
+                }
             }
+        }
+        // El de arriba no es del tipo elegido: pasa al primero que sí (mientras, el mazo muestra el lugar de las relacionadas).
+        .task(id: "\(kind ?? "")-\(model.because?.seed.imdb ?? "")-\(pool.count)") {
+            guard let b = model.because, !fits(b.seed), let first = pool.first else { return }
+            await model.choose(first)
         }
     }
 
-    private func card(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        let fromHistory = model.seeds.map(seed)
-        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory : [seed(because.seed)] + fromHistory
+    private func fits(_ e: TraktEntry) -> Bool { kind == nil || e.kind == kind }
+
+    private func card(_ because: (seed: TraktEntry, items: [Suggestion]), pool: [TraktEntry]) -> some View {
+        let fromHistory = pool.map(seed)
+        let seeds = fromHistory.contains { $0.id == because.seed.imdb } || !fits(because.seed) ? fromHistory : [seed(because.seed)] + fromHistory
         // El mazo sigue a lo que elegiste al momento; las relacionadas son las del de arriba o, si aún no llegan, su lugar.
-        let selected = model.selected ?? because.seed.imdb
+        let chosen = model.selected ?? because.seed.imdb
+        let selected = seeds.contains { $0.id == chosen } ? chosen : seeds.first?.id ?? chosen
         let items = because.items.filter { kind == nil || $0.kind == kind }
         let state: BecauseRelated = because.seed.imdb != selected ? .loading : items.isEmpty ? .none : .ready
         return BecauseCard(seeds: seeds, selected: selected, state: state,
-                           choose: { id in if let pick = model.seeds.first(where: { $0.imdb == id }) { Task { await model.choose(pick) } } },
+                           choose: { id in if let pick = pool.first(where: { $0.imdb == id }) { Task { await model.choose(pick) } } },
                            artBackdrop: true,
-                           stopSeeding: { id in if let pick = model.seeds.first(where: { $0.imdb == id }) { stop(pick) } }) {
+                           stopSeeding: { id in if let pick = pool.first(where: { $0.imdb == id }) { stop(pick) } }) {
             ForEach(items) { s in TitleLink(route: s.route, width: DS.Collections.relatedPoster) }
         }
         .padding(.horizontal, DS.Space.gutter)

@@ -53,4 +53,13 @@ extension DesignRulesTests {
             XCTAssertFalse(text.contains("@State private var kind"), "\(name): el tipo de Guardado no vive en cada pestaña")
         }
     }
+
+    /// Con un tipo en la barra de Inicio (Series o Películas), «Por lo que viste» arma el mazo solo con títulos de ese tipo:
+    /// Trakt relaciona películas con películas y series con series, y con una película de base y «Series» elegido salía
+    /// «Trakt aún no relaciona nada» (Fernando, 14 nov 2026). Regla en `docs/ios-interfaz.md`.
+    func testBecauseDeckFollowsTheKind() throws {
+        let home = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "HomeBecause.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(home.contains("model.seeds.filter(fits)"), "HomeBecause: el mazo se filtra por el tipo elegido")
+        XCTAssertTrue(home.contains("await model.choose(first)"), "HomeBecause: si el de arriba no es del tipo, pasa al primero que sí")
+    }
 }
