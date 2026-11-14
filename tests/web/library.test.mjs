@@ -153,13 +153,20 @@ test("Por género: tarjetas con arte que llevan a su estante, y el destacado no 
   assert.deepEqual(rows.map((r) => r.id), ["curated:genres", "curated:genre:Comedy", "curated:genre:Horror"]);
   const terror = rows[0].items.find((i) => i.genre === "Horror");
   assert.equal(terror.image, "img/genres/genre-horror.jpg");
-  // Cada género de la tele tiene su arte (el mismo del iPhone, en Assets.xcassets/Genres).
+  // Cada género de la tele tiene su arte. El iPhone lleva el mismo arte, pero solo el que usa su filtro avanzado
+  // (`Filtro.genreArt`): desde GB1 (13 nov 2026) su Buscar ya no tiene «Por género», y Biografía y Deporte no van.
   const { GENRE_SHELVES, genreArt } = await import("../../orbital/web/js/core/curation.js");
-  const { existsSync } = await import("node:fs");
+  const { existsSync, readFileSync } = await import("node:fs");
   for (const g of GENRE_SHELVES) {
     const art = genreArt(g.genre);
     assert.ok(existsSync(new URL(`../../orbital/web/${art}`, import.meta.url)), `falta ${art}`);
-    assert.ok(existsSync(new URL(`../../ios/App/Resources/Assets.xcassets/Genres/${art.split("/").pop().replace(".jpg", "")}.imageset`, import.meta.url)), `el iPhone no tiene ${art}`);
+  }
+  const filtro = readFileSync(new URL("../../ios/App/Sources/Design/Filtro.swift", import.meta.url), "utf8");
+  const phoneArt = [...new Set([...filtro.match(/static let genreArt = \[[^\]]*\]/)[0].matchAll(/: "([a-z]+)"/g)].map((m) => `genre-${m[1]}`))];
+  assert.ok(phoneArt.length >= 15, "se leyó el arte del filtro del iPhone");
+  for (const name of phoneArt) {
+    assert.ok(existsSync(new URL(`../../orbital/web/img/genres/${name}.jpg`, import.meta.url)), `el iPhone usa ${name}, que la tele no tiene`);
+    assert.ok(existsSync(new URL(`../../ios/App/Resources/Assets.xcassets/Genres/${name}.imageset`, import.meta.url)), `el iPhone no tiene ${name}`);
   }
   assert.equal(primaryLabel(terror), "Ver títulos");
   assert.equal(isGame(terror), false);
