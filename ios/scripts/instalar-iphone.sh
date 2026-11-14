@@ -30,7 +30,7 @@ import json, sys
 devices = json.load(open(sys.argv[1]))["result"]["devices"]
 for d in devices:
     hw = d.get("hardwareProperties", {})
-    if hw.get("deviceType") == "iPhone" and d.get("connectionProperties", {}).get("tunnelState") != "unavailable":
+    if hw.get("deviceType") == "iPhone" and hw.get("reality") == "physical" and d.get("connectionProperties", {}).get("tunnelState") != "unavailable":   # Xcode también lista los simuladores
         print(hw.get("udid", "")); break
 ' "$list")
   rm -f "$list"
