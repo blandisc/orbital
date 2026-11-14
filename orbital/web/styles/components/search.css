@@ -62,7 +62,9 @@
   --caption-room: calc((.55rem + .2rem + 3 * var(--caption-size) * var(--leading-normal)) * var(--card-focus-scale));
   /* Alrededor, lo que crece la enfocada y su anillo (crece desde su esquina de abajo a la izquierda). */
   padding: calc(var(--focus-grow) + var(--space-2)) calc(var(--focus-grow) / 2 + var(--space-2)) var(--space-6) var(--space-2);
-  margin: calc(-1 * var(--focus-grow) - var(--space-2)) 0 0 calc(-1 * var(--space-2));
+  /* A la derecha, el aire de lo que crece sale del margen de la pantalla: la última columna termina donde el teclado empieza
+     del otro lado (centrado); la de la orilla crece hacia adentro (card.css · data-edge="end"). */
+  margin: calc(-1 * var(--focus-grow) - var(--space-2)) calc(-1 * (var(--focus-grow) / 2 + var(--space-2))) 0 calc(-1 * var(--space-2));
   scroll-padding-block: calc(var(--focus-grow) + var(--space-10)) calc(var(--caption-room) + var(--space-6));
   overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
@@ -86,6 +88,14 @@
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
 .search__set { flex: none; max-width: 100%; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--caption-room) + var(--focus-grow) + var(--space-3)) var(--space-6); }
+/* Centrado (Fernando, 13 nov 2026: «Ve que esté centrado el buscar»): las portadas van en columnas que se reparten a lo ancho,
+   así la última termina en el margen derecho como el teclado empieza en el izquierdo (antes sobraba un hueco a la derecha y
+   todo se veía cargado a la izquierda). Un grupo corto usa las mismas columnas que los demás. */
+.search__set:not(.search__set--pills) { width: 100%; }
+.search__set-cards.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, calc(var(--card-height) * var(--grid-ratio, .667)));
+  justify-content: space-between; align-items: end;
+}
 /* El pie de cada portada cuelga debajo de ella: cada grupo le guarda su lugar (si no, el nombre del grupo siguiente lo tapaba). */
 .search__set:not(.search__set--pills) .search__set-cards { padding-bottom: var(--caption-room); }
 /* Un grupo donde todas llevan el nombre encima (Seguir viendo, Por género) no tiene pie: no le guarda lugar. */
