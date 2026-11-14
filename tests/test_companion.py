@@ -624,3 +624,11 @@ def test_skip_and_seek_answer_with_the_new_minute(library):
     assert ("seek", 1234.0, "absolute") in mpv.sent and now["position"] == 1234
     with pytest.raises(ValueError):
         companion.control_player(library, "seek")
+
+
+def test_now_playing_never_sends_an_empty_poster_when_the_title_is_known(library):
+    """13 nov 2026 (el iPhone pintaba «lo que suena» sin arte): lo descargado, lo de tu carpeta o un Cinemeta que no contestó
+    al abrir no traen `poster`; va el de metahub por su IMDb."""
+    p, _ = _play_movie(library)
+    p.segment.meta.pop("poster", None)
+    assert companion.now_playing(library)["poster"] == "https://images.metahub.space/poster/medium/tt1/img"

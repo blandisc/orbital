@@ -284,10 +284,14 @@ class _Tracks(_UpNext):
             return None
         meta = segment.meta
         logo = f"/api/tv/logo?id={quote(meta['channel_id'], safe='')}" if meta.get("channel_id") else None
+        # El póster nunca va vacío si se sabe qué es (13 nov 2026: el iPhone pintaba la pastilla sin arte): lo descargado, lo
+        # de tu carpeta, un tráiler o un Cinemeta que no contestó al abrir no traían `poster`; ahí va el de metahub.
+        imdb = meta.get("meta_id") or meta.get("trailer_of")
+        fallback = f"https://images.metahub.space/poster/medium/{imdb}/img" if isinstance(imdb, str) and imdb.startswith("tt") else None
         if meta.get("synthetic"):  # un canal de Orbital, para el iPhone, es tele: el canal y lo que va
             return {"kind": "tv", "live": True, "channel": current.title, "title": meta.get("detail") or current.title,
                     "number": None, "category": "Orbital 24/7", "paused": bool(self.mpv.get("pause")),
-                    "muted": self._muted(), "logo": logo, "poster": meta.get("still") or meta.get("poster"),
+                    "muted": self._muted(), "logo": logo, "poster": meta.get("still") or meta.get("poster") or fallback,
                     "meta_id": meta.get("meta_id")}
         if segment.live:
             return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,
@@ -300,7 +304,7 @@ class _Tracks(_UpNext):
         episode_label = f"{parts[0]} · {parts[1]}" if len(parts) == 2 else ""
         return {"kind": meta.get("kind") or "movie", "live": False, "meta_id": meta.get("meta_id"),
                 "video_id": meta.get("video_id"), "title": meta.get("title") or current.title,
-                "episode_label": episode_label, "poster": meta.get("poster"),
+                "episode_label": episode_label, "poster": meta.get("poster") or fallback,
                 **episode_numbers(meta.get("video_id") if meta.get("kind") == "series" else None),
                 "position": self._reported_position(segment), "duration": segment.duration,
                 "paused": bool(self._value("pause"))}
