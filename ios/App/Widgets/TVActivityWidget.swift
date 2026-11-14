@@ -12,7 +12,7 @@ struct TVLiveActivity: Widget {
             // El póster a todo lo alto a la izquierda (2:3, entero); a su derecha el nombre, la barra y los botones (Fernando,
             // 6 nov: con los botones en su propio renglón la actividad pasaba del alto que deja iOS y se comía el póster).
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                ActivityPoster(file: context.state.poster, width: DS.Widget.tvPoster)
+                ActivityPoster(file: context.state.poster, width: DS.Widget.tvPoster, placeholder: "tv")
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     // TV3 (Fernando, 8 nov): el sello de Orbital (la luna, encendida mientras suena) y el turquesa solo en lo de
                     // Orbital: el sello, el botón principal y el avance. El póster sigue mandando.
@@ -36,7 +36,7 @@ struct TVLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster).padding(.leading, DS.Space.s1)
+                    ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster, placeholder: "tv").padding(.leading, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     OrbitalSeal(paused: context.state.paused, compact: true).padding(.trailing, DS.Space.s1)

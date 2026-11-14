@@ -434,9 +434,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
-                                     "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/medium/tt0386676/img"),
+                                     "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/small/tt0386676/img"),
                                      "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
-        // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
+        // El póster «small», como lo manda la consola de verdad (Cinemeta). La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
         let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
                         "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
                                    "page": "De 5 en 5", "section": "Secciones"],

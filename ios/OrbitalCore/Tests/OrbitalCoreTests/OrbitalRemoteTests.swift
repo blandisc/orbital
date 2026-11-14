@@ -249,4 +249,15 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(RemoteTyping.delta(from: "dune", to: "duna"), "\u{8}a")
         XCTAssertEqual(RemoteTyping.delta(from: "dune", to: "dune"), "")
     }
+
+    /// Lo que suena en la tele siempre trae póster (Fernando, 13 nov 2026: «no se ve el póster»): si la TV no lo manda, el de
+    /// metahub por su IMDb (también para un capítulo, «tt…:1:2»); en vivo, nada inventado.
+    func testNowPlayingAlwaysHasAPoster() {
+        let bare = OrbitalRemote.NowPlaying(kind: "series", live: false, metaID: "tt0903747:1:2", title: "Breaking Bad")
+        XCTAssertEqual(bare.art, "https://images.metahub.space/poster/medium/tt0903747/img")
+        let sent = OrbitalRemote.NowPlaying(kind: "movie", live: false, metaID: "tt1160419", title: "Duna", poster: "https://x/p.jpg")
+        XCTAssertEqual(sent.art, "https://x/p.jpg")
+        XCTAssertEqual(sent.artFallback, "https://images.metahub.space/poster/medium/tt1160419/img")
+        XCTAssertNil(OrbitalRemote.NowPlaying(kind: "movie", live: true, metaID: "tt1160419", title: "Canal").artFallback)
+    }
 }

@@ -181,8 +181,15 @@ public struct OrbitalRemote: Sendable {
         public var channel: String?, number: Int?, category: String?, muted: Bool
         /// El logotipo del canal en vivo (o de la serie de un canal de Orbital 24/7), si la TV lo manda.
         public var logo: String?
-        /// Lo que se pinta: en vivo, el logotipo del canal (si no hay, el póster); si no, el póster.
-        public var art: String? { live ? (logo ?? poster) : poster }
+        /// Lo que se pinta: en vivo, el logotipo del canal (si no hay, el póster); si no, el póster y, si la TV no lo manda,
+        /// el de metahub por su IMDb (Fernando, 13 nov 2026: «no se ve en la pastilla de la película que está reproduciendo
+        /// en la tele el póster»).
+        public var art: String? { live ? (logo ?? poster) : (poster?.isEmpty == false ? poster : artFallback) }
+        /// Si el arte de la TV no carga: el póster de metahub del título (nil en vivo o sin IMDb).
+        public var artFallback: String? {
+            guard !live, let id = metaID?.split(separator: ":").first.map(String.init), id.hasPrefix("tt") else { return nil }
+            return String(format: ForYou.metahubPoster, id)
+        }
         /// Las pistas de audio y subtítulos del reproductor (versiones de la consola que las mandan); vacío: no se sabe.
         public var audioTracks: [Track] = [], subtitleTracks: [Track] = []
 

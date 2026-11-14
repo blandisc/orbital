@@ -139,7 +139,7 @@ struct VoiceRow: View {
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 // Lo que quedó en la TV: su póster; sin póster (prender la tele, el volumen), el ícono de la tele.
                 if ok, let now {
-                    PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
+                    PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback).frame(width: DS.Size.thumbSmall)
                         .transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale)))
                 } else {
                     statusTile(ok: ok)

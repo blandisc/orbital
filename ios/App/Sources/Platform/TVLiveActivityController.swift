@@ -44,7 +44,8 @@ final class TVLiveActivityController {
         var state = TVActivityAttributes.ContentState(title: AppEnvironment.shared.services.titleNames.name(now.title, id: now.metaID, kind: now.kind), detail: detail, poster: last?.poster, position: now.position,
                                                       duration: now.duration, measuredAt: tv.fetchedAt, paused: now.paused, live: now.live,
                                                       language: language())
-        if let last, last.title == state.title, last.detail == state.detail, last.paused == state.paused, last.live == state.live,
+        // Sin póster todavía (no cargó): se vuelve a intentar en el siguiente sondeo en vez de quedarse sin él.
+        if let last, last.poster != nil, last.title == state.title, last.detail == state.detail, last.paused == state.paused, last.live == state.live,
            last.language == state.language, abs(last.end.timeIntervalSince(state.end)) < DesignTokens.Widget.tvDrift,
            state.paused == false || abs(last.position - state.position) < DesignTokens.Widget.tvDrift { return }
         if last?.title != state.title || state.poster == nil { state.poster = await posterFile(now) }
@@ -71,13 +72,16 @@ final class TVLiveActivityController {
     }
 
     /// El póster (o el logo del canal) reducido en el App Group: la actividad no baja imágenes.
+    /// Si el arte de la TV no baja, el póster de metahub del título (Fernando, 13 nov 2026: «no se ve el póster»).
     private func posterFile(_ now: OrbitalRemote.NowPlaying) async -> String? {
-        guard let art = now.art, let url = URL(string: art) else { return nil }
         let name = "tv-" + WidgetLists.imageFileName(for: now.metaID ?? now.title)
         guard let target = WidgetStore.imageURL(name) else { return nil }
         if FileManager.default.fileExists(atPath: target.path) { return name }
-        guard let image = await ImagePipeline.shared.image(url, maxPixel: DS.Widget.activityPosterPixels),
-              let data = image.jpegData(compressionQuality: DesignTokens.Widget.jpegQuality) else { return nil }
-        return (try? data.write(to: target, options: .atomic)) != nil ? name : nil
+        for art in [now.art, now.artFallback].compactMap({ $0 }) {
+            guard let url = URL(string: art), let image = await ImagePipeline.shared.image(url, maxPixel: DS.Widget.activityPosterPixels),
+                  let data = image.jpegData(compressionQuality: DesignTokens.Widget.jpegQuality) else { continue }
+            return (try? data.write(to: target, options: .atomic)) != nil ? name : nil
+        }
+        return nil
     }
 }

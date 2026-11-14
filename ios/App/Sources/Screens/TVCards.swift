@@ -26,7 +26,7 @@ struct NowPlayingCard: View {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv.and.mediabox")
                 .font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
+                PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback).frame(width: DS.Poster.nowPlayingWidth)
                     .remoteMorph("poster", in: morph)
                 info
                 Spacer(minLength: 0)

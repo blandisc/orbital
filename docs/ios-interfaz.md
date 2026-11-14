@@ -846,6 +846,11 @@ va en `ListControlsRow`: decide con el ancho que le dan y, si no cabe (un SE, le
 pastilla), la pastilla baja a su renglón. Nada de `HStack` a mano con piezas de ancho fijo: crecían más que la pantalla y los
 pósters se salían por los lados. `testListControlsUseTheMeasuredRow` lo cuida; `OneSelectorUITests` mide que nada salga.
 
+**Lo que suena en la tele siempre trae su póster.** El accesorio de la barra, la tarjeta del control y la Live Activity
+pintan el arte de la TV y, si no llega o no carga, el póster de metahub del título (`NowPlaying.artFallback`); la Live
+Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el ícono de la tele (nunca la flecha de descarga).
+`testNowPlayingArtFallsBackToThePoster` y `testNowPlayingAlwaysHasAPoster` lo cuidan.
+
 **La marca es una sola en toda la app.** El Centro de control y la Live Activity usan el símbolo `orbital.mark`, que sale
 del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si
 cambia la marca (`DS.Brand`), se corre el script. `testBrandSymbolMatchesTheMark` compara su firma con `Tokens.swift`.

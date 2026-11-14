@@ -17,7 +17,7 @@ struct RemoteNowHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
-            PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true)
+            PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback)
                 .frame(width: DS.Poster.nowPlayingWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv.and.mediabox")

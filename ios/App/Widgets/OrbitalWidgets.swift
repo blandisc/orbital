@@ -167,6 +167,8 @@ struct DownloadLiveActivity: Widget {
 struct ActivityPoster: View {
     let file: String?
     let width: CGFloat
+    /// Lo que va mientras no hay póster: la descarga, su flecha; la tele, el ícono de la tele (no una flecha de descarga).
+    var placeholder = "arrow.down.circle.fill"
 
     @Environment(\.displayScale) private var scale
 
@@ -178,7 +180,7 @@ struct ActivityPoster: View {
                 .frame(width: width, height: width / DS.Poster.aspect)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Widget.posterRadius, style: .continuous))
         } else {
-            Image(systemName: "arrow.down.circle.fill").font(DS.font(.lg)).foregroundStyle(DS.paper).frame(width: width)
+            Image(systemName: placeholder).font(DS.font(.lg)).foregroundStyle(DS.paper).frame(width: width)
         }
     }
 

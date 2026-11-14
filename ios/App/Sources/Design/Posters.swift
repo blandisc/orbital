@@ -78,10 +78,12 @@ struct PosterView: View {
     }
 
     @ViewBuilder private var wholeArt: some View {
-        if let url, let u = URL(string: url) {
+        if let url = shownURL, let u = URL(string: url) {
             RemoteImage(url: u, maxPoints: maxPoints) { phase in
                 switch phase {
                 case .success(let image): image.resizable().scaledToFit()   // sin redondear: las esquinas del arte se ven completas
+                case .failure where !primaryFailed && fallback != nil:   // el arte de la TV no cargó: el póster de siempre
+                    frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)).onAppear { primaryFailed = true }
                 default: frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 }
             }
