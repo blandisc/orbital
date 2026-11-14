@@ -258,17 +258,18 @@ struct BrowseView: View {
     // MARK: sin escribir
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
-        // La puerta del filtro y lo que buscaste van juntas (antes las separaba el aire entre secciones).
+        // Lo que buscaste arriba y, debajo, la puerta del filtro (Fernando, 13 nov 2026: «pon búsquedas recientes arriba de
+        // búsqueda avanzada»); juntas, sin el aire entre secciones.
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            filterDoor
             if !search.model.recent.isEmpty { recent }
+            filterDoor
         }
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }
     }
 
-    /// La puerta del filtro avanzado, arriba de todo (entrada A, Fernando, 31 oct 2026): los mosaicos del cajón en chiquito.
+    /// La puerta del filtro avanzado, bajo «Buscaste hace poco» (entrada A del 31 oct; abajo de lo reciente desde el 13 nov): los mosaicos del cajón en chiquito.
     private var filterDoor: some View {
         let model = env.advancedFilter
         let _ = model.track()
