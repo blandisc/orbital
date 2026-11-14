@@ -159,7 +159,7 @@ class _History(_Lists):
         una lista de 210 parecía de 100 (4 nov 2026, «Mi lista Stremio»)."""
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
-        return _typed(self._all_pages(f"/users/me/lists/{list_id}/items", extended="full"))
+        return _typed(self._all_pages(f"/users/me/lists/{list_id}/items", extended="full"), listed=True)
 
     def public_list_items(self, user: str, slug: str) -> list[dict]:
         """Los títulos de la lista pública de otra persona (sin tu sesión): «Aprobadas por la crítica» de series."""

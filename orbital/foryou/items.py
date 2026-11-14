@@ -74,6 +74,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         **({"runtime": int(e["runtime"])} if isinstance(e.get("runtime"), int) and e["runtime"] > 0 else {}),
         # La calificación de Trakt (para ordenar «Mejor calificadas en Trakt», en la TV y en el iPhone).
         **({"rating": e["rating"]} if isinstance(e.get("rating"), (int, float)) and e["rating"] > 0 else {}),
+        # Cuándo la agregaste a Mi lista o a una lista tuya (para «Agregadas: más recientes / más viejas», GD2).
+        **({"added_at": e["listed_at"]} if isinstance(e.get("listed_at"), (int, float)) and e["listed_at"] > 0 else {}),
     }
 
 

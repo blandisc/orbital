@@ -34,7 +34,13 @@ export const SORTS = [
   { id: "year", label: "Año (lo más nuevo primero)" },
   { id: "oldest", label: "Año: más viejas" },
   { id: "az", label: "A–Z" },
+  // GD2 (Fernando, 13 nov 2026: «que en mis listas también pueda ordenar por agregadas»): solo donde hay fecha (Mi lista y
+  // tus listas); una opción que no aplica no aparece (`sortsFor`). Lo que no trae fecha va al final, en su orden.
+  { id: "added", label: "Agregadas: más recientes", needs: "added_at" },
+  { id: "added_old", label: "Agregadas: más viejas", needs: "added_at" },
 ];
+/** Los órdenes que aplican a lo cargado: uno que pide un dato que nadie trae no se ofrece. */
+export const sortsFor = (items) => SORTS.filter((s) => !s.needs || (items || []).some((i) => i[s.needs] > 0));
 /** La calificación mínima del filtro (como el iPhone: «De 7 para arriba») y el nombre de una década («90s», «2010s»). */
 export const MIN_RATINGS = [6, 7, 8];
 export const ratingName = (r) => `De ${r} para arriba`;
@@ -218,6 +224,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       trakt: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
       year: (a, b) => (b.year ?? 0) - (a.year ?? 0),
       az: (a, b) => String(a.title).localeCompare(String(b.title), "es"),
+      added: (a, b) => (b.added_at || -Infinity) - (a.added_at || -Infinity) || 0,
+      added_old: (a, b) => (a.added_at || Infinity) - (b.added_at || Infinity) || 0,
     }[settings.sort];
     if (by) out = [...out].sort(by);
     return out;
@@ -400,6 +408,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     },
     /** Sus pestañas ya son Series · Películas (entonces el filtro de tipo sobra). */
     get kindTabs() { return !!list?.tabs.some((t) => t.id === "series" || t.id === "movie"); },
+    /** Los órdenes que aplican aquí (sin fecha de cuando la agregaste, no hay «Agregadas»). */
+    sorts() { return sortsFor(loaded.get(tab)); },
     async setSort(id) {
       settings.sort = chooseSort(list.id, settings.sort, id);
       if (id === "imdb" || id === "best") await needImdb();

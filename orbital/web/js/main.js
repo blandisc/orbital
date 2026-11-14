@@ -34,7 +34,7 @@ import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
-import { createListScreen, decadeName, ratingName, SORTS } from "./components/list-screen.js";
+import { createListScreen, decadeName, ratingName } from "./components/list-screen.js";
 import { createSettings } from "./components/settings.js";
 import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
@@ -1544,7 +1544,7 @@ function listSortMenu(s) {
   options.push(...listManageOptions(s.editable, { online: navigator.onLine !== false }));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },
-      ...SORTS.map((o) => ({ icon: "list", label: o.label, value: check(st.sort === o.id), command: { type: "list-sort", value: o.id } })));
+      ...s.sorts().map((o) => ({ icon: "list", label: o.label, value: check(st.sort === o.id), command: { type: "list-sort", value: o.id } })));
   }
   options.push({ heading: true, label: "Filtrar" });
   // Como el iPhone: Series o Películas siempre (salvo que la lista ya venga partida en esas pestañas), género y lo visto.

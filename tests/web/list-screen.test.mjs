@@ -47,3 +47,10 @@ test("la ficha nueva no enseña las calificaciones de la anterior mientras carga
   assert.match(open, /mount\(ratings\)/);
   assert.ok(open.indexOf("mount(ratings)") < open.indexOf("load();"));
 });
+
+test("GD2: «Agregadas» solo donde hay fecha de cuando la agregaste", async () => {
+  const { sortsFor } = await import("../../orbital/web/js/components/list-screen.js");
+  const ids = (items) => sortsFor(items).map((s) => s.id);
+  assert.ok(!ids([{ meta_id: "a" }]).includes("added")); // Viendo, Vistas, catálogos: no aparece
+  assert.deepEqual(ids([{ meta_id: "a", added_at: 5 }]).filter((id) => id.startsWith("added")), ["added", "added_old"]);
+});

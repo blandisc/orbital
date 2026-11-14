@@ -1,5 +1,6 @@
 /** Guardado y tus listas en la TV (el gestor tipo Trakt del iPhone, olas 1 y 2; docs/producto/live-activity-2026-11-08/):
- *  - G2-A: «Guardado» (☰) abre lo tuyo por estado en pestañas con su cifra: En Mi lista · Viendo · Vistas · Las dejé. Las
+ *  - G2-A: «Guardado» (☰) abre lo tuyo por estado en pestañas con su cifra: Mi lista · Viendo · Vistas · Las dejé (GD2, 13 nov:
+ *    la pestaña se llama «Mi lista», como en el iPhone; en la ficha el estado sigue diciendo «En Mi lista»). Las
  *    series a medias que no ves hace seis meses van al final de Viendo, cada una con «¿La dejaste?» arriba, y ☰ de Viendo
  *    pregunta «¿Las dejaste?» (R2-9: como el iPhone; antes era una pestaña junto a «Las dejé», dos nombres para lo mismo).
  *    Y sobre un póster: «Mover a…».
@@ -10,7 +11,7 @@
 import { curatedItem } from "../core/curation.js";
 
 /** Los montones de Guardado, en el orden del tablero del iPhone, con su nombre. */
-export const PILES = [["in_list", "En Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"]];
+export const PILES = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"]];
 /** «Quién la ve» (`Trakt.privacies`): Solo tú · Con el enlace · Todos en Trakt; «Solo amigos» solo si ya lo era. */
 export const PRIVACY = [["private", "Solo tú", "Nadie más la ve"], ["link", "Con el enlace", "Quien tenga el enlace"],
   ["public", "Todos en Trakt", "Sale en tu perfil"], ["friends", "Solo amigos", "Tus amigos de Trakt"]];

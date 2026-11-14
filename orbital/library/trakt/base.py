@@ -277,8 +277,9 @@ def history_play(row) -> dict | None:
             "episode_title": str(ep.get("title") or "").strip() or None}
 
 
-def _typed(rows) -> list[dict]:
-    """Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir."""
+def _typed(rows, *, listed: bool = False) -> list[dict]:
+    """Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir. `listed`: cada una lleva
+    cuándo la agregaste (`listed_at`, en segundos), para ordenar por «Agregadas» (13 nov 2026, GD2 en la TV)."""
     found, seen = [], set()
     for row in rows if isinstance(rows, list) else []:
         if not isinstance(row, dict):
@@ -288,6 +289,8 @@ def _typed(rows) -> list[dict]:
         item = entry(row.get(kind_name), kind) if kind and isinstance(kind_name, str) else None
         if item and item["imdb"] not in seen:
             seen.add(item["imdb"])
+            if listed and (when := _when(row.get("listed_at"))):
+                item["listed_at"] = when
             found.append(item)
     return found
 

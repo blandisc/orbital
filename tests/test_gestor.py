@@ -227,3 +227,17 @@ def test_lists_saved_before_g4_are_read_again(library, make_foryou, net):  # noq
     fy = make_foryou(linked=True)
     fy.cache.get("trakt:lists", 900, lambda: [{"id": "3", "name": "animadas"}])
     assert fy.gestor.lists() == [{"id": "3", "name": "animadas", "privacy": "public", "count": 17}]
+
+
+def test_mi_lista_y_tus_listas_dicen_cuando_las_agregaste():
+    """GD2 (13 nov 2026): «Agregadas: más recientes / más viejas» en la TV necesita la fecha de Trakt en cada título."""
+    from orbital.foryou.items import video_item
+    from orbital.library.trakt.base import _typed
+
+    rows = [{"type": "movie", "listed_at": "2026-11-01T10:00:00.000Z", "movie": {"title": "Dune", "ids": {"imdb": "tt1160419"}}},
+            {"type": "show", "show": {"title": "Dark", "ids": {"imdb": "tt5753856"}}}]
+    dune, dark = _typed(rows, listed=True)
+    assert dune["listed_at"] > 0 and "listed_at" not in dark
+    assert video_item(dune, "En Mi lista")["added_at"] == dune["listed_at"]
+    assert "added_at" not in video_item(dark, "En Mi lista")
+    assert "listed_at" not in _typed(rows)[0]  # donde no se pide (tendencias, catálogos), no viaja

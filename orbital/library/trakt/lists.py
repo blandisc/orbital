@@ -104,7 +104,7 @@ class _Lists(_Account):
         rows = self._all_pages("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
         if isinstance(rows, list):
             rows = sorted((r for r in rows if isinstance(r, dict)), key=lambda r: str(r.get("listed_at") or ""), reverse=True)
-        return _typed(rows)
+        return _typed(rows, listed=True)
 
     def lists(self) -> list[dict]:
         rows = self._get("/users/me/lists")
