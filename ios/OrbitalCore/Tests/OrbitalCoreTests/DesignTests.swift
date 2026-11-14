@@ -296,7 +296,7 @@ final class DesignTests: XCTestCase {
                 if relative.hasPrefix("Sources/Screens/") {
                     let pieces: [(String, String)] = [
                         (#"\.buttonStyle\(\.(borderedProminent|bordered|glassProminent)\)"#, "botón armado a mano: dsPrimaryButton, dsSolidPrimaryButton o dsSecondaryButton"),
-                        (#"\.pickerStyle\(\.segmented\)"#, "selector armado a mano: DSSegmented (o DSKindFilter para el tipo)"),
+                        (#"\.pickerStyle\(\.segmented\)"#, "selector armado a mano: DSSelector (o DSKindFilter para el tipo)"),
                         (#"ContentUnavailableView\("#, "vacío armado a mano: DSEmptyState"),
                         (#"\.recipe\(\.eyebrow, color: (?!DS\.eyebrow\))"#, "porqué de otro color: el porqué va en turquesa (Eyebrow(reason: true) o DS.eyebrow)"),
                         (#"ProgressView\(\)\.frame\(maxWidth: \.infinity"#, "área cargando armada a mano: DSLoadingState (o el esqueleto de su forma)"),

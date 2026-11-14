@@ -33,12 +33,15 @@ struct DSKindFilter: View {
     var menu = false
     /// SX1: si la pastilla está abierta (Inicio quita la cápsula mientras eliges, para que quepa).
     var open: Binding<Bool>? = nil
+    /// En el renglón de controles de una lista (R1): un poco más compacta, para que con el nombre de lo elegido (KT1) quepa
+    /// junto a ⊜, ＋ y elegir varios.
+    var dense = false
 
     var body: some View {
         if menu {
             KindPill(kind: $kind, open: open ?? .constant(false), options: options)
         } else {
-            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true)
+            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
                 .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
         }
     }
@@ -268,8 +271,10 @@ struct KindPill: View {
     let options: [(String, LocalizedStringKey)]
     /// I8 · fuera de Inicio la pastilla está siempre abierta: tocar un ícono lo elige y nada se recoge.
     var alwaysOpen = false
+    var dense = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var mark
+    private var cell: CGFloat { open ? (dense ? DS.KindPill.dense : DS.KindPill.open) : DS.KindPill.closed }
     /// El cierre que espera a que el círculo llegue: otro toque lo cancela (nunca se cierra encima de lo que acabas de hacer).
     @State private var folding: Task<Void, Never>?
     /// Recién elegido: las otras dos se van y en su lugar se lee el nombre de lo que elegiste, un momento, antes de recogerse
@@ -283,15 +288,27 @@ struct KindPill: View {
             ForEach(Array(shown.enumerated()), id: \.element.0) { _, option in
                 let on = kind == option.0
                 let index = options.firstIndex { $0.0 == option.0 } ?? 0
+                // KT1 (Fernando, 13 nov 2026: «que muestre de alguna forma que estás filtrando películas o series, con letras»):
+                // donde la pastilla vive abierta, lo elegido dice su nombre junto al ícono; con «Todo», solo los íconos.
+                let named = alwaysOpen && on && !option.0.isEmpty
                 Button { choose(option.0) } label: {
-                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
-                        .font(DS.TextRecipe.section.font)
-                        .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
-                        // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
-                        .foregroundStyle(on && open ? DS.bg : DS.text)
-                        .frame(width: open ? DS.KindPill.open : DS.KindPill.closed, height: open ? DS.KindPill.open : DS.KindPill.closed)
-                        .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido
-                        .contentShape(Circle())
+                    HStack(spacing: 0) {
+                        Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
+                            .font(DS.TextRecipe.section.font)
+                            .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
+                            // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
+                            .frame(width: cell, height: cell)
+                        if named {
+                            Text(option.1).font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
+                                .lineLimit(1).fixedSize()
+                                .padding(.trailing, DS.Space.s2)
+                                .transition(.opacity.animation(DS.Motion.fadeQuick))
+                                .accessibilityHidden(true)   // el botón ya lo dice
+                        }
+                    }
+                    .foregroundStyle(on && open ? DS.bg : DS.text)
+                    .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(KindPillPress())
                 .help(Text(option.1))
@@ -311,7 +328,7 @@ struct KindPill: View {
         // Con «Reducir movimiento» no viaja: se apaga en uno y se enciende en el otro.
         .background {
             if open {
-                Circle().fill(DS.text)
+                Capsule().fill(DS.text)   // un círculo con «Todo»; con KT1 se estira bajo el nombre de lo elegido
                     .padding(DS.KindPill.markInset)   // el círculo cabe holgado en su lugar: nunca toca la orilla de la pastilla
                     .matchedGeometryEffect(id: kind, in: mark, isSource: false)
                     .id(reduceMotion ? kind : "")

@@ -198,7 +198,7 @@ struct DecideView: View {
                 }
             }
             .entrance("decide-\(opened)-title", order: 0)
-            DSTextTabs(options: [.init(id: DecideModel.Mode.trio, title: Text("Tres que caben"), symbol: DS.Symbol.decideTrio),
+            DSSelector(options: [.init(id: DecideModel.Mode.trio, title: Text("Tres que caben"), symbol: DS.Symbol.decideTrio),
                                  .init(id: .deck, title: Text("Una por una"), symbol: DS.Symbol.decideDeck)],
                        selection: Binding(get: { mode }, set: { switchMode(to: $0, m) }), adapts: false)
                 .accessibilityIdentifier("decide-mode")

@@ -289,7 +289,7 @@ struct SettingsView: View {
     // MARK: páginas
     @ViewBuilder private func appearance(_ model: SettingsModel) -> some View {
         Section("Modo") {
-            DSSegmented(options: [("system", "Como el iPhone"), ("light", "Claro"), ("dark", "Oscuro")],
+            DSSelector(choices: [("system", "Como el iPhone"), ("light", "Claro"), ("dark", "Oscuro")],
                         selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
         }
         .listRowBackground(DS.surface)

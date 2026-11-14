@@ -82,6 +82,9 @@ struct DownloadsView: View {
             .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
             .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
             .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
+            .navigationDestination(for: DiaryRoute.self) { _ in
+                HistoryScreen().background(Backdrop()).navigationTitle("Historial").navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
+            }
     }
 
     var body: some View {

@@ -158,7 +158,7 @@ extension PlayerScreen {
                     Spacer()
                 }
             }
-            DSTextTabs(options: [.init(id: false, title: Text("Por idioma")), .init(id: true, title: Text("Todas las fuentes"))], selection: $dockState.versionShowsAll)
+            DSSelector(options: [.init(id: false, title: Text("Por idioma")), .init(id: true, title: Text("Todas las fuentes"))], selection: $dockState.versionShowsAll)
             ScrollView {
                 // Tu idioma no arranca al instante pero existe (13 nov, la ruleta de Los Simpson): arriba, con «Pedir a la nube»,
                 // como «Versión» de la ficha.

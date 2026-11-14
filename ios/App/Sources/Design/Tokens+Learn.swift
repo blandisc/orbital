@@ -112,6 +112,8 @@ extension DS {
     /// SX1: el selector de Inicio. Cerrado, cada ícono mide `closed`; abierto crece a `open` para tocarlo fácil.
     enum KindPill {
         static let closed: CGFloat = 34, open: CGFloat = 42
+        /// En el renglón de controles de una lista (R1): cabe con el nombre de lo elegido (KT1).
+        static let dense: CGFloat = 38
         /// Lo que llega nace de este tamaño junto a lo que ves (nunca de la nada: antes 0.4, un brinco); al apretar un ícono se
         /// hunde a `pressed` (tantito: es respuesta al dedo, no un golpe).
         static let enterScale: CGFloat = 0.8, pressed: CGFloat = 0.92   // ds-exception: escalas

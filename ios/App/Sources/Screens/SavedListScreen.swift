@@ -142,28 +142,27 @@ struct SavedListContent: View {
         }
     }
 
-    /// Con letra de accesibilidad no caben en un renglón: Todo · Películas · Series baja al suyo (nada se encima).
+    /// Si no cabe a lo ancho (un SE, letra grande, el nombre de lo elegido), Todo · Películas · Series baja a su renglón.
     private func controls(_ parts: ListBarParts?) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s2) {
-                if let parts { parts.sort }
-                Spacer(minLength: 0)
-                if showsGrid && !typeSize.isAccessibilitySize { kindFilter }
-                if let parts {
-                    parts.filters.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
-                        .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
-                }
-                if model.canEdit && current && (showsGrid || selection.editing) {
-                    ListSelectButtons(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb))
-                }
+        let editable = model.canEdit && current && (showsGrid || selection.editing)
+        return ListControlsRow {
+            if let parts { parts.sort }
+        } kind: {
+            if showsGrid { kindFilter }
+        } trailing: {
+            if let parts {
+                parts.filters.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
+                    .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
             }
-            if showsGrid && typeSize.isAccessibilitySize { kindFilter }
+            if editable {
+                ListSelectButtons(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb))
+            }
         }
         .padding(.horizontal, DS.Space.gutter)
     }
 
     private var kindFilter: some View {
-        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }))
+        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), dense: true)
     }
 
     /// Quitar con un toque (el «−», el menú): sale ya y el aviso trae «Deshacer»; si Trakt no acepta, regresa y lo dice.

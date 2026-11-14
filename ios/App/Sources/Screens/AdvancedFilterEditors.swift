@@ -68,7 +68,7 @@ struct FilterEditor: View {
 
     private var genre: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSegmented(options: [(false, "Quiero"), (true, "No quiero")], selection: $excluding)
+            DSSelector(choices: [(false, "Quiero"), (true, "No quiero")], selection: $excluding)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                 ForEach(Tmdb.filterGenres, id: \.slug) { g in
                     let on = excluding ? filter.excluded.contains(g.slug) : filter.genres.contains(g.slug)

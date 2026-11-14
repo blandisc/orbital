@@ -31,7 +31,7 @@ private struct CatalogSample: View {
                 }
                 DSProgress(fraction: 0.4)
                 DSKindFilter(kind: $kind)
-                DSSegmented(options: [(0, "Películas"), (1, "Series")], selection: $segment)
+                DSSelector(choices: [(0, "Películas"), (1, "Series")], selection: $segment)
                 HStack(spacing: DS.Space.s3) {
                     FavoriteButton(isFavorite: false) {}
                     FavoriteButton(isFavorite: true) {}

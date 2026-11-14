@@ -305,8 +305,8 @@ struct DecideListPicker: View {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         List {
             if origins.count > 1 {
-                // De dónde, en las pestañas de texto de toda la app (antes cápsulas de solo texto).
-                DSTextTabs(options: [.init(id: "", title: Text(verbatim: String(format: Strings.tr("Todas · %lld", language: language), all.count)))]
+                // De dónde, en el selector de toda la app (SL1; antes pestañas de texto y, antes, cápsulas de solo texto).
+                DSSelector(options: [.init(id: "", title: Text(verbatim: String(format: Strings.tr("Todas · %lld", language: language), all.count)))]
                            + origins.map { name, count in .init(id: name, title: Text(verbatim: "\(Strings.tr(name, language: language)) · \(count)")) },
                            selection: Binding(get: { origin ?? "" }, set: { origin = $0.isEmpty ? nil : $0 }))
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: DS.Space.gutter, bottom: 0, trailing: DS.Space.gutter))

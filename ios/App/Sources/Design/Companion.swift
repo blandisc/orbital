@@ -104,7 +104,7 @@ struct ConsoleStatePanel: View {
                         }
                     }
                 }
-                DSSegmented(options: [("efficiency", "Ahorro"), ("balanced", "Equilibrado"), ("performance", "Rendimiento")],
+                DSSelector(choices: [("efficiency", "Ahorro"), ("balanced", "Equilibrado"), ("performance", "Rendimiento")],
                             selection: Binding(get: { s.powerMode ?? "balanced" }, set: { setPower($0) }))
             } else {
                 Text("Actualiza tu Orbital para ver la batería, los controles y la memoria.").recipe(.footnote)

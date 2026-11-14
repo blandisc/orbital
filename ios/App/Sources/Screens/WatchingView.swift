@@ -77,7 +77,7 @@ struct WatchingView: View {
                 VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                     // La portada: el arte de lo que más viste en el periodo, de orilla a orilla, con tus horas encima (como la
                     // portada de Inicio). Las pestañas arriba de lo que cambian.
-                    DSTextTabs(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
+                    DSSelector(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
                                selection: Binding(get: { model.period }, set: { model.period = $0 }))
                     .accessibilityIdentifier("watching-period")
                     if model.loaded, !model.failed, !s.isEmpty { hero(s) }

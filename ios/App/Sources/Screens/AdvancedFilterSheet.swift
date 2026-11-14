@@ -105,7 +105,7 @@ struct AdvancedFilterSheet: View {
         .accessibilityIdentifier("filter-hide-watched")
         if model.filter.format == .series {
             let statuses: [(AdvancedFilter.SeriesStatus, LocalizedStringKey)] = [(.any, "Todas"), (.airing, "En emisión"), (.ended, "Terminadas")]
-            DSSegmented(options: statuses,
+            DSSelector(choices: statuses,
                         selection: Binding(get: { model.filter.seriesStatus }, set: { model.filter.seriesStatus = $0 }))
                 .accessibilityIdentifier("filter-series-status")
         }

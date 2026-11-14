@@ -134,7 +134,7 @@ struct DSSeasonMenu: View {
 struct DSSeasonPicker: View {
     let seasons: [Int]
     @Binding var selection: Int
-    /// El valor actual como dato de la vista (ver `DSSegmented`).
+    /// El valor actual como dato de la vista: con un `Binding(get:set:)` SwiftUI no ve el cambio y no la vuelve a pintar.
     private let current: Int
     @State private var scrolled: Int?
 

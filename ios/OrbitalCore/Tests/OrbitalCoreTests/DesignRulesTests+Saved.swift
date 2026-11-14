@@ -11,7 +11,7 @@ extension DesignRulesTests {
         file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
     }
 
-    /// Guardado abre en los pósters de Mi lista con cuatro pestañas (una sola pieza, `DSCountTabs`), no en un índice que hay
+    /// Guardado abre en los pósters de Mi lista con sus cuatro partes en el selector de Orbital (SG1, `DSSelector` completo), no en un índice que hay
     /// que tocar para ver algo: ni tablero ni pantallas aparte por estado.
     func testSavedOpensOnTabsNotAnIndex() throws {
         let files = try sources(["Design", "Screens"])
@@ -19,7 +19,7 @@ extension DesignRulesTests {
               "Guardado son pestañas (GD2): sin el tablero, sus pantallas por estado ni el menú de listas de antes")
         let saved = try XCTUnwrap(files.first { $0.name == "LibrarySavedView.swift" })
         let body = code(saved)
-        XCTAssertTrue(body.contains { $0.contains("DSCountTabs(") }, "Las pestañas de Guardado son la pieza `DSCountTabs` del catálogo")
+        XCTAssertTrue(body.contains { $0.contains("DSSelector(") && $0.contains("size: .full") }, "Las partes de Guardado van en el selector de Orbital, completo (SG1)")
         for id in ["saved-tab-mylist", "saved-tab-watching", "saved-tab-watched", "saved-tab-lists"] {
             XCTAssertTrue(body.contains { $0.contains("\"\(id)\"") }, "falta la pestaña \(id)")
         }

@@ -4,14 +4,16 @@ import OrbitalModels
 
 /// Las cuatro pestañas de Guardado, en el orden de la TV (GD2).
 enum SavedTab: String, CaseIterable, Hashable { case myList, watching, watched, lists }
-/// Lo que se ve dentro de «Vistas»: lo que terminaste, lo que dejaste y el diario con fecha.
-enum SavedWatchedView: String, Hashable { case watched, dropped, history }
+/// Lo que se ve dentro de «Vistas»: lo que terminaste o lo que dejaste (VS2: se elige en ⊜; el Historial abre su pantalla con
+/// el reloj del renglón).
+enum SavedWatchedView: String, Hashable { case watched, dropped }
 
 /// Biblioteca › Guardado en pestañas (GD2, Fernando, 13 nov 2026: «Pestañas, como la tele»; reemplaza el tablero de pilas
-/// G2-A del 9 nov). Arriba, **Mi lista · Viendo · Vistas · Listas** con ícono, nombre y cifra (`DSCountTabs`); al entrar ya ves
-/// los pósters de la primera, sin un índice antes. «Vistas» guarda adentro «Las dejé» y el Historial (el diario con fecha) en un
-/// selector de tres con ícono; «Listas», Favoritos y tus listas de Trakt en mosaico con portada, y «Nueva lista» como un mosaico
-/// más. La pestaña elegida se recuerda en este aparato. Sin Trakt, qué es y «Conectar Trakt»; sin internet, lo dice con
+/// G2-A del 9 nov). Arriba, **Mi lista · Viendo · Vistas · Listas** en el selector de Orbital con ícono, cifra y nombre (SG1,
+/// 13 nov: `DSSelector` completo, para que no se confunda con las pestañas subrayadas de la Biblioteca); al entrar ya ves los
+/// pósters de la primera, sin un índice antes. Debajo, un renglón de controles (R1): el orden, el tipo, ⊜, ＋ y elegir varios.
+/// «Vistas» (VS2) elige «Las dejé» dentro de ⊜ y abre el Historial con su reloj; «Listas», Favoritos y tus listas de Trakt en
+/// mosaico con portada, y ＋ crea una lista nueva. La pestaña elegida se recuerda en este aparato. Sin Trakt, qué es y «Conectar Trakt»; sin internet, lo dice con
 /// «Reintentar» (nunca como si no tuvieras nada); una cuenta nueva, cómo se guarda.
 /// En la TV: las mismas pestañas con cifra (`saved-commands.js`); Historial dentro de Vistas y «Listas» como pestaña quedan
 /// pendientes allá (registro de paridad). En el iPad, lo mismo con más columnas.
@@ -39,7 +41,6 @@ struct LibrarySavedView: View {
     private static var lastWatchedView: SavedWatchedView {
         #if DEBUG
         if Demo.isOn {
-            if Demo.open == "history" { return .history }
             return Demo.value(after: "-demo-saved-view").flatMap(SavedWatchedView.init(rawValue:)) ?? .watched
         }
         #endif
@@ -82,67 +83,35 @@ struct LibrarySavedView: View {
             case .myList: SavedListContent(observer: observer, listID: SavedModel.watchlist, header: header)
             case .watching: SavedPileContent(observer: observer, status: .watching, header: header)
             case .watched:
-                switch shownWatchedView(board) {
-                case .history: HistoryScreen(header: header)
-                case .dropped: SavedPileContent(observer: observer, status: .dropped, header: header)
-                case .watched: SavedPileContent(observer: observer, status: .watched, header: header)
-                }
+                SavedPileContent(observer: observer, status: shownWatchedView(board) == .dropped ? .dropped : .watched, header: header,
+                                 watchedView: $watchedView, hasDropped: !board.dropped.isEmpty)
             case .lists: SavedListsContent(observer: observer, header: header)
             }
         }
         .transition(.opacity)
     }
 
-    /// Las pestañas y, en Vistas, su selector de tres con lo que cuenta cada cifra.
+    /// Las cuatro partes de Guardado en el selector de Orbital, completo (SG1).
     private func header(_ board: SavedBoard) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSCountTabs(options: tabs(board), selection: $tab)
-            if tab == .watched { watchedPicker(board) }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("saved-tabs")
+        DSSelector(options: tabs(board), selection: $tab, size: .full)
+            .padding(.horizontal, DS.Space.gutter)
+            .accessibilityIdentifier("saved-tabs")
     }
 
-    private func tabs(_ board: SavedBoard) -> [DSCountTabs<SavedTab>.Option] {
+    private func tabs(_ board: SavedBoard) -> [DSSelector<SavedTab>.Option] {
         let ready = model.boardReady
         let lists = model.lists.count   // Mi lista ya no va en «Listas»: en su lugar, Favoritos
         return [
-            .init(id: .myList, title: Text("Mi lista"), symbol: DS.Symbol.saved, count: ready ? board.inList.count : nil, identifier: "saved-tab-mylist"),
-            .init(id: .watching, title: Text("Viendo"), symbol: TitleView.statusSymbol(.watching), count: ready ? board.watching.count : nil, identifier: "saved-tab-watching"),
-            .init(id: .watched, title: Text("Vistas"), symbol: TitleView.statusSymbol(.watched), count: ready ? board.watched.count : nil, identifier: "saved-tab-watched"),
-            .init(id: .lists, title: Text("Listas"), symbol: "list.bullet.rectangle.portrait.fill", count: ready ? lists : nil, identifier: "saved-tab-lists"),
+            .init(id: .myList, title: Text("Mi lista"), symbol: DS.Symbol.saved, count: .some(ready ? board.inList.count : nil), identifier: "saved-tab-mylist"),
+            .init(id: .watching, title: Text("Viendo"), symbol: TitleView.statusSymbol(.watching), count: .some(ready ? board.watching.count : nil), identifier: "saved-tab-watching"),
+            .init(id: .watched, title: Text("Vistas"), symbol: TitleView.statusSymbol(.watched), count: .some(ready ? board.watched.count : nil), identifier: "saved-tab-watched"),
+            .init(id: .lists, title: Text("Listas"), symbol: "list.bullet.rectangle.portrait.fill", count: .some(ready ? lists : nil), identifier: "saved-tab-lists"),
         ]
     }
 
-    /// «Las dejé» en cero no ocupa lugar: el selector queda en Vistas · Historial.
+    /// «Las dejé» en cero no ocupa lugar: Vistas muestra lo que terminaste.
     private func shownWatchedView(_ board: SavedBoard) -> SavedWatchedView {
         watchedView == .dropped && board.dropped.isEmpty && model.boardReady ? .watched : watchedView
-    }
-
-    /// Vistas · Las dejé · Historial y, debajo, qué cuenta lo que ves (así Historial y Vistas no parecen contradecirse).
-    private func watchedPicker(_ board: SavedBoard) -> some View {
-        let shown = shownWatchedView(board)
-        var options: [DSTextTabs<SavedWatchedView>.Option] = [.init(id: .watched, title: Text("Vistas"), symbol: TitleView.statusSymbol(.watched))]
-        if !board.dropped.isEmpty { options.append(.init(id: .dropped, title: Text("Las dejé"), symbol: TitleView.statusSymbol(.dropped))) }
-        options.append(.init(id: .history, title: Text("Historial"), symbol: "clock.fill"))
-        return VStack(alignment: .leading, spacing: DS.Space.s1) {
-            DSTextTabs(options: options, selection: Binding(get: { shown }, set: { watchedView = $0 }))
-                .accessibilityIdentifier("saved-watched-views")
-            caption(shown, board)
-                .recipe(.footnote, color: DS.textMuted)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-
-    /// Qué cuenta lo que ves: Vistas son títulos terminados; Historial, cada vez que viste algo (por eso sus cifras difieren).
-    private func caption(_ shown: SavedWatchedView, _ board: SavedBoard) -> Text {
-        switch shown {
-        case .watched: board.watched.count == 1 ? Text("1 título que terminaste, por el mes en que lo viste")
-                                                : Text("\(board.watched.count) títulos que terminaste, por el mes en que los viste")
-        case .dropped: board.dropped.count == 1 ? Text("1 título que dejaste a medias") : Text("\(board.dropped.count) títulos que dejaste a medias")
-        case .history: Text("Cada vez que viste algo, con su día y su hora")
-        }
     }
 
     private var currentBoard: SavedBoard {
@@ -223,3 +192,5 @@ private struct SavedMessage<Content: View>: View {
 
 /// Una de tus listas (o Favoritos), abierta desde «Listas».
 struct SavedListRoute: Hashable { let id: String }
+/// El Historial (el diario con fecha), desde el reloj del renglón de Vistas (VS2).
+struct DiaryRoute: Hashable {}

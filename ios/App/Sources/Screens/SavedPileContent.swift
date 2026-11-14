@@ -15,6 +15,10 @@ struct SavedPileContent: View {
     var observer: ModelObserver<SavedModel>
     let status: TitleStatus
     var header: AnyView? = nil
+    /// Vistas (VS2): «Terminadas» o «Las dejé», elegido en ⊜. nil fuera de Vistas.
+    var watchedView: Binding<SavedWatchedView>? = nil
+    /// Si hay algo en «Las dejé» (sin nada, ⊜ no lo ofrece).
+    var hasDropped = false
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
     /// «Editar»: elegir varios (G3-A).
     @State private var selection = ListSelection()
@@ -80,26 +84,54 @@ struct SavedPileContent: View {
         }
     }
 
-    /// Con letra de accesibilidad, Todo · Películas · Series baja a su renglón (nada se encima).
+    /// Si no cabe a lo ancho (un SE, letra grande, el nombre de lo elegido), Todo · Películas · Series baja a su renglón.
     private func controls(_ parts: ListBarParts?, every: [Suggestion]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s2) {
-                if let parts { parts.sort }
-                Spacer(minLength: 0)
-                if !typeSize.isAccessibilitySize { kindFilter }
-                if let parts {
-                    parts.filters.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
-                        .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
-                }
-                ListSelectButtons(selection: selection, all: every.map(\.imdb))
+        return ListControlsRow {
+            if let parts { parts.sort }
+        } kind: {
+            kindFilter
+        } trailing: {
+            if watchedView != nil { historyLink }
+            // En Vistas, ⊜ es «Terminadas · Las dejé» (un solo ⊜ en el renglón, nunca dos).
+            if let parts, watchedView == nil {
+                parts.filters.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
+                    .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
             }
-            if typeSize.isAccessibilitySize { kindFilter }
+            if let watchedView, hasDropped { watchedMenu(watchedView) }
+            ListSelectButtons(selection: selection, all: every.map(\.imdb))
         }
         .padding(.horizontal, DS.Space.gutter)
     }
 
+    /// El reloj de Vistas (VS2): abre el Historial, cada vez que viste algo con su día y su hora.
+    private var historyLink: some View {
+        NavigationLink(value: DiaryRoute()) { ListBarIcon(symbol: "clock") }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Historial"))
+            .accessibilityHint(Text("Cada vez que viste algo, con su día y su hora"))
+            .accessibilityIdentifier("saved-history")
+    }
+
+    /// ⊜ de Vistas (VS2): lo que terminaste o lo que dejaste a medias (antes, un tercer renglón de pestañas).
+    private func watchedMenu(_ shown: Binding<SavedWatchedView>) -> some View {
+        Menu {
+            Picker(selection: shown) {
+                Label("Terminadas", systemImage: TitleView.statusSymbol(.watched)).tag(SavedWatchedView.watched)
+                Label("Las dejé", systemImage: TitleView.statusSymbol(.dropped)).tag(SavedWatchedView.dropped)
+            } label: { Text("Mostrar") }
+            .pickerStyle(.inline)
+        } label: {
+            ListBarIcon(symbol: shown.wrappedValue == .dropped ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle",
+                        on: shown.wrappedValue == .dropped)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Filtrar"))
+        .accessibilityValue(shown.wrappedValue == .dropped ? Text("Las dejé") : Text("Terminadas"))
+        .accessibilityIdentifier("saved-watched-filter")
+    }
+
     private var kindFilter: some View {
-        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }))
+        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), dense: true)
     }
 
     /// Un póster del montón: abre su ficha, mantener el dedo trae «Mover a…» y, mientras eliges, se elige.

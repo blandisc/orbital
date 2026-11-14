@@ -3,8 +3,9 @@ import OrbitalCore
 import OrbitalModels
 
 /// «Listas» en Guardado (GD2, Fernando, 13 nov 2026): Favoritos y tus listas de Trakt en mosaico, cada una con su portada (sus
-/// primeros pósters), su nombre y cuántos títulos tiene; dos columnas en el iPhone, las que quepan en el iPad y la Mac. Al final,
-/// «Nueva lista» como un mosaico más (el único «+» de la pestaña): nace «Solo tú» y necesita internet (sin él, lo dice). Tocar
+/// primeros pósters), su nombre y cuántos títulos tiene; dos columnas en el iPhone, las que quepan en el iPad y la Mac. «Nueva
+/// lista» es el ＋ del renglón, en el mismo lugar que en toda Guardado (R1, 13 nov); mientras no tienes listas tuyas, también
+/// un mosaico que invita. Nace «Solo tú» y necesita internet (sin él, lo dice). Tocar
 /// una la abre en la misma pantalla de lista de siempre (`SavedListScreen`). Antes vivían en renglones abajo del tablero, a
 /// pantalla y media de distancia, y Favoritos no aparecía en Guardado.
 struct SavedListsContent: View {
@@ -22,6 +23,7 @@ struct SavedListsContent: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if let header { header }
+                controls
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3, alignment: .top), count: columns),
                           alignment: .leading, spacing: DS.Space.s5) {
                     NavigationLink(value: SavedListRoute(id: SavedModel.favorites)) {
@@ -35,9 +37,11 @@ struct SavedListsContent: View {
                                           posters: model.listPosters[list.id] ?? [])
                         }
                     }
-                    Button { newListName = ""; naming = true } label: { SavedNewListTile(online: env.isOnline) }
-                        .disabled(!env.isOnline)
-                        .accessibilityIdentifier("saved-new-list")
+                    if own.isEmpty {
+                        Button { newListName = ""; naming = true } label: { SavedNewListTile(online: env.isOnline) }
+                            .disabled(!env.isOnline)
+                            .accessibilityIdentifier("saved-new-list-tile")
+                    }
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, DS.Space.gutter)
@@ -54,6 +58,21 @@ struct SavedListsContent: View {
             Button("Crear") { createList(newListName) }
                 .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: { Text("Nace «Solo tú». Puedes cambiar quién la ve en su «···».") }
+    }
+
+    /// El renglón de controles de Listas: ＋ crea una lista nueva (sin tipo ni filtros: aquí no aplican).
+    private var controls: some View {
+        HStack(spacing: DS.Space.s2) {
+            Spacer(minLength: 0)
+            Button { newListName = ""; naming = true } label: { ListBarIcon(symbol: "plus") }
+                .buttonStyle(.plain)
+                .disabled(!env.isOnline)
+                .keyboardShortcut("n", modifiers: .command)
+                .accessibilityLabel(Text("Nueva lista"))
+                .accessibilityHint(env.isOnline ? Text(verbatim: "") : Text("Necesita internet"))
+                .accessibilityIdentifier("saved-new-list")
+        }
+        .padding(.horizontal, DS.Space.gutter)
     }
 
     /// «12 títulos» (o qué es, mientras llega o si está vacía).

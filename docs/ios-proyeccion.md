@@ -155,7 +155,7 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | `TVAccessory` | Lo que suena en tu Orbital, en el accesorio de la barra | Toda la app (iOS 26.1+) |
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
-| `DSSegmented`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
+| `DSSelector`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
 | `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, la flecha de «Ver todo» pegada al título si abre la lista completa (o un dato corto a la derecha); de dónde viene una lista (Trakt) lo dice el porqué, no un sello y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
 | `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en turquesa) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
 | `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |

@@ -121,7 +121,7 @@ extension DesignRulesTests {
         XCTAssertTrue(pages.contains("m.filtersSignature != opened"), "al salir se baraja solo si cambió algo")
         XCTAssertFalse(pages.contains("LazyVGrid"), "las opciones van en `DecideChoiceGrid` (iguala altos), no en la rejilla perezosa")
         let header = try XCTUnwrap(decide.components(separatedBy: "private func header(").dropFirst().first)
-        let title = try XCTUnwrap(header.components(separatedBy: "DSTextTabs(").first)
+        let title = try XCTUnwrap(header.components(separatedBy: "DSSelector(").first)
         XCTAssertTrue(title.contains("{ countText(m, count); close }"), "la cuenta va junto al título, no en su propio renglón")
         check(hits(#"DSFilterIcon|DSFilterPill"#, in: files), "Sin los cuatro íconos de antes")
     }

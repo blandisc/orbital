@@ -763,12 +763,14 @@ Fernando, del selector Todo · Películas · Series de Explorar: «está ahí co
 Fernando, GD2: «Pestañas, como la tele». El tablero de Guardado (G2-A, 9 nov) era un índice: cuatro tarjetas con cifras que
 había que tocar para ver algo, y cada una abría una pantalla distinta. La regla:
 
-- **Al entrar se ven los pósters.** Guardado abre en «Mi lista» con su cuadrícula. Arriba, cuatro pestañas con ícono, cifra y
-  nombre (Mi lista · Viendo · Vistas · Listas), una sola pieza del catálogo (`DSCountTabs`). Se recuerda la última.
-- **Abajo de las pestañas, un renglón.** A la izquierda el orden elegido; a la derecha Todo · Películas · Series, filtrar,
-  agregar y «Editar», todos con ícono. Lo que no aplica no aparece (Vistas va por mes: sin orden).
-- **Lo de una pestaña vive dentro de ella.** «Vistas» trae Vistas · Las dejé · Historial con una frase que dice qué cuenta
-  cada una («3 títulos que terminaste…», «Cada vez que viste algo…»): la cifra de Vistas son títulos; el Historial, vistas.
+- **Al entrar se ven los pósters.** Guardado abre en «Mi lista» con su cuadrícula. Arriba, sus cuatro partes con ícono, cifra
+  y nombre (Mi lista · Viendo · Vistas · Listas) en el selector de Orbital completo (SG1, `DSSelector`), para que no se
+  confunda con las pestañas subrayadas de la Biblioteca. Se recuerda la última.
+- **Abajo del selector, un renglón (R1).** A la izquierda el orden elegido (una sola vez: no se repite dentro de ⊜); a la
+  derecha Todo · Películas · Series, ⊜, ＋ y elegir varios, todos con ícono y siempre en ese orden. Lo que no aplica no
+  aparece: ＋ solo donde agrega algo (Mi lista, Listas, Historial), y Listas no lleva tipo ni filtro.
+- **Lo de una parte vive dentro de ella, sin otro renglón de pestañas (VS2).** En «Vistas», ⊜ elige Terminadas o Las dejé y el
+  reloj abre el Historial (cada vez que viste algo, con su día y su hora) en su propia pantalla.
 - **Una lista abierta es la misma pantalla de lista** y lleva el mismo cielo que el resto de Guardado.
 
 ### Sin conexión nunca se ve como vacío (13 nov 2026)
@@ -784,7 +786,7 @@ un letrero. Una cuenta nueva ve una sola guía para todo Guardado, no cuatro pes
 («Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo (`ratingReminderHeight`) para no tapar lo
 último de la pantalla.
 
-`DesignRulesTests+Saved.swift` lo cuida: Guardado usa `DSCountTabs` con sus cuatro pestañas en orden y sin el tablero ni sus
+`DesignRulesTests+Saved.swift` lo cuida: Guardado usa `DSSelector` completo con sus cuatro partes en orden y sin el tablero ni sus
 pantallas por estado, revisa «sin conexión» antes que «vacío» (también en una lista abierta), cada `DSEmptyState` de Guardado
 lleva símbolo y botón, deja lugar a «¿Qué tal…?» y las listas abiertas llevan el cielo (`Backdrop`).
 
@@ -833,6 +835,16 @@ llegan por un hilo que no es el de la pantalla. Escritos como cierre dentro de u
 de la pantalla y la app truena en cuanto llegan por otro hilo (la 2296: «truena al dar un comando de voz»). Se piden
 desde una función `nonisolated` (o con la versión `async` del sistema) y solo vuelven a la pantalla con
 `Task { @MainActor … }`. Prueba: `DesignRulesTests+SystemCallbacks`.
+
+**Un solo selector (SL1, 13 nov 2026).** Para elegir qué ves aquí, `DSSelector` (completo en Guardado, normal en lo demás) y,
+para el tipo, su tamaño compacto `DSKindFilter`, que dice el nombre de lo elegido (KT1: «Series»). Las pestañas subrayadas
+(`DSTextTabs`) son solo para moverte entre partes: Biblioteca, la ficha y el reproductor. Sin `Picker` segmentado ni pestañas
+armadas a mano. `testOneSelectorEverywhere` lo cuida.
+
+**Un renglón de controles nunca empuja la página.** El renglón de una lista (orden, pastilla de tipo, ⊜, ＋, elegir varios)
+va en `ListControlsRow`: decide con el ancho que le dan y, si no cabe (un SE, letra grande, el nombre «Series» en la
+pastilla), la pastilla baja a su renglón. Nada de `HStack` a mano con piezas de ancho fijo: crecían más que la pantalla y los
+pósters se salían por los lados. `testListControlsUseTheMeasuredRow` lo cuida; `OneSelectorUITests` mide que nada salga.
 
 **La marca es una sola en toda la app.** El Centro de control y la Live Activity usan el símbolo `orbital.mark`, que sale
 del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si
