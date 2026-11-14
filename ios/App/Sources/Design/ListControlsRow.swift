@@ -2,7 +2,7 @@ import SwiftUI
 
 /// El renglón de controles de una lista (R1, Guardado y Mi lista): el orden a la izquierda con su nombre; luego la pastilla de
 /// tipo y los íconos (⊜, ＋, el reloj, elegir varios). Con el nombre de lo elegido en la pastilla (KT1, «Series») el renglón
-/// crece: si así no cabe a lo ancho (un SE, letra grande), la pastilla baja a su propio renglón en vez de empujar la página
+/// aparta su lugar: si así no cabe a lo ancho, la pastilla baja a su propio renglón, a la derecha como arriba en vez de empujar la página
 /// fuera de la pantalla (Fernando, 13 nov 2026, visto en las capturas). Se mide lo que ocupa y lo que hay, no se adivina.
 struct ListControlsRow<Sort: View, Kind: View, Trailing: View>: View {
     @ViewBuilder var sort: Sort
@@ -52,7 +52,8 @@ private struct ControlsLayout: Layout {
         if inline {
             subviews[1].place(at: CGPoint(x: bounds.maxX - trailing.width - gap, y: bounds.minY + row / 2), anchor: .trailing, proposal: .unspecified)
         } else {
-            subviews[1].place(at: CGPoint(x: bounds.minX, y: bounds.minY + row + gap), anchor: .topLeading, proposal: .unspecified)
+            // Del mismo lado que en el renglón: la pastilla no cruza la pantalla.
+            subviews[1].place(at: CGPoint(x: bounds.maxX, y: bounds.minY + row + gap), anchor: .topTrailing, proposal: .unspecified)
         }
     }
 }

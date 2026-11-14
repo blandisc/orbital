@@ -41,9 +41,31 @@ struct DSKindFilter: View {
         if menu {
             KindPill(kind: $kind, open: open ?? .constant(false), options: options)
         } else {
-            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
-                .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+            HStack(spacing: DS.Space.s2) {
+                chosenName
+                KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
+            }
+            .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
         }
+    }
+
+    /// KT1 (Fernando, 13 nov 2026: «que muestre que estás filtrando películas o series, con letras»): el nombre de lo elegido,
+    /// a la izquierda de la pastilla. Su lugar está apartado para el nombre más largo, así que al elegir nada se mueve: los
+    /// íconos se quedan donde estaban (Fernando: «que aparezca del lado izquierdo, que no se mueva el ícono hasta el otro
+    /// lado»). Con «Todo», el lugar queda vacío.
+    private var chosenName: some View {
+        let names: [(String, LocalizedStringKey)] = [("movie", "Películas"), ("series", "Series")]
+        return ZStack(alignment: .trailing) {
+            ForEach(names, id: \.0) { Text($0.1).hidden() }
+            if let name = names.first(where: { $0.0 == kind })?.1 {
+                Text(name).foregroundStyle(DS.text).transition(.opacity.animation(DS.Motion.fadeQuick))
+            }
+        }
+        .font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
+        .lineLimit(1).fixedSize()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("kind-name")
+        .accessibilityHidden(kind.isEmpty)
     }
 
     private var options: [(String, LocalizedStringKey)] {
@@ -288,9 +310,6 @@ struct KindPill: View {
             ForEach(Array(shown.enumerated()), id: \.element.0) { _, option in
                 let on = kind == option.0
                 let index = options.firstIndex { $0.0 == option.0 } ?? 0
-                // KT1 (Fernando, 13 nov 2026: «que muestre de alguna forma que estás filtrando películas o series, con letras»):
-                // donde la pastilla vive abierta, lo elegido dice su nombre junto al ícono; con «Todo», solo los íconos.
-                let named = alwaysOpen && on && !option.0.isEmpty
                 Button { choose(option.0) } label: {
                     HStack(spacing: 0) {
                         Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
@@ -298,13 +317,6 @@ struct KindPill: View {
                             .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
                             // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                             .frame(width: cell, height: cell)
-                        if named {
-                            Text(option.1).font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
-                                .lineLimit(1).fixedSize()
-                                .padding(.trailing, DS.Space.s2)
-                                .transition(.opacity.animation(DS.Motion.fadeQuick))
-                                .accessibilityHidden(true)   // el botón ya lo dice
-                        }
                     }
                     .foregroundStyle(on && open ? DS.bg : DS.text)
                     .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido

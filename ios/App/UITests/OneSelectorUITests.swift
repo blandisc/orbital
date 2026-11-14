@@ -40,14 +40,22 @@ final class OneSelectorUITests: XCTestCase {
         // KT1: elegir Series y que la pastilla lo diga con letras.
         let series = app.buttons["kind-series"].firstMatch
         XCTAssertTrue(series.exists)
+        let before = series.frame
         series.tap()
-        XCTAssertTrue(app.staticTexts["Series"].waitForExistence(timeout: 3), "la pastilla dice «Series»")
+        let name = app.descendants(matching: .any)["kind-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 3), "dice «Series»")
+        XCTAssertEqual(name.label, "Series")
+        sleep(1)
+        XCTAssertEqual(series.frame.minX, before.minX, accuracy: 1, "el ícono no se mueve al elegirlo")
+        XCTAssertEqual(series.frame.minY, before.minY, accuracy: 1, "el ícono no se mueve al elegirlo")
+        XCTAssertLessThanOrEqual(name.frame.maxX, app.buttons["kind-all"].firstMatch.frame.minX, "el nombre, a la izquierda de la pastilla")
         let tabs = app.descendants(matching: .any)["saved-tabs"]
-        XCTAssertGreaterThan(series.frame.minY, tabs.frame.maxY - 1, "la pastilla, en el renglón bajo el selector")
+        XCTAssertGreaterThan(series.frame.minY, tabs.frame.maxY - 1, "la pastilla, bajo el selector")
         assertFits(app, "con «Series»")
         shot(app, "2-solo-series")
         app.buttons["kind-movie"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Películas"].waitForExistence(timeout: 3), "la pastilla dice «Películas»")
+        XCTAssertEqual(app.descendants(matching: .any)["kind-name"].firstMatch.label, "Películas", "dice «Películas»")
+        XCTAssertEqual(series.frame.minX, before.minX, accuracy: 1, "los íconos siguen en su lugar")
         assertFits(app, "con «Películas»")
         shot(app, "2b-solo-peliculas")
         app.buttons["kind-all"].firstMatch.tap()

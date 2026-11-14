@@ -20,7 +20,8 @@ extension DesignRulesTests {
         XCTAssertEqual(stray, [], "Pestañas subrayadas para elegir qué ves: eso es `DSSelector` (las pestañas son para moverte entre partes)")
         // KT1: la pastilla de tipo dice el nombre de lo elegido donde vive abierta.
         let filters = try XCTUnwrap(files.first { $0.name == "Filters.swift" }).lines.joined(separator: "\n")
-        XCTAssertTrue(filters.contains("let named = alwaysOpen && on && !option.0.isEmpty"), "La pastilla de tipo dice «Películas» o «Series» (KT1)")
+        XCTAssertTrue(filters.contains("private var chosenName: some View") && filters.contains("Text($0.1).hidden()"),
+                      "La pastilla de tipo dice «Películas» o «Series» a su izquierda, con su lugar apartado: los íconos no se mueven (KT1)")
     }
 
     /// El renglón de controles de una lista decide con el ancho que le dan (con «Series» en la pastilla, un `HStack` a mano se

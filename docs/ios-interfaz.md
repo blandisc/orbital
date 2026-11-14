@@ -837,7 +837,7 @@ desde una función `nonisolated` (o con la versión `async` del sistema) y solo 
 `Task { @MainActor … }`. Prueba: `DesignRulesTests+SystemCallbacks`.
 
 **Un solo selector (SL1, 13 nov 2026).** Para elegir qué ves aquí, `DSSelector` (completo en Guardado, normal en lo demás) y,
-para el tipo, su tamaño compacto `DSKindFilter`, que dice el nombre de lo elegido (KT1: «Series»). Las pestañas subrayadas
+para el tipo, su tamaño compacto `DSKindFilter`, que dice el nombre de lo elegido a su izquierda (KT1: «Series») en un lugar apartado: al elegir, los íconos no se mueven. Las pestañas subrayadas
 (`DSTextTabs`) son solo para moverte entre partes: Biblioteca, la ficha y el reproductor. Sin `Picker` segmentado ni pestañas
 armadas a mano. `testOneSelectorEverywhere` lo cuida.
 
