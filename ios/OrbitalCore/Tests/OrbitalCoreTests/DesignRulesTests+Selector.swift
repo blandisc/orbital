@@ -20,8 +20,8 @@ extension DesignRulesTests {
         XCTAssertEqual(stray, [], "Pestañas subrayadas para elegir qué ves: eso es `DSSelector` (las pestañas son para moverte entre partes)")
         // KT1: la pastilla de tipo dice el nombre de lo elegido donde vive abierta.
         let filters = try XCTUnwrap(files.first { $0.name == "Filters.swift" }).lines.joined(separator: "\n")
-        XCTAssertTrue(filters.contains("private func nameSlot(") && filters.contains("Text($0.1).hidden()"),
-                      "La pastilla de tipo dice «Todo», «Películas» o «Series» adentro, a la izquierda de los íconos, con su lugar apartado: los íconos no se mueven (KT2)")
+        XCTAssertTrue(filters.contains("private func nameSlot(") && !filters.contains("Text($0.1).hidden()"),
+                      "La pastilla de tipo dice «Todo», «Películas» o «Series» adentro, a la izquierda de los íconos, y mide justo lo que el nombre: sin lugar apartado para el más largo, que dejaba un hueco con «Todo» (KT2, 14 nov)")
         XCTAssertFalse(filters.contains("chosenName"), "El nombre de lo elegido ya no va afuera de la pastilla (KT2)")
         XCTAssertTrue(filters.contains(".frame(minWidth: left)"),
                       "En Inicio, el nombre ocupa lo que había a la izquierda de lo elegido: centrado en ese lugar; con Series el círculo no brinca a la orilla (KT2)")

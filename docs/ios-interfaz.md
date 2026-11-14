@@ -837,7 +837,7 @@ desde una función `nonisolated` (o con la versión `async` del sistema) y solo 
 `Task { @MainActor … }`. Prueba: `DesignRulesTests+SystemCallbacks`.
 
 **Un solo selector (SL1, 13 nov 2026).** Para elegir qué ves aquí, `DSSelector` (completo en Guardado, normal en lo demás) y,
-para el tipo, su tamaño compacto `DSKindFilter`, que dice el nombre de lo elegido («Todo», «Películas», «Series») adentro de la pastilla, a la izquierda de los íconos, en un lugar apartado: al elegir, los íconos no se mueven (KT2, antes KT1 lo ponía afuera). En Inicio, recién elegido, el nombre ocupa el lugar de lo que había a la izquierda: el círculo se queda donde lo tocaste y luego la pastilla se recoge, todo un poco más pausado (`DS.KindPill.pace`). Las pestañas subrayadas
+para el tipo, su tamaño compacto `DSKindFilter`, que dice el nombre de lo elegido («Todo», «Películas», «Series») adentro de la pastilla, a la izquierda de los íconos, y la pastilla mide justo lo que necesita: sin hueco apartado para el nombre más largo (KT2, 14 nov; antes KT1 lo ponía afuera). Donde va a la derecha (Guardado) los íconos no se mueven al elegir. En Inicio, recién elegido, el nombre ocupa el lugar de lo que había a la izquierda: el círculo se queda donde lo tocaste y luego la pastilla se recoge, todo un poco más pausado (`DS.KindPill.pace`). Las pestañas subrayadas
 (`DSTextTabs`) son solo para moverte entre partes: Biblioteca, la ficha y el reproductor. Sin `Picker` segmentado ni pestañas
 armadas a mano. `testOneSelectorEverywhere` lo cuida.
 

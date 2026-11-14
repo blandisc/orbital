@@ -350,8 +350,7 @@ struct KindPill: View {
     /// KT2 (Fernando, 13 nov 2026: «que diga adentro de la pastilla película, todo, serie… que sea a la izquierda del
     /// punto», y que con Series el ícono no se vaya hasta la izquierda): el nombre de lo elegido, adentro de la pastilla y a la
     /// izquierda de los íconos, en toda la app.
-    /// - Siempre abierta: su lugar está apartado para el nombre más largo, así que al elegir nada se mueve; el nombre nuevo se
-    ///   funde sobre el anterior.
+    /// - Siempre abierta: el lugar mide lo que el nombre (sin huecos); el nombre nuevo se funde sobre el anterior.
     /// - Inicio, recién elegido: las otras opciones se van y el nombre ocupa su lugar a la izquierda de lo elegido, centrado en al menos
     ///   el ancho de lo que había a su izquierda: el círculo se queda donde lo tocaste (con Series, ya no brinca hasta la
     ///   orilla) y después la pastilla se recoge con él.
@@ -359,13 +358,13 @@ struct KindPill: View {
         let names = Self.names.filter { name in options.contains { $0.0 == name.0 } }
         let chosen = names.first { $0.0 == kind }?.1
         if alwaysOpen {
-            ZStack {   // centrado en su lugar, como en Inicio
-                ForEach(names, id: \.0) { Text($0.1).hidden() }
-                if let chosen {
-                    Text(chosen).id(kind).transition(.opacity.animation(DS.Motion.fade))
-                }
+            // Justo del ancho del nombre que dice (Fernando, 14 nov: «que no haya más espacio del que necesitamos»): antes
+            // se apartaba el lugar de «Películas» y con «Todo» sobraba un hueco. El ancho cambia con el mismo resorte con que
+            // viaja el círculo; donde la pastilla va a la derecha (Guardado), los íconos ni se mueven.
+            if let chosen {
+                Text(chosen).id(kind).transition(.opacity.animation(DS.Motion.fade))
+                    .modifier(KindName())
             }
-            .modifier(KindName())
         } else if open, naming, let chosen {
             let left = max(0, CGFloat(picked) * (cell + spacing) - spacing)
             Text(chosen)
