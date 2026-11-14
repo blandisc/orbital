@@ -38,7 +38,7 @@ final class SpeechInput {
         // Si todavía está diciendo la respuesta anterior, se calla: si no, el micrófono se oye a sí mismo.
         voice.stopSpeaking(at: .immediate)
         self.onFinish = onFinish
-        let speechOK = await withCheckedContinuation { c in SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) } }
+        let speechOK = await Self.speechAuthorized()
         let micOK = await AVAudioApplication.requestRecordPermission()
         guard speechOK, micOK, let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language.hasPrefix("en") ? "en-US" : "es-MX")),
               recognizer.isAvailable else { denied = true; return }
@@ -56,18 +56,16 @@ final class SpeechInput {
             request.contextualStrings = Array(hints.prefix(100))
             self.request = request
             let input = engine.inputNode
-            input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in request.append(buffer) }
+            Self.feed(input, to: request)
             engine.prepare()
             try engine.start()
             transcript = ""
             heardNothing = false
             listening = true
-            task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if let result { self.transcript = result.bestTranscription.formattedString; self.armSilence(Self.silenceSeconds) }
-                    if error != nil || result?.isFinal == true { self.finish() }
-                }
+            task = Self.recognize(recognizer, request) { [weak self] text, done in
+                guard let self else { return }
+                if let text { self.transcript = text; self.armSilence(Self.silenceSeconds) }
+                if done { self.finish() }
             }
             armSilence(Self.firstWordSeconds)
         } catch {
@@ -101,6 +99,27 @@ final class SpeechInput {
         utterance.voice = AVSpeechSynthesisVoice(language: language.hasPrefix("en") ? "en-US" : "es-MX")
         voice.delegate = spoken
         voice.speak(utterance)
+    }
+
+    // Las respuestas del sistema (permiso de dictado, el micrófono que entrega audio, el reconocimiento) llegan por hilos
+    // que no son el de la pantalla. Un cierre escrito dentro de esta clase (@MainActor) exige ese hilo y, en Swift 6, truena
+    // al llegar por otro (la 2296, 13 nov 2026: «la app truena al dar un comando de voz»). Por eso se arman aquí, fuera
+    // del actor, y solo regresan a la pantalla con `Task { @MainActor … }`. Regla «Respuestas del sistema fuera del actor».
+    nonisolated private static func speechAuthorized() async -> Bool {
+        await withCheckedContinuation { c in SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) } }
+    }
+
+    nonisolated private static func feed(_ input: AVAudioInputNode, to request: SFSpeechAudioBufferRecognitionRequest) {
+        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in request.append(buffer) }
+    }
+
+    nonisolated private static func recognize(_ recognizer: SFSpeechRecognizer, _ request: SFSpeechAudioBufferRecognitionRequest,
+                                              _ update: @escaping @MainActor (String?, Bool) -> Void) -> SFSpeechRecognitionTask {
+        recognizer.recognitionTask(with: request) { result, error in
+            let text = result?.bestTranscription.formattedString
+            let done = error != nil || result?.isFinal == true
+            Task { @MainActor in update(text, done) }
+        }
     }
 
     private func armSilence(_ seconds: Double) {

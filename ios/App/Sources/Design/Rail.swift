@@ -37,6 +37,7 @@ struct Rail<Content: View>: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
+            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .edgeBump()   // al final de la fila, un golpe suave en la mano

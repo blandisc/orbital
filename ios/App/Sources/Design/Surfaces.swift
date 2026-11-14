@@ -164,6 +164,7 @@ struct DSSeasonPicker: View {
             }
             .scrollTargetLayout()
         }
+        .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
         .fixedSize(horizontal: false, vertical: true)
         .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         .scrollPosition(id: $scrolled, anchor: .center)

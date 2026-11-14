@@ -312,7 +312,7 @@ struct HomeView: View {
     /// su borde entra «Seguir viendo». El fondo toma el color del que está al frente.
     private func spotlightCarousel(_ model: HomeModel) -> some View {
         let items = spotlightItems(model)
-        return ScrollView(.horizontal, showsIndicators: false) {
+        return ScrollView(.horizontal, showsIndicators: false) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
             LazyHStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
                     hero(s).containerRelativeFrame(.horizontal).id(i)   // ds-exception: mide el carrusel (ya del ancho de la página). Mantener y mover: se inclina
@@ -464,6 +464,7 @@ struct HomeView: View {
                 }
                 .scrollTargetLayout()
             }
+            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
         }
@@ -513,6 +514,7 @@ struct HomeView: View {
                     .padding(.vertical, DS.Stroke.selected)   // el anillo de la elegida no se recorta
                     .scrollTargetLayout()
                 }
+                .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 // Un riel: solo de lado. Antes la fila tenía unos puntos de más y se podía mover arriba y abajo.
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
@@ -535,6 +537,7 @@ struct HomeView: View {
                 }
                 .scrollTargetLayout()
             }
+            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .id("\(service.brand)-\(movies)")   // al cambiar, desde el n.º 1

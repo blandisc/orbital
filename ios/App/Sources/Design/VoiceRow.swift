@@ -234,7 +234,7 @@ struct VoiceChoicesCarousel: View {
                 Spacer(minLength: DS.Space.s2)
                 DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { actions.close() }
             }
-            ScrollView(.horizontal) {
+            ScrollView(.horizontal) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
                 LazyHStack(spacing: DS.Space.s3) {
                     ForEach(reply.choices) { choice in card(choice).containerRelativeFrame(.horizontal) { width, _ in width * DS.Remote.choiceCardShare } }   // ds-exception: su carrusel, dentro del control
                 }

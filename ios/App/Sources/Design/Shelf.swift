@@ -30,6 +30,7 @@ struct Shelf<Content: View>: View {
                 .scrollTargetLayout()
                 .environment(\.posterCaptions, false)
             }
+            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .edgeBump()   // al final de la fila, un golpe suave en la mano
@@ -107,6 +108,7 @@ struct PopularTodayShelf: View {
                 }
                 .scrollTargetLayout()
             }
+            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .edgeBump()   // al final de la fila, un golpe suave en la mano, como los demás estantes

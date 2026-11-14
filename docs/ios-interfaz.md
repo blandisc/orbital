@@ -811,6 +811,22 @@ El arte nunca enseña su orilla: se funde con el fondo que de verdad tiene detr�
 destacado de Inicio, la portada de una colección, «Lo que ves», una persona) no se recogen: se van con el contenido y se
 funden con máscara o velo hacia el fondo, sin recorte que se mueva. En la TV el arte ya nunca enseña su orilla.
 
+### Un listón no recorta lo que crece (13 nov 2026)
+
+Un póster de un listón que crece al picarlo, al dejarlo apretado o con el puntero se cortaba en la orilla de la fila: la caja
+se quedaba fija y el póster crecía adentro (Fernando, 13 nov 2026). Todo `ScrollView(.horizontal …)` lleva
+`.scrollClipDisabled()`. La única excepción es un carrusel de página completa, donde la página de al lado no debe asomar,
+y lleva `// recorta: <motivo>` en la línea del `ScrollView`. Prueba: `DesignRulesTests+SystemCallbacks`
+(`testHorizontalRowsDoNotClipWhatGrows`).
+
+### Las respuestas del sistema se arman fuera de la pantalla (13 nov 2026)
+
+Un permiso (dictado, micrófono, notificaciones), el audio que entrega el micrófono o el resultado del reconocimiento de voz
+llegan por un hilo que no es el de la pantalla. Escritos como cierre dentro de una clase `@MainActor`, Swift 6 los declara
+de la pantalla y la app truena en cuanto llegan por otro hilo (la 2296: «truena al dar un comando de voz»). Se piden
+desde una función `nonisolated` (o con la versión `async` del sistema) y solo vuelven a la pantalla con
+`Task { @MainActor … }`. Prueba: `DesignRulesTests+SystemCallbacks`.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

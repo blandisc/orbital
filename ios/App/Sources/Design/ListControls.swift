@@ -361,6 +361,7 @@ struct ListFilterChips: View {
                 if filter.hideWatched { chip(Text("Sin lo que ya vi")) { filter.hideWatched = false } }
             }
         }
+        .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
         .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
     }
 

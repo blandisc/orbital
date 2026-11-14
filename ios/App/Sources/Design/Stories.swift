@@ -141,7 +141,7 @@ struct StoryDeck: View {
 
     var body: some View {
         GeometryReader { geo in
-            ScrollView(.horizontal) {
+            ScrollView(.horizontal) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
                 LazyHStack(spacing: 0) {
                     ForEach(Array(stories.enumerated()), id: \.element.id) { i, story in
                         StoryPlayer(story: story, active: current == story.id, onFinish: { onSeen(story) }, onAction: onAction,

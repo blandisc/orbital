@@ -232,6 +232,7 @@ struct BecauseCard<Related: View>: View {
                         LazyHStack(spacing: DS.Space.s2) { related() }
                             .environment(\.posterCaptions, false)
                     }
+                    .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 case .loading:
                     HStack(spacing: DS.Space.s2) {
                         ForEach(0..<DS.Collections.relatedPlaceholders, id: \.self) { _ in

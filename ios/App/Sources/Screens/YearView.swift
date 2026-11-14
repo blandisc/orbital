@@ -59,6 +59,7 @@ struct YearView: View {
                                     }
                                 }
                             }
+                            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                             .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                         }
                     }

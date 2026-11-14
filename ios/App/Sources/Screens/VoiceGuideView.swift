@@ -155,6 +155,7 @@ private struct VoiceTopicsView: View {
                                 topicChip("Si no funciona", id: "help", proxy: proxy)
                             }
                         }
+                        .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                         .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                         // Cómo decirlo: empezar con Alexa, la rutina para prender todo, y que se puede hablar con naturalidad.
                         VoiceTopic(title: Text("Cómo pedirlo"), meta: Text("No hace falta decirlo exacto.")) {
