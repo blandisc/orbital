@@ -41,6 +41,28 @@ final class DecideTabsUITests: XCTestCase {
         }
     }
 
+    /// De «Una por una» a «Tres que caben» con la carta que veías (Fernando, 13 nov 2026: «mejor la transición del póster»):
+    /// después de pasar dos cartas, al regresar la de arriba queda elegida entre los tres (se encoge hasta su cartel).
+    func testLaCartaQueVeiasQuedaElegidaEntreLosTres() {
+        let app = launch(["-demo-tab", "1", "-demo-mode", "lists", "-demo-open", "decide"])
+        let trioTab = app.buttons["Tres que caben"], deckTab = app.buttons["Una por una"]
+        XCTAssertTrue(deckTab.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.descendants(matching: .any)["decide-shuffle"].waitForExistence(timeout: 15))
+        deckTab.tap()
+        let pass = app.descendants(matching: .any)["match-discard"].firstMatch
+        XCTAssertTrue(pass.waitForExistence(timeout: 8), "el mazo con su «Paso»")
+        for _ in 0..<2 { pass.tap(); sleep(1) }
+        let info = app.descendants(matching: .any)["match-info"].firstMatch
+        XCTAssertTrue(info.waitForExistence(timeout: 4))
+        let seen = info.label
+        trioTab.tap()
+        let chosen = app.descendants(matching: .any)["decide-chosen"].firstMatch
+        XCTAssertTrue(chosen.waitForExistence(timeout: 8), "regresa a los tres")
+        XCTAssertFalse(chosen.label.isEmpty)
+        XCTAssertTrue(seen.contains(chosen.label), "la elegida es la carta que veías («\(seen)» / «\(chosen.label)»)")
+        shot(app, "trio-con-la-carta")
+    }
+
     /// «Una por una» abre sin colgarse (Fernando, 13 nov 2026, la 2291–2293: «truena cada vez que la abro»), sus botones
     /// quedan completos debajo de los datos de la carta (no se encima nada), «Filtros» abre su hoja en las dos pestañas y se
     /// regresa a «Tres que caben». Con tiempos límite: si la app se cuelga, la prueba falla en vez de esperar.
@@ -58,7 +80,7 @@ final class DecideTabsUITests: XCTestCase {
         let deck = app.descendants(matching: .any).matching(identifier: "match-deck").firstMatch
         XCTAssertTrue(deck.waitForExistence(timeout: 30), "«Una por una» abre")
         let info = app.descendants(matching: .any).matching(identifier: "match-info").firstMatch
-        let pass = app.buttons["match-discard"], play = app.buttons["match-play"]
+        let pass = app.descendants(matching: .any)["match-discard"].firstMatch, play = app.buttons["match-play"]
         XCTAssertTrue(info.waitForExistence(timeout: 10) && pass.waitForExistence(timeout: 5), "la carta con sus datos y sus botones")
         sleep(1)
         shot(app, "mazo-abierto")

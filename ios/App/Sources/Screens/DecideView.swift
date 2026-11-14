@@ -137,8 +137,10 @@ struct DecideView: View {
 
     /// Cada pestaña entra de su lado y sale hacia él («Tres que caben» a la izquierda, «Una por una» a la derecha), con un
     /// fundido; se puede interrumpir a medias. Con «Reducir movimiento», solo el fundido.
+    /// Con un título que viaja (`heroID`), sin correrse de lado: el cartel y la carta van de uno al otro y el resto se funde
+    /// (antes el corrimiento arrastraba al cartel y se veían dos).
     private func tabTransition(_ tab: DecideModel.Mode) -> AnyTransition {
-        guard !reduceMotion else { return .opacity }
+        guard !reduceMotion, heroID == nil else { return .opacity }
         return .offset(x: tab == .deck ? DS.DecideLive.tabShift : -DS.DecideLive.tabShift).combined(with: .opacity)
     }
 
@@ -209,17 +211,19 @@ struct DecideView: View {
     }
 
     /// Cambiar de pestaña con continuidad (Fernando, 13 nov 2026): a «Una por una», el mazo empieza por el cartel elegido (si
-    /// pasa sus filtros) y ese cartel crece hasta ser la carta; de regreso, la carta de arriba vuelve a ser la elegida si está
-    /// entre los tres. Ni el trío ni el mazo se vuelven a barajar.
+    /// pasa sus filtros) y ese cartel crece hasta ser la carta; de regreso, la carta de arriba se encoge hasta su cartel y
+    /// queda elegida (si no estaba entre los tres y cabe esta noche, entra en el lugar de la elegida). Ni el trío ni el mazo
+    /// se vuelven a barajar.
     private func switchMode(to new: DecideModel.Mode, _ m: DecideModel) {
         guard new != mode else { return }
         if new == .deck {
             let lead = m.pick.flatMap { p in m.deckPool().contains { $0.imdb == p.imdb } ? p.imdb : nil }
             deckModel?.lead = lead
             heroID = lead
-        } else if let top = deckModel?.cards.first, let same = m.picks.first(where: { $0.imdb == top.imdb }) {
-            m.select(same)
-            heroID = same.imdb
+        } else if let top = deckModel?.cards.first, m.bringIn(top) {
+            // La carta que veías se encoge hasta su cartel entre los tres (si no estaba y cabe esta noche, entra en el lugar
+            // de la elegida).
+            heroID = top.imdb
         } else {
             heroID = nil
         }

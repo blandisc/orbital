@@ -60,3 +60,23 @@ extension DecideModel {
         return parts.joined(separator: "|")
     }
 }
+
+extension DecideModel {
+    /// De «Una por una» a «Tres que caben» con la carta que estabas viendo (Fernando, 13 nov 2026: «mejor la transición del
+    /// póster de cuando estás en el Tinder de películas a cuando estás en la sección de 3»): si no está entre los tres y cabe
+    /// en lo de esta noche (tiempo y ánimo), entra en el lugar de la elegida y queda elegida, así la carta se encoge hasta su
+    /// cartel. Devuelve si quedó entre los tres (si no cabe, el trío no cambia).
+    @discardableResult
+    public func bringIn(_ s: Suggestion) -> Bool {
+        if let same = picks.first(where: { $0.imdb == s.imdb }) { select(same); return true }
+        guard let v = verdict(s, filters), v.matches, v.fits else { return false }
+        coalescing {
+            var next = picks
+            if let at = next.firstIndex(where: { $0.imdb == pick?.imdb }) { next[at] = s } else if next.count < 3 { next.append(s) } else { next[next.count / 2] = s }
+            shown.insert(s.imdb)
+            picks = next
+        }
+        select(s)
+        return true
+    }
+}
