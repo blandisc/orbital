@@ -29,7 +29,7 @@ from ..scrobble import TraktScrobbler
 from ..sessions import Sessions
 from ..state import State
 from ..store import ItemStore
-from ..trakt_sync import TraktLibrary
+from ..trakt_sync import ChannelDetours, TraktLibrary
 from .base import ADDONS_KEY as ADDONS_KEY
 from .base import DEBRID_CAUSES as DEBRID_CAUSES
 from .base import RD_ACCOUNT as RD_ACCOUNT
@@ -113,6 +113,9 @@ class Watch(_Details):
         # Trakt: lo que viste, pausaste o guardaste en el iPhone (o en otra app) también entra a Seguir viendo y Mi lista.
         self.trakt_library = TraktLibrary()  # catalog.py le da el Trakt de «Para ti» cuando ya existe
         self.trakt_library.dismissed = lambda imdb: self.state.prefs(f"stremio:{imdb}").get("dismissed")
+        # V2: lo que dejaste a medias en un canal de Orbital (sale en Seguir viendo sin mover tu orden).
+        self.trakt_library.channel = ChannelDetours(lambda: self.state.settings().get("channel_detours"),
+                                                    lambda value: self.state.set_setting("channel_detours", value))
         self._trakt_busy = threading.Lock()
         self._saving = threading.Lock()
         # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).

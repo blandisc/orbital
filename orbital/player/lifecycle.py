@@ -65,6 +65,7 @@ from ..playback import (  # noqa: F401 - el resto de Orbital y las pruebas las p
     wrong_audio,
 )
 from ..scrobble import not_the_video
+from ..trakt_sync import CHANNEL_DONE
 from .base import SYNTHETIC_RESYNC_AFTER, _num, log
 from .pip import _Pip
 
@@ -238,8 +239,21 @@ class _Lifecycle(_Pip):
         meta = {**segment.meta, "finished": True} if segment.finished else segment.meta  # créditos o «Ver ahora»: visto
         self._safe(self.on_scrobble, action, meta, segment.position, segment.duration)
 
+    def _channel_progress(self, segment: Segment, closing: bool) -> None:
+        """V2: un episodio de un canal de Orbital no guarda en Stremio ni avisa a Trakt mientras lo ves (es la tele de fondo),
+        pero lo que dejas a medias se puede retomar y lo terminado queda visto, sin mover tu orden (trakt_sync.ChannelDetours)."""
+        if not self.on_channel or not segment.duration or not segment.meta.get("video_id"):
+            return
+        done = segment.finished or segment.position >= segment.duration * CHANNEL_DONE
+        if not closing and done:
+            return  # el final se dice una sola vez, al cerrar
+        threading.Thread(target=self._safe, args=(self.on_channel, segment.meta, segment.position, segment.duration,
+                                                   segment.watched, closing and done), daemon=True).start()
+
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()
+        if segment.meta.get("synthetic") and not segment.live:
+            return self._channel_progress(segment, closing=False)
         delta = segment.watched - segment.saved_watched
         if segment.live or segment.meta.get("synthetic") or segment.meta.get("clip") or not self.on_progress \
                 or not segment.duration or delta <= 0:
@@ -259,8 +273,10 @@ class _Lifecycle(_Pip):
             log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %d cuadros perdidos (%d al decodificar), %d tirones",
                      segment.title, int(segment.watched // 60), segment.waits, segment.waited, segment.drops,
                      segment.decoder_drops, segment.stutters)
-        if segment.live or segment.meta.get("synthetic") or segment.meta.get("clip"):
-            return  # la tele (en vivo o un canal de Orbital) y un tráiler no guardan dónde ibas ni entran en «Seguir viendo»
+        if segment.meta.get("synthetic") and not segment.live:
+            return self._channel_progress(segment, closing=True)  # V2: lo de un canal, aparte
+        if segment.live or segment.meta.get("clip"):
+            return  # la tele en vivo y un tráiler no guardan dónde ibas ni entran en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)

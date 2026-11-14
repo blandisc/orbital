@@ -29,6 +29,9 @@ from .library.models import LibraryItem
 log = logging.getLogger(__name__)
 
 CHECK_EVERY = 60  # s: cada cuánto se pregunta a Trakt si cambió algo (se pregunta al abrir Inicio, no hay sondeo aparte)
+CHANNEL_MIN_WATCHED = 20  # s: menos que esto de un canal es zapear (PlaybackRules.minWatchedToSave del iPhone)
+CHANNEL_DONE = .9  # visto, en un canal: los créditos o el 90 %
+CHANNEL_SLACK = 300  # s: lo de Trakt hasta 5 min después de lo del canal todavía es lo del canal (la vista que él mandó)
 SHOWS = 15  # las últimas series que viste: de ellas sale «Sigue: T2 E6»
 PARTS = ("paused", "watched", "watchlist", "hidden")
 
@@ -84,13 +87,104 @@ def list_item(entry: dict) -> LibraryItem:
                               "eyebrow": "Película" if kind == "movie" else "Serie"})
 
 
+class ChannelDetours:
+    """V2 (Fernando, 13 nov 2026: «vamos con B2»; en la TV: «aplica lo mismo de iPhone»): **el canal no desordena tu serie,
+    pero lo que dejaste a medias siempre se puede retomar** (`LibraryEntry+Channel.swift` del iPhone).
+
+    - Un episodio de un canal de Orbital cortado a la mitad (más de `CHANNEL_MIN_WATCHED` vistos) sale en Seguir viendo con
+      su avance («T2 E3 · quedan 12 min») y «Continuar» lo retoma ahí. Se guarda aquí, no en Trakt ni en Stremio: tu orden
+      (el que te toca) queda apartado en `before`.
+    - Terminado, queda visto en Trakt, pero Seguir viendo regresa a tu orden de antes (`kept`), no al que le sigue.
+    - Si el canal puso justo el que te tocaba, es verlo en orden: al terminarlo la serie pasa al siguiente, como siempre.
+
+    `load()`/`save(data)`: {"detours": {IMDb: {video_id, position, duration, at, before, title}},
+    "kept": {IMDb: {video_id, at, before}}}, en el estado de Orbital."""
+
+    def __init__(self, load: Callable[[], dict | None], save: Callable[[dict], None]) -> None:
+        self.load, self.save = load, save
+        self._lock = threading.Lock()
+
+    def data(self) -> dict:
+        raw = self.load() or {}
+        return {"detours": dict(raw.get("detours") or {}), "kept": dict(raw.get("kept") or {})}
+
+    def progress(self, imdb: str, video: str, position: float, duration: float, watched: float, at: float,
+                 your_next: str | None, title: str = "") -> bool:
+        """Un episodio del canal a medias. `watched`: segundos vistos de él; `your_next`: el que te toca ahora en tu orden.
+        False si fue zapear (no cambia nada)."""
+        with self._lock:
+            d = self.data()
+            was = d["detours"].get(imdb)
+            continuing = bool(was) and was.get("video_id") == video
+            if not continuing and watched < CHANNEL_MIN_WATCHED:
+                return False
+            before = was.get("before") if was else your_next  # tu orden de antes del primer desvío, no otro del canal
+            d["detours"][imdb] = {"video_id": video, "position": position, "duration": duration, "at": at,
+                                  "before": before, "title": title or (was or {}).get("title") or ""}
+            self.save(d)
+            return True
+
+    def finished(self, imdb: str, video: str, at: float, your_next: str | None) -> None:
+        """Terminaste un episodio del canal (o, desde la ficha, el que dejaste a medias de él): Seguir viendo vuelve a tu orden
+        de antes. Si era justo el que te tocaba, no se aparta nada."""
+        with self._lock:
+            d = self.data()
+            was = d["detours"].get(imdb)
+            if was and was.get("video_id") == video:
+                d["detours"].pop(imdb)
+                before = was.get("before")
+            else:
+                before = was.get("before") if was else your_next
+            if before != video:
+                d["kept"][imdb] = {"video_id": video, "at": at, "before": before}
+            d["kept"] = {k: v for k, v in d["kept"].items() if at - v["at"] < 60 * 86_400}  # lo viejo ya no aparta nada
+            self.save(d)
+
+    def owns(self, imdb: str, video: str) -> bool:
+        """¿Ese episodio es el que dejaste a medias en un canal? (terminarlo desde la ficha regresa tu orden)."""
+        return (self.data()["detours"].get(imdb) or {}).get("video_id") == video
+
+    def dismiss(self, imdb: str) -> None:
+        """«Quitar de Seguir viendo»: el episodio del canal ya no se retoma."""
+        with self._lock:
+            d = self.data()
+            if d["detours"].pop(imdb, None) is not None:
+                self.save(d)
+
+    def position(self, imdb: str, video: str) -> tuple[float, float] | None:
+        """(dónde ibas, cuándo) de ese episodio del canal, o None."""
+        was = self.data()["detours"].get(imdb)
+        return (float(was["position"]), float(was["at"])) if was and was.get("video_id") == video else None
+
+
+def _channel_rows(best: dict[str, dict], shows: dict[str, dict], channel: dict) -> None:
+    """V2: lo de los canales dentro de lo más reciente por título (`best`, de `merge`)."""
+    detours = channel.get("detours") or {}
+    for imdb, k in (channel.get("kept") or {}).items():
+        last = (shows.get(imdb) or {}).get("last_watched") or 0
+        newer = (best.get(imdb) or {}).get("when") or 0
+        if last > k["at"] + CHANNEL_SLACK or newer > k["at"] + CHANNEL_SLACK:
+            continue  # después viste otro de esa serie: manda lo de Trakt
+        best[imdb] = {"kind": "series", "meta_id": imdb, "title": (shows.get(imdb) or {}).get("title") or imdb,
+                      "when": max(newer, k["at"]), "percent": None, "runtime": None, "video_id": k.get("before")}
+    for imdb, d in detours.items():
+        if ((best.get(imdb) or {}).get("when") or 0) > d["at"] + CHANNEL_SLACK:
+            continue  # algo más nuevo de esa serie, aquí o en otro aparato
+        duration = float(d.get("duration") or 0)
+        best[imdb] = {"kind": "series", "meta_id": imdb, "title": (shows.get(imdb) or {}).get("title") or d.get("title") or imdb,
+                      "when": d["at"], "percent": min(99.0, 100 * float(d["position"]) / duration) if duration else None,
+                      "runtime": duration or None, "video_id": d["video_id"]}
+
+
 def merge(items: list[LibraryItem], playback: list[dict], shows: dict[str, dict], movies: dict[str, float],
-          watchlist: list[dict] | None, dismissed: Callable[[str], float | None] = lambda imdb: None) -> list[LibraryItem]:
+          watchlist: list[dict] | None, dismissed: Callable[[str], float | None] = lambda imdb: None,
+          channel: dict | None = None) -> list[LibraryItem]:
     """La biblioteca de Stremio (`items`) unida con lo de Trakt. No toca `items`: devuelve otra lista.
 
     `playback`: lo que tienes a medias (Trakt.playback_rows). `shows`: {IMDb: serie + show_progress}. `movies`: películas
     vistas {IMDb: cuándo}. `watchlist`: Trakt.watchlist_rows, o None si no se sabe (entonces Mi lista se queda como está).
-    `dismissed`: cuándo lo quitaste de Seguir viendo en la consola (lo de antes de eso no lo regresa).
+    `dismissed`: cuándo lo quitaste de Seguir viendo en la consola (lo de antes de eso no lo regresa). `channel`: lo de los
+    canales de Orbital (`ChannelDetours.data()`, V2).
     """
     out = [replace(i, extra=dict(i.extra)) for i in items]
     where = {i.extra.get("meta_id"): n for n, i in enumerate(out) if i.extra.get("meta_id")}
@@ -106,6 +200,8 @@ def merge(items: list[LibraryItem], playback: list[dict], shows: dict[str, dict]
             continue  # lo que dejaste a medias es más nuevo que el último episodio terminado
         best[imdb] = {"kind": "series", "meta_id": imdb, "title": show.get("title") or imdb, "when": when, "percent": None,
                       "runtime": None, "video_id": f"{imdb}:{nxt[0]}:{nxt[1]}" if nxt else None}
+    if channel:
+        _channel_rows(best, shows, channel)
 
     for imdb, found in best.items():
         if (dismissed(imdb) or 0) >= found["when"]:
@@ -163,6 +259,7 @@ class TraktLibrary:
         self._checked = 0.0
         self.error: str | None = None
         self.dismissed: Callable[[str], float | None] = lambda imdb: None  # watch.py: «Quitar de Seguir viendo»
+        self.channel: ChannelDetours | None = None  # watch.py: lo de los canales de Orbital (V2)
 
     def client(self) -> trakt_api.Trakt | None:
         try:
@@ -189,7 +286,13 @@ class TraktLibrary:
     def merged(self, items: list[LibraryItem]) -> list[LibraryItem]:
         if not self.active:
             return items
-        return merge(items, *self.snapshot(), dismissed=self.dismissed)
+        return merge(items, *self.snapshot(), dismissed=self.dismissed, channel=self.channel.data() if self.channel else None)
+
+    def your_next(self, imdb: str) -> str | None:
+        """El episodio que te toca de esa serie según Trakt («tt…:2:6»), o None."""
+        with self._lock:
+            nxt = (self.shows.get(imdb) or {}).get("next")
+        return f"{imdb}:{nxt[0]}:{nxt[1]}" if nxt else None
 
     def refresh(self, force: bool = False) -> bool:
         """Pregunta a Trakt qué cambió y baja solo eso. True si algo cambió (hay que volver a armar la biblioteca)."""

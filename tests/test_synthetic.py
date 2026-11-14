@@ -413,3 +413,27 @@ def test_seguir_solo_este_capitulo_y_seguir_en_el_iphone():
     mpv.props["time-pos"] = 845.0
     p._send_iphone(now, "continue")
     assert sent == [("tt0096697:7:17", "continue", 845.0)] and stopped == [True]
+
+
+def test_v2_un_canal_avisa_aparte_lo_que_dejaste_a_medias_y_lo_que_terminaste():
+    """V2 (13 nov 2026, «aplica lo mismo de iPhone»): sin Stremio ni el scrobble normal, pero con `on_channel`: a medias cada
+    guardado y, al cerrar, si lo terminaste."""
+    from tests.test_player import make_player
+
+    p, _ = make_player()
+    told, saved = [], []
+    p.on_progress = lambda *a: saved.append(a)
+    p.on_channel = lambda *a: told.append(a)
+    meta = {"synthetic": True, "kind": "channel", "meta_id": "tt0096697", "video_id": "tt0096697:2:3"}
+    half = player.Segment(dict(meta), "Los Simpson", "u", duration=1320.0, watched=600.0)
+    half.position = 600.0
+    p._save_progress(half)
+    done = player.Segment(dict(meta), "Los Simpson", "u", duration=1320.0, watched=1300.0)
+    done.position = 1310.0
+    p._close_segment(done)
+    for _ in range(50):
+        if len(told) == 2:
+            break
+        time.sleep(.02)
+    assert saved == []
+    assert sorted((a[1], a[4]) for a in told) == [(600.0, False), (1310.0, True)]

@@ -153,6 +153,7 @@ class OrbitalPlayer(_Tracks):
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
         self.on_scrobble = None  # (acción, meta, posición, duración): «start» | «pause» | «stop» para Trakt; nunca de TV en vivo
+        self.on_channel = None  # (meta, posición, duración, segundos vistos, terminado): un episodio de un canal de Orbital (V2)
         self.on_failed = None  # (meta, posición, sigue_abierto) -> True si se intenta con otra fuente
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]

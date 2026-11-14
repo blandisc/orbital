@@ -188,6 +188,8 @@ class _Library(_Base):
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         # Una serie al día en Trakt no tiene avance que borrar: la consola recuerda cuándo la quitaste.
         self.state.set_pref(f"stremio:{meta_id}", "dismissed", time.time())
+        if self.trakt_library.channel is not None:
+            self.trakt_library.channel.dismiss(meta_id)  # V2: lo de un canal a medias tampoco se retoma
         if trakt is not None:
             playback, _, _, _ = self.trakt_library.snapshot()
             for row in playback:

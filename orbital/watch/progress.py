@@ -20,6 +20,11 @@ class _Progress(_Sources):
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)
+        # V2: terminaste desde la ficha el episodio que dejaste a medias en un canal: Seguir viendo vuelve a tu orden.
+        store = self.trakt_library.channel
+        imdb, video = meta.get("meta_id"), meta.get("video_id")
+        if store is not None and imdb and video and store.owns(imdb, video) and (meta.get("finished") or (duration and position >= duration * .9)):
+            store.finished(imdb, video, time.time(), self.trakt_library.your_next(imdb))
 
     def _subtitle_search(self, meta: dict, url: str | None) -> list[dict] | None:
         """Los subtítulos de internet de lo que ves (todos los idiomas), con la huella del archivo si el servidor la da (dos

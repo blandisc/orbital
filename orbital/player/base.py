@@ -235,6 +235,7 @@ class _State(PlayerScreen):
     on_play_episode: Any
     on_progress: Any
     on_scrobble: Any
+    on_channel: Any
     on_send_iphone: Any
     on_sub_kept: Any
     on_sub_scale: Any

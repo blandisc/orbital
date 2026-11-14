@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import re
 import threading
+import time
 from dataclasses import replace
 
 from .. import companion, flags, player, player_ui, remote_art
@@ -55,6 +56,7 @@ class _Playback(_Progress):
         p = self.player
         p.on_progress = lambda meta, pos, dur, watched: self._save_progress(meta, pos, dur, watched, refresh=False)
         p.on_scrobble = self.scrobbler.event
+        p.on_channel = self._channel_seen
         p.on_failed = self._source_failed
         p.next_provider = self._next_up
         p.still_provider = self._episode_still
@@ -78,6 +80,21 @@ class _Playback(_Progress):
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
+
+    def _channel_seen(self, meta: dict, position: float, duration: float, watched: float, finished: bool) -> None:
+        """V2: un episodio de un canal de Orbital. A medias, sale en Seguir viendo (sin tocar Trakt ni Stremio); terminado,
+        queda visto en Trakt y Seguir viendo regresa a tu orden de antes (trakt_sync.ChannelDetours)."""
+        imdb, video = meta.get("meta_id"), meta.get("video_id")
+        store = self.trakt_library.channel
+        if not imdb or not video or store is None or not self.trakt_library.active:
+            return
+        your_next = self.trakt_library.your_next(imdb)
+        if finished:
+            store.finished(imdb, video, time.time(), your_next)
+            self.scrobbler.event("stop", {**meta, "kind": "series", "finished": True}, duration, duration)
+        elif not store.progress(imdb, video, position, duration, watched, time.time(), your_next, title=meta.get("series") or ""):
+            return  # zapear no cambia nada
+        self._publish_videos()
 
     def _send_to_phone(self, meta: dict, action: str, position: float | None = None) -> str:
         """Y › «Seguir en el iPhone» (el mismo minuto) / «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está
@@ -242,6 +259,11 @@ class _Playback(_Progress):
             log.info("No pude leer dónde ibas en Stremio: %s", exc)
         trakt = self._trakt_playback(meta_id, video_id)
         start = trakt_api.latest_resume(seconds, when, duration, trakt)
+        store = getattr(getattr(self, "trakt_library", None), "channel", None)
+        channel = store.position(meta_id, video_id) if store else None
+        if channel and start < 1:  # V2: lo dejaste a medias en un canal (ni Stremio ni Trakt lo saben)
+            log.info("Sigo donde lo dejaste en el canal: %.0f s", channel[0])
+            return channel[0]
         if trakt and start != seconds:
             log.info("Sigo donde dice Trakt (%.0f %%): %.0f s (Stremio: %.0f s)", trakt["percent"], start, seconds)
         return start
