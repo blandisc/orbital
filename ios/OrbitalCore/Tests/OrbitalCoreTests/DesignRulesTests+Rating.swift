@@ -19,4 +19,18 @@ extension DesignRulesTests {
         }
         XCTAssertEqual(small, [], "Estrellas para calificar con el tamaño de leer: usa `DS.Rating.starTouch`")
     }
+
+    /// La pastilla «¿Qué tal…?» es un solo renglón: sus letreros nunca se parten letra por letra (Fernando, 14 nov 2026:
+    /// «Guardada» salía «Gu / ar- / da / da» con las estrellas grandes y «y 2 más»). Cada `Text`/`Label` lleva `.lineLimit(1)`.
+    func testRatingReminderLabelsStayOnOneLine() throws {
+        let file = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Calificar.swift" })
+        let start = try XCTUnwrap(file.lines.firstIndex { $0.contains("struct RatingReminder") })
+        let end = file.lines[(start + 1)...].firstIndex { $0.hasPrefix("struct ") || $0.hasPrefix("private struct ") } ?? file.lines.count
+        var loose: [String] = []
+        for i in start..<end where file.lines[i].contains("Text(\"") || file.lines[i].contains("Label(\"") {
+            let near = file.lines[i...min(i + 1, end - 1)].joined()
+            if !near.contains("lineLimit(1)") { loose.append("Calificar.swift:\(i + 1)") }
+        }
+        XCTAssertEqual(loose, [], "Letreros de la pastilla «¿Qué tal…?» sin .lineLimit(1): se parten letra por letra")
+    }
 }

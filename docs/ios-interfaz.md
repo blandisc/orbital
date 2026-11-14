@@ -858,6 +858,8 @@ la estrella sea chica, y al arrastrar una burbuja arriba del dedo dice cuánto l
 para las que se leen. La pastilla no se va sola mientras tienes el dedo encima (Fernando, 13 nov 2026: «es bien difícil
 atinarle»). `testRatingStarsAreEasyToHit` lo cuida.
 
+**La pastilla «¿Qué tal…?» es un solo renglón.** Sus letreros («Guardada», «y 2 más») llevan `.lineLimit(1)` y nunca se parten letra por letra; ya calificada, «y 2 más» se quita para dejarle su lugar a «Guardada» (14 nov 2026). Lo cuida `testRatingReminderLabelsStayOnOneLine`.
+
 **Lo que suena en la tele siempre trae su póster.** El accesorio de la barra, la tarjeta del control y la Live Activity
 pintan el arte de la TV y, si no llega o no carga, el póster de metahub del título (`NowPlaying.artFallback`); la Live
 Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el ícono de la tele (nunca la flecha de descarga).

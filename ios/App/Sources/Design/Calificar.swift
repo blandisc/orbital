@@ -168,6 +168,7 @@ struct RatingReminder: View {
                     }
                     if rated != nil {
                         Label("Guardada", systemImage: "checkmark").recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon)
+                            .lineLimit(1).fixedSize()   // nunca letra por letra («Gu / ar- / da», Fernando, 14 nov)
                             .transition(.opacity)
                     }
                 }
@@ -175,7 +176,7 @@ struct RatingReminder: View {
             }
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
             Spacer(minLength: 0)
-            if more > 0 {
+            if more > 0, rated == nil {   // ya calificada, «Guardada» ocupa su lugar: la pastilla se va y no hay a dónde ir
                 Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }   // nunca letra por letra
                     .accessibilityIdentifier("rating-reminder-more")
             }
