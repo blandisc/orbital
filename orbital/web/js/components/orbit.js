@@ -3,9 +3,8 @@
  * la primera vez, su anillo (`<span class="orbit">`); desde ahí el CSS lo enseña solo mientras lleva `.is-focused`. Se pone
  * aquí, una vez, y no en cada componente: así cualquier póster, tile, cara o episodio nuevo lo trae sin pedirlo.
  *
- * Es un elemento (y no un ::after) para que el filo que recorre la pieza sea un giro (transform) que hace la tarjeta gráfica:
- * con una propiedad animada, el navegador recalculaba el estilo en cada cuadro (~13 ms más por tecla con la CPU a 4x). Y solo
- * lo lleva lo enfocado: al perder el foco se quita (la tarjeta que se encoge se recalcula en cada cuadro de su transición, y
+ * Es un elemento (y no un ::after) desde cuando una luz recorría el filo (un giro que hacía la tarjeta gráfica); desde el
+ * 15 nov el filo es quieto. Solo lo lleva lo enfocado: al perder el foco se quita (la tarjeta que se encoge se recalcula en cada cuadro de su transición, y
  * un anillo apagado adentro era trabajo de más).
  */
 import { h } from "../core/dom.js";
@@ -17,7 +16,7 @@ export const ORBIT_HOSTS = ".card:not(.visually-hidden .card), .tile:not(.showca
 
 const worn = new WeakMap(); // pieza → su anillo
 // P4 (10 nov): un solo anillo de repuesto. Al moverte, el de la pieza que deja el foco pasa a la nueva (se mueve el mismo
-// nodo): no se crea ni se tira un elemento por tecla. Se ve igual (el recorrido arranca al entrar, como antes).
+// nodo): no se crea ni se tira un elemento por tecla. Se ve igual.
 let spare = null;
 
 /** ¿Es un anillo? (focus-mark.js no revisa lo que agrega esta pieza.) */

@@ -153,8 +153,10 @@
   background: var(--color-primary); color: var(--color-on-primary); /* el principal, siempre en blanco (como «Jugar») */
   font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking);
 }
-.title__action--primary { flex: 0 1 auto; min-width: 0; }
-.title__action--primary > span { flex: none; white-space: nowrap; } /* «Continuar T12 E8» entero, siempre */
+/* «Continuar T22 E10» entero, siempre (Fernando, 15 nov: con dos dígitos no cabía): el botón no se encoge; si falta lugar,
+   cede la cápsula de la versión de al lado (se recorta con «…»). Antes el botón cedía y la A y «E10» se salían por las orillas. */
+.title__action--primary { flex: none; }
+.title__action--primary > span { flex: none; white-space: nowrap; }
 /* La versión, junto al botón (opción C, 2 nov): una cápsula de vidrio con Y. Dice cómo va a sonar y verse; con Y o un toque, se
    cambia. Si no cabe, cede ella (se recorta), nunca «Continuar». */
 .title__version {

@@ -1,13 +1,11 @@
 /* La órbita (D3-A, Fernando, 10 nov 2026): el foco de todo lo que es contenido. Lo enfocado se levanta (cada pieza con su
-   escala, nunca menos de --tile-focus-scale) y un filo de luz del color de su arte (--orbit-color: --art-accent con un piso
-   claro, así se ve sobre arte oscuro o sin arte) lo recorre UNA vez al llegar; queda el filo quieto. Por dentro del filo, una
-   línea oscura (--orbit-shade) lo separa del arte claro. Una sola pieza (js/components/orbit.js pone el anillo): pósters y
-   tarjetas (.card), tiles (consolas, canales de TV en vivo, Cambiar el arte), caras del reparto, episodios y casillas del
-   calendario.
+   escala, nunca menos de --tile-focus-scale) y lleva un filo de luz quieto del color de su arte (--orbit-color: --art-accent
+   con un piso claro, así se ve sobre arte oscuro o sin arte). Por dentro del filo, una línea oscura (--orbit-shade) lo separa
+   del arte claro. Una sola pieza (js/components/orbit.js pone el anillo): pósters y tarjetas (.card), tiles (consolas, canales
+   de TV en vivo, Cambiar el arte), caras del reparto, episodios y casillas del calendario.
 
-   Barato a propósito: el recorrido es un giro (transform) y un fundido (opacity) que hace la tarjeta gráfica, ~0,7 s, y luego
-   nada se mueve: en reposo no gasta. Con «Reducir movimiento» no hay recorrido: solo el filo quieto (base.css lleva las
-   duraciones a cero y la luz que gira se queda apagada). */
+   Quieto (Fernando, 15 nov: «quita que cuando seleccionas un episodio sale como el resalte con movimiento»): antes una luz
+   recorría el filo una vez al llegar; ya no, en ninguna pieza. Lo que se mueve al enfocar es solo que la pieza crece. */
 .orbit {
   --orbit-band: calc(var(--orbit-width) + var(--orbit-gap));
   display: none; position: absolute; inset: calc(-1 * var(--orbit-out, var(--orbit-band))); z-index: var(--z-above); pointer-events: none;
@@ -20,18 +18,6 @@
   mask: linear-gradient(var(--mask-solid) 0 0) content-box exclude, linear-gradient(var(--mask-solid) 0 0);
 }
 .is-focused > .orbit, .is-focused.episode .episode__thumb > .orbit { display: block; }
-/* La luz que recorre: un cono que da una vuelta (cubre la pieza a cualquier ángulo) y se apaga al cerrarla. */
-.orbit::after {
-  content: ""; position: absolute; left: 50%; top: 50%; width: 300%; height: 300%; opacity: 0;
-  background: conic-gradient(from 0deg, transparent 0 62%, var(--orbit-color) 88%, var(--orbit-light));
-  transform: translate(-50%, -50%);
-}
-.is-focused > .orbit::after, .is-focused.episode .episode__thumb > .orbit::after { animation: orbit-sweep var(--duration-tint) var(--ease-sweep); }
-@keyframes orbit-sweep {
-  from { opacity: 1; transform: translate(-50%, -50%) rotate(0deg); }
-  80% { opacity: 1; }
-  to { opacity: 0; transform: translate(-50%, -50%) rotate(360deg); }
-}
 
 /* Dónde va y con qué curva, por pieza: fuera de la pieza (--orbit-out = el grosor) donde no recorta; por dentro (0) donde sí. */
 .card--collection, .tile, .episode__thumb, .calendar__cell { --orbit-out: 0px; }

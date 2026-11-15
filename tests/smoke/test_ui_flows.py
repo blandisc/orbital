@@ -675,6 +675,44 @@ def test_switching_games_fast_does_not_blink(browser, server):  # noqa: F811
     page.close()
 
 
+@pytest.mark.parametrize("text_size", ["normal", "xlarge"])
+@pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
+def test_continue_with_two_digit_season_fits_and_the_focus_ring_holds_still(browser, server, width, height, text_size):  # noqa: F811
+    """Fernando, 15 nov: «Continuar» con la temporada 22 no cabía (en 1280×800 con letra muy grande el botón se encogía: la A
+    se salía por la izquierda y «E10» tocaba la orilla); y al enfocar un episodio, el filo de luz daba una vuelta. «Continuar
+    T22 E10» va entero dentro de su botón (cede la versión de al lado) y lo enfocado lleva su filo quieto, sin animación."""
+    page = browser.new_page(viewport={"width": width, "height": height})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+
+    def season_22(route):
+        res = route.fetch()
+        data = res.json()
+        episode = data["seasons"][0]["episodes"][1]
+        data["resume"] = {"video_id": episode["id"], "position": 600, "duration": 1300, "label": "T22 E10"}
+        route.fulfill(response=res, json=data)
+
+    page.route("**/api/stremio/title/series/tt0386676*", season_22)
+    page.goto(f"{server}/?serie=tt0386676")
+    ready(page)
+    page.evaluate(f"document.documentElement.dataset.textSize = {text_size!r}")
+    page.locator(".title__action--primary", has_text="Continuar T22 E10").wait_for(timeout=8000)
+    page.wait_for_timeout(1200)
+    fit = page.evaluate("""() => {
+      const b = document.querySelector('.title__action--primary'), r = b.getBoundingClientRect();
+      const inside = [...b.children].map((c) => c.getBoundingClientRect()).every((c) => c.left >= r.left - .5 && c.right <= r.right + .5);
+      return { inside, text: b.textContent.trim(), clipped: b.scrollWidth > b.clientWidth + 1 }; }""")
+    assert fit["inside"] and not fit["clipped"], fit
+    page.keyboard.press("ArrowDown")  # a los episodios
+    page.locator(".is-focused.episode .orbit").wait_for(timeout=5000)
+    ring = page.evaluate("""() => { const o = document.querySelector('.is-focused.episode .orbit');
+      return { animations: document.getAnimations().filter((a) => a.effect?.target === o || a.effect?.pseudoElement && a.effect.target === o).length,
+               after: getComputedStyle(o, '::after').content }; }""")
+    assert ring["animations"] == 0 and ring["after"] in ("none", "normal"), ring
+    assert not errors, errors
+    page.close()
+
+
 @pytest.mark.parametrize("modality", ["gamepad", "keyboard", "touch"])
 @pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
 def test_search_pill_is_centered(browser, server, modality, width, height):  # noqa: F811
