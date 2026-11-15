@@ -140,6 +140,10 @@
    Abajo queda el lugar del nombre del redondo enfocado (sale ahí, sin mover nada). */
 /* En un renglón siempre: si «Continuar» trae su versión larga, la versión se recorta (antes «Más» bajaba a otro renglón). */
 .title__actions { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-3) 0 var(--space-8); }
+/* La fila de botones no se queda en la columna del texto (44rem): a la derecha solo hay arte. Usa lo que necesita, hasta el
+   margen de la pantalla, así la versión («🇺🇸 · 1080p · CC») se lee entera también con letra grande y «Continuar T22 E10»
+   (Fernando, 15 nov: «ve también el botón de escoger idioma»); solo si ni así cabe, se recorta. */
+.title__info > .title__actions { width: max-content; max-width: calc(100vw - 2 * var(--page-gutter)); }
 .title__action {
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
   min-height: var(--control-height); border-radius: var(--radius-pill); flex: none; text-shadow: none;
@@ -166,6 +170,7 @@
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-fast) var(--ease-out);
 }
+.title__version { margin-inline-end: var(--space-3); } /* enfocada crece (--inverse-scale): sin esto rozaba el redondo de al lado */
 .title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .title__version > .flag + span::before { content: "· "; } /* el punto va con la bandera: si no hay bandera, no hay punto (T10) */
 .title__version:hover { background: var(--color-glass-hover); }

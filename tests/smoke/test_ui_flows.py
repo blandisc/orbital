@@ -701,8 +701,13 @@ def test_continue_with_two_digit_season_fits_and_the_focus_ring_holds_still(brow
     fit = page.evaluate("""() => {
       const b = document.querySelector('.title__action--primary'), r = b.getBoundingClientRect();
       const inside = [...b.children].map((c) => c.getBoundingClientRect()).every((c) => c.left >= r.left - .5 && c.right <= r.right + .5);
-      return { inside, text: b.textContent.trim(), clipped: b.scrollWidth > b.clientWidth + 1 }; }""")
+      const v = document.querySelector('.title__version > span:last-child');
+      return { inside, text: b.textContent.trim(), clipped: b.scrollWidth > b.clientWidth + 1,
+               version: v && v.textContent, versionCut: !!v && v.scrollWidth > v.clientWidth + 1 }; }""")
     assert fit["inside"] and not fit["clipped"], fit
+    # Fernando, 15 nov: «ve también el botón de escoger idioma». La fila ya no se queda en la columna del texto: la versión
+    # de al lado se lee entera también con letra muy grande.
+    assert fit["version"] and not fit["versionCut"], fit
     page.keyboard.press("ArrowDown")  # a los episodios
     page.locator(".is-focused.episode .orbit").wait_for(timeout=5000)
     ring = page.evaluate("""() => { const o = document.querySelector('.is-focused.episode .orbit');
