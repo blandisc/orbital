@@ -84,3 +84,31 @@ final class ChartsTests: XCTestCase {
         XCTAssertNil(Charts.brand(named: "Lo más visto"))
     }
 }
+
+/// JustWatch responde distinto según el nombre corto que se pida: «prv» vacío (como en Estados Unidos) y «amp» con un título.
+private final class PrimeByCountryHTTP: HTTPClient, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _asked: [String] = []
+    var asked: [String] { lock.withLock { _asked } }
+    func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        let body = String(decoding: request.body ?? Data(), as: UTF8.self)
+        let package = body.contains("\"amp\"") ? "amp" : "prv"
+        lock.withLock { _asked.append(package) }
+        let edges = package == "amp"
+            ? #"[{"streamingChartInfo":{"rank":1},"node":{"objectType":"SHOW","content":{"title":"Dexter","originalReleaseYear":2006,"externalIds":{"imdbId":"tt0773262"}}}}]"#
+            : "[]"
+        return HTTPResponse(status: 200, data: Data(#"{"data":{"streamingCharts":{"edges":\#(edges)}}}"#.utf8))
+    }
+}
+
+final class ChartsPrimeTests: XCTestCase {
+    /// La Mac en inglés de EE. UU. pedía Prime Video como «prv», que allá no trae nada: la tarjeta salía en blanco
+    /// (Fernando, 16 nov 2026). Si el primer nombre no trae nada, se pide el otro.
+    func testPrimeVideoTriesItsOtherNameWhenTheFirstIsEmpty() async throws {
+        let http = PrimeByCountryHTTP()
+        let charts = Charts(http: http, tmdb: nil, cinemeta: Cinemeta(http: http), kv: InMemoryKeyValueStore(), region: { "US" })
+        let entries = try await charts.justWatch(brand: "prime", kind: "series")
+        XCTAssertEqual(entries.map(\.imdb), ["tt0773262"])
+        XCTAssertEqual(http.asked, ["prv", "amp"])
+    }
+}

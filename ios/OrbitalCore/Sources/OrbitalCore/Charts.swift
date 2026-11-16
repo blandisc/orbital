@@ -47,6 +47,9 @@ public actor Charts {
         ("paramount", "pmp", "Paramount+", "/icon/242706661/s100/paramountplus.png"),
     ]
     public static let netflixLogo = justWatchImages + "/icon/207360008/s100/netflix.png"
+    /// Otro nombre corto si el primero no trae nada en ese país: Prime Video es «prv» en México y «amp» en Estados Unidos (la
+    /// Mac en inglés de EE. UU. pedía «prv» y la tarjeta salía en blanco; Fernando, 16 nov 2026).
+    static let justWatchAlternates: [String: String] = ["prv": "amp"]
 
     public static func justWatchLogo(_ brand: String) -> String? {
         justWatchPlatforms.first { $0.brand == brand }.map { justWatchImages + $0.logo }
@@ -233,23 +236,30 @@ public actor Charts {
         guard let platform = Self.justWatchPlatforms.first(where: { $0.brand == brand }) else { return [] }
         let country = region().uppercased()
         return try await cached("jw:\(country):\(brand):\(kind)", ttl: Self.justWatchTTL) {
-            let body: JSON = .object([
-                "operationName": "GetStreamingCharts",
-                "variables": .object([
-                    "country": .string(country), "language": "es", "first": .int(Self.justWatchFetch),
-                    "filter": .object(["category": "DAILY_POPULARITY_SAME_CONTENT_TYPE", "objectType": .string(kind == "movie" ? "MOVIE" : "SHOW"),
-                                       "packages": .array([.string(platform.shortName)])]),
-                ]),
-                "query": .string(Self.justWatchQuery),
-            ])
-            let response = try await http.send(HTTPRequest(url: Self.justWatchURL, method: "POST", headers: ["Content-Type": "application/json", "User-Agent": "Orbital"],
-                                                           body: body.serialized(), timeout: 12))
-            guard response.status == 200, let json = JSON.parse(response.data), json["errors"] == nil else {
-                throw NetworkError("JustWatch respondió HTTP \(response.status)")
+            var entries = try await justWatchChart(package: platform.shortName, kind: kind, country: country)
+            if entries.isEmpty, let other = Self.justWatchAlternates[platform.shortName] {
+                entries = try await justWatchChart(package: other, kind: kind, country: country)
             }
-            let entries = Self.parseJustWatch(json)
             return snapshots.annotate(listID: "jw:\(brand)", kind: kind, entries: entries, today: clock())
         }
+    }
+
+    private func justWatchChart(package: String, kind: String, country: String) async throws -> [ChartEntry] {
+        let body: JSON = .object([
+            "operationName": "GetStreamingCharts",
+            "variables": .object([
+                "country": .string(country), "language": "es", "first": .int(Self.justWatchFetch),
+                "filter": .object(["category": "DAILY_POPULARITY_SAME_CONTENT_TYPE", "objectType": .string(kind == "movie" ? "MOVIE" : "SHOW"),
+                                   "packages": .array([.string(package)])]),
+            ]),
+            "query": .string(Self.justWatchQuery),
+        ])
+        let response = try await http.send(HTTPRequest(url: Self.justWatchURL, method: "POST", headers: ["Content-Type": "application/json", "User-Agent": "Orbital"],
+                                                       body: body.serialized(), timeout: 12))
+        guard response.status == 200, let json = JSON.parse(response.data), json["errors"] == nil else {
+            throw NetworkError("JustWatch respondió HTTP \(response.status)")
+        }
+        return Self.parseJustWatch(json)
     }
 
     static let justWatchQuery = """
