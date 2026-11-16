@@ -135,7 +135,7 @@ struct MatchDeckScreen: View {
         } else {
             let saved: Text? = model.saved.isEmpty ? nil : (model.savesToTrakt ? Text("Guardaste \(model.saved.count) en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count) en Mi lista."))
             let hint = Text("Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.")
-            DSEmptyState(symbol: "rectangle.stack", title: Text("Se acabaron tus matches"), message: saved.map { $0 + Text(verbatim: " ") + hint } ?? hint)
+            DSEmptyState(symbol: "rectangle.stack", title: Text("Se acabaron tus matches"), message: saved.map { Text("\($0) \(hint)") } ?? hint)
                 .accessibilityIdentifier("match-empty")
         }
     }

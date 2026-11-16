@@ -909,10 +909,10 @@ def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     from orbital import player_ui
 
     def waves(ass):  # cada onda es un tramo de anillo: una figura más después del cuerpo de la bocina
-        return ass.count("\p1}") - 6  # cápsula (y la luz de su filo de vidrio), riel, relleno, la rayita del 100 y cuerpo
+        return ass.count("\\p1}") - 6  # cápsula (y la luz de su filo de vidrio), riel, relleno, la rayita del 100 y cuerpo
     assert waves(player_ui.volume_ass(15)) == 1 and waves(player_ui.volume_ass(50)) == 2 and waves(player_ui.volume_ass(90)) == 3
     muted = player_ui.volume_ass(50, muted=True)
-    assert "—" in muted and muted.count("\p1}") == 6  # cápsula y su luz, riel (sin relleno), la rayita, cuerpo y la ✕
+    assert "—" in muted and muted.count("\\p1}") == 6  # cápsula y su luz, riel (sin relleno), la rayita, cuerpo y la ✕
     extra = player_ui.volume_ass(160)
     assert "EXTRA" in extra and player_ui.EXTRA in extra and "EXTRA" not in player_ui.volume_ass(100)  # V1-C
     touch = player_ui.volume_ass(80, touch=True)  # V2-A: + y − tocables

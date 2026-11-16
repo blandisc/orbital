@@ -123,8 +123,8 @@ struct GuideMoonFlight: View {
         GeometryReader { geo in
             if !reduceMotion, trigger > 0 {
                 Circle().fill(DS.brandMoon).frame(width: DS.OrbitArc.moon, height: DS.OrbitArc.moon)
-                    .keyframeAnimator(initialValue: Flight(), trigger: trigger) { moon, f in
-                        moon.position(x: f.x * geo.size.width, y: f.y * geo.size.height).opacity(f.shown)
+                    .keyframeAnimator(initialValue: Flight(), trigger: trigger) { [size = geo.size] moon, f in
+                        moon.position(x: f.x * size.width, y: f.y * size.height).opacity(f.shown)
                     } keyframes: { _ in
                         KeyframeTrack(\.x) { CubicKeyframe(0.5, duration: 0.01); CubicKeyframe(to, duration: DS.GuideScene.flight) }
                         KeyframeTrack(\.y) { CubicKeyframe(0.92, duration: 0.01); CubicKeyframe(0.02, duration: DS.GuideScene.flight) }   // ds-exception: de abajo (el botón) al arco

@@ -132,7 +132,7 @@ def test_steam_game_opens_with_steam_already_in_the_background(library, monkeypa
 
 
 def test_without_es_de_each_console_reads_its_folder_in_your_roms(tmp_path, monkeypatch):
-    """Orbital sin ES-DE: los emuladores de tu carpeta de emuladores y los juegos de ROMs\<consola> (como antes, sin ES-DE)."""
+    """Orbital sin ES-DE: los emuladores de tu carpeta de emuladores y los juegos de ROMs\\<consola> (como antes, sin ES-DE)."""
     from conftest import FakeLauncher
 
     from orbital.catalog import Catalog

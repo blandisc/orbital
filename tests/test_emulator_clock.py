@@ -33,12 +33,12 @@ def test_eden_sin_reloj_propio_y_con_zona_automatica(tmp_path):
     config = tmp_path / "eden" / "user" / "config"
     config.mkdir(parents=True)
     ini = config / "qt-config.ini"
-    ini.write_text("[System]\ncustom_rtc_enabled\default=false\ncustom_rtc_enabled=true\ntime_zone_index\default=false\n"
+    ini.write_text("[System]\ncustom_rtc_enabled\\default=false\ncustom_rtc_enabled=true\ntime_zone_index\\default=false\n"
                    "time_zone_index=12\nlanguage_index=2\n", encoding="utf-8")
     exe = tmp_path / "eden" / "launch-eden.cmd"
     exe.write_text("@echo off", encoding="utf-8")
     assert emulator_clock.sync_for([str(exe), "juego.nsp"]) == 1
     text = ini.read_text(encoding="utf-8")
-    assert "custom_rtc_enabled=false" in text and "custom_rtc_enabled\default=true" in text
+    assert "custom_rtc_enabled=false" in text and "custom_rtc_enabled\\default=true" in text
     assert "time_zone_index=0" in text and "language_index=2" in text
     assert emulator_clock.sync_for([str(tmp_path / "dolphin" / "Dolphin.exe")]) == 0  # los demás ya usan la de la PC

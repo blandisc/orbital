@@ -174,9 +174,9 @@ struct HistoryScreen: View {
         let time = Text(verbatim: " · " + Strings.date(date, .time, language: locale.identifier))   // la misma hora que Inicio (revisión del 11 nov)
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 99
         switch days {
-        case 0: return Text("Hoy") + time
-        case 1: return Text("Ayer") + time
-        case 2...6: return dayName(date, locale: locale, calendar: calendar) + time
+        case 0: return Text("\(Text("Hoy"))\(time)")
+        case 1: return Text("\(Text("Ayer"))\(time)")
+        case 2...6: return Text("\(dayName(date, locale: locale, calendar: calendar))\(time)")
         default: return Text(verbatim: ViewingsSheet.stamp(date, language: locale.identifier))
         }
     }

@@ -305,7 +305,7 @@ struct KindPill: View {
                 }
                 .buttonStyle(KindPillPress())
                 .help(Text(option.1))
-                .accessibilityLabel(open ? Text(option.1) : Text(option.1) + Text(". Cambiar entre todo, películas y series"))
+                .accessibilityLabel(open ? Text(option.1) : Text("\(Text(option.1))\(Text(". Cambiar entre todo, películas y series"))"))
                 .accessibilityIdentifier("kind-\(option.0.isEmpty ? "all" : option.0)")
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .transition(arrival(index: index, picked: picked))

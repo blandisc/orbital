@@ -701,6 +701,11 @@ letras que bajan: g, p, j, y).
 
 ## 4. Pantallas y vistas (cada una con su JS y su CSS del mismo nombre)
 
+**Nada queda bajo el pie** (16 nov 2026, Decide por mí): una pantalla que no se desliza reparte su altura; lo que puede achicarse
+(los carteles de `decide__stage`, con `container-type: size` y `100cqh`) toma lo que sobra, con su tamaño de siempre como tope, y
+las preguntas y botones siempre caben sobre `hints`. En la tele de 1080 «Ánimo» quedaba tapado. Prueba:
+`tests/smoke/test_ui_smoke.py · test_no_text_is_cut_in_half` (1920×1080 y la Legion Go con letra grande).
+
 | Componente | Qué es |
 |---|---|
 | `status-bar` | Barra de arriba: marca, Buscar, pestañas (LB/RB), Alexa (navegable: muestra ejemplos de órdenes), lo que está abierto (un ícono quieto en `--color-live` —▶ si es un video, el control si es un juego; en pausa, ▶ en ámbar— y su nombre, centrado con la altura de las mayúsculas), batería y hora. |

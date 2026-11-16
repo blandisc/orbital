@@ -147,7 +147,8 @@ public actor ParallelStream {
                 while last - index + 1 < config.runChunks, last + 1 <= lastIndex, !done.contains(last + 1), inflight[last + 1] == nil,
                       !waited.contains(last + 1), wanted.contains(last + 1) { last += 1 }
             }
-            let task = Task { await self.run(index...last) }
+            let range = index...last
+            let task = Task { await self.run(range) }
             for i in index...last { inflight[i] = task }
             busy += 1
         }

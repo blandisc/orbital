@@ -1,6 +1,6 @@
 # Antes de decir «listo» en la app de Apple
 
-Lista corta, nacida de errores reales (13 nov 2026). Es ligera a propósito: cinco comprobaciones, no un trámite.
+Lista corta, nacida de errores reales (13 nov 2026). Es ligera a propósito: seis comprobaciones, no un trámite.
 Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
 
 1. **Se mide, no se ve a ojo.** Márgenes, alineación y espacios se comprueban con números: los marcos de los elementos
@@ -19,6 +19,10 @@ Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
 5. **El informe dice la verdad en tres palabras.** Cada punto va como «comprobado con toques», «hecho sin comprobar» o
    «no hecho». Lo que no se vio en pantalla no se anuncia como listo, y se instala solo si el número de compilación
    coincide con el esperado.
+
+6. **Compila sin advertencias.** Una compilación completa de la app no deja ni una advertencia de Xcode. La más común:
+   unir `Text` con `+` (obsoleto en iOS 26); se escribe `Text("\(a)\(b)")`. Prueba: `NoTextConcatenationTests`.
+   *Por qué:* el 16 nov había 18 escondidas (la CI compila en silencio y una compilación a medias no las muestra).
 
 Lo que se corrige y puede repetirse se vuelve regla del repo con su prueba (regla 16 de la casa); las reglas de diseño
 viven en `docs/ios-interfaz.md`. Para quien dirige agentes: todo en primer plano con tiempo límite y, a lo más, tres

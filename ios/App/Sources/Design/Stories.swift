@@ -147,7 +147,7 @@ struct StoryDeck: View {
                         StoryPlayer(story: story, active: current == story.id, onFinish: { onSeen(story) }, onAction: onAction,
                                     onNextStory: { go(i + 1) }, onPreviousStory: i > 0 ? { go(i - 1) } : nil, close: close)
                             .frame(width: geo.size.width, height: geo.size.height)
-                            .visualEffect { content, proxy in
+                            .visualEffect { [reduceMotion] content, proxy in
                                 // -1…1: cuánto se fue a la izquierda o a la derecha; gira sobre la orilla que comparte con la otra.
                                 let shift = proxy.frame(in: .scrollView(axis: .horizontal)).minX / max(proxy.size.width, 1)
                                 return content.rotation3DEffect(.degrees(reduceMotion ? 0 : Double(shift) * DS.Story.cubeAngle), axis: (x: 0, y: 1, z: 0),

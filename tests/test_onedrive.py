@@ -150,7 +150,7 @@ def test_the_folder_you_choose_is_kept_clean():
     class Offline(FakeClient):
         linked = False  # sin cuenta: no se busca en segundo plano
     lib = onedrive_library.OneDriveLibrary(Offline(), FakeCinemeta(), State())
-    lib.set_folder("\Películas/../Series/./Drama/")
+    lib.set_folder("\\Películas/../Series/./Drama/")
     assert lib.folder == "Películas/Series/Drama"  # sin «..» ni «.»: solo lo que tú elegiste
 
 

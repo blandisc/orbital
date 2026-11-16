@@ -1,13 +1,21 @@
 /* «¿Qué vemos?» (js/components/decide.js), como DecideView del iPhone: tres carteles lado a lado, el porqué de la
    enfocada y abajo las preguntas en píldora (`Pill`). El marco es .screen. */
-.decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+/* Llena la pantalla y los carteles toman lo que sobra (16 nov 2026): con la altura fija, en la tele de 1080 y en la Legion Go
+   con letra grande, «Ánimo» quedaba debajo del pie. Así las preguntas siempre caben y los carteles se achican lo justo. */
+.decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); height: 100%; }
 .decide__modes { display: flex; gap: var(--space-1); }
 /* En pantallas bajas (la Legion Go) las pestañas de arriba le quitan aire a las preguntas: los carteles bajan un poco. */
 @media (max-height: 900px) { .decide { --decide-poster-height: 12rem; } }
 .decide__lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.decide__stage { display: flex; align-items: center; gap: var(--space-10); min-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6)); padding-top: var(--space-6); }
+/* El escenario toma la altura que sobra y es contenedor de ella: el cartel enfocado (crecido) y su aire caben ahí, sin pasar del
+   tamaño de siempre (`--decide-poster-height`). */
+.decide__stage {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-10); padding-top: var(--space-6);
+  flex: 1 1 0; min-height: 0; max-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6) * 2);
+  align-self: stretch; container-type: size;
+}
 .decide__picks { display: flex; align-items: center; gap: var(--card-gap); }
-.decide__card { --card-height: var(--decide-poster-height); }
+.decide__card { --card-height: min(var(--decide-poster-height), calc((100cqh - var(--space-6)) / var(--card-focus-scale))); }
 .decide__about { display: flex; flex-direction: column; gap: var(--space-2); width: 26rem; min-width: 0; }
 .decide__name {
   margin: 0; font-size: var(--type-title); font-weight: var(--type-title-weight); line-height: var(--leading-tight); letter-spacing: var(--tracking-display);

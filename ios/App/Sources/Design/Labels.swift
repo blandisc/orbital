@@ -20,7 +20,7 @@ extension Text {
     /// queda centrada con las letras de su renglón y, si el título se parte, va al final del último renglón (Fernando, 2 nov
     /// 2026: «que todas las flechitas de los títulos estén bien centradas respecto al renglón»). En el gris de los datos.
     func withTitleChevron() -> Text {
-        self + Text(verbatim: "\u{00A0}") + Text(Image(systemName: "chevron.forward")).foregroundStyle(DS.textMuted)
+        Text("\(self)\(Text(verbatim: "\u{00A0}"))\(Text(Image(systemName: "chevron.forward")).foregroundStyle(DS.textMuted))")
     }
 }
 

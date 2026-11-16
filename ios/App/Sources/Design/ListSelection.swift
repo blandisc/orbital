@@ -30,7 +30,7 @@ final class ListSelection {
     }
     func dragEnded() { drag = nil }
 
-    static let space = "list-selection"
+    nonisolated static let space = "list-selection"
 }
 
 /// El círculo de un póster mientras eliges: vacío o lleno con la palomita.

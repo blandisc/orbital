@@ -32,5 +32,5 @@ def test_the_player_draws_the_flag_before_the_language():
     audio = panel.columns[0].options
     assert [o["flag"] for o in audio] == ["mx", "us"]
     drawn = player_ui.panel_ass(panel)
-    assert drawn.count("\clip(") >= len(flags.FLAGS["mx"]) + len(flags.FLAGS["us"])  # cada figura, recortada a la silueta
+    assert drawn.count("\\clip(") >= len(flags.FLAGS["mx"]) + len(flags.FLAGS["us"])  # cada figura, recortada a la silueta
     assert "&H476800&" in drawn  # el verde de México (#006847, en ASS va al revés)

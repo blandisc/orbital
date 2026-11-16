@@ -89,7 +89,7 @@ extension StreamFinder {
                 if case .none = got, !Task.isCancelled { addonHealth?.fail(addon.url) }
                 let streams = got ?? nil
                 let (late, seconds) = board.arrive(i, streams)
-                if !Task.isCancelled { await self.arrived(key: key, asked: asked, index: i, name: addon.name, streams: streams, seconds: seconds, late: late) }
+                if !Task.isCancelled { self.arrived(key: key, asked: asked, index: i, name: addon.name, streams: streams, seconds: seconds, late: late) }
                 return streams
             }
         }
@@ -112,7 +112,7 @@ extension StreamFinder {
                     let streams = await task.value
                     if !(streams ?? []).isEmpty { got = true }
                 }
-                await self.lateDone(key: key, asked: asked)
+                self.lateDone(key: key, asked: asked)
                 return got
             })
         }

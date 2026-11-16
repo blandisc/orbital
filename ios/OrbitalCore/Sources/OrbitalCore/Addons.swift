@@ -192,7 +192,7 @@ public actor AddonRegistry {
             // Por si el manifiesto repite la clave (en su descripción o en sus `behaviorHints`), también se tapa ahí.
             var manifest = entry["manifest"] ?? .null
             let keys = AddonSecrets.keys(in: url)
-            if !keys.isEmpty, let text = try? String(data: manifest.serialized(), encoding: .utf8), keys.contains(where: text.contains),
+            if !keys.isEmpty, let text = String(data: manifest.serialized(), encoding: .utf8), keys.contains(where: text.contains),
                let clean = JSON.parse(Data(AddonRedaction.redact(text, secrets: keys).utf8)) { manifest = clean }
             return .object(["manifest": manifest, "urlRef": .string(SHA1.hex(Array(url.utf8)))])
         }

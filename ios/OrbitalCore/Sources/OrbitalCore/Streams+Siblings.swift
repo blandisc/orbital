@@ -17,7 +17,6 @@ extension Streams {
         for title in titles {
             let words = plain(title).split(separator: " ").map(String.init)
             if words == show { return false }
-            let extra = show.filter { !words.contains($0) }
             // Sin espacios ni puntos: «StarWars.The.Clone.Wars» y «Star.Wars-The.Clone.Wars» son lo mismo (Fernando, 9 nov).
             let core = show.filter { !articles.contains($0) }.joined(), titleCore = words.filter { !articles.contains($0) }.joined()
             let showArticles = show.filter(articles.contains), titleArticles = words.filter(articles.contains)
