@@ -407,12 +407,16 @@ public final class ParaTiModel: ObservableModel {
     /// «¿Qué vemos?» (antes la misma elección estaba copiada cuatro veces).
     struct ShelfFetcher: Sendable {
         let remote: RemoteForYou, local: ForYou, source: Source
+        static func isChart(_ listID: String) -> Bool { listID.hasPrefix("jw:") || listID.hasPrefix("chart:") }
         /// nil: falló o no contestó (no es «vacío»). `retry`: con la consola, una segunda oportunidad.
         func items(listID: String, kind: String, retry: Bool = false) async -> [Suggestion]? {
             if listID.hasPrefix("lb:") { return try? await local.items(listID: listID, kind: kind) }   // Letterboxd: siempre del iPhone
             switch source {
             case .console:
-                if let found = try? await remote.items(listID: listID, kind: kind) { return found }
+                if let found = try? await remote.items(listID: listID, kind: kind), !found.isEmpty || !Self.isChart(listID) { return found }
+                // Un ranking (Top 10, tendencias de JustWatch) que la consola no trae: el iPhone lo pide él mismo. Prime Video
+                // llegaba vacío de la consola y su tarjeta salía en blanco (Fernando, 16 nov 2026).
+                if Self.isChart(listID), let own = try? await local.items(listID: listID, kind: kind), !own.isEmpty { return own }
                 guard retry, !Task.isCancelled else { return nil }
                 return try? await remote.items(listID: listID, kind: kind)
             case .phone: return try? await local.items(listID: listID, kind: kind)

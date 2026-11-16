@@ -895,7 +895,7 @@ nuevos tamaños»):
 - **Controles de tamaño fijo con ícono** (el selector Todo · Películas · Series, `DS.KindPill`): en la Mac crecen como la
   letra (`DS.Mac.sized`); si no, el ícono, que sí crece, llenaba su círculo.
 - **Las filas llenan la ventana** (segunda pasada, 16 nov: «en plataformas no se extiende completamente a la derecha»):
-  - Plataformas, Premios y Estudios crecen con `DS.PlatformFan.scale` hasta que seis llenan el renglón (tope 1.6×).
+  - Plataformas, Premios y Estudios crecen con `DS.PlatformFan.scale` hasta que seis llenan el renglón (tope 2×); en ventana más ancha caben más. Si la tele no trae un ranking (Prime Video llegaba vacío), la app lo pide ella misma a JustWatch.
   - Canales reparte el renglón (`DS.HomeChannels.width(count:)`).
   - «Lo que sigue» mete los renglones que caben a la altura de la portada (`DS.HomeHero.splitRows`).
   - La puerta de «Decide por mí» asoma una tira de pósters (`DecideStrip`; `DS.ParaTiB.doorFan`, la misma en Inicio y Explorar).

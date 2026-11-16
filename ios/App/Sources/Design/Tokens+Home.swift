@@ -138,12 +138,16 @@ extension DS {
         }
         /// En la Mac las tarjetas (Plataformas, Premios, Estudios) crecen hasta que `perRow` llenan el renglón, sin pasar de
         /// `maxScale`: con su tamaño de iPhone dejaban media pantalla vacía a la derecha (Fernando, 16 nov 2026).
+        /// En ventana muy ancha caben más de `perRow` (si no, topaban en `maxScale` y volvía a quedar hueco a la derecha):
+        /// tantas como quepan sin pasar de `maxScale`, y todas crecen lo justo para llegar a la orilla.
         static var scale: CGFloat {
             guard ProcessInfo.processInfo.isiOSAppOnMac else { return 1 }
-            let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(perRow - 1) * DS.Space.s3
-            return min(maxScale, max(1, row / (CGFloat(perRow) * baseWidth)))
+            let room = WindowMetrics.column.width - 2 * DS.Space.gutter
+            let count = max(perRow, Int(ceil((room + DS.Space.s3) / (maxScale * baseWidth + DS.Space.s3))))
+            let row = room - CGFloat(count - 1) * DS.Space.s3
+            return min(maxScale, max(1, row / (CGFloat(count) * baseWidth)))
         }
-        static let perRow = 6, maxScale: CGFloat = 1.6, baseWidth: CGFloat = 168
+        static let perRow = 6, maxScale: CGFloat = 2, baseWidth: CGFloat = 168
         static var maxWidth: CGFloat { baseWidth * scale }
         static var height: CGFloat { 176 * scale }
         static let radius = DS.Radius.xxl
