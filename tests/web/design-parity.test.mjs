@@ -177,7 +177,8 @@ test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y gr
     // «case .badge, .groupLabel:» también cuenta (dos recetas con la misma letra).
     const line = SWIFT_DS.match(new RegExp(`case [^:\\n]*\\.${recipe}\\b[^:\\n]*: ([^\\n]+)`))?.[1];
     assert.ok(line, `el iPhone no tiene la receta .${recipe}`);
-    assert.ok(line.includes(`.system(.${spec.ios},`), `iPhone .${recipe}: ${spec.ios} (es ${line.trim()})`);
+    // `DS.styled(.estilo)`: el estilo de iOS, con su tamaño propio en la Mac (MAC-A, 16 nov 2026).
+    assert.ok(line.includes(`DS.styled(.${spec.ios})`), `iPhone .${recipe}: ${spec.ios} (es ${line.trim()})`);
     const weight = line.match(/\.weight\(\.(\w+)\)/)?.[1] ?? (spec.ios === "headline" ? "semibold" : "regular");
     assert.equal(weight, spec.peso, `iPhone .${recipe}: peso`);
   }

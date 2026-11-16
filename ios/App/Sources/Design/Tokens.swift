@@ -195,7 +195,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         }
     }
 
-    static func font(_ face: Typeface, weight: Font.Weight = .regular) -> Font { .system(face.style, design: .default).weight(weight) }
+    static func font(_ face: Typeface, weight: Font.Weight = .regular) -> Font { DS.styled(face.style).weight(weight) }
 
     /// Recetas de texto de Proyección: cada pantalla usa estas, no tamaños sueltos. SF Pro con Dynamic Type; los datos
     /// (tiempos, temporadas, tamaños) con cifras tabulares (todas del mismo ancho), como `tabular-nums` en la TV.
@@ -230,22 +230,22 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         case sectionQuiet
         var font: Font {
             switch self {
-            case .display: .system(.largeTitle, design: .default).weight(.bold)
-            case .title: .system(.title, design: .default).weight(.bold)
-            case .section: .system(.title2, design: .default).weight(.bold)
-            case .cardTitle: .system(.headline, design: .default)
-            case .body: .system(.body, design: .default)
-            case .secondary: .system(.subheadline, design: .default)
-            case .footnote: .system(.footnote, design: .default)
-            case .caption: .system(.caption, design: .default)
-            case .eyebrow: .system(.footnote, design: .default).weight(.semibold)
-            case .data: .system(.footnote, design: .default).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
-            case .label: .system(.footnote, design: .default).weight(.semibold)
-            case .labelLarge: .system(.subheadline, design: .default).weight(.semibold)
-            case .badge: .system(.caption, design: .default).weight(.bold)
-            case .groupLabel: .system(.footnote, design: .default).weight(.bold)   // en letra normal desde el 2 nov 2026 (E3)
-            case .sectionQuiet: .system(.title3, design: .default).weight(.bold)
-            case .stat: .system(.largeTitle, design: .default).weight(.heavy).monospacedDigit()
+            case .display: DS.styled(.largeTitle).weight(.bold)
+            case .title: DS.styled(.title).weight(.bold)
+            case .section: DS.styled(.title2).weight(.bold)
+            case .cardTitle: DS.styled(.headline)
+            case .body: DS.styled(.body)
+            case .secondary: DS.styled(.subheadline)
+            case .footnote: DS.styled(.footnote)
+            case .caption: DS.styled(.caption)
+            case .eyebrow: DS.styled(.footnote).weight(.semibold)
+            case .data: DS.styled(.footnote).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
+            case .label: DS.styled(.footnote).weight(.semibold)
+            case .labelLarge: DS.styled(.subheadline).weight(.semibold)
+            case .badge: DS.styled(.caption).weight(.bold)
+            case .groupLabel: DS.styled(.footnote).weight(.bold)   // en letra normal desde el 2 nov 2026 (E3)
+            case .sectionQuiet: DS.styled(.title3).weight(.bold)
+            case .stat: DS.styled(.largeTitle).weight(.heavy).monospacedDigit()
             }
         }
     }
@@ -522,9 +522,14 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Image {
         /// `bleed`: el arte a sangre (la ficha, «En tendencia»). Un fondo 16:9 que llena un marco alto se dibuja más ancho que la
         /// pantalla (en la ficha de un iPhone, ~800 pt): con 480 se veía agrandado y suave.
-        static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96, bleed: CGFloat = 800
+        static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96
+        /// En la Mac el arte a sangre mide la ventana (con 800 la portada se veía pixeleada, 16 nov 2026); iPhone y iPad, 800
+        /// (más era casi el triple de memoria por imagen en el iPad sin que se notara).
+        static var bleed: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(bleedPhone, WindowMetrics.column.width) : bleedPhone }
+        static let bleedPhone: CGFloat = 800
         /// Una tarjeta ancha de lado a lado (la portada de un estreno, `CoverCard`): con `card` se pedía la versión chica (480 px).
-        static let wide: CGFloat = 420
+        static var wide: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(widePhone, WindowMetrics.column.width / 2) : widePhone }   // en la Mac la tarjeta crece con la columna
+        static let widePhone: CGFloat = 420
         /// El desenfoque de la copia que rellena el marco cuando la imagen va completa (`ArtFit.whole`).
         static let wholeBlur: CGFloat = 28
         /// Basta una miniatura para sacar el color medio del fondo.
@@ -538,7 +543,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let stillAspect = DesignTokens.Aspect.still
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
-        static var railWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? railWidthWide : railWidthCompact }   // sin el panel de la derecha
+        static var railWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? (ProcessInfo.processInfo.isiOSAppOnMac ? Mac.railWidth : railWidthWide) : railWidthCompact }   // sin el panel de la derecha
         static let railWidthCompact: CGFloat = 112, railWidthWide: CGFloat = 148
         static let gridMinimum: CGFloat = 100
         /// `DSPosterGrid`: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de accesibilidad) y
@@ -569,6 +574,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static var stillWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280
+        /// La imagen de un renglón de «Seguir viendo» (`StillRow`, Inicio a dos columnas).
+        static let stillRowArt: CGFloat = 176
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
         static let nowPlayingWidth: CGFloat = 56

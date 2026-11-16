@@ -91,9 +91,17 @@ struct HomeHeader: View {
         // inmediato en los botones de arriba a la derecha», Fernando, 13 nov 2026). Cerrado se ve igual que antes.
         return HStack(spacing: 0) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
-            DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
-                .padding(.leading, DS.Space.s2)
-            Spacer(minLength: DS.Space.s2)
+            if ThisDevice.isMac {
+                // La Mac (MAC-A): las pestañas en este mismo renglón, junto al logo; «Todo ▾» pasa a la derecha, junto a tu foto.
+                MacTabStrip().padding(.leading, DS.Space.s8)
+                Spacer(minLength: DS.Space.s2)
+                DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
+                    .padding(.trailing, DS.Space.s4)
+            } else {
+                DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
+                    .padding(.leading, DS.Space.s2)
+                Spacer(minLength: DS.Space.s2)
+            }
             // SX1: mientras eliges, la cápsula cede su lugar ANTES de que la pastilla lo necesite (`fold`, más rápido que el
             // `grow` de la pastilla) hasta quedar solo tu foto, apagada; tocarla cierra. Al cerrar regresa un instante después
             // de que la pastilla se recogió: nunca se enciman. En un iPhone chico (SE) ni tu foto cabe junto al selector

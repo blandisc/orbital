@@ -20,7 +20,8 @@ extension DesignRulesTests {
     func testTabBarAlwaysFull() throws {
         let files = try sources(["Design", "Screens", "App"])
         check(hits(#"tabBarMinimizeBehavior\("#, in: files, unless: #"\(\.never\)"#), "La barra de pestañas no se encoge (.never)")
-        check(hits(#"for: \.tabBar"#, in: files), "La barra de pestañas no se esconde")
+        // En la Mac sí: sus pestañas van en el renglón del logo (`MacTabStrip`, MAC-A, 16 nov 2026).
+        check(hits(#"for: \.tabBar"#, in: files, unless: #"if ThisDevice\.isMac \{ toolbarVisibility\(\.hidden, for: \.tabBar\) \} else \{ self \}"#), "La barra de pestañas no se esconde")
     }
 
     /// Nada en mayúsculas en la app: todo en letra normal. La única excepción es el sello del mazo de Match, que imita un

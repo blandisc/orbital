@@ -10,7 +10,7 @@ extension DesignRulesTests {
         check(hits(#"\bDSCountTabs\b|\bDSSegmented\b|\.pickerStyle\(\.segmented\)"#, in: files),
               "Selector de antes: usa `DSSelector` (o `DSKindFilter` para el tipo)")
         // Las pestañas subrayadas solo donde mueven entre partes: la Biblioteca, la ficha y el reproductor.
-        let navigation: Set<String> = ["DownloadsView.swift", "TitleView.swift", "PlayerScreen+DockData.swift"]
+        let navigation: Set<String> = ["DownloadsView.swift", "TitleView.swift", "PlayerScreen+DockData.swift", "MacTabStrip.swift"]   // la Mac: las pestañas de la app
         var stray: [String] = []
         for file in files where !file.name.hasPrefix("Filters") && !navigation.contains(file.name) {
             for (i, line) in file.lines.enumerated() where line.contains("DSTextTabs(") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {

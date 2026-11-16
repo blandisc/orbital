@@ -34,7 +34,9 @@ final class ImagePipeline: @unchecked Sendable {
     /// Píxeles por punto de la pantalla (se lee una vez, en el hilo principal).
     @MainActor static let screenScale: CGFloat = {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
-        return scene?.screen.scale ?? 3
+        let scale = scene?.screen.scale ?? 3
+        // La Mac: la ventana puede pasar a una pantalla Retina aunque arranque en un monitor de 1x; con 2 se ve nítida en las dos.
+        return ProcessInfo.processInfo.isiOSAppOnMac ? max(scale, 2) : scale
     }()
 
     nonisolated(unsafe) private let memory = NSCache<NSString, UIImage>()   // NSCache es seguro entre hilos

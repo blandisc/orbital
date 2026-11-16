@@ -328,7 +328,7 @@ struct MainTabs: View {
     /// Las cuatro pestañas, cada una con su pila de navegación.
     private func tabs(_ selection: Binding<Int>) -> some View {
         TabView(selection: selection) {
-            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
+            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar() }
             Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) {   // antes «Para ti» (Fernando, 31 oct 2026)
                 NavigationStack(path: $paths[1]) {
                     // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
@@ -336,14 +336,14 @@ struct MainTabs: View {
                         .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
                         .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
                         .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
-                }.tint(DS.primary)
+                }.tint(DS.primary).macHidesTabBar()
             }
             // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas». Su ícono, una pila
             // de tarjetas (tu colección), del mismo trazo que la casa y la lupa; los libros parecían de lectura (4 nov, la 1774).
-            Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+            Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar() }
                 .badge(env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending)   // viéndola, sin marca
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
-            Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
+            Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar() }
         }
     }
 
@@ -353,7 +353,8 @@ struct MainTabs: View {
         tabs(selection)
         .tracksColumnSize()   // lo que queda sin el panel de la derecha (`WindowMetrics.column`): la portada y las tiras
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
-        .tabViewStyle(.sidebarAdaptable)
+        // En la Mac, sin barra lateral ni barra de pestañas: las pestañas van en el renglón del logo (`MacTabStrip`, MAC-A).
+        .modifier(TabStyle())
         // Como Apple (TV, Música): la barra arriba también acostado; la lateral, a un toque del botón de la barra (DK1, 4 nov 2026).
         .modifier(TabBarFirst())
         // El control como panel fijo a la derecha en ventana ancha (el inspector de SwiftUI); si la ventana se angosta con
@@ -411,6 +412,8 @@ struct MainTabs: View {
     /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
     private func wired(_ selection: Binding<Int>) -> some View {
         shell(selection)
+        .environment(\.macTabs, ThisDevice.isMac ? MacTabs(current: tab, select: { selection.wrappedValue = $0 },
+                                                          libraryBadge: env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending) : nil)
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
@@ -451,6 +454,7 @@ struct MainTabs: View {
             tab = new
         })
         wired(selection)
+        .macDefaults()
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)

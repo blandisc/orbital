@@ -1,0 +1,126 @@
+<title>Orbital en la Mac</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Una columna de lectura; tres maquetas lado a lado que se apilan en el celular. */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#12161c; --muted:#5b6672; --line:#d9dee4;
+  --voice:#0f8f8a; --win:#0d1117; --win2:#1a212b; --winink:#e8edf2; --winmuted:#8995a3; --warn:#b4541c;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b0e12; --panel:#141a21; --ink:#e8edf2; --muted:#9aa5b1; --line:#26303b; --voice:#3cc8c0; --warn:#f08a4b; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0e12; --panel:#141a21; --ink:#e8edf2; --muted:#9aa5b1; --line:#26303b; --voice:#3cc8c0; --warn:#f08a4b; color-scheme:dark}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:32px 64px}
+.wrap{max-width:1180px; margin:0 auto; display:grid; gap:40px}
+h1,h2{font-family:var(--display); text-wrap:balance; margin:0}
+h1{font-size:2rem; letter-spacing:-.02em}
+h2{font-size:1.35rem}
+p{margin:0; max-width:68ch}
+.lead{color:var(--muted); font-size:1.05rem}
+.why{display:grid; gap:12px}
+.cause{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:grid; gap:10px}
+.cause b{color:var(--voice)}
+.opts{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px}
+@media (max-width:900px){.opts{grid-template-columns:1fr}}
+.opt{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; display:grid; gap:14px; align-content:start; min-width:0}
+.opt.rec{border-color:var(--voice); box-shadow:0 0 0 1px var(--voice)}
+.code{font-family:var(--display); font-weight:700; color:var(--voice); font-size:.95rem; letter-spacing:.04em}
+.tag{display:inline-block; font-size:.8rem; font-weight:600; color:var(--voice)}
+.opt h2{font-size:1.15rem}
+ul{margin:0; padding-left:18px; display:grid; gap:4px}
+.gain li::marker{color:var(--voice)} .lose li::marker{color:var(--warn)}
+.k{font-size:.8rem; font-weight:600; color:var(--muted); letter-spacing:.04em}
+.cost{font-size:.9rem; color:var(--muted)}
+/* Maquetas de ventana */
+.mac{background:var(--win); border-radius:10px; overflow:hidden; aspect-ratio:16/10; max-width:100%; display:flex; flex-direction:column; font-family:var(--body)}
+.chrome{height:16px; background:#06080b; display:flex; gap:4px; align-items:center; padding-left:6px}
+.chrome i{width:6px; height:6px; border-radius:50%; background:#3a434e}
+.bar{display:flex; align-items:center; gap:8px; padding:6px 10px; color:var(--winink)}
+.bar .logo{font-weight:700; font-size:var(--fs,10px)}
+.bar .tabs{display:flex; gap:6px; font-size:var(--fs,10px); color:var(--winmuted)}
+.bar .tabs b{color:var(--winink); background:var(--win2); border-radius:99px; padding:1px 7px}
+.bar .sp{flex:1}
+.dot{width:var(--dot,12px); height:var(--dot,12px); border-radius:50%; background:var(--win2); border:1px solid #2c3540}
+.lane{justify-content:center; background:#0a1a20}
+.hero{flex:1.3; background:linear-gradient(120deg,#2b4a52,#1b2a33 55%,#0d1117); position:relative}
+.hero .t{position:absolute; left:10px; bottom:8px; color:#fff; font-weight:800; font-size:var(--ht,13px); font-family:var(--display)}
+.hero.soft{filter:blur(.6px)}
+.row{display:flex; gap:var(--gap,5px); padding:8px 10px}
+.row span{flex:0 0 var(--pw,11%); aspect-ratio:2/3; border-radius:3px; background:linear-gradient(160deg,#41505f,#222b35)}
+.side{display:flex; flex:1; min-height:0}
+.side nav{width:24%; background:#0a0e13; border-right:1px solid #1d252e; padding:8px; display:grid; gap:6px; align-content:start; color:var(--winmuted); font-size:9px}
+.side nav b{color:var(--winink)}
+.side .main{flex:1; display:flex; flex-direction:column; min-width:0}
+.cap{font-size:.85rem; color:var(--muted)}
+.also{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:grid; gap:12px}
+.pick{font-family:var(--display); font-size:1.1rem}
+.pick b{color:var(--voice)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap">
+
+<div class="wrap">
+  <header class="why">
+    <span class="tag">Orbital · Mac · 16 nov 2026</span>
+    <h1>¿Qué Orbital quieres en la Mac?</h1>
+    <p class="lead">Hoy la Mac abre la misma app del iPad. Se ve chica, suave y con una barra de más arriba. Antes de pulir pantalla por pantalla, hay que escoger el camino.</p>
+  </header>
+
+  <section class="cause">
+    <h2>Por qué se ve cruda</h2>
+    <p><b>macOS dibuja las apps de iPad al 77 % de su tamaño</b> cuando van en ventana. Un botón de 32 puntos sale de 25, la letra de 17 sale de 13 y todo se reescala, por eso se ve suave. Encima, las imágenes grandes (la portada) se piden al tamaño de un iPhone y en una pantalla de 27" se estiran. Y la barra de pestañas del iPad pone su propio carril arriba de «orbital» y del selector.</p>
+    <p class="cap">Lo que vi hoy en tu Mac: barra de pestañas en un carril aparte, la barra lateral sale vacía y tapa el contenido, pósters de ~115 puntos en una ventana de 1,512.</p>
+  </section>
+
+  <section class="opts">
+    <article class="opt rec">
+      <span class="code">MAC-A · recomendada</span>
+      <h2>Seguir con la app de iPad, ajustada a la Mac</h2>
+      <div class="mac" style="--fs:11px;--dot:14px;--pw:13%;--ht:15px">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="bar"><span class="logo">orbital</span><span class="tabs"><b>Inicio</b><span>Explorar</span><span>Biblioteca</span></span><span class="sp"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="hero"><span class="t">HEART OF THE BEAST</span></div>
+        <div class="row"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <p class="cap">Una sola barra arriba, como la tele: logo, Inicio · Explorar · Biblioteca, buscar y tu foto. Letra y botones un tercio más grandes en la Mac.</p>
+      <div><div class="k">GANAS</div><ul class="gain"><li>Una sola app: lo que arreglas en el iPhone llega a la Mac.</li><li>Ves MKV, latino y todo lo del reproductor como hoy.</li><li>Se nota en días, no en semanas.</li></ul></div>
+      <div><div class="k">PIERDES</div><ul class="lose"><li>Sigue un poco suave: el 77 % de macOS no se puede quitar en ventana.</li><li>No tiene menús ni gestos 100 % de Mac.</li></ul></div>
+      <p class="cost">Costo: 2 a 3 días de pulido.</p>
+    </article>
+
+    <article class="opt">
+      <span class="code">MAC-B</span>
+      <h2>«Optimizada para Mac» (Catalyst)</h2>
+      <div class="mac" style="--fs:10px;--dot:12px;--pw:11%">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="side"><nav><b>Inicio</b><span>Explorar</span><span>Biblioteca</span><span>Buscar</span></nav>
+          <div class="main"><div class="hero"><span class="t">HEART OF THE BEAST</span></div><div class="row"><span></span><span></span><span></span><span></span><span></span></div></div></div>
+      </div>
+      <p class="cap">Nítida al 100 %, con barra lateral y controles de Mac.</p>
+      <div><div class="k">GANAS</div><ul class="gain"><li>Todo nítido y del tamaño correcto.</li><li>Se siente más de Mac.</li></ul></div>
+      <div><div class="k">PIERDES</div><ul class="lose"><li><b>No abre MKV</b>: el motor de video no existe para este modo. Muchas versiones con latino no se podrían ver.</li><li>Una plataforma más que compilar y probar.</li></ul></div>
+      <p class="cost">Costo: 1 a 2 semanas, y el reproductor queda a medias.</p>
+    </article>
+
+    <article class="opt">
+      <span class="code">MAC-C</span>
+      <h2>App de Mac de verdad</h2>
+      <div class="mac" style="--fs:10px;--dot:12px;--pw:10%;--gap:4px">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="side"><nav><b>Inicio</b><span>Explorar</span><span>Biblioteca</span><span>Mis listas</span><span>Descargas</span></nav>
+          <div class="main"><div class="bar"><span class="sp"></span><span class="dot"></span></div><div class="hero"><span class="t">HEART OF THE BEAST</span></div><div class="row"><span></span><span></span><span></span><span></span><span></span><span></span></div></div></div>
+      </div>
+      <p class="cap">Hecha para la Mac desde cero, como la app de TV de Apple.</p>
+      <div><div class="k">GANAS</div><ul class="gain"><li>La más pulida: nítida, menús, atajos y ventanas de Mac.</li><li>El motor de video sí funciona.</li></ul></div>
+      <div><div class="k">PIERDES</div><ul class="lose"><li>Dos apps que mantener: cada cambio se hace dos veces.</li><li>Unas 60 piezas de la app se rehacen.</li></ul></div>
+      <p class="cost">Costo: varias semanas.</p>
+    </article>
+  </section>
+
+  <section class="also">
+    <h2>Mi recomendación</h2>
+    <p class="pick"><b>MAC-A.</b> Te da una Mac que se ve bien esta semana sin perder el reproductor ni partir la app en dos. Si después usas mucho la Mac y te sigue sabiendo a iPad, MAC-C es el siguiente paso; MAC-B no la recomiendo porque pierde el MKV.</p>
+    <p>Con MAC-A empiezo por: <b>una sola barra arriba</b> (sin el carril extra ni la barra lateral que sale vacía y es donde truena), <b>imágenes pedidas al tamaño real</b> de la ventana, y <b>letra y botones más grandes</b> en la Mac. Luego pantalla por pantalla contigo.</p>
+    <p class="cap">Para contestar basta dictar el código: «MAC-A», «MAC-B» o «MAC-C».</p>
+  </section>
+</div>

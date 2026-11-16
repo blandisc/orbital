@@ -7,6 +7,9 @@ struct AppMark: View {
     @Environment(AppEnvironment.self) private var env: AppEnvironment?
     /// EH1: un poco más chico (con su planeta) para que quepan «Todo ▾» y la cápsula en el mismo renglón.
     var small = false
+    /// Solo el logo de Inicio dice dónde está (ahí termina la entrada de la app). Una segunda copia que también lo dijera (la barra
+    /// de la Mac en Explorar) se peleaba con la de Inicio y la app se trababa redibujando (16 nov 2026).
+    var reportsFrame = true
 
     var body: some View {
         let compact = WindowMetrics.column.width < DS.Size.compactWidth   // el encabezado va en la columna (sin el panel del control)
@@ -14,8 +17,8 @@ struct AppMark: View {
         OrbitalWordmark(size: compact || small ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
             // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact, let ui { ui.homeLogoFrame = $0 } }
-            .onDisappear { ui?.homeLogoFrame = nil }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if reportsFrame, !compact, let ui { ui.homeLogoFrame = $0 } }
+            .onDisappear { if reportsFrame { ui?.homeLogoFrame = nil } }
             .opacity(ui?.splashing == true ? 0 : 1)
     }
 }

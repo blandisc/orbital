@@ -117,12 +117,14 @@ struct BrowseView: View {
         // La barra de pestañas ya no se esconde al bajar: siempre completa, como en toda la app (2 nov 2026).
         // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
         // (título y campo) y vuelve al subir, con lo escrito.
-        .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)
+        // En la Mac no: esa barra lleva las pestañas (`.macTopBar()`) y sin ella no habría cómo cambiar de pestaña.
+        .toolbarVisibility(barHidden && searching && !ThisDevice.isMac ? .hidden : .visible, for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
-        .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Buscar")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
         // Siempre a la vista (revisión del 11 nov): con `.automatic`, en iOS 27 el campo solo salía al jalar hacia abajo y,
         // ya con texto, no se veía qué buscaste. Al bajar por los resultados se va con la barra de arriba y vuelve al subir.
         .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))

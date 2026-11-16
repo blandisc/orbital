@@ -871,6 +871,32 @@ Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el íco
 del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si
 cambia la marca (`DS.Brand`), se corre el script. `testBrandSymbolMatchesTheMark` compara su firma con `Tokens.swift`.
 
+### iPad y Mac: su propio tamaño (MAC-A, 16 nov 2026)
+
+La Mac corre la app del iPad («Diseñada para iPad») y macOS la dibuja al 77 % en ventana. Por eso la Mac tiene un mini
+sistema propio, en `DS.Mac` y `DS.HomeHero` (Fernando, 16 nov 2026: «crea otro mini sistema de diseño para iPad y Mac con
+nuevos tamaños»):
+
+- **Letra:** la Mac ignora Dynamic Type. Toda receta pasa por `DS.styled(_:)`, que en la Mac da el tamaño de iOS por
+  `DS.Mac.typeScale` (1.25). Nada de `.system(.estilo)` suelto en los tokens. Los botones del sistema van en
+  `.controlSize(.large)` (`macDefaults()` en `RootView`).
+- **Una sola barra:** en la Mac no hay barra de pestañas del sistema ni barra lateral (la lateral salía vacía, tapaba el
+  contenido y ahí tronaba). Inicio · Explorar · Biblioteca · Buscar van en el renglón del logo (`MacTabStrip`). En Inicio
+  van en su encabezado; en las otras, por `.macTopBar()`, sin título del sistema (con título, las pestañas se iban a «More»).
+  En la Mac las pestañas siempre llevan nombre: la barra le ofrece poco ancho a lo de la izquierda y los nombres se recortaban hasta desaparecer, así que la tira lleva `.fixedSize()`.
+- **Un solo logo reporta su lugar:** el de la barra de la Mac va con `AppMark(reportsFrame: false)`. Dos logos escribiendo
+  el mismo dato se peleaban y la app se trababa redibujando.
+- **Imágenes al ancho de la ventana (solo Mac):** `DS.Image.bleed` y `DS.Image.wide` se piden al ancho de la columna, y
+  `ImagePipeline` pide al menos 2× en la Mac. Si no, la portada se ve pixeleada.
+- **Inicio como el escritorio de la tele:** en la Mac, desde `DS.HomeHero.splitFrom` (1100 pt de columna), la portada es una tarjeta
+  16:9 a la izquierda (`splitShare`). A la derecha va «Seguir viendo» en renglones (`StillRow`) o, si no hay nada a medias,
+  «Lo que sigue» en la portada (tocar uno lo pasa al frente). Más angosto, la portada de siempre.
+- **Pósters:** en la Mac, las filas usan `DS.Mac.railWidth` (188 pt).
+- **Controles de tamaño fijo con ícono** (el selector Todo · Películas · Series, `DS.KindPill`): en la Mac crecen como la
+  letra (`DS.Mac.sized`); si no, el ícono, que sí crece, llenaba su círculo.
+
+`DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testWideHomeLooksLikeTheDesktop`).
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

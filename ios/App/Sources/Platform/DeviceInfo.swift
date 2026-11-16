@@ -44,6 +44,8 @@ enum ThisDevice {
     /// conecta con la TV para nada»). El iPhone y el iPad, sí. Solo recibe tu clave de Real-Debrid por iCloud (CX2-A).
     /// `MacNeverTalksToTheTVTests` cuida que esto no cambie.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
+    static let isMac = ProcessInfo.processInfo.isiOSAppOnMac
     /// Qué trae esta app aquí (D1-B): la versión de la compilación (`ORBITAL_EDITION` → Info.plist › `OrbitalEdition`, leída una
     /// vez; sin ella, Ultra) y si este aparato habla con la TV. Lo que no recibe `Services` (Siri, el menú, la actividad en
     /// vivo) pregunta aquí; lo demás, a `services.capabilities`, que se arma con esto mismo.

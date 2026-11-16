@@ -38,6 +38,8 @@ struct BleedArt<Content: View>: View {
     /// El arte respira: si te quedas, se acerca un poco muy despacio y se queda (un solo tramo, como la TV). Quieto con
     /// «Reducir movimiento» y en modo de bajo consumo.
     var breathes = true
+    /// Tarjeta con esquinas también en oscuro (Inicio a dos columnas: la portada es una tarjeta junto a «Seguir viendo»).
+    var card = false
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -47,12 +49,14 @@ struct BleedArt<Content: View>: View {
     /// «Reducir movimiento» o «Reducir transparencia»: al recogerse, solo se desvanece (sin desenfoque ni estirarse).
     private var quiet: Bool { reduceMotion || reduceTransparency }
 
+    private var isCard: Bool { card || scheme != .dark }
+
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
         // funde con el papel: el texto claro de encima dejaría de leerse).
         ZStack(alignment: .bottomLeading) {
             Group {
-                if scheme == .dark {
+                if !isCard {
                     art.mask(LinearGradient(stops: [.init(color: fadesTop ? .clear : .black, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
                                                     .init(color: .black, location: DS.Backdrop.artFadeStart),
                                                     .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
@@ -63,21 +67,21 @@ struct BleedArt<Content: View>: View {
             // Al recogerse se va con el contenido, se difumina al final y se desvanece: deja ver el fondo de detrás, el mismo
             // color a los dos lados (en claro, la tarjeta sube nítida). Todo con `visualEffect` (en el render, sin volver a
             // medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
-            .visualEffect { [on = collapses, still = quiet, card = scheme != .dark, raised] view, proxy in
+            .visualEffect { [on = collapses, still = quiet, card = isCard, raised] view, proxy in
                 let s = BleedCollapse.state(proxy, on: on, still: still, card: card, raised: raised)
                 return view.scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
             }
             .background { if let zoom { Color.clear.playerZoomSource(zoom) } }   // ds-exception: el marco quieto del zoom, no se ve
             // El logo y la frase se van con el contenido y antes que el arte: no se quedan detrás de los datos.
-            content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
-                .visualEffect { [on = collapses, still = quiet, card = scheme != .dark, raised] view, proxy in
+            content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, isCard ? DS.Space.s5 : DS.Space.s3)
+                .visualEffect { [on = collapses, still = quiet, card = isCard, raised] view, proxy in
                     let s = BleedCollapse.state(proxy, on: on, still: still, card: card, raised: raised)
                     return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
                 }
         }
         .coordinateSpace(.named(BleedCollapse.space))
         .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
-        .padding(.horizontal, scheme == .dark ? 0 : DS.Space.gutter)
+        .padding(.horizontal, isCard ? DS.Space.gutter : 0)
         .accessibilityElement(children: .contain)
     }
 
