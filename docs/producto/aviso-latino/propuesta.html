@@ -1,0 +1,131 @@
+<title>Aviso «No trae latino»</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una pregunta arriba, lo que pasa hoy, y tres opciones lado a lado como pantallas del reproductor. */
+:root{
+  --bg:#f3f5f6; --fg:#14181b; --muted:#5d676e; --line:#d9dfe3; --card:#ffffff;
+  --accent:#0e8f88; --warn:#b26a00; --warn-bg:#fff3df; --pick:#0e8f88;
+  --screen:#0b0d0f; --screen-fg:#f2f4f5; --screen-muted:#a3adb3; --pill:rgba(30,34,38,.92); --pill-line:rgba(255,255,255,.08);
+  --s-warn:#f0a83a; --s-info:#9fb0ba; --s-accent:#3fd0c6;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1214; --fg:#eef1f2; --muted:#9aa5ab; --line:#262d31; --card:#171c1f;
+  --accent:#3fd0c6; --warn:#f0a83a; --warn-bg:#2a2112; --pick:#3fd0c6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1214; --fg:#eef1f2; --muted:#9aa5ab; --line:#262d31; --card:#171c1f;
+  --accent:#3fd0c6; --warn:#f0a83a; --warn-bg:#2a2112; --pick:#3fd0c6; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+h1{font-size:26px;line-height:1.2;margin:0;text-wrap:balance}
+h2{font-size:18px;margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.lead{display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.opt.rec{border:2px solid var(--pick)}
+.head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.code{font-weight:700;font-size:15px;letter-spacing:.04em;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:2px 8px;border-radius:6px}
+.rec-tag{font-size:12px;font-weight:600;color:var(--pick)}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.gana li::marker{content:"+  ";color:var(--accent);font-weight:700}
+.pierde li::marker{content:"−  ";color:var(--warn);font-weight:700}
+.label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+/* pantalla del reproductor en horizontal */
+.screen{background:var(--screen);border-radius:18px;aspect-ratio:19.5/9;max-width:100%;position:relative;overflow:hidden;
+  background-image:radial-gradient(ellipse at 30% 40%,#2a3a44 0,#0b0d0f 70%)}
+.screen .scene{position:absolute;inset:0;display:flex;align-items:flex-end;padding:10px 14px;color:var(--screen-muted);font-size:11px}
+.notice{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:min(88%,330px);background:var(--pill);border:1px solid var(--pill-line);
+  border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:10px;color:var(--screen-fg)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot.warn{background:var(--s-warn)} .dot.info{background:var(--s-info)}
+.txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.t{font-size:12.5px;font-weight:600;line-height:1.25}
+.d{font-size:11px;color:var(--screen-muted);line-height:1.3}
+.btn{font-size:11.5px;font-weight:600;color:#06201e;background:var(--s-accent);border-radius:999px;padding:4px 10px;white-space:nowrap;flex:none}
+.btn.ghost{background:transparent;color:var(--s-accent);border:1px solid var(--s-accent)}
+.btns{display:flex;gap:6px;flex:none}
+.none{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--screen-muted);border:1px dashed rgba(255,255,255,.2);border-radius:10px;padding:6px 10px;white-space:nowrap}
+.today{background:var(--warn-bg);border-radius:14px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:center}
+@media (max-width:720px){.today{grid-template-columns:1fr}}
+.today .txtcol{display:flex;flex-direction:column;gap:8px}
+.verdict{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.dictar{font-size:14px} .dictar b{color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <header class="lead">
+    <h1>Qué decir cuando la versión trae «español» y no sabemos cuál</h1>
+    <p class="muted">Reproductor del iPhone. Tú pides latino y el archivo solo dice «español»: puede ser latino o castellano.</p>
+  </header>
+
+  <section class="today">
+    <div class="screen" aria-label="Cómo se ve hoy">
+      <div class="notice">
+        <span class="dot warn"></span>
+        <span class="txt"><span class="t">No trae latino</span><span class="d">Sus pistas: español (no dice cuál)</span></span>
+        <span class="btn">Cambiar</span>
+      </div>
+      <div class="scene">Los Simpson · T5 E3</div>
+    </div>
+    <div class="txtcol">
+      <span class="label">Hoy</span>
+      <h2>El título afirma algo que no sabemos</h2>
+      <p>«No trae latino» suena seguro, y luego el detalle dice que no se sabe. Muchas veces ese «español» sí es latino, así que el aviso te hace cambiar de versión sin necesidad. Además va en ámbar, el color de «algo salió mal».</p>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="opt rec">
+      <div class="head"><span class="code">LA1</span><h2>Decir la duda</h2><span class="rec-tag">Recomendada</span></div>
+      <div class="screen">
+        <div class="notice">
+          <span class="dot info"></span>
+          <span class="txt"><span class="t">No dice si es latino</span><span class="d">La pista solo dice «español»</span></span>
+          <span class="btn">Cambiar a latino</span>
+        </div>
+        <div class="scene">Los Simpson · T5 E3</div>
+      </div>
+      <p>Mismo aviso, pero con la verdad: no se sabe. Va en gris (información), no en ámbar. El botón lleva a una versión que <b>sí</b> es latino seguro. Si la pista dice castellano o inglés, se queda «No trae latino» como hoy.</p>
+      <ul class="gana"><li>No te asusta cuando probablemente está bien</li><li>Usa las palabras de la tele («No dice si latino o castellano»)</li><li>Cambio chico: solo texto y color</li></ul>
+      <ul class="pierde"><li>Si era castellano, igual lo descubres al oírlo</li></ul>
+    </article>
+
+    <article class="opt">
+      <div class="head"><span class="code">LA2</span><h2>No avisar</h2></div>
+      <div class="screen">
+        <span class="none">sin aviso</span>
+        <div class="scene">Los Simpson · T5 E3</div>
+      </div>
+      <p>Cuando la pista dice solo «español», el reproductor se calla. En «Versión» la fila ya dice «Español (no dice cuál)» para quien quiera revisar.</p>
+      <ul class="gana"><li>Cero interrupciones</li><li>Lo más sencillo</li></ul>
+      <ul class="pierde"><li>Si es castellano, nadie te ofrece el cambio: tienes que ir tú a «Versión»</li></ul>
+    </article>
+
+    <article class="opt">
+      <div class="head"><span class="code">LA3</span><h2>Preguntarte y recordar</h2></div>
+      <div class="screen">
+        <div class="notice">
+          <span class="dot info"></span>
+          <span class="txt"><span class="t">¿Se oye en latino?</span><span class="d">La pista solo dice «español»</span></span>
+          <span class="btns"><span class="btn ghost">Sí</span><span class="btn">Cambiar</span></span>
+        </div>
+        <div class="scene">Los Simpson · T5 E3</div>
+      </div>
+      <p>Igual que LA1, pero con «Sí». Si dices que sí, la app lo anota para esa versión y los siguientes episodios ya salen como latino, sin aviso.</p>
+      <ul class="gana"><li>La app aprende: en series, preguntas una sola vez</li><li>Mejora la lista de versiones para la próxima</li></ul>
+      <ul class="pierde"><li>Un botón más en un aviso que ya es chico</li><li>Más trabajo (guardar lo que dijiste y usarlo en la lista)</li></ul>
+    </article>
+  </section>
+
+  <section class="verdict">
+    <span class="label">Mi recomendación</span>
+    <h2>LA1 ahora; LA3 después si el aviso te sale seguido</h2>
+    <p>El problema es de honestidad, no de diseño: el letrero dice «no» cuando la respuesta es «no sé». LA1 lo arregla con el menor cambio y no quita la salida rápida a latino seguro. LA2 esconde un caso real (cuando sí es castellano). LA3 es la mejor a largo plazo, pero conviene ver primero cuántas veces aparece.</p>
+    <p class="muted">Regla que quedaría en el repo: un aviso de idioma no afirma lo que la pista no dice; «español» a secas es duda, no «no». En la tele la lista de versiones ya habla así; el aviso del reproductor quedaría igual en las dos.</p>
+    <p class="dictar">Para elegir, dicta: <b>LA1</b>, <b>LA2</b> o <b>LA3</b>.</p>
+  </section>
+</div>
