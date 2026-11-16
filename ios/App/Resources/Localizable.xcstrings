@@ -1,6 +1,28 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "No dice si es latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn’t say if it’s Latin American Spanish"
+          }
+        }
+      }
+    },
+    "La pista solo dice «español»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The track only says “Spanish”"
+          }
+        }
+      }
+    },
     "No está en %@ al instante": {
       "extractionState": "manual",
       "localizations": {

@@ -57,6 +57,21 @@ final class VersionQAModelFindingsTests: XCTestCase {
         XCTAssertTrue(checked.contains { $0.code == "es-419" }, "lo comprobado tiró el «latino» del nombre: \(checked)")
     }
 
+    /// Regla LA1 (16 nov 2026): quieres latino y la pista solo dice «spa» (el nombre tampoco dice cuál). No se afirma «No trae
+    /// latino» (puede serlo): sale «No dice si es latino», sin botón de cambiar, aunque haya otra versión latina segura.
+    func testLA1_UnspecifiedSpanishSaysTheDoubtWithoutSwitch() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
+            .object(["name": "T\n1080p [RD+]", "title": "Show.S01E01.1080p.SPANISH.WEB-DL\n💾 2 GB", "url": "https://rd.example/spanish.mkv"]),
+            .object(["name": "T\n720p [RD+]", "title": "Show.S01E01.720p.LATINO\n💾 1 GB", "url": "https://rd.example/latino.mkv"]),
+        ]]
+        rig.settings.update { $0.audio = "es"; $0.latinSpanish = true }
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/spanish.mkv", "precondición: abre la que dice solo SPANISH")
+        await rig.model.handle(rig.playing(0, audio: [spaUntagged], subs: [], selectedAudio: 2))
+        XCTAssertEqual(rig.model.notice, .spanishUnspecified, "«español» a secas es duda, no «no trae latino»")
+    }
+
     /// La latina falla al cargar; se cae a la siguiente (inglés). El aviso ofrece «Cambiar a latino»… a la que acaba de fallar.
     func testQA23_OfferPointsToTheSourceThatAlreadyFailed() async throws {
         let rig = try Rig()

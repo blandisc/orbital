@@ -34,6 +34,9 @@ extension PlayerModel {
         let have = Self.realAudio(s.audioTracks, source: current)
         let want = prefs.wanted
         guard !have.isEmpty, !have.contains(where: { $0 == want || (want.count == 2 && $0.hasPrefix(want)) }) else { return }
+        // Quieres latino y la pista dice solo «español»: no se sabe si es latino. Se dice la duda, sin botón (LA1, Fernando,
+        // 16 nov 2026): «No trae latino» afirmaba lo que la pista no dice.
+        if want == "es-419", have.contains("es") { notice = .spanishUnspecified; return }
         // Ni una que ya falló, ni una que ya se comprobó en otro idioma, ni una de cine, un tráiler u otra película.
         let better = sourceChoices.first { choice in
             guard choice.index != current.index, choice.playbackURL != nil, !failedSources.contains(choice.index),

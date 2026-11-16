@@ -816,6 +816,11 @@ letras que bajan: g, p, j, y).
   en blanco, bajo el logo (PA-2). Pasado el 100 de Windows, el reproductor amplifica hasta 150 (`playback.VOLUME_BOOST_MAX`).
 - **Un dato dice qué es**: el tiempo jugado lleva «en total» («1 h 18 min en total», JU-2); una fecha dice qué pasa ese día
   («Episodio nuevo el miércoles 4», PS-2).
+- **Un aviso de idioma no afirma lo que la pista no dice** (LA1, 16 nov 2026): «español» a secas es duda, no «no». Si quieres
+  latino y la pista solo dice «español», el reproductor dice «No dice si es latino · La pista solo dice «español»», en `info` y
+  sin botón; «No trae latino · Cambiar» queda para cuando la pista dice castellano u otro idioma. Prueba:
+  `VersionQAModelFindingsTests.testLA1_UnspecifiedSpanishSaysTheDoubtWithoutSwitch`. La TV ya lo dice así en su lista
+  («No dice si latino o castellano»); su reproductor no tiene este aviso.
 - **Una etiqueta que llevan casi todos no se pone**: no distingue nada (el «24/7» de los canales de Orbital, TV-2).
 - Tamaños solo con `--text-*` o, mejor, una receta `--type-*` (escalan con Ajustes → Tamaño del texto).
 - Títulos con `line-clamp` o «…»: `-webkit-line-clamp` corta en el borde del último renglón, así que un `padding-bottom` no salva la cola de g, p, j, y. **Chicos** (tarjetas, riel, hojas): interlineado `--leading-title` (1,3). **Grandes** (héroe, ficha, destacado, mosaico): su interlineado de siempre y `overflow: clip; overflow-clip-margin: var(--clip-tail)`, que deja asomar la cola sin inflar el interlineado ni mover el diseño (con `clip` el elemento flex pide `min-width: 0` y `min-height: 0`).

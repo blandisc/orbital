@@ -18,6 +18,8 @@ extension PlayerScreen {
             let name = VersionText.inline(code == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(code, in: ui), ui)
             return PlayerNotice(title: String(format: Strings.tr("No está en %@ al instante", language: ui), name),
                                 detail: Strings.tr("Se puede pedir a la nube", language: ui), tone: .info, opensVersion: true)
+        case .spanishUnspecified?:
+            return PlayerNotice(title: Strings.tr("No dice si es latino", language: ui), detail: Strings.tr("La pista solo dice «español»", language: ui), tone: .info)
         default: return nil
         }
     }

@@ -63,6 +63,9 @@ public enum PlayerNotice: Sendable, Equatable {
     /// Esta versión no trae el idioma que quieres (o no su variante: latino) y otra sí: se ofrece cambiar sin perder el punto.
     /// `language` es el código que quieres («es-419»); `have`, lo que trae esta («en», «es-ES»).
     case otherVersionHasYourLanguage(language: String, have: [String], sourceIndex: Int)
+    /// Quieres latino y la pista solo dice «español» (puede ser latino o castellano): «No dice si es latino», sin botón (LA1).
+    /// Un aviso de idioma no afirma lo que la pista no dice.
+    case spanishUnspecified
     /// La versión que elegiste no abrió: se volvió a la que veías, en el mismo segundo.
     case switchFailedBack
     /// Real-Debrid aún no tiene esa versión (mandó su video corto de «descargando» en lugar de la película).
