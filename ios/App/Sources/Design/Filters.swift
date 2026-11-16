@@ -17,6 +17,9 @@ enum KindGlyph {
     static func symbol(_ kind: String?) -> String {
         switch kind { case "movie": movie; case "series": series; default: all }
     }
+    /// Relleno en iPhone y iPad; en la Mac, de línea: al tamaño de la Mac el rollo de película relleno se veía como un bloque
+    /// blanco (Fernando, 16 nov 2026: «el selector de series, películas o todo se ve medio feo»).
+    static var variant: SymbolVariants { ThisDevice.isMac ? .none : .fill }
 }
 
 /// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
@@ -294,7 +297,7 @@ struct KindPill: View {
                 let index = options.firstIndex { $0.0 == option.0 } ?? 0
                 Button { choose(option.0) } label: {
                     HStack(spacing: 0) {
-                        Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
+                        Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(KindGlyph.variant)   // el mismo dibujo abierta y cerrada
                             .font(DS.TextRecipe.section.font)
                             .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
                             // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
@@ -330,6 +333,7 @@ struct KindPill: View {
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Capsule())
+        .macPillBase(Capsule())
         .fixedSize()
         .dsFeedback(.selection, trigger: kind)
         .dsFeedback(.impact(weight: .light), trigger: open)
@@ -422,6 +426,7 @@ private struct KindName: ViewModifier {
             .foregroundStyle(DS.text)
             .lineLimit(1).fixedSize()
             .padding(.horizontal, DS.KindPill.nameInset / 2)   // aire igual a los dos lados: el nombre queda centrado en su lugar
+            .padding(.leading, ThisDevice.isMac ? DS.KindPill.nameInset / 2 : 0)   // en la Mac la pastilla es más redonda: el nombre se pegaba a la curva
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("kind-name")
     }
@@ -470,6 +475,7 @@ struct DSFiltersButton: View {
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // círculo de tamaño fijo, como los del tipo
         .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Circle())
+        .macPillBase(Circle())
         .fixedSize()
         .dsFeedback(.impact(weight: .light), trigger: on)
         .accessibilityLabel(Text("Filtros"))
@@ -483,5 +489,17 @@ private struct KindPillPress: ButtonStyle {   // ds-exception: el hundido del se
         configuration.label
             .scaleEffect(configuration.isPressed ? DS.KindPill.pressed : 1)
             .animation(DS.Motion.press, value: configuration.isPressed)
+    }
+}
+
+extension View {
+    /// En la Mac el vidrio casi no se ve sobre el fondo oscuro y el selector parecía íconos sueltos: debajo, una base del color
+    /// de las tarjetas y su filo. En iPhone y iPad, el vidrio solo.
+    @ViewBuilder func macPillBase(_ shape: some InsettableShape) -> some View {
+        if ThisDevice.isMac {
+            background(shape.fill(DS.surfaceRaised)).overlay(shape.strokeBorder(DS.hairline, lineWidth: DS.Stroke.regular))
+        } else {
+            self
+        }
     }
 }

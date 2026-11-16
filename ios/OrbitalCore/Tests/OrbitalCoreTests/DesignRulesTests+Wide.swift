@@ -112,4 +112,20 @@ extension DesignRulesTests {
             XCTAssertTrue(learn.contains(token), token)
         }
     }
+
+    /// En la Mac el vidrio casi no se ve sobre el fondo oscuro: los controles de vidrio de las pantallas (no los del
+    /// reproductor, que van sobre el video) llevan `macPillBase` (Fernando, 16 nov 2026: «el selector de series, películas o
+    /// todo se ve medio feo»). Y en la Mac los íconos del tipo van de línea (el rollo relleno se veía como bloque).
+    func testMacGlassControlsHaveABase() throws {
+        let files = try sources(["Design", "Screens"])
+        let player = ["PlayerControls.swift", "SubtitlePanel.swift"]
+        for file in files where !player.contains(file.name) {
+            for (i, line) in file.lines.enumerated() where line.contains(".glassEffect(.regular.interactive(), in: Capsule())") || line.contains(".glassEffect(.regular.interactive(), in: Circle())") {
+                let next = i + 1 < file.lines.count ? file.lines[i + 1] : ""
+                XCTAssertTrue(next.contains(".macPillBase("), "\(file.name):\(i + 1): un control de vidrio sin su base en la Mac")
+            }
+        }
+        let filters = try XCTUnwrap(files.first { $0.name == "Filters.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(filters.contains("static var variant: SymbolVariants { ThisDevice.isMac ? .none : .fill }"), "En la Mac los íconos del tipo van de línea")
+    }
 }

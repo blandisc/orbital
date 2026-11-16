@@ -906,9 +906,13 @@ nuevos tamaños»):
 - **La barra de la Mac lleva sombra** (`DS.Mac.topScrim`, con `ArtVeil`): sobre el mosaico de Explorar las pestañas se perdían.
 - **La ficha y los tutoriales crecen con la letra:** la columna y el logo de la ficha ancha, el ancho de lectura de la guía, la
   burbuja de los avisos y la escena de las historias van por `DS.Mac.sized`.
+- **El vidrio lleva base en la Mac:** el selector Todo · Películas · Series, «Filtros» y la cápsula de arriba de Inicio van
+  sobre `macPillBase` (el color de las tarjetas y su filo). Sobre el fondo oscuro de la Mac el vidrio solo no se veía y el
+  selector parecía íconos sueltos. En la Mac los íconos del tipo van de línea (`KindGlyph.variant`): el rollo de película
+  relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video.
 
 `DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testWideHomeLooksLikeTheDesktop`,
-`testMacRowsFillTheWindow`).
+`testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`).
 
 ## 4b. Bilingüe
 

@@ -181,6 +181,7 @@ struct HomeHeader: View {
         .buttonStyle(.plain).foregroundStyle(DS.text)
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular.interactive(), in: Capsule())
+        .macPillBase(Capsule())   // junto al selector de tipo: la misma base en la Mac
     }
 
     /// Las historias en lugar de todo el encabezado, con la ✕ para regresar.
