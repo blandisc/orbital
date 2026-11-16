@@ -71,8 +71,10 @@ struct HomeTopTen: View {
                         if model.loadingTop { ShelfSkeleton() }
                         else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }
                     }
+                    // El puesto dentro de lo que ves (Series 1, 2, 3…): con el del ranking mezclado, al quitar las películas brincaba
+                    // del 4 al 6 (Fernando, 16 nov 2026: «pasa del 4 al 6, se come un par»).
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand), zoom: s.route) }
+                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: i + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand), zoom: s.route) }
                             .buttonStyle(.plain)
                     }
                 }

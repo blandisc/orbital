@@ -34,7 +34,15 @@ extension DS {
         /// inspiración de la app de escritorio para Inicio»). La portada es una tarjeta a la izquierda (`splitShare` del ancho,
         /// en 16:9) y «Seguir viendo» una lista a su derecha (`splitRows` renglones), en vez de una portada de lado a lado con
         /// la fila encimada.
-        static let splitFrom: CGFloat = 1100, splitShare: CGFloat = 0.62, splitAspect: CGFloat = 16 / 9, splitRows = 4
+        static let splitFrom: CGFloat = 1100, splitShare: CGFloat = 0.62, splitAspect: CGFloat = 16 / 9
+        /// Cuántos renglones caben junto a la portada: los que llenan su alto (con 4 fijos quedaba un hueco abajo; Fernando,
+        /// 16 nov 2026: «en lo que sigue meterle tal vez una fila más»). `splitHead`: lo que mide el encabezado de la lista.
+        static var splitRows: Int {
+            let card = (WindowMetrics.column.width * splitShare - 2 * DS.Space.gutter) / splitAspect
+            let row = DS.Poster.stillRowArt / CGFloat(DS.Poster.stillAspect)
+            return max(3, Int((card - splitHead + splitGap) / (row + splitGap)))
+        }
+        static let splitHead: CGFloat = 64, splitGap = DS.Space.s3
         /// ¿Esta ventana va a dos columnas? Solo en la Mac: el iPad acostado no cambia (y con el control abierto cruzaría la
         /// línea a cada rato).
         static var split: Bool { ProcessInfo.processInfo.isiOSAppOnMac && WindowMetrics.column.width >= splitFrom }
@@ -57,6 +65,14 @@ extension DS {
     /// capítulo (el «cachito») y la hoja para elegir.
     enum HomeChannels {
         static let width: CGFloat = 268, addWidth: CGFloat = 150
+        /// En la Mac los canales crecen hasta llenar el renglón (con 268 quedaba un hueco a la derecha; Fernando, 16 nov 2026),
+        /// sin pasar de `macMax`.
+        static func width(count: Int) -> CGFloat {
+            guard ProcessInfo.processInfo.isiOSAppOnMac, count > 0 else { return width }
+            let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(count) * DS.Space.s3 - addWidth
+            return min(macMax, max(width, row / CGFloat(count)))
+        }
+        static let macMax: CGFloat = 420
         static let logoWidth: CGFloat = 96, logoHeight: CGFloat = 30
         static let veilStart: Double = 0.4
         static let tick: TimeInterval = 30
@@ -93,6 +109,9 @@ extension DS {
         static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3
+        /// En la Mac, la puerta de «Decide por mí» lleva a la derecha una tira de más carteles que se desvanece hacia el texto
+        /// (a lo ancho, la tarjeta quedaba vacía: Fernando, 16 nov 2026, «hay que pulir el decide por mí»).
+        static let stripPoster: CGFloat = 60, stripCount = 8, stripFadeFrom: Double = 0.15
         /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.
         static let seasonPoster: CGFloat = 76, seasonGlow: Double = 0.35, rowShift: CGFloat = 14
         /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba
@@ -102,6 +121,45 @@ extension DS {
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
         static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)
+        /// Cuántas pide la puerta de «Decide por mí» (Inicio y Explorar, la misma): en la Mac, también las de la tira que se asoma.
+        static var doorFan: Int { matchFan + (ProcessInfo.processInfo.isiOSAppOnMac ? stripCount : 0) }
         static let doorHintDelay: Duration = .milliseconds(1200), doorHintHold: Duration = .milliseconds(650)
+    }
+
+    /// Las tarjetas de Plataformas, Premios y Estudios (Explorar). Aquí y no en Tokens+Screens: ese archivo llegó a su tope.
+    enum PlatformFan {
+        /// El subrayado de la lista elegida en la página de una plataforma.
+        static let tabUnderline: CGFloat = 3
+        /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
+        /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
+        static var width: CGFloat {
+            if ProcessInfo.processInfo.isiOSAppOnMac { return maxWidth }
+            return min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2)
+        }
+        /// En la Mac las tarjetas (Plataformas, Premios, Estudios) crecen hasta que `perRow` llenan el renglón, sin pasar de
+        /// `maxScale`: con su tamaño de iPhone dejaban media pantalla vacía a la derecha (Fernando, 16 nov 2026).
+        static var scale: CGFloat {
+            guard ProcessInfo.processInfo.isiOSAppOnMac else { return 1 }
+            let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(perRow - 1) * DS.Space.s3
+            return min(maxScale, max(1, row / (CGFloat(perRow) * baseWidth)))
+        }
+        static let perRow = 6, maxScale: CGFloat = 1.6, baseWidth: CGFloat = 168
+        static var maxWidth: CGFloat { baseWidth * scale }
+        static var height: CGFloat { 176 * scale }
+        static let radius = DS.Radius.xxl
+        static var poster: CGFloat { 66 * scale }
+        static var posterTop: CGFloat { 26 * scale }
+        static let angle: Double = 15
+        static var spread: CGFloat { 8 * scale }
+        static var lift: CGFloat { 6 * scale }
+        static var logo: CGFloat { 34 * scale }
+        static var glow: CGFloat { 18 * scale }
+        /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
+        static var pickLogo: CGFloat { Mac.sized(40) }   // en la Mac crece con la letra (se veían diminutos)
+        static let tintTop: Double = 0.42, tintEdge: Double = 0.45
+        /// El logo grande de la página de la plataforma y su halo.
+        static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
+        /// El brillo de los números de un ranking.
+        static let numberTint: Double = 0.55
     }
 }

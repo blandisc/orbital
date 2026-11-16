@@ -10,11 +10,11 @@ extension ParaTiModel {
 
     /// El abanico de la puerta (`DecideDoor`), igual en Inicio y en Explorar: carteles de lo mismo que alimenta la hoja, sin
     /// repetir, saltando los primeros (en Explorar ya son la portada del mosaico) si hay de dónde.
-    func decideFan() -> [String] {
+    func decideFan(count: Int = DS.ParaTiB.matchFan) -> [String] {
         var seen = Set<String>()
         let posters = decidePool().map(\.poster).filter { !$0.isEmpty && seen.insert($0).inserted }
         let skip = posters.count >= DS.ParaTiB.matchFan * 2 ? DS.ParaTiB.matchFan : 0
-        return Array(posters.dropFirst(skip).prefix(DS.ParaTiB.matchFan))
+        return Array(posters.dropFirst(skip).prefix(count))
     }
 
     /// De dónde («De qué listas»): «Porque viste», lo nuevo en tus plataformas, cada estante que se ve (con su nombre) y todas

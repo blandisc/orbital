@@ -93,7 +93,7 @@ extension DesignRulesTests {
         let paraTi = try file("ParaTiView.swift", in: files)
         XCTAssertFalse(paraTi.contains("fullScreenCover"), "sin la pantalla aparte del mazo")
         let explore = try file("ListsView.swift", in: files), home = try file("DecideHomeRow.swift", in: files)
-        XCTAssertTrue(explore.contains("model.decideFan()") && home.contains(".decideFan()"), "la misma puerta con el mismo abanico en Explorar y en Inicio")
+        XCTAssertTrue(explore.contains("model.decideFan(count: DS.ParaTiB.doorFan)") && home.contains(".decideFan(count: DS.ParaTiB.doorFan)"), "la misma puerta con el mismo abanico en Explorar y en Inicio")
     }
 
     /// Una hoja, un renglón de controles (Fernando, 13 nov 2026): las dos pestañas usan el mismo `DecideControls`, con el tipo

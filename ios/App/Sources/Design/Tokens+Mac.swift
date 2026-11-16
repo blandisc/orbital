@@ -23,6 +23,10 @@ extension DS {
         ]
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
         static let railWidth: CGFloat = 188
+        /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac.
+        static let searchRows = 2
+        /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
+        static let topScrim: CGFloat = 120
         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
         static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
     }

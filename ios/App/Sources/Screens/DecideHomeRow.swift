@@ -11,7 +11,9 @@ struct DecideHomeRow: View {
     var body: some View {
         // La misma puerta que en Explorar, con el mismo abanico (`decideFan`): sale de lo mismo que alimenta la hoja. Si
         // Explorar aún no carga, se pide aquí (sin pósters todavía, el dado).
-        DecideDoor(posters: env.paraTi.model.decideFan(), offline: !env.isOnline, id: "home-decide") { deciding = true }
+        let fan = env.paraTi.model.decideFan(count: DS.ParaTiB.doorFan)
+        DecideDoor(posters: Array(fan.prefix(DS.ParaTiB.matchFan)), offline: !env.isOnline, id: "home-decide",
+                   more: Array(fan.dropFirst(DS.ParaTiB.matchFan))) { deciding = true }
             .task { await env.paraTi.model.loadIfStale() }
             .sheet(isPresented: $deciding) { DecideSheet(open: open) }
             #if DEBUG

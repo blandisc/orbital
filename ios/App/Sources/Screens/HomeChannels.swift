@@ -19,6 +19,8 @@ struct HomeChannels: View {
     /// Si la fila se ve en Inicio: abajo de la portada no se ve al abrir, y el acercamiento de cada tarjeta gastaba ~18 % de
     /// CPU sin que nadie lo viera (auditoría del 31 oct 2026, R3).
     @State private var onScreen = false
+    /// El ancho de cada canal (en la Mac crece con el renglón: `DS.HomeChannels.width(count:)`).
+    private var cardWidth: CGFloat { DS.HomeChannels.width(count: model.channels.count) }
 
     var body: some View {
         let _ = model.track()
@@ -122,7 +124,7 @@ struct HomeChannels: View {
                                                  language: env.language).components(separatedBy: " · "))
                 }
             }
-            .frame(width: DS.HomeChannels.width)
+            .frame(width: cardWidth)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -136,7 +138,7 @@ struct HomeChannels: View {
                 Image(systemName: "plus").font(DS.TextRecipe.cardTitle.font)
                 Text("Añadir canal").recipe(.label)
             }
-            .frame(width: DS.HomeChannels.addWidth, height: DS.HomeChannels.width / DS.Poster.stillAspect)
+            .frame(width: DS.HomeChannels.addWidth, height: cardWidth / DS.Poster.stillAspect)
             .dsCard(translucent: true)
         }
         .buttonStyle(.plain)

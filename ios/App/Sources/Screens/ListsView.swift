@@ -142,8 +142,10 @@ struct ListsView: View {
                     // «Decide por mí», la única puerta (DE2: antes el dado de la barra y «¿Qué vemos hoy?»). Sin pósters (sin red)
                     // la tarjeta sigue y lo dice (F8); adentro, «Sin conexión · Reintentar».
                     // El mismo abanico que en Inicio (`decideFan`, de lo que alimenta la hoja): una sola puerta, igual en las dos.
-                    let fan = model.decideFan()
-                    if !fan.isEmpty || !model.showsFirstSkeleton { DecideDoor(posters: fan, offline: !env.isOnline, onOpen: onDecide) }
+                    let fan = model.decideFan(count: DS.ParaTiB.doorFan)
+                    if !fan.isEmpty || !model.showsFirstSkeleton {
+                        DecideDoor(posters: Array(fan.prefix(DS.ParaTiB.matchFan)), offline: !env.isOnline, more: Array(fan.dropFirst(DS.ParaTiB.matchFan)), onOpen: onDecide)
+                    }
                     // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
                     // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
@@ -299,6 +301,8 @@ struct ListsView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("platform-\(hub.brand)")
+                // Su top 3 sale de un estante ya cargado; si no hay (Prime Video salía vacía, 16 nov 2026), pide su ranking.
+                .task(id: hub.id) { if model.cover(of: hub).isEmpty { await model.loadRankings(hub) } }
             }
         }
     }

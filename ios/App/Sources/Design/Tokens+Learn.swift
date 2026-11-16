@@ -74,9 +74,9 @@ extension DS {
         static let veil = 0.75
         static let hole: CGFloat = 8
         static let ring: CGFloat = 2
-        static let bubble: CGFloat = 300
+        static var bubble: CGFloat { Mac.sized(300) }   // en la Mac crece con la letra: el texto de 1.25× no cabía en 300
         /// La escena en miniatura dentro de la burbuja.
-        static let scene: CGFloat = 130
+        static var scene: CGFloat { Mac.sized(130) }
         /// Lo alto que debe medir la pantalla entera para que la burbuja lleve su miniatura (el SE, 667, no llega).
         static let roomForScene: CGFloat = 700
     }
@@ -166,7 +166,7 @@ extension DS {
         /// El ancho de la miniatura sobre su alto (un iPhone).
         static let phoneAspect: CGFloat = 0.52   // ds-exception: proporción de un iPhone
         /// Lo más alta que crece la escena en la tarjeta.
-        static let maxHeight: CGFloat = 420
+        static var maxHeight: CGFloat { Mac.sized(420) }   // en la Mac la escena crece como la letra de la tarjeta
         /// El dedo fantasma: un círculo del tamaño de una yema.
         static let finger: CGFloat = 26
         /// Un compás: cada cuánto pasa lo siguiente dentro de la escena.

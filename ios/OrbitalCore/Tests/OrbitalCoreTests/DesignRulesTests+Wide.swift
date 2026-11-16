@@ -82,4 +82,34 @@ extension DesignRulesTests {
         XCTAssertTrue(home.contains("card: twoColumns"), "En dos columnas la portada es tarjeta (no pasa detrás de la barra)")
         XCTAssertTrue(try code("Projection.swift").contains("struct StillRow: View"), "El renglón de «Seguir viendo» es pieza del catálogo")
     }
+    /// En la Mac lo de Inicio y Explorar llena la ventana (Fernando, 16 nov 2026: «en plataformas… no se extiende completamente
+    /// a la derecha, tampoco premios», «en lo que sigue meterle una fila más», «Top 10 pasa del 4 al 6»).
+    func testMacRowsFillTheWindow() throws {
+        let files = try sources(["Design", "Screens"])
+        func code(_ name: String) throws -> String {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        }
+        let screens = try code("Tokens+Screens.swift"), home = try code("Tokens+Home.swift")
+        XCTAssertTrue(home.contains("static var scale: CGFloat {") && home.contains("static var maxWidth: CGFloat { baseWidth * scale }"),
+                      "Plataformas, Premios y Estudios crecen hasta llenar el renglón en la Mac")
+        XCTAssertTrue(screens.contains("static var emblem: CGFloat { 70 * PlatformFan.scale }"), "El emblema crece con su tarjeta")
+        XCTAssertTrue(try code("ListsView.swift").contains("await model.loadRankings(hub)"), "Cada plataforma pide su ranking si llega vacía (Prime Video salía en blanco)")
+        XCTAssertTrue(home.contains("static var splitRows: Int {"), "«Lo que sigue» llena la altura de la portada (no un número fijo)")
+        XCTAssertTrue(home.contains("static func width(count: Int) -> CGFloat {"), "Canales llena el renglón en la Mac")
+        // El puesto es el de lo que ves: con el del ranking mezclado, al quedarse con las series brincaba del 4 al 6.
+        XCTAssertTrue(try code("HomeTopTen.swift").contains("RankedPosterCard(rank: i + 1,"), "El Top 10 se numera dentro de lo que ves")
+        XCTAssertTrue(try code("ParaTiB.swift").contains("struct DecideStrip: View"), "La entrada de «Decide por mí» se asoma en la Mac")
+        XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac, !model.popular.isEmpty { popularWall(model) }"), "Buscar vacío en la Mac: un muro de lo popular")
+        // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters.
+        XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(height: DS.Mac.topScrim)"), "Una sombra bajo la barra de la Mac")
+        // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).
+        for token in ["static var wideColumn: CGFloat { Mac.sized(", "static var wideLogoWidth: CGFloat { Mac.sized(", "static var readable: CGFloat { Mac.sized("] {
+            XCTAssertTrue(screens.contains(token), token)
+        }
+        let learn = try code("Tokens+Learn.swift")
+        for token in ["static var bubble: CGFloat { Mac.sized(", "static var maxHeight: CGFloat { Mac.sized("] {
+            XCTAssertTrue(learn.contains(token), token)
+        }
+    }
 }

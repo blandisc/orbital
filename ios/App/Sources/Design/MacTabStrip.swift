@@ -49,6 +49,11 @@ extension View {
                     }
                     .sharedBackgroundVisibility(.hidden)
                 }
+                // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters: una sombra bajo la barra.
+                .overlay(alignment: .top) {
+                    ArtVeil(kind: .top, strength: .deep)
+                        .frame(height: DS.Mac.topScrim).ignoresSafeArea(edges: .top).allowsHitTesting(false)
+                }
         } else {
             self
         }

@@ -466,7 +466,7 @@ struct HomeView: View {
     }
 
     private func continueList(_ model: HomeModel, items: [HomeItem]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
+        VStack(alignment: .leading, spacing: DS.HomeHero.splitGap) {
             NavigationLink(value: HomeListRoute(id: "continue")) {
                 DSSectionHead(title: Text("Seguir viendo"), count: items.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
             }
@@ -495,7 +495,7 @@ struct HomeView: View {
         let items = spotlightItems(model)
         let current = min(heroSlot ?? 0, max(0, items.count - 1))
         let next = items.indices.filter { $0 != current }.sorted { ($0 - current + items.count) % items.count < ($1 - current + items.count) % items.count }
-        return VStack(alignment: .leading, spacing: DS.Space.s4) {
+        return VStack(alignment: .leading, spacing: DS.HomeHero.splitGap) {
             if !next.isEmpty { DSSectionHead(title: Text("Lo que sigue"), eyebrow: Text("En la portada")) }   // con una sola, nada
             ForEach(next.prefix(DS.HomeHero.splitRows), id: \.self) { i in
                 Button {

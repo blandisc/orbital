@@ -266,8 +266,26 @@ struct BrowseView: View {
             if !search.model.recent.isEmpty { recent }
             filterDoor
         }
+        // En la Mac la pantalla vacía de Buscar era una franja arriba y nada más (Fernando, 16 nov 2026: «hay que hacerlo más
+        // atractivo para una pantalla más grande»): debajo, lo más popular hoy, en dos renglones de pósters.
+        if ThisDevice.isMac, !model.popular.isEmpty { popularWall(model) }
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
+        }
+    }
+
+    /// Lo más popular hoy, en renglones que llenan la ventana (solo en la Mac).
+    private func popularWall(_ model: CatalogModel) -> some View {
+        let width = DS.Poster.railWidth, gap = DS.Space.s3
+        let columns = max(1, Int((WindowMetrics.column.width - 2 * DS.Space.gutter + gap) / (width + gap)))
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: Text("Lo más popular hoy"), eyebrow: Text("Para empezar")).padding(.horizontal, DS.Space.gutter)
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: gap), count: columns), alignment: .leading, spacing: DS.Space.s4) {
+                ForEach(model.popular.prefix(columns * DS.Mac.searchRows).map(PopularGridView.suggestion)) { s in
+                    TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
         }
     }
 

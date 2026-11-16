@@ -68,7 +68,11 @@ extension DS {
         static let readableWidth: CGFloat = 720
         /// La ficha ancha del iPad y la Mac (FE1, como la TV): lo alto del arte (parte de la pantalla), el ancho de la columna
         /// de la izquierda, el del logo y dónde empieza a oscurecer abajo.
-        static let wideHeroShare: CGFloat = 0.82, wideColumn: CGFloat = 520, wideLogoWidth: CGFloat = 440, wideVeilFrom = 0.55, wideVeilSolid = 0.9
+        static let wideHeroShare: CGFloat = 0.82, wideVeilFrom = 0.55, wideVeilSolid = 0.9
+        /// En la Mac la columna y el logo crecen como la letra: con 520 los cuatro botones grandes de la Mac iban apretados
+        /// y el logo se veía chico sobre un arte de toda la ventana (16 nov 2026).
+        static var wideColumn: CGFloat { Mac.sized(520) }
+        static var wideLogoWidth: CGFloat { Mac.sized(440) }
         /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
         static let wideSide = DS.Space.s10
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
@@ -269,7 +273,7 @@ extension DS {
         static let face: CGFloat = 72, faceColumn: CGFloat = 84
         static let badgeStroke = DS.Stroke.regular, badgeRadius = DS.Radius.tag
         static let clipWidth: CGFloat = 240, trailerPlay: CGFloat = 44
-        static let logo: CGFloat = 36, logoRadius = DS.Radius.logo(36)
+        static let logo: CGFloat = 36
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
 
@@ -329,7 +333,7 @@ extension DS {
         /// El código de Trakt: separación entre letras (se lee de lejos, desde la TV).
         static let codeTracking: CGFloat = 4
         /// Lo más ancho que crece una página de la guía (iPad, Mac): se lee como una columna.
-        static let readable: CGFloat = 560
+        static var readable: CGFloat { Mac.sized(560) }   // en la Mac crece con la letra (MAC-A)
         /// La ilustración de una página del tutorial de Orbital (`GuideArt`): su alto y el del ícono grande.
         static let artHeight: CGFloat = 220, artSymbol: CGFloat = 88
         /// El recuadro que apunta al código de la TV en el lector (`QRScanner`).
@@ -382,7 +386,8 @@ extension DS {
     enum Collections {
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
-        static let emblem: CGFloat = 70, glow: CGFloat = 16
+        static var emblem: CGFloat { 70 * PlatformFan.scale }   // crece con la tarjeta en la Mac
+        static let glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
         static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
         static let badgeRadius = DS.Radius.tag
@@ -443,24 +448,6 @@ extension DS {
         static func genre(_ slug: String) -> Color {
             genreHex[slug].map { Color(red: $0.0, green: $0.1, blue: $0.2) } ?? studio
         }
-    }
-
-    enum PlatformFan {
-        /// El subrayado de la lista elegida en la página de una plataforma.
-        static let tabUnderline: CGFloat = 3
-        /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
-        /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
-        static var width: CGFloat { min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
-        static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius = DS.Radius.xxl
-        static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
-        static let logo: CGFloat = 34, logoRadius = DS.Radius.logo(34), glow: CGFloat = 18
-        /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
-        static let pickLogo: CGFloat = 40
-        static let tintTop: Double = 0.42, tintEdge: Double = 0.45
-        /// El logo grande de la página de la plataforma y su halo.
-        static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
-        /// El brillo de los números de un ranking.
-        static let numberTint: Double = 0.55
     }
 
     /// Tu avatar: en Inicio (junto al saludo) y en Ajustes.

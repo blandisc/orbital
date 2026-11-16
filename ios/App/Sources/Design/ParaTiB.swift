@@ -296,6 +296,8 @@ struct DecideDoor: View {
     /// Sin red y sin pósters: lo dice en vez de prometer opciones.
     var offline = false
     var id = "paraTi-decide"
+    /// Más carteles para la tira de la derecha (solo en la Mac, `DS.ParaTiB.stripCount`).
+    var more: [String] = []
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -323,6 +325,11 @@ struct DecideDoor: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
+                if !more.isEmpty, !typeSize.isAccessibilitySize {
+                    DecideStrip(posters: more)
+                    Image(systemName: "chevron.right").font(DS.TextRecipe.section.font).foregroundStyle(DS.textMuted)
+                        .accessibilityHidden(true)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Space.s4)
@@ -332,6 +339,22 @@ struct DecideDoor: View {
         .buttonStyle(.plain)
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityIdentifier(id)
+    }
+}
+
+/// La tira de carteles de la puerta de «Decide por mí» en la Mac: de lo que sale en la hoja, cada vez más claros hacia el
+/// texto (los de la derecha, nítidos).
+struct DecideStrip: View {
+    let posters: [String]
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            ForEach(Array(posters.enumerated()), id: \.offset) { i, url in
+                PosterView(url: url, title: "")
+                    .frame(width: DS.ParaTiB.stripPoster)
+                    .opacity(DS.ParaTiB.stripFadeFrom + (1 - DS.ParaTiB.stripFadeFrom) * Double(i + 1) / Double(posters.count))
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

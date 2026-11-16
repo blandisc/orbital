@@ -894,8 +894,21 @@ nuevos tamaños»):
 - **Pósters:** en la Mac, las filas usan `DS.Mac.railWidth` (188 pt).
 - **Controles de tamaño fijo con ícono** (el selector Todo · Películas · Series, `DS.KindPill`): en la Mac crecen como la
   letra (`DS.Mac.sized`); si no, el ícono, que sí crece, llenaba su círculo.
+- **Las filas llenan la ventana** (segunda pasada, 16 nov: «en plataformas no se extiende completamente a la derecha»):
+  - Plataformas, Premios y Estudios crecen con `DS.PlatformFan.scale` hasta que seis llenan el renglón (tope 1.6×).
+  - Canales reparte el renglón (`DS.HomeChannels.width(count:)`).
+  - «Lo que sigue» mete los renglones que caben a la altura de la portada (`DS.HomeHero.splitRows`).
+  - La puerta de «Decide por mí» asoma una tira de pósters (`DecideStrip`; `DS.ParaTiB.doorFan`, la misma en Inicio y Explorar).
+  - Buscar vacío muestra un muro de «Lo más popular hoy» (`DS.Mac.searchRows`).
+- **Una plataforma nunca queda vacía:** si su tarjeta llega sin pósters, pide su ranking (Prime Video salía en blanco).
+- **Un ranking filtrado se numera dentro de lo que ves:** el Top 10 de Inicio dice 1, 2, 3… en Series o Películas. Con el
+  puesto del ranking mezclado brincaba del 4 al 6. Los rankings de una sola lista sí llevan su puesto.
+- **La barra de la Mac lleva sombra** (`DS.Mac.topScrim`, con `ArtVeil`): sobre el mosaico de Explorar las pestañas se perdían.
+- **La ficha y los tutoriales crecen con la letra:** la columna y el logo de la ficha ancha, el ancho de lectura de la guía, la
+  burbuja de los avisos y la escena de las historias van por `DS.Mac.sized`.
 
-`DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testWideHomeLooksLikeTheDesktop`).
+`DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testWideHomeLooksLikeTheDesktop`,
+`testMacRowsFillTheWindow`).
 
 ## 4b. Bilingüe
 
