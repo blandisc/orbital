@@ -1,6 +1,7 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { duration, genres as genreNames, runtime } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { reducedMotion } from "../core/motion.js";
 import { storage } from "../core/storage.js";
 import { TONIGHT, today, tonightPick } from "../core/tonight.js";
@@ -120,7 +121,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   /** Una carta: el póster (sus datos van a la izquierda, AD-10), con su tinte y su sello para cuando sale volando. */
   function Card(c, { behind = 0 } = {}) {
-    const poster = h("img", { class: "match__poster", src: c.image || c.hero || "", alt: "", decoding: "async" });
+    const poster = h("img", { class: "match__poster", src: sized(c.image || c.hero || "", 480), alt: "", decoding: "async" });
     poster.addEventListener("error", () => poster.remove(), { once: true });
     if (behind) return h("div", { class: ["match__card", "match__card--behind", `match__card--behind-${behind}`], "aria-hidden": "true" }, poster);
     // R3 (11 nov): la de arriba es lo enfocado del mazo (las flechas deciden sobre ella, no mueven el foco).

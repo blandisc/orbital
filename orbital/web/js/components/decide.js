@@ -2,6 +2,7 @@ import { curatedItem } from "../core/curation.js";
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { clock, duration, genres as genreNames } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { settler } from "../core/motion.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
@@ -33,7 +34,7 @@ export function DecideDoor(door, { focusId, onPress }) {
     style: { "--ratio": 16 / 9 }, // lo que mide una tarjeta ancha (Card lo pone igual)
     "aria-label": "Decide por mí", onClick: onPress },
   h("span", { class: "decide-door__fan", "aria-hidden": "true" },
-    posters.map((p) => h("img", { class: "decide-door__poster", src: p.image, alt: "", loading: "lazy", decoding: "async" }))),
+    posters.map((p) => h("img", { class: "decide-door__poster", src: sized(p.image, 160), alt: "", loading: "lazy", decoding: "async" }))),
   h("span", { class: "decide-door__text" },
     h("strong", { class: "decide-door__title" }, "Decide por mí"),
     h("small", { class: "decide-door__line" }, doorLine())));
@@ -86,7 +87,7 @@ export function DecideBackdrop({ soft = false } = {}) {
       current = src;
       const old = [...el.querySelectorAll(".decide-backdrop__art")];
       if (!src) { old.forEach((n) => n.remove()); return; }
-      const img = h("img", { class: "decide-backdrop__art", src, alt: "", decoding: "async" });
+      const img = h("img", { class: "decide-backdrop__art", src: sized(src, soft ? 960 : 1600), alt: "", decoding: "async" });
       img.addEventListener("load", () => {
         img.classList.add("decide-backdrop__art--in");
         setTimeout(() => old.forEach((n) => n.remove()), tokenMs("--duration-slow", el));
@@ -125,7 +126,7 @@ export function DecideInfo(p, { eyebrow, facts }) {
   const name = h("h2", { class: "decide-info__name" }, p.title);
   let title = name;
   if (p.logo) {
-    title = h("img", { class: "decide-info__logo", src: p.logo, alt: p.title, decoding: "async" });
+    title = h("img", { class: "decide-info__logo", src: sized(p.logo, 560), alt: p.title, decoding: "async" });
     title.addEventListener("error", () => title.replaceWith(name), { once: true });
   }
   return [Eyebrow(eyebrow || p.why || "", { className: "decide-info__eyebrow" }), title,
