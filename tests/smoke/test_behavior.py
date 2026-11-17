@@ -110,18 +110,14 @@ def paths_from_the_menu(browser, server):  # noqa: F811
     page.locator('.hero__kinds .pill[aria-label="Colecciones"]').click()
     page.locator("section.showcase:not([hidden])").wait_for(timeout=5000)
     press(page, "Escape", wait=900)
-    # Explorar: X abre Decide por mí; ↑ llega a las pestañas y A en «Una por una» abre el mazo; B vuelve a Decide.
+    # Explorar: X abre Decide por mí; RB abre «Una por una» (AD-11: el pie lo dice, «RB · Una por una»); B vuelve a Decide.
     press(page, "q", "q", "q", wait=600)
     page.wait_for_timeout(1200)
     assert page.locator("section.foryou:not([hidden])").count() == 1
     press(page, "x", wait=1500)
     page.locator("section.decide:not([hidden])").wait_for(timeout=5000)
-    for _ in range(4):
-        if "Una por una" in (page.evaluate(FOCUSED, ".decide__modes") or ""):
-            break
-        press(page, "ArrowUp", "ArrowRight", wait=300)
-    assert "Una por una" in (page.evaluate(FOCUSED, ".decide__modes") or "")
-    press(page, "Enter", wait=1500)
+    assert "Una por una" in page.locator(".decide").inner_text(), "El camino del mando se ve en el pie"
+    press(page, "e", wait=1500)
     page.locator("section.match:not([hidden])").wait_for(timeout=5000)
     press(page, "Escape", wait=900)
     assert page.locator("section.match:not([hidden])").count() == 0

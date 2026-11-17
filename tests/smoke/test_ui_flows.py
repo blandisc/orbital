@@ -63,6 +63,9 @@ NAMELESS = """
   const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight && getComputedStyle(el).visibility !== 'hidden'; };
   const says = (card) => {
     if (card.classList.contains('card--logo-ready')) return true;
+    // NQ-1: la puerta de «Decide por mí» lleva su nombre escrito.
+    const door = card.querySelector('.decide-door__title');
+    if (door && door.textContent.trim()) return true;
     const meta = card.querySelector('.card__meta');
     if (meta && getComputedStyle(meta).display !== 'none' && meta.textContent.trim()) return true;
     const label = card.querySelector('.card__label');

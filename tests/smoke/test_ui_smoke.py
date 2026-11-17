@@ -84,7 +84,8 @@ def test_boots_and_shows_the_library(page):
     # Inicio (como el Apple TV): lo que te toca a lo grande, «A continuación» y tus consolas (con foto; sin arte, el respaldo).
     page.locator(".feature-hero").wait_for(timeout=5000)
     assert page.locator(".tile--console").count() >= 4
-    assert page.locator(".home__track--upnext .card").count() == 5  # lo de arriba y los cuatro que siguen
+    # Lo de arriba y los cuatro que siguen; la puerta de «Decide por mí» (NQ-1) va aparte.
+    assert page.locator(".home__track--upnext .card:not(.decide-door)").count() == 5
     page.keyboard.press("e")  # RB: a Juegos, con sus filas de portadas
     page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     assert page.locator("button.card").count() >= 6
@@ -311,7 +312,7 @@ def test_no_text_is_cut_in_half(server, width, height, size):
             page.keyboard.press("e")  # de Juegos a Películas y series
             page.wait_for_timeout(800)
             for screen, ready_sel in (("Filtro avanzado", ".filter__row"), ("Colecciones", ".showcase__item, .showcase .empty-state")):
-                page.locator(f'.hero__kinds .pill--icon[aria-label="{screen}"]').click()
+                page.locator(f'.hero__kinds .pill[aria-label="{screen}"]').click()  # PS-2: con su nombre, ya no solo ícono
                 page.locator(ready_sel).first.wait_for(timeout=10000)
                 look(screen)
                 page.keyboard.press("Escape")
@@ -324,11 +325,12 @@ def test_no_text_is_cut_in_half(server, width, height, size):
             page.keyboard.press("x")
             page.wait_for_timeout(1500)
             look("Decide por mí")
-            page.keyboard.press("ArrowUp")
-            page.keyboard.press("Enter")
+            page.keyboard.press("e")  # AD-11: RB abre «Una por una» (ya no se sube a las pestañas)
             page.locator(".match__card").first.wait_for(timeout=8000)
             look("¿Qué vemos hoy?")
-            page.keyboard.press("Escape")
+            page.keyboard.press("Escape")  # del mazo a Decide por mí
+            page.wait_for_timeout(500)
+            page.keyboard.press("Escape")  # y de Decide a Explorar: ahí ☰ es del sistema (en Decide abre las opciones del título)
             page.wait_for_timeout(500)
             for sheet in ("Panel rápido", "Jugadores"):
                 page.keyboard.press("m")

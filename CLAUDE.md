@@ -46,6 +46,10 @@ npx --yes pyright@1.1.390
 (La CI de GitHub corre las cuatro; pyright necesita el `.venv` en el PATH para encontrar las dependencias.)
 
 Pruebas de humo (navegador real): `ORBITAL_SMOKE_BROWSER=msedge .venv/Scripts/python -m pytest -q tests/smoke`.
+En la Mac: `ORBITAL_SMOKE_BROWSER=chrome` con un venv que tenga `playwright`. Si cambias un camino del mando (qué tecla
+abre qué) o lo que sale en una fila, córrelas antes de subir: la CI solo las corre en Windows y del 16 al 17 nov quedaron
+en rojo 15 subidas seguidas por pruebas que seguían el camino viejo. (En la Mac fallan por la letra el contraste de
+«Steam» y la última fila de «Elegir versión»; en Windows pasan.)
 
 ## Ver la interfaz y probar en la TV
 
