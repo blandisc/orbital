@@ -548,6 +548,11 @@ solo «Guardar» tenía «Deshacer».
   el aviso ya se fue (`HomeModel.dismiss(_:undoWindow:)`, `DS.Timing.undoCommit`). Nació en el recorrido de la Mac del 16 nov
   2026: «Quitar de Seguir viendo» no tenía vuelta. Lo cuidan `DesignRulesTests+Quitar.swift` y
   `ScreenModelsTests.testRemovingFromContinueWaitsForUndoBeforeLeavingThePhone`.
+- **«Borrar» una descarga también avisa con «Deshacer»** (una descarga, un título o una temporada): sale de la lista al
+  instante y el archivo se borra hasta que el aviso ya se fue (`DownloadsModel.deleteWithUndo`, D1-A, Fernando, 16 nov 2026:
+  volver a bajarla tarda y gasta datos). Ningún «Borrar» de Descargas llama a `delete(` directo. Lo cuidan
+  `DesignRulesTests+Quitar.swift` (`testDeletingADownloadOffersUndo`) y
+  `ScreenModelsTests.testDeletingADownloadCanBeUndoneUntilTheNoticeIsGone`.
 
 Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
 tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.
@@ -823,6 +828,15 @@ El arte nunca enseña su orilla: se funde con el fondo que de verdad tiene detr�
 `HeroCollapse`, el zoom desde un marco quieto, `topFade` ≥ 90 y el iPad sin el fondo teñido). Los otros artes grandes (el
 destacado de Inicio, la portada de una colección, «Lo que ves», una persona) no se recogen: se van con el contenido y se
 funden con máscara o velo hacia el fondo, sin recorte que se mueva. En la TV el arte ya nunca enseña su orilla.
+
+### «Mejor resultado» es la más conocida de las exactas (16 nov 2026)
+
+Al buscar «matrix», lo grande arriba era la serie Matrix de 1993 y The Matrix quedaba abajo: con una película y una serie
+que se llaman igual a lo que escribes, la serie ganaba solo por ir primero (S1-A, Fernando, 16 nov 2026: «también aplica
+para el iPhone»). Cuando hay coincidencias exactas de los dos tipos, la búsqueda pide su ficha a Cinemeta (`popularity`) y
+la más vista va primero; si tarda más de `SearchModel.tieLimit`, se queda el orden de antes. Con una sola exacta («office»)
+no se pregunta nada. Pruebas: `CinemetaTests.testTheBestKnownExactMatchWinsTheTopSpot` y
+`ScreenModelsTests.testSearchPutsTheBestKnownOfTwoExactMatchesFirst`.
 
 ### Un buscador que flota tapa lo que pasa por debajo (13 nov 2026)
 

@@ -129,17 +129,32 @@ public final class DownloadsModel: ObservableModel {
 
     /// Borrar desde la lista: el renglón se quita en el acto (el «Borrar» de deslizar lo anima al momento y la lista truena si
     /// el dato sigue ahí o regresa con el siguiente avance) y el archivo se borra después.
-    public func delete(_ ids: [String]) {
+    /// `undoWindow` (D1-A, 16 nov 2026): el archivo espera ese tiempo antes de borrarse, por si tocas «Deshacer».
+    public func delete(_ ids: [String], undoWindow: Duration = .zero) {
         let ids = Set(ids)
         guard !ids.isEmpty else { return }
         deleting.formUnion(ids)
+        undoable.formUnion(ids)
         items.removeAll { ids.contains($0.id) }
         Task {
-            for id in ids { await remove(id) }
-            deleting.subtract(ids)
+            if undoWindow > .zero { try? await Task.sleep(for: undoWindow) }
+            let still = ids.intersection(undoable)
+            undoable.subtract(still)
+            for id in still { await remove(id) }
+            deleting.subtract(still)
         }
     }
+
+    /// «Deshacer» de «Borrar»: el renglón regresa (el archivo nunca se fue) mientras el borrado sigue esperando.
+    public func undoDelete(_ ids: [String]) async {
+        let back = Set(ids).intersection(undoable)
+        guard !back.isEmpty else { return }
+        undoable.subtract(back)
+        deleting.subtract(back)
+        items = await services.downloads.all.filter { !deleting.contains($0.id) }
+    }
     private var deleting: Set<String> = []
+    private var undoable: Set<String> = []
 
     /// «Buscar subtítulos» de una descarga: lo que hay en OpenSubtitles y tus complementos, con la huella del archivo (los de
     /// esa copia exacta primero).

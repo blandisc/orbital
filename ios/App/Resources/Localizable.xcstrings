@@ -15074,6 +15074,28 @@
         }
       }
     },
+    "Descarga borrada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download deleted"
+          }
+        }
+      }
+    },
+    "Descargas borradas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads deleted"
+          }
+        }
+      }
+    },
     "Descargada": {
       "extractionState": "manual",
       "localizations": {

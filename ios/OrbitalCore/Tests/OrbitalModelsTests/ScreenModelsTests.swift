@@ -153,6 +153,19 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(search.results.filter { $0.kind == "series" }.count, 12)
     }
 
+    /// S1-A: con una película y una serie que se llaman igual, la búsqueda pide sus fichas y pone arriba la más vista.
+    func testSearchPutsTheBestKnownOfTwoExactMatchesFirst() async throws {
+        let rig = try ServicesRig()
+        let base = "https://v3-cinemeta.strem.io"
+        rig.http.json["\(base)/catalog/movie/top/search=matrix.json"] = ["metas": [["id": "tt0133093", "name": "The Matrix"]]]
+        rig.http.json["\(base)/catalog/series/top/search=matrix.json"] = ["metas": [["id": "tt0106062", "name": "Matrix"]]]
+        rig.http.json["\(base)/meta/movie/tt0133093.json"] = ["meta": ["id": "tt0133093", "name": "The Matrix", "popularity": .double(1.28)]]
+        rig.http.json["\(base)/meta/series/tt0106062.json"] = ["meta": ["id": "tt0106062", "name": "Matrix", "popularity": .double(0.08)]]
+        let search = SearchModel(rig.services)
+        await search.search("matrix")
+        XCTAssertEqual(search.results.first?.metaID, "tt0133093", "«Mejor resultado»: The Matrix, no la serie de 1993")
+    }
+
     func testSearchShowsEachKindAsItArrivesAndKeepsOneWhenTheOtherFails() async throws {
         let rig = try ServicesRig()
         let movies = try Fixtures.json("cinemeta/search_movie_dune.json"), series = try Fixtures.json("cinemeta/search_series_dune.json")
@@ -773,6 +786,35 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.items.map(\.id), ["tt1|tt1|b"])
         let left = await rig.services.downloads.item("tt1|tt1|a")
         XCTAssertNil(left)
+        run.cancel()
+    }
+
+    /// D1-A (Fernando, 16 nov 2026): «Borrar» una descarga avisa con «Deshacer»; el archivo espera a que el aviso se vaya.
+    func testDeletingADownloadCanBeUndoneUntilTheNoticeIsGone() async throws {
+        let rig = try ServicesRig()
+        func movie(_ version: String) -> DownloadItem {
+            DownloadItem(id: "tt1|tt1|\(version)", kind: "movie", metaID: "tt1", videoID: "tt1", title: "Peli", originalTitle: "Peli", subtitle: "",
+                         poster: nil, addon: "Torrentio", sourceIndex: 1, expectedBytes: 1000, relativePath: "tt1/\(version)/video.mkv", createdAt: 1)
+        }
+        try await rig.services.downloads.enqueue(movie("a"), url: URL(string: "https://rd.example/a")!)
+        try await rig.services.downloads.enqueue(movie("b"), url: URL(string: "https://rd.example/b")!)
+        let model = DownloadsModel(rig.services, freeSpace: { 50_000_000_000 })
+        let run = Task { await model.run() }
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        model.delete(["tt1|tt1|a"], undoWindow: .seconds(30))
+        XCTAssertEqual(model.items.map(\.id), ["tt1|tt1|b"], "se quita de la lista al instante")
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let waiting = await rig.services.downloads.item("tt1|tt1|a")
+        XCTAssertNotNil(waiting, "el archivo espera a que ya no se pueda deshacer")
+        await model.undoDelete(["tt1|tt1|a"])
+        XCTAssertEqual(Set(model.items.map(\.id)), ["tt1|tt1|a", "tt1|tt1|b"], "«Deshacer» la regresa")
+
+        model.delete(["tt1|tt1|b"], undoWindow: .milliseconds(50))
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let gone = await rig.services.downloads.item("tt1|tt1|b")
+        XCTAssertNil(gone, "pasado el aviso, se borra")
+        XCTAssertEqual(model.items.map(\.id), ["tt1|tt1|a"])
         run.cancel()
     }
 }

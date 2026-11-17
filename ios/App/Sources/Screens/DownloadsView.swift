@@ -193,7 +193,7 @@ struct DownloadsView: View {
                     DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: level, symbol: symbol("tv")).listHeadRow()
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.deleteWithUndo(g.items) }.tint(DS.danger) }
                     }
                 }
                 .downloadCard()
@@ -286,7 +286,7 @@ struct DownloadsView: View {
             }
         }
         .padding(.vertical, DS.Space.s1)
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.deleteWithUndo([item]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     /// «12 MB/s · faltan 3 min» (o «Calculando…» mientras se mide).
@@ -354,7 +354,7 @@ struct DownloadsView: View {
         }
         .buttonStyle(.plain)
         .padding(.vertical, DS.Space.s1)   // aire arriba y abajo: al deslizar para borrar, el póster no se corta en las esquinas
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.deleteWithUndo([item]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
         .contextMenu { fileMenu(item, title: title, model: model) }
     }
 
@@ -364,7 +364,7 @@ struct DownloadsView: View {
         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: title))) {
             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
         }
-        Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }
+        Button("Borrar", systemImage: "trash", role: .destructive) { model.deleteWithUndo([item]) }
     }
 
     private func episodesText(_ count: Int) -> String {
@@ -410,7 +410,7 @@ struct DownloadSeriesView: View {
                                     Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
                                 }
                             }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { observer.model.delete(season.items.map(\.id)) }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { observer.model.deleteWithUndo(season.items) }.tint(DS.danger) }
                         }
                     }
                     .downloadCard()
@@ -454,7 +454,7 @@ struct DownloadSeasonView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }
+                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.deleteWithUndo([item]) }.tint(DS.danger) }
                     .contextMenu {
                         Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
                         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : item.subtitle))) {
@@ -561,3 +561,15 @@ extension View {
     }
 }
 
+extension DownloadsModel {
+    /// «Borrar» una descarga (o un título, o una temporada): sale de la lista al instante y avisa con «Deshacer»; el archivo se
+    /// borra cuando el aviso ya se fue (D1-A, Fernando, 16 nov 2026: volver a bajarla tarda y gasta datos).
+    func deleteWithUndo(_ items: [DownloadItem]) {
+        guard let first = items.first else { return }
+        let ids = items.map(\.id)
+        let env = AppEnvironment.shared
+        env.notify(items.count == 1 ? "Descarga borrada" : "Descargas borradas", detail: first.title, tone: .info,
+                   actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await self.undoDelete(ids) } }
+        delete(ids, undoWindow: DS.Timing.undoCommit)
+    }
+}

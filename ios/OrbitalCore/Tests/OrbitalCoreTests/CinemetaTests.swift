@@ -65,6 +65,22 @@ final class CinemetaTests: XCTestCase {
         XCTAssertEqual(CinemetaParsing.searchResults(query: "the office", movies: movies, series: series).map(\.metaID).first, "tt0386676")
     }
 
+    /// S1-A (Fernando, 16 nov 2026): «matrix» daba de «Mejor resultado» la serie Matrix de 1993. Entre exactas de tipos
+    /// distintos gana la más conocida; sin datos, el orden de antes (la serie primero).
+    func testTheBestKnownExactMatchWinsTheTopSpot() {
+        let movies: [JSON] = [["id": "tt0133093", "name": "The Matrix"], ["id": "tt10838180", "name": "The Matrix Resurrections"]]
+        let series: [JSON] = [["id": "tt0106062", "name": "Matrix"], ["id": "tt0364888", "name": "Threat Matrix"]]
+        let ties = CinemetaParsing.exactTies(query: "matrix", movies: movies, series: series)
+        XCTAssertEqual(Set(ties.map(\.id)), ["tt0133093", "tt0106062"], "las dos exactas, una de cada tipo")
+        XCTAssertEqual(CinemetaParsing.searchResults(query: "matrix", movies: movies, series: series).first?.metaID, "tt0106062", "sin datos, como antes")
+        let known = CinemetaParsing.searchResults(query: "matrix", movies: movies, series: series, popularity: ["tt0133093": 1.28, "tt0106062": 0.08])
+        XCTAssertEqual(known.map(\.metaID).prefix(2), ["tt0133093", "tt0106062"], "la película, mucho más vista, de «Mejor resultado»")
+        XCTAssertEqual(CinemetaParsing.popularity(["popularities": ["stremio": .double(0.5)]]), 0.5)
+        // «office» no empata (solo hay una exacta): nada que preguntar y The Office sigue arriba.
+        XCTAssertTrue(CinemetaParsing.exactTies(query: "office", movies: [["id": "tt2", "name": "Office Space"]],
+                                                series: [["id": "tt0386676", "name": "The Office"]]).isEmpty)
+    }
+
     func testUnusableMetasAreDropped() {
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "tt1", "name": 1917]))
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "", "name": "x"]))

@@ -48,3 +48,19 @@ extension DesignRulesTests {
         }
     }
 }
+
+/// «"Borrar" una descarga también avisa con "Deshacer"» (`docs/ios-interfaz.md`, D1-A, 16 nov 2026): en Descargas nadie llama a
+/// `delete(` directo; todo pasa por `deleteWithUndo`, que avisa y espera a que el aviso se vaya para borrar el archivo.
+extension DesignRulesTests {
+    func testDeletingADownloadOffersUndo() throws {
+        let code = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/DownloadsView.swift"), encoding: .utf8)
+        let lines = code.components(separatedBy: "\n")
+        let deletes = lines.filter { $0.contains("Button(\"Borrar\"") }
+        XCTAssertGreaterThanOrEqual(deletes.count, 6, "se leyeron los «Borrar» de Descargas")
+        for line in deletes { XCTAssertTrue(line.contains("deleteWithUndo("), "«Borrar» sin «Deshacer»: \(line)") }
+        let helper = try XCTUnwrap(code.range(of: "func deleteWithUndo("), "el ayudante existe")
+        let body = code[helper.upperBound...].prefix(700)
+        XCTAssertTrue(body.contains("actionTitle: \"Deshacer\""), "avisa con «Deshacer»")
+        XCTAssertTrue(body.contains("undoWindow: DS.Timing.undoCommit"), "el archivo espera a que el aviso se vaya")
+    }
+}

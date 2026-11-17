@@ -124,7 +124,7 @@ public final class SearchModel: ObservableModel {
     private func find(_ query: String, show: @escaping @MainActor ([SearchResult]) async -> Void) async throws -> (results: [SearchResult], complete: Bool) {
         let cinemeta = services.cinemeta, trakt = services.trakt.flatMap { $0.configured ? $0 : nil }
         var parts: [String: [JSON]] = [:], failed = Set<String>(), fromTrakt: [SearchResult]?, traktSettled = trakt == nil
-        var waited = false, shown: [SearchResult] = []
+        var waited = false, shown: [SearchResult] = [], popularity: [String: Double]?
         await withTaskGroup(of: Piece.self) { group in
             for kind in ["movie", "series"] {
                 group.addTask {
@@ -152,7 +152,14 @@ public final class SearchModel: ObservableModel {
                 case .kind(let kind, nil): failed.insert(kind)
                 }
                 let cinemetaSettled = parts.count + failed.count == 2
-                let fromCinemeta = parts.isEmpty ? [] : CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [], limit: Self.resultLimit)
+                // S1-A: si una película y una serie se llaman igual a lo que buscas, la más conocida va de «Mejor resultado»
+                // (su ficha dice qué tan vista es). Se pregunta una vez, con tope: si tarda, se queda el orden de Cinemeta.
+                let ties = CinemetaParsing.exactTies(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [])
+                if cinemetaSettled, !ties.isEmpty, popularity == nil {
+                    popularity = await Self.popularity(of: ties, cinemeta: cinemeta)
+                }
+                let fromCinemeta = parts.isEmpty ? [] : CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [],
+                                                                                         limit: Self.resultLimit, popularity: popularity ?? [:])
                 // Lo de Trakt entra cuando ya está Cinemeta (o tardó): así no salta el orden al llegar.
                 let now = Self.merged(cinemeta: fromCinemeta, trakt: cinemetaSettled || waited ? fromTrakt ?? [] : [])
                 if !now.isEmpty, now != shown { shown = now; await show(now) }
@@ -162,6 +169,24 @@ public final class SearchModel: ObservableModel {
         if Task.isCancelled { throw CancellationError() }
         if shown.isEmpty && fromTrakt == nil && parts.isEmpty { throw SearchFailure() }
         return (shown, failed.isEmpty && (trakt == nil || fromTrakt != nil))
+    }
+
+    /// Qué tan vista es cada empatada (id → popularidad), pidiendo sus fichas a la vez; lo que no llega en `tieLimit`, sin dato.
+    nonisolated static func popularity(of ties: [(kind: String, id: String)], cinemeta: Cinemeta) async -> [String: Double] {
+        await withTaskGroup(of: (String, Double?).self) { group in
+            for tie in ties.prefix(4) {
+                group.addTask { (tie.id, (try? await cinemeta.meta(kind: tie.kind, id: tie.id)).flatMap(CinemetaParsing.popularity)) }
+            }
+            group.addTask { try? await Task.sleep(nanoseconds: tieLimit); return ("", nil) }
+            var found: [String: Double] = [:], answered = 0
+            for await (id, value) in group {
+                if id.isEmpty { group.cancelAll(); break }
+                answered += 1
+                if let value { found[id] = value }
+                if answered == min(ties.count, 4) { group.cancelAll(); break }
+            }
+            return found
+        }
     }
 
     /// Lo de Cinemeta en su orden y, después, lo que solo trajo Trakt (en el suyo), sin repetir; lo de otro alfabeto al final.
@@ -212,6 +237,8 @@ public final class SearchModel: ObservableModel {
     static let traktLimit = 50
     /// Si Cinemeta no ha contestado en este tiempo, se enseña lo de Trakt solo (y Cinemeta, al llegar, pone su orden).
     static let hedgeDelay: UInt64 = 1_200_000_000
+    /// S1-A: cuánto se espera la ficha de las empatadas (película y serie con el mismo nombre) antes de enseñar el orden.
+    static let tieLimit: UInt64 = 1_500_000_000
 
     /// Lo buscado en esta sesión (las últimas `memoryLimit` búsquedas), por texto en minúsculas.
     private var memory: [String: [Result]] = [:]

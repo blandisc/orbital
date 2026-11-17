@@ -321,8 +321,27 @@ public enum CinemetaParsing {
         return name
     }
 
+    /// Las coincidencias exactas de tipos distintos («matrix»: la película The Matrix y la serie Matrix de 1993), como
+    /// `(tipo, id)`. Con dos o más, la búsqueda pide su ficha para saber cuál es la más conocida (S1-A, 16 nov 2026).
+    public static func exactTies(query: String, movies: [JSON], series: [JSON]) -> [(kind: String, id: String)] {
+        let q = withoutArticle(query.trimmingCharacters(in: .whitespaces).lowercased())
+        let exact: (String, [JSON]) -> [(kind: String, id: String)] = { kind, metas in
+            metas.filter { withoutArticle($0["name"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? "") == q }
+                .compactMap { meta in meta["id"]?.string.map { (kind, $0) } }
+        }
+        let movie = exact("movie", movies), show = exact("series", series)
+        return movie.isEmpty || show.isEmpty ? [] : movie + show
+    }
+
+    /// Qué tan vista es, según su ficha de Cinemeta (`popularity`; si no, la de Stremio en `popularities`).
+    public static func popularity(_ meta: JSON) -> Double? {
+        meta["popularity"]?.doubleValue ?? meta["popularities"]?["stremio"]?.doubleValue
+    }
+
     /// Une películas y series alternando tipos y respetando el orden de Cinemeta; solo sube una coincidencia exacta.
-    public static func searchResults(query: String, movies: [JSON], series: [JSON], limit: Int = 18) -> [SearchResult] {
+    /// `popularity` (id → qué tan vista): entre las exactas gana la más conocida, no la serie por ir primero (S1-A).
+    public static func searchResults(query: String, movies: [JSON], series: [JSON], limit: Int = 18,
+                                     popularity: [String: Double] = [:]) -> [SearchResult] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         var merged: [(String, JSON)] = []
         for i in 0..<min(series.count, movies.count) { merged.append(("series", series[i])); merged.append(("movie", movies[i])) }
@@ -330,7 +349,15 @@ public enum CinemetaParsing {
         let kindLeft = series.count > movies.count ? "series" : "movie"
         merged += longer.dropFirst(min(series.count, movies.count)).map { (kindLeft, $0) }
         let isExact: ((String, JSON)) -> Bool = { withoutArticle($0.1["name"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? "") == withoutArticle(q) }
-        let exact = merged.filter(isExact)
+        var exact = merged.filter(isExact)
+        if !popularity.isEmpty {
+            // Estable: las que no tienen dato conservan su lugar entre ellas, después de las que sí.
+            exact = exact.enumerated().sorted { a, b in
+                let pa = a.element.1["id"]?.string.flatMap { popularity[$0] } ?? -1
+                let pb = b.element.1["id"]?.string.flatMap { popularity[$0] } ?? -1
+                return pa != pb ? pa > pb : a.offset < b.offset
+            }.map(\.element)
+        }
         let rest = merged.filter { !isExact($0) }  // estable
         var seen = Set<String>(), results: [SearchResult] = []
         for (kind, meta) in exact + rest {
