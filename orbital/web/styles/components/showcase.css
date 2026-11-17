@@ -1,6 +1,8 @@
 /* Colecciones (js/components/showcase.js): los premios y las listas famosas en tarjetas, cada una con cuánto llevas. */
 .showcase { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: var(--space-6); justify-items: center; }
 .showcase__status:empty { display: none; }
+/* Bajo el encabezado centrado, el aviso también (Fernando, 16 nov: el trofeo de «Contando lo que viste…» salía corrido). */
+.showcase__status .empty-state { justify-items: center; text-align: center; }
 .showcase__grid {
   width: min(70rem, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: var(--tile-gap);
   min-height: 0; overflow-y: auto; scrollbar-width: none; padding: var(--space-4); margin: calc(-1 * var(--space-4));
