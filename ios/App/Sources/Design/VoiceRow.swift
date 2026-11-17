@@ -206,7 +206,7 @@ struct VoiceRow: View {
 
     private func pill(_ title: LocalizedStringKey, id: String, action: @escaping () -> Void) -> some View {
         Button { tap(action) } label: { Text(title).font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
-            .dsSecondaryButton().controlSize(.large)
+            .dsSecondaryButton().dsControlSize(.large)
             .accessibilityIdentifier(id)
     }
 
@@ -314,7 +314,7 @@ struct ConnectionTrail: View {
                 Button(action: retry) { Text("Probar otra vez").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
                     .dsPrimaryButton(size: .large).accessibilityIdentifier("voice-retry")
                 Button(action: check) { Text("Probar la conexión").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large).accessibilityIdentifier("voice-check-connection")
+                    .dsSecondaryButton().dsControlSize(.large).accessibilityIdentifier("voice-check-connection")
             }
         }
     }

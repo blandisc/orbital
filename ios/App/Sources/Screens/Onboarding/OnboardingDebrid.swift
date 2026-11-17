@@ -57,7 +57,7 @@ struct OnboardingSeeHere: View {
                         Button {
                             if let text = UIPasteboard.general.string { model.token = text; Task { await model.verify() } }
                         } label: { Label("Pegar tu clave", systemImage: "doc.on.clipboard").frame(maxWidth: .infinity) }
-                            .dsGlassButton().controlSize(.large)
+                            .dsGlassButton().dsControlSize(.large)
                             .accessibilityIdentifier("debrid-paste")
                     }
                     if byHand {

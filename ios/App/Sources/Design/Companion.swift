@@ -27,7 +27,7 @@ struct GameNowCard: View {
                 }
                 HStack(spacing: DS.Space.s2) {
                     Button(action: onResume) { Label("Volver al juego", systemImage: "play.fill").lineLimit(1).minimumScaleFactor(DS.Size.statScale).frame(maxWidth: .infinity) }
-                        .dsPrimaryButton().controlSize(.large).disabled(busy)
+                        .dsPrimaryButton().dsControlSize(.large).disabled(busy)
                     DSIconButton(symbol: "house", label: "Ir al inicio", action: onHome).disabled(busy)
                     ConfirmIconButton(symbol: "xmark", prompt: "¿Cerrar el juego?", label: "Cerrar el juego", action: onClose)
                 }
@@ -100,7 +100,7 @@ struct ConsoleStatePanel: View {
                         Spacer()
                         if let app = s.apps.first(where: \.closable) {
                             Button { closeApp(app.name) } label: { Text("Cerrar \(app.name)") }
-                                .font(DS.TextRecipe.badge.font).buttonStyle(.bordered).controlSize(.mini)
+                                .font(DS.TextRecipe.badge.font).buttonStyle(.bordered).dsControlSize(.mini)
                         }
                     }
                 }
@@ -145,7 +145,7 @@ struct GuidePanel: View {
         Button { if let u = URL(string: url) { openURL(u) } } label: {
             Label(title, systemImage: symbol).frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.bordered).controlSize(.small)
+        .buttonStyle(.bordered).dsControlSize(.small)
     }
 }
 
@@ -174,7 +174,7 @@ struct TimerPanel: View {
             if let endsAt, endsAt > .now {
                 Text(timerInterval: Date.now...endsAt, countsDown: true).recipe(.title).monospacedDigit()
                 Text("Te aviso al terminar; no cierro nada.").recipe(.caption)
-                Button("Quitar", role: .destructive, action: cancel).buttonStyle(.bordered).controlSize(.small)
+                Button("Quitar", role: .destructive, action: cancel).buttonStyle(.bordered).dsControlSize(.small)
             } else {
                 Text("¿Cuánto quieres jugar?").recipe(.footnote)
                 FlowChips {

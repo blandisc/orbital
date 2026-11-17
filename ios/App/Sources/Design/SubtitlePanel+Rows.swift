@@ -111,7 +111,7 @@ struct SubtitleRow: View {
             switch mark {
             case .none: Color.clear
             case .check: Image(systemName: DS.Symbol.done).font(DS.TextRecipe.label.font).foregroundStyle(DS.brandMoon)
-            case .loading: ProgressView().controlSize(.small).tint(DS.textMuted)
+            case .loading: ProgressView().dsControlSize(.small).tint(DS.textMuted)
             case .opens: Image(systemName: "chevron.right").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
             }
         }

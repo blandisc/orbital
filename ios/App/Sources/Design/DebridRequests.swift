@@ -143,7 +143,7 @@ struct DebridRequestSheet: View {
                         .dsPrimaryButton(size: .large)
                         .accessibilityIdentifier("debrid-instead")
                     Button(action: close) { Text("Esperar a que llegue").frame(maxWidth: .infinity) }
-                        .dsSecondaryButton().controlSize(.large)
+                        .dsSecondaryButton().dsControlSize(.large)
                         .accessibilityIdentifier("debrid-wait")
                 }
                 if let manageDownloads {
@@ -158,14 +158,14 @@ struct DebridRequestSheet: View {
                 }
                 if let openTitle {
                     Button(action: openTitle) { Label("Abrir la ficha", systemImage: "info.circle").frame(maxWidth: .infinity) }
-                        .dsSecondaryButton().controlSize(.large)
+                        .dsSecondaryButton().dsControlSize(.large)
                         .accessibilityIdentifier("debrid-open-title")
                 }
                 if cancel != nil {
                     Button(role: .destructive) { confirmingCancel = true } label: {
                         Label(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? DS.Symbol.removeRequest : DS.Symbol.cancelRequest).frame(maxWidth: .infinity)
                     }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
                     .accessibilityIdentifier(finished ? "debrid-remove-finished" : "debrid-cancel")
                 }
                 Button(action: explain) { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
@@ -218,7 +218,7 @@ struct DebridNotifyPrompt: View {
                     .dsPrimaryButton(size: .large)
                     .accessibilityIdentifier("debrid-allow-notifications")
                 Button(action: notNow) { Text("Ahora no").frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
             }
         }
         .dsSheetContent()

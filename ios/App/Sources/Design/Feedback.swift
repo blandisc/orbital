@@ -66,7 +66,7 @@ struct DSProblem<Fixes: View>: View {
 /// Los arreglos de un `DSProblem`: el primero, el principal en blanco; los demás, de vidrio (su texto va a lo ancho).
 extension View {
     @ViewBuilder func dsProblemFix(primary: Bool) -> some View {
-        if primary { dsPrimaryButton(size: .large) } else { dsSecondaryButton().controlSize(.large) }
+        if primary { dsPrimaryButton(size: .large) } else { dsSecondaryButton().dsControlSize(.large) }
     }
 }
 
@@ -95,7 +95,7 @@ struct DSDegradedNotice: View {
                     Button(text("Reintentar"), systemImage: "arrow.clockwise", action: retry).accessibilityIdentifier("degraded-retry")
                 }
             }
-            .dsGlassButton().controlSize(.small).padding(.top, DS.Space.s1)
+            .dsGlassButton().dsControlSize(.small).padding(.top, DS.Space.s1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Space.s3)
@@ -132,7 +132,7 @@ struct DSEmptyState<Actions: View>: View {
         } description: {
             if let message { message }
         } actions: {
-            actions().dsGlassButton().controlSize(.large)
+            actions().dsGlassButton().dsControlSize(.large)
         }
         // Arriba, donde empezaría la lista (regla de bordes, §4): sin esto el vacío del sistema se estira y queda al centro
         // aunque lo pongan arriba (revisión del 11 nov: Descargas vacía seguía al centro).

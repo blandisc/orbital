@@ -49,7 +49,7 @@ struct StoryPlayer: View {
             Spacer(minLength: 0)
             if last, let action = story.action {
                 Button { onAction(action.destination) } label: { Text(LocalizedStringKey(action.title)).frame(maxWidth: .infinity) }
-                    .dsPrimaryButton().controlSize(.large)
+                    .dsPrimaryButton().dsControlSize(.large)
                     .accessibilityIdentifier("story-action")
             }
         }

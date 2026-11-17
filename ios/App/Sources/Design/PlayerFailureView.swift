@@ -194,7 +194,7 @@ struct PlayerFailureView: View {
         // del control, D9 y D18).
         let button = Button(action: action) { label.font(DS.TextRecipe.labelLarge.font).frame(maxWidth: .infinity) }
         return Group {
-            if primary { button.dsPrimaryButton(size: .large) } else { button.dsSecondaryButton().controlSize(.large) }
+            if primary { button.dsPrimaryButton(size: .large) } else { button.dsSecondaryButton().dsControlSize(.large) }
         }
     }
 }

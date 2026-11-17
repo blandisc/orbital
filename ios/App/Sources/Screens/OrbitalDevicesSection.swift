@@ -110,7 +110,7 @@ private struct OrbitalDeviceSheet: View {
             DSSheetHeader(title: Text(verbatim: device.name), subtitle: detail)
             Text("Tiene su propia conexión con tu TV.").recipe(.secondary, color: DS.textMuted)
             Button(role: .destructive) { confirming = true } label: { Label("Quitar", systemImage: "minus.circle").frame(maxWidth: .infinity) }
-                .dsSecondaryButton().controlSize(.large)
+                .dsSecondaryButton().dsControlSize(.large)
                 .accessibilityIdentifier("orbital-device-remove")
         }
         .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último

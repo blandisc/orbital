@@ -10,13 +10,17 @@ import OrbitalModels
 
 /// Botones del catálogo: sobre arte, de ícono, el menú «Más» y el botón que pide confirmar.
 extension View {
+    /// El tamaño de un control. Toda la app lo pide así (nunca `.controlSize` directo): en la Mac sube un tamaño
+    /// (`DS.Mac.control`), en iPhone y iPad es el mismo. `DesignRulesTests` lo cuida.
+    func dsControlSize(_ size: ControlSize) -> some View { controlSize(DS.Mac.control(size)) }
+
     /// El botón principal: vidrio nativo con el tinte de Orbital (papel) y la letra oscura encima. Sin esto, iOS pone letra
     /// blanca sobre el tinte claro y no se lee.
     func dsPrimaryButton() -> some View { buttonStyle(.glassProminent).foregroundStyle(DS.onPrimary) }
 
     /// El botón principal chico (Listo, Usar, Cambiar): el mismo vidrio con el tinte de Orbital, en tamaño chico.
     func dsPrimaryButton(size: ControlSize) -> some View {
-        buttonStyle(.glassProminent).controlSize(size).tint(DS.primary).foregroundStyle(DS.onPrimary)
+        buttonStyle(.glassProminent).dsControlSize(size).tint(DS.primary).foregroundStyle(DS.onPrimary)
     }
 
     /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
@@ -54,7 +58,7 @@ private struct OnSolidButton: ViewModifier {
             if primary { content.buttonStyle(.borderedProminent).tint(DS.onSolidPrimary).foregroundStyle(DS.solidPrimary) }
             else { content.buttonStyle(.bordered).tint(DS.onSolidPrimary) }
         }
-        .buttonBorderShape(.capsule).controlSize(.large)
+        .buttonBorderShape(.capsule).dsControlSize(.large)
     }
 }
 
@@ -95,7 +99,7 @@ struct DSMoreMenu<Content: View>: View {
 
     var body: some View {
         Menu { content() } label: { Image(systemName: "ellipsis") }
-            .dsIconButtonLook().buttonBorderShape(.circle).controlSize(.large)
+            .dsIconButtonLook().buttonBorderShape(.circle).dsControlSize(.large)
             .accessibilityLabel(Text("Más"))
     }
 }
@@ -144,7 +148,7 @@ struct DSIconButton: View {
             .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? 0 : kick)
     }
     @ViewBuilder private var glyph: some View {
-        if busy { ProgressView().controlSize(.small).frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) }   // ds-exception: la ruedita va dentro del botón que la pidió
+        if busy { ProgressView().dsControlSize(.small).frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) }   // ds-exception: la ruedita va dentro del botón que la pidió
         else if steady { image.frame(width: DS.IconButton.steadyGlyph, height: DS.IconButton.steadyGlyph) } else { image }
     }
 
@@ -154,7 +158,7 @@ struct DSIconButton: View {
             else { Button(action: action) { glyph }.dsIconButtonLook() }
         }
         .buttonRepeatBehavior(repeats ? .enabled : .automatic)
-        .buttonBorderShape(.circle).controlSize(size.control)
+        .buttonBorderShape(.circle).dsControlSize(size.control)
         .accessibilityLabel(Text(label))
     }
 }
@@ -179,7 +183,7 @@ struct ConfirmIconButton: View {
             }
         }
         .dsIconButtonLook()
-        .buttonBorderShape(asking ? .capsule : .circle).controlSize(.large)
+        .buttonBorderShape(asking ? .capsule : .circle).dsControlSize(.large)
         .accessibilityLabel(Text(label))
         .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))
         .dsFeedback(.selection, trigger: asking)

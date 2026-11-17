@@ -148,7 +148,7 @@ struct DebridAccountView: View {
             Label { Text("Canjear \(Strings.count(points, language: env.services.appSettings.uiLanguage)) puntos") } icon: { Image(systemName: "gift") }
                 .frame(maxWidth: .infinity)
         }
-        .dsSecondaryButton().controlSize(.large)
+        .dsSecondaryButton().dsControlSize(.large)
         .disabled(model.redeem == .working)
         .accessibilityIdentifier("debrid-redeem")
     }

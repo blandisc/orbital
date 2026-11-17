@@ -294,7 +294,7 @@ struct MiMediaTitleView: View {
                             Button("Bajar esta", systemImage: "arrow.down.circle") { Task { await report(model.download(t, videoID: e.videoID, entry: e)) } }
                                 .disabled(model.onPhone[e.videoID] != nil)
                         }
-                        .dsSecondaryButton().controlSize(.small)
+                        .dsSecondaryButton().dsControlSize(.small)
                     }
                 }
                 .padding(DS.Space.s3)

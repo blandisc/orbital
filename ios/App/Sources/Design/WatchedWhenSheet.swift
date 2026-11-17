@@ -82,7 +82,7 @@ struct WatchedWhenSheet: View {
                             Button { choose(.day(day)) } label: {
                                 Text("Listo · \(Strings.date(day, .dayMonthShort, language: language))").frame(maxWidth: .infinity)
                             }
-                            .dsSolidPrimaryButton().controlSize(.large)
+                            .dsSolidPrimaryButton().dsControlSize(.large)
                             .accessibilityIdentifier("watched-when-done")
                         }
                         .padding(DS.Space.s3)

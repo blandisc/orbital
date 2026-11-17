@@ -57,7 +57,7 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("Filters.swift").contains("tabs(titles: ThisDevice.isMac ||"), "En la Mac las pestañas llevan nombre")
         // La barra le ofrece poco ancho a lo de la izquierda: sin su tamaño propio, los nombres se recortaban hasta desaparecer.
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".fixedSize()"), "Las pestañas de la barra de la Mac conservan su nombre")
-        XCTAssertTrue(root.contains(".macDefaults()") && mac.contains(".controlSize(.large)"), "En la Mac los botones del sistema van en grande")
+        XCTAssertTrue(root.contains(".macDefaults()") && mac.contains(".controlSize(DS.Mac.controlDefault)"), "En la Mac los botones del sistema van en grande")
     }
 
     /// Inicio en ventana muy ancha se acomoda como la entrada del escritorio de la tele (Fernando, 16 nov 2026: «toma más

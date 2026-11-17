@@ -213,7 +213,7 @@ private struct VoiceTopicsView: View {
         Button { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } } label: {
             (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
         }
-        .dsSecondaryButton().controlSize(.small)
+        .dsSecondaryButton().dsControlSize(.small)
     }
 }
 

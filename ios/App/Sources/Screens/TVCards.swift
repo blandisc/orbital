@@ -121,7 +121,7 @@ struct NowPlayingCard: View {
                 DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }.frame(maxWidth: .infinity)
             }
         }
-        .controlSize(prominent ? .extraLarge : .large)
+        .dsControlSize(prominent ? .extraLarge : .large)
     }
 
     private func tapAndRun(_ action: @escaping () -> Void) {
@@ -164,8 +164,8 @@ struct FromTVCard: View {
                     TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: titleName(item.title, id: item.metaID, kind: item.kind))
                     DataLine(parts: [detail], color: DS.onArtSecondary)
                     HeroActions {
-                        Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).controlSize(.large)
-                        Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle").lineLimit(1) }.dsGlassButton().controlSize(.large)
+                        Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).dsControlSize(.large)
+                        Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle").lineLimit(1) }.dsGlassButton().dsControlSize(.large)
                     }
                     .padding(.top, DS.Space.s1)
                 }

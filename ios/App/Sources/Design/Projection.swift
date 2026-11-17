@@ -354,7 +354,7 @@ struct MosaicCaption<More: View>: View {
                 more()
             }
             Button(action: watch) { Image(systemName: "play.fill") }   // como en toda la app (antes, una flecha en las series)
-                .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)   // ds-exception: el ▶ toma el color del arte; DSIconButton no tiene versión de arte
+                .dsArtButton(accent).buttonBorderShape(.circle).dsControlSize(.large)   // ds-exception: el ▶ toma el color del arte; DSIconButton no tiene versión de arte
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }
         .accessibilityElement(children: .contain)

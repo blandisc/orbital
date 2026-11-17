@@ -81,7 +81,7 @@ struct DSInlineProgress: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            ProgressView().controlSize(.small)
+            ProgressView().dsControlSize(.small)
             text.recipe(.footnote)
         }
         .accessibilityElement(children: .combine)
@@ -156,7 +156,7 @@ struct DSSeasonPicker: View {
                                 .buttonStyle(.bordered).tint(DS.text)
                         }
                     }
-                    .buttonBorderShape(.capsule).controlSize(.regular)
+                    .buttonBorderShape(.capsule).dsControlSize(.regular)
                     .id(season)
                     .accessibilityLabel(season == 0 ? Text("Especiales") : Text("Temporada \(season)"))
                     .accessibilityAddTraits(season == current ? .isSelected : [])

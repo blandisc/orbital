@@ -176,14 +176,14 @@ struct AdvancedFilterSheet: View {
         HStack(spacing: DS.Space.s3) {
             if !model.filter.isEmpty {
                 Button("Limpiar") { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
-                    .dsGlassButton().buttonBorderShape(.capsule).controlSize(.large)
+                    .dsGlassButton().buttonBorderShape(.capsule).dsControlSize(.large)
                     .accessibilityIdentifier("filter-clear")
             }
             Button(action: onResults) {
                 resultsLabel(model.preview).frame(maxWidth: .infinity)
                     .contentTransition(.numericText()).animation(DS.Motion.base(reduceMotion), value: model.preview)
             }
-            .dsSolidPrimaryButton().controlSize(.large)   // el principal sólido de la app: se lee siempre
+            .dsSolidPrimaryButton().dsControlSize(.large)   // el principal sólido de la app: se lee siempre
             .disabled(model.preview?.count.total == 0)
             .accessibilityIdentifier("filter-results")
             .task { model.schedulePreview() }

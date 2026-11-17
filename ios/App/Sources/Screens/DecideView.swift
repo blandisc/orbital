@@ -330,7 +330,7 @@ struct DecideView: View {
                 .frame(maxWidth: .infinity)
                 .contentTransition(.opacity)
             }
-            .dsPrimaryButton().controlSize(.large)
+            .dsPrimaryButton().dsControlSize(.large)
             .accessibilityIdentifier("decide-watch")
             // Lo que se espera se ve en el botón; con una o dos opciones no hay a qué barajar (F4).
             DSIconButton(symbol: DS.Symbol.shuffle, label: "Barajar", steady: true, busy: m.isLoading, kick: shuffles) { shuffle(m) }
@@ -398,7 +398,7 @@ struct DecideView: View {
                     Button { Task { let fresh = await reload(); await m.retry(pool: fresh.pool, sources: fresh.sources) } } label: {
                         Label("Reintentar", systemImage: "arrow.clockwise")
                     }
-                    .dsGlassButton().controlSize(.large)
+                    .dsGlassButton().dsControlSize(.large)
                     .accessibilityIdentifier("decide-retry")
                 }
             }

@@ -48,7 +48,7 @@ struct VersionRequestRow: View {
                 status.accessibilityIdentifier("version-request-status")   // la misma pieza que la ficha y «Tus pedidos»
             } else {
                 Button(action: request) { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
                     .accessibilityIdentifier("version-request")
             }
         }
@@ -79,7 +79,7 @@ struct VersionYoursAside: View {
                 status.accessibilityIdentifier("sources-yours-status")
             } else {
                 Button(action: request) { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
                     .accessibilityIdentifier("sources-yours-request")
             }
         }

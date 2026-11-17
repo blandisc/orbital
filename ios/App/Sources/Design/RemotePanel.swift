@@ -63,7 +63,7 @@ struct RemoteSendRow: View {
         HStack(spacing: DS.Space.s3) {
             RowTile(title: title, thumb: art, detail: detail, progress: progress)
             Group {
-                if sending { ProgressView().controlSize(.small) }   // ds-exception: la ruedita ocupa el lugar del ícono mientras va a la tele
+                if sending { ProgressView().dsControlSize(.small) }   // ds-exception: la ruedita ocupa el lugar del ícono mientras va a la tele
                 else { Image(systemName: "tv.and.mediabox").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted) }
             }
             .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)

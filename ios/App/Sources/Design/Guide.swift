@@ -96,10 +96,10 @@ struct GuidePage<Content: View>: View {
         .safeAreaBar(edge: .bottom) {
             VStack(spacing: DS.Space.s2) {
                 Button(action: next) { primary.frame(maxWidth: .infinity) }
-                    .dsPrimaryButton().controlSize(.large).disabled(!primaryEnabled)
+                    .dsPrimaryButton().dsControlSize(.large).disabled(!primaryEnabled)
                     .accessibilityIdentifier("guide-next")
                 if let skip, let secondary {
-                    Button(action: skip) { secondary.frame(maxWidth: .infinity) }.dsGlassButton().controlSize(.large)
+                    Button(action: skip) { secondary.frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
                         .accessibilityIdentifier("guide-skip")
                 }
             }

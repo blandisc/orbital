@@ -48,7 +48,7 @@ struct OnboardingWelcome: View {
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : DS.Welcome.rise)
             Button(action: next) { Text("Empezar").frame(maxWidth: .infinity) }
-                .dsPrimaryButton().controlSize(.large)
+                .dsPrimaryButton().dsControlSize(.large)
                 .opacity(showsButton ? 1 : 0)
                 .accessibilityIdentifier("guide-next")
         }

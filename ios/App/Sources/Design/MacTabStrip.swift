@@ -91,10 +91,15 @@ extension View {
         if ThisDevice.isMac { toolbarVisibility(.hidden, for: .tabBar) } else { self }
     }
 
-    /// En la Mac, lo que no trae su propia letra (los botones del sistema como «Ver», textos sin receta) arranca con el cuerpo
-    /// de la Mac (`DS.styled(.body)`) y los controles en tamaño grande: macOS los dibuja al 77 % y salían diminutos (MAC-A).
+    /// La escala de la Mac, una sola vez para toda la app (en `RootView`): lo que no trae su propia letra arranca con el cuerpo
+    /// de la Mac (`DS.styled(.body)`), la letra del sistema (formularios, menús, botones nativos) crece como la de `DS.styled`
+    /// y los controles sin tamaño propio van en `DS.Mac.controlDefault`. macOS dibuja la app al 77 % y salían diminutos (MAC-A;
+    /// sistema de tamaños, 16 nov 2026). En iPhone y iPad, nada: cada quien con su Dynamic Type.
     @ViewBuilder func macDefaults() -> some View {
-        if ThisDevice.isMac { font(DS.styled(.body)).controlSize(.large) } else { self }
+        if ThisDevice.isMac {
+            font(DS.styled(.body)).dynamicTypeSize(DS.Mac.systemType)
+                .controlSize(DS.Mac.controlDefault)   // ds-exception: la escala de la Mac se pone aquí y solo aquí
+        } else { self }
     }
 
 }

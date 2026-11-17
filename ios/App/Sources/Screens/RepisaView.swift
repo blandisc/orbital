@@ -314,10 +314,10 @@ struct RepisaCollectionView: View {
             .accessibilityIdentifier("repisa-open-title")
             HStack(spacing: DS.Space.s3) {
                 Button { picked = nil; Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
-                    .dsSolidPrimaryButton().controlSize(.large)
+                    .dsSolidPrimaryButton().dsControlSize(.large)
                 if !seen {
                     Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
-                        .dsGlassButton().buttonBorderShape(.capsule).controlSize(.large)
+                        .dsGlassButton().buttonBorderShape(.capsule).dsControlSize(.large)
                         .accessibilityIdentifier("repisa-seen")
                 }
             }

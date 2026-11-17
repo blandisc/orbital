@@ -44,7 +44,7 @@ extension DesignRulesTests {
         XCTAssertTrue(chip.contains(".frame(maxHeight: .infinity)"), "PanelChip llena el alto que le da su línea")
         let surfaces = try XCTUnwrap(files.first { $0.name == "Surfaces.swift" }).lines.joined(separator: "\n")
         let picker = surfaces.components(separatedBy: "struct DSSeasonPicker").last?.components(separatedBy: "\nstruct ").first ?? ""
-        XCTAssertEqual(picker.components(separatedBy: ".controlSize(").count - 1, 1, "Temporadas: un solo tamaño para todas")
+        XCTAssertEqual(picker.components(separatedBy: ".dsControlSize(").count - 1, 1, "Temporadas: un solo tamaño para todas")
         XCTAssertEqual(picker.components(separatedBy: ".buttonBorderShape(").count - 1, 1, "Temporadas: una sola forma para todas")
     }
 }

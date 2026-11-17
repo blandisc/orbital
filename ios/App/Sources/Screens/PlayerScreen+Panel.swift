@@ -266,7 +266,7 @@ extension PlayerScreen {
             // Sólida (papel): lo único que se ofrece en ese momento, se distingue del vidrio de los demás.
             Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }
                 .fontWeight(.semibold)
-                .dsPrimaryButton().controlSize(.regular)
+                .dsPrimaryButton().dsControlSize(.regular)
                 .fixedSize()
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
                 .accessibilityIdentifier("player-skip-intro")
@@ -285,7 +285,7 @@ extension PlayerScreen {
                 Label { Text("Siguiente · \(next.label)") } icon: { Image(systemName: "forward.end.fill") }
             }
             .fontWeight(.semibold)
-            .buttonStyle(.glass).controlSize(.regular)
+            .buttonStyle(.glass).dsControlSize(.regular)
             .fixedSize()
             .transition(.opacity.combined(with: .move(edge: .trailing)))
             .accessibilityIdentifier("player-next-episode")

@@ -878,8 +878,18 @@ sistema propio, en `DS.Mac` y `DS.HomeHero` (Fernando, 16 nov 2026: «crea otro 
 nuevos tamaños»):
 
 - **Letra:** la Mac ignora Dynamic Type. Toda receta pasa por `DS.styled(_:)`, que en la Mac da el tamaño de iOS por
-  `DS.Mac.typeScale` (1.25). Nada de `.system(.estilo)` suelto en los tokens. Los botones del sistema van en
-  `.controlSize(.large)` (`macDefaults()` en `RootView`).
+  `DS.Mac.typeScale` (1.25). Nada de `.system(.estilo)` suelto en los tokens.
+- **La escala de la Mac: una vez y para todo** (Fernando, 16 nov 2026: «haz esa misma revisión en cuanto a tamaños de fuente
+  y todos los botones… que queden registradas una vez y se apliquen siempre»). El tamaño de la Mac se decide en un solo
+  lugar, `DS.Mac`, y se pone una sola vez, con `macDefaults()` en `RootView`:
+  - **La letra chica se aprieta, no baja:** en `DS.Mac.styleSizes` lo más chico es 13 pt (×1.25): en el iPhone una nota de
+    11 pt se lee a palmo; en la Mac, al 77 % y a medio metro, salía de 10 px.
+  - **La letra del sistema crece igual** (formularios, menús, botones nativos, lo que no pasa por `DS.styled`):
+    `DS.Mac.systemType` (`.xxLarge`). Ninguna pantalla le pone un tope menor.
+  - **Los controles suben un tamaño:** toda la app pide su tamaño con `.dsControlSize(…)`, nunca `.controlSize(…)` directo;
+    en la Mac pasa por `DS.Mac.control` (chico → normal → grande → extragrande). Los que no piden ninguno toman
+    `DS.Mac.controlDefault`.
+  - Lo vigila `DesignRulesTests+MacScale`. Un tamaño nuevo de la Mac se agrega en `DS.Mac`, no en la pantalla.
 - **Una sola barra:** en la Mac no hay barra de pestañas del sistema ni barra lateral (la lateral salía vacía, tapaba el
   contenido y ahí tronaba). Inicio · Explorar · Biblioteca · Buscar van en el renglón del logo (`MacTabStrip`). En Inicio
   van en su encabezado; en las otras, por `.macTopBar()`, sin título del sistema (con título, las pestañas se iban a «More»).

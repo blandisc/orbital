@@ -68,12 +68,12 @@ extension TitleView {
                     Button { DebridRequestNotifier.openSystemSettings() } label: {
                         Label("Avisos apagados · actívalos", systemImage: "bell.slash").frame(maxWidth: .infinity)
                     }
-                    .dsSecondaryButton().controlSize(.large).tint(DS.warning)
+                    .dsSecondaryButton().dsControlSize(.large).tint(DS.warning)
                 }
                 Button(role: .destructive) { env.services.appearWatch.stop(kind: model.kind, videoID: videoID); debridSheet = nil } label: {
                     Label("Ya no avisarme", systemImage: "bell.slash").frame(maxWidth: .infinity)
                 }
-                .dsSecondaryButton().controlSize(.large)
+                .dsSecondaryButton().dsControlSize(.large)
                 .accessibilityIdentifier("appear-stop")
             }
             .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último

@@ -37,7 +37,7 @@ struct DebridRedeemSheet: View {
                     .dsPrimaryButton(size: .large)
                     .accessibilityIdentifier("debrid-redeem-confirm")
                 Button(action: close) { Text("Ahora no").frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
             }
         }
         .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último

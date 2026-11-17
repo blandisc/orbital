@@ -275,7 +275,7 @@ struct AllSourcesList: View {
             if let request, SourceSpeed(source) == .realDebridMustDownload {
                 if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
                     Button { request(source) } label: { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
-                        .dsPrimaryButton().controlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
+                        .dsPrimaryButton().dsControlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
                 }
             } else {
             ViewThatFits(in: .horizontal) {

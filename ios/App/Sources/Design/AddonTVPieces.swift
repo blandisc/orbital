@@ -19,7 +19,7 @@ struct AddonTVStatus: View {
             if let line = main { row(line.symbol, line.tint, line.title, line.detail) }
             if let retry, hasProblem {
                 Button(action: retry) { Text("Reintentar").font(DS.TextRecipe.label.font) }
-                    .dsSecondaryButton().controlSize(.large)
+                    .dsSecondaryButton().dsControlSize(.large)
                     .accessibilityIdentifier("addons-tv-retry")
             }
             if !waitingForKeys.isEmpty {   // IOS-5: solo sin conexión propia (con ella, todo viaja); sin «llaves»

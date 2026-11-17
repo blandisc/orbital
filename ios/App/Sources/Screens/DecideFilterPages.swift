@@ -69,7 +69,7 @@ struct DecideFilters: View {
                     .contentTransition(.numericText())
                     .frame(maxWidth: .infinity)
             }
-            .dsPrimaryButton().controlSize(.large)
+            .dsPrimaryButton().dsControlSize(.large)
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
             .accessibilityIdentifier("decide-more-done")
         }
@@ -330,7 +330,7 @@ struct DecideListPicker: View {
                      : String(format: Strings.tr(selection.count == 1 ? "Listo · %lld lista" : "Listo · %lld listas", language: language), selection.count))
                     .frame(maxWidth: .infinity)
             }
-            .dsPrimaryButton().controlSize(.large)
+            .dsPrimaryButton().dsControlSize(.large)
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
             .accessibilityIdentifier("decide-lists-done")
         }

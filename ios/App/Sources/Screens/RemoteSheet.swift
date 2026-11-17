@@ -290,7 +290,7 @@ struct RemoteSheet: View {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
                             .recipe(.label, color: DS.text)
                     }
-                    .dsSecondaryButton().controlSize(.large).frame(maxWidth: .infinity)
+                    .dsSecondaryButton().dsControlSize(.large).frame(maxWidth: .infinity)
                     .accessibilityIdentifier("remote-scares")
                 }
             }

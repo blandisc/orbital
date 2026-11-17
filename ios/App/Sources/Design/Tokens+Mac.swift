@@ -17,10 +17,28 @@ extension DS {
         static let typeScale: CGFloat = 1.25
         /// Los tamaños de cada estilo del iPhone (letra «Grande», la de fábrica): en la Mac se parte de estos.
         static let bodySize: CGFloat = 17
+        /// La escala de letra de la Mac (sistema de tamaños, Fernando, 16 nov 2026: «haz esa misma revisión en cuanto a tamaños
+        /// de fuente y todos los botones»). Arriba, los del iPhone; abajo se aprietan: en el iPhone una nota de 11 pt se lee a
+        /// palmo, pero en la Mac, al 77 % y a medio metro, salía de 10 px. Así lo más chico de la app sale de ~12.5 px.
         static let styleSizes: [Font.TextStyle: CGFloat] = [
             .largeTitle: 34, .title: 28, .title2: 22, .title3: 20, .headline: 17, .body: 17, .callout: 16,
-            .subheadline: 15, .footnote: 13, .caption: 12, .caption2: 11,
+            .subheadline: 16, .footnote: 15, .caption: 14, .caption2: 13,
         ]
+        /// El tamaño de la letra del sistema (la de los controles nativos, menús, formularios, títulos de la barra) en la Mac:
+        /// lo que no pasa por `DS.styled` crece igual que lo que sí (17 → 21 pt, como `typeScale`). Lo pone `macDefaults()` en `RootView`.
+        static let systemType: DynamicTypeSize = .xxLarge
+        /// Los controles nativos (botones, selectores) en la Mac van un tamaño arriba: con el de iPad salían de 24–30 px.
+        /// Toda la app pide su tamaño con `dsControlSize`, que pasa por aquí; los que no piden ninguno toman `controlDefault` (el que sale de pedir `.large`).
+        static let controlDefault: ControlSize = .extraLarge
+        static func control(_ size: ControlSize) -> ControlSize {
+            guard ProcessInfo.processInfo.isiOSAppOnMac else { return size }
+            switch size {
+            case .mini: return .small
+            case .small: return .regular
+            case .regular: return .large
+            default: return .extraLarge
+            }
+        }
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
         static let railWidth: CGFloat = 188
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la
