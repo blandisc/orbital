@@ -22,6 +22,7 @@ import { Eyebrow, Pill } from "./ui.js";
  */
 export const DECIDE_MODES = ["Tres que caben", "Una por una"];
 const MODE_HINTS = ["elige entre tres", "sí o no, rápido"]; // NQ-9 / AD-2: cada pestaña dice qué hace
+const MODE_ICONS = ["decideTrio", "decideDeck"]; // los del selector del iPhone (Fernando, 16 nov 2026)
 
 /**
  * NQ-1 (Fernando, 16 nov 2026): la puerta de «Decide por mí» en el Inicio, segunda de «A continuación» (como la del Inicio
@@ -71,7 +72,8 @@ export function DecideHead(modes, { title = "Decide por mí", icon = "spark" } =
  * LB/RB (AD-11): ↑ ya no lleva aquí (en el mazo ▲ es «Para hoy»). */
 export const DecideModes = (el, { on, onPick }) => mount(el, DECIDE_MODES.map((label, i) => h("button", {
   class: ["decide-mode", i === on && "decide-mode--on"], type: "button", tabindex: "-1", role: "tab", "aria-selected": String(i === on),
-  onClick: () => onPick(i) }, h("span", { class: "decide-mode__name" }, label), h("small", { class: "decide-mode__hint" }, MODE_HINTS[i]))));
+  onClick: () => onPick(i) }, h("span", { class: "decide-mode__name" }, svg(ICONS[MODE_ICONS[i]]), label),
+  h("small", { class: "decide-mode__hint" }, MODE_HINTS[i]))));
 
 /** AD-1: el fondo de las dos pestañas, el arte de lo enfocado a pantalla completa con el velo de Orbital. Al pasar rápido
  * espera a que te detengas (como el Inicio) y entra con un fundido. `soft`: difuminado y más oscuro (el mazo). */

@@ -89,6 +89,10 @@ export const ICONS = {
   trash: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15M9.5 6.5V4.8a.8.8 0 0 1 .8-.8h3.4a.8.8 0 0 1 .8.8v1.7M6.5 6.5l.9 12.1a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.1M10.25 10.5v6M13.75 10.5v6"/></svg>',
   clock: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   playersOff: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.25 19.5c.7-3.2 2.9-5 5.75-5s5.05 1.8 5.75 5"/><circle cx="16.75" cy="9.25" r="2.5"/><path d="M15.9 14.55c2.5-.2 4.3 1.4 4.85 4.45M3.5 3.5l17 17"/></svg>',
+  // Las pestañas de «Decide por mí», como el iPhone (DS.Symbol.decideTrio · decideDeck, 16 nov 2026): tres que caben
+  // (rectangle.split.3x1) y una por una (rectangle.portrait.on.rectangle.portrait.angled).
+  decideTrio: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M8.83 6v12M15.17 6v12"/></svg>',
+  decideDeck: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4" width="10.5" height="16" rx="2"/><path d="M9 4.8 2.6 6.4a1.6 1.6 0 0 0-1.2 1.9l3.3 13.2a1.6 1.6 0 0 0 1.9 1.2L13 21"/></svg>',
   stack: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 8.5 4.5-8.5 4.5L3.5 8z"/><path d="m3.5 12 8.5 4.5 8.5-4.5M3.5 16l8.5 4.5 8.5-4.5"/></svg>',
   checkCircle: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.25 12.25 2.5 2.5 5-5.25"/></svg>',
   // «¿Qué es Real-Debrid?» (los del iPhone: creditcard.fill y key.fill).

@@ -36,7 +36,8 @@
 }
 .decide-mode--on { color: var(--color-text); }
 .decide-mode--on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--tab-mark); border-radius: var(--tab-mark); background: currentColor; }
-.decide-mode__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+.decide-mode__name { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+.decide-mode__name .icon { width: var(--icon-md); height: var(--icon-md); }
 .decide-mode__hint { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 /* AD-3: el bloque de la izquierda (el mismo en el mazo): por qué cabe, el logo o el nombre, los datos y dos renglones. */
