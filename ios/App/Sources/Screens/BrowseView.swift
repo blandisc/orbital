@@ -275,13 +275,21 @@ struct BrowseView: View {
     }
 
     /// Lo más popular hoy, en renglones que llenan la ventana (solo en la Mac).
+    /// Renglones del muro que caben a lo alto de la ventana (ver `DS.Mac.searchRowsMin`).
+    private static func wallRows(posterWidth: CGFloat) -> Int {
+        let row = posterWidth / DesignTokens.Aspect.poster + DS.Mac.searchCaption
+        return max(DS.Mac.searchRowsMin, Int((WindowMetrics.column.height - DS.Mac.searchTop) / row))
+    }
+
     private func popularWall(_ model: CatalogModel) -> some View {
-        let width = DS.Poster.railWidth, gap = DS.Space.s3
-        let columns = max(1, Int((WindowMetrics.column.width - 2 * DS.Space.gutter + gap) / (width + gap)))
+        let gap = DS.Space.s3, room = WindowMetrics.column.width - 2 * DS.Space.gutter
+        let columns = max(1, Int((room + gap) / (DS.Poster.railWidth + gap)))
+        // Los que caben y crecen lo justo para llegar a la orilla (con el ancho fijo quedaba un hueco a la derecha).
+        let width = (room - CGFloat(columns - 1) * gap) / CGFloat(columns)
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: Text("Lo más popular hoy"), eyebrow: Text("Para empezar")).padding(.horizontal, DS.Space.gutter)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: gap), count: columns), alignment: .leading, spacing: DS.Space.s4) {
-                ForEach(model.popular.prefix(columns * DS.Mac.searchRows).map(PopularGridView.suggestion)) { s in
+                ForEach(model.popular.prefix(columns * Self.wallRows(posterWidth: width)).map(PopularGridView.suggestion)) { s in
                     TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
                 }
             }

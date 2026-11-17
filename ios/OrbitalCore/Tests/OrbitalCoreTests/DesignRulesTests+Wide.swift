@@ -103,6 +103,12 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac, !model.popular.isEmpty { popularWall(model) }"), "Buscar vacío en la Mac: un muro de lo popular")
         // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters.
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(height: DS.Mac.topScrim)"), "Una sombra bajo la barra de la Mac")
+        // Segunda pasada (16 nov): el muro de Buscar llena lo alto, Inicio lleva la sombra bajo la barra, una sola pestaña no
+        // se dibuja y lo que se lee en la ficha va a un ancho de lectura.
+        XCTAssertTrue(try code("BrowseView.swift").contains("private static func wallRows(posterWidth: CGFloat) -> Int {"), "El muro de Buscar llena lo alto")
+        XCTAssertTrue(try code("HomeView.swift").contains(".macTopShade()"), "Inicio también lleva la sombra bajo la barra")
+        XCTAssertTrue(try code("Filters.swift").contains("if options.count < 2 { EmptyView() }"), "Una sola pestaña no se dibuja")
+        XCTAssertTrue(try code("TitleView.swift").contains(".frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)"), "Las reseñas a ancho de lectura")
         // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).
         for token in ["static var wideColumn: CGFloat { Mac.sized(", "static var wideLogoWidth: CGFloat { Mac.sized(", "static var readable: CGFloat { Mac.sized("] {
             XCTAssertTrue(screens.contains(token), token)

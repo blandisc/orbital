@@ -201,6 +201,7 @@ struct HomeView: View {
         }
         // El encabezado propio de Inicio (HE1-B): el logo, la cápsula y los tipos, o las historias de «Aprende» al deslizar.
         .toolbar(.hidden, for: .navigationBar)
+        .macTopShade()   // en la Mac, lo que sube no pasa crudo detrás del logo y las pestañas
         .safeAreaBar(edge: .top) {
             HomeHeader(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
                        collapsed: collapsed,

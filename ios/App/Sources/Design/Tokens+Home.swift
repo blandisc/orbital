@@ -159,7 +159,7 @@ extension DS {
         static var logo: CGFloat { 34 * scale }
         static var glow: CGFloat { 18 * scale }
         /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
-        static var pickLogo: CGFloat { Mac.sized(40) }   // en la Mac crece con la letra (se veían diminutos)
+        static var pickLogo: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? 60 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

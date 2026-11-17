@@ -253,6 +253,7 @@ struct TitleView: View {
         }
         let tabs = WideTab.available(series: model.kind == "series", extras: model.extras)
         let current = wideTab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs.first ?? .details
+        // Con una sola (una película sin reparto ni parecidas) `DSTextTabs` no se dibuja.
         DSTextTabs(options: tabs.map { DSTextTabs.Option(id: $0, title: $0.title, symbol: $0.symbol) },
                    selection: Binding(get: { current }, set: { wideTab = $0 }))
             .accessibilityIdentifier("title-tabs")
@@ -261,13 +262,17 @@ struct TitleView: View {
         case .cast: if let extras = model.extras { rich(extras, trailers: false, similar: false, headed: false).padding(.horizontal, -side) }
         case .similar: if let extras = model.extras { rich(extras, trailers: false, people: false).padding(.horizontal, -side) }
         case .details:
-            creditLine(model)
-            yourRating(model)
-            yourViewings(model)
-            if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
-            if let info = letterboxdInfo, !info.reviews.isEmpty {
-                LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
+            // Lo que se lee, a un ancho de lectura: en la Mac las reseñas iban de orilla a orilla en un solo renglón larguísimo.
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                creditLine(model)
+                yourRating(model)
+                yourViewings(model)
+                if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
+                if let info = letterboxdInfo, !info.reviews.isEmpty {
+                    LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
+                }
             }
+            .frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)
             if let extras = model.extras { rich(extras, people: false, similar: false).padding(.horizontal, -side) }
             details(model)
         }

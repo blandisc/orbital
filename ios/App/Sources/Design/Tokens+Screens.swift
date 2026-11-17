@@ -73,6 +73,8 @@ extension DS {
         /// y el logo se veía chico sobre un arte de toda la ventana (16 nov 2026).
         static var wideColumn: CGFloat { Mac.sized(520) }
         static var wideLogoWidth: CGFloat { Mac.sized(440) }
+        /// Lo que se lee bajo el arte de la ficha ancha (créditos, reseñas): a un ancho de lectura, no de orilla a orilla.
+        static var wideReading: CGFloat { Mac.sized(readableWidth) }
         /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
         static let wideSide = DS.Space.s10
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué

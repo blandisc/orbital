@@ -49,11 +49,7 @@ extension View {
                     }
                     .sharedBackgroundVisibility(.hidden)
                 }
-                // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters: una sombra bajo la barra.
-                .overlay(alignment: .top) {
-                    ArtVeil(kind: .top, strength: .deep)
-                        .frame(height: DS.Mac.topScrim).ignoresSafeArea(edges: .top).allowsHitTesting(false)
-                }
+                .macTopShade()
         } else {
             self
         }
@@ -69,6 +65,19 @@ struct TabStyle: ViewModifier {
 }
 
 extension View {
+    /// En la Mac, una sombra bajo la barra de arriba: sobre el mosaico de Explorar o la portada de Inicio las pestañas se
+    /// perdían entre los pósters. En iPhone y iPad, nada (ahí la barra del sistema ya tiene su desvanecido).
+    @ViewBuilder func macTopShade() -> some View {
+        if ThisDevice.isMac {
+            overlay(alignment: .top) {
+                ArtVeil(kind: .top, strength: .deep)
+                    .frame(height: DS.Mac.topScrim).ignoresSafeArea(edges: .top).allowsHitTesting(false)
+            }
+        } else {
+            self
+        }
+    }
+
     /// En la Mac la barra de pestañas del sistema no se ve (las pestañas van en el renglón del logo, `MacTabStrip`).
     @ViewBuilder func macHidesTabBar() -> some View {
         if ThisDevice.isMac { toolbarVisibility(.hidden, for: .tabBar) } else { self }

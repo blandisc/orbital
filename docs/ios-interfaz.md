@@ -899,7 +899,10 @@ nuevos tamaños»):
   - Canales reparte el renglón (`DS.HomeChannels.width(count:)`).
   - «Lo que sigue» mete los renglones que caben a la altura de la portada (`DS.HomeHero.splitRows`).
   - La puerta de «Decide por mí» asoma una tira de pósters (`DecideStrip`; `DS.ParaTiB.doorFan`, la misma en Inicio y Explorar).
-  - Buscar vacío muestra un muro de «Lo más popular hoy» (`DS.Mac.searchRows`).
+  - Buscar vacío muestra un muro de «Lo más popular hoy» que llena lo ancho y lo alto (los renglones que caben bajo la búsqueda avanzada, al menos `DS.Mac.searchRowsMin`).
+  - Inicio también lleva la sombra bajo la barra (`macTopShade`): al bajar, las pestañas se perdían sobre la portada.
+- **Una sola pestaña no se dibuja** (`DSTextTabs` con menos de dos opciones): en la ficha de una película sin reparto ni parecidas, «Detalles» sola parecía rota. Vale en iPhone, iPad y Mac.
+- **Lo que se lee va a ancho de lectura** (`DS.TitleAction.wideReading`): en la ficha ancha, créditos, tu calificación y las reseñas ya no van de orilla a orilla.
 - **Una plataforma nunca queda vacía:** si su tarjeta llega sin pósters, pide su ranking (Prime Video salía en blanco).
 - **Un ranking filtrado se numera dentro de lo que ves:** el Top 10 de Inicio dice 1, 2, 3… en Series o Películas. Con el
   puesto del ranking mezclado brincaba del 4 al 6. Los rankings de una sola lista sí llevan su puesto.

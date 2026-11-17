@@ -83,8 +83,10 @@ struct DSTextTabs<ID: Hashable>: View {
         // I13 · antes de quedarse solo con íconos, los nombres sin ícono: en un SE «Descargas · Mi media · Guardado» no cabía
         // con ícono y la Biblioteca se quedaba sin palabras.
         Group {
+            // Con una sola opción no hay pestañas: «Detalles» sola en la ficha de una película parecía rota (16 nov 2026).
+            if options.count < 2 { EmptyView() }
             // En la Mac no hay Dynamic Type (la letra la pone `DS.styled`): con nombre siempre, como en Inicio.
-            if adapts { fitted } else { tabs(titles: ThisDevice.isMac || !typeSize.isAccessibilitySize) }
+            else if adapts { fitted } else { tabs(titles: ThisDevice.isMac || !typeSize.isAccessibilitySize) }
         }
         // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
         .animation(DS.Motion.fade, value: selection)
