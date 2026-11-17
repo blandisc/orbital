@@ -119,14 +119,16 @@ struct BrowseView: View {
         // La barra de pestañas ya no se esconde al bajar: siempre completa, como en toda la app (2 nov 2026).
         // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
         // (título y campo) y vuelve al subir, con lo escrito.
-        // En la Mac no: esa barra lleva las pestañas (`.macTopBar()`) y sin ella no habría cómo cambiar de pestaña.
-        .toolbarVisibility(barHidden && searching && !ThisDevice.isMac ? .hidden : .visible, for: .navigationBar)
+        // En la Mac, nunca: ahí el renglón de arriba lo dibuja la pantalla (`macOwnTopRow`), con las pestañas.
+        .toolbarVisibility(ThisDevice.isMac ? .hidden : (barHidden && searching ? .hidden : .visible), for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Buscar")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
+        // La Mac: el logo, las pestañas y tu perfil en un renglón propio, como Inicio (en la barra del sistema la cápsula de las
+        // pestañas se perdía al entrar a Buscar y al regresar de una ficha, 17 nov 2026).
+        .macOwnTopRow { ProfileButton() }
         // Siempre a la vista (revisión del 11 nov): con `.automatic`, en iOS 27 el campo solo salía al jalar hacia abajo y,
         // ya con texto, no se veía qué buscaste. Al bajar por los resultados se va con la barra de arriba y vuelve al subir.
         .systemSearch($query, isPresented: $searching, focused: $typing)

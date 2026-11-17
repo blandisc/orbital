@@ -125,30 +125,47 @@ enum MacTabSwitch {
 }
 
 extension View {
-    /// En la Mac, la barra de navegación de una pantalla de arriba (Explorar, Biblioteca, Buscar): el logo y «Buscar» a la
-    /// izquierda y las pestañas al centro, en el mismo renglón que sus botones, sin el título grande (las pestañas ya dicen dónde estás). En iPhone y
+    /// En la Mac, el renglón de arriba de una pantalla de arriba (Explorar, Biblioteca, Buscar), dibujado por la pantalla como
+    /// en Inicio (`HomeHeader`): el logo y «Buscar» a la izquierda, las pestañas al centro y `trailing` (sus botones y tu perfil)
+    /// a la derecha. Antes iban en la barra del sistema (`.toolbar`) y UIKit las soltaba: al entrar a Buscar, al regresar de una
+    /// ficha o al volver a Explorar la pantalla se quedaba sin pestañas o sin logo; además, lo de la barra a veces se armaba sin
+    /// el entorno de la app (17 nov 2026). Regla «Las pestañas de la Mac no dependen de la barra del sistema». La barra del
+    /// sistema se esconde solo aquí, en la pantalla de arriba: las de adentro (la ficha) traen la suya, con «‹». En iPhone y
     /// iPad, nada.
-    @ViewBuilder func macTopBar() -> some View {
+    @ViewBuilder func macOwnTopRow(@ViewBuilder trailing: () -> some View) -> some View {
         if ThisDevice.isMac {
-            toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        HStack(spacing: DS.Space.s6) {
-                            AppMark(small: true, reportsFrame: false)
-                            MacSearchChip(compact: !MacTabStrip.centered)
-                            // En una ventana angosta la cápsula va aquí, solo con íconos: al centro se encimaba.
-                            if !MacTabStrip.centered { MacTabStrip(compact: true) }
-                        }
-                        .fixedSize()   // la barra le ofrece poco ancho y los nombres se recortaban hasta desaparecer
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                    // RN2: las pestañas en su cápsula, al centro de la barra (como la tele).
-                    ToolbarItem(placement: .principal) { if MacTabStrip.centered { MacTabStrip() } }
-                        .sharedBackgroundVisibility(.hidden)
-                }
+            toolbarVisibility(.hidden, for: .navigationBar)
                 .macTopShade()
+                .safeAreaBar(edge: .top) { MacTopRow(trailing: trailing()) }
         } else {
             self
         }
+    }
+}
+
+/// El renglón de `macOwnTopRow`, con las mismas medidas que el de Inicio: al cambiar de pestaña nada brinca.
+struct MacTopRow<Trailing: View>: View {
+    let trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Solo el logo de Inicio dice dónde está: dos que lo dijeran se pelean y la app se traba redibujando.
+            AppMark(small: true, reportsFrame: false)
+            MacSearchChip(compact: !MacTabStrip.centered).padding(.leading, DS.Space.s6)
+            // En una ventana angosta la cápsula va aquí, solo con íconos: al centro se encimaba.
+            if !MacTabStrip.centered { MacTabStrip(compact: true).padding(.leading, DS.Space.s2) }
+            Spacer(minLength: DS.Space.s2)
+            trailing
+                .buttonStyle(.plain).foregroundStyle(DS.text)
+                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .macPillBase(Capsule())
+        }
+        // RN2: las pestañas en su cápsula, al centro del renglón (como la tele).
+        .overlay { if MacTabStrip.centered { MacTabStrip() } }
+        .padding(.horizontal, DS.Space.gutter)
+        .padding(.bottom, DS.Space.s1)
+        .containerRelativeFrame(.horizontal)   // ds-exception: en la barra de arriba (safeAreaBar) el panel no cuenta, como en Inicio
     }
 }
 

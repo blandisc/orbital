@@ -21,9 +21,9 @@ extension DesignRulesTests {
         XCTAssertTrue(home.contains("upNextRail(model)"), "RI2: sin nada a medias, lo que sigue va en la fila encimada")
         // RN2: las pestañas en una cápsula al centro (si cabe) y «Buscar» junto al logo, en el orden de ⌘1 ⌘2 ⌘3.
         let strip = try code("MacTabStrip.swift")
-        XCTAssertTrue(strip.contains("ToolbarItem(placement: .principal) { if MacTabStrip.centered { MacTabStrip() } }"), "RN2: la cápsula al centro de la barra")
+        XCTAssertTrue(strip.contains(".overlay { if MacTabStrip.centered { MacTabStrip() } }"), "RN2: la cápsula al centro del renglón de arriba")
         XCTAssertTrue(try code("HomeHeader.swift").contains(".overlay { if ThisDevice.isMac && MacTabStrip.centered { MacTabStrip() } }"), "RN2: la cápsula al centro en Inicio")
-        XCTAssertTrue(strip.contains("if !MacTabStrip.centered { MacTabStrip(compact: true) }"), "RN2: en una ventana angosta la cápsula va junto al logo (al centro se encimaba)")
+        XCTAssertTrue(strip.contains("if !MacTabStrip.centered { MacTabStrip(compact: true)"), "RN2: en una ventana angosta la cápsula va junto al logo (al centro se encimaba)")
         XCTAssertTrue(strip.contains("struct MacSearchChip: View"), "RN2: «Buscar» junto al logo")
         let order = ["Text(\"Inicio\")", "Text(\"Explorar\")", "Text(\"Biblioteca\")"].compactMap { strip.range(of: $0)?.lowerBound }
         XCTAssertEqual(order.count, 3); XCTAssertEqual(order, order.sorted(), "RN2: la cápsula en el orden del menú «Ir»")

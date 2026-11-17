@@ -995,6 +995,16 @@ buena pulida a los landing pages». Las reglas que quedan:
 
 `DesignRulesTests+Wide.testWidePassOfNov17` lo vigila; `SettingsTests.testRegionFollowsTimeZone` el país.
 
+### Las pestañas de la Mac no dependen de la barra del sistema (17 nov 2026)
+
+En la Mac, Explorar, Biblioteca y Buscar dibujan su propio renglón de arriba (`.macOwnTopRow { … }`, `MacTabStrip.swift`), con
+las mismas medidas que el de Inicio (`HomeHeader`): logo y «Buscar» a la izquierda, la cápsula de pestañas al centro y los
+botones de la pantalla con tu perfil a la derecha. Antes iban en la barra del sistema (`.toolbar`, `.principal`) y UIKit los
+soltaba: al entrar a Buscar, al regresar de una ficha o al volver a Explorar la pantalla se quedaba sin pestañas o sin logo.
+Dos caminos probados que no sirven: la cápsula encima del contenido (la barra del sistema se queda con los clics) y corrida
+dentro de la pieza del logo midiéndose (la app se traba redibujando). `DesignRulesTests.testMacTabsLiveInTheLogoRow` revisa que
+ni la cápsula ni «Buscar» vuelvan a un `.toolbar { … }`.
+
 ### Del Mac al iPad ancho (17 nov 2026)
 
 Fernando: «tráete de Mac a iPad lo que haga sentido y dale una muy buena pulida». La regla: **lo que crece con la ventana

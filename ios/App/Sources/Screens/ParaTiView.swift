@@ -72,6 +72,14 @@ struct ParaTiView: View {
             case .mosaic:
                 // MO1: el mosaico crece desde la portada (arriba) y al salir regresa a ella, mientras la portada se inclina otra vez.
                 mosaicPart(m).transition(MosaicCover.mosaicTransition(reduceMotion))
+                    // La Mac: el logo y las pestañas en su renglón, con «Actualizar» y la ✕ del mosaico (en Listas lo pone `ListsView`).
+                    .macOwnTopRow {
+                        HStack(spacing: DS.Space.s4) {
+                            Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                                .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
+                            mosaicBack(m)
+                        }
+                    }
             case .lists: listsPart
             }
         }
@@ -85,7 +93,6 @@ struct ParaTiView: View {
         // oculta; con el título a mano quedaba encimado a la hora y a la barra (4 nov 2026).
         .navigationTitle(ThisDevice.platform == "ipad" ? Text("Explorar") : Text(verbatim: ""))   // en la Mac sin título: su lugar es de las pestañas (con él, se iban a «More»)
         .toolbarTitleDisplayMode(ThisDevice.platform == "ipad" ? .inlineLarge : .inline)   // en la Mac, chico: su lugar es del logo y las pestañas
-        .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
         // Solo en el mosaico: en las listas no hay pósters que acercar.
         .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.", active: m.mode == .mosaic)
         .toolbar {

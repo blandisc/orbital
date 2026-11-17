@@ -68,7 +68,7 @@ struct DownloadsView: View {
             if !ThisDevice.isMac { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
         .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Biblioteca")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
+        .macOwnTopRow { ProfileButton() }   // la Mac: el logo, las pestañas y tu perfil en su renglón (MAC-A)
         .learnCoach(.downloads, title: "Biblioteca", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
     }

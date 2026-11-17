@@ -45,6 +45,25 @@ final class IPadLayoutUITests: XCTestCase {
         }
     }
 
+    /// El índice de Explorar (☰) lleva a cada grupo y el grupo se ve: con la bandera de demostración, saltar a «Géneros» o
+    /// «Premios» dejaba la página en blanco (17 nov 2026).
+    func testSectionIndexLandsOnEachGroup() {
+        open(["-demo-tab", "1"], .portrait)
+        let menu = app.buttons["paraTi-sections"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 30), "falta el índice de Explorar")
+        sleep(8)   // que lleguen las colecciones de TMDB
+        for name in ["Géneros", "Premios", "Temporadas", "Plataformas"] {
+            menu.tap()
+            let item = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+            XCTAssertTrue(item.waitForExistence(timeout: 5), "falta \(name) en el índice")
+            item.tap()
+            sleep(2)
+            shot("indice-\(name)")
+            let head = app.staticTexts.matching(NSPredicate(format: "label == %@", name)).firstMatch
+            XCTAssertTrue(head.exists && head.isHittable, "\(name): el salto no deja ver su grupo")
+        }
+    }
+
     /// La ficha y sus acciones en horizontal (el arte no tapa el botón de ver).
     func testTitleInLandscape() {
         open(["-demo-tmdb", "-demo-title", "series:tt0386676"], .landscapeLeft)

@@ -40,9 +40,24 @@ extension DesignRulesTests {
         }
         // Cada pantalla de arriba lleva las pestañas de la Mac en su renglón (si falta una, en la Mac esa pantalla queda sin pestañas).
         XCTAssertTrue(try code("HomeHeader.swift").contains("MacTabStrip()"), "Inicio: las pestañas en el renglón del logo")
-        for screen in ["ParaTiView.swift", "DownloadsView.swift", "BrowseView.swift"] {
-            XCTAssertTrue(try code(screen).contains(".macTopBar()"), "\(screen): el logo y las pestañas de la Mac en su barra")
+        for screen in ["ParaTiView.swift", "ListsView.swift", "DownloadsView.swift", "BrowseView.swift"] {
+            XCTAssertTrue(try code(screen).contains(".macOwnTopRow {"), "\(screen): el logo y las pestañas de la Mac en su renglón")
         }
+        // «Las pestañas de la Mac no dependen de la barra del sistema» (17 nov 2026): en `.toolbar` UIKit las soltaba al entrar a
+        // Buscar, al regresar de una ficha o al volver a Explorar. Ni la cápsula ni «Buscar» van dentro de una barra.
+        for file in files where file.name.hasSuffix(".swift") {
+            let text = file.lines.joined(separator: "\n")
+            var search = text.startIndex
+            while let found = text.range(of: ".toolbar {", range: search..<text.endIndex) {
+                search = found.upperBound
+                let block = text[found.upperBound...].prefix(800)
+                let end = block.range(of: "\n        }")?.lowerBound ?? block.endIndex
+                let body = block[..<end]
+                XCTAssertFalse(body.contains("MacTabStrip(") || body.contains("MacSearchChip("),
+                               "\(file.name): las pestañas de la Mac en la barra del sistema (se pierden); usa `.macOwnTopRow`")
+            }
+        }
+        XCTAssertTrue(try code("MacTabStrip.swift").contains("toolbarVisibility(.hidden, for: .navigationBar)"), "El renglón propio de la Mac esconde la barra del sistema")
         let root = try code("RootView.swift")
         XCTAssertEqual(root.components(separatedBy: ".macHidesTabBar()").count - 1, 4, "Las cuatro pestañas esconden la barra del sistema en la Mac")
         let mac = try code("MacTabStrip.swift")
