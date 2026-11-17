@@ -17,7 +17,7 @@ const CENTERED = new Set(["platforms", "awards", "studios", "genre-top", "season
 
 /** Los grupos de «Ir a…» (☰), en orden; LT/RT pasan de uno a otro. */
 export const GROUPS = [
-  { id: "spotlight", label: "Destacados" }, { id: "nuevo", label: "Lo nuevo de lo tuyo" }, { id: "because", label: "Porque viste" },
+  { id: "spotlight", label: "Destacados" }, { id: "decide", label: "¿No sabes qué ver?" }, { id: "nuevo", label: "Lo nuevo de lo tuyo" }, { id: "because", label: "Porque viste" },
   { id: "top10", label: "Top 10" }, { id: "milista", label: "Mi lista" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
   { id: "studios", label: "Estudios" }, { id: "genre-top", label: "Lo mejor del género" }, { id: "seasons", label: "Temporadas" },

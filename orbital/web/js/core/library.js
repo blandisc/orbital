@@ -123,7 +123,7 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.request) return item.request.state === "ready" ? "Ver" : "Cómo va";
   if (item?.source === "genre") return "Ver títulos"; // Por género: abre su lista
   // Una tarjeta de colección (plataforma, premio, estudio, año, lista) abre su lista; «Porque viste X», su ficha.
-  if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : "Ver la lista";
+  if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : item.collection?.type === "decide" ? "Decide por mí" : "Ver la lista";
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver la serie";

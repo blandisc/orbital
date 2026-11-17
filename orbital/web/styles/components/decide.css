@@ -38,13 +38,14 @@
 /* NQ-1 (16 nov 2026): la puerta del Inicio, segunda de «A continuación». Mide lo que una tarjeta ancha (`card--wide`) y
    lleva el foco de siempre; adentro, el abanico de los tres pósters de hoy y la pregunta. */
 .decide-door { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4) 0 var(--space-3); text-align: left; background: var(--color-surface-raised); }
-.decide-door__fan { position: relative; flex: none; width: 5.25rem; height: 70%; }
+/* El abanico crece con la tarjeta (en el Inicio es ancha y baja; en la fila de Películas y series, del alto de un póster). */
+.decide-door__fan { position: relative; flex: none; height: 66%; aspect-ratio: .95; }
 .decide-door__poster {
   position: absolute; top: 50%; left: 0; height: 84%; aspect-ratio: 2 / 3; object-fit: cover;
   border-radius: var(--radius-sm); box-shadow: var(--shadow-card); transform: translateY(-50%) rotate(-7deg);
 }
-.decide-door__poster:nth-child(2) { left: 1.1rem; z-index: var(--z-raised); height: 100%; transform: translateY(-50%); }
-.decide-door__poster:nth-child(3) { left: 2.2rem; transform: translateY(-50%) rotate(7deg); }
+.decide-door__poster:nth-child(2) { left: 17%; z-index: var(--z-raised); height: 100%; transform: translateY(-50%); }
+.decide-door__poster:nth-child(3) { left: 34%; transform: translateY(-50%) rotate(7deg); }
 .decide-door__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .decide-door__title { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); line-height: var(--leading-tight); white-space: nowrap; }
 .decide-door__line { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }

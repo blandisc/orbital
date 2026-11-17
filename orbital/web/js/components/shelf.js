@@ -7,6 +7,7 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
+import { DecideDoor } from "./decide.js";
 import { Badge, EmptyState, Eyebrow, PosterSkeletons, RowCount, rowCountText, SectionHead } from "./ui.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
@@ -117,6 +118,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
         onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
       };
       // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.
+      if (item.collection?.type === "decide") return { card: DecideDoor({ picks: item.collection.picks }, options) }; // ¿No sabes qué ver?
       if (item.collection) return { card: CollectionCard(item, options) };
       if (row.timeline) return Dated(item, Card(item, options), c === row.startAt && c > 0);
       return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };

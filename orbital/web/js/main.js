@@ -16,6 +16,7 @@ import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppCo
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
 import { createBackdrop } from "./components/backdrop.js";
+import { doorLine } from "./components/decide.js";
 import { createForYou } from "./components/foryou.js";
 import { createHero } from "./components/hero.js";
 import { createHome } from "./components/home.js";
@@ -1204,12 +1205,35 @@ async function loadCuration() {
   return curating;
 }
 
+/** La fila «¿No sabes qué ver?» (Fernando, 16 nov 2026): la puerta de «Decide por mí» y los tres de hoy, debajo de Destacados.
+ * Se piden cada media hora; sin propuestas, no hay fila. */
+let mediaDecide = null;
+let mediaDecideAt = 0;
+function loadMediaDecide() {
+  if (Date.now() - mediaDecideAt < 30 * 60_000) return;
+  mediaDecideAt = Date.now();
+  api.forYouDecide({}).then((res) => {
+    const picks = (res?.picks || []).slice(0, 3);
+    mediaDecide = picks.length ? picks : null;
+    if (mediaLists.length) buildCuration();
+  }, () => { mediaDecideAt = 0; });
+}
+function decideRow() {
+  if (!mediaDecide || state.online === false) return [];
+  const names = mediaDecide.map((p) => p.title);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names.at(-1)}` : names[0];
+  const door = { id: "decide:door", source: "collection", title: "Decide por mí", hero: mediaDecide[0].hero, image: mediaDecide[0].image,
+    collection: { type: "decide", picks: mediaDecide, detail: `${doorLine()}: ${list}` }, extra: {} };
+  return [{ id: "curated:decide", title: "¿No sabes qué ver?", group: "decide", items: [door, ...mediaDecide.map((p) => ({ ...curatedItem(p), rank: undefined, trend: undefined }))] }]; // sin la cifra de su Top
+}
+
 function buildCuration() {
+  loadMediaDecide();
   // Destacados, como hoy: el N.º 1 de cada plataforma, con su arte ancho.
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || [], { hiddenAt: state.settings?.cloud_row_hidden }), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
+  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || [], { hiddenAt: state.settings?.cloud_row_hidden }), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...decideRow(), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -1236,6 +1260,7 @@ function moreYears() {
 /** Una tarjeta de colección: su lista completa (list-screen), como en el iPhone. «Porque viste X»: la ficha de X. */
 function openCollection(item) {
   const c = item.collection || {};
+  if (c.type === "decide") return runCommand({ type: "decide" }); // la puerta de «¿No sabes qué ver?»
   if (c.type === "seed") return openTitle(curatedItem({ meta_id: item.meta_id, kind: item.kind, title: item.title, image: c.posters?.[0] }));
   sound.play("open");
   const cached = (id, kind) => (mediaItems[keyOf(id, kind)] ? Promise.resolve(mediaItems[keyOf(id, kind)]) : fetchList(id, kind));
