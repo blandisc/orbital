@@ -52,7 +52,7 @@ extension DS {
         /// En la Mac los canales crecen hasta llenar el renglón (con 268 quedaba un hueco a la derecha; Fernando, 16 nov 2026),
         /// sin pasar de `macMax`.
         static func width(count: Int) -> CGFloat {
-            guard ProcessInfo.processInfo.isiOSAppOnMac, count > 0 else { return width }
+            guard WindowMetrics.roomy, count > 0 else { return width }
             let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(count) * DS.Space.s3 - addWidth
             return min(macMax, max(width, row / CGFloat(count)))
         }
@@ -114,7 +114,7 @@ extension DS {
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
         static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)
         /// Cuántas pide la puerta de «Decide por mí» (Inicio y Explorar, la misma): en la Mac, también las de la tira que se asoma.
-        static var doorFan: Int { matchFan + (ProcessInfo.processInfo.isiOSAppOnMac ? stripCount : 0) }
+        static var doorFan: Int { matchFan + (WindowMetrics.roomy ? stripCount : 0) }
         static let doorHintDelay: Duration = .milliseconds(1200), doorHintHold: Duration = .milliseconds(650)
     }
 
@@ -125,7 +125,7 @@ extension DS {
         /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
         /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
         static var width: CGFloat {
-            if ProcessInfo.processInfo.isiOSAppOnMac { return maxWidth }
+            if WindowMetrics.roomy { return maxWidth }
             return min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2)
         }
         /// En la Mac las tarjetas (Plataformas, Premios, Estudios) crecen hasta que `perRow` llenan el renglón, sin pasar de
@@ -133,7 +133,7 @@ extension DS {
         /// En ventana muy ancha caben más de `perRow` (si no, topaban en `maxScale` y volvía a quedar hueco a la derecha):
         /// tantas como quepan sin pasar de `maxScale`, y todas crecen lo justo para llegar a la orilla.
         static var scale: CGFloat {
-            guard ProcessInfo.processInfo.isiOSAppOnMac else { return 1 }
+            guard WindowMetrics.roomy else { return 1 }
             let room = WindowMetrics.column.width - 2 * DS.Space.gutter
             let count = max(perRow, Int(ceil((room + DS.Space.s3) / (maxScale * baseWidth + DS.Space.s3))))
             let row = room - CGFloat(count - 1) * DS.Space.s3
@@ -151,7 +151,7 @@ extension DS {
         static var logo: CGFloat { 34 * scale }
         static var glow: CGFloat { 18 * scale }
         /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
-        static var pickLogo: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? 60 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
+        static var pickLogo: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? 60 : WindowMetrics.roomy ? 52 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

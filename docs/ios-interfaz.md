@@ -995,6 +995,20 @@ buena pulida a los landing pages». Las reglas que quedan:
 
 `DesignRulesTests+Wide.testWidePassOfNov17` lo vigila; `SettingsTests.testRegionFollowsTimeZone` el país.
 
+### Del Mac al iPad ancho (17 nov 2026)
+
+Fernando: «tráete de Mac a iPad lo que haga sentido y dale una muy buena pulida». La regla: **lo que crece con la ventana
+sigue a la ventana, no a la Mac.** `WindowMetrics.roomy` es la Mac o una columna desde 900 pt (iPad de 13" de pie, cualquier
+iPad acostado). Con espacio, en el iPad también: los canales llenan el renglón, la tira de «Decide por mí» y la de «La
+temporada», los logos de plataforma más grandes, el muro de lo popular en Buscar vacío y «A continuación» en Inicio cuando no
+hay «Seguir viendo». Se quedan solo en la Mac: el arte a sangre pedido al ancho de la ventana (en el iPad, 800 por memoria),
+las pestañas en el renglón del logo, el campo de búsqueda propio, el puntero y los íconos de línea. La ficha del iPad sigue
+con pestañas (FE2-B).
+
+**Una tira de carteles junto a un texto nunca le quita el ancho al texto:** el texto lleva `layoutPriority(1)` y la tira
+(`DecideStrip`) enseña solo los carteles que caben (`ViewThatFits`). En el iPad la tira de ocho dejaba «Decide por mí» a
+una letra por renglón. `DesignRulesTests+Wide.testWideRoomFollowsTheWindowNotTheMac` lo vigila.
+
 `DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`) y `DesignRulesTests+MacLayout` el replanteamiento (`testMacLooksLikeTheDesktop`).
 
 ## 4b. Bilingüe

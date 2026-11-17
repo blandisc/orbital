@@ -29,6 +29,13 @@ final class WindowMetrics {
     /// el tamaño más chico en el que la app está probada. Así ningún acomodo se rompe al achicar la ventana.
     static let minimum = CGSize(width: 375, height: 667)
 
+    /// Pantalla con espacio: la Mac, o una columna desde `roomyWidth` (el iPad de 13" de pie, cualquier iPad acostado). Lo que
+    /// en la Mac crece hasta llenar el renglón (tarjetas, canales, la tira de «Decide por mí», el muro de Buscar) crece igual
+    /// aquí: en el iPad dejaba media pantalla vacía (Fernando, 17 nov 2026: «tráete de Mac a iPad lo que haga sentido»). Lo del
+    /// puntero y la ventana de la Mac (pestañas en el renglón del logo, buscador propio) sigue siendo solo de la Mac.
+    nonisolated static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }
+    nonisolated static let roomyWidth: CGFloat = 900
+
     func update(_ new: CGSize) {
         guard new.width > 0, new.height > 0, new != size else { return }
         size = new

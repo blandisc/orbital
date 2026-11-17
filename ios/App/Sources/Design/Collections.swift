@@ -470,8 +470,9 @@ struct SeasonFeature: View {
                 Text(verbatim: blurb).recipe(.secondary, color: DS.textMuted).lineLimit(2)
             }
             .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
             Spacer(minLength: 0)
-            if posters.count > DS.ParaTiB.matchFan, ProcessInfo.processInfo.isiOSAppOnMac {
+            if posters.count > DS.ParaTiB.matchFan, WindowMetrics.roomy {
                 DecideStrip(posters: Array(posters.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.seasonStrip)))
             }
             if !posters.isEmpty { PosterFan(posters: posters, width: DS.ParaTiB.seasonPoster) }

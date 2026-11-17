@@ -338,6 +338,7 @@ struct DecideDoor: View {
                         .recipe(.secondary, color: DS.textMuted)
                 }
                 .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
                 Spacer(minLength: 0)
                 if !more.isEmpty, !typeSize.isAccessibilitySize {
                     DecideStrip(posters: more)
@@ -363,17 +364,27 @@ struct DecideDoor: View {
 
 /// La tira de carteles de la puerta de «Decide por mí» en la Mac: de lo que sale en la hoja, cada vez más claros hacia el
 /// texto (los de la derecha, nítidos).
+/// Muestra solo los que caben (los más nítidos, los de la derecha): en el iPad la tira de ocho aplastaba el título a una letra
+/// por renglón (17 nov 2026). El texto de al lado lleva `layoutPriority(1)` y la tira toma lo que sobra.
 struct DecideStrip: View {
     let posters: [String]
     var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            ForEach(Array(posters.enumerated()), id: \.offset) { i, url in
-                PosterView(url: url, title: "")
-                    .frame(width: DS.ParaTiB.stripPoster)
-                    .opacity(DS.ParaTiB.stripFadeFrom + (1 - DS.ParaTiB.stripFadeFrom) * Double(i + 1) / Double(posters.count))
-            }
+        ViewThatFits(in: .horizontal) {
+            ForEach(Array(stride(from: posters.count, to: 0, by: -2)), id: \.self) { n in row(Array(posters.suffix(n))) }
+            EmptyView()
         }
         .accessibilityHidden(true)
+    }
+
+    private func row(_ shown: [String]) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            ForEach(Array(shown.enumerated()), id: \.offset) { i, url in
+                PosterView(url: url, title: "")
+                    .frame(width: DS.ParaTiB.stripPoster)
+                    .opacity(DS.ParaTiB.stripFadeFrom + (1 - DS.ParaTiB.stripFadeFrom) * Double(i + 1) / Double(shown.count))
+            }
+        }
+        .fixedSize()
     }
 }
 

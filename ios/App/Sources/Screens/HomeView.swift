@@ -135,7 +135,7 @@ struct HomeView: View {
                     // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                     // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
                     .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
-            } else if ThisDevice.isMac, spotlightItems(model).count > 1 {
+            } else if WindowMetrics.roomy, spotlightItems(model).count > 1 {
                 // RI2: en la Mac, sin nada a medias, lo que sigue en la portada va en esa misma fila encimada (como la tele).
                 upNextRail(model).padding(.top, scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice

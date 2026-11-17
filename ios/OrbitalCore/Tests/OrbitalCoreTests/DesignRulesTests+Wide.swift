@@ -88,6 +88,35 @@ extension DesignRulesTests {
                       "Un ranking que ves no hace fila detrás de los detalles de fondo")
     }
 
+    /// Lo que en la Mac crece con la ventana crece igual en el iPad ancho (`WindowMetrics.roomy`); lo de puntero y ventana de la
+    /// Mac sigue siendo solo de la Mac. Y una tira de carteles junto a un texto nunca le quita el ancho al texto (17 nov 2026: en
+    /// el iPad la tira de «Decide por mí» dejaba el título a una letra por renglón).
+    func testWideRoomFollowsTheWindowNotTheMac() throws {
+        let files = try sources(["Design", "Screens", "Platform"])
+        func code(_ name: String) throws -> String {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        }
+        XCTAssertTrue(try code("WindowMetrics.swift").contains("static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }"))
+        let tokens = try code("Tokens.swift"), home = try code("Tokens+Home.swift")
+        // El arte a sangre no: en el iPad se queda en 800 por memoria (`testMacHasItsOwnSizes`).
+        XCTAssertFalse(tokens.contains("static var bleed: CGFloat { WindowMetrics.roomy"))
+        for (text, line) in [(home, "guard WindowMetrics.roomy, count > 0 else { return width }"),
+                             (home, "static var doorFan: Int { matchFan + (WindowMetrics.roomy ? stripCount : 0) }")] {
+            XCTAssertTrue(text.contains(line), "Crece con la ventana, no solo en la Mac: \(line)")
+        }
+        XCTAssertTrue(try code("HomeView.swift").contains("} else if WindowMetrics.roomy, spotlightItems(model).count > 1 {"))
+        XCTAssertTrue(try code("Collections.swift").contains("if posters.count > DS.ParaTiB.matchFan, WindowMetrics.roomy {"))
+        let paraTi = try code("ParaTiB.swift"), collections = try code("Collections.swift")
+        let strip = try XCTUnwrap(paraTi.range(of: "struct DecideStrip: View {")).upperBound
+        XCTAssertTrue(paraTi[strip...].prefix(300).contains("ViewThatFits(in: .horizontal)"), "La tira muestra solo los carteles que caben")
+        for (name, text) in [("ParaTiB.swift", paraTi), ("Collections.swift", collections)] {
+            XCTAssertTrue(text.contains(".fixedSize(horizontal: false, vertical: true)\n                .layoutPriority(1)")
+                          || text.contains(".fixedSize(horizontal: false, vertical: true)\n            .layoutPriority(1)"),
+                          "\(name): el texto junto a la tira tiene prioridad")
+        }
+    }
+
     func testMacRowsFillTheWindow() throws {
         let files = try sources(["Design", "Screens"])
         func code(_ name: String) throws -> String {
@@ -103,7 +132,7 @@ extension DesignRulesTests {
         // El puesto es el de lo que ves: con el del ranking mezclado, al quedarse con las series brincaba del 4 al 6.
         XCTAssertTrue(try code("HomeTopTen.swift").contains("RankedPosterCard(rank: i + 1,"), "El Top 10 se numera dentro de lo que ves")
         XCTAssertTrue(try code("ParaTiB.swift").contains("struct DecideStrip: View"), "La entrada de «Decide por mí» se asoma en la Mac")
-        XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac, !model.popular.isEmpty { popularWall(model) }"), "Buscar vacío en la Mac: un muro de lo popular")
+        XCTAssertTrue(try code("BrowseView.swift").contains("if WindowMetrics.roomy, !model.popular.isEmpty { popularWall(model) }"), "Buscar vacío en la Mac y el iPad ancho: un muro de lo popular")
         // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters.
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(height: DS.Mac.topScrim)"), "Una sombra bajo la barra de la Mac")
         // Segunda pasada (16 nov): el muro de Buscar llena lo alto, Inicio lleva la sombra bajo la barra, una sola pestaña no

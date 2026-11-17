@@ -269,7 +269,7 @@ struct BrowseView: View {
         }
         // En la Mac la pantalla vacía de Buscar era una franja arriba y nada más (Fernando, 16 nov 2026: «hay que hacerlo más
         // atractivo para una pantalla más grande»): debajo, lo más popular hoy, en dos renglones de pósters.
-        if ThisDevice.isMac, !model.popular.isEmpty { popularWall(model) }
+        if WindowMetrics.roomy, !model.popular.isEmpty { popularWall(model) }   // también el iPad ancho (17 nov 2026)
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }
