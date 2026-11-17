@@ -251,6 +251,32 @@ struct TitleView: View {
                     .dsGlassButton().accessibilityIdentifier("title-retry")
             }
         }
+        if ThisDevice.isMac { macSections(model) } else { tabbedSections(model) }
+    }
+
+    /// RF2 (Fernando, 16 nov 2026: «hazlo de acuerdo a tus sugerencias»): en la Mac no hay pestañas bajo el arte. Todo va en
+    /// filas a lo ancho, como la TV: episodios, reparto, tus datos y las reseñas en columnas, parecidas y detalles. Con pestañas,
+    /// una película sin reparto dejaba dos tercios de la ventana vacíos.
+    @ViewBuilder private func macSections(_ model: TitleModel) -> some View {
+        if model.kind == "series" { episodes(model) }
+        if let extras = model.extras { rich(extras, similar: false).padding(.horizontal, -side) }
+        VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+            creditLine(model)
+            yourRating(model)
+            yourViewings(model)
+            if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
+        }
+        .frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)
+        if let info = letterboxdInfo, !info.reviews.isEmpty {
+            LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") },
+                                    columns: DS.Mac.reviewColumns)
+        }
+        if let extras = model.extras { rich(extras, trailers: false, people: false).padding(.horizontal, -side) }
+        details(model)
+    }
+
+    /// iPad: pestañas bajo el arte (Episodios · Reparto · Parecidas · Detalles) y solo lo de la elegida.
+    @ViewBuilder private func tabbedSections(_ model: TitleModel) -> some View {
         let tabs = WideTab.available(series: model.kind == "series", extras: model.extras)
         let current = wideTab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs.first ?? .details
         // Con una sola (una película sin reparto ni parecidas) `DSTextTabs` no se dibuja.

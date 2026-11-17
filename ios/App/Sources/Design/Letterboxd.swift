@@ -106,6 +106,8 @@ enum LetterboxdWords {
 struct LetterboxdPublicReviews: View {
     let reviews: [LetterboxdPublicReview]
     let link: URL?
+    /// RF2: en la Mac van en columnas (`DS.Mac.reviewColumns`); en iPhone y iPad, una debajo de otra.
+    var columns = 1
     @State private var revealed: Set<String> = []
 
     var body: some View {
@@ -113,30 +115,42 @@ struct LetterboxdPublicReviews: View {
             // Como los demás encabezados de la ficha (dos niveles): el título y su porqué turquesa arriba (revisión del 11 nov:
             // era el único con el sello al lado y sin porqué).
             DSSectionHead(title: Text("Reseñas"), eyebrow: Text("Lo que dicen en Letterboxd"))
-            ForEach(reviews.prefix(DS.Letterboxd.publicShown)) { r in
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    HStack(spacing: DS.Space.s2) {
-                        Text(verbatim: r.author).recipe(.label)
-                        LetterboxdStars(rating: r.rating)
-                        if let likes = r.likes {
-                            Label { Text(likes, format: .number.notation(.compactName)) } icon: { Image(systemName: "heart") }
-                                .recipe(.caption, color: DS.textMuted)
-                        }
-                    }
-                    if r.spoiler && !revealed.contains(r.id) {
-                        Button { revealed.insert(r.id) } label: { Label("Tiene spoilers · Leer", systemImage: "eye.slash").recipe(.footnote, color: DS.textMuted) }
-                            .buttonStyle(.plain)
-                    } else {
-                        Text(verbatim: r.text).recipe(.footnote, color: DS.textMuted).lineLimit(4)
+            // `Grid`, no `LazyVGrid`: así las tarjetas de un mismo renglón miden lo mismo (con columnas en la Mac).
+            let shown = Array(reviews.prefix(DS.Letterboxd.publicShown)), per = max(columns, 1)
+            Grid(alignment: .topLeading, horizontalSpacing: DS.Space.s3, verticalSpacing: DS.Space.s3) {
+                ForEach(Array(stride(from: 0, to: shown.count, by: per)), id: \.self) { first in
+                    GridRow {
+                        ForEach(shown[first..<min(first + per, shown.count)]) { review($0) }
+                        // El último renglón no estira sus tarjetas a lo ancho: lo que falta queda vacío.
+                        ForEach(0..<max(0, first + per - shown.count), id: \.self) { _ in Color.clear.gridCellUnsizedAxes([.horizontal, .vertical]) }
                     }
                 }
-                .padding(DS.Space.s3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .dsCard(.row)
             }
             if let link { Link(destination: link) { Label("Ver más en Letterboxd", systemImage: "arrow.up.right").recipe(.label) } }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("letterboxd-public-reviews")
+    }
+
+    private func review(_ r: LetterboxdPublicReview) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            HStack(spacing: DS.Space.s2) {
+                Text(verbatim: r.author).recipe(.label)
+                LetterboxdStars(rating: r.rating)
+                if let likes = r.likes {
+                    Label { Text(likes, format: .number.notation(.compactName)) } icon: { Image(systemName: "heart") }
+                        .recipe(.caption, color: DS.textMuted)
+                }
+            }
+            if r.spoiler && !revealed.contains(r.id) {
+                Button { revealed.insert(r.id) } label: { Label("Tiene spoilers · Leer", systemImage: "eye.slash").recipe(.footnote, color: DS.textMuted) }
+                    .buttonStyle(.plain)
+            } else {
+                Text(verbatim: r.text).recipe(.footnote, color: DS.textMuted).lineLimit(4)
+            }
+        }
+        .padding(DS.Space.s3)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .dsCard(.row)
     }
 }

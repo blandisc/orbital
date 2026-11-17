@@ -40,6 +40,7 @@ struct PosterView: View {
             art
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(DS.hairline))
+                .macPosterBounds()   // RP2: su enlace le dibuja el marco del foco de la TV y ▶ ＋ al pasar el puntero (solo Mac)
                 .accessibilityLabel(Text(title))
         }
     }

@@ -38,8 +38,6 @@ struct BleedArt<Content: View>: View {
     /// El arte respira: si te quedas, se acerca un poco muy despacio y se queda (un solo tramo, como la TV). Quieto con
     /// «Reducir movimiento» y en modo de bajo consumo.
     var breathes = true
-    /// Tarjeta con esquinas también en oscuro (Inicio a dos columnas: la portada es una tarjeta junto a «Seguir viendo»).
-    var card = false
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -49,7 +47,7 @@ struct BleedArt<Content: View>: View {
     /// «Reducir movimiento» o «Reducir transparencia»: al recogerse, solo se desvanece (sin desenfoque ni estirarse).
     private var quiet: Bool { reduceMotion || reduceTransparency }
 
-    private var isCard: Bool { card || scheme != .dark }
+    private var isCard: Bool { scheme != .dark }
 
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se

@@ -175,5 +175,6 @@ struct TmdbPoster: View {
             }
         }
         .buttonStyle(.plain)
+        .macPosterHover(nil)   // RP2: el marco al pasar el puntero; sin IMDb no hay ▶ ni ＋
     }
 }

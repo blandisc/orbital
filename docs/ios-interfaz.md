@@ -898,16 +898,13 @@ nuevos tamaños»):
   el mismo dato se peleaban y la app se trababa redibujando.
 - **Imágenes al ancho de la ventana (solo Mac):** `DS.Image.bleed` y `DS.Image.wide` se piden al ancho de la columna, y
   `ImagePipeline` pide al menos 2× en la Mac. Si no, la portada se ve pixeleada.
-- **Inicio como el escritorio de la tele:** en la Mac, desde `DS.HomeHero.splitFrom` (1100 pt de columna), la portada es una tarjeta
-  16:9 a la izquierda (`splitShare`). A la derecha va «Seguir viendo» en renglones (`StillRow`) o, si no hay nada a medias,
-  «Lo que sigue» en la portada (tocar uno lo pasa al frente). Más angosto, la portada de siempre.
+- **Inicio como el escritorio de la tele** (RI2, 16 nov): en la Mac la portada va a todo lo ancho, como el Inicio de la tele, y «Seguir viendo» se monta sobre su borde. Si no hay nada a medias, en su lugar va «Lo que sigue» (`upNextRail`, tarjetas anchas; tocar una la pasa al frente). Ya no hay portada partida ni renglones a la derecha.
 - **Pósters:** en la Mac, las filas usan `DS.Mac.railWidth` (188 pt).
 - **Controles de tamaño fijo con ícono** (el selector Todo · Películas · Series, `DS.KindPill`): en la Mac crecen como la
   letra (`DS.Mac.sized`); si no, el ícono, que sí crece, llenaba su círculo.
 - **Las filas llenan la ventana** (segunda pasada, 16 nov: «en plataformas no se extiende completamente a la derecha»):
   - Plataformas, Premios y Estudios crecen con `DS.PlatformFan.scale` hasta que seis llenan el renglón (tope 2×); en ventana más ancha caben más. Si la tele no trae un ranking (Prime Video llegaba vacío), la app lo pide ella misma a JustWatch.
   - Canales reparte el renglón (`DS.HomeChannels.width(count:)`).
-  - «Lo que sigue» mete los renglones que caben a la altura de la portada (`DS.HomeHero.splitRows`).
   - La puerta de «Decide por mí» asoma una tira de pósters (`DecideStrip`; `DS.ParaTiB.doorFan`, la misma en Inicio y Explorar).
   - Buscar vacío muestra un muro de «Lo más popular hoy» que llena lo ancho y lo alto (los renglones que caben bajo la búsqueda avanzada, al menos `DS.Mac.searchRowsMin`).
   - Inicio también lleva la sombra bajo la barra (`macTopShade`): al bajar, las pestañas se perdían sobre la portada.
@@ -916,6 +913,12 @@ nuevos tamaños»):
   - Ajustes: lista y detalle, como Ajustes del Sistema. Cada renglón es un `SettingsLink`: en la Mac abre su página a la derecha (`SettingsView.destination`); en iPhone y iPad la empuja.
   - Buscar: el campo grande al centro (`MacSearchField`, 88 pt de alto y letra de título) en vez del de la barra, y los seis mosaicos de la búsqueda avanzada en una fila, de 150 pt de alto con su dibujo grande (`DS.Mac.doorTileHeight`): con el tamaño del iPhone eran franjas que se leían como botones de formulario.
   - Al cambiar de pestaña, el cambio es al momento (sin el fundido del sistema, `DS.Mac.tabSwitchQuiet`).
+- **El replanteamiento de la Mac** (Fernando, 16 nov 2026: «hazlo de acuerdo a tus sugerencias», RF2 · RI2 · RN2 · RP2 · RB2):
+  - Ficha (RF2): en la Mac no lleva pestañas; todo en una sola página que se baja: episodios, tráiler y reparto, tus créditos, tu calificación y tus vistas, reseñas en tres columnas de igual alto (`DS.Mac.reviewColumns`, con `Grid`), saga y parecidas, y detalles. En iPad siguen las pestañas.
+  - Inicio (RI2): la portada a lo ancho con «Seguir viendo» (o «Lo que sigue») montado en su borde.
+  - Pestañas (RN2): una cápsula al centro de la barra (`MacTabStrip`), en el orden del menú «Ir» (⌘1 Inicio, ⌘2 Explorar, ⌘3 Biblioteca), con la elegida llena del color del texto (crema en oscuro, oscura en claro). «Buscar» es una cápsula junto al logo (`MacSearchChip`) que abre Buscar con el cursor listo. En una ventana de menos de `DS.Mac.centeredTabsFrom` las dos van junto al logo, solo con íconos: al centro se encimaban.
+  - Pósters (RP2): al pasar el puntero, la tarjeta crece y su póster lleva el marco crema del foco de la tele; si el póster mide al menos `DS.Mac.quickMinWidth`, en su esquina salen ▶ y ＋. El marco y los botones se ponen sobre el póster (`macPosterBounds`), no sobre toda la tarjeta. ▶ y ＋ también son acciones de VoiceOver. La acción la pone la raíz (`posterQuick`, comparable: no repinta los pósters); ＋ sobre algo que ya está en Mi lista solo lo avisa, sin «Deshacer».
+  - Pantallas vacías (RB2): `DSEmptyState` ocupa casi todo el alto de lo que lo contiene (`DS.Mac.emptyShare`, con `containerRelativeFrame`), no de la ventana: en una hoja chica no se sale.
 - **La variante de iPad dice «dispositivo»:** la Mac toma la variante de iPad del catálogo de textos, así que ahí nunca se escribe «iPad» sino «dispositivo» («device»); «Como el iPad» es «Como el sistema». Al compilar, Xcode reescribe `Localizable.xcstrings`: se restaura y solo se cambia el texto a propósito.
 - **Una sola pestaña no se dibuja** (`DSTextTabs` con menos de dos opciones): en la ficha de una película sin reparto ni parecidas, «Detalles» sola parecía rota. Vale en iPhone, iPad y Mac.
 - **Lo que se lee va a ancho de lectura** (`DS.TitleAction.wideReading`): en la ficha ancha, créditos, tu calificación y las reseñas ya no van de orilla a orilla.
@@ -930,8 +933,7 @@ nuevos tamaños»):
   selector parecía íconos sueltos. En la Mac los íconos del tipo van de línea (`KindGlyph.variant`): el rollo de película
   relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video.
 
-`DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testWideHomeLooksLikeTheDesktop`,
-`testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`).
+`DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`) y `DesignRulesTests+MacLayout` el replanteamiento (`testMacLooksLikeTheDesktop`).
 
 ## 4b. Bilingüe
 

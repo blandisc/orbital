@@ -30,22 +30,6 @@ extension DS {
         static let maxHeightShare: CGFloat = 0.6, aspectWideMax: CGFloat = 2.4
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).
         static let overlap: CGFloat = 44
-        /// Ventana muy ancha (Mac, iPad grande acostado): Inicio como el escritorio de la tele (Fernando, 16 nov 2026: «toma más
-        /// inspiración de la app de escritorio para Inicio»). La portada es una tarjeta a la izquierda (`splitShare` del ancho,
-        /// en 16:9) y «Seguir viendo» una lista a su derecha (`splitRows` renglones), en vez de una portada de lado a lado con
-        /// la fila encimada.
-        static let splitFrom: CGFloat = 1100, splitShare: CGFloat = 0.62, splitAspect: CGFloat = 16 / 9
-        /// Cuántos renglones caben junto a la portada: los que llenan su alto (con 4 fijos quedaba un hueco abajo; Fernando,
-        /// 16 nov 2026: «en lo que sigue meterle tal vez una fila más»). `splitHead`: lo que mide el encabezado de la lista.
-        static var splitRows: Int {
-            let card = (WindowMetrics.column.width * splitShare - 2 * DS.Space.gutter) / splitAspect
-            let row = DS.Poster.stillRowArt / CGFloat(DS.Poster.stillAspect)
-            return max(3, Int((card - splitHead + splitGap) / (row + splitGap)))
-        }
-        static let splitHead: CGFloat = 64, splitGap = DS.Space.s3
-        /// ¿Esta ventana va a dos columnas? Solo en la Mac: el iPad acostado no cambia (y con el control abierto cruzaría la
-        /// línea a cada rato).
-        static var split: Bool { ProcessInfo.processInfo.isiOSAppOnMac && WindowMetrics.column.width >= splitFrom }
     }
 
     /// «Lo nuevo de lo tuyo»: el ancho de cada pieza, el renglón del día, la marca de hoy y lo apagado de lo que viene.

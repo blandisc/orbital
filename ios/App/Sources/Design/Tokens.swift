@@ -574,8 +574,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static var stillWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280
-        /// La imagen de un renglón de «Seguir viendo» (`StillRow`, Inicio a dos columnas).
-        static let stillRowArt: CGFloat = 160
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
         static let nowPlayingWidth: CGFloat = 56

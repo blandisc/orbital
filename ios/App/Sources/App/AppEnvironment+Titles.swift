@@ -42,6 +42,8 @@ extension AppEnvironment {
     /// (`SaveDestination`: Mi lista, que es tu watchlist de Trakt), con un aviso que se deshace.
     func save(_ s: Suggestion) async {
         let destination = titles.preferredDestination(for: s)
+        // Si ya estaba, no se ofrece «Deshacer»: deshacer lo sacaba de Mi lista (y de Trakt) sin que nadie lo pidiera (revisión, 16 nov).
+        if await services.watch.entry(metaID: s.imdb)?.inList == true { return notify("Ya está en Mi lista") }
         do {
             try await titles.setSaved(s, in: destination, add: true)
             notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.titles.setSaved(s, in: destination, add: false) } }

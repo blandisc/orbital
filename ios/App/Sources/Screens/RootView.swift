@@ -413,7 +413,9 @@ struct MainTabs: View {
     private func wired(_ selection: Binding<Int>) -> some View {
         shell(selection)
         .environment(\.macTabs, ThisDevice.isMac ? MacTabs(current: tab, select: { selection.wrappedValue = $0 },
-                                                          libraryBadge: env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending) : nil)
+                                                          libraryBadge: env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending,
+                                                          focusSearch: { [env] in env.ui.focusSearch = true }) : nil)
+        .environment(\.posterQuick, ThisDevice.isMac ? .app(env) : nil)
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).

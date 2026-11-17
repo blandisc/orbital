@@ -9,6 +9,8 @@ struct MacTabs: Equatable {
     let select: (Int) -> Void
     /// Lo que baja (descargas y pedidos a la nube): el numerito de Biblioteca.
     let libraryBadge: Int
+    /// RN2: «Buscar» junto al logo pone el cursor en el campo (lo hace la raíz: la pieza no toca el estado de la app).
+    var focusSearch: () -> Void = {}
     /// Sin la acción (cambia en cada pasada): así la tira solo se repinta si cambia la pestaña o el numerito.
     static func == (a: MacTabs, b: MacTabs) -> Bool { a.current == b.current && a.libraryBadge == b.libraryBadge }
 }
@@ -18,44 +20,130 @@ extension EnvironmentValues {
     @Entry var macTabs: MacTabs?
 }
 
-/// Inicio · Explorar · Biblioteca · Buscar con la misma pieza de pestañas de texto de toda la app (`DSTextTabs`).
+/// RN2 (Fernando, 16 nov 2026: «hazlo de acuerdo a tus sugerencias»): Inicio · Explorar · Biblioteca en una cápsula al
+/// centro, como la barra de la tele, con la elegida en crema (`DS.paper`). Buscar va aparte, junto al logo (`MacSearchChip`),
+/// como el «Buscar» de la tele.
 struct MacTabStrip: View {
+    /// En una ventana angosta va junto al logo y solo con íconos (el nombre lo dice VoiceOver y la ayuda del puntero).
+    var compact = false
     @Environment(\.macTabs) private var tabs
+
+    /// La ventana alcanza para la cápsula al centro sin encimarse con el logo, «Buscar» y lo de la derecha.
+    static var centered: Bool { WindowMetrics.column.width >= DS.Mac.centeredTabsFrom }
 
     var body: some View {
         if let tabs {
-            DSTextTabs(options: [
-                .init(id: 0, title: Text("Inicio"), symbol: "house"),
-                .init(id: 1, title: Text("Explorar"), symbol: "sparkles"),
-                .init(id: 3, title: Text("Biblioteca"), symbol: "rectangle.stack", badge: tabs.libraryBadge),
-                .init(id: 2, title: Text("Buscar"), symbol: "magnifyingglass"),
-            ], selection: Binding(get: { tabs.current }, set: { id in
-                // MC1 (Fernando, 16 nov 2026): la pestaña cambia al momento, como en Safari; con el fundido se veían las dos
-                // pantallas encimadas un instante y se sentía lenta.
-                // El fundido lo pone UIKit al cambiar de pestaña (no SwiftUI): se apagan sus animaciones mientras cambia.
-                UIView.setAnimationsEnabled(false)
-                var instant = Transaction(); instant.disablesAnimations = true
-                withTransaction(instant) { tabs.select(id) }
-                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Mac.tabSwitchQuiet) { UIView.setAnimationsEnabled(true) }
-            }), mark: DS.eyebrow, adapts: false)
+            // En el orden del menú «Ir» (⌘1 Inicio, ⌘2 Explorar, ⌘3 Biblioteca).
+            HStack(spacing: DS.Space.s1) {
+                MacTabButton(title: Text("Inicio"), symbol: "house", on: tabs.current == 0, compact: compact) { MacTabSwitch.go(tabs, 0) }
+                MacTabButton(title: Text("Explorar"), symbol: "sparkles", on: tabs.current == 1, compact: compact) { MacTabSwitch.go(tabs, 1) }
+                MacTabButton(title: Text("Biblioteca"), symbol: "rectangle.stack", on: tabs.current == 3, badge: tabs.libraryBadge, compact: compact) { MacTabSwitch.go(tabs, 3) }
+            }
+            .padding(DS.Space.s1)
+            .background(Capsule().fill(DS.surfaceRaised))
+            .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+            .fixedSize()
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("mac-tabs")
         }
     }
 }
 
+/// «Buscar» junto al logo en la Mac (RN2): una cápsula con la lupa que abre Buscar y pone el cursor en su campo (⌘F también).
+struct MacSearchChip: View {
+    var compact = false
+    @Environment(\.macTabs) private var tabs
+
+    var body: some View {
+        if let tabs {
+            Button {
+                MacTabSwitch.go(tabs, 2)
+                tabs.focusSearch()
+            } label: {
+                Label("Buscar", systemImage: "magnifyingglass").recipe(.label, color: tabs.current == 2 ? DS.bg : DS.text)
+                    .macTabLabel(compact: compact)
+                    .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+                    .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
+                    .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+            }
+            .buttonStyle(.plain)
+            .help(Text("Buscar"))
+            .fixedSize()
+            .accessibilityIdentifier("mac-search-chip")
+        }
+    }
+}
+
 extension View {
-    /// En la Mac, la barra de navegación de una pantalla de arriba (Explorar, Biblioteca, Buscar): el logo y las pestañas a la
-    /// izquierda, en el mismo renglón que sus botones, sin el título grande (las pestañas ya dicen dónde estás). En iPhone y
+    /// El nombre y el ícono (en la barra del sistema el nombre se quitaba); en una ventana angosta, solo el ícono, con su
+    /// nombre en la ayuda del puntero.
+    @ViewBuilder fileprivate func macTabLabel(compact: Bool) -> some View {
+        if compact { labelStyle(.iconOnly) } else { labelStyle(.titleAndIcon) }
+    }
+}
+
+/// Una pestaña de la cápsula de la Mac: la elegida, llena con la letra al revés (como el foco de la tele).
+private struct MacTabButton: View {
+    let title: Text
+    let symbol: String
+    let on: Bool
+    var badge = 0
+    var compact = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label { title } icon: { Image(systemName: symbol) }
+                .recipe(.label, color: on ? DS.bg : DS.textMuted)
+                .macTabLabel(compact: compact)
+                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+                // La elegida, llena del color del texto con la letra del fondo: crema y oscura en modo oscuro (el foco de la tele), oscura
+                // y clara en modo claro (crema sobre la cápsula casi blanca no se distinguía).
+                .background { if on { Capsule().fill(DS.text) } }
+                .overlay(alignment: .topTrailing) {
+                    if badge > 0 { Circle().fill(DS.accent).frame(width: DS.Mac.tabBadge, height: DS.Mac.tabBadge) }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(title)
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityValue(badge > 0 ? Text("\(badge) bajando") : Text(verbatim: ""))
+    }
+}
+
+/// El cambio de pestaña en la Mac, al momento (MC1, Fernando, 16 nov 2026: con el fundido se veían las dos pantallas
+/// encimadas un instante y se sentía lenta). El fundido lo pone UIKit al cambiar de pestaña: se apagan sus animaciones mientras.
+enum MacTabSwitch {
+    @MainActor static func go(_ tabs: MacTabs, _ id: Int) {
+        guard tabs.current != id else { return }
+        UIView.setAnimationsEnabled(false)
+        var instant = Transaction(); instant.disablesAnimations = true
+        withTransaction(instant) { tabs.select(id) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Mac.tabSwitchQuiet) { UIView.setAnimationsEnabled(true) }
+    }
+}
+
+extension View {
+    /// En la Mac, la barra de navegación de una pantalla de arriba (Explorar, Biblioteca, Buscar): el logo y «Buscar» a la
+    /// izquierda y las pestañas al centro, en el mismo renglón que sus botones, sin el título grande (las pestañas ya dicen dónde estás). En iPhone y
     /// iPad, nada.
     @ViewBuilder func macTopBar() -> some View {
         if ThisDevice.isMac {
-            toolbar(removing: .title)
-                .toolbar {
+            toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        HStack(spacing: DS.Space.s6) { AppMark(small: true, reportsFrame: false); MacTabStrip() }
-                            .fixedSize()   // la barra le ofrece poco ancho y los nombres se recortaban hasta desaparecer
+                        HStack(spacing: DS.Space.s6) {
+                            AppMark(small: true, reportsFrame: false)
+                            MacSearchChip(compact: !MacTabStrip.centered)
+                            // En una ventana angosta la cápsula va aquí, solo con íconos: al centro se encimaba.
+                            if !MacTabStrip.centered { MacTabStrip(compact: true) }
+                        }
+                        .fixedSize()   // la barra le ofrece poco ancho y los nombres se recortaban hasta desaparecer
                     }
                     .sharedBackgroundVisibility(.hidden)
+                    // RN2: las pestañas en su cápsula, al centro de la barra (como la tele).
+                    ToolbarItem(placement: .principal) { if MacTabStrip.centered { MacTabStrip() } }
+                        .sharedBackgroundVisibility(.hidden)
                 }
                 .macTopShade()
         } else {

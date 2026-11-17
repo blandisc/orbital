@@ -45,6 +45,7 @@ struct TitleNavigationLink<Label: View>: View {
             }
         }
         .environment(\.titleZoomSlot, slot)
+        .macPosterHover(route)   // RP2: en la Mac, al pasar el puntero crece con el marco de la TV y muestra ▶ y ＋
         .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
 }

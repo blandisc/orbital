@@ -60,28 +60,6 @@ extension DesignRulesTests {
         XCTAssertTrue(root.contains(".macDefaults()") && mac.contains(".controlSize(DS.Mac.controlDefault)"), "En la Mac los botones del sistema van en grande")
     }
 
-    /// Inicio en ventana muy ancha se acomoda como la entrada del escritorio de la tele (Fernando, 16 nov 2026: «toma más
-    /// inspiración de la app de escritorio para Inicio»): portada en tarjeta a la izquierda y una lista a la derecha.
-    func testWideHomeLooksLikeTheDesktop() throws {
-        let files = try sources(["Design", "Screens"])
-        func code(_ name: String) throws -> String {
-            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
-            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
-        }
-        let tokens = try code("Tokens+Home.swift")
-        XCTAssertTrue(tokens.contains("static let splitFrom: CGFloat = 1100"), "Desde qué ancho Inicio va a dos columnas")
-        XCTAssertTrue(tokens.contains("static var split: Bool { ProcessInfo.processInfo.isiOSAppOnMac && WindowMetrics.column.width >= splitFrom }"),
-                      "Solo la Mac, y lo decide la columna (el iPad acostado no cambia)")
-        let home = try code("HomeView.swift")
-        XCTAssertTrue(home.contains("if twoColumns { splitTop(model, continuing: continuing) }"), "Inicio arma las dos columnas")
-        XCTAssertTrue(home.contains("if continuing.isEmpty { upNextList(model) } else { continueList(model, items: continuing) }"),
-                      "Sin nada a medias, la derecha no queda vacía")
-        XCTAssertTrue(home.contains("DS.HomeHero.split && !spotlightItems(home.model).isEmpty"),
-                      "Dos columnas solo si el carrusel tiene algo con el tipo puesto (si no, la izquierda quedaba vacía)")
-        XCTAssertTrue(home.contains("if !next.isEmpty { DSSectionHead(title: Text(\"Lo que sigue\")"), "Sin renglones, sin encabezado suelto")
-        XCTAssertTrue(home.contains("card: twoColumns"), "En dos columnas la portada es tarjeta (no pasa detrás de la barra)")
-        XCTAssertTrue(try code("Projection.swift").contains("struct StillRow: View"), "El renglón de «Seguir viendo» es pieza del catálogo")
-    }
     /// En la Mac lo de Inicio y Explorar llena la ventana (Fernando, 16 nov 2026: «en plataformas… no se extiende completamente
     /// a la derecha, tampoco premios», «en lo que sigue meterle una fila más», «Top 10 pasa del 4 al 6»).
     func testMacRowsFillTheWindow() throws {
@@ -95,7 +73,6 @@ extension DesignRulesTests {
                       "Plataformas, Premios y Estudios crecen hasta llenar el renglón en la Mac")
         XCTAssertTrue(screens.contains("static var emblem: CGFloat { 70 * PlatformFan.scale }"), "El emblema crece con su tarjeta")
         XCTAssertTrue(try code("ListsView.swift").contains("await model.loadRankings(hub)"), "Cada plataforma pide su ranking si llega vacía (Prime Video salía en blanco)")
-        XCTAssertTrue(home.contains("static var splitRows: Int {"), "«Lo que sigue» llena la altura de la portada (no un número fijo)")
         XCTAssertTrue(home.contains("static func width(count: Int) -> CGFloat {"), "Canales llena el renglón en la Mac")
         // El puesto es el de lo que ves: con el del ranking mezclado, al quedarse con las series brincaba del 4 al 6.
         XCTAssertTrue(try code("HomeTopTen.swift").contains("RankedPosterCard(rank: i + 1,"), "El Top 10 se numera dentro de lo que ves")

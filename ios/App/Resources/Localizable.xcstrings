@@ -1,6 +1,61 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Lo que sigue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up next"
+          }
+        }
+      }
+    },
+    "En la portada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the cover"
+          }
+        }
+      }
+    },
+    "Lo pasa al frente de la portada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moves it to the front of the cover"
+          }
+        }
+      }
+    },
+    "Guardar en Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to My List"
+          }
+        }
+      }
+    },
+    "Ya está en Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in My List"
+          }
+        }
+      }
+    },
     "No dice si es latino": {
       "extractionState": "manual",
       "localizations": {

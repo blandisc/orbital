@@ -119,7 +119,7 @@ struct DSDegradedNotice: View {
 /// `ProgressView` chico con su texto («Conectando…»).
 /// Un área vacía (Descargas vacía, sin resultados, nada con estos filtros): el vacío nativo de iOS con un ícono, qué pasa y,
 /// si lo hay, qué hacer. Va arriba, donde empezaría la lista, nunca al centro de la pantalla: igual en las partes de la
-/// Biblioteca (I13, revisión del 10 nov).
+/// Biblioteca (I13, revisión del 10 nov). En la Mac sí va al centro de su área (RB2, 16 nov 2026).
 struct DSEmptyState<Actions: View>: View {
     let symbol: String
     let title: Text
@@ -137,6 +137,21 @@ struct DSEmptyState<Actions: View>: View {
         // Arriba, donde empezaría la lista (regla de bordes, §4): sin esto el vacío del sistema se estira y queda al centro
         // aunque lo pongan arriba (revisión del 11 nov: Descargas vacía seguía al centro).
         .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity)
+        .modifier(MacEmptyHeight())
+    }
+}
+
+/// RB2 (Fernando, 16 nov 2026): en la Mac, con la ventana grande, arriba y chico parecía que la pantalla no había cargado. Ahí
+/// el aviso ocupa casi todo el alto de lo que lo contiene (`DS.Mac.emptyShare` de lo visible del desplazamiento, o de la
+/// hoja), no de la ventana entera: en una hoja chica no se sale. iPhone y iPad, arriba.
+private struct MacEmptyHeight: ViewModifier {
+    func body(content: Content) -> some View {
+        if ThisDevice.isMac {
+            content.containerRelativeFrame(.vertical) { length, _ in length * DS.Mac.emptyShare }   // ds-exception: el alto (no el ancho) de lo visible, para centrar el aviso
+        } else {
+            content
+        }
     }
 }
 

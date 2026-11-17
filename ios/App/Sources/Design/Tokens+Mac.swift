@@ -55,6 +55,19 @@ extension DS {
         /// Los seis mosaicos de la búsqueda avanzada en la Mac (MS1): con 76 pt de alto y 360 de ancho eran franjas que se
         /// leían como botones de formulario; así son mosaicos, con su dibujo grande (Fernando, 16 nov 2026).
         static let doorTileHeight: CGFloat = 150, doorArtHeight: CGFloat = 52
+        /// RF2: las reseñas de la ficha en la Mac, en columnas a lo ancho (como la tele, no una tira angosta a la izquierda).
+        static let reviewColumns = 3
+        /// RP2: el póster bajo el puntero crece un poco y lleva el marco crema del foco de la TV.
+        static let hoverScale: CGFloat = 1.05, hoverRing: CGFloat = 3
+        /// Desde este ancho de póster salen ▶ y ＋ al pasar el puntero (los de un renglón, de 40 pt, solo llevan el marco).
+        static let quickMinWidth: CGFloat = 120
+        /// RN2: desde este ancho de ventana la cápsula de pestañas va al centro con sus nombres; más angosta, junto al logo y
+        /// solo con íconos (con la letra de la Mac, las tres con nombre miden ~330 pt y se encimaban con el logo y tu foto).
+        static let centeredTabsFrom: CGFloat = 980
+        /// RB2: qué parte del alto de la ventana ocupa un aviso vacío (`DSEmptyState`) en la Mac: queda al centro de lo visible.
+        static let emptyShare: CGFloat = 0.72
+        /// RN2: el puntito de Biblioteca (algo bajando) en la cápsula de pestañas.
+        static let tabBadge: CGFloat = 8
         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
         static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
     }

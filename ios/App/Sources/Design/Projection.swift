@@ -105,34 +105,6 @@ struct StillCard: View {
     }
 }
 
-/// «Seguir viendo» en renglón (Inicio a dos columnas, `DS.HomeHero.split`): la imagen chica con su avance a la izquierda y el
-/// título y los datos a la derecha, como la lista «Continuar» del escritorio de la tele.
-struct StillRow: View {
-    let title: String
-    let art: String?
-    var data: [String] = []
-    var progress: Double?
-    var fallback: String? = nil
-
-    var body: some View {
-        HStack(spacing: DS.Space.s4) {
-            ZStack(alignment: .bottom) {
-                PosterView(url: art, title: title, aspect: DS.Poster.stillAspect, fallback: fallback)
-                if let progress { DSProgress(fraction: progress).padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s2) }
-            }
-            .frame(width: DS.Poster.stillRowArt)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).recipe(.cardTitle).lineLimit(2)
-                if !data.isEmpty { DataLine(parts: data) }
-            }
-            Spacer(minLength: 0)
-        }
-        .contentShape(Rectangle())
-        .pointerHover(.lift)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// Los puntos de un carrusel: dónde estás (una gota alargada que brinca de punto a punto) y cuántas hay.
 struct PageDots: View {
     let count: Int

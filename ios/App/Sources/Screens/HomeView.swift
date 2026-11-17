@@ -122,22 +122,22 @@ struct HomeView: View {
         let pending = model.traktPending.filter { fits($0.kind) }
         return VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
             topCards(model)
-            // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
-            // Ventana muy ancha (Mac): como el escritorio de la tele, la portada a la izquierda y «Seguir viendo» a la derecha.
-            if twoColumns { splitTop(model, continuing: continuing) }
-            else if !model.spotlight.isEmpty { spotlightPart(model) }
+            // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo, encimado
+            // en su borde, como «A continuación» en la tele (RI2 en la Mac, 16 nov 2026).
+            if !model.spotlight.isEmpty { spotlightPart(model) }
             if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
                 HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
             }
             // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
             // tus sugerencias, el Top 10 y Mi lista.
-            if twoColumns, !continuing.isEmpty {
-                EmptyView()   // ya está arriba, junto a la portada
-            } else if !continuing.isEmpty {
+            if !continuing.isEmpty {
                 continueRail(model, items: continuing).perfTag("home.rail")
                     // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                     // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
                     .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+            } else if ThisDevice.isMac, spotlightItems(model).count > 1 {
+                // RI2: en la Mac, sin nada a medias, lo que sigue en la portada va en esa misma fila encimada (como la tele).
+                upNextRail(model).padding(.top, scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                 DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
             }
@@ -264,10 +264,7 @@ struct HomeView: View {
     }
 
     /// Cuánto se encima «Seguir viendo» sobre la portada: solo en oscuro (en claro la portada es una tarjeta y no se leería).
-    private var heroOverlap: CGFloat { scheme == .dark && !twoColumns ? DS.HomeHero.overlap : 0 }
-    /// Inicio a dos columnas (`DS.HomeHero.split`): con portada. A la derecha «Seguir viendo»; sin nada a medias, lo que sigue
-    /// en la portada.
-    private var twoColumns: Bool { DS.HomeHero.split && !spotlightItems(home.model).isEmpty }   // la misma lista que el carrusel (con el tipo puesto)
+    private var heroOverlap: CGFloat { scheme == .dark ? DS.HomeHero.overlap : 0 }
 
     /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
     @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {
@@ -313,7 +310,7 @@ struct HomeView: View {
     }
 
     /// Ancho entre alto de la portada: casi un póster en el iPhone, más baja en pantallas cortas y apaisada en ventana ancha.
-    private var heroAspect: CGFloat { twoColumns ? DS.HomeHero.splitAspect : DS.HomeHero.current }
+    private var heroAspect: CGFloat { DS.HomeHero.current }
 
     /// La portada (docs/producto/inicio-benchmark/): el arte de borde a borde, detrás de la barra, que se desliza entre lo
     /// que todos están viendo. Cada título con su porqué en turquesa, su logo, sus datos y «Ver». Abajo, los puntos; encima de
@@ -336,7 +333,7 @@ struct HomeView: View {
                 .allowsHitTesting(false)   // tocar los puntos no abre la ficha
         }
         // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
-        .ignoresSafeArea(edges: scheme == .dark && !twoColumns ? .top : [])
+        .ignoresSafeArea(edges: scheme == .dark ? .top : [])
         // Cambió la lista (al volver de ver algo, al cambiar el tipo): te quedas en el que estabas si sigue; si no, el primero.
         .onChange(of: items.map(\.id)) { old, new in
             let current = heroSlot.flatMap { old.indices.contains($0) ? old[$0] : nil }
@@ -349,7 +346,7 @@ struct HomeView: View {
     private func hero(_ s: Suggestion) -> some View {
         // La portada abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
         // ficha en vez de reproducir).
-        BleedArt(url: s.wide, title: titleName(s.title, id: s.imdb, kind: s.kind), aspect: heroAspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind), card: twoColumns) {
+        BleedArt(url: s.wide, title: titleName(s.title, id: s.imdb, kind: s.kind), aspect: heroAspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let reason = reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
@@ -452,62 +449,33 @@ struct HomeView: View {
         Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
     }
 
-    /// Inicio a dos columnas (Mac): la portada en tarjeta a la izquierda y, a la derecha, «Seguir viendo» en renglones (como la
-    /// entrada del escritorio de la tele) o, sin nada a medias, lo que sigue en la portada.
-    private func splitTop(_ model: HomeModel, continuing: [HomeItem]) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            spotlightPart(model).frame(width: WindowMetrics.column.width * DS.HomeHero.splitShare)
-            Group {
-                if continuing.isEmpty { upNextList(model) } else { continueList(model, items: continuing) }
-            }
-            .padding(.trailing, DS.Space.gutter)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .perfTag("home.rail")
-        }
-    }
-
-    private func continueList(_ model: HomeModel, items: [HomeItem]) -> some View {
-        VStack(alignment: .leading, spacing: DS.HomeHero.splitGap) {
-            NavigationLink(value: HomeListRoute(id: "continue")) {
-                DSSectionHead(title: Text("Seguir viendo"), count: items.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("home-all-continue")
-            ForEach(items.prefix(DS.HomeHero.splitRows)) { item in
-                Button {
-                    env.ui.playerSource = PlayerZoomID(metaID: item.metaID, slot: "continue")
-                    Task { await env.play(item) }
-                } label: {
-                    StillRow(title: titleName(item.title, id: item.metaID, kind: item.kind), art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
-                             fallback: item.background == nil ? nil : item.poster)
-                        .playerZoomSource(PlayerZoomID(metaID: item.metaID, slot: "continue"))
-                }
-                .buttonStyle(.plain)
-                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                .contextMenu { continueMenu(model, item: item) }
-                .transition(reduceMotion ? .opacity : .scale(scale: DS.Motion.leaveScale).combined(with: .opacity))
-            }
-        }
-        .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: items.map(\.id))
-    }
-
-    /// Sin nada a medias: los que siguen en la portada. Tocar uno lo pasa al frente (la ficha se abre desde la portada).
-    private func upNextList(_ model: HomeModel) -> some View {
+    /// RI2 (Mac, sin nada a medias): los que siguen en la portada, en tarjetas anchas encimadas en su borde, como «A
+    /// continuación» en la tele. Tocar uno lo pasa al frente (la ficha se abre desde la portada).
+    private func upNextRail(_ model: HomeModel) -> some View {
         let items = spotlightItems(model)
         let current = min(heroSlot ?? 0, max(0, items.count - 1))
         let next = items.indices.filter { $0 != current }.sorted { ($0 - current + items.count) % items.count < ($1 - current + items.count) % items.count }
-        return VStack(alignment: .leading, spacing: DS.HomeHero.splitGap) {
-            if !next.isEmpty { DSSectionHead(title: Text("Lo que sigue"), eyebrow: Text("En la portada")) }   // con una sola, nada
-            ForEach(next.prefix(DS.HomeHero.splitRows), id: \.self) { i in
-                Button {
-                    withAnimation(DS.Motion.smooth(reduceMotion)) { heroSlot = i }
-                } label: {
-                    StillRow(title: titleName(items[i].title, id: items[i].imdb, kind: items[i].kind), art: items[i].wide, data: heroData(items[i]), fallback: items[i].poster)
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: Text("Lo que sigue"), eyebrow: Text("En la portada")).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(next, id: \.self) { i in
+                        Button {
+                            withAnimation(DS.Motion.smooth(reduceMotion)) { heroSlot = i }
+                        } label: {
+                            StillCard(title: titleName(items[i].title, id: items[i].imdb, kind: items[i].kind), art: items[i].wide, data: heroData(items[i]), fallback: items[i].poster)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(Text("Lo pasa al frente de la portada"))
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint(Text("Lo pasa al frente de la portada"))
+                .scrollTargetLayout()
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
         }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("home-up-next")
     }
 
     /// «Mi lista» (tu watchlist de Trakt, también sin Trakt en el teléfono): tarjetas con póster, datos y sinopsis en dos renglones que se deslizan juntos (cada renglón de Inicio

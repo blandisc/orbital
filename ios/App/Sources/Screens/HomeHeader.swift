@@ -92,8 +92,10 @@ struct HomeHeader: View {
         return HStack(spacing: 0) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
             if ThisDevice.isMac {
-                // La Mac (MAC-A): las pestañas en este mismo renglón, junto al logo; «Todo ▾» pasa a la derecha, junto a tu foto.
-                MacTabStrip().padding(.leading, DS.Space.s8)
+                // La Mac (RN2): «Buscar» junto al logo y las pestañas al centro (abajo, en `overlay`); en una ventana angosta las
+                // dos van aquí, solo con íconos. «Todo ▾» pasa a la derecha, junto a tu foto.
+                MacSearchChip(compact: !MacTabStrip.centered).padding(.leading, DS.Space.s6)
+                if !MacTabStrip.centered { MacTabStrip(compact: true).padding(.leading, DS.Space.s2) }
                 Spacer(minLength: DS.Space.s2)
                 DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
                     .padding(.trailing, DS.Space.s4)
@@ -117,6 +119,8 @@ struct HomeHeader: View {
                 .transition(yielding)
             }
         }
+        // RN2: en la Mac las pestañas en su cápsula, al centro del renglón (como la tele).
+        .overlay { if ThisDevice.isMac && MacTabStrip.centered { MacTabStrip() } }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
         // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad
