@@ -84,7 +84,7 @@ struct GuidePage<Content: View>: View {
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     title.font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
-                    if let message { message.font(DS.TextRecipe.body.font).foregroundStyle(DS.textMuted) }
+                    if let message { message.font(DS.Welcome.lead).foregroundStyle(DS.textMuted) }
                 }
                 content
             }
@@ -94,6 +94,8 @@ struct GuidePage<Content: View>: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaBar(edge: .bottom) {
+            // Al centro de la ventana y no más anchos que `buttonWidth` (en la Mac quedaban pegados a la izquierda; Fernando,
+            // 17 nov 2026: «los botones estén centrados»).
             VStack(spacing: DS.Space.s2) {
                 Button(action: next) { primary.frame(maxWidth: .infinity) }
                     .dsPrimaryButton().dsControlSize(.large).disabled(!primaryEnabled)
@@ -103,8 +105,9 @@ struct GuidePage<Content: View>: View {
                         .accessibilityIdentifier("guide-skip")
                 }
             }
+            .frame(maxWidth: DS.Welcome.buttonWidth)
             .padding(.horizontal, DS.Space.s6).padding(.bottom, DS.Space.s3)
-            .frame(maxWidth: DS.Guide.readable)
+            .frame(maxWidth: .infinity)
         }
         .background(Backdrop())
         .navigationBarBackButtonHidden(step == nil)

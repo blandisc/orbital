@@ -392,7 +392,7 @@ struct ListsView: View {
             DSChapterHead(label: Text("Temporadas"), symbol: CollectionSection.seasons.symbol)
             if let now = countdown.first {
                 NavigationLink(value: CollectionRoute(kind: .season, id: now.season.slug)) {
-                    SeasonFeature(name: Strings.tr(now.season.title, language: language), blurb: Strings.tr(now.season.blurb, language: language),
+                    SeasonFeature(slug: now.season.slug, name: Strings.tr(now.season.title, language: language), blurb: Strings.tr(now.season.blurb, language: language),
                                   days: now.days, posters: (collections.model.seasonItems[now.season.slug] ?? []).map(\.poster),
                                   tint: DS.Collections.season(now.season.slug))
                 }

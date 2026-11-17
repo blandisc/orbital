@@ -62,6 +62,32 @@ extension DesignRulesTests {
 
     /// En la Mac lo de Inicio y Explorar llena la ventana (Fernando, 16 nov 2026: «en plataformas… no se extiende completamente
     /// a la derecha, tampoco premios», «en lo que sigue meterle una fila más», «Top 10 pasa del 4 al 6»).
+    /// La pasada del 17 nov 2026 (Fernando: «está lentísimo», «los botones estén centrados», «quítale la cajita gris»): el muro
+    /// de Explorar no pasa de `coverMaxColumns` (se ensancha en vez de sumar columnas), los botones de la bienvenida y la guía
+    /// van al centro con su ancho tope, «Añadir canal» sin caja y los modelos no redibujan con lo mismo.
+    func testWidePassOfNov17() throws {
+        let files = try sources(["Design", "Screens"])
+        func code(_ name: String) throws -> String {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        }
+        XCTAssertTrue(try code("ParaTiB.swift").contains("private var columns: Int { min(needed, DS.ParaTiB.coverMaxColumns) }"),
+                      "El muro de Explorar tiene tope de columnas (en la Mac eran ~340 pósters y el cambio de pestaña se trababa)")
+        let guide = try code("Guide.swift"), welcome = try code("OnboardingWelcome.swift")
+        XCTAssertTrue(guide.contains(".frame(maxWidth: DS.Welcome.buttonWidth)") && guide.contains(".frame(maxWidth: .infinity)"),
+                      "Los botones de la guía van al centro de la ventana")
+        XCTAssertTrue(welcome.contains(".frame(maxWidth: DS.Welcome.buttonWidth)") && welcome.contains(".multilineTextAlignment(.center)"),
+                      "La bienvenida: texto y «Empezar» al centro")
+        let channels = try code("HomeChannels.swift")
+        let add = try XCTUnwrap(channels.range(of: "private var addCard: some View {")).upperBound
+        XCTAssertFalse(channels[add...].prefix(900).contains("dsCard("), "«Añadir canal» va sin caja detrás")
+        let collections = try String(contentsOf: repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalModels/CollectionsModel.swift"), encoding: .utf8)
+        XCTAssertFalse(collections.contains("{ didSet { changed() } }"), "Lo mismo no vuelve a pintar Explorar entero (`if x != oldValue`)")
+        let tmdb = try String(contentsOf: repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalCore/Tmdb.swift"), encoding: .utf8)
+        XCTAssertTrue(tmdb.contains("return try await details(kind: kind, tmdbID: id, urgent: true).imdb"),
+                      "Un ranking que ves no hace fila detrás de los detalles de fondo")
+    }
+
     func testMacRowsFillTheWindow() throws {
         let files = try sources(["Design", "Screens"])
         func code(_ name: String) throws -> String {

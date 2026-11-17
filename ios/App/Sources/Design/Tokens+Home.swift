@@ -57,6 +57,8 @@ extension DS {
             return min(macMax, max(width, row / CGFloat(count)))
         }
         static let macMax: CGFloat = 420
+        /// «Añadir canal»: el círculo del +, sin caja detrás.
+        static let addCircle: CGFloat = 64
         static let logoWidth: CGFloat = 96, logoHeight: CGFloat = 30
         static let veilStart: Double = 0.4
         static let tick: TimeInterval = 30
@@ -72,6 +74,8 @@ extension DS {
         /// El muro: ocho columnas (con siete, girado, quedaba una orilla sin pósters) de trece pósters cada vuelta.
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 828, coverColumns = 8, coverPosters = 96, coverTilt: Double = -10
         static let coverRows = 13, coverWallHeight: CGFloat = 1900
+        /// Tope de columnas del muro: en ventana más ancha, columnas más anchas en vez de más (rendimiento en la Mac, 17 nov 2026).
+        static let coverMaxColumns = 9
         /// En ventana ancha (iPad acostado o grande, Mac) el muro suma columnas del mismo ancho hasta cubrir la ventana (con
         /// las ocho de siempre quedaba una cuña en blanco a la izquierda). Hasta el ancho del iPad de pie, las ocho de siempre.
         static func coverColumns(forWidth width: CGFloat) -> Int {
@@ -90,14 +94,18 @@ extension DS {
         /// 2 nov 2026): un cuarto menos (antes de 8 a 9.5).
         static let coverPace: [Double] = [6, 6.75, 6.4, 7.1, 6, 6.75, 6.4, 7.1], coverPhaseStep = 0.37, coverVisibleFrom: Double = 0.1
         static let coverAlternates = true
-        static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
+        static let deckPoster: CGFloat = 104, deckShift: CGFloat = 14, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3
         /// En la Mac, la puerta de «Decide por mí» lleva a la derecha una tira de más carteles que se desvanece hacia el texto
         /// (a lo ancho, la tarjeta quedaba vacía: Fernando, 16 nov 2026, «hay que pulir el decide por mí»).
-        static let stripPoster: CGFloat = 60, stripCount = 8, stripFadeFrom: Double = 0.15
+        static let stripPoster: CGFloat = 78, stripCount = 8, stripFadeFrom: Double = 0.15
+        /// Cuánto la tiñe el color de acento desde el abanico (Fernando, 17 nov 2026: «hazlo más vistoso»; el turquesa es voz).
+        static let doorGlow: Double = 0.3
         /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.
-        static let seasonPoster: CGFloat = 76, seasonGlow: Double = 0.35, rowShift: CGFloat = 14
+        static let seasonPoster: CGFloat = 96, seasonGlow: Double = 0.42, rowShift: CGFloat = 14
+        /// Su ícono, su altura mínima, su anillo del color y cuántos más asoman en la tira de la Mac (17 nov 2026).
+        static let seasonIcon: CGFloat = 72, seasonHeight: CGFloat = 168, seasonRing: Double = 0.5, seasonStrip = 7
         /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba
         /// para entrar (más allá de «actualizar», `DS.Refresh.threshold`: lo corto actualiza, lo largo entra). Al abrirse el muro
         /// se endereza, crece `doorGrow` y su velo se aclara `doorUnveil`; el mosaico entra desde `doorEnterScale`, arriba.

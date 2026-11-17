@@ -966,6 +966,35 @@ nuevos tamaños»):
   - **El puntero muestra los controles:** moverlo sobre el video los saca (antes había que hacer clic). El puntero no se
     esconde: `pointerVisibility` no existe en una app de iPad.
 
+### Pasada de la Mac del 17 nov 2026
+
+Fernando: «Está lentísimo… cuando intento cambiar de Inicio a Explorar», «Decide por mí, hazlo más vistoso», «quítale la
+cajita gris» a «Añadir canal», «el top 10 de Netflix sigue sin seguir el top 10», «pulir el elemento Navidad» y «da una muy
+buena pulida a los landing pages». Las reglas que quedan:
+
+- **El muro de Explorar tiene tope de columnas** (`DS.ParaTiB.coverMaxColumns`, 9): en ventana ancha las columnas se
+  ensanchan y llevan menos renglones en vez de sumar columnas. En la Mac eran 13 columnas de 26 pósters (~340 a la vez,
+  cada uno con sus tareas) y el cambio de pestaña se trababa.
+- **Lo mismo no vuelve a pintar la página:** toda propiedad de un modelo que avisa (`changed()`) compara con `oldValue`.
+  En `CollectionsModel` cada estudio, temporada o género que llegaba igual redibujaba Explorar entero.
+- **Un ranking que ves no hace fila:** buscar el IMDb de un título del Top 10 pide sus detalles con `urgent: true`; detrás
+  de los ~260 detalles de fondo de Explorar, las series de Netflix tardaban más de un minuto en salir.
+- **Tu país sale de donde estás:** sin elegirlo en Ajustes, el país (Top 10 de Netflix, JustWatch, «dónde verla») sale de
+  la zona horaria y luego del idioma y región del aparato (`AppSettings.phoneRegion`, `zoneRegion`). Una Mac en inglés de
+  EE. UU. en Monterrey pedía el Top 10 de Estados Unidos. Sin elegir, el guardado sigue al aparato en cada arranque.
+- **Una página que terminó sin nada lo dice:** el ranking de una plataforma sin resultados enseña «Hoy no hay ranking de
+  este servicio.» en vez de quedarse en blanco.
+- **«Decide por mí»** (Inicio y Explorar, la misma puerta): nombre en tamaño de título con el dado en turquesa, abanico más
+  grande (`deckPoster` 104) y un brillo del color de acento desde el abanico (`doorGlow`; el turquesa es voz: solo el dado).
+- **«Añadir canal» sin caja:** un círculo neutro con el + en turquesa y su nombre debajo (`DS.HomeChannels.addCircle`); el turquesa no pinta el fondo ni la orilla.
+- **«La temporada»** (la de ahora en Explorar): su ícono, el nombre en tamaño `display`, más color y un anillo de su color,
+  más alta y, en la Mac, una tira de sus títulos que se desvanece hacia el texto.
+- **La bienvenida y la guía:** en ventana ancha la marca crece hasta ×1.5 (`DS.Welcome.wideScale`, con la clase de tamaño ancha), la frase va un escalón
+  arriba del cuerpo (`DS.Welcome.lead`), el texto de la bienvenida va al centro y los botones van al centro de la ventana
+  con ancho tope (`DS.Welcome.buttonWidth`); antes quedaban pegados a la izquierda en la Mac.
+
+`DesignRulesTests+Wide.testWidePassOfNov17` lo vigila; `SettingsTests.testRegionFollowsTimeZone` el país.
+
 `DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`) y `DesignRulesTests+MacLayout` el replanteamiento (`testMacLooksLikeTheDesktop`).
 
 ## 4b. Bilingüe

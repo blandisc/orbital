@@ -623,7 +623,9 @@ final class ScreenModelsTests: XCTestCase {
         await model.checkOrbital()
         XCTAssertEqual(rig.secrets.get(SecretKey.tmdbKey), "tmdb123", "la clave va al Keychain")
         XCTAssertEqual(model.settings.traktClientID, "cid456")
-        XCTAssertEqual(model.settings.region, "US")
+        // El de la consola solo si el aparato no dice su país; si lo dice, manda el de donde estás (antes pasaba por suerte en
+        // una Mac en inglés de EE. UU.).
+        XCTAssertEqual(model.settings.region, Locale.current.region == nil ? "US" : AppSettings.phoneRegion)
         XCTAssertEqual(model.importedFromOrbital, ["TMDB", "Trakt"])
         XCTAssertEqual(model.trakt, .unlinked, "ya se puede conectar Trakt con un toque")
         rig.http.json["https://tv.example/api/companion"] = ["tmdb_key": "otra", "trakt_client_id": "otro", "region": "US"]
@@ -639,7 +641,8 @@ final class ScreenModelsTests: XCTestCase {
         rig.http.json["https://legion.example/api/ping"] = ["ok": true]
         rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "", "trakt_client_id": "", "region": "US"]
         _ = try await rig.services.connectOrbital(address: "https://legion.example", token: "t")
-        XCTAssertEqual(rig.services.appSettings.region, "US", "sin elegir país: el de la consola")
+        XCTAssertEqual(rig.services.appSettings.region, Locale.current.region == nil ? "US" : AppSettings.phoneRegion,
+                       "sin elegir país: el de la consola, si el aparato no dice el suyo")
         let model = SettingsModel(rig.services)
         model.update { $0.region = "MX"; $0.regionChosen = true }   // Ajustes › Avanzado › País
         rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "", "trakt_client_id": "", "region": "ES"]

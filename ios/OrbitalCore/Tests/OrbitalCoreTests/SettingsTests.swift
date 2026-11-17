@@ -70,4 +70,22 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(old.audio, "en")
         XCTAssertEqual(old.simpsonsSeasons, Array(5...15))
     }
+
+    /// El país sale de la zona horaria antes que del idioma: una Mac en inglés de EE. UU. en Monterrey es México.
+    func testRegionFollowsTimeZone() {
+        XCTAssertEqual(AppSettings.zoneRegion("America/Monterrey"), "MX")
+        XCTAssertEqual(AppSettings.zoneRegion("America/Mexico_City"), "MX")
+        XCTAssertEqual(AppSettings.zoneRegion("America/Argentina/Buenos_Aires"), "AR")
+        XCTAssertEqual(AppSettings.zoneRegion("Europe/Madrid"), "ES")
+        XCTAssertNil(AppSettings.zoneRegion("America/New_York"))
+        XCTAssertNil(AppSettings.zoneRegion("Asia/Tokyo"))
+    }
+
+    /// Un país elegido en Ajustes se queda; uno sin elegir sigue a donde estás.
+    func testChosenRegionStays() throws {
+        let chosen = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"region":"JP","regionChosen":true}"#.utf8))
+        XCTAssertEqual(chosen.region, "JP")
+        let followed = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"region":"JP","regionChosen":false}"#.utf8))
+        XCTAssertEqual(followed.region, AppSettings.phoneRegion)
+    }
 }

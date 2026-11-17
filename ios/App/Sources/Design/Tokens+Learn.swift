@@ -29,6 +29,13 @@ extension DS {
         static let sceneHeight: CGFloat = 354
         /// La frase sube esto al aparecer.
         static let rise: CGFloat = 16
+        /// En pantalla ancha (iPad, Mac) la escena con la marca crece hasta esto (Fernando, 17 nov 2026: «que el logo esté más
+        /// grande»); en el iPhone se queda en 1 o se encoge si no cabe.
+        static let wideScale: CGFloat = 1.5
+        /// La frase de debajo del título en las páginas de bienvenida: un escalón arriba del cuerpo («el texto más grande»).
+        static var lead: Font { DS.styled(.title3) }
+        /// El ancho de los botones de la bienvenida en pantalla ancha: al centro, sin estirarse a todo lo ancho de la columna.
+        static var buttonWidth: CGFloat { Mac.sized(360) }
     }
 
     /// La vitrina (B1): a los 12 s sin tocar, la bienvenida se enseña sola; dos vueltas y se detiene.

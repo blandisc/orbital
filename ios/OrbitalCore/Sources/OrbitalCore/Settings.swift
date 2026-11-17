@@ -25,11 +25,33 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var region = AppSettings.phoneRegion
     /// Ya hay país: lo elegiste en Ajustes o se trajo una vez de tu Orbital. Conectarla después ya no lo cambia.
     public var regionChosen = false
-    /// El país del iPhone (Ajustes › General › Idioma y región), o México si no lo dice.
+    /// Dónde estás: el país de tu zona horaria si se sabe (una Mac en inglés de EE. UU. en Monterrey pedía el Top 10 de
+    /// Estados Unidos; Fernando, 17 nov 2026: «el top 10 de Netflix sigue sin seguir el top 10»); si no, el país del idioma y
+    /// región del aparato; si no, México.
     public static var phoneRegion: String {
+        if let zone = zoneRegion(TimeZone.current.identifier) { return zone }
         let code = Locale.current.region?.identifier ?? ""
         return code.count == 2 && code.allSatisfy(\.isLetter) ? code.uppercased() : "MX"
     }
+
+    /// El país de una zona horaria de América Latina o España («America/Monterrey» → MX); nil si no es una de ellas (Estados
+    /// Unidos y Canadá comparten zonas: ahí manda el idioma y región).
+    public static func zoneRegion(_ identifier: String) -> String? {
+        let city = identifier.split(separator: "/").dropFirst().joined(separator: "/")
+        guard identifier.hasPrefix("America/") || identifier.hasPrefix("Europe/") else { return nil }
+        for (code, cities) in zoneCities where cities.contains(city) { return code }
+        return nil
+    }
+
+    static let zoneCities: [(String, Set<String>)] = [
+        ("MX", ["Mexico_City", "Monterrey", "Tijuana", "Cancun", "Merida", "Chihuahua", "Hermosillo", "Mazatlan", "Matamoros",
+                "Ojinaga", "Bahia_Banderas", "Ciudad_Juarez"]),
+        ("AR", ["Buenos_Aires", "Argentina/Buenos_Aires", "Argentina/Cordoba", "Argentina/Mendoza", "Cordoba"]),
+        ("CO", ["Bogota"]), ("CL", ["Santiago"]), ("PE", ["Lima"]), ("VE", ["Caracas"]), ("EC", ["Guayaquil"]),
+        ("GT", ["Guatemala"]), ("CR", ["Costa_Rica"]), ("PA", ["Panama"]), ("SV", ["El_Salvador"]), ("HN", ["Tegucigalpa"]),
+        ("NI", ["Managua"]), ("DO", ["Santo_Domingo"]), ("UY", ["Montevideo"]), ("PY", ["Asuncion"]), ("BO", ["La_Paz"]),
+        ("ES", ["Madrid"]),
+    ]
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large» | «xlarge»: el tamaño de la letra de los subtítulos
@@ -79,6 +101,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         warnCellularOverGB = try c.decodeIfPresent(Double.self, forKey: .warnCellularOverGB) ?? warnCellularOverGB
         region = try c.decodeIfPresent(String.self, forKey: .region) ?? region
         regionChosen = try c.decodeIfPresent(Bool.self, forKey: .regionChosen) ?? regionChosen
+        // Sin elegir: sigue a donde estás (lo guardado era una foto del primer arranque, con el país del idioma).
+        if !regionChosen { region = AppSettings.phoneRegion }
         preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize

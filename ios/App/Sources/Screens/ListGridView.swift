@@ -148,6 +148,10 @@ struct PlatformRankingsView: View {
     /// La lista en cuadrícula de dos, con el número grande en el color de la plataforma y su brillo (como hoy).
     @ViewBuilder private func grid(_ ranking: PlatformRanking, tint: Color) -> some View {
         let items = model.items(for: ranking)
+        // Ya terminó y no trajo nada: lo dice (antes la página se quedaba en blanco).
+        if items.isEmpty && !model.isLoading(ranking: ranking) {
+            DSEmptyState(symbol: "tray", title: Text("Hoy no hay ranking de este servicio."))
+        }
         LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in

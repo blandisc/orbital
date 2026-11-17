@@ -163,20 +163,27 @@ struct MosaicCover: View {
             ForEach(0..<columns, id: \.self) { c in
                 let posters = column(c)
                 CoreDrift(key: posters, content: AnyView(strip(posters).environment(\.perfTag, c == 0 ? perfTag : nil)),
-                          contentHeight: Self.loop * 2, loop: Self.loop,
+                          contentHeight: loop * 2, loop: loop,
                           speed: DS.ParaTiB.coverPace[c % DS.ParaTiB.coverPace.count], phase: Double(c) * DS.ParaTiB.coverPhaseStep,
                           rising: DS.ParaTiB.coverAlternates && c % 2 == 1,
                           enabled: !still, running: onScreen)
-                    .frame(width: Self.columnWidth, height: DS.ParaTiB.coverWallHeight)
+                    .frame(width: columnWidth, height: DS.ParaTiB.coverWallHeight)
             }
         }
-        .frame(width: CGFloat(columns) * Self.columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
+        .frame(width: CGFloat(columns) * columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Cuántas columnas lleva el muro en esta ventana (`DS.ParaTiB.coverColumns(forWidth:)`): ocho, o más en ventana ancha.
-    private var columns: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.column.width) }   // lo que le queda a la pantalla (sin el panel del control)
+    /// Cuántas columnas lleva el muro en esta ventana: ocho, o más en ventana ancha, pero nunca más de `coverMaxColumns`; lo
+    /// que falta para cubrir la ventana lo ponen columnas más anchas (`widen`), con menos renglones. En la Mac eran 13 columnas
+    /// de 26 pósters (~340 a la vez) y cambiar de Inicio a Explorar se trababa (Fernando, 17 nov 2026: «está lentísimo»).
+    private var needed: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.column.width) }   // lo que le queda a la pantalla (sin el panel del control)
+    private var columns: Int { min(needed, DS.ParaTiB.coverMaxColumns) }
+    private var widen: CGFloat { CGFloat(needed) / CGFloat(columns) }
+    private var rows: Int { Int((Double(DS.ParaTiB.coverRows) / Double(widen)).rounded(.up)) }
+    private var columnWidth: CGFloat { Self.columnWidth * widen }
+    private var loop: CGFloat { (columnWidth / DS.Poster.aspect + DS.Space.s2) * CGFloat(rows) }
 
     private var still: Bool {
         #if DEBUG
@@ -187,22 +194,21 @@ struct MosaicCover: View {
 
     /// El ancho de una columna del muro y lo que mide una vuelta de su tira (sus pósters una vez, con su separación).
     private static let columnWidth = (DS.ParaTiB.coverWall - DS.Space.s2 * CGFloat(DS.ParaTiB.coverColumns - 1)) / CGFloat(DS.ParaTiB.coverColumns)
-    private static let loop = (columnWidth / DS.Poster.aspect + DS.Space.s2) * CGFloat(DS.ParaTiB.coverRows)
 
     /// Los pósters de una columna: uno de cada `coverColumns` del orden del muro (así las vecinas no repiten).
     private func column(_ c: Int) -> [String] {
         guard !order.isEmpty else { return [] }
-        return (0..<DS.ParaTiB.coverRows).map { order[(c + $0 * columns) % order.count] }
+        return (0..<rows).map { order[(c + $0 * columns) % order.count] }
     }
 
     /// La tira de una columna, dos veces seguida: al bajar una vuelta entera queda igual que al principio y se repite sin corte.
     private func strip(_ posters: [String]) -> some View {
         VStack(spacing: DS.Space.s2) {
             ForEach(0..<(posters.count * 2), id: \.self) { i in
-                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic).frame(width: Self.columnWidth)
+                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic * widen).frame(width: columnWidth)
             }
         }
-        .frame(width: Self.columnWidth, alignment: .top)
+        .frame(width: columnWidth, alignment: .top)
     }
 
     /// Las orillas: arriba sube mucho más que la pantalla (al jalar para actualizar siguen los pósters, Fernando, 31 oct
@@ -318,10 +324,18 @@ struct DecideDoor: View {
                     // En el SE, junto al abanico, se cortaba («…no sabes qu…»): se achica un poco en vez de cortarse.
                     Eyebrow(text: Text("Para cuando no sabes qué ver"), reason: true).minimumScaleFactor(DS.Size.statScale)
                     // El dado una sola vez: junto al nombre si hay pósters; si no, ya es el ícono de la izquierda.
-                    if posters.isEmpty { Text("Decide por mí").recipe(.section) }
-                    else { Label { Text("Decide por mí") } icon: { Image(systemName: DS.Symbol.decide) }.recipe(.section) }
+                    // Más grande y con su color (Fernando, 17 nov 2026: «Decide por mí, hazlo más vistoso en ambos, un poquito
+                    // más grande»): el nombre en tamaño de título y el dado en turquesa.
+                    if posters.isEmpty { Text("Decide por mí").recipe(.title) }
+                    else {
+                        HStack(spacing: DS.Space.s2) {
+                            Image(systemName: DS.Symbol.decide).foregroundStyle(DS.brandMoon).accessibilityHidden(true)
+                            Text("Decide por mí").recipe(.title)
+                        }
+                        .font(DS.TextRecipe.title.font)
+                    }
                     (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("Tres que caben · Una por una"))
-                        .recipe(.footnote, color: DS.textMuted)
+                        .recipe(.secondary, color: DS.textMuted)
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
@@ -332,8 +346,13 @@ struct DecideDoor: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DS.Space.s4)
-            .dsCard(.card)
+            .padding(DS.Space.s5)
+            .background {
+                // Un brillo del color de acento desde el abanico, como el color de «La temporada»: la puerta se ve como puerta.
+                Color.clear.dsCard(.card)
+                    .overlay(LinearGradient(colors: [DS.accent.opacity(DS.ParaTiB.doorGlow), .clear], startPoint: .leading, endPoint: .trailing)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)))
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -376,47 +395,6 @@ struct PosterFan: View {
         }
         .frame(width: width + DS.ParaTiB.deckShift * CGFloat(DS.ParaTiB.matchFan - 1), alignment: .leading)
         .accessibilityHidden(true)
-    }
-}
-
-/// «La temporada»: la de ahora (o la siguiente en llegar) en grande, con su color, cuándo, su frase, sus tres más vistos en
-/// abanico. Toda la tarjeta abre la colección (sin flecha ni cápsula).
-struct SeasonFeature: View {
-    let name: String
-    let blurb: String
-    let days: Int
-    let posters: [String]
-    let tint: Color
-
-    var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s4) {
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Eyebrow(text: when, reason: true)
-                // Toda la tarjeta abre la colección, sin cápsula «Ver la colección» (H3) y sin flecha: la temporada de ahora es la
-                // portada de la sección, no una fila (Fernando, 2 nov 2026).
-                Text(verbatim: name).recipe(.title).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
-                Text(verbatim: blurb).recipe(.footnote, color: DS.textMuted).lineLimit(2)
-            }
-            Spacer(minLength: 0)
-            if !posters.isEmpty { PosterFan(posters: posters, width: DS.ParaTiB.seasonPoster) }
-        }
-        .padding(DS.Space.s4)
-        .background {
-            Color.clear.dsCard(.card)
-                .overlay(LinearGradient(colors: [tint.opacity(DS.ParaTiB.seasonGlow), .clear], startPoint: .topTrailing, endPoint: .bottomLeading)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)))
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-
-    /// «La temporada · ahora», «… · mañana» o «… · en 12 días».
-    private var when: Text {
-        switch days {
-        case 0: Text("La temporada · ahora")
-        case 1: Text("La temporada · mañana")
-        default: Text("La temporada · en \(days) días")
-        }
     }
 }
 

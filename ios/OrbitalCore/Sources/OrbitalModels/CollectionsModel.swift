@@ -9,7 +9,7 @@ public final class CollectionsModel: ObservableModel {
     /// Mi lista de Stremio (tu biblioteca), lo más reciente primero.
     public private(set) var myList: [Suggestion] = [] { didSet { if myList != oldValue { changed() } } }   // la misma lista al volver a la pestaña no redibuja
     /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
-    public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
+    public private(set) var yearPosters: [Int: [String]] = [:] { didSet { if yearPosters != oldValue { changed() } } }
     private var watchedCache: Set<String>?
 
     /// Viste algo: «Ocultar lo que ya vi» se vuelve a preguntar.
@@ -18,7 +18,7 @@ public final class CollectionsModel: ObservableModel {
     public func resetAccount() { watchedCache = nil; myList = [] }
     /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
     public let studios: [(id: Int, name: String)] = Tmdb.studios
-    public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }
+    public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { if studioItems != oldValue { changed() } } }
     /// El logo de cada estudio (TMDB), si lo tiene; se guarda en el iPhone (no cambia).
     public private(set) var studioLogos: [Int: String] = [:] { didSet { if oldValue != studioLogos { changed() } } }
     public var tmdbReady: Bool { services.tmdb.configured }
@@ -26,10 +26,10 @@ public final class CollectionsModel: ObservableModel {
     public var seasons: [TmdbSeason] { Tmdb.orderedSeasons(today: services.now()) }
     /// Las temporadas con los días que faltan (0: ya va), de la más cercana a la más lejana.
     public var seasonCountdown: [(season: TmdbSeason, days: Int)] { Tmdb.seasonCountdown(today: services.now()) }
-    public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { changed() } }
+    public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { if seasonItems != oldValue { changed() } } }
     /// «Lo mejor del género»: los 14 géneros y el Top de cada uno (con el año de verdad), que se pide al verlo.
     public let genres: [TmdbGenre] = Tmdb.genres
-    public private(set) var genreCharts: [String: GenreChart] = [:] { didSet { changed() } }
+    public private(set) var genreCharts: [String: GenreChart] = [:] { didSet { if genreCharts != oldValue { changed() } } }
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
 

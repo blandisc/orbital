@@ -442,3 +442,60 @@ struct SeasonTimelineStop: View {
         return months == 1 ? Text("en 1 mes") : Text("en \(months) meses")
     }
 }
+
+/// «La temporada»: la de ahora (o la siguiente en llegar) en grande, con su ícono, su color, cuándo, su frase y sus más
+/// vistos (tres en abanico; en la Mac, también una tira que se desvanece hacia el texto). Toda la tarjeta abre la colección
+/// (sin flecha ni cápsula).
+/// Pulida (Fernando, 17 nov 2026: «pulir el elemento Navidad, la temporada que está en marcha»): en la Mac era una franja
+/// delgada con un abanico diminuto en la orilla; ahora lleva el ícono de la temporada, el nombre en grande, más color y altura.
+struct SeasonFeature: View {
+    let slug: String
+    let name: String
+    let blurb: String
+    let days: Int
+    let posters: [String]
+    let tint: Color
+
+    var body: some View {
+        HStack(alignment: .center, spacing: DS.Space.s5) {
+            Image("Collections/" + slug).resizable().scaledToFit()
+                .frame(width: DS.ParaTiB.seasonIcon, height: DS.ParaTiB.seasonIcon)
+                .glow(tint, .strong)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Eyebrow(text: when, reason: true)
+                // Toda la tarjeta abre la colección, sin cápsula «Ver la colección» (H3) y sin flecha: la temporada de ahora es la
+                // portada de la sección, no una fila (Fernando, 2 nov 2026).
+                Text(verbatim: name).recipe(.display).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
+                Text(verbatim: blurb).recipe(.secondary, color: DS.textMuted).lineLimit(2)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if posters.count > DS.ParaTiB.matchFan, ProcessInfo.processInfo.isiOSAppOnMac {
+                DecideStrip(posters: Array(posters.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.seasonStrip)))
+            }
+            if !posters.isEmpty { PosterFan(posters: posters, width: DS.ParaTiB.seasonPoster) }
+        }
+        .padding(DS.Space.s5)
+        .frame(minHeight: DS.ParaTiB.seasonHeight)
+        .background {
+            Color.clear.dsCard(.card)
+                .overlay(LinearGradient(colors: [tint.opacity(DS.ParaTiB.seasonGlow), tint.opacity(DS.ParaTiB.seasonGlow / 3)],
+                                        startPoint: .leading, endPoint: .trailing)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .strokeBorder(tint.opacity(DS.ParaTiB.seasonRing), lineWidth: DS.Stroke.regular))
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    /// «La temporada · ahora», «… · mañana» o «… · en 12 días».
+    private var when: Text {
+        switch days {
+        case 0: Text("La temporada · ahora")
+        case 1: Text("La temporada · mañana")
+        default: Text("La temporada · en \(days) días")
+        }
+    }
+}

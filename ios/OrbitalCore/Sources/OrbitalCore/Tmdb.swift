@@ -185,7 +185,9 @@ public struct Tmdb: Sendable {
     public func searchIMDb(kind: String, title: String) async throws -> String? {
         let data = try await get("/search/\(Tmdb.kinds[kind] ?? "movie")", [("query", title), ("include_adult", "false")])
         guard let id = data["results"]?.array?.first?["id"]?.intValue else { return nil }
-        return try await details(kind: kind, tmdbID: id).imdb
+        // Sin fila: es un ranking que estás viendo; detrás de los ~260 detalles de Explorar, las series de Netflix tardaban más
+        // de un minuto (Fernando, 17 nov 2026: «está lentísimo»).
+        return try await details(kind: kind, tmdbID: id, urgent: true).imdb
     }
 
     /// Una película por su título y año (lo que trae el archivo de Letterboxd) → su id de TMDB: la del año exacto, si no la

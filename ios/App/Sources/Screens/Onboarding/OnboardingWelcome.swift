@@ -15,6 +15,8 @@ struct OnboardingWelcome: View {
     @State private var attract = false
     @State private var touched = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// En pantalla ancha (iPad, Mac) la marca crece hasta `DS.Welcome.wideScale`.
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     init(guide: OnboardingModel, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); self.next = next; self.skip = skip
@@ -27,7 +29,7 @@ struct OnboardingWelcome: View {
             Spacer(minLength: DS.Space.s4)
             // En un iPhone chico (SE) la escena se encoge para que el texto y «Empezar» quepan.
             GeometryReader { geo in
-                let scale = min(1, geo.size.height / DS.Welcome.sceneHeight)
+                let scale = min(sizeClass == .regular ? DS.Welcome.wideScale : 1, geo.size.height / DS.Welcome.sceneHeight)
                 ZStack {
                     OrbitCatch(posters: model.candidates) { moon += 1 }
                         .opacity(attract ? 0 : 1)
@@ -36,19 +38,23 @@ struct OnboardingWelcome: View {
                 .scaleEffect(scale)
                 .frame(width: geo.size.width, height: geo.size.height)
             }
-            .frame(maxHeight: DS.Welcome.sceneHeight)
+            .frame(maxHeight: DS.Welcome.sceneHeight * DS.Welcome.wideScale)
+            .layoutPriority(1)   // la marca toma su alto antes que los espacios (si no, se quedaba chica en el iPad y la Mac)
             Spacer(minLength: DS.Space.s4)
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
+            // Al centro, bajo la marca, y más grande (Fernando, 17 nov 2026: «el texto más grande, los botones centrados»).
+            VStack(alignment: .center, spacing: DS.Space.s3) {
                 Text("Todo lo que quieres ver, en un solo lugar.").recipe(.display, color: DS.text)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Encuentra qué ver, sigue tus series y míralo aquí mismo.").recipe(.body, color: DS.textMuted)
+                Text("Encuentra qué ver, sigue tus series y míralo aquí mismo.").font(DS.Welcome.lead).foregroundStyle(DS.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : DS.Welcome.rise)
             Button(action: next) { Text("Empezar").frame(maxWidth: .infinity) }
                 .dsPrimaryButton().dsControlSize(.large)
+                .frame(maxWidth: DS.Welcome.buttonWidth)
                 .opacity(showsButton ? 1 : 0)
                 .accessibilityIdentifier("guide-next")
         }
