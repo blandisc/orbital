@@ -122,9 +122,10 @@ export function createToast({ onTone = () => {} } = {}) {
         h("span", { class: "toast__title" }, title),
         // Calificar (como la pastilla «¿Qué tal…?» del iPhone): las cinco estrellas vacías invitan antes del detalle.
         toast.rating ? Stars(0, { className: "toast__stars" }) : null,
+        toast.stars ? Stars(toast.stars, { className: "toast__stars" }) : null, // OP-1: la que diste, en ámbar
         detail ? h("span", { class: "toast__detail" }, detail) : null),
       action);
-    el.className = ["toast", `toast--${toast.tone}`, detail || toast.image ? "toast--two-line" : null,
+    el.className = ["toast", `toast--${toast.tone}`, detail || toast.image || toast.stars ? "toast--two-line" : null,
       toast.image ? "toast--rich" : null, toast.rating ? "toast--rate" : null].filter(Boolean).join(" ");
     el.setAttribute("role", toast.tone === "error" ? "alert" : "status");
     el.hidden = false;
@@ -137,17 +138,18 @@ export function createToast({ onTone = () => {} } = {}) {
   /**
    * `message`: el título (con « · », también el detalle). Opciones: `tone`, `detail`, `image`, `heading` (el título
    * cuando `message` es el detalle: «Hades» / «Jugaste 2 h»), `action` ({ label, glyph, onPress }), `duration`,
-   * `countdown`, `urgent`, `rating` (calificar: estrellas vacías y la acción en pastilla). Las de antes siguen: `error`, `voice`, `onPress`.
+   * `countdown`, `urgent`, `rating` (calificar: estrellas vacías y la acción en pastilla), `stars` (la calificación que diste,
+   * en ámbar). Las de antes siguen: `error`, `voice`, `onPress`.
    */
   function show(message, { tone = "", error = false, voice = false, countdown = 0, duration = 0, onPress = null, urgent = false,
-    heading = "", image = "", detail = "", action = null, rating = false } = {}) {
+    heading = "", image = "", detail = "", action = null, rating = false, stars = 0 } = {}) {
     if (!message) return;
     const text = heading || message;
     const below = heading ? message : detail;
     const last = queue.at(-1) || current;
     if (last?.message === text && (last?.detail || "") === (below || "")) return; // el mismo aviso dos veces seguidas no aporta
     const toast = {
-      message: text, detail: below, image, countdown, duration, rating,
+      message: text, detail: below, image, countdown, duration, rating, stars,
       tone: toneOf({ tone, error, voice, message: text }),
       onPress: action?.onPress || onPress, actionLabel: action?.label || "", actionGlyph: action?.glyph || "",
     };

@@ -161,7 +161,8 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
       ui.title.rated?.(command.id, command.stars); // la ficha abierta dice «Tu calificación» al instante
       ui.sheet.close();
       sound.play(command.stars ? "success" : "select");
-      ui.toast.show(command.stars ? `${command.title} · ${starText(command.stars)}` : `Quité tu calificación de ${command.title}`, { tone: "success" });
+      // OP-1 (16 nov 2026): las estrellas en ámbar (Stars), no en el blanco del texto.
+      ui.toast.show(command.stars ? command.title : `Quité tu calificación de ${command.title}`, { tone: "success", stars: command.stars || 0 });
       return renderHints();
     },
     "watched": async (command, context) => openMenu(watchedMenu(command), nested(context)),

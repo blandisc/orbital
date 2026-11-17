@@ -160,7 +160,8 @@ export const api = {
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),
-  forYouCollections: () => request("/api/foryou/collections", SLOW), // Colecciones: los premios y las listas famosas
+  // Colecciones: los premios y las listas famosas (`counts: false`: sin contar lo que viste, para que salgan ya; CO-3).
+  forYouCollections: ({ counts = true } = {}) => request(`/api/foryou/collections${counts ? "" : "?counts=false"}`, SLOW),
   matchDeck: () => request("/api/foryou/match"), // un solo mazo, de todo (sin ánimos)
   match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),
   myRating: (kind, id) => request(`/api/foryou/rating?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`),

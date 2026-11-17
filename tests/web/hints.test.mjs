@@ -13,8 +13,10 @@ test("el pie no repite lo que ya dicen los botones del héroe", () => {
 });
 
 test("fuera del inicio enseña cómo volver, LB/RB cambia de sección y LT/RT salta en filas largas", () => {
-  const items = footerHints(GLYPHS.gamepad, { atHome: false, longRow: true });
-  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Saltar 5", "Atrás", "Menú"]);
+  // PS-4 (16 nov 2026): B ya subía al principio; el pie lo dice («Subir» desde otra fila, «Al principio» en la primera).
+  const items = footerHints(GLYPHS.gamepad, { atHome: false, atTop: false, longRow: true });
+  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Saltar 5", "Subir", "Menú"]);
+  assert.equal(footerHints(GLYPHS.gamepad, { atHome: false, atTop: true }).find((i) => i.glyph === "B").label, "Al principio");
   assert.equal(items[2].glyph, "LB RB");
   assert.equal(items[3].glyph, "LT RT");
   assert.equal(items[4].glyph, "B");
@@ -56,7 +58,7 @@ test("la leyenda del pie, como {acción: texto}, para el control del iPhone", as
   assert.deepEqual(legendOf(list, glyphs), { select: "Ver", alt: "Mi lista", section: "Sección" });
 });
 
-test("la leyenda: como mucho tres pistas a la vista y Menú, B siempre «Atrás»; lo de la barra de arriba solo va al iPhone", async () => {
+test("la leyenda: como mucho tres pistas a la vista y Menú, B dice a dónde lleva; lo de la barra de arriba solo va al iPhone", async () => {
   const { gamesHints, homeHints, tvHints, legendOf } = await import("../../orbital/web/js/core/hints.js");
   const g = { select: "A", alt: "X", back: "B", options: "Y", rows: "↑↓", search: "S", section: "LB RB", page: "LT RT", menu: "☰", home: "Home" };
   const seen = (list) => list.filter((i) => !i.offscreen && !i.end);
@@ -67,7 +69,7 @@ test("la leyenda: como mucho tres pistas a la vista y Menú, B siempre «Atrás�
     homeHints(g, { kind: "console", console: { last: null } })]) {
     assert.ok(seen(list).length <= 3, seen(list).map((i) => i.label).join(", "));
     const back = list.find((i) => i.glyph === "B");
-    if (back) assert.equal(back.label, "Atrás");
+    if (back) assert.ok(["Atrás", "Subir", "Al principio"].includes(back.label), back.label); // PS-4: en las filas, «Subir»
   }
 });
 

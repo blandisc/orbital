@@ -226,9 +226,9 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/collections")
     @slow
-    def collections() -> dict:
-        """Colecciones: los premios y las listas famosas, con cuántas ya viste de cada una."""
-        return {"collections": foryou.collections(), "trakt": foryou.trakt.linked}
+    def collections(counts: bool = True) -> dict:
+        """Colecciones: los premios y las listas famosas, con cuántas ya viste de cada una (`counts=false`: sin contar, ya)."""
+        return {"collections": foryou.collections(counts=counts), "trakt": foryou.trakt.linked}
 
     @r.get("/match")
     def match_deck(mood: str = "") -> dict:

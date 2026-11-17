@@ -9,7 +9,7 @@
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
-export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, longRow = false, groups = false, running = null, rows = 2,
+export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, atTop = true, longRow = false, groups = false, running = null, rows = 2,
   primary = null, alt = null, heroButtons = false, stage = null, kinds = null, kindAction = null, status = null } = {}) {
   if (sheetOpen) {
     // Una fila que solo informa («Cómo se usa», ejemplos de Alexa): A no hace nada, no se ofrece.
@@ -39,7 +39,8 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     stage === "seeds" ? { glyph: String(glyphs.page).split(" ")[1], label: "Ver sugeridas", secondary: true }
       : stage === "related" ? { glyph: String(glyphs.page).split(" ")[0], label: "Tus títulos", secondary: true }
       : groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
-    !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
+    // PS-4 (Fernando, 16 nov 2026: «un acceso directo para subir hasta arriba»): B ya sube; el pie lo dice.
+    !atHome && { glyph: glyphs.back, label: atTop ? "Al principio" : "Subir", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` },
     { glyph: glyphs.menu, label: "Menú", end: true },

@@ -315,7 +315,7 @@ const ui = {
   match: decideScreens.match,
   // Colecciones (como la repisa del iPhone): los premios y las listas famosas, con cuánto llevas.
   showcase: createShowcase({
-    load: () => api.forYouCollections(),
+    load: (options) => api.forYouCollections(options),
     onOpen: (c) => openShowcaseItem(c),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
@@ -540,6 +540,7 @@ function renderHints() {
     adjustable: ui.sheet.adjustable,
     inert: ui.sheet.inert,
     atHome: !r && !c,
+    atTop: !r,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     groups: state.section === "media" && state.rows.some((row) => row.group),
     stage: state.section === "media" ? stageSide(state.rows[r], c) : null,
@@ -1045,7 +1046,8 @@ let yearsLoaded = 0;
 let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
 const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
 /** Todo · Películas · Series a la vista sobre el destacado, solo en Películas y series (el Inicio del iPhone lo lleva arriba). */
-const MEDIA_KINDS = [["all", "Todo"], ["movie", "Películas"], ["series", "Series"]]; // las pestañas del héroe, en su orden
+// PS-1 (Fernando, 16 nov 2026): cada pestaña con su ícono, los mismos del selector del iPhone (KindGlyph).
+const MEDIA_KINDS = [["all", "Todo", "grid"], ["movie", "Películas", "movie"], ["series", "Series", "series"]]; // las pestañas del héroe, en su orden
 // T5 (10 nov 2026): con el mando o el teclado, ↑ desde la primera fila entra a «Todo · Películas · Series» (como los filtros de
 // Juegos); ◀ ▶ cambian de pestaña, A la elige, ↓ o B regresan a la fila. `kindFocus`: cuál está enfocada (null: ninguna).
 let kindFocus = null;
@@ -1053,9 +1055,10 @@ let kindFocus = null;
 // o el teclado, ↑ desde la primera fila y ▶ hasta el ícono; A lo abre. Con el mouse o el dedo, un clic o un toque.
 const MEDIA_TOOLS = [
   // NQ-2 (Fernando, 16 nov 2026): «Decide por mí» donde más se duda, con su nombre a la vista (es una puerta, no una herramienta).
-  { id: "decide", icon: "spark", label: "Decide por mí", named: true, command: { type: "decide" } },
+  // PS-2 (16 nov): todos con su nombre a la vista, como las pestañas (antes solo el ícono, que se estiraba al enfocarlo).
+  { id: "decide", icon: "spark", label: "Decide por mí", command: { type: "decide" } },
   { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
-  { id: "collections", icon: "trophy", label: "Colecciones", command: { type: "collections" } },
+  { id: "collections", icon: "stack", label: "Colecciones", command: { type: "collections" } }, // PS-3: pilas, no el trofeo
   { id: "filter", icon: "sliders", label: "Filtro avanzado", command: { type: "filter" } },
 ];
 const kindStops = () => MEDIA_KINDS.length + MEDIA_TOOLS.length; // las pestañas y luego los íconos

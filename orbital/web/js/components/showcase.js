@@ -7,7 +7,9 @@ import { EmptyState, Progress, ScreenHead } from "./ui.js";
  * Colecciones (☰; como la vitrina y la repisa del iPhone, ola 3 de «Una sola Orbital»): los premios y las listas famosas,
  * cada uno con cuánto llevas («12 de 96») y su barra. A (o tocar) abre su lista; B cierra.
  *
- * load() → { collections: [{ id, title, meta, family: "award" | "list", tint?, total, seen }], trakt } · onOpen(collection)
+ * CO-3 (16 nov 2026): primero sale sin contar (load({ counts: false }), al instante) y la cuenta llega después.
+ *
+ * load({ counts }) → { collections: [{ id, title, meta, family: "award" | "list", tint?, total, seen }], trakt } · onOpen(collection)
  */
 export function createShowcase({ load, onOpen, onMove, onClose }) {
   const head = h("div");
@@ -26,32 +28,40 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
     el.hidden = false;
     mount(head, ScreenHead({ eyebrow: "Los premios y las listas famosas", title: "Colecciones" }));
     mount(grid);
-    mount(status, EmptyState({ icon: "trophy", title: "Contando lo que viste…" }));
+    mount(status, EmptyState({ icon: "trophy", title: "Buscando las colecciones…" }));
     try {
-      const res = await load();
+      const res = await load({ counts: false });
       if (mine !== token) return;
       items = res.collections || [];
-      mount(status, !res.trakt && EmptyState({ icon: "info", title: "Con Trakt, cuánto llevas de cada una",
-        text: "Conecta Trakt en Ajustes › Cuentas para ver qué ya viste." }));
+      mount(status, res.trakt ? h("p", { class: "showcase__counting", role: "status" }, "Contando lo que viste…")
+        : EmptyState({ icon: "info", title: "Con Trakt, cuánto llevas de cada una", text: "Conecta Trakt en Ajustes › Cuentas para ver qué ya viste." }));
       render();
+      onMove?.();
+      if (!res.trakt) return;
+      const counted = await load({ counts: true });
+      if (mine !== token) return;
+      items = counted.collections || items;
+      mount(status);
+      render({ keep: true });
     } catch (err) {
       if (mine !== token) return;
-      mount(status, EmptyState({ icon: "warning", title: "No pude cargar Colecciones", text: err.message }));
+      if (items.length) mount(status); // ya se ven: sin la cuenta, igual se pueden abrir
+      else mount(status, EmptyState({ icon: "warning", title: "No pude cargar Colecciones", text: err.message }));
     }
-    onMove?.();
   }
 
-  function render() {
-    focusId = "col:0";
+  function render({ keep = false } = {}) {
+    if (!keep) focusId = "col:0";
     mount(grid, items.map((c, i) => h("div", {
       class: ["tile", "showcase__item", `showcase__item--${c.family}`], role: "button", tabindex: "-1", "data-focus-id": `col:${i}`,
-      "data-tint": c.tint || null, "aria-label": `${c.title}: ${c.seen} de ${c.total}`,
+      "data-tint": c.tint || null, "aria-label": c.seen == null ? `${c.title}: ${c.total} títulos` : `${c.title}: ${c.seen} de ${c.total}`,
       onClick: () => (focusId === `col:${i}` ? onOpen?.(c) : (focusId = `col:${i}`, paint(), onMove?.())),
     },
     h("span", { class: "showcase__icon", "aria-hidden": "true" }, svg(ICONS[c.family === "award" ? "trophy" : "list"])),
     h("span", { class: "showcase__text" }, h("strong", { class: "showcase__name" }, c.title), c.meta && h("span", { class: "showcase__meta" }, c.meta)),
-    h("span", { class: "showcase__count" }, `${c.seen} de ${c.total}`),
-    Progress(c.total ? c.seen / c.total : 0, { className: "showcase__progress", label: "Cuánto llevas" }))));
+    // Sin contar todavía: cuántos títulos tiene; la barra llega con la cuenta.
+    h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : `${c.seen} de ${c.total}`),
+    Progress(c.total && c.seen != null ? c.seen / c.total : 0, { className: "showcase__progress", label: "Cuánto llevas" }))));
     paint();
   }
 

@@ -7,7 +7,7 @@
  *  - El aviso de «Vista» trae «Cambiar» (Y): «Deshacer» (solo la de hoy) u «Otra fecha».
  *  - «Historial» (☰ de Guardado › Vistas), con las repetidas marcadas y «Borrar N vistas repetidas».
  *  Sin internet, las vistas y la nota esperan en la cola de Trakt. */
-import { STARS, starText } from "./yours-commands.js";
+import { STARS } from "./yours-commands.js";
 import { clock } from "../core/format.js";
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -191,7 +191,7 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
       try {
         await api.rateSeason(command.id, command.season, command.stars);
         sound.play(command.stars ? "success" : "select");
-        ui.toast.show(command.stars ? `${command.title}, temporada ${command.season} · ${starText(command.stars)}` : "Quité tu calificación de la temporada", { tone: "success" });
+        ui.toast.show(command.stars ? `${command.title}, temporada ${command.season}` : "Quité tu calificación de la temporada", { tone: "success", stars: command.stars || 0 });
       } catch (err) { return failed(err, "No pude guardar tu calificación"); }
       return renderHints();
     },

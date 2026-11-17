@@ -118,9 +118,11 @@ class ForYou(_Home):
             scrobbler.outbox = self.gestor.outbox
 
     # Aquí y no en su pieza: lee `load_awards` de este módulo (las pruebas lo cambian por aquí).
-    def collections(self) -> list[dict]:
-        """La vitrina de Colecciones: cada premio y cada lista famosa con cuántas ya viste (lo que no se pudo leer no sale)."""
-        watched = set(self.watched_ids()) if self.trakt.linked else set()
+    def collections(self, counts: bool = True) -> list[dict]:
+        """La vitrina de Colecciones: cada premio y cada lista famosa con cuántas ya viste (lo que no se pudo leer no sale).
+        `counts=False`: sin preguntarle a Trakt qué viste (`seen` en None), para que la vitrina salga ya y la cuenta llegue
+        después (CO-3, Fernando, 16 nov 2026: la primera vez eran más de 8 s de «Contando lo que viste…»)."""
+        watched = set(self.watched_ids()) if counts and self.trakt.linked else set()
         awards = {a["id"]: a for a in load_awards()}
         out = []
         for award_id in [*AWARD_ORDER, *(a for a in awards if a not in AWARD_ORDER)]:
@@ -128,7 +130,7 @@ class ForYou(_Home):
             if a:
                 ids = {w["imdb"] for w in a["winners"]}
                 out.append({"id": f"award:{award_id}", "title": a["title"], "meta": a.get("category") or "", "family": "award",
-                            "tint": a["tint"], "kind": a["kind"], "total": len(ids), "seen": len(ids & watched)})
+                            "tint": a["tint"], "kind": a["kind"], "total": len(ids), "seen": len(ids & watched) if counts else None})
         for canon_id, title, _, _total in CANON:
             try:
                 items = self._canon(canon_id)
@@ -137,5 +139,5 @@ class ForYou(_Home):
             if items:
                 ids = {e["imdb"] for e in items}
                 out.append({"id": f"canon:{canon_id}", "title": title, "meta": "", "family": "list", "total": len(ids),
-                            "seen": len(ids & watched)})
+                            "seen": len(ids & watched) if counts else None})
         return out

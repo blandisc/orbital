@@ -369,6 +369,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back" && editing) { setEditing(false); return true; } // B: «Listo»
     if (action === "back" && reordering) { setReordering(false); return true; }
+    // PS-4 (16 nov 2026): de la segunda fila para abajo, B primero sube al principio; arriba, cierra.
+    if (action === "back" && zone === "grid" && index >= columns()) { index = 0; onMove?.(); paintFocus(); return true; }
     if (action === "back") { close(); return true; }
     if (action === "menu") { onSort?.(api); return true; }
     if (action === "prevsection" || action === "nextsection") { switchTab(tab + (action === "nextsection" ? 1 : -1)); return true; }
@@ -506,7 +508,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
     { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },
-    { glyph: g.back, label: "Atrás", end: true },
+    { glyph: g.back, label: zone === "grid" && index >= columns() ? "Subir" : "Atrás", end: true },
   ]).filter(Boolean);
 
   return { el, open, close, handle, hints, sorter: api, setPerson, setHeading, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
