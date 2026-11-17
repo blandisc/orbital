@@ -223,18 +223,18 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     if (onFilters() || !picks.length) {
       // AD-8: con el foco en «Filtros», la izquierda dice qué hace A; sin propuestas, por qué y qué hacer.
       const empty = !picks.length;
-      return mount(info, Eyebrow(empty ? (state === "error" ? "No pude decidir ahora" : "No encontré nada con eso") : "Filtros", { className: "decide-info__eyebrow" }),
+      return mount(info, empty && Eyebrow(state === "error" ? "No pude decidir ahora" : "No encontré nada con eso", { className: "decide-info__eyebrow" }),
         h("h2", { class: "decide-info__name" }, empty ? (state === "error" ? "Inténtalo de nuevo" : "Prueba con otros filtros") : "¿Qué se te antoja?"),
         h("p", { class: "decide-info__facts" }, empty && state === "error" ? problem : "Qué tipo, cuánto dura y de qué ánimo"),
         h("div", { class: "button-row decide__actions" },
-          Button({ label: empty && state === "error" ? "Reintentar" : "Filtros", glyph: g.select, variant: "primary", onPress: () => select() })));
+          Button({ label: empty && state === "error" ? "Reintentar" : "Elegir filtros", glyph: g.select, variant: "primary", onPress: () => select() })));
     }
     const p = current();
     return mount(info, ...DecideInfo(p, { eyebrow: endsLine(p) || p.why, facts: pickFacts(p) }),
       h("div", { class: "button-row decide__actions" },
         Button({ label: "Ver ya", glyph: g.select, variant: "primary", onPress: () => onPlay?.(p) }),
         Button({ label: "Ficha", glyph: g.options, icon: "info", onPress: () => onPick?.(p) }),
-        Button({ label: "Otras tres", glyph: g.alt, icon: "refresh", onPress: () => { onMove?.(); shuffle(); } })));
+        Button({ label: "Otras tres", glyph: g.alt, icon: "refresh", onPress: () => { onMove?.(); shuffle({ fresh: true }); } })));
   }
 
   function paintPanel() {
@@ -244,12 +244,12 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     const summary = filtersSummary(choice);
     mount(panel,
       h("h2", { class: "decide__panel-title" }, "Filtros"),
-      h("p", { class: "decide__panel-lead" }, "Al cerrar, elijo otras tres con esto."),
+      h("p", { class: "decide__panel-lead" }, "Al cerrar, te propongo otras tres con esto."),
       ...QUESTIONS.map((q, qi) => h("div", { class: "decide__question" },
         h("span", { class: "decide__label" }, q.label),
         h("div", { class: "browse__filters", role: "tablist" }, q.options.map(([value, label], oi) => {
           const on = (choice[q.id] || "") === value;
-          return Pill(on ? `✓ ${label}` : label, { on, tone: "outline", className: row === qi && oi === option && "is-focused",
+          return Pill(on ? `✓ ${label}` : label, { on, tone: "outline", className: row === qi && on && "is-focused",
             tabindex: "-1", role: "tab", onClick: () => { row = qi; option = oi; answer(); } });
         })))),
       summary.count > 0 && h("div", { class: "decide__question" }, h("span", { class: "decide__label" }),
@@ -268,12 +268,12 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     onChange();
   }
 
-  async function shuffle() {
+  async function shuffle({ fresh = false } = {}) {
     const mine = ++token;
     state = "loading";
     paint();
     try {
-      const res = await load(choice);
+      const res = await load(choice, { fresh });
       if (mine !== token || el.hidden) return;
       picks = (res.picks || []).slice(0, 3);
       state = "ready";
@@ -333,7 +333,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     if (!p) return;
     await skip?.(p.meta_id).catch(() => {});
     forget(p);
-    shuffle();
+    shuffle({ fresh: true });
   }
 
   /** «No me interesa» (☰): no vuelve nunca (lo mismo que en Explorar). */
@@ -342,7 +342,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     if (!p) return;
     await dismiss?.(p.key).catch(() => {});
     forget(p);
-    shuffle();
+    shuffle({ fresh: true });
   }
 
   /** Tampoco regresa al volver a otro tipo. */
@@ -382,11 +382,24 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
       const rows = QUESTIONS.length + (filtersSummary(choice).count > 0 ? 1 : 0);
       const opts = row < QUESTIONS.length ? QUESTIONS[row].options.length : 1;
       const at = (r) => (r < QUESTIONS.length ? Math.max(0, QUESTIONS[r].options.findIndex(([v]) => v === (choice[QUESTIONS[r].id] || ""))) : 0);
-      if (action === "left" && option > 0) option--;
-      else if (action === "right" && option < opts - 1) option++;
-      else if (action === "up" && row > 0) { row--; option = at(row); }
+      // Como el Filtro avanzado: ◀▶ eligen al instante (lo elegido lleva el foco); A pasa a la siguiente; en la última, cierra.
+      if (action === "left" || action === "right") {
+        if (row === QUESTIONS.length) return true;
+        const next = at(row) + (action === "right" ? 1 : -1);
+        if (next < 0 || next >= opts) return true;
+        option = next;
+        answer();
+        return true;
+      }
+      if (action === "select") {
+        if (row === QUESTIONS.length) { answer(); return true; }
+        if (row < rows - 1) { row++; option = at(row); onMove?.(); paint(); return true; }
+        onMove?.();
+        closePanel();
+        return true;
+      }
+      if (action === "up" && row > 0) { row--; option = at(row); }
       else if (action === "down" && row < rows - 1) { row++; option = at(row); }
-      else if (action === "select") { answer(); return true; }
       else return true;
       onMove?.();
       paint();
@@ -394,9 +407,9 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     }
     if (action === "back") { close(); return true; }
     if (action === "search") return false;
-    if (action === "menu") { const p = current(); if (p && onOptions) { onOptions(p); return true; } return false; } // AD-5
+    if (action === "menu") { const p = current(); if (p && onOptions) onOptions(p); return true; } // AD-5 (en «Filtros», nada)
     if (action === "nextsection" || action === "prevsection") { if (onDeck) onDeck(); return true; } // AD-11: LB/RB, «Una por una»
-    if (action === "alt") { onMove?.(); shuffle(); return true; }
+    if (action === "alt") { onMove?.(); shuffle({ fresh: true }); return true; }
     if (action === "options") { const p = current(); if (p) onPick?.(p); return true; }
     if (action === "select") { select(); return true; }
     if (action === "left" && index > 0) index--;
@@ -409,7 +422,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
 
   // El pie: lo que hacen A, Y y X ya lo dicen los botones de la izquierda (como el Inicio); aquí lo demás.
   const hints = (g) => (panelFrom != null
-    ? [{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Listo", end: true }]
+    ? [{ glyph: "◀ ▶", label: "Elegir" }, { glyph: g.select, label: "Siguiente" }, { glyph: g.back, label: "Listo", end: true }]
     : [picks.length > 0 && { glyph: "◀ ▶", label: "Otra" }, { glyph: g.section, label: "Una por una" },
       current() && { glyph: g.menu, label: "Opciones" }, { glyph: g.back, label: "Atrás", end: true }]).filter(Boolean);
 

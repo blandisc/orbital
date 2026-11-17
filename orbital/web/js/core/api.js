@@ -82,6 +82,9 @@ async function titleDetails(kind, id, { fresh = false } = {}) {
 
 const post = (path, body, options = {}) => request(path, { method: "POST", body: JSON.stringify(body || {}), ...options });
 
+let decideToday = null; // el trío del día (api.decideToday)
+let decideTodayAt = 0;
+
 export const api = {
   library: () => request("/api/library"),
   refresh: () => post("/api/library/refresh", {}, SLOW),
@@ -209,6 +212,16 @@ export const api = {
   // Como el iPhone: una persona del reparto, abrir un título de su filmografía, «¿Qué vemos?» y «Tu año».
   forYouPerson: (id) => request(`/api/foryou/person/${Number(id)}`),
   forYouTmdbImdb: (kind, id) => request(`/api/foryou/tmdb-imdb?kind=${kind}&id=${Number(id)}`),
+  /** El trío del día (Fernando, 16 nov 2026, pasada de UX: la puerta prometía tres y adentro salían otros): el mismo en el
+   *  Inicio, en la fila de Películas y series y al abrir «Decide por mí», media hora; `fresh` («Otras tres», «Hoy no») trae
+   *  otro y ese pasa a ser el del día. */
+  decideToday: ({ fresh = false } = {}) => {
+    if (fresh || !decideToday || Date.now() - decideTodayAt > 30 * 60_000) {
+      decideTodayAt = Date.now();
+      decideToday = request("/api/foryou/decide?time=&mood=&kind=", { timeout: 20000 }).catch((err) => { decideToday = null; throw err; });
+    }
+    return decideToday;
+  },
   forYouDecide: ({ time = "", mood = "", kind = "" } = {}) => request(`/api/foryou/decide?time=${time}&mood=${mood}&kind=${kind}`, { timeout: 20000 }),
   forYouDecideSkip: (imdb) => post("/api/foryou/decide/skip", { key: imdb }),
   forYouCalendar: (month) => request(`/api/foryou/calendar?month=${encodeURIComponent(month)}`, { timeout: 20000 }),

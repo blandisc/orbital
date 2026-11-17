@@ -1215,7 +1215,7 @@ let mediaDecideAt = 0;
 function loadMediaDecide() {
   if (Date.now() - mediaDecideAt < 30 * 60_000) return;
   mediaDecideAt = Date.now();
-  api.forYouDecide({}).then((res) => {
+  api.decideToday().then((res) => {
     const picks = (res?.picks || []).slice(0, 3);
     mediaDecide = picks.length ? picks : null;
     if (mediaLists.length) buildCuration();
@@ -1223,10 +1223,8 @@ function loadMediaDecide() {
 }
 function decideRow() {
   if (!mediaDecide || state.online === false) return [];
-  const names = mediaDecide.map((p) => p.title);
-  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names.at(-1)}` : names[0];
   const door = { id: "decide:door", source: "collection", title: "Decide por mí", hero: mediaDecide[0].hero, image: mediaDecide[0].image,
-    collection: { type: "decide", picks: mediaDecide, detail: `${doorLine()}: ${list}` }, extra: {} };
+    collection: { type: "decide", picks: mediaDecide, detail: doorLine() }, extra: {} }; // sus nombres ya se ven al lado (se cortaban)
   return [{ id: "curated:decide", title: "¿No sabes qué ver?", group: "decide", items: [door, ...mediaDecide.map((p) => ({ ...curatedItem(p), rank: undefined, trend: undefined }))] }]; // sin la cifra de su Top
 }
 

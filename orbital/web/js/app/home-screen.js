@@ -43,7 +43,7 @@ export function createHomeScreen({ state, ui, glyphs, inHome, getLists, getItems
   function loadDoor() {
     if (Date.now() - doorAt < 30 * 60_000) return;
     doorAt = Date.now();
-    api.forYouDecide({}).then((res) => {
+    api.decideToday().then((res) => {
       const picks = (res?.picks || []).filter((p) => p.image).slice(0, 3).map((p) => ({ title: p.title, image: p.image, hero: p.hero }));
       const next = picks.length ? { picks } : null;
       if (JSON.stringify(next) === JSON.stringify(door)) return;

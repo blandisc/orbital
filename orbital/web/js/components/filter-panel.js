@@ -16,7 +16,7 @@ import { Pill } from "./ui.js";
  * preview(filter) → { total, items } · onResults(filter, label) · onMove · onClose
  */
 export const FILTERS = [
-  { id: "kind", label: "Formato", icon: "movie", hue: "orbital", options: [["movie", "Películas"], ["series", "Series"]] },
+  { id: "kind", label: "Qué tipo", icon: "movie", hue: "orbital", options: [["movie", "Películas"], ["series", "Series"]] },
   { id: "genre", label: "Género", icon: "spark", hue: "coral", options: [["", "Todos"], ["accion", "Acción"], ["aventura", "Aventura"],
     ["animacion", "Animación"], ["comedia", "Comedia"], ["crimen", "Crimen"], ["documental", "Documental"], ["drama", "Drama"],
     ["familia", "Familia"], ["fantasia", "Fantasía"], ["terror", "Terror"], ["misterio", "Misterio"], ["romance", "Romance"],
@@ -31,7 +31,10 @@ export const FILTERS = [
 ];
 const KEY = "orbital.filter";
 const EMPTY = { kind: "movie", genre: "", decade: "", rating: "", fame: "", platform: "", country: "" };
-const PREVIEW = 10; // los pósters de la derecha: dos renglones de cinco
+const PREVIEW = 8; // los pósters de la derecha: dos renglones de cuatro (más grandes que diez)
+
+/** Cuántos, al estilo de México: «8,506», «Más de 10,000». */
+export const countText = (total) => (total > 9999 ? "Más de 10,000" : total.toLocaleString("es-MX"));
 
 /** Lo elegido en palabras, para el título de los resultados: «Series · Comedia · Los 90». */
 export function filterLabel(f) {
@@ -44,16 +47,17 @@ export function filterLabel(f) {
 
 export function createFilterPanel({ preview, onResults, onMove, onClose }) {
   const backdrop = DecideBackdrop({ soft: true });
-  const summary = h("span", { class: "filter__summary" });
-  const head = DecideHead(summary, { title: "Filtro avanzado", icon: "sliders" });
+  const head = DecideHead(h("span", { class: "filter__spacer" }), { title: "Filtro avanzado", icon: "sliders" });
   const rows = h("div", { class: "filter__rows", role: "list" });
+  const actions = h("div", { class: "button-row filter__actions" }); // pasada de UX (16 nov): bajo las preguntas, donde ↓ llega
   const side = h("div", { class: "filter__side" });
   const el = h("section", { class: "filter screen", hidden: true, "aria-label": "Filtro avanzado" },
-    backdrop.el, head.el, h("div", { class: "filter__body" }, rows, side));
+    backdrop.el, head.el, h("div", { class: "filter__body" }, h("div", { class: "filter__main" }, rows, actions), side));
 
   let filter = { ...EMPTY, ...storage.get(KEY, {}) };
   let at = 0; // la pregunta enfocada; FILTERS.length = «Ver N títulos»
   let found = null; // { total, items } | Error | null (contando)
+  let counting = false; // contando de nuevo: lo de antes se queda atenuado (no brinca a «…»)
   let token = 0;
   let timer = 0;
   let glyphs = {};
@@ -93,17 +97,19 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
   function refresh() {
     clearTimeout(timer);
     const mine = ++token;
-    found = null;
+    counting = true;
     paintSide();
     timer = setTimeout(async () => {
       try {
         const res = await preview(filter);
         if (mine !== token) return;
         found = { total: res.total ?? (res.items || []).length, items: (res.items || []).slice(0, PREVIEW) };
+        counting = false;
         backdrop.show(found.items[0]?.hero || found.items[0]?.image || null);
       } catch (err) {
         if (mine !== token) return;
         found = err instanceof Error ? err : new Error(String(err));
+        counting = false;
       }
       paintSide();
     }, 350);
@@ -111,11 +117,10 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
 
   function paint() {
     head.tick();
-    summary.textContent = filterLabel(filter);
     mount(rows, FILTERS.map((row, i) => {
       const open = i === at;
       const value = row.options[indexOf(row)][1];
-      const changed = row.id !== "kind" && !!valueOf(row);
+      const changed = row.id === "kind" || !!valueOf(row); // el tipo siempre es una elección: en color
       return h("div", { class: ["filter__row", open && "filter__row--open", changed && "filter__row--on"], role: "listitem",
         "data-hue": row.hue, onClick: () => { if (at !== i) { at = i; paint(); onMove?.(); } } },
       h("span", { class: "filter__icon", "aria-hidden": "true" }, svg(ICONS[row.icon] || ICONS.list)),
@@ -136,31 +141,34 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
     const g = glyphs;
     const failed = found instanceof Error;
     const total = found && !failed ? found.total : null;
-    const none = total === 0;
-    const label = found === null ? "Contando…" : failed ? "Ver títulos" : none ? "Nada con este filtro" : `Ver ${total > 9999 ? "más de 10 000" : total.toLocaleString("es-MX")} títulos`;
-    const go = Button({ label, variant: "primary", glyph: g.options, onPress: () => results() });
+    const none = total === 0 && !counting;
+    const label = found === null ? "Contando…" : failed ? "Ver títulos" : `Ver ${total > 9999 ? "más de 10,000" : countText(total)} títulos`;
+    // Blanco solo con el foco (el blanco es el foco en Orbital); mientras eliges, de vidrio, con su Y a la vista.
+    const go = Button({ label, variant: at === FILTERS.length ? "primary" : "ghost", glyph: g.options, onPress: () => results() });
     go.classList.toggle("is-focused", at === FILTERS.length);
     const posters = found && !failed ? found.items : [];
     mount(side,
-      h("div", { class: "filter__count" },
-        h("strong", { class: "filter__total" }, found === null ? "…" : failed ? "—" : none ? "0" : total > 9999 ? "+10 000" : total.toLocaleString("es-MX")),
-        h("span", { class: "filter__total-label" }, found === null ? "Contando…" : failed ? found.message : none
-          ? "Nada con esto. Prueba quitar un filtro (X borra todos)." : `${total === 1 ? "título" : "títulos"} con lo que elegiste`)),
-      // Con cero, sin muro (las cajas vacías parecían «cargando») y lo que se puede hacer es borrar.
-      !none && h("div", { class: ["filter__wall", found === null && "filter__wall--loading"], "aria-hidden": "true" },
+      h("div", { class: ["filter__count", (counting || found === null) && "filter__count--counting"] },
+        h("strong", { class: "filter__total" }, found === null ? "…" : failed ? "—" : countText(total)),
+        h("span", { class: "filter__total-label" }, found === null ? "Contando…" : failed ? `No pude contar: ${found.message}` : none
+          ? "Nada con esto. Prueba quitar un filtro (X borra todos)."
+          : `${total === 1 ? "título" : "títulos"}${active() ? " con lo que elegiste" : ""}`)),
+      // Con cero, sin muro (las cajas vacías parecían «cargando»).
+      !none && h("div", { class: ["filter__wall", (counting || found === null) && "filter__wall--loading"], "aria-hidden": "true" },
         Array.from({ length: PREVIEW }, (_, i) => {
           const p = posters[i];
-          return p?.image ? h("img", { class: "filter__poster", src: sized(p.image, 160), alt: "", loading: "lazy", decoding: "async" })
+          return p?.image ? h("img", { class: "filter__poster", src: sized(p.image, 240), alt: "", loading: "lazy", decoding: "async" })
             : h("span", { class: "filter__poster filter__poster--empty" });
-        })),
-      h("div", { class: "button-row filter__actions" }, none
-        ? Button({ label: "Borrar filtros", glyph: g.alt, variant: "primary", onPress: () => clear() })
-        : [go, active() > 0 && Button({ label: "Borrar filtros", glyph: g.alt, icon: "close", onPress: () => clear() })]));
+        })));
+    mount(actions, none
+      ? Button({ label: "Borrar filtros", glyph: g.alt, variant: "primary", onPress: () => clear() })
+      : [go, active() > 0 && Button({ label: "Borrar filtros", glyph: g.alt, icon: "close", onPress: () => clear() })]);
   }
 
   function results() {
     if (found?.total === 0) return;
-    onResults?.({ ...filter }, filterLabel(filter));
+    const many = found && !(found instanceof Error) ? `${countText(found.total)} ${found.total === 1 ? "título" : "títulos"} · ` : "";
+    onResults?.({ ...filter }, `${many}${filterLabel(filter)}`);
   }
 
   function clear() {

@@ -88,9 +88,9 @@
 
 /* NQ-1 (16 nov 2026): la puerta del Inicio, segunda de «A continuación». Mide lo que una tarjeta ancha (`card--wide`) y
    lleva el foco de siempre; adentro, el abanico de los tres pósters de hoy y la pregunta. */
-.decide-door { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4) 0 var(--space-3); text-align: left; background: var(--color-surface-raised); }
+.decide-door { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); text-align: left; background: var(--color-surface-raised); }
 /* El abanico crece con la tarjeta (en el Inicio es ancha y baja; en la fila de Películas y series, del alto de un póster). */
-.decide-door__fan { position: relative; flex: none; height: 66%; aspect-ratio: .95; }
+.decide-door__fan { position: relative; flex: none; height: 60%; aspect-ratio: .85; }
 .decide-door__poster {
   position: absolute; top: 50%; left: 0; height: 84%; aspect-ratio: 2 / 3; object-fit: cover;
   border-radius: var(--radius-sm); box-shadow: var(--shadow-card); transform: translateY(-50%) rotate(-7deg);

@@ -7,8 +7,10 @@
   padding-top: calc(var(--space-8) + var(--safe-y));
 }
 .filter > :not(.decide-backdrop) { position: relative; }
-.filter__summary { margin-right: auto; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.filter__spacer { margin-right: auto; }
 .filter__body { display: grid; grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); column-gap: var(--space-14); min-height: 0; }
+/* La izquierda: las preguntas y, debajo, «Ver N títulos» (Y) y «Borrar filtros» (X): ↓ desde la última llega al botón. */
+.filter__main { display: flex; flex-direction: column; gap: var(--space-4); min-height: 0; }
 
 /* Las preguntas: cerradas, un renglón con su valor; la enfocada, abierta con sus píldoras. */
 /* Si la abierta no cabe (Género, con sus quince), la lista se desliza para dejarla entera a la vista; lo que sale se desvanece. */
@@ -44,12 +46,14 @@
 
 /* En vivo: cuántos (grande) y los primeros pósters; abajo, «Ver N títulos» (Y) y «Borrar filtros» (X). */
 .filter__side { display: flex; flex-direction: column; gap: var(--space-6); min-height: 0; }
-.filter__count { display: grid; gap: var(--space-1); }
+.filter__count { display: grid; gap: var(--space-1); transition: opacity var(--duration-base) var(--ease-out); }
+/* Contando de nuevo: lo de antes se queda, atenuado (no brinca a «…»). */
+.filter__count--counting { opacity: var(--opacity-away); }
 .filter__total { font-size: var(--type-hero); font-weight: var(--type-hero-weight); letter-spacing: var(--type-hero-tracking); line-height: var(--leading-tight); font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text); }
 .filter__total-label { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.filter__wall { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); max-width: 46rem; transition: opacity var(--duration-base) var(--ease-out); }
+.filter__wall { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); max-width: 40rem; transition: opacity var(--duration-base) var(--ease-out); }
 .filter__wall--loading { opacity: var(--opacity-away); }
 .filter__poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: var(--radius-sm); box-shadow: var(--edge-glass-hairline), var(--shadow-card); background: var(--color-glass); }
 .filter__poster--empty { display: block; box-shadow: var(--edge-glass-hairline); }
-.filter__actions { margin-top: auto; padding-bottom: var(--space-2); }
+.filter__actions { flex: none; padding: var(--space-2) var(--space-4) var(--space-2); }
 .filter__actions .button--round:has(.button__glyph) .button__name { display: inline-flex; }

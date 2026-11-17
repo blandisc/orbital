@@ -25,7 +25,9 @@ export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints,
   // «Ver ya» (A), igual en las dos pestañas: una película empieza; una serie abre su ficha (para elegir el episodio).
   const play = (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card));
   const decide = createDecide({
-    load: (choice) => api.forYouDecide(choice),
+    // Sin filtros, el trío del día (el mismo que prometen las puertas); con filtros, lo que caben.
+    load: (choice, { fresh = false } = {}) => (!choice.mood && !choice.kind && (choice.time || "any") === "any"
+      ? api.decideToday({ fresh }) : api.forYouDecide(choice)),
     skip: (imdb) => api.forYouDecideSkip(imdb),
     dismiss: (key) => api.forYouDismiss(key),
     glyphs,
