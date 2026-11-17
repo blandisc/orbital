@@ -51,7 +51,7 @@ struct AddonDetail: View {
             switch model.configure(addon) {
             case .torrentio?:
                 Section {
-                    NavigationLink { TorrentioSettings() } label: { Label("Configurar", systemImage: "slider.horizontal.3").foregroundStyle(DS.text) }
+                    PaneLink(Text(verbatim: "Torrentio")) { TorrentioSettings() } label: { Label("Configurar", systemImage: "slider.horizontal.3").foregroundStyle(DS.text) }
                         .accessibilityIdentifier("addon-configure")
                 } footer: { Text("Idiomas, calidades y qué versiones te enseña.") }
                 .listRowBackground(DS.surface)

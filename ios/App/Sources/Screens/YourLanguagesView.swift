@@ -26,7 +26,7 @@ struct YourLanguagesView: View {
                     save(model, Self.normalized(next))
                 }
                 if list.count < Services.addableLanguages.count {
-                    NavigationLink { YourLanguagesPicker(settings: settings) } label: {
+                    PaneLink(Text("Agregar idioma")) { YourLanguagesPicker(settings: settings) } label: {
                         Label("Agregar idioma", systemImage: "plus.circle").foregroundStyle(DS.text)
                     }
                     .accessibilityIdentifier("languages-add")

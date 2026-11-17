@@ -100,7 +100,7 @@ struct TorrentioMoreOptions: View {
             } header: { Text("Tamaño máximo") } footer: { Text("Sin límite, salvo que tu internet sea lento o veas con datos.") }
             .listRowBackground(DS.surface)
             Section {
-                NavigationLink { TorrentioProviders(model: model) } label: {
+                PaneLink(Text("Sitios donde busca")) { TorrentioProviders(model: model) } label: {
                     TorrentioRowLabel(title: Text("Sitios donde busca"),
                                       detail: options.providers.isEmpty ? Text("Los \(TorrentioConfig.providers.count) prendidos · apaga uno si da basura")
                                                                         : Text("\(options.providers.count) de \(TorrentioConfig.providers.count) prendidos"))

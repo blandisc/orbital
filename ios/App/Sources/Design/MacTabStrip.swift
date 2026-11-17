@@ -60,9 +60,9 @@ struct MacSearchChip: View {
                 MacTabSwitch.go(tabs, 2)
                 tabs.focusSearch()
             } label: {
-                Label("Buscar", systemImage: "magnifyingglass").recipe(.label, color: tabs.current == 2 ? DS.bg : DS.text)
+                Label("Buscar", systemImage: "magnifyingglass").recipe(.labelLarge, color: tabs.current == 2 ? DS.bg : DS.text)
                     .macTabLabel(compact: compact)
-                    .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+                    .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
                     .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
                     .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
             }
@@ -94,9 +94,9 @@ private struct MacTabButton: View {
     var body: some View {
         Button(action: action) {
             Label { title } icon: { Image(systemName: symbol) }
-                .recipe(.label, color: on ? DS.bg : DS.textMuted)
+                .recipe(.labelLarge, color: on ? DS.bg : DS.textMuted)
                 .macTabLabel(compact: compact)
-                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+                .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
                 // La elegida, llena del color del texto con la letra del fondo: crema y oscura en modo oscuro (el foco de la tele), oscura
                 // y clara en modo claro (crema sobre la cápsula casi blanca no se distinguía).
                 .background { if on { Capsule().fill(DS.text) } }

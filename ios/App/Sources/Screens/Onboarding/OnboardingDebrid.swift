@@ -96,7 +96,6 @@ struct OnboardingSeeHere: View {
 struct DebridCodeConnect: View {
     @State private var observer: ModelObserver<DebridModel>
     var showsStart = true
-    @Environment(\.openURL) private var openURL
 
     init(debrid: DebridModel, showsStart: Bool = true) { _observer = State(wrappedValue: ModelObserver(debrid)); self.showsStart = showsStart }
 
@@ -111,10 +110,7 @@ struct DebridCodeConnect: View {
                 }
             case .asking: DSInlineProgress(text: Text("Pidiendo un código…"))
             case .waiting(let code, let url):
-                Text("Escribe este código en real-debrid.com/device").recipe(.secondary, color: DS.textMuted)
-                GuideCode(code: code).accessibilityIdentifier("debrid-code")
-                Button("Abrir Real-Debrid", systemImage: "arrow.up.right") { openURL(url) }.dsGlassButton()
-                DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
+                DeviceCodeCard(service: "Real-Debrid", code: code, url: url).accessibilityIdentifier("debrid-code")
             case .connecting: DSInlineProgress(text: Text("Conectando…"))
             case .failed(let message):
                 DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)

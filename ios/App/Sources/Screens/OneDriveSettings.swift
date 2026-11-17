@@ -7,7 +7,6 @@ import OrbitalModels
 struct OneDriveSettings: View {
     @State private var observer = ModelObserver(AppEnvironment.shared.oneDriveSetup)
     @Environment(AppEnvironment.self) private var env
-    @Environment(\.openURL) private var openURL
     @State private var confirmUnlink = false
     @State private var draftID = ""
     @State private var pickingFolder = false
@@ -27,22 +26,13 @@ struct OneDriveSettings: View {
                     Button("Conectar OneDrive") { Task { await model.link() } }
                     Text("Aparece un código para escribir en microsoft.com/link. Solo pide leer tus archivos.").recipe(.caption, color: DS.textFaint)
                 case .linking(let code, let url):
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        Text("Escribe este código en \(url.replacingOccurrences(of: "https://", with: "")):").recipe(.footnote)
-                        Text(verbatim: code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
-                        DSInlineProgress(text: Text("Esperando…"))
-                    }
+                    DeviceCodeCard(service: "Microsoft", code: code, url: URL(string: url))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Label("Orbital solo lee: nunca cambia ni borra nada", systemImage: "lock")
                         Label("Solo mira la carpeta que elijas después", systemImage: "folder")
                         Label("Tus videos se ven directo, sin bajarlos completos", systemImage: "play.circle")
                     }
                     .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                    // En el mismo iPhone: se copia el código y se abre la página de Microsoft (ahí solo se pega).
-                    Button("Copiar el código y abrir Microsoft", systemImage: "arrow.up.forward.app") {
-                        UIPasteboard.general.string = code
-                        if let link = URL(string: url) { openURL(link) }
-                    }
                     Button("Cancelar", role: .cancel) { model.cancelLinking() }
                 case .linked:
                     Label("OneDrive conectado", systemImage: "checkmark.icloud")

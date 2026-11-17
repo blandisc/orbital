@@ -183,6 +183,40 @@ struct GuideCode: View {
     }
 }
 
+/// Conectar una cuenta con un código (Trakt, Real-Debrid, OneDrive): la misma pantalla en Ajustes y en la guía (17 nov 2026,
+/// Fernando: «dale una pulida a la pantalla donde se mete el código»; antes cada cuenta lo decía y lo acomodaba distinto). Dónde
+/// escribirlo, el código grande, un botón que lo copia y abre la página, y que estamos esperando.
+struct DeviceCodeCard: View {
+    /// El nombre de la cuenta para el botón («Copiar y abrir Trakt»).
+    let service: String
+    let code: String
+    let url: URL?
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Text("Escribe este código en \(Text(verbatim: Self.site(url)).bold())").recipe(.secondary, color: DS.textMuted)
+            GuideCode(code: code)
+            if let url {
+                Button("Copiar y abrir \(service)", systemImage: "arrow.up.forward.app") {
+                    UIPasteboard.general.string = code   // en el mismo aparato: allá solo se pega
+                    openURL(url)
+                }
+                .dsGlassButton()
+            }
+            DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// «auth.trakt.tv/activate»: la dirección sin «https://» ni la diagonal del final, como se escribe.
+    static func site(_ url: URL?) -> String {
+        guard let url else { return "" }
+        let text = url.absoluteString.replacingOccurrences(of: "https://", with: "").replacingOccurrences(of: "http://", with: "")
+        return text.hasSuffix("/") ? String(text.dropLast()) : text
+    }
+}
+
 /// La ilustración de una página del tutorial de Orbital: un recuadro con un ícono grande en su color y, si hace falta, lo
 /// que se toca de verdad debajo (los botones «Ver» y «Ver en la TV»).
 struct GuideArt<Detail: View>: View {

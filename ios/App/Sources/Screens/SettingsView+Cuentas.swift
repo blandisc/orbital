@@ -17,7 +17,7 @@ extension SettingsView {
     @ViewBuilder private var traktDiscardsRow: some View {
         let count: Int = discards.model.count
         if count > 0 {
-            NavigationLink { TraktDiscardsView(model: discards.model) } label: {
+            PaneLink(Text("No llegó a Trakt")) { TraktDiscardsView(model: discards.model) } label: {
                 if count == 1 {
                     SettingsRow(title: "1 cosa no se pudo guardar en Trakt", symbol: "exclamationmark.icloud", tint: DS.warning)
                 } else {
@@ -32,7 +32,7 @@ extension SettingsView {
         if env.services.settingsEntries.realDebrid { debridSection }   // D1-B: Orbital (App Store) no trae Real-Debrid
         Section {
             // La sesión de Trakt siempre es la de este iPhone (la de la consola ya no se presta): se abre, se ve y se desconecta aquí.
-            NavigationLink { page("Trakt") { traktSection(model) } } label: {
+            PaneLink(Text(verbatim: "Trakt")) { page("Trakt") { traktSection(model) } } label: {
                 SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
             }
             traktDiscardsRow
@@ -40,14 +40,14 @@ extension SettingsView {
         .listRowBackground(DS.surface)
         .onAppear { discards.model.reload() }   // la cola pudo descartar algo mientras tanto
         Section {
-            NavigationLink { LetterboxdSettings() } label: {
+            PaneLink(Text(verbatim: "Letterboxd")) { LetterboxdSettings() } label: {
                 SettingsRow(title: "Letterboxd", symbol: "star.bubble", tint: DS.Letterboxd.leaf, value: letterboxdValue)
             }
         } header: { Text("Letterboxd · tus reseñas") } footer: { Text("Solo se lee: tus reseñas salen en Lo que ves y en cada ficha, y tus listas en Explorar.") }
         .listRowBackground(DS.surface)
         if AppEnvironment.shared.openSubtitles.available {
             Section {
-                NavigationLink { OpenSubtitlesSettings() } label: {
+                PaneLink(Text(verbatim: "OpenSubtitles")) { OpenSubtitlesSettings() } label: {
                     SettingsRow(title: "OpenSubtitles", symbol: "captions.bubble", tint: DS.ListTint.series, value: openSubtitlesValue)
                 }
                 .accessibilityIdentifier("settings-opensubtitles")
@@ -73,7 +73,7 @@ extension SettingsView {
     @ViewBuilder private var debridSection: some View {
         let model = debrid.model
         Section {
-            NavigationLink { DebridAccountView(debrid: model) } label: {
+            PaneLink(Text(verbatim: "Real-Debrid")) { DebridAccountView(debrid: model) } label: {
                 SettingsRow(title: "Real-Debrid", symbol: "externaldrive.badge.checkmark",
                             tint: model.status.map(DebridAccountView.isWarning) == true ? DS.warning : DS.ListTint.calendar,
                             value: model.status.map { DebridWords.short($0) } ?? Text("Falta tu clave"))

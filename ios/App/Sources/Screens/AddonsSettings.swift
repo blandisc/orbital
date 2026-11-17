@@ -36,7 +36,7 @@ struct AddonsSettings: View {
             if !model.torrentioChoice.isEmpty { torrentioChoice(model) }
             Section {
                 ForEach(model.items) { addon in
-                    NavigationLink { AddonDetail(addons: addons, id: addon.id) { remove($0, model) } } label: {
+                    PaneLink(Text(verbatim: addon.name)) { AddonDetail(addons: addons, id: addon.id) { remove($0, model) } } label: {
                         AddonRowLabel(addon: addon, health: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en"),
                                       torrents: model.onlyTorrents(addon), tv: env.services.orbitalOn)
                     }

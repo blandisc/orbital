@@ -213,7 +213,7 @@ struct DebridAccountView: View {
                 Text("Tomé tu clave de Real-Debrid de tu Torrentio").recipe(.footnote, color: DS.textMuted)
             }
             if key != .rejected {   // rechazada, «Cambiar la clave» ya es el arreglo de arriba
-                NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar la clave").foregroundStyle(DS.text) }
+                PaneLink(Text("Cambiar la clave")) { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar la clave").foregroundStyle(DS.text) }
             }
             Button("Quitar", role: .destructive) { confirmRemove = true }
                 // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir

@@ -27,7 +27,7 @@ extension DS {
         }
         /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
         /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
-        static let maxHeightShare: CGFloat = 0.6, aspectWideMax: CGFloat = 2.4
+        static let maxHeightShare: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).
         static let overlap: CGFloat = 44
     }

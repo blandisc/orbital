@@ -132,7 +132,7 @@ struct TitleLogo: View {
                 }
                 // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
                 // entre el rótulo y el logo.
-                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
+                .frame(maxWidth: maxWidth, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
                 .shadow(DS.Elevation.low)
                 .task(id: url) {
                     trimmed = LogoTrim.cached(u)
@@ -151,8 +151,12 @@ struct TitleLogo: View {
     /// El alto que de verdad ocupa el logo recortado a lo ancho de siempre (sin pasar del tope).
     private var fittedHeight: CGFloat {
         guard let trimmed, trimmed.size.width > 0, trimmed.size.height > 0 else { return height }
-        return min(height, DS.Size.cardMax * trimmed.size.height / trimmed.size.width)
+        return min(height, maxWidth * trimmed.size.height / trimmed.size.width)
     }
+
+    /// Lo más ancho del logo; en la portada de la Mac crece como su alto (17 nov 2026: un logo apaisado, como el de «The Odyssey»,
+    /// topaba con el ancho y se quedaba chico).
+    private var maxWidth: CGFloat { DS.Size.cardMax * (size == .hero && ThisDevice.isMac ? DS.Mac.heroScale : 1) }
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.

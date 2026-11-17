@@ -62,7 +62,7 @@ extension SettingsView {
         }
         .listRowBackground(DS.surface)
         Section {
-            NavigationLink { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
+            PaneLink(Text("Lo que recuerda cada título")) { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
                 .accessibilityIdentifier("settings-remembered")
         }
         .listRowBackground(DS.surface)

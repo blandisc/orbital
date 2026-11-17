@@ -40,6 +40,8 @@ struct SettingsView: View {
     @State private var confirmOrbitalOff = false
     /// La página abierta a la derecha en la Mac (MA1); de entrada, «Tus idiomas», el primer renglón.
     @State var macPage: SettingsPage = .languages
+    /// MA2: lo que se abrió desde la página de la derecha en la Mac (Trakt, Real-Debrid…), arriba de ella.
+    @State var macStack: [SettingsSubPage] = []
 
     init() {
         let services = AppEnvironment.shared.services
@@ -356,7 +358,7 @@ struct SettingsView: View {
         // La prueba mide a Real-Debrid: solo donde hay nube (D1-B).
         if env.services.capabilities.instantStreams {
             Section {
-                NavigationLink { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
+                PaneLink(Text("Probar la velocidad")) { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
                     .accessibilityIdentifier("speed-test")
             } footer: {
                 Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")   // edición: solo con instantStreams
@@ -394,7 +396,7 @@ struct SettingsView: View {
         if model.traktLinked {
             // Cuáles sigues y cuáles ya no, en una lista (antes solo desde la ficha de cada serie).
             Section {
-                NavigationLink { FollowedSeriesView() } label: {
+                PaneLink(Text("Series que sigues")) { FollowedSeriesView() } label: {
                     SettingsRow(title: "Series que sigues", symbol: "bell", tint: DS.ListTint.flame, value: Text("Elige de cuáles te aviso"))
                 }
                 .accessibilityIdentifier("followed-series")
@@ -431,7 +433,7 @@ struct SettingsView: View {
 
     // MARK: Trakt
     @ViewBuilder func traktSection(_ model: SettingsModel) -> some View {
-        Section("Trakt") {
+        Section {   // sin «Trakt» encima: la página ya se llama así (en la Mac salía dos veces, 17 nov 2026)
             switch model.trakt {
             case .off:
                 Text("Falta la aplicación de Trakt. Si usas la tuya, pega su Client ID en Avanzado.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
@@ -440,11 +442,7 @@ struct SettingsView: View {
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
                 Text("Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             case .linking(let code, let url):
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                    Text(code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
-                    DSInlineProgress(text: Text("Esperando…"))
-                }
+                DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url))
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):
                 (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))

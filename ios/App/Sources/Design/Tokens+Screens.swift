@@ -454,7 +454,8 @@ extension DS {
 
     /// Tu avatar: en Inicio (junto al saludo) y en Ajustes.
     enum Avatar {
-        static let toolbar: CGFloat = 34, picker: CGFloat = 64, ring: CGFloat = 3
+        /// En la Mac crece con la letra (17 nov 2026): de 34 pt salía de ~26 px junto a las pestañas.
+        static let toolbar: CGFloat = DS.Mac.sized(34), picker: CGFloat = 64, ring: CGFloat = 3
         /// La esquina de un ícono de app (la curva de iOS: 22.37 % del lado).
         static let iconCorner: CGFloat = 0.2237
     }

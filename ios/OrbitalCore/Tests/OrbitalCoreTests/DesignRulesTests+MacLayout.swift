@@ -42,4 +42,37 @@ extension DesignRulesTests {
         XCTAssertTrue(feedback.contains("containerRelativeFrame(.vertical) { length, _ in length * DS.Mac.emptyShare }"), "RB2: el aviso vacío al centro de su lugar en la Mac")
         XCTAssertFalse(feedback.contains("WindowMetrics.size.height * DS.Mac.emptyShare"), "RB2: no con el alto de la ventana (en una hoja se salía)")
     }
+
+    /// La Mac no tiene sensor de movimiento: crear un `CMMotionManager` ahí y soltarlo al salir de una pantalla con cielo
+    /// (Ajustes) trababa la app para siempre (17 nov 2026). Todo sensor de CoreMotion se pide solo fuera de la Mac.
+    func testNoMotionSensorOnTheMac() throws {
+        for file in try sources(["Design", "Screens", "App", "Platform"]) {
+            let text = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            for sensor in ["CMMotionManager()", "CMAltimeter()", "CMPedometer()", "CMHeadphoneMotionManager()"] {
+                guard let use = text.range(of: sensor) else { continue }
+                let before = text[text.startIndex..<use.lowerBound].suffix(400)
+                XCTAssertTrue(before.contains("guard !ProcessInfo.processInfo.isiOSAppOnMac"),
+                              "\(file.name): \(sensor) sin «guard !ProcessInfo.processInfo.isiOSAppOnMac» justo antes: en la Mac traba la app")
+            }
+        }
+    }
+
+    /// MA2 (17 nov 2026): en la Mac, lo que se abre desde una página de Ajustes se queda a la derecha, junto a la lista
+    /// (`PaneLink`). Con un `NavigationLink` se empujaba a toda la ventana: una columna angosta sola, sin la lista. Y una sola
+    /// pantalla de código para conectar cuentas (`DeviceCodeCard`).
+    func testSettingsPagesOpenBesideTheList() throws {
+        let pages = ["SettingsView.swift", "SettingsView+Cuentas.swift", "SettingsView+Idiomas.swift", "DebridAccountView.swift",
+                     "TorrentioSettings.swift", "TorrentioSettings+Opciones.swift", "AddonsSettings.swift", "AddonDetail.swift",
+                     "VoiceGuideView.swift", "YourLanguagesView.swift"]
+        let files = try sources(["Design", "Screens"])
+        for name in pages {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            let text = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            XCTAssertFalse(text.contains("NavigationLink {"), "\(name): en Ajustes, `PaneLink` (en la Mac abre a la derecha), no `NavigationLink`")
+        }
+        for file in files where file.name != "Guide.swift" {
+            let text = file.lines.joined(separator: "\n")
+            XCTAssertFalse(text.contains("Escribe este código en \\("), "\(file.name): el código para conectar una cuenta va en `DeviceCodeCard`")
+        }
+    }
 }

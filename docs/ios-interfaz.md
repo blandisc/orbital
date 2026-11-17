@@ -1005,6 +1005,22 @@ Dos caminos probados que no sirven: la cápsula encima del contenido (la barra d
 dentro de la pieza del logo midiéndose (la app se traba redibujando). `DesignRulesTests.testMacTabsLiveInTheLogoRow` revisa que
 ni la cápsula ni «Buscar» vuelvan a un `.toolbar { … }`.
 
+### Ajustes y conectar cuentas en la Mac (MA2, 17 nov 2026)
+
+- **Lo que se abre desde Ajustes se queda a la derecha.** En la Mac, un enlace dentro de una página de Ajustes es `PaneLink`
+  (`SettingsParts.swift`): abre la página junto a la lista, con su nombre arriba y «‹» para volver (`SettingsPaneHeader`). Con
+  `NavigationLink` se empujaba a toda la ventana y quedaba una columna angosta sola. En iPhone y iPad, `PaneLink` es un
+  `NavigationLink` de siempre. No va dentro de una hoja (la hoja hereda el entorno y abriría la página detrás).
+- **Una sola pantalla de código.** Trakt, Real-Debrid y OneDrive se conectan con `DeviceCodeCard` (`Guide.swift`): dónde
+  escribirlo, el código grande, «Copiar y abrir …» y «Esperando a que lo apruebes…», en Ajustes y en la guía.
+- **Nada de sensores de movimiento en la Mac.** Soltar un `CMMotionManager` en la Mac (el cielo de Ajustes al salir) trababa la
+  app para siempre; `SkyTilt` ni lo crea ahí.
+- **Inicio de escritorio.** En la Mac el margen de las pantallas es de 40 pt (`DS.Space.gutter`), la portada toma a lo más
+  ~la mitad de la ventana (`DS.Mac.heroHeightShare`) y su logo y «Ver» crecen (`DS.Mac.heroScale`, `macHeroButtons`); el logo
+  de Orbital, las pestañas, «Buscar» y tu foto crecen con la letra.
+
+`DesignRulesTests.testSettingsPagesOpenBesideTheList` y `testNoMotionSensorOnTheMac` lo cuidan.
+
 ### Del Mac al iPad ancho (17 nov 2026)
 
 Fernando: «tráete de Mac a iPad lo que haga sentido y dale una muy buena pulida». La regla: **lo que crece con la ventana

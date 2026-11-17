@@ -11,7 +11,6 @@ struct OnboardingTrakt: View {
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var settings: ModelObserver<SettingsModel>
-    @Environment(\.openURL) private var openURL
     @Environment(AppEnvironment.self) private var env
     @State private var connectingTV = false
 
@@ -32,10 +31,7 @@ struct OnboardingTrakt: View {
                     .accessibilityHidden(true)
                 switch settings.model.trakt {
                 case .linking(let code, let url):
-                    GuideCode(code: code)
-                    Text("Entra a trakt.tv/activate y escribe este código.").recipe(.secondary, color: DS.textMuted)
-                    DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
-                    if let link = URL(string: url) { Button("Abrir Trakt", systemImage: "arrow.up.right") { openURL(link) }.dsGlassButton() }
+                    DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url))
                 case .linked(let name):
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
                     if let brought = model.brought {

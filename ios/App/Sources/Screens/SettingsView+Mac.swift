@@ -12,14 +12,27 @@ extension SettingsView {
             HStack(spacing: 0) {
                 list
                     .frame(width: DS.Mac.settingsListWidth)
-                    .environment(\.settingsPane, SettingsPane(current: macPage, open: { macPage = $0 }))
+                    .environment(\.settingsPane, SettingsPane(current: macPage, open: { macPage = $0; macStack = [] }))
                     .overlay(alignment: .trailing) { Rectangle().fill(DS.hairline).frame(width: DS.Stroke.hairline) }
-                destination(macPage, model)
-                    .id(macPage)   // cada página empieza arriba y con su propio estado
+                // MA2: su nombre arriba y, si vino de otra página, «‹» para volver; lo que abre se queda aquí (`PaneLink`).
+                VStack(spacing: 0) {
+                    SettingsPaneHeader(title: macStack.last?.title ?? macPage.title,
+                                       back: macStack.isEmpty ? nil : { macStack.removeLast() })
+                    Group {
+                        if let top = macStack.last {
+                            top.make().id(top.id)
+                        } else {
+                            destination(macPage, model).id(macPage)   // cada página empieza arriba y con su propio estado
+                        }
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .environment(\.settingsSubPane, SettingsSubPane { title, make in macStack.append(SettingsSubPage(title: title, make: make)) })
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Backdrop())
             .dsFeedback(.selection, trigger: macPage)
+            .dsFeedback(.selection, trigger: macStack.count)
         } else {
             list
         }

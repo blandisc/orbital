@@ -39,7 +39,7 @@ struct TorrentioSettings: View {
             .listRowBackground(DS.surface)
             languages(model, options)
             Section {
-                NavigationLink { TorrentioQualities(model: torrentio) } label: {
+                PaneLink(Text("Calidades")) { TorrentioQualities(model: torrentio) } label: {
                     TorrentioRowLabel(title: Text("Calidades que no quieres"), detail: TorrentioWords.hidden(options.excludedQualities))
                 }
                 .accessibilityIdentifier("torrentio-qualities")
@@ -53,7 +53,7 @@ struct TorrentioSettings: View {
                                 }
                             }))
                 .accessibilityIdentifier("torrentio-only-instant")
-                NavigationLink { TorrentioMoreOptions(model: torrentio) } label: {
+                PaneLink(Text("Más opciones")) { TorrentioMoreOptions(model: torrentio) } label: {
                     TorrentioRowLabel(title: Text("Más opciones"), detail: Text("Orden, cuántas, tamaño y sitios"))
                 }
                 .accessibilityIdentifier("torrentio-more")
@@ -98,7 +98,7 @@ struct TorrentioSettings: View {
         let mine = yourSettings.model.settings
         let names = Text(verbatim: mine.yourLanguages.map { YourLanguagesView.name($0, mine.uiLanguage) }.joined(separator: ", "))
         Section {
-            NavigationLink { YourLanguagesView(settings: yourSettings) } label: {
+            PaneLink(Text("Tus idiomas")) { YourLanguagesView(settings: yourSettings) } label: {
                 TorrentioRowLabel(title: Text("Se usan tus idiomas · Cambiar"), detail: names, action: true)
             }
             .accessibilityIdentifier("torrentio-your-languages")

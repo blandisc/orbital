@@ -39,6 +39,10 @@ extension DS {
             default: return .extraLarge
             }
         }
+        /// La portada de Inicio en la Mac (17 nov 2026, Fernando: «se sigue viendo la imagen demasiado grande, el icono muy pequeño,
+        /// los botones muy pequeños»): a lo más esta parte del alto de la ventana (con 0.6 casi no se veía lo de abajo), y su logo
+        /// y sus botones crecen `heroScale` sobre la letra de la Mac.
+        static let heroHeightShare: CGFloat = 0.46, heroScale: CGFloat = 1.5
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
         static let railWidth: CGFloat = 188
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la

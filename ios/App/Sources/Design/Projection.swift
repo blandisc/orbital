@@ -353,6 +353,15 @@ struct HeroActions<Content: View>: View {
             HStack(spacing: DS.Space.s3) { content() }
             VStack(alignment: .leading, spacing: DS.Space.s2) { content() }
         }
+        .macHeroButtons()
+    }
+}
+
+extension View {
+    /// La Mac: «Ver» y sus botones de la portada más grandes (17 nov 2026, Fernando: «los botones muy pequeños»). Iban con la
+    /// letra de un botón normal sobre un arte de media ventana.
+    @ViewBuilder func macHeroButtons() -> some View {
+        if ThisDevice.isMac { font(DS.TextRecipe.section.font).dsControlSize(.large) } else { self }
     }
 }
 

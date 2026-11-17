@@ -32,7 +32,7 @@ struct VoiceGuideView: View {
                     if !nowPhrases.isEmpty { now }
                     essentials
                     whereToSpeak
-                    NavigationLink { VoiceTopicsView(guide: guide, onSay: onSay) } label: { moreRow }
+                    PaneLink(Text("Más frases, por tema")) { VoiceTopicsView(guide: guide, onSay: onSay) } label: { moreRow }
                         .buttonStyle(.plain).pointerHover(.lift)
                 } else {
                     VoiceGuideResults(guide: guide, query: query, onSay: onSay)

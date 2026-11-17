@@ -136,10 +136,104 @@ struct SettingsPane {
 enum SettingsPage: String, CaseIterable {
     case languages, subtitles, lettering, appearance, appLanguage, playback, alerts, downloads, accounts, addons, oneDrive
     case orbital, voice, advanced, learn
+
+    /// El nombre de la página, el mismo del renglón: en la Mac va arriba de la página, a la derecha (MA2).
+    var title: Text {
+        switch self {
+        case .languages: Text("Tus idiomas")
+        case .subtitles: Text("Subtítulos")
+        case .lettering: Text("Letra de los subtítulos")
+        case .appearance: Text("Apariencia")
+        case .appLanguage: Text("Idioma de la app")
+        case .playback: Text("Reproducción")
+        case .alerts: Text("Avisos")
+        case .downloads: Text("Descargas")
+        case .accounts: Text("Cuentas")
+        case .addons: Text("Complementos")   // edición: la página solo existe con `settingsEntries.addons`
+        case .oneDrive: Text(verbatim: "OneDrive")
+        case .orbital: Text("Tu Orbital")
+        case .voice: Text("Voz y Siri")
+        case .advanced: Text("Avanzado")
+        case .learn: Text("Aprende")
+        }
+    }
+}
+
+/// MA2 (Fernando, 17 nov 2026: «dale una pulida a esas pantallas que no son tan comunes»): en la Mac, lo que se abre desde
+/// una página de Ajustes (Trakt, Real-Debrid, Letterboxd, un complemento…) se queda a la derecha, con su nombre arriba y «‹»
+/// para volver. Antes se empujaba a toda la ventana: una columna angosta sola en la pantalla, sin la lista. Lo pone
+/// `SettingsView` solo en la Mac; sin él, `PaneLink` es un `NavigationLink` de siempre.
+struct SettingsSubPane {
+    let push: (Text, @escaping () -> AnyView) -> Void
+}
+
+/// Una página abierta a la derecha en la Mac (MA2): se arma en cada pasada, con los valores al día.
+struct SettingsSubPage: Identifiable {
+    let id = UUID()
+    let title: Text
+    let make: () -> AnyView
 }
 
 extension EnvironmentValues {
     @Entry var settingsPane: SettingsPane?
+    @Entry var settingsSubPane: SettingsSubPane?
+}
+
+/// Un enlace dentro de una página de Ajustes: en iPhone y iPad la empuja; en la Mac la abre a la derecha, junto a la lista (MA2).
+/// No va dentro de una hoja: la hoja hereda el entorno y abriría la página detrás.
+struct PaneLink<Destination: View, Label: View>: View {
+    let title: Text
+    @ViewBuilder let destination: () -> Destination
+    @ViewBuilder let label: () -> Label
+    @Environment(\.settingsSubPane) private var pane
+
+    init(_ title: Text, @ViewBuilder destination: @escaping () -> Destination, @ViewBuilder label: @escaping () -> Label) {
+        self.title = title; self.destination = destination; self.label = label
+    }
+
+    var body: some View {
+        if let pane {
+            Button { pane.push(title) { AnyView(destination()) } } label: {
+                HStack(spacing: DS.Space.s2) {
+                    label()
+                    Spacer(minLength: DS.Space.s2)
+                    Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            NavigationLink(destination: destination, label: label)
+        }
+    }
+}
+
+/// El nombre de la página abierta a la derecha en la Mac, con «‹» si vino de otra (MA2), como Ajustes del Sistema.
+struct SettingsPaneHeader: View {
+    let title: Text
+    let back: (() -> Void)?
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            if let back {
+                Button(action: back) { Image(systemName: "chevron.left").font(DS.TextRecipe.labelLarge.font) }
+                    .buttonStyle(.plain).foregroundStyle(DS.text)
+                    .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .macPillBase(Circle())
+                    .accessibilityLabel(Text("Volver"))
+                    .keyboardShortcut("[", modifiers: .command)
+            }
+            title.recipe(.section, color: DS.text).lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: DS.TitleAction.readableWidth, alignment: .leading)
+        .padding(.horizontal, DS.Space.gutter)
+        .padding(.top, DS.Space.s4)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
 }
 
 /// Un renglón de Ajustes que lleva a otra página: en iPhone y iPad la empuja; en la Mac la abre a la derecha, marcado.

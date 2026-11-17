@@ -163,8 +163,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s3 = CGFloat(DesignTokens.Space.s3)
         static let s4 = CGFloat(DesignTokens.Space.s4), s5 = CGFloat(DesignTokens.Space.s5), s6 = CGFloat(DesignTokens.Space.s6)
         static let s8 = CGFloat(DesignTokens.Space.s8), s10 = CGFloat(DesignTokens.Space.s10), s14 = CGFloat(DesignTokens.Space.s14)
-        /// Margen lateral de las pantallas.
-        static let gutter = s4
+        /// Margen lateral de las pantallas. En la Mac, el de una app de escritorio (17 nov 2026, Fernando: Inicio con el arte y
+        /// las tiras pegados a la orilla de la ventana): con 16 pt, al 77 % salía de 12 px.
+        static let gutter = ProcessInfo.processInfo.isiOSAppOnMac ? s10 : s4
         /// De la orilla de arriba de una hoja (con su asa) al primer título, en toda hoja que arma su propio encabezado
         /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital». Con 24 el
         /// título quedaba pegado al asa (Fernando, 4 nov 2026, la 1774, la hoja de un pedido: «muy poco espacio arriba»): 32.
@@ -425,7 +426,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let rankTracking = -rankNumber * 0.08
         /// El «10»: sus cifras más juntas y el póster encima de parte del cero (no empuja el póster ni se achata).
         static let rankTwoDigitsOverlap = rankNumber * 0.42
-        static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+        static let logoHero = CGFloat(DesignTokens.Size.logoHero) * (ProcessInfo.processInfo.isiOSAppOnMac ? Mac.heroScale : 1)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline = Stroke.hairline
         /// El alto del logo en la franja del mosaico.
