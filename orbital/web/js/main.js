@@ -1946,7 +1946,7 @@ const { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer } = 
 // --- Guardado y tus listas (el gestor tipo Trakt, olas 1 y 2: app/saved-commands.js) ------------------------------------
 let savedCommandsTable = null;
 function savedTable() {
-  savedCommandsTable ??= savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm,
+  savedCommandsTable ??= savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, traktLinked,
     openCollectionList: ({ id, title }) => openCollection({ collection: { type: "list", source: "trakt", list: { id, title, meta: "Tu lista" } } }) });
   return savedCommandsTable;
 }

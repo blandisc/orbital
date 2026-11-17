@@ -132,6 +132,9 @@ function armed(grid, node) {
 export function fillWindow(grid, viewport) {
   const cells = cellsOf.get(grid);
   if (!cells || !grid.isConnected || !grid.getClientRects().length) return; // oculta no mide: no se arma de golpe
+  // La cuadrícula ya muestra otra cosa (el esqueleto de la lista siguiente, un Top 10): esas casillas eran de la anterior y
+  // armarlas pintaba títulos que no existen (Fernando, 16 nov: tras un año, Géneros y Verano se quedaban vacíos).
+  if (cells[0]?.node.parentNode !== grid) { cellsOf.delete(grid); return; }
   const shift = Number(grid.dataset.shift || 0);
   const screen = viewport.clientHeight || window.innerHeight;
   const near = [shift - screen, shift + 2 * screen];

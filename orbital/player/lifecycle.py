@@ -311,9 +311,11 @@ class _Lifecycle(_Pip):
         if waiting:
             percent = self.mpv.get("cache-buffering-state")
             self._buffering = True
-            known = isinstance(percent, (int, float)) and math.isfinite(percent)
-            self._show_notice(player_ui.toast_ass(f"Cargando… {int(percent)} %" if known else "Cargando…",
-                                                  top=player_ui.BUFFER_Y), 2, layer=self.BUFFER)
+            # La cifra solo cuando avanza: mpv da 0 hasta que tiene algo, y muchas esperas se acaban antes; «0 %» y
+            # desaparecer parecía que no cargaba (Fernando, 16 nov). La píldora mide lo de «100 %» y no brinca.
+            known = isinstance(percent, (int, float)) and math.isfinite(percent) and percent >= 1
+            self._show_notice(player_ui.toast_ass(f"Cargando… {min(99, int(percent))} %" if known else "Cargando…",
+                                                  top=player_ui.BUFFER_Y, room_for="Cargando… 100 %"), 2, layer=self.BUFFER)
         elif self._buffering:
             self._buffering = False
             self._overlay(self.BUFFER, None)  # solo el «Cargando…»: el aviso que estaba sigue

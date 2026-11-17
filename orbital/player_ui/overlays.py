@@ -316,15 +316,18 @@ def lines_of(message: str) -> tuple[str, str]:
     return text_, ""
 
 
-def toast_ass(message: str, top: float = NOTICE_Y) -> str:
-    """Aviso arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»): una píldora; con detalle, dos renglones."""
+def toast_ass(message: str, top: float = NOTICE_Y, *, room_for: str = "") -> str:
+    """Aviso arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»): una píldora; con detalle, dos renglones.
+    `room_for`: el texto más ancho que tendrá la píldora («Cargando… 100 %»), para que no cambie de ancho con la cifra."""
     title, detail = lines_of(message)
     room = canvas.W - 2 * MARGIN - 44
     title = fit(title, 24, room, "semi")
     if not detail:
-        w = text_width(title, 24, "semi") + 44
+        w = max(text_width(title, 24, "semi"), text_width(room_for, 24, "semi")) + 44
         x = canvas.W - MARGIN - w
-        return "\n".join([glass(x, top, w, 54, 27, "glass-strong"), text(x + 22, top + 27, esc(title), 24, weight="semi", align=4)])
+        # Centrado (antes pegado a la izquierda): si el ancho medido no es exacto, el aire queda igual a los dos lados
+        # (Fernando, 16 nov: «aparece descentrado el texto dentro»).
+        return "\n".join([glass(x, top, w, 54, 27, "glass-strong"), text(x + w / 2, top + 27, esc(title), 24, weight="semi", align=5)])
     detail = fit(detail, 20, room)
     w = max(text_width(title, 24, "semi"), text_width(detail, 20)) + 44
     x = canvas.W - MARGIN - w

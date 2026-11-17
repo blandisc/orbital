@@ -116,7 +116,7 @@ export function listManageOptions(editable, { online = true } = {}) {
   ];
 }
 
-export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, openCollectionList }) {
+export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, openCollectionList, traktLinked = () => false }) {
   let board = null; // lo último que trajo el tablero
   let lists = []; // tus listas de Trakt: { id, name, privacy, count }
 
@@ -134,13 +134,25 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
 
   /** Abre (o pone al día) Guardado, en la pestaña que tenías. */
   async function openSaved({ tab = null } = {}) {
+    // Trakt puede tardar unos segundos: la pantalla se abre ya, con su esqueleto, y se llena al llegar (Fernando, 16 nov:
+    // «Guardado no funciona», apretarlo no hacía nada mientras esperaba).
+    const waiting = !ui.listScreen.isOpen && traktLinked();
+    if (waiting) {
+      sound.play("open");
+      ui.listScreen.open({ id: "saved", title: "Guardado", source: "trakt", media: {},
+        tabs: SAVED_TABS.map(([id, label]) => ({ id, label, load: () => new Promise(() => {}) })) });
+      renderHints();
+    }
     let found;
     try {
       found = await api.board();
     } catch (err) {
+      if (waiting && onBoard()) ui.listScreen.close();
       return failed(err, "No pude traer lo tuyo de Trakt");
     }
+    if (waiting && !onBoard()) return; // la cerraste mientras cargaba
     if (!found.trakt) {
+      if (waiting) ui.listScreen.close();
       sound.play("error");
       return ui.toast.show("Lo que guardas vive en Trakt", { tone: "warn", detail: "Conéctalo en Ajustes › Cuentas y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas" });
     }
