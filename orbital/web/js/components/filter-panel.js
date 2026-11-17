@@ -1,16 +1,19 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { storage } from "../core/storage.js";
 import { Button } from "./button.js";
-import { ScreenHead } from "./ui.js";
+import { DecideBackdrop, DecideHead } from "./decide.js";
+import { Pill } from "./ui.js";
 
 /**
- * El filtro avanzado (el ícono junto a «Todo · Películas · Series» en Películas y series, D5-A; como el del iPhone, ola 3 de «Una sola Orbital»): una fila por filtro —formato,
- * género, época, calificación, fama, dónde verla y país—, cada uno con su color del arcoíris del azul de Orbital (el formato
- * y «Dónde verla», en el azul de Orbital: son de Orbital). ↑↓ de filtro en filtro, ←→ (o A) cambian su valor, y abajo
- * «Ver N títulos» abre los resultados. X borra todo. Con el dedo o el ratón: tocar una fila avanza su valor; ‹ › también.
+ * El filtro avanzado (FA-1, Fernando, 16 nov 2026: «dale una pulida mucho mayor»), en la misma línea que «Decide por mí»:
+ * arriba su encabezado con lo que llevas elegido y el reloj, de fondo el arte del primer resultado. A la izquierda las siete
+ * preguntas en acordeón —solo la enfocada se abre con sus píldoras; las demás dicen su valor en un renglón, con su color— y a
+ * la derecha, en vivo, cuántos hay y los primeros pósters: ves lo que estás armando antes de abrirlo.
+ *   ↑↓ pregunta · ◀▶ elige (al instante) · A la siguiente pregunta · Y (o «Ver N títulos») los resultados · X borra · B cierra
  *
- * count(filter) → { total } · onResults(filter, label) · onMove · onClose
+ * preview(filter) → { total, items } · onResults(filter, label) · onMove · onClose
  */
 export const FILTERS = [
   { id: "kind", label: "Formato", icon: "movie", hue: "orbital", options: [["movie", "Películas"], ["series", "Series"]] },
@@ -28,6 +31,7 @@ export const FILTERS = [
 ];
 const KEY = "orbital.filter";
 const EMPTY = { kind: "movie", genre: "", decade: "", rating: "", fame: "", platform: "", country: "" };
+const PREVIEW = 10; // los pósters de la derecha: dos renglones de cinco
 
 /** Lo elegido en palabras, para el título de los resultados: «Series · Comedia · Los 90». */
 export function filterLabel(f) {
@@ -38,86 +42,124 @@ export function filterLabel(f) {
   }).filter(Boolean).join(" · ");
 }
 
-export function createFilterPanel({ count, onResults, onMove, onClose }) {
-  const head = h("div");
+export function createFilterPanel({ preview, onResults, onMove, onClose }) {
+  const backdrop = DecideBackdrop({ soft: true });
+  const summary = h("span", { class: "filter__summary" });
+  const head = DecideHead(summary, { title: "Filtro avanzado", icon: "sliders" });
   const rows = h("div", { class: "filter__rows", role: "list" });
-  const result = h("div", { class: "filter__result" });
-  const el = h("section", { class: "filter screen", hidden: true, "aria-label": "Filtro avanzado" }, head, rows, result);
+  const side = h("div", { class: "filter__side" });
+  const el = h("section", { class: "filter screen", hidden: true, "aria-label": "Filtro avanzado" },
+    backdrop.el, head.el, h("div", { class: "filter__body" }, rows, side));
 
   let filter = { ...EMPTY, ...storage.get(KEY, {}) };
-  let at = 0; // la fila enfocada; FILTERS.length = el botón de resultados
-  let total = null;
+  let at = 0; // la pregunta enfocada; FILTERS.length = «Ver N títulos»
+  let found = null; // { total, items } | Error | null (contando)
   let token = 0;
   let timer = 0;
   let glyphs = {};
   let cancelExit = () => {};
 
+  const valueOf = (row) => filter[row.id] ?? "";
+  const indexOf = (row) => Math.max(0, row.options.findIndex(([v]) => v === valueOf(row)));
+  const active = () => FILTERS.filter((row) => row.id !== "kind" && valueOf(row)).length;
+
   function open(options = {}) {
     cancelExit();
     glyphs = options.glyphs || glyphs;
     el.hidden = false;
-    mount(head, ScreenHead({ eyebrow: "Justo lo que se te antoja", title: "Filtro avanzado" }));
     at = 0;
     paint();
-    recount();
+    refresh();
   }
 
-  function step(i, delta) {
-    const row = FILTERS[i];
-    const now = row.options.findIndex(([v]) => v === (filter[row.id] ?? ""));
-    const next = row.options[(Math.max(0, now) + delta + row.options.length) % row.options.length][0];
-    filter = { ...filter, [row.id]: next };
+  /** ◀▶: elige la de al lado en la pregunta enfocada (sin dar la vuelta), y la vista previa se pone al día. */
+  function step(delta) {
+    const row = FILTERS[at];
+    const next = indexOf(row) + delta;
+    if (next < 0 || next >= row.options.length) return "edge";
+    choose(row, row.options[next][0]);
+    return true;
+  }
+
+  function choose(row, value) {
+    filter = { ...filter, [row.id]: value };
     storage.set(KEY, filter);
     paint();
-    recount();
+    refresh();
     onMove?.();
   }
 
-  /** Cuántos hay con lo elegido (cuando dejas de moverte, para no preguntar a TMDB en cada paso). */
-  function recount() {
+  /** Cuántos hay y los primeros, cuando dejas de moverte (no se le pregunta a TMDB en cada paso). */
+  function refresh() {
     clearTimeout(timer);
     const mine = ++token;
-    total = null;
-    paintResult();
+    found = null;
+    paintSide();
     timer = setTimeout(async () => {
       try {
-        const res = await count(filter);
-        if (mine === token) { total = res.total ?? 0; paintResult(); }
+        const res = await preview(filter);
+        if (mine !== token) return;
+        found = { total: res.total ?? (res.items || []).length, items: (res.items || []).slice(0, PREVIEW) };
+        backdrop.show(found.items[0]?.hero || found.items[0]?.image || null);
       } catch (err) {
-        if (mine === token) { total = err; paintResult(); }
+        if (mine !== token) return;
+        found = err instanceof Error ? err : new Error(String(err));
       }
-    }, 400);
+      paintSide();
+    }, 350);
   }
 
   function paint() {
+    head.tick();
+    summary.textContent = filterLabel(filter);
     mount(rows, FILTERS.map((row, i) => {
-      const value = row.options.find(([v]) => v === (filter[row.id] ?? ""))?.[1] ?? row.options[0][1];
-      const changed = row.id !== "kind" && filter[row.id];
-      return h("div", { class: ["filter__row", i === at && "is-focused", changed && "filter__row--on"], role: "listitem",
-        "data-hue": row.hue, onClick: () => { at = i; step(i, 1); } },
+      const open = i === at;
+      const value = row.options[indexOf(row)][1];
+      const changed = row.id !== "kind" && !!valueOf(row);
+      return h("div", { class: ["filter__row", open && "filter__row--open", changed && "filter__row--on"], role: "listitem",
+        "data-hue": row.hue, onClick: () => { if (at !== i) { at = i; paint(); onMove?.(); } } },
       h("span", { class: "filter__icon", "aria-hidden": "true" }, svg(ICONS[row.icon] || ICONS.list)),
       h("span", { class: "filter__label" }, row.label),
-      h("span", { class: "filter__value" },
-        h("button", { class: "filter__arrow", type: "button", tabindex: "-1", "aria-label": `${row.label}: anterior`,
-          onClick: (e) => { e.stopPropagation(); at = i; step(i, -1); } }, "‹"),
-        h("span", {}, value),
-        h("button", { class: "filter__arrow", type: "button", tabindex: "-1", "aria-label": `${row.label}: siguiente`,
-          onClick: (e) => { e.stopPropagation(); at = i; step(i, 1); } }, "›")));
+      !open && h("span", { class: "filter__value" }, value),
+      // La enfocada se abre: sus respuestas en píldoras, la elegida con ✓ y con el foco (◀▶ eligen al instante).
+      open && h("div", { class: "filter__options", role: "tablist", "aria-label": row.label }, row.options.map(([v, label]) => {
+        const on = valueOf(row) === v;
+        return Pill(on ? `✓ ${label}` : label, { on, tone: "outline", className: on && "is-focused", tabindex: "-1", role: "tab",
+          onClick: (e) => { e.stopPropagation(); choose(row, v); } });
+      })));
     }));
-    paintResult();
+    rows.querySelector(".filter__row--open")?.scrollIntoView({ block: "nearest" });
+    paintSide();
   }
 
-  function paintResult() {
-    const failed = total instanceof Error;
-    const label = total === null ? "Contando…" : failed ? "Ver títulos" : total === 0 ? "Nada con este filtro" : `Ver ${total > 9999 ? "más de 10 000" : total} títulos`;
-    const button = Button({ label, variant: "primary", glyph: glyphs.select, onPress: () => results() });
-    button.classList.toggle("is-focused", at === FILTERS.length);
-    mount(result, button, failed && h("p", { class: "filter__note" }, total.message),
-      h("button", { class: "filter__clear", type: "button", tabindex: "-1", onClick: () => clear() }, "Borrar filtros"));
+  function paintSide() {
+    const g = glyphs;
+    const failed = found instanceof Error;
+    const total = found && !failed ? found.total : null;
+    const none = total === 0;
+    const label = found === null ? "Contando…" : failed ? "Ver títulos" : none ? "Nada con este filtro" : `Ver ${total > 9999 ? "más de 10 000" : total.toLocaleString("es-MX")} títulos`;
+    const go = Button({ label, variant: "primary", glyph: g.options, onPress: () => results() });
+    go.classList.toggle("is-focused", at === FILTERS.length);
+    const posters = found && !failed ? found.items : [];
+    mount(side,
+      h("div", { class: "filter__count" },
+        h("strong", { class: "filter__total" }, found === null ? "…" : failed ? "—" : none ? "0" : total > 9999 ? "+10 000" : total.toLocaleString("es-MX")),
+        h("span", { class: "filter__total-label" }, found === null ? "Contando…" : failed ? found.message : none
+          ? "Nada con esto. Prueba quitar un filtro (X borra todos)." : `${total === 1 ? "título" : "títulos"} con lo que elegiste`)),
+      // Con cero, sin muro (las cajas vacías parecían «cargando») y lo que se puede hacer es borrar.
+      !none && h("div", { class: ["filter__wall", found === null && "filter__wall--loading"], "aria-hidden": "true" },
+        Array.from({ length: PREVIEW }, (_, i) => {
+          const p = posters[i];
+          return p?.image ? h("img", { class: "filter__poster", src: sized(p.image, 160), alt: "", loading: "lazy", decoding: "async" })
+            : h("span", { class: "filter__poster filter__poster--empty" });
+        })),
+      h("div", { class: "button-row filter__actions" }, none
+        ? Button({ label: "Borrar filtros", glyph: g.alt, variant: "primary", onPress: () => clear() })
+        : [go, active() > 0 && Button({ label: "Borrar filtros", glyph: g.alt, icon: "close", onPress: () => clear() })]));
   }
 
   function results() {
-    if (total === 0) return;
+    if (found?.total === 0) return;
     onResults?.({ ...filter }, filterLabel(filter));
   }
 
@@ -125,7 +167,7 @@ export function createFilterPanel({ count, onResults, onMove, onClose }) {
     filter = { ...EMPTY, kind: filter.kind };
     storage.set(KEY, filter);
     paint();
-    recount();
+    refresh();
     onMove?.();
   }
 
@@ -141,6 +183,8 @@ export function createFilterPanel({ count, onResults, onMove, onClose }) {
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
+    if (action === "options") { results(); return true; } // Y: los resultados, desde cualquier pregunta
+    if (action === "alt") { clear(); return true; }
     if (action === "up" || action === "down") {
       const next = Math.max(0, Math.min(FILTERS.length, at + (action === "up" ? -1 : 1)));
       if (next === at) return "edge";
@@ -149,22 +193,17 @@ export function createFilterPanel({ count, onResults, onMove, onClose }) {
       onMove?.();
       return true;
     }
-    if (action === "left" || action === "right") {
-      if (at === FILTERS.length) return "edge";
-      step(at, action === "left" ? -1 : 1);
-      return true;
-    }
+    if (action === "left" || action === "right") return at === FILTERS.length ? "edge" : step(action === "left" ? -1 : 1);
     if (action === "select") {
       if (at === FILTERS.length) results();
-      else step(at, 1);
+      else { at++; paint(); onMove?.(); } // A: lista esta pregunta, a la siguiente
       return true;
     }
-    if (action === "alt") { clear(); return true; }
     return true;
   }
 
-  const hints = (g) => [at === FILTERS.length ? { glyph: g.select, label: "Ver resultados" } : { glyph: g.select, label: "Cambiar" },
-    { glyph: g.alt, label: "Borrar filtros", secondary: true }, { glyph: g.back, label: "Atrás", end: true }];
+  const hints = (g) => [at === FILTERS.length ? { glyph: g.select, label: "Ver los títulos" } : { glyph: "◀ ▶", label: "Elegir" },
+    at < FILTERS.length && { glyph: g.select, label: "Siguiente" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

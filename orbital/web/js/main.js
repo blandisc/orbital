@@ -322,7 +322,7 @@ const ui = {
   }),
   // El filtro avanzado (como el del iPhone): formato, género, época, calificación, fama, dónde verla y país.
   filter: createFilterPanel({
-    count: (f) => api.forYouFilter(f, true),
+    preview: (f) => api.forYouFilter(f, false), // FA-1: cuántos y los primeros, en vivo
     onResults: (f, label) => openFilterResults(f, label),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },

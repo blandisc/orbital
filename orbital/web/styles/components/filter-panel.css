@@ -1,31 +1,55 @@
-/* El filtro avanzado (js/components/filter-panel.js): una fila por filtro con su color del arcoíris del azul de Orbital (solo
-   en el ícono y en lo elegido: el resto es neutro, como el iPhone) y, abajo, «Ver N títulos». */
-.filter { display: grid; grid-template-rows: auto auto auto; align-content: start; gap: var(--space-6); justify-items: center; }
-.filter__rows { width: min(48rem, 100%); display: grid; align-content: start; gap: var(--space-1); }
+/* El filtro avanzado (js/components/filter-panel.js; FA-1, 16 nov 2026), en la línea de «Decide por mí» (decide.css: su
+   encabezado y su fondo): a la izquierda las preguntas en acordeón, cada una con su color del arcoíris del azul de Orbital
+   (solo en su ícono, su barrita y lo elegido: el resto es neutro, como el iPhone); a la derecha, en vivo, cuántos hay y los
+   primeros pósters. */
+.filter {
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); row-gap: var(--space-6); overflow: hidden;
+  padding-top: calc(var(--space-8) + var(--safe-y));
+}
+.filter > :not(.decide-backdrop) { position: relative; }
+.filter__summary { margin-right: auto; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.filter__body { display: grid; grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); column-gap: var(--space-14); min-height: 0; }
+
+/* Las preguntas: cerradas, un renglón con su valor; la enfocada, abierta con sus píldoras. */
+/* Si la abierta no cabe (Género, con sus quince), la lista se desliza para dejarla entera a la vista; lo que sale se desvanece. */
+.filter__rows {
+  display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow-y: auto; scrollbar-width: none; padding: var(--space-1);
+  margin: calc(-1 * var(--space-1));
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
+  mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
+}
 .filter__row {
   --hue: var(--color-orbital);
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-4);
-  min-height: var(--menu-row-height); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-4);
+  flex: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 .filter__row[data-hue="coral"] { --hue: var(--rainbow-coral); }
 .filter__row[data-hue="ambar"] { --hue: var(--rainbow-ambar); }
 .filter__row[data-hue="lima"] { --hue: var(--rainbow-lima); }
 .filter__row[data-hue="verde"] { --hue: var(--rainbow-verde); }
 .filter__row[data-hue="lavanda"] { --hue: var(--rainbow-lavanda); }
-.filter__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--hue); }
+.filter__row:not(.filter__row--open):hover { background: var(--color-glass); }
+/* Abierta: vidrio fuerte y una barrita de su color a la izquierda; sus píldoras debajo, a todo lo ancho. */
+.filter__row--open { background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-card); backdrop-filter: var(--filter-glass); }
+.filter__row--open::before { content: ""; position: absolute; left: 0; top: var(--space-3); bottom: var(--space-3); width: var(--tab-mark); border-radius: var(--tab-mark); background: var(--hue); }
+.filter__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--hue); }
 .filter__icon .icon { width: var(--icon-md); height: var(--icon-md); }
 .filter__label { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
-.filter__value { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.filter__row--on .filter__value { color: var(--color-text); font-weight: var(--weight-semibold); }
-.filter__arrow { display: grid; place-items: center; min-width: var(--icon-xl); color: inherit; font-size: var(--type-body); font-weight: var(--type-body-weight); opacity: var(--opacity-faint); }
-/* Enfocada: el foco invertido de toda opción; su color se queda en el ícono. */
-.is-focused.filter__row { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
-.is-focused.filter__row .filter__value { color: var(--inverse-fg); }
-.is-focused.filter__row .filter__icon { background: var(--on-light-fill-strong); }
-.filter__row:not(.is-focused.filter__row):hover { background: var(--color-glass); }
-.filter__result { display: grid; justify-items: center; gap: var(--space-3); }
-.filter__note { color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
-.filter__clear { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
-.filter__clear:hover { color: var(--color-text); }
-[data-input="touch"] .filter__arrow { min-width: var(--touch-target); min-height: var(--touch-target); }
+.filter__value { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); white-space: nowrap; }
+/* Lo que cambiaste se lee en su color (lo que sigue en «cualquiera», en gris). */
+.filter__row--on .filter__value { color: var(--hue); font-weight: var(--type-body-weight); }
+.filter__options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); padding-top: var(--space-2); }
+.filter__options .pill { white-space: nowrap; }
+
+/* En vivo: cuántos (grande) y los primeros pósters; abajo, «Ver N títulos» (Y) y «Borrar filtros» (X). */
+.filter__side { display: flex; flex-direction: column; gap: var(--space-6); min-height: 0; }
+.filter__count { display: grid; gap: var(--space-1); }
+.filter__total { font-size: var(--type-hero); font-weight: var(--type-hero-weight); letter-spacing: var(--type-hero-tracking); line-height: var(--leading-tight); font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text); }
+.filter__total-label { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.filter__wall { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); max-width: 46rem; transition: opacity var(--duration-base) var(--ease-out); }
+.filter__wall--loading { opacity: var(--opacity-away); }
+.filter__poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: var(--radius-sm); box-shadow: var(--edge-glass-hairline), var(--shadow-card); background: var(--color-glass); }
+.filter__poster--empty { display: block; box-shadow: var(--edge-glass-hairline); }
+.filter__actions { margin-top: auto; padding-bottom: var(--space-2); }
+.filter__actions .button--round:has(.button__glyph) .button__name { display: inline-flex; }

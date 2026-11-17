@@ -59,11 +59,11 @@ export function doorLine(now = new Date()) {
 }
 
 /** AD-2: el encabezado de las dos pestañas: «✦ Decide por mí», las pestañas con lo que hace cada una y el reloj (la pantalla
- * dice a qué hora termina cada cosa). `tick()` pone la hora al día. */
-export function DecideHead(modes) {
+ * dice a qué hora termina cada cosa). `tick()` pone la hora al día. FA-1: el Filtro avanzado lo usa con su nombre y su ícono. */
+export function DecideHead(modes, { title = "Decide por mí", icon = "spark" } = {}) {
   const time = h("span", { class: "decide-head__clock" }, clock());
   const el = h("header", { class: "decide-head" },
-    h("span", { class: "decide-head__title" }, svg(ICONS.spark), "Decide por mí"), modes, time);
+    h("span", { class: "decide-head__title" }, svg(ICONS[icon]), title), modes, time);
   return { el, tick: () => { time.textContent = clock(); } };
 }
 
