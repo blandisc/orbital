@@ -592,10 +592,11 @@ class ConsoleShell:
         if not connected:
             players.sync()
             if self.away_from_orbital() and self.overlay is not None:
-                self.overlay.notice(f"Se desconectó el {name}", "" if video else "Enciéndelo o conéctalo para seguir jugando",
+                # «Se desconectó el control», sin la marca (Fernando, 16 nov: «que diga que se desconectó control, no el GameSir»).
+                self.overlay.notice("Se desconectó el control", "" if video else "Enciéndelo o conéctalo para seguir jugando",
                                     seconds=4.5, badge="!", tone="warn")
             else:
-                self.notify({"type": "toast", "tone": "warn", "message": f"Se desconectó el control {name}"})
+                self.notify({"type": "toast", "tone": "warn", "message": "Se desconectó el control"})
             return
         number = players.joined(slot)
         gamepad.rumble(slot)

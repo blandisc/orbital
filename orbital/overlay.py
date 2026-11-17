@@ -1,7 +1,7 @@
 """Avisos encima del juego (con un juego al frente, la ventana de Orbital no se ve), hechos con el sistema de diseño de
 Orbital (tokens.css, themes/orbital.css, toast.css):
 
-- Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
+- Notificación («GameSir conectado · Jugador 2», «Se desconectó el control»): arriba a la derecha, donde salen los avisos
   de Orbital, con su forma (radio xl), su fondo, su borde fino y su sombra. El ícono en un círculo: el número del
   jugador en el azul de los controles de Orbital o, si es advertencia, «!» en ámbar tenue. Entra como los avisos de
   Orbital (toast.css): primero el ícono con un «pop», luego la tarjeta crece desde él y rebota un poco, y al final llegan
