@@ -101,7 +101,7 @@ const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "to
 // ---------------------------------------------------------------- componentes
 // «Decide por mí», con sus pestañas «Tres que caben» y «Una por una» (el mazo): app/decide-screens.js.
 const { openMatch, openDecide, ...decideScreens } = createDecideScreens({ ui: () => ui, glyphs, openTitle, renderHints, runCommand,
-  watch: (...args) => watch(...args) });
+  watch: (...args) => watch(...args), openMenu: (...args) => openMenu(...args) });
 const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
@@ -1872,6 +1872,12 @@ async function runCommand(command, context = null) {
       case "decide":
         ui.sheet.close();
         return openDecide();
+      case "decide-not-today": // AD-5: ☰ de «Tres que caben»
+        ui.sheet.close();
+        return decideScreens.decide.notToday();
+      case "decide-dismiss":
+        ui.sheet.close();
+        return decideScreens.decide.notInterested();
       case "save-open": // «Guardar en…» desde Opciones (como el iPhone): la misma hoja que en la ficha
         ui.sheet.close();
         return openSave({ kind: command.kind, id: command.id, title: command.title, library: !!command.library });

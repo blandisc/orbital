@@ -6,8 +6,8 @@ import { storage } from "../core/storage.js";
 import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
-import { DecideHead, DecideModes } from "./decide.js";
-import { EmptyState, Eyebrow } from "./ui.js";
+import { DecideBackdrop, DecideHead, DecideInfo, DecideModes, endsAt } from "./decide.js";
+import { EmptyState } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
@@ -23,7 +23,6 @@ import { EmptyState, Eyebrow } from "./ui.js";
  */
 const DISCARDED = "match-discarded";
 export const DISCARD_DAYS = 30;
-const GENRES = 3; // DS.Match.genres
 
 /** Lo descartado que sigue fuera del mazo (un mes, como el iPhone); lo viejo se olvida. */
 export function freshDiscards(all, now = Date.now()) {
@@ -32,24 +31,27 @@ export function freshDiscards(all, now = Date.now()) {
 
 /** Cada dirección con su nombre, su sello y su color (DS.Match.pass · tonight · keep). */
 const WAYS = {
-  pass: { label: "Paso", stamp: "Paso", icon: "close", glyph: "←" },
-  tonight: { label: "Para hoy", stamp: "★ Para hoy", icon: "star", glyph: "↑" },
-  keep: { label: "Guardar", stamp: "Guardar", icon: "heart", glyph: "→" },
+  pass: { label: "Paso", stamp: "Paso", icon: "close", glyph: "◀" },
+  tonight: { label: "Para hoy", stamp: "★ Para hoy", icon: "star", glyph: "▲" },
+  keep: { label: "Guardar", stamp: "Guardar", icon: "heart", glyph: "▶" },
 };
 
 export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null }) {
-  const backdrop = h("div", { class: "match__backdrop", "aria-hidden": "true" });
+  // AD-1: el mismo fondo que «Tres que caben», difuminado y más oscuro: la carta es lo importante.
+  const backdrop = DecideBackdrop({ soft: true });
   const saved = h("span", { class: "match__saved", hidden: true });
   const stage = h("div", { class: "match__stage" });
-  const actions = h("div", { class: "match__actions" });
-  // D5-A (R2-7): el mazo es la segunda pestaña de Decide, con su mismo encabezado; «Tres que caben» (tocarla, o Q / LB)
+  const info = h("div", { class: "decide__info match__info" }); // AD-10: los datos a la izquierda, donde en «Tres que caben»
+  const actions = h("div", { class: "button-row decide__actions match__actions" });
+  // D5-A (R2-7): el mazo es la segunda pestaña de Decide, con su mismo encabezado (AD-2); «Tres que caben» (tocarla, o LB/RB)
   // regresa a la primera, igual que B.
   const modes = h("div", { class: "decide__modes", role: "tablist", "aria-label": "Cómo decidir" });
   DecideModes(modes, { on: 1, onPick: (i) => (i === 0 ? toDecide() : null) });
+  const head = DecideHead(modes);
+  head.el.append(saved);
   const el = h("section", { class: "match screen", hidden: true, "aria-label": "Decide por mí · Una por una" },
-    backdrop,
-    h("header", { class: "match__head" }, DecideHead(), modes, saved),
-    stage, actions);
+    backdrop.el, head.el, info, stage);
+  let total = 0; // AD-3: «4 de 20»
 
   let cards = [];
   let kept = []; // lo que guardaste en esta vuelta
@@ -81,6 +83,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
       const gone = discards();
       const keptIds = new Set(kept.map((c) => c.meta_id));
       cards = (res.cards || []).filter((c) => !gone[c.meta_id] && !keptIds.has(c.meta_id));
+      total = cards.length;
     } catch (err) {
       if (mine !== token) return;
       cards = [];
@@ -92,64 +95,48 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     onReady?.(); // las pistas del pie, ya con la carta («Ver ya», «Ficha»)
   }
 
-  /** El fondo de la pantalla: el arte de la carta de arriba, desenfocado y en voz baja (como el resto de Orbital). */
-  function paintBackdrop(card) {
-    const src = card?.hero || card?.image;
-    if (!src) return mount(backdrop);
-    const img = h("img", { class: "match__backdrop-art", src, alt: "", decoding: "async" });
-    img.addEventListener("error", () => img.remove(), { once: true });
-    mount(backdrop, img);
-  }
-
   function paint() {
     saved.hidden = !kept.length;
     mount(saved, svg(ICONS.heart), String(kept.length));
-    const [top, next] = cards;
-    paintBackdrop(top);
+    head.tick();
+    const [top, next, after] = cards;
+    backdrop.show(top?.hero || top?.image || null);
     if (!top) {
+      mount(info);
       mount(stage, EmptyState(kept.length
         ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Vuelve mañana: el mazo cambia cada día.` }
         : { icon: "list", title: "Ya viste todo el mazo", text: "Vuelve mañana: el mazo cambia cada día." }));
       return paintActions();
     }
-    mount(stage, next && Card(next, { behind: true }), Card(top));
+    const at = Math.max(1, total - cards.length + 1);
+    const length = Number(top.runtime) > 0 ? duration(Number(top.runtime) * 60) : runtime(top.runtime);
+    const facts = [top.why, top.kind === "series" ? "Serie" : top.kind === "movie" ? "Película" : null, top.year, length,
+      genreNames(top.genres || []).slice(0, 2).join(", ")].filter(Boolean).join(" · ");
+    mount(info, ...DecideInfo(top, { eyebrow: [`${at} de ${total}`, endsAt(top)].filter(Boolean).join(" · "), facts }), actions);
+    // AD-10: el póster grande con las dos siguientes asomando detrás.
+    mount(stage, after && Card(after, { behind: 2 }), next && Card(next, { behind: 1 }), Card(top));
     paintActions();
   }
 
-  /** Una carta: el póster arriba y, debajo (R2-7: ya no encima, tapaba el logo del arte), por qué, el nombre, los datos y los
-   * géneros (como MatchCard). */
-  function Card(c, { behind = false } = {}) {
-    const length = typeof c.runtime === "number" ? duration(c.runtime * 60) : runtime(c.runtime);
-    const facts = [c.year, length, c.kind === "series" ? "Serie" : c.kind === "movie" ? "Película" : null].filter(Boolean).join(" · ");
-    const kinds = genreNames(c.genres || []).slice(0, Math.min(GENRES, 2)); // dos: en un renglón bajo el póster
+  /** Una carta: el póster (sus datos van a la izquierda, AD-10), con su tinte y su sello para cuando sale volando. */
+  function Card(c, { behind = 0 } = {}) {
     const poster = h("img", { class: "match__poster", src: c.image || c.hero || "", alt: "", decoding: "async" });
     poster.addEventListener("error", () => poster.remove(), { once: true });
-    if (behind) return h("div", { class: ["match__card", "match__card--behind"], "aria-hidden": "true" }, poster);
-    const rating = Number(c.rating) > 0 ? Math.round(Number(c.rating) * 10) : null;
-    // R3 (11 nov): la de arriba es lo enfocado del mazo (las flechas deciden sobre ella, no mueven el foco): lleva
-    // `.is-focused` (y con eso `aria-current`) para que el foco nunca se pierda; no lleva órbita, es lo único al frente.
+    if (behind) return h("div", { class: ["match__card", "match__card--behind", `match__card--behind-${behind}`], "aria-hidden": "true" }, poster);
+    // R3 (11 nov): la de arriba es lo enfocado del mazo (las flechas deciden sobre ella, no mueven el foco).
     return h("div", { class: ["match__card", "is-focused"], role: "button", tabindex: "-1", "aria-label": `${c.title}: ver la ficha`, onClick: () => onOpen?.(c) },
       poster,
-      rating && h("span", { class: "match__rating", "aria-label": `Calificación en Trakt: ${rating} por ciento` },
-        h("img", { class: "match__rating-mark", src: "img/ratings/trakt.svg", alt: "" }), `${rating} %`),
-      h("div", { class: "match__info" },
-        Eyebrow(c.why, { className: "match__why" }),
-        h("strong", { class: "match__name" }, c.title),
-        facts && h("span", { class: "match__facts" }, facts),
-        kinds.length > 0 && h("span", { class: "match__genres" }, kinds.map((g) => h("span", { class: "match__genre" }, g)))),
       h("span", { class: "match__tint", "aria-hidden": "true" }),
       h("span", { class: "match__stamp", "aria-hidden": "true" }));
   }
 
-  /** ✕ · ★ · ♥ · ▶, cada uno con su color y su nombre debajo, del mismo tamaño (como el iPhone, DE2: «Ver» es un botón junto a
-   * los otros tres, no un ▶ sobre la carta que tapaba sus datos); son también la leyenda de ← ↑ → y A. */
+  /** AD-6: una sola fila: «Ver ya» (A) sólido y ✕ · ★ · ♥ redondos con su botón del mando y su nombre. */
   function paintActions() {
     const top = cards[0];
     mount(actions, top && [
+      Button({ label: "Ver ya", glyph: glyphs.select, variant: "primary", onPress: () => play() }),
       ...Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },
         Button({ label: w.label, icon: w.icon, glyph: w.glyph, onPress: () => decide(way) }))),
-      h("span", { class: ["match__act", "match__act--play"] },
-        Button({ label: "Ver ya", icon: "play", glyph: glyphs.select, onPress: () => play() })),
     ]);
   }
 
@@ -240,7 +227,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
-    if (action === "prevsection") { toDecide(); return true; } // Q / LB: la otra pestaña
+    if (action === "prevsection" || action === "nextsection") { toDecide(); return true; } // AD-11: LB/RB, la otra pestaña
     if (action === "left") { decide("pass"); return true; }
     if (action === "right") { decide("keep"); return true; }
     if (action === "up") { decide("tonight"); return true; }
@@ -250,7 +237,8 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     return true;
   }
 
-  const hints = (g) => [cards[0] && { glyph: g.select, label: "Ver ya" }, cards[0] && { glyph: g.options, label: "Ficha" },
+  // El pie: A y ◀ ▲ ▶ ya los dicen los botones de la izquierda.
+  const hints = (g) => [cards[0] && { glyph: g.options, label: "Ficha" }, { glyph: g.section, label: "Tres que caben" },
     last && { glyph: g.alt, label: "Deshacer" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, play, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };

@@ -28,7 +28,7 @@
   --palette-paper: #f5f4f0;
   --palette-red-400: #f0574d;
   --palette-amber-300: #f4c24d;
-  --palette-amber-700: #9a6a00; /* las estrellas sobre lo claro (el renglón enfocado de una hoja) */
+  --palette-amber-700: #9a6a00;
   --palette-teal-300: #5fd6c6;
   /* Botones de cara del mando (convención Xbox, la del GameSir y la Legion Go) */
   --palette-pad-green: #5cbf6d;
@@ -335,7 +335,6 @@
   --person-photo: 5.4rem;
   --touch-back-room: 9rem; /* con el dedo: lo que aparta un encabezado para que «Atrás» (arriba a la derecha) no lo tape */
   --person-head-photo: 8.5rem;
-  --decide-poster-height: 16rem;
   --console-name-fit: 15cqi; /* el nombre de una consola en su tarjeta, como mucho este tanto de su ancho (8 letras caben) */
   --because-stage-width: 30rem; /* «Porque viste»: el escenario fijo de la izquierda */
   --key-height: 3.2rem;

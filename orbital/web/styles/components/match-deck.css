@@ -1,18 +1,11 @@
 /* «¿Qué vemos hoy?» (js/components/match-deck.js), como el iPhone (MatchCard, «como Tinder»): el arte de la carta de fondo,
    arriba a la izquierda el título, al centro la carta (un póster grande, la siguiente asoma detrás) y abajo
    ✕ · ★ · ♥ con su color. Al decidir, la carta se tiñe, asoma su sello y sale volando hacia allá. */
-.match { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-4); overflow: hidden; }
-/* El fondo: el arte de la carta de arriba, desenfocado y en voz baja, sobre el fondo de siempre. */
-.match__backdrop { position: absolute; inset: 0; z-index: var(--z-behind); overflow: hidden; pointer-events: none; }
-.match__backdrop-art {
-  position: absolute; inset: calc(-1 * var(--space-10)); width: calc(100% + 2 * var(--space-10)); height: calc(100% + 2 * var(--space-10));
-  object-fit: cover; filter: blur(var(--blur-case)); opacity: var(--opacity-dim); animation: fade-in var(--duration-slow) var(--ease-out);
-}
-.match > :not(.match__backdrop) { position: relative; }
-/* D5-A (R2-7): arriba, el encabezado de Decide (el mismo de «Tres que caben») y sus dos pestañas, al centro; lo guardado,
-   a la derecha. */
-.match > .match__head { display: grid; justify-items: center; gap: var(--space-3); }
-.match__head > .match__saved { position: absolute; top: 0; right: var(--touch-back-room); }
+/* AD-10: el mazo a la derecha, los datos a la izquierda (decide.css · .decide__info), el encabezado arriba de los dos. */
+.match { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); column-gap: var(--space-14); }
+.match > .decide-head { grid-column: 1 / -1; }
+.match > .match__info { grid-row: 2; grid-column: 1; }
+.match > .match__stage { grid-row: 2; grid-column: 2; margin-right: var(--space-10); }
 /* Cuántas guardaste en esta vuelta (el ♥ verde de Guardar). */
 .match__saved {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-4);
@@ -25,38 +18,20 @@
 /* La carta: un póster grande (alto entre ancho 1.5, DS.Match.cardAspect), con la siguiente asomando detrás. */
 .match__stage { position: relative; display: grid; place-items: center; min-height: 0; }
 .match__card {
-  grid-area: 1 / 1; position: relative; display: flex; flex-direction: column; height: 100%; max-height: var(--match-card-height); aspect-ratio: 4 / 5; /* más ancha que el póster: su ficha va debajo */
+  grid-area: 1 / 1; position: relative; display: flex; flex-direction: column; height: 100%; max-height: var(--match-card-height); aspect-ratio: 2 / 3; /* solo el póster: sus datos van a la izquierda (AD-10) */
   border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-raised); box-shadow: var(--focus-lift); cursor: pointer;
   animation: fade-in var(--duration-base) var(--ease-out);
   transition: transform var(--duration-base) var(--ease-in), opacity var(--duration-base) var(--ease-in);
 }
 .match__card--skeleton { box-shadow: none; }
 /* La de atrás: un poco más chica y más abajo (DS.Match.behindShrink, behindDrop), sin nada encima. */
-.match__card--behind { transform: translateY(var(--space-4)) scale(.95); opacity: var(--opacity-away); box-shadow: var(--shadow-card); pointer-events: none; animation: none; }
+.match__card--behind { opacity: var(--opacity-away); box-shadow: var(--shadow-card); pointer-events: none; animation: none; }
+.match__card--behind-1 { transform: translateX(var(--space-5)) rotate(4deg) scale(.96); }
+.match__card--behind-2 { transform: translateX(calc(2 * var(--space-5))) rotate(8deg) scale(.92); }
 /* El póster llena lo que deja su ficha de abajo (recortado por abajo: ahí suele ir el logo, que ya no queda bajo el nombre). */
 .match__poster { flex: 1 1 auto; min-height: 0; width: 100%; object-fit: cover; object-position: top; }
 .match__card--behind .match__poster { height: 100%; }
-.match__card > :not(.match__poster, .match__info) { position: absolute; }
-/* Arriba a la derecha, su calificación de Trakt en su placa. */
-.match__rating {
-  top: var(--space-3); right: var(--space-3); display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
-  font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
-}
-.match__rating-mark { width: var(--icon-sm); height: var(--icon-sm); }
-/* Abajo, bajo el póster: por qué te la propone, el nombre, año · duración · tipo y sus géneros. */
-.match__info { position: relative; flex: none; display: grid; gap: var(--space-2); padding: var(--space-4); } /* sin el ▶ en la esquina (DE2): los datos usan todo el ancho */
-.match__name {
-  font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text); /* en la carta de la tele, un paso menos que title: cabe el nombre */
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.match__facts { color: var(--color-on-art-secondary); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-shadow: var(--shadow-text-strong); }
-.match__genres { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-.match__genre {
-  padding: calc(var(--space-1) / 2) var(--space-2); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
-  font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking);
-}
+.match__card > :not(.match__poster) { position: absolute; }
 /* El color de lo que va a pasar y su sello (PASO, GUARDAR, ★ PARA HOY), como Tinder; solo al decidir. */
 .match__tint { inset: 0; opacity: 0; pointer-events: none; transition: opacity var(--duration-fast) var(--ease-out); }
 .match__stamp {
@@ -79,7 +54,7 @@
 
 /* ✕ · ★ · ♥ · ▶: al centro, cada uno con su color y del mismo tamaño («Ver ya» ya no va sobre la carta, DE2); debajo, centrados, la tecla que lo hace (← ↑ →) y su nombre (R2-7: antes
    la tecla colgaba de la orilla del círculo, fuera de centro). */
-.match__actions { display: flex; justify-content: center; align-items: flex-start; gap: var(--space-10); }
+.match__actions { display: flex; align-items: flex-start; gap: var(--space-8); }
 .match__act .button--round { gap: var(--space-2); }
 .match__act .button__disc { margin-bottom: calc(var(--glyph-size) + var(--space-1)); }
 [data-input="touch"] .match__act .button__disc { margin-bottom: 0; } /* con el dedo no hay tecla debajo: el nombre, pegado */

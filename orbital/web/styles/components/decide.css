@@ -1,39 +1,90 @@
-/* «¿Qué vemos?» (js/components/decide.js), como DecideView del iPhone: tres carteles lado a lado, el porqué de la
-   enfocada y abajo las preguntas en píldora (`Pill`). El marco es .screen. */
-/* Llena la pantalla y los carteles toman lo que sobra (16 nov 2026): con la altura fija, en la tele de 1080 y en la Legion Go
-   con letra grande, «Ánimo» quedaba debajo del pie. Así las preguntas siempre caben y los carteles se achican lo justo. */
-.decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); height: 100%; }
-.decide__modes { display: flex; gap: var(--space-1); }
-/* En pantallas bajas (la Legion Go) las pestañas de arriba le quitan aire a las preguntas: los carteles bajan un poco. */
-@media (max-height: 900px) { .decide { --decide-poster-height: 12rem; } }
-.decide__lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-/* El escenario toma la altura que sobra y es contenedor de ella: el cartel enfocado (crecido) y su aire caben ahí, sin pasar del
-   tamaño de siempre (`--decide-poster-height`). */
-.decide__stage {
-  display: flex; align-items: center; justify-content: center; gap: var(--space-10); padding-top: var(--space-6);
-  flex: 1 1 0; min-height: 0; max-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6) * 2);
-  align-self: stretch; container-type: size;
+/* «Decide por mí» (js/components/decide.js): «Tres que caben» y, compartido con el mazo (match-deck.css), su encabezado, su
+   fondo y el bloque de la izquierda. AD-1…AD-12 (Fernando, 16 nov 2026): se ve y se maneja como el Inicio. El marco es .screen. */
+.decide, .match {
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; row-gap: var(--space-6); overflow: hidden;
+  padding-top: calc(var(--space-8) + var(--safe-y));
 }
-.decide__picks { display: flex; align-items: center; gap: var(--card-gap); }
-.decide__card { --card-height: min(var(--decide-poster-height), calc((100cqh - var(--space-6)) / var(--card-focus-scale))); }
-.decide__about { display: flex; flex-direction: column; gap: var(--space-2); width: 26rem; min-width: 0; }
-.decide__name {
-  margin: 0; font-size: var(--type-title); font-weight: var(--type-title-weight); line-height: var(--leading-tight); letter-spacing: var(--tracking-display);
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; padding-bottom: .15em;
+.decide > :not(.decide-backdrop, .decide__panel), .match > :not(.decide-backdrop) { position: relative; }
+
+/* AD-1: el arte de lo enfocado a pantalla completa (a la derecha, desvanecido hacia el texto y hacia abajo) con el velo de
+   Orbital; entra con un fundido. En el mazo, difuminado y apagado. */
+.decide-backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.decide-backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim-hero); }
+.decide-backdrop__art {
+  position: absolute; top: 0; right: 0; width: 78%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 32%), linear-gradient(0deg, transparent 0%, var(--mask-solid) 38%);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+  mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 32%), linear-gradient(0deg, transparent 0%, var(--mask-solid) 38%);
+  transition: opacity var(--duration-slow) var(--ease-out);
 }
-.decide__facts { margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
-.decide__overview {
-  margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-relaxed);
-  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+.decide-backdrop__art--in { opacity: 1; }
+.decide-backdrop--soft .decide-backdrop__art {
+  top: calc(-1 * var(--space-10)); right: calc(-1 * var(--space-10)); width: calc(100% + 2 * var(--space-10)); height: calc(100% + 2 * var(--space-10));
+  filter: blur(var(--blur-case)); -webkit-mask-image: none; mask-image: none;
 }
-.decide__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-/* R2-7: la última pregunta («Qué») con aire sobre el pie (antes casi lo tocaba). */
-.decide__questions { display: grid; gap: var(--space-3); margin-bottom: var(--space-6); }
-.decide__question { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: var(--space-4); }
-/* «Esta noche»: el rótulo de sección del iPhone sobre Duración y Ánimo. */
-.decide__section { margin-top: var(--space-2); }
-.decide__label { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: right; }
-.decide[data-zone="questions"] .decide__picks .card { opacity: var(--opacity-away); }
+.decide-backdrop--soft .decide-backdrop__art--in { opacity: var(--opacity-dim); }
+
+/* AD-2: arriba, «✦ Decide por mí», las pestañas con lo que hacen y, a la derecha, el reloj. */
+.decide-head { display: flex; align-items: center; gap: var(--space-10); }
+.decide-head__title { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
+.decide-head__title .icon { width: var(--icon-md); height: var(--icon-md); }
+.decide__modes { display: flex; gap: var(--space-8); margin-right: auto; }
+.decide-head__clock { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text); }
+.decide-mode {
+  position: relative; display: grid; gap: var(--space-1); padding: 0 0 var(--space-3); border: 0; background: none; color: var(--color-text-muted);
+  text-align: left; cursor: pointer; font-family: var(--font-sans);
+}
+.decide-mode--on { color: var(--color-text); }
+.decide-mode--on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--tab-mark); border-radius: var(--tab-mark); background: currentColor; }
+.decide-mode__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+.decide-mode__hint { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
+
+/* AD-3: el bloque de la izquierda (el mismo en el mazo): por qué cabe, el logo o el nombre, los datos y dos renglones. */
+.decide__info { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--space-4); max-width: 52rem; min-height: 0; }
+.decide-info__logo { max-width: 34rem; height: 7rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
+.decide-info__name {
+  margin: 0; font-size: var(--type-hero); font-weight: var(--type-hero-weight); letter-spacing: var(--type-hero-tracking); line-height: var(--leading-tight);
+  text-shadow: var(--shadow-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.decide-info__facts { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); text-shadow: var(--shadow-text-strong); }
+.decide-info__overview {
+  margin: 0; max-width: 46rem; font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); text-shadow: var(--shadow-text-strong);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.decide-info__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+/* AD-4 / AD-6: los botones del destacado; los redondos con su nombre debajo (aquí son lo principal, no un extra). */
+.decide__actions { margin-top: var(--space-2); }
+.decide__actions .button--round:has(.button__glyph) .button__name { display: inline-flex; }
+
+/* AD-7 / AD-8: abajo, las tres como tarjetas anchas (como «A continuación») y «Filtros» al final. */
+.decide__strip { --card-height: 10.25rem; display: flex; min-width: 0; align-items: flex-end; gap: var(--card-gap); padding-bottom: var(--space-2); }
+.decide__filters {
+  display: grid; align-content: space-between; justify-items: start; padding: var(--space-5); text-align: left;
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); backdrop-filter: var(--filter-glass); color: var(--color-text);
+}
+.decide__filters-icon .icon { width: var(--icon-md); height: var(--icon-md); }
+.decide__filters-name { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+.decide__filters-count {
+  display: inline-grid; place-items: center; min-width: var(--glyph-size); padding: 0 var(--space-2); border-radius: var(--radius-pill);
+  background: var(--inverse-bg); color: var(--inverse-fg); font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking);
+}
+.decide__filters-text { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+
+/* AD-9: el panel «Filtros», desde la derecha; lo de atrás se apaga. A elige (✓), B lo cierra y se vuelve a elegir. */
+.decide__panel {
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: var(--z-panel); width: min(48rem, 46%);
+  display: flex; flex-direction: column; gap: var(--space-6); padding: calc(var(--space-14) + var(--safe-y)) var(--space-10) var(--hints-room);
+  background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
+  animation: fade-in var(--duration-base) var(--ease-out);
+}
+.decide__panel[hidden] { display: none; }
+.decide--panel > :not(.decide__panel, .decide-backdrop) { opacity: var(--opacity-away); }
+.decide__panel-title { margin: 0; font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--type-title-tracking); }
+.decide__panel-lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.decide__question { display: grid; gap: var(--space-3); }
+.decide__label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
+.decide__question .browse__filters { flex-wrap: wrap; overflow: visible; }
+.decide__question .pill { white-space: nowrap; }
 
 /* NQ-1 (16 nov 2026): la puerta del Inicio, segunda de «A continuación». Mide lo que una tarjeta ancha (`card--wide`) y
    lleva el foco de siempre; adentro, el abanico de los tres pósters de hoy y la pregunta. */

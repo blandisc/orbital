@@ -11,8 +11,8 @@ public enum DesignTokens {
     public static let palette: [String: String] = [
         "ink-1000": "#070708", "ink-950": "#0c0c0e", "ink-900": "#131316", "ink-850": "#18181c", "ink-800": "#1e1e23",
         "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-250": "#babac1", "ink-200": "#cdcdd3",
-        "paper": "#f5f4f0", "red-400": "#f0574d", "amber-300": "#f4c24d", "teal-300": "#5fd6c6", "pad-green": "#5cbf6d",
-        "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
+        "paper": "#f5f4f0", "red-400": "#f0574d", "amber-300": "#f4c24d", "amber-700": "#9a6a00", "teal-300": "#5fd6c6",
+        "pad-green": "#5cbf6d", "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
     ]
 
     /// El color de cada plataforma («otra»: Apple TV+ y las demás, plata). Igual que `platforms` en design/tokens.json.

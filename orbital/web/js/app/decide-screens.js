@@ -19,13 +19,23 @@ export async function saveMatch(card, add, where = null) {
   return "mylist";
 }
 
-export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints, runCommand }) {
+export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints, runCommand, openMenu }) {
   const moved = () => { sound.play("move"); renderHints(); };
   const closed = () => { sound.play("back"); renderHints(); };
+  // «Ver ya» (A), igual en las dos pestañas: una película empieza; una serie abre su ficha (para elegir el episodio).
+  const play = (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card));
   const decide = createDecide({
     load: (choice) => api.forYouDecide(choice),
     skip: (imdb) => api.forYouDecideSkip(imdb),
+    dismiss: (key) => api.forYouDismiss(key),
+    glyphs,
     onPick: (item) => openTitle(item),
+    onPlay: (item) => item && play(item),
+    // AD-5: «Hoy no» y «No me interesa», en ☰ (antes «Hoy no» era Y).
+    onOptions: (item) => openMenu({ title: item.title, options: [
+      { icon: "clock", label: "Hoy no", hint: "Vuelve mañana", command: { type: "decide-not-today" } },
+      { icon: "hide", label: "No me interesa", hint: "No te la vuelvo a proponer", command: { type: "decide-dismiss" } },
+    ] }),
     onChange: () => renderHints(),
     onMove: moved,
     onClose: closed,
@@ -36,7 +46,7 @@ export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints,
     load: () => api.matchDeck(),
     save: (card, add, where = null) => saveMatch(card, add, where),
     onOpen: (card) => openTitle(card),
-    onPlay: (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card)),
+    onPlay: (card) => play(card),
     // «Para hoy» (★): guardada y primera en Mi lista hoy; el aviso ofrece verla ya (como el iPhone).
     onSaved: (card, where, err, { tonight = false } = {}) => (err ? (sound.play("error"), ui().toast.show(err.message, { error: true }))
       : tonight ? ui().toast.show("Para hoy", { tone: "success", detail: card.title, action: { label: "Ver ya", onPress: () => { match.close(); match.play(card); } } })
