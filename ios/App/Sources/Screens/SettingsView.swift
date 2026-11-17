@@ -38,6 +38,8 @@ struct SettingsView: View {
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
+    /// La página abierta a la derecha en la Mac (MA1); de entrada, «Tus idiomas», el primer renglón.
+    @State var macPage: SettingsPage = .languages
 
     init() {
         let services = AppEnvironment.shared.services
@@ -79,19 +81,19 @@ struct SettingsView: View {
     @ViewBuilder private func preferencesSection(_ model: SettingsModel, _ s: AppSettings) -> some View {
         // Lo tuyo: cómo se ve y cómo se reproduce, con su título (I13: era el único grupo sin nombre).
         Section {
-            NavigationLink { page("Apariencia") { appearance(model) } } label: {
+            SettingsLink(.appearance) { destination(.appearance, model) } label: {
                 SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
             }
-            NavigationLink { page("Idioma de la app") { appLanguage(model) } } label: {
+            SettingsLink(.appLanguage) { destination(.appLanguage, model) } label: {
                 SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
             }
-            NavigationLink { page("Reproducción") { playback(model) } } label: {
+            SettingsLink(.playback) { destination(.playback, model) } label: {
                 SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
             }
-            NavigationLink { page("Avisos") { alerts(model) } } label: {
+            SettingsLink(.alerts) { destination(.alerts, model) } label: {
                 SettingsRow(title: "Avisos", symbol: "bell.badge", tint: DS.ListTint.flame, value: s.releaseAlerts ? Text("Estrenos") : Text("Apagados"))
             }
-            NavigationLink { page("Descargas") { downloads(model) } } label: {
+            SettingsLink(.downloads) { destination(.downloads, model) } label: {
                 SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
             }
         } header: { Text("Preferencias") }
@@ -103,17 +105,17 @@ struct SettingsView: View {
         // Con qué se conecta.
         Section {
             // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
-            NavigationLink { page("Cuentas") { accounts(model) } } label: {
+            SettingsLink(.accounts) { destination(.accounts, model) } label: {
                 SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: entries.realDebrid ? debridValue : traktValue(model))
             }
             if entries.addons {
-                NavigationLink { AddonsSettings() } label: {
+                SettingsLink(.addons) { destination(.addons, model) } label: {
                     SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,  // edición: dentro de `entries.addons`
                                 value: addonsValue)
                 }
             }
             // Tus películas y series de OneDrive como una fuente más (como en la TV).
-            NavigationLink { OneDriveSettings() } label: {
+            SettingsLink(.oneDrive) { destination(.oneDrive, model) } label: {
                 SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
                             value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
             }
@@ -124,12 +126,12 @@ struct SettingsView: View {
     @ViewBuilder private func moreSection(_ model: SettingsModel) -> some View {
         // Lo que casi no se toca: complementos, la clave de TMDB y el país.
         Section {
-            NavigationLink { page("Avanzado") { suggestions(model) } } label: {
+            SettingsLink(.advanced) { destination(.advanced, model) } label: {
                 SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
             }
             // «Aprende»: una sola entrada con las historias, la guía otra vez, los avisos desde cero y lo que se puede hacer con
             // la TV (revisión del 11 nov: eran cuatro renglones casi iguales, dos con el mismo destello).
-            NavigationLink { LearnView(tvTutorial: env.services.settingsEntries.orbital && model.settings.orbitalEnabled ? { orbitalSetup = .tutorial } : nil) } label: {
+            SettingsLink(.learn) { destination(.learn, model) } label: {
                 SettingsRow(title: "Aprende", symbol: "sparkles", tint: DS.ListTint.spark)
             }
             .accessibilityIdentifier("settings-learn")
@@ -162,7 +164,7 @@ struct SettingsView: View {
         let model = settings.model
         let s = model.settings
         // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar todo Ajustes de una vez.
-        withDemoPages(withDialogs(settingsForm(model, s), s), model)
+        withDemoPages(withDialogs(macSplit(settingsForm(model, s), model), s), model)
         .task { await model.loadTraktName(); await debrid.model.load() }
         .navigationDestination(isPresented: $showsLanguages) { YourLanguagesView(settings: settings) }
         .onChange(of: env.ui.openLanguages, initial: true) { _, open in
@@ -228,14 +230,12 @@ struct SettingsView: View {
             }
             .accessibilityIdentifier("settings-orbital")
             if on {
-                NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
+                SettingsLink(.orbital) { destination(.orbital, model) } label: {
                     SettingsRow(title: "Tu Orbital", symbol: "tv.and.mediabox", tint: env.services.orbitalNeedsRescan || env.services.tvLinkNow == .silent ? DS.warning : DS.ListTint.series,
                                 value: orbitalValue)
                 }
                 .task { await env.services.checkTV() }   // IOS-2: «Conectada» solo si la TV contestó
-                NavigationLink {   // la voz le da órdenes a tu Orbital; tocar una frase la manda a la TV, como en el control
-                    VoiceGuideView(hints: env.tvNow.hints, nowTitle: env.tvNow.now?.title) { phrase in sayFromSettings(phrase) }
-                } label: {
+                SettingsLink(.voice) { destination(.voice, model) } label: {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
                 }
             }
@@ -245,6 +245,28 @@ struct SettingsView: View {
         }
         .listRowBackground(DS.surface)
         .onChange(of: on) { _, now in ReleaseNotifier.registerCategory(language: model.settings.uiLanguage, tv: now) }
+    }
+
+    /// La página de cada renglón de la lista: la misma en iPhone y iPad (empujada) y en la Mac (a la derecha, MA1).
+    @ViewBuilder func destination(_ page: SettingsPage, _ model: SettingsModel) -> some View {
+        switch page {
+        case .languages: YourLanguagesView(settings: settings)
+        case .subtitles: self.page("Subtítulos") { subtitles(model) }
+        case .lettering: self.page("Letra de los subtítulos") { lettering(model) }
+        case .appearance: self.page("Apariencia") { appearance(model) }
+        case .appLanguage: self.page("Idioma de la app") { appLanguage(model) }
+        case .playback: self.page("Reproducción") { playback(model) }
+        case .alerts: self.page("Avisos") { alerts(model) }
+        case .downloads: self.page("Descargas") { downloads(model) }
+        case .accounts: self.page("Cuentas") { accounts(model) }
+        case .addons: AddonsSettings()
+        case .oneDrive: OneDriveSettings()
+        case .orbital: self.page("Tu Orbital") { orbitalSection(model) }
+        // La voz le da órdenes a tu Orbital; tocar una frase la manda a la TV, como en el control.
+        case .voice: VoiceGuideView(hints: env.tvNow.hints, nowTitle: env.tvNow.now?.title) { phrase in sayFromSettings(phrase) }
+        case .advanced: self.page("Avanzado") { suggestions(model) }
+        case .learn: LearnView(tvTutorial: env.services.settingsEntries.orbital && model.settings.orbitalEnabled ? { orbitalSetup = .tutorial } : nil)
+        }
     }
 
     /// Una página de Ajustes: el mismo formulario y fondo.

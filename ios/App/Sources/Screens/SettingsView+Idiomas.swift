@@ -9,18 +9,18 @@ extension SettingsView {
     @ViewBuilder func languagesSection(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            NavigationLink { YourLanguagesView(settings: settings) } label: {
+            SettingsLink(.languages) { destination(.languages, model) } label: {
                 SettingsRow(title: "Tus idiomas", symbol: "globe", tint: DS.ListTint.chart, value: Text(verbatim: YourLanguagesView.summary(s.yourLanguages, s.uiLanguage)))
             }
             .accessibilityIdentifier("settings-languages")
-            NavigationLink { page("Subtítulos") { subtitles(model) } } label: {
+            SettingsLink(.subtitles) { destination(.subtitles, model) } label: {
                 SettingsRow(title: "Subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: subtitlesValue(s))
             }
             .accessibilityIdentifier("settings-subtitles")
             DSToggleRow("Buscar subtítulos en internet", detail: "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.",
                         isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
                 .accessibilityIdentifier("settings-internet-subtitles")
-            NavigationLink { page("Letra de los subtítulos") { lettering(model) } } label: {
+            SettingsLink(.lettering) { destination(.lettering, model) } label: {
                 SettingsRow(title: "Letra de los subtítulos", symbol: "textformat.size", tint: DS.ListTint.spark, value: sizeName(s.subtitleSize))
             }
             .accessibilityIdentifier("settings-subtitle-letter")

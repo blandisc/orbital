@@ -29,7 +29,15 @@ struct MacTabStrip: View {
                 .init(id: 1, title: Text("Explorar"), symbol: "sparkles"),
                 .init(id: 3, title: Text("Biblioteca"), symbol: "rectangle.stack", badge: tabs.libraryBadge),
                 .init(id: 2, title: Text("Buscar"), symbol: "magnifyingglass"),
-            ], selection: Binding(get: { tabs.current }, set: { tabs.select($0) }), mark: DS.eyebrow, adapts: false)
+            ], selection: Binding(get: { tabs.current }, set: { id in
+                // MC1 (Fernando, 16 nov 2026): la pestaña cambia al momento, como en Safari; con el fundido se veían las dos
+                // pantallas encimadas un instante y se sentía lenta.
+                // El fundido lo pone UIKit al cambiar de pestaña (no SwiftUI): se apagan sus animaciones mientras cambia.
+                UIView.setAnimationsEnabled(false)
+                var instant = Transaction(); instant.disablesAnimations = true
+                withTransaction(instant) { tabs.select(id) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Mac.tabSwitchQuiet) { UIView.setAnimationsEnabled(true) }
+            }), mark: DS.eyebrow, adapts: false)
             .accessibilityIdentifier("mac-tabs")
         }
     }
@@ -89,4 +97,67 @@ extension View {
         if ThisDevice.isMac { font(DS.styled(.body)).controlSize(.large) } else { self }
     }
 
+}
+
+/// MB1 (Fernando, 16 nov 2026): en la Mac, las partes de una pantalla (Descargas · Mi media · Guardado) en una columna a la
+/// izquierda, como Música o Fotos, en vez de una segunda fila de pestañas que se sentía puesta a la fuerza. La elegida con su
+/// relleno; el numerito de lo que baja a la derecha.
+struct MacSidebar<ID: Hashable>: View {
+    struct Option { let id: ID; let title: Text; let symbol: String; var badge: Int = 0 }
+    let options: [Option]
+    @Binding var selection: ID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            ForEach(options, id: \.id) { option in
+                let on = option.id == selection
+                Button { selection = option.id } label: {
+                    HStack(spacing: DS.Space.s3) {
+                        Image(systemName: option.symbol).font(DS.TextRecipe.cardTitle.font)
+                            .foregroundStyle(on ? DS.text : DS.textMuted).frame(width: DS.SettingsLook.rowIcon)
+                        option.title.bold(on).recipe(.cardTitle, color: on ? DS.text : DS.textMuted)
+                        Spacer(minLength: 0)
+                        if option.badge > 0 { Text(verbatim: "\(option.badge)").recipe(.badge, color: DS.textMuted).monospacedDigit() }
+                    }
+                    .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s3)
+                    .dsCard(fill: on ? DS.surfaceRaised : .clear)
+                    .contentShape(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .pointerHover(.highlight)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, DS.Space.s3).padding(.top, DS.Space.s3)
+        .frame(width: DS.Mac.sidebarWidth, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .overlay(alignment: .trailing) { Rectangle().fill(DS.hairline).frame(width: DS.Stroke.hairline) }
+        .dsFeedback(.selection, trigger: selection)
+    }
+}
+
+/// MS1 (Fernando, 16 nov 2026): en la Mac, Buscar trae su campo grande al centro en vez de la rayita de la barra del sistema.
+struct MacSearchField: View {
+    @Binding var text: String
+    var focused: FocusState<Bool>.Binding
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: "magnifyingglass").font(DS.TextRecipe.section.font).foregroundStyle(DS.textMuted)
+            TextField("Películas y series", text: $text)
+                .textFieldStyle(.plain).font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
+                .focused(focused).submitLabel(.search).autocorrectionDisabled()
+            if !text.isEmpty {
+                DSIconButton(symbol: "xmark", label: "Borrar la búsqueda", size: .regular) { text = "" }
+            }
+        }
+        .padding(.horizontal, DS.Space.s5)
+        .frame(maxWidth: DS.Mac.searchFieldWidth, minHeight: DS.Mac.searchFieldHeight)
+        .background(DS.surfaceRaised, in: Capsule())
+        .overlay(Capsule().strokeBorder(focused.wrappedValue ? DS.accent : DS.hairline, lineWidth: focused.wrappedValue ? DS.Stroke.selected : DS.Stroke.hairline))
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("mac-search-field")
+    }
 }

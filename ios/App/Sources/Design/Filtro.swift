@@ -427,9 +427,11 @@ struct FilterDoor: View {
                 }
             }
             // Dos columnas con letra de accesibilidad: en tres el dibujo se encimaba con el nombre («Cu…»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
+            // MS1: en la Mac, los seis en una fila y en grande (con su dibujo), como mosaicos y no como botones planos.
+            let mac = ThisDevice.isMac
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: mac ? FilterPage.main.count : typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
                 ForEach(FilterPage.main) { page in
-                    FilterTile(page: page, context: context, mini: true) { open(page) }
+                    FilterTile(page: page, context: context, mini: !mac) { open(page) }
                         .accessibilityIdentifier("browse-filter-\(page.rawValue)")
                 }
             }

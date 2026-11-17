@@ -28,6 +28,12 @@ extension DS {
         static let searchRowsMin = 2, searchTop: CGFloat = 340, searchCaption: CGFloat = 52
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
         static let topScrim: CGFloat = 120
+        /// La columna de la izquierda de la Biblioteca (MB1) y la lista de Ajustes (MA1), como Música y Ajustes del Sistema.
+        static let sidebarWidth: CGFloat = 340, settingsListWidth: CGFloat = 560
+        /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
+        static let tabSwitchQuiet: Double = 0.4
+        /// El campo de Buscar en la Mac (MS1): grande y al centro, no la rayita de la barra.
+        static let searchFieldWidth: CGFloat = 1000, searchFieldHeight: CGFloat = 64
         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
         static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
     }

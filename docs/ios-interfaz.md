@@ -901,6 +901,12 @@ nuevos tamaños»):
   - La puerta de «Decide por mí» asoma una tira de pósters (`DecideStrip`; `DS.ParaTiB.doorFan`, la misma en Inicio y Explorar).
   - Buscar vacío muestra un muro de «Lo más popular hoy» que llena lo ancho y lo alto (los renglones que caben bajo la búsqueda avanzada, al menos `DS.Mac.searchRowsMin`).
   - Inicio también lleva la sombra bajo la barra (`macTopShade`): al bajar, las pestañas se perdían sobre la portada.
+- **La Mac con su propio acomodo** (Fernando, 16 nov 2026: «vamos con tus recomendaciones», MB1 · MA1 · MS1 · MT1 · MC1):
+  - Biblioteca: Descargas, Mi media y Guardado en una columna a la izquierda (`MacSidebar`), como Música; no una segunda fila de pestañas.
+  - Ajustes: lista y detalle, como Ajustes del Sistema. Cada renglón es un `SettingsLink`: en la Mac abre su página a la derecha (`SettingsView.destination`); en iPhone y iPad la empuja.
+  - Buscar: el campo grande al centro (`MacSearchField`) en vez del de la barra, y los seis mosaicos de la búsqueda avanzada en una fila.
+  - Al cambiar de pestaña, el cambio es al momento (sin el fundido del sistema, `DS.Mac.tabSwitchQuiet`).
+- **La variante de iPad dice «dispositivo»:** la Mac toma la variante de iPad del catálogo de textos, así que ahí nunca se escribe «iPad» sino «dispositivo» («device»); «Como el iPad» es «Como el sistema». Al compilar, Xcode reescribe `Localizable.xcstrings`: se restaura y solo se cambia el texto a propósito.
 - **Una sola pestaña no se dibuja** (`DSTextTabs` con menos de dos opciones): en la ficha de una película sin reparto ni parecidas, «Detalles» sola parecía rota. Vale en iPhone, iPad y Mac.
 - **Lo que se lee va a ancho de lectura** (`DS.TitleAction.wideReading`): en la ficha ancha, créditos, tu calificación y las reseñas ya no van de orilla a orilla.
 - **Una plataforma nunca queda vacía:** si su tarjeta llega sin pósters, pide su ranking (Prime Video salía en blanco).

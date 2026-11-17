@@ -109,6 +109,12 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("HomeView.swift").contains(".macTopShade()"), "Inicio también lleva la sombra bajo la barra")
         XCTAssertTrue(try code("Filters.swift").contains("if options.count < 2 { EmptyView() }"), "Una sola pestaña no se dibuja")
         XCTAssertTrue(try code("TitleView.swift").contains(".frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)"), "Las reseñas a ancho de lectura")
+        // Cuarta pasada (16 nov, MB1 · MA1 · MS1 · MC1): la Mac con su propio acomodo.
+        XCTAssertTrue(try code("DownloadsView.swift").contains("MacSidebar(options:"), "Biblioteca en la Mac: sus partes en una columna a la izquierda")
+        XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
+        XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac: el campo grande")
+        XCTAssertTrue(try code("Filtro.swift").contains("count: mac ? FilterPage.main.count :"), "Buscar en la Mac: los seis mosaicos en una fila")
+        XCTAssertTrue(try code("MacTabStrip.swift").contains("UIView.setAnimationsEnabled(false)"), "En la Mac la pestaña cambia al momento")
         // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).
         for token in ["static var wideColumn: CGFloat { Mac.sized(", "static var wideLogoWidth: CGFloat { Mac.sized(", "static var readable: CGFloat { Mac.sized("] {
             XCTAssertTrue(screens.contains(token), token)

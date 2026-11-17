@@ -39,4 +39,21 @@ final class DeviceWordsOnMacTests: XCTestCase {
             XCTAssertNotNil(english?["value"], "«\(mac)» sin inglés")
         }
     }
+
+    /// MT1 (Fernando, 16 nov 2026: «en vez de equipo utiliza dispositivo»): la Mac toma la variante de iPad del catálogo, así
+    /// que esa variante no dice «iPad» sino «dispositivo» («device»). La única que nombra al iPad es la que manda a usar un
+    /// iPhone o un iPad para controlar la TV.
+    func testTheIPadVariantSaysDevice() throws {
+        let data = try Data(contentsOf: ios.appendingPathComponent("App/Resources/Localizable.xcstrings"))
+        let strings = try XCTUnwrap((try JSONSerialization.jsonObject(with: data) as? [String: Any])?["strings"] as? [String: Any])
+        var offenders: [String] = []
+        for (_, entry) in strings {
+            for (_, loc) in ((entry as? [String: Any])?["localizations"] as? [String: Any]) ?? [:] {
+                let device = ((loc as? [String: Any])?["variations"] as? [String: Any])?["device"] as? [String: Any]
+                let value = ((device?["ipad"] as? [String: Any])?["stringUnit"] as? [String: Any])?["value"] as? String ?? ""
+                if value.contains("iPad"), !value.contains("iPhone") { offenders.append(value) }
+            }
+        }
+        XCTAssertEqual(offenders, [], "La variante de iPad (la que ve la Mac) dice «dispositivo», no «iPad»")
+    }
 }

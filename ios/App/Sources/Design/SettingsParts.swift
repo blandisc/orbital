@@ -123,3 +123,48 @@ struct SimpsonsSeasonsPicker: View {
         .accessibilityIdentifier("simpsons-seasons")
     }
 }
+
+/// MA1 (Fernando, 16 nov 2026): en la Mac, Ajustes es lista y detalle, como Ajustes del Sistema: un renglón de la lista abre su
+/// página a la derecha, sin ir y volver. Lo pone `SettingsView` solo en la Mac; sin él (iPhone, iPad), `SettingsLink` es un
+/// `NavigationLink` de siempre. La página la arma `SettingsView` en cada pasada (con los valores al día), no el renglón.
+struct SettingsPane {
+    let current: SettingsPage
+    let open: (SettingsPage) -> Void
+}
+
+/// Las páginas de Ajustes que se abren desde la lista.
+enum SettingsPage: String, CaseIterable {
+    case languages, subtitles, lettering, appearance, appLanguage, playback, alerts, downloads, accounts, addons, oneDrive
+    case orbital, voice, advanced, learn
+}
+
+extension EnvironmentValues {
+    @Entry var settingsPane: SettingsPane?
+}
+
+/// Un renglón de Ajustes que lleva a otra página: en iPhone y iPad la empuja; en la Mac la abre a la derecha, marcado.
+struct SettingsLink<Destination: View, Label: View>: View {
+    let page: SettingsPage
+    @ViewBuilder let destination: () -> Destination
+    @ViewBuilder let label: () -> Label
+    @Environment(\.settingsPane) private var pane
+
+    init(_ page: SettingsPage, @ViewBuilder destination: @escaping () -> Destination, @ViewBuilder label: @escaping () -> Label) {
+        self.page = page; self.destination = destination; self.label = label
+    }
+
+    var body: some View {
+        if let pane {
+            let on = pane.current == page
+            // El renglón abierto, marcado hasta las orillas de su grupo (el fondo de la sección gana a `listRowBackground`).
+            Button { pane.open(page) } label: {
+                label().contentShape(Rectangle())
+                    .background { if on { DS.surfaceRaised.padding(.horizontal, -DS.Space.s5).padding(.vertical, -DS.Space.s3) } }
+            }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+        } else {
+            NavigationLink(destination: destination, label: label)
+        }
+    }
+}

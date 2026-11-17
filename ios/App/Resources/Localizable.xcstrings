@@ -564,7 +564,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad, control de tu TV"
+                  "value": "Tu dispositivo, control de tu TV"
                 }
               },
               "mac": {
@@ -594,7 +594,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad, your TV remote"
+                  "value": "Your device, your TV remote"
                 }
               },
               "mac": {
@@ -1143,7 +1143,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Espacio en tu iPad"
+                  "value": "Espacio en tu dispositivo"
                 }
               },
               "mac": {
@@ -1173,7 +1173,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Space on your iPad"
+                  "value": "Space on your device"
                 }
               },
               "mac": {
@@ -1460,7 +1460,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pasa al iPad en el mismo minuto."
+                  "value": "Pasa al dispositivo en el mismo minuto."
                 }
               },
               "mac": {
@@ -1490,7 +1490,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Moves to the iPad at the same minute."
+                  "value": "Moves to the device at the same minute."
                 }
               },
               "mac": {
@@ -1788,7 +1788,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad, igual"
+                  "value": "Tu dispositivo, igual"
                 }
               },
               "mac": {
@@ -1818,7 +1818,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad, unchanged"
+                  "value": "Your device, unchanged"
                 }
               },
               "mac": {
@@ -2127,7 +2127,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se quita de este iPad."
+                  "value": "Se quita de este dispositivo."
                 }
               },
               "mac": {
@@ -2157,7 +2157,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It's removed from this iPad."
+                  "value": "It's removed from this device."
                 }
               },
               "mac": {
@@ -2192,7 +2192,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se quita de este iPad y de tu TV."
+                  "value": "Se quita de este dispositivo y de tu TV."
                 }
               },
               "mac": {
@@ -2222,7 +2222,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It's removed from this iPad and from your TV."
+                  "value": "It's removed from this device and from your TV."
                 }
               },
               "mac": {
@@ -2257,7 +2257,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPad."
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este dispositivo."
                 }
               },
               "mac": {
@@ -2287,7 +2287,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPad."
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this device."
                 }
               },
               "mac": {
@@ -2322,7 +2322,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPad y de tu TV."
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este dispositivo y de tu TV."
                 }
               },
               "mac": {
@@ -2352,7 +2352,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPad and from your TV."
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this device and from your TV."
                 }
               },
               "mac": {
@@ -2563,7 +2563,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Con Orbital en la TV, el iPad la maneja y le habla."
+                  "value": "Con Orbital en la TV, el dispositivo la maneja y le habla."
                 }
               },
               "mac": {
@@ -2593,7 +2593,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "With Orbital on the TV, the iPad controls it and talks to it."
+                  "value": "With Orbital on the TV, the device controls it and talks to it."
                 }
               },
               "mac": {
@@ -2628,7 +2628,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Con Orbital en la TV, tu iPad es su control: mándale lo que veas y sigue aquí lo que suena allá."
+                  "value": "Con Orbital en la TV, tu dispositivo es su control: mándale lo que veas y sigue aquí lo que suena allá."
                 }
               },
               "mac": {
@@ -2658,7 +2658,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "With Orbital on the TV, your iPad is its remote: send it what you watch and keep watching here what plays there."
+                  "value": "With Orbital on the TV, your device is its remote: send it what you watch and keep watching here what plays there."
                 }
               },
               "mac": {
@@ -2891,7 +2891,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El video llega desde la nube mientras lo ves. Tu iPad no guarda nada."
+                  "value": "El video llega desde la nube mientras lo ves. Tu dispositivo no guarda nada."
                 }
               },
               "mac": {
@@ -2921,7 +2921,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The video comes from the cloud while you watch. Your iPad stores nothing."
+                  "value": "The video comes from the cloud while you watch. Your device stores nothing."
                 }
               },
               "mac": {
@@ -2989,7 +2989,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Empieza en el iPad y sigue en otro aparato, justo en el minuto."
+                  "value": "Empieza en el dispositivo y sigue en otro aparato, justo en el minuto."
                 }
               },
               "mac": {
@@ -3019,7 +3019,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Start on the iPad and continue on another device, right at the minute."
+                  "value": "Start on the device and continue on another device, right at the minute."
                 }
               },
               "mac": {
@@ -3296,7 +3296,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que guardes para ver sin internet vive aquí, en tu iPad."
+                  "value": "Lo que guardes para ver sin internet vive aquí, en tu dispositivo."
                 }
               },
               "mac": {
@@ -3326,7 +3326,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What you save to watch offline lives here, on your iPad."
+                  "value": "What you save to watch offline lives here, on your device."
                 }
               },
               "mac": {
@@ -3361,7 +3361,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPad."
+                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu dispositivo."
                 }
               },
               "mac": {
@@ -3391,7 +3391,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your iPad."
+                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your device."
                 }
               },
               "mac": {
@@ -3426,7 +3426,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que suena en la TV pasa al iPad en el mismo minuto."
+                  "value": "Lo que suena en la TV pasa al dispositivo en el mismo minuto."
                 }
               },
               "mac": {
@@ -3456,7 +3456,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What's playing on the TV moves to the iPad at the same minute."
+                  "value": "What's playing on the TV moves to the device at the same minute."
                 }
               },
               "mac": {
@@ -4148,7 +4148,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad como su control."
+                  "value": "Tu dispositivo como su control."
                 }
               },
               "mac": {
@@ -4178,7 +4178,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad as its remote."
+                  "value": "Your device as its remote."
                 }
               },
               "mac": {
@@ -4213,7 +4213,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad, el control de la TV"
+                  "value": "Tu dispositivo, el control de la TV"
                 }
               },
               "mac": {
@@ -4243,7 +4243,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad, the TV remote"
+                  "value": "Your device, the TV remote"
                 }
               },
               "mac": {
@@ -4771,7 +4771,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPad."
+                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este dispositivo."
                 }
               },
               "mac": {
@@ -4801,7 +4801,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this iPad."
+                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this device."
                 }
               },
               "mac": {
@@ -5099,7 +5099,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Listo: este iPad ya tiene su propia conexión"
+                  "value": "Listo: este dispositivo ya tiene su propia conexión"
                 }
               },
               "mac": {
@@ -5129,7 +5129,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Done: this iPad now has its own connection"
+                  "value": "Done: this device now has its own connection"
                 }
               },
               "mac": {
@@ -5329,7 +5329,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La nueva es de la cuenta %@ · la de este iPad, de %@."
+                  "value": "La nueva es de la cuenta %@ · la de este dispositivo, de %@."
                 }
               },
               "mac": {
@@ -5359,7 +5359,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The new one is from the %@ account · this iPad's, from %@."
+                  "value": "The new one is from the %@ account · this device's, from %@."
                 }
               },
               "mac": {
@@ -5394,7 +5394,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La nueva es de la cuenta %@. La de este iPad ya no sirve."
+                  "value": "La nueva es de la cuenta %@. La de este dispositivo ya no sirve."
                 }
               },
               "mac": {
@@ -5424,7 +5424,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The new one is from the %@ account. This iPad's no longer works."
+                  "value": "The new one is from the %@ account. This device's no longer works."
                 }
               },
               "mac": {
@@ -5470,7 +5470,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Seguir con la de este iPad"
+                  "value": "Seguir con la de este dispositivo"
                 }
               },
               "mac": {
@@ -5500,7 +5500,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Keep this iPad's"
+                  "value": "Keep this device's"
                 }
               },
               "mac": {
@@ -5557,7 +5557,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Solo de este iPad"
+                  "value": "Solo de este dispositivo"
                 }
               },
               "mac": {
@@ -5587,7 +5587,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Only from this iPad"
+                  "value": "Only from this device"
                 }
               },
               "mac": {
@@ -5633,7 +5633,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Sale de real-debrid.com/apitoken. Se guarda en este iPad y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+                  "value": "Sale de real-debrid.com/apitoken. Se guarda en este dispositivo y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
                 }
               },
               "mac": {
@@ -5663,7 +5663,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It comes from real-debrid.com/apitoken. It's saved on this iPad and, if you use iCloud Keychain, your other Apple devices see it too."
+                  "value": "It comes from real-debrid.com/apitoken. It's saved on this device and, if you use iCloud Keychain, your other Apple devices see it too."
                 }
               },
               "mac": {
@@ -5731,7 +5731,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu TV quitó este iPad de sus aparatos."
+                  "value": "Tu TV quitó este dispositivo de sus aparatos."
                 }
               },
               "mac": {
@@ -5761,7 +5761,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your TV removed this iPad from its devices."
+                  "value": "Your TV removed this device from its devices."
                 }
               },
               "mac": {
@@ -5840,7 +5840,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Este iPad deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
+                  "value": "Este dispositivo deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
                 }
               },
               "mac": {
@@ -5870,7 +5870,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This iPad stops talking to your TV until you scan its code again. It can't be undone."
+                  "value": "This device stops talking to your TV until you scan its code again. It can't be undone."
                 }
               },
               "mac": {
@@ -5949,7 +5949,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu TV usará la clave de este iPad"
+                  "value": "Tu TV usará la clave de este dispositivo"
                 }
               },
               "mac": {
@@ -5979,7 +5979,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your TV will use this iPad's key"
+                  "value": "Your TV will use this device's key"
                 }
               },
               "mac": {
@@ -6014,7 +6014,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Este iPad usará la clave de tu TV"
+                  "value": "Este dispositivo usará la clave de tu TV"
                 }
               },
               "mac": {
@@ -6044,7 +6044,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This iPad will use your TV's key"
+                  "value": "This device will use your TV's key"
                 }
               },
               "mac": {
@@ -6112,7 +6112,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Reemplaza la de este iPad si Real-Debrid la acepta con Premium."
+                  "value": "Reemplaza la de este dispositivo si Real-Debrid la acepta con Premium."
                 }
               },
               "mac": {
@@ -6142,7 +6142,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It replaces this iPad's if Real-Debrid accepts it with Premium."
+                  "value": "It replaces this device's if Real-Debrid accepts it with Premium."
                 }
               },
               "mac": {
@@ -6210,7 +6210,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Listo: este iPad ya usa la clave de tu TV"
+                  "value": "Listo: este dispositivo ya usa la clave de tu TV"
                 }
               },
               "mac": {
@@ -6240,7 +6240,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Done: this iPad now uses your TV's key"
+                  "value": "Done: this device now uses your TV's key"
                 }
               },
               "mac": {
@@ -9523,7 +9523,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Open the iPad camera and point it at the code on the TV"
+                  "value": "Open the device camera and point it at the code on the TV"
                 }
               },
               "iphone": {
@@ -9553,7 +9553,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Abre la cámara del iPad y apunta al código de la TV"
+                  "value": "Abre la cámara del dispositivo y apunta al código de la TV"
                 }
               },
               "iphone": {
@@ -9797,7 +9797,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Turn on Orbital notifications in iPad Settings."
+                  "value": "Turn on Orbital notifications in device Settings."
                 }
               },
               "iphone": {
@@ -9827,7 +9827,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Activa los avisos de Orbital en Ajustes del iPad."
+                  "value": "Activa los avisos de Orbital en Ajustes del dispositivo."
                 }
               },
               "iphone": {
@@ -9917,7 +9917,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Turn them on in iPad Settings"
+                  "value": "Turn them on in device Settings"
                 }
               },
               "iphone": {
@@ -9947,7 +9947,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Actívalos en Ajustes del iPad"
+                  "value": "Actívalos en Ajustes del dispositivo"
                 }
               },
               "iphone": {
@@ -10422,7 +10422,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "A code appears to enter on the Trakt page shown. The session is only for this iPad: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
+                  "value": "A code appears to enter on the Trakt page shown. The session is only for this device: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
                 }
               },
               "iphone": {
@@ -10452,7 +10452,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este dispositivo: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
                 }
               },
               "iphone": {
@@ -10498,7 +10498,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "A code appears. Point the iPad camera at it and tap “Open in Orbital”: it connects, no typing."
+                  "value": "A code appears. Point the device camera at it and tap “Open in Orbital”: it connects, no typing."
                 }
               },
               "iphone": {
@@ -10528,7 +10528,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Aparece un código. Apúntale con la cámara del iPad y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
+                  "value": "Aparece un código. Apúntale con la cámara del dispositivo y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
                 }
               },
               "iphone": {
@@ -10596,7 +10596,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Turn it off anytime: the app goes back to being just for your iPad. What you watched stays in Trakt."
+                  "value": "Turn it off anytime: the app goes back to being just for your device. What you watched stays in Trakt."
                 }
               },
               "iphone": {
@@ -10626,7 +10626,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Apágalo cuando quieras: la app vuelve a ser solo del iPad. Lo que viste sigue en Trakt."
+                  "value": "Apágalo cuando quieras: la app vuelve a ser solo del dispositivo. Lo que viste sigue en Trakt."
                 }
               },
               "iphone": {
@@ -10672,7 +10672,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What you're watching shows up here, on iPad and on Orbital."
+                  "value": "What you're watching shows up here, on this device and on Orbital."
                 }
               },
               "iphone": {
@@ -10702,7 +10702,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Aquí aparece lo que vas viendo, en el iPad y en Orbital."
+                  "value": "Aquí aparece lo que vas viendo, en el dispositivo y en Orbital."
                 }
               },
               "iphone": {
@@ -12077,7 +12077,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Calculated on the iPad"
+                  "value": "Calculated on the device"
                 }
               },
               "iphone": {
@@ -12107,7 +12107,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Calculado en el iPad"
+                  "value": "Calculado en el dispositivo"
                 }
               },
               "iphone": {
@@ -12846,7 +12846,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Match iPad"
+                  "value": "Match system"
                 }
               },
               "iphone": {
@@ -12876,7 +12876,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Como el iPad"
+                  "value": "Como el sistema"
                 }
               },
               "iphone": {
@@ -13350,7 +13350,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect Trakt on this iPad (Settings › Trakt)."
+                  "value": "Connect Trakt on this device (Settings › Trakt)."
                 }
               },
               "iphone": {
@@ -13380,7 +13380,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conecta Trakt en este iPad (Ajustes › Trakt)."
+                  "value": "Conecta Trakt en este dispositivo (Ajustes › Trakt)."
                 }
               },
               "iphone": {
@@ -13898,7 +13898,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect it to send what you watch and use the iPad as a remote."
+                  "value": "Connect it to send what you watch and use the device as a remote."
                 }
               },
               "iphone": {
@@ -13928,7 +13928,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conéctala para mandarle lo que ves y usar el iPad de control."
+                  "value": "Conéctala para mandarle lo que ves y usar el dispositivo de control."
                 }
               },
               "iphone": {
@@ -14887,7 +14887,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Download on iPad"
+                  "value": "Download on this device"
                 }
               },
               "iphone": {
@@ -14917,7 +14917,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Descarga en el iPad"
+                  "value": "Descarga en el dispositivo"
                 }
               },
               "iphone": {
@@ -14952,7 +14952,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Downloads what's on the TV to the iPad."
+                  "value": "Downloads what's on the TV to the device."
                 }
               },
               "iphone": {
@@ -14982,7 +14982,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Descarga en el iPad lo que se ve en la TV."
+                  "value": "Descarga en el dispositivo lo que se ve en la TV."
                 }
               },
               "iphone": {
@@ -15083,7 +15083,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Downloading %@ on the iPad."
+                  "value": "Downloading %@ on the device."
                 }
               },
               "iphone": {
@@ -15113,7 +15113,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Descargando %@ en el iPad."
+                  "value": "Descargando %@ en el dispositivo."
                 }
               },
               "iphone": {
@@ -16232,7 +16232,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad and your TV recognize each other once, and that's it."
+                  "value": "Your device and your TV recognize each other once, and that's it."
                 }
               },
               "iphone": {
@@ -16262,7 +16262,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El iPad y la TV se reconocen una vez y ya."
+                  "value": "El dispositivo y la TV se reconocen una vez y ya."
                 }
               },
               "iphone": {
@@ -16297,7 +16297,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Language, version and timing are remembered for each show or movie. The iPad style is set in Settings › Accessibility › Subtitles."
+                  "value": "Language, version and timing are remembered for each show or movie. The device style is set in Settings › Accessibility › Subtitles."
                 }
               },
               "iphone": {
@@ -16327,7 +16327,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPad se cambia en Ajustes › Accesibilidad › Subtítulos."
+                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del dispositivo se cambia en Ajustes › Accesibilidad › Subtítulos."
                 }
               },
               "iphone": {
@@ -17043,7 +17043,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "On iPad"
+                  "value": "On this device"
                 }
               },
               "iphone": {
@@ -17073,7 +17073,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "En el iPad"
+                  "value": "En el dispositivo"
                 }
               },
               "iphone": {
@@ -17108,7 +17108,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "On the iPad, to watch offline"
+                  "value": "On the device, to watch offline"
                 }
               },
               "iphone": {
@@ -17138,7 +17138,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "En el iPad, para ver sin conexión"
+                  "value": "En el dispositivo, para ver sin conexión"
                 }
               },
               "iphone": {
@@ -17206,7 +17206,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "On the Mac, Orbital doesn't control the TV. Use your iPad or iPad."
+                  "value": "On the Mac, Orbital doesn't control the TV. Use your iPhone or iPad."
                 }
               },
               "iphone": {
@@ -17236,7 +17236,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "En la Mac, Orbital no controla la TV. Usa tu iPad o tu iPad."
+                  "value": "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad."
                 }
               },
               "iphone": {
@@ -18777,7 +18777,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Saved on your iPad: it reaches Trakt as soon as there's a connection."
+                  "value": "Saved on your device: it reaches Trakt as soon as there's a connection."
                 }
               },
               "iphone": {
@@ -18807,7 +18807,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Guardado en el iPad: llega a Trakt en cuanto haya conexión."
+                  "value": "Guardado en el dispositivo: llega a Trakt en cuanto haya conexión."
                 }
               },
               "iphone": {
@@ -19095,7 +19095,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the iPad and syncs on its own when it's back."
+                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the device and syncs on its own when it's back."
                 }
               },
               "iphone": {
@@ -19125,7 +19125,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPad y se sincroniza solo cuando vuelva."
+                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el dispositivo y se sincroniza solo cuando vuelva."
                 }
               },
               "iphone": {
@@ -19820,7 +19820,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Best for iPad: balanced quality and size"
+                  "value": "Best for this device: balanced quality and size"
                 }
               },
               "iphone": {
@@ -19850,7 +19850,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La mejor para el iPad: calidad y tamaño en equilibrio"
+                  "value": "La mejor para el dispositivo: calidad y tamaño en equilibrio"
                 }
               },
               "iphone": {
@@ -20006,7 +20006,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The resolution. 4K shines on the TV; on iPad, 1080p already looks sharp."
+                  "value": "The resolution. 4K shines on the TV; on this device, 1080p already looks sharp."
                 }
               },
               "iphone": {
@@ -20036,7 +20036,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La resolución. 4K se luce en la TV; en el iPad, 1080p ya se ve nítido."
+                  "value": "La resolución. 4K se luce en la TV; en el dispositivo, 1080p ya se ve nítido."
                 }
               },
               "iphone": {
@@ -21127,7 +21127,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What's on your iPad is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
+                  "value": "What's on your device is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
                 }
               },
               "iphone": {
@@ -21157,7 +21157,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que está en el iPad sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
+                  "value": "Lo que está en el dispositivo sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
                 }
               },
               "iphone": {
@@ -21203,7 +21203,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What you send from the living room to your iPad lands in Home, to watch in bed."
+                  "value": "What you send from the living room to your device lands in Home, to watch in bed."
                 }
               },
               "iphone": {
@@ -21233,7 +21233,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que mandes desde la sala al iPad llega a Inicio, para verlo en la cama."
+                  "value": "Lo que mandes desde la sala al dispositivo llega a Inicio, para verlo en la cama."
                 }
               },
               "iphone": {
@@ -21752,7 +21752,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Send what you watch to the big screen and use the iPad as a remote."
+                  "value": "Send what you watch to the big screen and use the device as a remote."
                 }
               },
               "iphone": {
@@ -21782,7 +21782,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Manda lo que ves a la pantalla grande y usa el iPad de control."
+                  "value": "Manda lo que ves a la pantalla grande y usa el dispositivo de control."
                 }
               },
               "iphone": {
@@ -22539,7 +22539,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "My media is cleared. What you already downloaded to the iPad stays."
+                  "value": "My media is cleared. What you already downloaded to the device stays."
                 }
               },
               "iphone": {
@@ -22569,7 +22569,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Mi media se vacía. Lo que ya bajaste al iPad se queda."
+                  "value": "Mi media se vacía. Lo que ya bajaste al dispositivo se queda."
                 }
               },
               "iphone": {
@@ -22934,7 +22934,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "More contrast and color. DV is Dolby Vision: iPad plays it."
+                  "value": "More contrast and color. DV is Dolby Vision: device plays it."
                 }
               },
               "iphone": {
@@ -22964,7 +22964,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Más contraste y color. DV es Dolby Vision: el iPad lo reproduce."
+                  "value": "Más contraste y color. DV es Dolby Vision: el dispositivo lo reproduce."
                 }
               },
               "iphone": {
@@ -23615,7 +23615,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It doesn't fit on the iPad"
+                  "value": "It doesn't fit on the device"
                 }
               },
               "iphone": {
@@ -23645,7 +23645,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No cabe en el iPad"
+                  "value": "No cabe en el dispositivo"
                 }
               },
               "iphone": {
@@ -27978,7 +27978,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Make sure the console is on and on the same network as the iPad."
+                  "value": "Make sure the console is on and on the same network as the device."
                 }
               },
               "iphone": {
@@ -28008,7 +28008,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Revisa que la consola esté prendida y en la misma red que el iPad."
+                  "value": "Revisa que la consola esté prendida y en la misma red que el dispositivo."
                 }
               },
               "iphone": {
@@ -28043,7 +28043,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Make sure the console is on and on the same network as your iPad."
+                  "value": "Make sure the console is on and on the same network as your device."
                 }
               },
               "iphone": {
@@ -28073,7 +28073,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Revisa que la consola esté prendida y en la misma red que tu iPad."
+                  "value": "Revisa que la consola esté prendida y en la misma red que tu dispositivo."
                 }
               },
               "iphone": {
@@ -28449,7 +28449,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "What came from Letterboxd is removed from this iPad. Your Letterboxd account doesn't change."
+                  "value": "What came from Letterboxd is removed from this device. Your Letterboxd account doesn't change."
                 }
               },
               "iphone": {
@@ -28479,7 +28479,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se borra de este iPad lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
+                  "value": "Se borra de este dispositivo lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
                 }
               },
               "iphone": {
@@ -28514,7 +28514,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPad."
+                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the device."
                 }
               },
               "iphone": {
@@ -28544,7 +28544,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPad."
+                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el dispositivo."
                 }
               },
               "iphone": {
@@ -28689,7 +28689,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad is full. Free up space and tap Retry."
+                  "value": "Your device is full. Free up space and tap Retry."
                 }
               },
               "iphone": {
@@ -28719,7 +28719,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se llenó el iPad. Libera espacio y toca Reintentar."
+                  "value": "Se llenó el dispositivo. Libera espacio y toca Reintentar."
                 }
               },
               "iphone": {
@@ -29127,7 +29127,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you open a game on the console, your iPad shows its guide, your notes and a timer."
+                  "value": "If you open a game on the console, your device shows its guide, your notes and a timer."
                 }
               },
               "iphone": {
@@ -29157,7 +29157,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si abres un juego en la consola, el iPad te muestra su guía, tus notas y un temporizador."
+                  "value": "Si abres un juego en la consola, el dispositivo te muestra su guía, tus notas y un temporizador."
                 }
               },
               "iphone": {
@@ -30005,7 +30005,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Only on the iPad"
+                  "value": "Only on the device"
                 }
               },
               "iphone": {
@@ -30035,7 +30035,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Solo en el iPad"
+                  "value": "Solo en el dispositivo"
                 }
               },
               "iphone": {
@@ -32775,7 +32775,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Nothing yet: it shows up once you watch something on the iPad."
+                  "value": "Nothing yet: it shows up once you watch something on the device."
                 }
               },
               "iphone": {
@@ -32805,7 +32805,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Todavía nada: aparece cuando veas algo en el iPad."
+                  "value": "Todavía nada: aparece cuando veas algo en el dispositivo."
                 }
               },
               "iphone": {
@@ -33489,7 +33489,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPad"
+                  "value": "Your Orbital no longer recognizes this device"
                 }
               },
               "iphone": {
@@ -33519,7 +33519,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPad"
+                  "value": "Tu Orbital ya no reconoce este dispositivo"
                 }
               },
               "iphone": {
@@ -33554,7 +33554,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPad. Reconnect it in Settings › Use with your Orbital."
+                  "value": "Your Orbital no longer recognizes this device. Reconnect it in Settings › Use with your Orbital."
                 }
               },
               "iphone": {
@@ -33584,7 +33584,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPad. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                  "value": "Tu Orbital ya no reconoce este dispositivo. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
                 }
               },
               "iphone": {
@@ -33773,7 +33773,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your password isn't stored: only the session key, in your iPad's Keychain."
+                  "value": "Your password isn't stored: only the session key, in your device's Keychain."
                 }
               },
               "iphone": {
@@ -33803,7 +33803,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPad."
+                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu dispositivo."
                 }
               },
               "iphone": {
@@ -33871,7 +33871,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad"
+                  "value": "Your device"
                 }
               },
               "iphone": {
@@ -33901,7 +33901,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad"
+                  "value": "Tu dispositivo"
                 }
               },
               "iphone": {
@@ -33936,7 +33936,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad is the remote"
+                  "value": "Your device is the remote"
                 }
               },
               "iphone": {
@@ -33966,7 +33966,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad es el control"
+                  "value": "Tu dispositivo es el control"
                 }
               },
               "iphone": {
@@ -34001,7 +34001,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad has no internet"
+                  "value": "Your device has no internet"
                 }
               },
               "iphone": {
@@ -34031,7 +34031,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad no tiene internet"
+                  "value": "Tu dispositivo no tiene internet"
                 }
               },
               "iphone": {
@@ -34066,7 +34066,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad has no internet. Connect to a network and try again."
+                  "value": "Your device has no internet. Connect to a network and try again."
                 }
               },
               "iphone": {
@@ -34096,7 +34096,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad no tiene internet. Conéctate a una red y prueba otra vez."
+                  "value": "Tu dispositivo no tiene internet. Conéctate a una red y prueba otra vez."
                 }
               },
               "iphone": {
@@ -34131,7 +34131,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your iPad and your Orbital are connected."
+                  "value": "Your device and your Orbital are connected."
                 }
               },
               "iphone": {
@@ -34161,7 +34161,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu iPad y tu Orbital quedaron conectados."
+                  "value": "Tu dispositivo y tu Orbital quedaron conectados."
                 }
               },
               "iphone": {
@@ -34460,7 +34460,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the iPad."
+                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the device."
                 }
               },
               "iphone": {
@@ -34490,7 +34490,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPad."
+                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al dispositivo."
                 }
               },
               "iphone": {
@@ -34536,7 +34536,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPad."
+                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the device."
                 }
               },
               "iphone": {
@@ -34566,7 +34566,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPad."
+                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al dispositivo."
                 }
               },
               "iphone": {
@@ -34920,7 +34920,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Use the iPad style"
+                  "value": "Use the device style"
                 }
               },
               "iphone": {
@@ -34950,7 +34950,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Usar el estilo del iPad"
+                  "value": "Usar el estilo del dispositivo"
                 }
               },
               "iphone": {
@@ -36888,7 +36888,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "“%@” doesn't fit on the iPad"
+                  "value": "“%@” doesn't fit on the device"
                 }
               },
               "iphone": {
@@ -36918,7 +36918,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "«%@» no cabe en el iPad"
+                  "value": "«%@» no cabe en el dispositivo"
                 }
               },
               "iphone": {
@@ -37348,7 +37348,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your iPad as the remote and talk to it."
+                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your device as the remote and talk to it."
                 }
               },
               "iphone": {
@@ -37378,7 +37378,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPad de control y hablarle."
+                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el dispositivo de control y hablarle."
                 }
               },
               "iphone": {
@@ -38057,7 +38057,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPad, con su configuración; «Volver a traer» no lo regresa."
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este dispositivo, con su configuración; «Volver a traer» no lo regresa."
                 }
               },
               "mac": {
@@ -38087,7 +38087,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPad, with its settings; “Bring back again” won't restore it."
+                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this device, with its settings; “Bring back again” won't restore it."
                 }
               },
               "mac": {
@@ -38155,7 +38155,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Se borra su dirección de este iPad, con su configuración; «Volver a traer» no lo regresa."
+                  "value": "Se borra su dirección de este dispositivo, con su configuración; «Volver a traer» no lo regresa."
                 }
               },
               "mac": {
@@ -38185,7 +38185,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Its address is deleted from this iPad, with its settings; “Bring back again” won't restore it."
+                  "value": "Its address is deleted from this device, with its settings; “Bring back again” won't restore it."
                 }
               },
               "mac": {
@@ -38692,7 +38692,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Lo que lleva una clave se queda en este iPad"
+                  "value": "Lo que lleva una clave se queda en este dispositivo"
                 }
               },
               "mac": {
@@ -38722,7 +38722,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Whatever carries a key stays on this iPad"
+                  "value": "Whatever carries a key stays on this device"
                 }
               },
               "mac": {
@@ -38768,7 +38768,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%@ se queda en este iPad"
+                  "value": "%@ se queda en este dispositivo"
                 }
               },
               "mac": {
@@ -38798,7 +38798,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%@ stays on this iPad"
+                  "value": "%@ stays on this device"
                 }
               },
               "mac": {
@@ -38866,7 +38866,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Viven en tu TV; este iPad no los usa."
+                  "value": "Viven en tu TV; este dispositivo no los usa."
                 }
               },
               "mac": {
@@ -38896,7 +38896,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "They live on your TV; this iPad doesn't use them."
+                  "value": "They live on your TV; this device doesn't use them."
                 }
               },
               "mac": {
@@ -38953,7 +38953,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "En el iPad no se puede reproducir; en la TV sí"
+                  "value": "En el dispositivo no se puede reproducir; en la TV sí"
                 }
               },
               "mac": {
@@ -38983,7 +38983,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It can't play on the iPad; it can on the TV"
+                  "value": "It can't play on the device; it can on the TV"
                 }
               },
               "mac": {
@@ -39018,7 +39018,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "En el iPad no se puede reproducir"
+                  "value": "En el dispositivo no se puede reproducir"
                 }
               },
               "mac": {
@@ -39048,7 +39048,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It can't play on the iPad"
+                  "value": "It can't play on the device"
                 }
               },
               "mac": {
@@ -39182,7 +39182,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPad. Vuelve a escanear el código de tu TV."
+                  "value": "Tu Orbital ya no reconoce este dispositivo. Vuelve a escanear el código de tu TV."
                 }
               },
               "mac": {
@@ -39212,7 +39212,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPad. Scan your TV's code again."
+                  "value": "Your Orbital no longer recognizes this device. Scan your TV's code again."
                 }
               },
               "mac": {
@@ -39247,7 +39247,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El iPad tiene que poder hablar con tu TV (en casa o desde fuera, si así la conectaste) y Orbital abierta en la TV."
+                  "value": "El dispositivo tiene que poder hablar con tu TV (en casa o desde fuera, si así la conectaste) y Orbital abierta en la TV."
                 }
               },
               "mac": {
@@ -39277,7 +39277,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The iPad has to be able to reach your TV (at home, or from outside if you set it up that way), with Orbital open on the TV."
+                  "value": "The device has to be able to reach your TV (at home, or from outside if you set it up that way), with Orbital open on the TV."
                 }
               },
               "mac": {
@@ -39345,7 +39345,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Su dirección lleva tu clave: pasa a la TV cuando este iPad tenga su propia conexión (Ajustes › Tu Orbital)."
+                  "value": "Su dirección lleva tu clave: pasa a la TV cuando este dispositivo tenga su propia conexión (Ajustes › Tu Orbital)."
                 }
               },
               "mac": {
@@ -39375,7 +39375,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Its address carries your key: it goes to the TV once this iPad has its own connection (Settings › Your Orbital)."
+                  "value": "Its address carries your key: it goes to the TV once this device has its own connection (Settings › Your Orbital)."
                 }
               },
               "mac": {
@@ -39564,7 +39564,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pídele a tu TV que le dé a este iPad su propia conexión, sin volver a escanear."
+                  "value": "Pídele a tu TV que le dé a este dispositivo su propia conexión, sin volver a escanear."
                 }
               },
               "mac": {
@@ -39594,7 +39594,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ask your TV to give this iPad its own connection, without scanning again."
+                  "value": "Ask your TV to give this device its own connection, without scanning again."
                 }
               },
               "mac": {
@@ -39629,7 +39629,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Desconectar este iPad"
+                  "value": "Desconectar este dispositivo"
                 }
               },
               "mac": {
@@ -39659,7 +39659,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Disconnect this iPad"
+                  "value": "Disconnect this device"
                 }
               },
               "mac": {
@@ -39694,7 +39694,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "¿Desconectar este iPad?"
+                  "value": "¿Desconectar este dispositivo?"
                 }
               },
               "mac": {
@@ -39724,7 +39724,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Disconnect this iPad?"
+                  "value": "Disconnect this device?"
                 }
               },
               "mac": {
@@ -39836,7 +39836,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Aparece un código. Escanéalo aquí; también sirve la cámara del iPad."
+                  "value": "Aparece un código. Escanéalo aquí; también sirve la cámara del dispositivo."
                 }
               },
               "mac": {
@@ -39866,7 +39866,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "A code appears. Scan it here; the iPad's camera works too."
+                  "value": "A code appears. Scan it here; the device's camera works too."
                 }
               },
               "mac": {
@@ -39956,7 +39956,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La misma que este iPad."
+                  "value": "La misma que este dispositivo."
                 }
               },
               "mac": {
@@ -39986,7 +39986,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The same one as this iPad."
+                  "value": "The same one as this device."
                 }
               },
               "mac": {
@@ -40032,7 +40032,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu TV usará la cuenta de este iPad"
+                  "value": "Tu TV usará la cuenta de este dispositivo"
                 }
               },
               "mac": {
@@ -40062,7 +40062,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your TV will use this iPad's account"
+                  "value": "Your TV will use this device's account"
                 }
               },
               "mac": {
@@ -40119,7 +40119,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Este iPad usará la cuenta %@"
+                  "value": "Este dispositivo usará la cuenta %@"
                 }
               },
               "mac": {
@@ -40149,7 +40149,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This iPad will use the account %@"
+                  "value": "This device will use the account %@"
                 }
               },
               "mac": {
@@ -40195,7 +40195,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Este iPad usa %@. ¿Cuál quieres en los dos?"
+                  "value": "Este dispositivo usa %@. ¿Cuál quieres en los dos?"
                 }
               },
               "mac": {
@@ -40225,7 +40225,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This iPad uses %@. Which one do you want on both?"
+                  "value": "This device uses %@. Which one do you want on both?"
                 }
               },
               "mac": {
@@ -40260,7 +40260,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pasar la de este iPad"
+                  "value": "Pasar la de este dispositivo"
                 }
               },
               "mac": {
@@ -40290,7 +40290,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Send this iPad's"
+                  "value": "Send this device's"
                 }
               },
               "mac": {
@@ -40336,7 +40336,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Este iPad usará %@"
+                  "value": "Este dispositivo usará %@"
                 }
               },
               "mac": {
@@ -40366,7 +40366,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This iPad will use %@"
+                  "value": "This device will use %@"
                 }
               },
               "mac": {
@@ -40709,7 +40709,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si lo pediste en la TV con tu misma cuenta, este iPad te avisa cuando lo note: al abrir la app o cuando iOS lo deja revisar, a veces minutos o una hora después."
+                  "value": "Si lo pediste en la TV con tu misma cuenta, este dispositivo te avisa cuando lo note: al abrir la app o cuando iOS lo deja revisar, a veces minutos o una hora después."
                 }
               },
               "mac": {
@@ -40739,7 +40739,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you requested it on the TV with the same account, this iPad lets you know once it notices: when you open the app, or when iOS lets it check, sometimes minutes or an hour later."
+                  "value": "If you requested it on the TV with the same account, this device lets you know once it notices: when you open the app, or when iOS lets it check, sometimes minutes or an hour later."
                 }
               },
               "mac": {
@@ -40862,7 +40862,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ábrelo con la cámara del iPad: apúntale al código de tu TV."
+                  "value": "Ábrelo con la cámara del dispositivo: apúntale al código de tu TV."
                 }
               },
               "mac": {
@@ -40892,7 +40892,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Open it with the iPad's camera: point it at your TV's code."
+                  "value": "Open it with the device's camera: point it at your TV's code."
                 }
               },
               "mac": {
@@ -41092,7 +41092,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Descargando en este iPad"
+                  "value": "Descargando en este dispositivo"
                 }
               },
               "mac": {
@@ -41122,7 +41122,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Downloading on this iPad"
+                  "value": "Downloading on this device"
                 }
               },
               "mac": {
@@ -41157,7 +41157,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en este iPad."
+                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en este dispositivo."
                 }
               },
               "mac": {
@@ -41187,7 +41187,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this iPad."
+                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this device."
                 }
               },
               "mac": {
@@ -41299,7 +41299,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPad. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este dispositivo. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
                 }
               },
               "mac": {
@@ -41329,7 +41329,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPad. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this device. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
                 }
               },
               "mac": {
@@ -41375,7 +41375,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPad."
+                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este dispositivo."
                 }
               },
               "mac": {
@@ -41405,7 +41405,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this iPad."
+                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this device."
                 }
               },
               "mac": {
@@ -41626,7 +41626,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No ocupa espacio en este iPad."
+                  "value": "No ocupa espacio en este dispositivo."
                 }
               },
               "mac": {
@@ -41656,7 +41656,7 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "It takes no space on this iPad."
+                  "value": "It takes no space on this device."
                 }
               },
               "mac": {

@@ -63,6 +63,8 @@ struct BrowseView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+                // MS1: en la Mac, el campo grande al centro (la barra del sistema solo dejaba una rayita).
+                if ThisDevice.isMac { MacSearchField(text: $query, focused: $typing).padding(.horizontal, DS.Space.gutter) }
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
             // Al poner el primer filtro (o quitar el último) los mosaicos de la puerta crecen o se encogen: lo de abajo (el Top 10,
@@ -127,12 +129,11 @@ struct BrowseView: View {
         .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
         // Siempre a la vista (revisión del 11 nov): con `.automatic`, en iOS 27 el campo solo salía al jalar hacia abajo y,
         // ya con texto, no se veía qué buscaste. Al bajar por los resultados se va con la barra de arriba y vuelve al subir.
-        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
-        .searchFocused($typing)
+        .systemSearch($query, isPresented: $searching, focused: $typing)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
             ui.focusSearch = false
-            searching = true
+            if ThisDevice.isMac { typing = true } else { searching = true }
         }
         // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
         // resultados, el teclado se va para verlos.
@@ -349,5 +350,17 @@ struct PopularGridView: View {
 
     static func suggestion(_ item: CatalogItem) -> Suggestion {
         Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, year: Int(item.year.prefix(4)), poster: item.poster ?? "", wide: "", reason: .popular)
+    }
+}
+
+private extension View {
+    /// El campo de búsqueda del sistema, siempre a la vista; en la Mac no (MS1): ahí va `MacSearchField`, grande y al centro.
+    @ViewBuilder func systemSearch(_ query: Binding<String>, isPresented: Binding<Bool>, focused: FocusState<Bool>.Binding) -> some View {
+        if ThisDevice.isMac {
+            self
+        } else {
+            searchable(text: query, isPresented: isPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
+                .searchFocused(focused)
+        }
     }
 }

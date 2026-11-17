@@ -48,7 +48,7 @@ struct DownloadsView: View {
     /// Las tres partes con su fondo, su selector fijo arriba y su título.
     private var parts: some View {
         let model = observer.model
-        return Group {
+        return macSplit(Group {
             switch part {
             // iPad y Mac: la lista al centro, no estirada a todo lo ancho. Guardado no: sus pósters y sus listas aprovechan el
             // ancho con más columnas (GD2), como toda cuadrícula de la app.
@@ -56,7 +56,7 @@ struct DownloadsView: View {
             case .phone: phoneList(model).readableListWidth()
             case .saved: LibrarySavedView(observer: saved)
             }
-        }
+        })
         // Un solo fondo para las tres partes, también mientras cargan y vacías: antes solo Descargas lo traía y Mi media y
         // Guardado se quedaban en negro; al cambiar de parte cambiaba el fondo (Fernando, 4 nov 2026, la 1774). Toma el color
         // de lo que se está bajando, sea cual sea la parte.
@@ -65,7 +65,7 @@ struct DownloadsView: View {
         // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las tres vistas,
         // así al cambiar no brinca ni se mueve nada.
         .safeAreaBar(edge: .top) {
-            switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
+            if !ThisDevice.isMac { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
         .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Biblioteca")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .macTopBar()   // la Mac: el logo y las pestañas en este renglón (MAC-A)
@@ -130,6 +130,21 @@ struct DownloadsView: View {
     private func seeing(_ on: Bool) {
         if env.ui.seeingDownloads != on { env.ui.seeingDownloads = on }
         if on { Task { await DebridRequestNotifier.clearDelivered() } }
+    }
+
+    /// MB1: en la Mac, las tres partes en una columna a la izquierda (como Música) y la parte elegida a la derecha.
+    @ViewBuilder private func macSplit(_ content: some View) -> some View {
+        if ThisDevice.isMac {
+            HStack(spacing: 0) {
+                MacSidebar(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.circle", badge: cloudActive + observer.model.active.count),
+                                     .init(id: .media, title: Text("Mi media"), symbol: "folder"),
+                                     .init(id: .saved, title: Text("Guardado"), symbol: "bookmark")], selection: $part)
+                    .accessibilityIdentifier("library-parts")
+                content.frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } else {
+            content
+        }
     }
 
     /// «Descargas · Mi media · Guardado».
