@@ -111,7 +111,7 @@ struct WatchingView: View {
             notInTrakt = letterboxd.missingInTrakt(watched: await env.collections.watchedIDs())
         }
         .navigationDestination(item: $rated) { r in WatchingRatedView(stars: r.stars, items: ratedItems(), onOpenTitle: onOpenTitle) }
-        .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
+        .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil }.environment(env) }
     }
 
     /// La portada del periodo: el arte de lo que más viste, con su velo; el periodo en turquesa, tus horas en grande y una

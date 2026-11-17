@@ -932,6 +932,16 @@ nuevos tamaños»):
   sobre `macPillBase` (el color de las tarjetas y su filo). Sobre el fondo oscuro de la Mac el vidrio solo no se veía y el
   selector parecía íconos sueltos. En la Mac los íconos del tipo van de línea (`KindGlyph.variant`): el rollo de película
   relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video.
+- **El reproductor en la Mac** (revisión del 16 nov 2026, «revisa muy bien el reproductor»):
+  - **Toda pantalla completa recibe la app a mano:** cada `fullScreenCover` lleva `.environment(env)` en lo que muestra. En la
+    Mac la cubierta leía sus preferencias (el zoom de entrada, `interactiveDismissDisabled`) antes de heredar `AppEnvironment`
+    y la app tronaba al abrir el reproductor desde cualquier lado. `DesignRulesTests+Covers` lo vigila.
+  - **Sus controles crecen en la Mac y en el iPad** (Fernando: «más grandes los iconos para tanto pantalla de Mac como
+    para pantalla de iPad»): play, ±10, los círculos de arriba (`DS.PlayerPanel.circle`), la barra de avance y el ancho del
+    panel van por `DS.PlayerPanel.big`: en la Mac como su letra (×1.25), en el iPad ×1.2 (`padScale`), en el iPhone igual.
+    Con el tamaño del iPhone se veían chicos en pantallas grandes.
+  - **El puntero muestra los controles:** moverlo sobre el video los saca (antes había que hacer clic). El puntero no se
+    esconde: `pointerVisibility` no existe en una app de iPad.
 
 `DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`) y `DesignRulesTests+MacLayout` el replanteamiento (`testMacLooksLikeTheDesktop`).
 

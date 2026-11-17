@@ -12,7 +12,7 @@ extension PlayerScreen {
             PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
             Spacer()
-            AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+            AirPlayButton().frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
             PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
                 withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }

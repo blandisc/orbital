@@ -24,7 +24,7 @@ struct PlayerCircleGlyph: View {
     let symbol: String
     var body: some View {
         Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
-            .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            .frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle)
             .glassEffect(.regular.interactive(), in: Circle())
             .contentShape(Circle())
     }

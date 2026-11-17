@@ -175,7 +175,7 @@ struct HomeView: View {
         .background(Backdrop(tint: tint.colors))
         // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
         .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
+        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)).environment(env) }
         .onChange(of: env.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
             env.ui.openSimpsons = false

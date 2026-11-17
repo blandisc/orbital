@@ -30,6 +30,7 @@ struct OrbitalSetupView: View {
                 scanning = false
                 Task { await setup.model.scanned(code) }
             })
+            .environment(env)
         }
         #if DEBUG
         // `-demo-open orbital-setup -demo-scan [v2]`: lee un código de mentira (v1, o v2 con la llave de K1), sin cámara.

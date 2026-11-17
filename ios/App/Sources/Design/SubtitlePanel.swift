@@ -61,7 +61,7 @@ struct SubtitleButton: View {
                     .contentTransition(.symbolEffect(.replace))
             }
         }
-        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+        .frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle)
         .glassEffect(.regular.interactive(), in: Circle())
         .contentShape(Circle())
         .onTapGesture(perform: open)

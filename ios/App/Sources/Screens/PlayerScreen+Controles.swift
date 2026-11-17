@@ -220,7 +220,7 @@ extension PlayerScreen {
                            open: { openDock() },
                            toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
-            AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+            AirPlayButton().frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
             // Un globo propio (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de
             // él. Se dibuja en `moreLayer` (antes un `popover`: la esquina junto a su colita quedaba recta y las otras tres no).

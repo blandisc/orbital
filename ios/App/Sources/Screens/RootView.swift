@@ -94,16 +94,17 @@ struct RootView: View {
 
     private func playerCover(_ request: PlayRequest) -> some View {
         PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
+            .environment(env)   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
     }
 
     /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
     private func withGuide<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(isPresented: showingGuide) { OnboardingView { ui.showingGuide = false } }
+        content.fullScreenCover(isPresented: showingGuide) { OnboardingView { ui.showingGuide = false }.environment(env) }
     }
 
     /// Una historia de «Aprende Orbital» (G3): desde los círculos de Inicio, Ajustes o «Ver la historia» de un aviso.
     private func withStories<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(item: openStory) { (route: StoryRoute) in storyDeck(route) }
+        content.fullScreenCover(item: openStory) { (route: StoryRoute) in storyDeck(route).environment(env) }
     }
 
     private var showingGuide: Binding<Bool> { Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 }) }

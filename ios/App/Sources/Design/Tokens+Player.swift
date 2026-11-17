@@ -75,6 +75,22 @@ extension DS {
 
     /// El reproductor: el video en vertical, «Audio y subtítulos» (a la derecha en horizontal, bajo el video en vertical) y los controles.
     enum PlayerPanel {
+        /// Los controles del reproductor en pantallas grandes (Fernando, 16 nov 2026: «hacer más grandes los iconos para tanto
+        /// pantalla de Mac como para pantalla de iPad»): en la Mac crecen como la letra (`DS.Mac.typeScale`); en el iPad,
+        /// `padScale` (con el tamaño del iPhone se veían chicos en 11 y 13 pulgadas); en el iPhone, igual.
+        static let padScale: CGFloat = 1.2
+        static func big(_ points: CGFloat) -> CGFloat {
+            ProcessInfo.processInfo.isiOSAppOnMac ? Mac.sized(points) : isPad ? points * padScale : points
+        }
+        /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal y no existe en los widgets).
+        private static let isPad: Bool = {
+            if ProcessInfo.processInfo.isiOSAppOnMac { return false }
+            if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
+            var info = utsname()
+            uname(&info)
+            let machine = withUnsafeBytes(of: &info.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+            return machine.hasPrefix("iPad")
+        }()
         /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
         static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
@@ -110,7 +126,9 @@ extension DS {
         static let lockScale: CGFloat = 0.9
         /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
         static let lockNoticeIcon: CGFloat = 36, lockNoticeRise: CGFloat = 28
-        static let width: CGFloat = 420, radius = DS.Radius.xxl, rowRadius = DS.Radius.lg, icon: CGFloat = 32
+        /// El ancho del panel: en la Mac y el iPad crece con los controles (en la Mac, con 420, los renglones se partían en tres).
+        static var width: CGFloat { big(420) }
+        static let radius = DS.Radius.xxl, rowRadius = DS.Radius.lg, icon: CGFloat = 32
         /// En horizontal, lo más que ocupa el panel de la derecha (parte del ancho), para que en iPhone chicos quede video.
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
@@ -125,14 +143,24 @@ extension DS {
         static let regularCenter = 0.5
         static let portraitCenter: CGFloat = -1
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
-        static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
+        /// En la Mac y el iPad crecen (`big`): con el tamaño del iPhone se veían chicos (revisión del reproductor, 16 nov 2026).
+        static var playButton: CGFloat { big(76) }
+        static var playGlyph: CGFloat { big(30) }
+        static var sideButton: CGFloat { big(56) }
+        /// Los círculos de vidrio de la barra de arriba (cerrar, episodios, audio, AirPlay, «⋯»): el toque mínimo, y en la Mac
+        /// crecen (`big`).
+        static var circle: CGFloat { big(DS.Size.touchTarget) }
         /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo); va en la orilla del video, donde sale la onda del doble toque.
-        static let skipGlyph: CGFloat = 32
+        static var skipGlyph: CGFloat { big(32) }
         /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
         /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).
-        static let scrubTrack: CGFloat = 3, scrubTrackActive: CGFloat = 10, scrubHit: CGFloat = 32
+        static var scrubTrack: CGFloat { big(3) }
+        static var scrubTrackActive: CGFloat { big(10) }
+        static var scrubHit: CGFloat { big(32) }
         /// El punto de la barra (quieta y arrastrando) y a qué altura sobre la barra va la burbuja del minuto (su centro).
-        static let scrubKnob: CGFloat = 12, scrubKnobActive: CGFloat = 22, scrubBubbleLift: CGFloat = 48
+        static var scrubKnob: CGFloat { big(12) }
+        static var scrubKnobActive: CGFloat { big(22) }
+        static var scrubBubbleLift: CGFloat { big(48) }
         /// Las rayitas del fin de la intro y del inicio de los créditos: su grosor y cuánto sobresalen de la barra; la hilera de
         /// tiempos bajo la barra.
         static let scrubTickWidth: CGFloat = 1.5, scrubTickReach: CGFloat = 3, scrubTimes: CGFloat = 16

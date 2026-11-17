@@ -112,8 +112,18 @@ extension PlayerScreen {
             .dsFeedback(.impact(weight: .light), trigger: skipHaptic)
             .dsFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
             .dsFeedback(.success, trigger: drag.fastForwardLocked)
+            // La Mac (puntero): mover el ratón sobre el video muestra los controles, como en cualquier reproductor de la Mac
+            // (antes había que hacer clic). Esconder el puntero (`pointerVisibility`) no existe en una app de iPad.
+            .onContinuousHover { phase in if case .active = phase { pointerMoved() } }
         }
         .accessibilityHidden(true)
+    }
+
+    /// La Mac: el puntero se movió sobre el video. Muestra los controles y vuelve a contar para esconderlos.
+    private func pointerMoved() {
+        guard ThisDevice.isMac, !padlock.locked, !dockState.subtitleDock else { return }
+        if !controlsVisible { withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = true } }
+        scheduleHide()
     }
 
     /// Brillo (mitad izquierda), volumen (mitad derecha) o buscar (cualquier zona), según el eje que gane los

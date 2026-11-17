@@ -64,6 +64,7 @@ struct SimpsonsRoulette: View {
 
     private func playerCover(_ request: PlayRequest) -> some View {
         PlayerScreen(request: request).interactiveDismissDisabled()
+            .environment(env)   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
     }
 
     private func closeQuietly() {
