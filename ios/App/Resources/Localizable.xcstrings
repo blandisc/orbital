@@ -27166,6 +27166,17 @@
         }
       }
     },
+    "Quitada de Seguir viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from Continue Watching"
+          }
+        }
+      }
+    },
     "Quitada de tus favoritos": {
       "extractionState": "manual",
       "localizations": {

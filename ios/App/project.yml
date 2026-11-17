@@ -250,3 +250,4 @@ schemes:
         "-demo": true
         "-demo-free-tabs": true
         "-demo-no-idle": true
+        "-demo-mute": true   # el reproductor en silencio: la prueba no toca el volumen de la Mac

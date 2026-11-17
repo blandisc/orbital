@@ -67,6 +67,37 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(home.traktPending.map(\.imdb), before, "regresa en su lugar, una sola vez")
     }
 
+    /// «Quitar de Seguir viendo» (16 nov 2026, recorrido de la Mac): sale al instante; «Deshacer» la regresa a su lugar y
+    /// nada sale del aparato (tu avance sigue en la biblioteca, sin `hiddenAt`). Sin deshacer, al terminar el plazo sí se quita.
+    func testRemovingFromContinueWaitsForUndoBeforeLeavingThePhone() async throws {
+        let rig = try ServicesRig(signedIn: false)
+        for (i, id) in ["tt1", "tt2", "tt3"].enumerated() {
+            rig.services.library.update(id, make: { LibraryEntry(metaID: id, kind: "movie", name: id) }) {
+                $0.videoID = id; $0.position = 600; $0.duration = 6000; $0.updatedAt = Double(100 - i)
+            }
+        }
+        let home = HomeModel(rig.services)
+        await home.refresh()
+        let before = home.continueWatching.map(\.metaID)
+        XCTAssertEqual(before, ["tt1", "tt2", "tt3"])
+        let middle = try XCTUnwrap(home.continueWatching.first { $0.metaID == "tt2" })
+        let pending = Task { await home.dismiss(middle, undoWindow: .seconds(30)) }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(home.continueWatching.map(\.metaID), ["tt1", "tt3"], "sale de la fila al instante")
+        XCTAssertNil(rig.services.library.entry("tt2")?.hiddenAt, "mientras se puede deshacer, la biblioteca no cambia")
+        home.undoDismiss(middle)
+        await pending.value
+        XCTAssertEqual(home.continueWatching.map(\.metaID), before, "«Deshacer» la regresa a su lugar")
+        XCTAssertNil(rig.services.library.entry("tt2")?.hiddenAt, "deshecho: nada salió del aparato")
+        await home.refresh()
+        XCTAssertEqual(home.continueWatching.map(\.metaID), before, "y otra carga no la vuelve a quitar")
+
+        await home.dismiss(middle, undoWindow: .milliseconds(50))
+        XCTAssertNotNil(rig.services.library.entry("tt2")?.hiddenAt, "sin deshacer, se quita de verdad al terminar el plazo")
+        await home.refresh()
+        XCTAssertEqual(home.continueWatching.map(\.metaID), ["tt1", "tt3"])
+    }
+
     func testSpotlightInterleavesListsWithoutRepeatsOrWhatYouAreWatching() {
         func s(_ id: String, _ kind: String) -> Suggestion { Suggestion(kind: kind, imdb: id, title: id, poster: "", wide: "", reason: .trending) }
         let trend = [s("tt1", "movie"), s("tt2", "movie")], series = [s("tt3", "series"), s("tt1", "movie")], popular = [s("tt4", "movie"), s("tt5", "movie")]

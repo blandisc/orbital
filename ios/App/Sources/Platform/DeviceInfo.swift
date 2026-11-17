@@ -45,7 +45,15 @@ enum ThisDevice {
     /// `MacNeverTalksToTheTVTests` cuida que esto no cambie.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
-    static let isMac = ProcessInfo.processInfo.isiOSAppOnMac
+    static let isMac = ProcessInfo.processInfo.isiOSAppOnMac || macLookForDemo
+    /// `-demo-mac-look` (solo Debug): el acomodo de la Mac (pestañas en cápsula, ficha en filas, Buscar grande, ▶ ＋) en el
+    /// simulador del iPad, para recorrer los flujos de la Mac con XCUITest cuando nadie está frente a la Mac (allí la app de
+    /// iPad se queda dormida si no se ve). Solo cambia `isMac`; la letra y los tamaños siguen siendo los del iPad.
+    #if DEBUG
+    private static let macLookForDemo = Demo.has("-demo-mac-look")
+    #else
+    private static let macLookForDemo = false
+    #endif
     /// Qué trae esta app aquí (D1-B): la versión de la compilación (`ORBITAL_EDITION` → Info.plist › `OrbitalEdition`, leída una
     /// vez; sin ella, Ultra) y si este aparato habla con la TV. Lo que no recibe `Services` (Siri, el menú, la actividad en
     /// vivo) pregunta aquí; lo demás, a `services.capabilities`, que se arma con esto mismo.

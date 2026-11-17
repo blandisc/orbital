@@ -273,6 +273,8 @@ extension DS {
         static let controlsFadeGrace: TimeInterval = 0.4
         /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).
         static let toastAction = UInt64(8 * 1e9)
+        /// Lo que quitas con «Deshacer» sale del aparato (Trakt, la biblioteca) hasta que su aviso ya se fue, con margen.
+        static let undoCommit: Duration = .nanoseconds(Int64(toastAction)) + .seconds(2)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// ×2: cuánto mantener el dedo en la mitad derecha para que arranque (casi al instante, como YouTube).

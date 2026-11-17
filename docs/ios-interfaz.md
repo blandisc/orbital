@@ -219,6 +219,10 @@ falle y que luego busques otra para que continúe. Es que esa no estaba disponib
   de otro torrent) y toda versión que se da por fallida queda en la bitácora con su motivo (`markFailed`).
 
 `PlayerModelTests+Avisos.swift` y `RetryOnlyWhenItFailsTests.swift` lo cuidan. En la TV: pendiente de revisar si su aviso dice lo mismo (registro de paridad).
+- **Si el video no arranca, nada del reproductor tapa el aviso**: ni los controles, ni ±10, ni el iPod, ni «Audio y
+  subtítulos» fijo del iPad de pie. El aviso trae sus propios botones («Pedir a la nube», «Cerrar») y es la única salida.
+  Nació en el recorrido de la Mac (16 nov 2026): en el iPad de pie, «Todavía no está en la nube» quedaba bajo el panel fijo,
+  sin ✕ ni «Cerrar» a la vista. `DesignRulesTests+Quitar.swift` (`testNothingCoversThePlayerFailure`) lo cuida.
 ### Las acciones de un título (12 nov 2026)
 
 Fernando, al ver la ficha del iPhone: «integrar los dos botones que están abajo, los de descargar y vista, a estos tres de ahí
@@ -539,6 +543,11 @@ solo «Guardar» tenía «Deshacer».
   cerrar la hoja (`DecideModel.commitDismissals`), nunca en el momento.
 - Los avisos de una hoja o pantalla completa van dentro de ella (`BannerView` con `coverShowsNotices`), no detrás.
 - El dado es solo «Decide por mí» (tabla de íconos).
+- **Todo «Quitar de …» de un título avisa con «Deshacer»** (Mi lista, una lista, favoritos y Seguir viendo). Si quitarlo borra
+  algo que no se recupera al volver a agregarlo (tu avance en Trakt), sale de la pantalla al instante y del aparato hasta que
+  el aviso ya se fue (`HomeModel.dismiss(_:undoWindow:)`, `DS.Timing.undoCommit`). Nació en el recorrido de la Mac del 16 nov
+  2026: «Quitar de Seguir viendo» no tenía vuelta. Lo cuidan `DesignRulesTests+Quitar.swift` y
+  `ScreenModelsTests.testRemovingFromContinueWaitsForUndoBeforeLeavingThePhone`.
 
 Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
 tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.

@@ -446,7 +446,13 @@ struct HomeView: View {
         if env.services.orbital.isConfigured {
             Button("Ver en la TV", systemImage: "tv.and.mediabox") { Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) } }
         }
-        Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
+        Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { removeFromContinue(model, item) }
+    }
+
+    /// «Quitar de Seguir viendo» con «Deshacer»: Trakt y la biblioteca se enteran cuando el aviso ya se fue.
+    private func removeFromContinue(_ model: HomeModel, _ item: HomeItem) {
+        env.notify("Quitada de Seguir viendo", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { model.undoDismiss(item) }
+        Task { await model.dismiss(item, undoWindow: DS.Timing.undoCommit) }
     }
 
     /// RI2 (Mac, sin nada a medias): los que siguen en la portada, en tarjetas anchas encimadas en su borde, como «A
@@ -534,7 +540,7 @@ struct HomeView: View {
                                   progress: item.progress, width: nil, fallback: item.background == nil ? nil : item.poster)
                     }
                     .buttonStyle(.plain)
-                    .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
+                    .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { removeFromContinue(model, item) } }
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)

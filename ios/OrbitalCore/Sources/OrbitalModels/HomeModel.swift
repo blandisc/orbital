@@ -397,13 +397,29 @@ public final class HomeModel: ObservableModel {
     /// Se dejan de escuchar al irse el modelo.
     let notifications = NotificationTokens()
 
-    /// «Quitar de Seguir viendo».
-    public func dismiss(_ item: HomeItem) async {
+    /// «Quitar de Seguir viendo», con «Deshacer» (regla «Lo que quitas se puede deshacer»): sale de la fila al instante y la
+    /// biblioteca y Trakt se enteran hasta que pasa `undoWindow` sin deshacer (lo que sale del aparato espera; antes Trakt
+    /// borraba tu avance en el momento y no había vuelta, 16 nov 2026).
+    public func dismiss(_ item: HomeItem, undoWindow: Duration = .zero) async {
+        let index = continueWatching.firstIndex { $0.metaID == item.metaID } ?? 0
         dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
+        undoable[item.metaID] = (index, item)
+        if undoWindow > .zero { try? await Task.sleep(for: undoWindow) }
+        guard undoable.removeValue(forKey: item.metaID) != nil else { return }   // lo deshiciste: no sale nada del aparato
         await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
     }
+
+    /// «Deshacer» de «Quitar de Seguir viendo»: regresa a su lugar de la fila, como estaba.
+    public func undoDismiss(_ item: HomeItem) {
+        guard let (index, saved) = undoable.removeValue(forKey: item.metaID) else { return }
+        dismissed.remove(item.metaID)
+        continueWatching.insert(saved, at: min(index, continueWatching.count))
+        publishWidget()
+    }
+    /// Lo quitado de «Seguir viendo» que aún se puede deshacer: su lugar y cómo estaba.
+    private var undoable: [String: (Int, HomeItem)] = [:]
 }
 
 /// Aviso de que un título entró o salió de tus favoritos (desde la ficha o desde Inicio), para que Inicio lo refleje al momento.
