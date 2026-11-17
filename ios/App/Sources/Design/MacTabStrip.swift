@@ -144,15 +144,15 @@ struct MacSearchField: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
-            Image(systemName: "magnifyingglass").font(DS.TextRecipe.section.font).foregroundStyle(DS.textMuted)
+            Image(systemName: "magnifyingglass").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
             TextField("Películas y series", text: $text)
-                .textFieldStyle(.plain).font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
+                .textFieldStyle(.plain).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
                 .focused(focused).submitLabel(.search).autocorrectionDisabled()
             if !text.isEmpty {
                 DSIconButton(symbol: "xmark", label: "Borrar la búsqueda", size: .regular) { text = "" }
             }
         }
-        .padding(.horizontal, DS.Space.s5)
+        .padding(.horizontal, DS.Space.s6)
         .frame(maxWidth: DS.Mac.searchFieldWidth, minHeight: DS.Mac.searchFieldHeight)
         .background(DS.surfaceRaised, in: Capsule())
         .overlay(Capsule().strokeBorder(focused.wrappedValue ? DS.accent : DS.hairline, lineWidth: focused.wrappedValue ? DS.Stroke.selected : DS.Stroke.hairline))

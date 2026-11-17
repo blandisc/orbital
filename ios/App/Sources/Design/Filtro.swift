@@ -165,12 +165,12 @@ enum FilterText {
 struct FilterArt: View {
     let page: FilterPage
     let context: FilterContext
-    var mini = false
+    var mini = false, big = false   // big: la puerta de Buscar en la Mac (MS1)
 
     var body: some View {
         let f = context.filter
-        let height = mini ? DS.Filter.miniArtHeight : DS.Filter.artHeight
-        let symbolFont = mini ? DS.TextRecipe.secondary.font : DS.TextRecipe.title.font
+        let height = big ? DS.Mac.doorArtHeight : mini ? DS.Filter.miniArtHeight : DS.Filter.artHeight
+        let symbolFont = big ? DS.TextRecipe.display.font : mini ? DS.TextRecipe.secondary.font : DS.TextRecipe.title.font
         Group {
             switch page {
             case .era where f.years != nil || f.spread:
@@ -223,7 +223,7 @@ struct FilterArt: View {
 struct FilterTile: View {
     let page: FilterPage
     let context: FilterContext
-    var mini = false
+    var mini = false, big = false   // big: en la Mac, la puerta de Buscar en mosaicos grandes (Fernando, 16 nov 2026)
     var open = false
     let action: () -> Void
 
@@ -244,9 +244,9 @@ struct FilterTile: View {
         Button(action: action) {
             // Centrado (Fernando, 31 oct 2026): el dibujo, el nombre y lo elegido al centro del mosaico.
             VStack(spacing: mini ? DS.Space.s1 / 2 : DS.Space.s1) {
-                if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
+                if art.isEmpty { FilterArt(page: page, context: context, mini: mini, big: big) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
-                page.title.recipe(mini ? .badge : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                page.title.recipe(mini ? .badge : big ? .cardTitle : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 if page == .rating, value != nil {
                     // De dónde sale el número de arriba (el logo de TMDB o el de Letterboxd) y, con las dos, las estrellas.
                     let f = context.filter, stars = f.format == .series ? nil : f.minLetterboxd
@@ -264,7 +264,7 @@ struct FilterTile: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
             .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
+            .frame(maxWidth: .infinity, minHeight: big ? DS.Mac.doorTileHeight : compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
             .background {
                 ZStack {
                     open || mini ? DS.surfaceRaised : DS.surface
@@ -431,7 +431,7 @@ struct FilterDoor: View {
             let mac = ThisDevice.isMac
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: mac ? FilterPage.main.count : typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
                 ForEach(FilterPage.main) { page in
-                    FilterTile(page: page, context: context, mini: !mac) { open(page) }
+                    FilterTile(page: page, context: context, mini: !mac, big: mac) { open(page) }
                         .accessibilityIdentifier("browse-filter-\(page.rawValue)")
                 }
             }

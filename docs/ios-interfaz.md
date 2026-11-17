@@ -904,7 +904,7 @@ nuevos tamaños»):
 - **La Mac con su propio acomodo** (Fernando, 16 nov 2026: «vamos con tus recomendaciones», MB1 · MA1 · MS1 · MT1 · MC1):
   - Biblioteca: Descargas, Mi media y Guardado en una columna a la izquierda (`MacSidebar`), como Música; no una segunda fila de pestañas.
   - Ajustes: lista y detalle, como Ajustes del Sistema. Cada renglón es un `SettingsLink`: en la Mac abre su página a la derecha (`SettingsView.destination`); en iPhone y iPad la empuja.
-  - Buscar: el campo grande al centro (`MacSearchField`) en vez del de la barra, y los seis mosaicos de la búsqueda avanzada en una fila.
+  - Buscar: el campo grande al centro (`MacSearchField`, 88 pt de alto y letra de título) en vez del de la barra, y los seis mosaicos de la búsqueda avanzada en una fila, de 150 pt de alto con su dibujo grande (`DS.Mac.doorTileHeight`): con el tamaño del iPhone eran franjas que se leían como botones de formulario.
   - Al cambiar de pestaña, el cambio es al momento (sin el fundido del sistema, `DS.Mac.tabSwitchQuiet`).
 - **La variante de iPad dice «dispositivo»:** la Mac toma la variante de iPad del catálogo de textos, así que ahí nunca se escribe «iPad» sino «dispositivo» («device»); «Como el iPad» es «Como el sistema». Al compilar, Xcode reescribe `Localizable.xcstrings`: se restaura y solo se cambia el texto a propósito.
 - **Una sola pestaña no se dibuja** (`DSTextTabs` con menos de dos opciones): en la ficha de una película sin reparto ni parecidas, «Detalles» sola parecía rota. Vale en iPhone, iPad y Mac.

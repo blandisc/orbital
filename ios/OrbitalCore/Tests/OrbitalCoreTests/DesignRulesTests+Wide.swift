@@ -114,6 +114,9 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
         XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac: el campo grande")
         XCTAssertTrue(try code("Filtro.swift").contains("count: mac ? FilterPage.main.count :"), "Buscar en la Mac: los seis mosaicos en una fila")
+        // Con 76 pt de alto en una ventana de Mac eran franjas de formulario (Fernando, 16 nov 2026): mosaicos grandes y campo alto.
+        XCTAssertTrue(try code("Filtro.swift").contains("minHeight: big ? DS.Mac.doorTileHeight"), "Los mosaicos de Buscar en la Mac son grandes")
+        XCTAssertTrue(try code("MacTabStrip.swift").contains(".textFieldStyle(.plain).font(DS.TextRecipe.title.font)"), "El campo de Buscar en la Mac lleva letra grande")
         XCTAssertTrue(try code("MacTabStrip.swift").contains("UIView.setAnimationsEnabled(false)"), "En la Mac la pestaña cambia al momento")
         // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).
         for token in ["static var wideColumn: CGFloat { Mac.sized(", "static var wideLogoWidth: CGFloat { Mac.sized(", "static var readable: CGFloat { Mac.sized("] {

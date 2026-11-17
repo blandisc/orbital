@@ -25,7 +25,7 @@ extension DS {
         static let railWidth: CGFloat = 188
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la
         /// búsqueda avanzada (`searchTop`), al menos `searchRowsMin` (con dos fijos quedaba vacío el tercio de abajo).
-        static let searchRowsMin = 2, searchTop: CGFloat = 340, searchCaption: CGFloat = 52
+        static let searchRowsMin = 2, searchTop: CGFloat = 520, searchCaption: CGFloat = 52
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
         static let topScrim: CGFloat = 120
         /// La columna de la izquierda de la Biblioteca (MB1) y la lista de Ajustes (MA1), como Música y Ajustes del Sistema.
@@ -33,7 +33,10 @@ extension DS {
         /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
         static let tabSwitchQuiet: Double = 0.4
         /// El campo de Buscar en la Mac (MS1): grande y al centro, no la rayita de la barra.
-        static let searchFieldWidth: CGFloat = 1000, searchFieldHeight: CGFloat = 64
+        static let searchFieldWidth: CGFloat = 1100, searchFieldHeight: CGFloat = 88
+        /// Los seis mosaicos de la búsqueda avanzada en la Mac (MS1): con 76 pt de alto y 360 de ancho eran franjas que se
+        /// leían como botones de formulario; así son mosaicos, con su dibujo grande (Fernando, 16 nov 2026).
+        static let doorTileHeight: CGFloat = 150, doorArtHeight: CGFloat = 52
         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
         static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
     }
