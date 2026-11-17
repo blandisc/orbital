@@ -140,11 +140,11 @@ function gameRows(legion, close = "Start + Select + Home") {
 
 /** Con teclado: Ctrl + Inicio es el Home de la consola (atajo global, orbital/hotkey.py), aunque el juego tenga el foco. */
 const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["Video en pequeño", "Ctrl + Inicio"],
-  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Buscar", "S"], ["Menú", "M"]];
+  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Buscar", "S"], ["Decide por mí", "D"], ["Menú", "M"]];
 
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
-    ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
+    ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Decide por mí", "R3 (clic del stick derecho)"], ["Menú", "☰"]],
   player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y versión", "Y"],
     ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };

@@ -58,6 +58,9 @@
 .pill--icon .pill__name { display: none; }
 .pill--icon.is-focused { gap: var(--space-2); }
 .pill--icon.is-focused .pill__name { display: inline; }
+/* Píldora con nombre (NQ-2, «Decide por mí»): la misma pieza, el nombre siempre a la vista. */
+.pill--named { gap: var(--space-2); padding-inline: var(--space-3) var(--space-4); }
+.pill--named .icon { width: var(--icon-md); height: var(--icon-md); }
 @media (hover: hover) {
   .pill--icon:hover { gap: var(--space-2); color: var(--color-text); }
   .pill--icon:hover .pill__name { display: inline; }

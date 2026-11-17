@@ -1,5 +1,6 @@
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { duration, genres as genreNames } from "../core/format.js";
+import { Button } from "./button.js";
 import { Card } from "./card.js";
 import { Eyebrow, Pill, ScreenHead } from "./ui.js";
 
@@ -15,6 +16,41 @@ import { Eyebrow, Pill, ScreenHead } from "./ui.js";
  * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · onPick(item) · onMove() · onClose() · onDeck()
  */
 export const DECIDE_MODES = ["Tres que caben", "Una por una"];
+
+/**
+ * NQ-1 (Fernando, 16 nov 2026): la puerta de «Decide por mí» en el Inicio, segunda de «A continuación» (como la del Inicio
+ * del iPhone). La tarjeta lleva el abanico de los tres pósters de hoy; arriba, al enfocarla, la pregunta y sus nombres.
+ * `door` = { picks: [{ title, image, hero }] }.
+ */
+export function DecideDoor(door, { focusId, onPress }) {
+  const posters = (door?.picks || []).slice(0, 3);
+  return h("button", { class: ["card", "card--wide", "decide-door"], type: "button", tabindex: "-1", "data-focus-id": focusId,
+    style: { "--ratio": 16 / 9 }, // lo que mide una tarjeta ancha (Card lo pone igual)
+    "aria-label": "Decide por mí", onClick: onPress },
+  h("span", { class: "decide-door__fan", "aria-hidden": "true" },
+    posters.map((p) => h("img", { class: "decide-door__poster", src: p.image, alt: "", loading: "lazy", decoding: "async" }))),
+  h("span", { class: "decide-door__text" },
+    h("strong", { class: "decide-door__title" }, "Decide por mí"),
+    h("small", { class: "decide-door__line" }, doorLine())));
+}
+
+/** Lo de arriba con la puerta enfocada: la pregunta, los tres de hoy por su nombre y el botón. */
+export function DecideDoorHero(door, { glyphs = {}, onAction }) {
+  const names = (door?.picks || []).slice(0, 3).map((p) => p.title);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names.at(-1)}` : names[0] || "";
+  return h("div", { class: "feature-hero" },
+    Eyebrow("¿No sabes qué ver?", { className: "feature-hero__eyebrow" }),
+    h("h2", { class: "feature-hero__title" }, "Decide por mí"),
+    h("span", { class: "feature-hero__detail" }, list ? `${doorLine()}: ${list}` : doorLine()),
+    h("span", { class: "button-row feature-hero__actions" },
+      Button({ label: "Decide por mí", glyph: glyphs.select, variant: "primary", icon: "spark", onPress: () => onAction?.("select") })));
+}
+
+/** La línea de la puerta sigue la hora: de noche, algo corto antes de dormir. */
+export function doorLine(now = new Date()) {
+  const hour = now.getHours();
+  return hour >= 23 || hour < 5 ? "Algo corto antes de dormir" : hour >= 18 ? "Tres para esta noche" : "Tres para hoy";
+}
 /** D5-A (R2-7): el mismo encabezado en las dos pestañas de Decide (aquí y en el mazo, match-deck.js). */
 export const DecideHead = () => ScreenHead({ eyebrow: "Para cuando no sabes qué ver", title: "Decide por mí" });
 /** Las dos pestañas; `on` la que ves, `focused` la enfocada con el mando (o null), `onPick(i)` al tocar o hacer clic. */

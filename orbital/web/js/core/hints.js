@@ -106,6 +106,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     list.push({ glyph: glyphs.select, label: "Buscar" });
   } else if (target?.kind === "alexa") {
     list.push({ glyph: glyphs.select, label: "Qué pedirle a Alexa" });
+  } else if (target?.kind === "decide") {
+    if (!onScreen) list.push({ glyph: glyphs.select, label: "Decide por mí" }); // NQ-1: lo de arriba ya enseña su botón
   } else if (target?.kind === "item") {
     if (!onScreen) { // el destacado ya enseña sus botones (A, X, Y): el pie no los repite
       list.push({ glyph: glyphs.select, label: primary });

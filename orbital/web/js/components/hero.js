@@ -204,8 +204,9 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     if (!choices) return mount(kinds);
     const tabs = choices.map(([value, label]) => Pill(label, { on: value === current, tone: "tab", role: "tab", tabindex: "-1",
       onClick: (event) => { event.stopPropagation(); onKind?.(value); } }));
+    // `named` (NQ-2): el ícono con su nombre siempre a la vista («Decide por mí»); los demás, solo el ícono.
     const icons = tools.map((tool) => Pill(h("span", { class: "pill__name" }, tool.label), {
-      icon: svg(ICONS[tool.icon]), tone: "tab", className: "pill--icon", tabindex: "-1", "aria-label": tool.label, title: tool.label,
+      icon: svg(ICONS[tool.icon]), tone: "tab", className: tool.named ? "pill--named" : "pill--icon", tabindex: "-1", "aria-label": tool.label, title: tool.label,
       onClick: (event) => { event.stopPropagation(); onTool?.(tool.id); } }));
     mount(kinds, ...tabs, icons.length ? h("span", { class: "hero__kinds-gap", "aria-hidden": "true" }) : null, ...icons);
   }

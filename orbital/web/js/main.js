@@ -1051,6 +1051,8 @@ let kindFocus = null;
 // D5-A (revisión del 10 nov): lo que vivía en ☰ y es de ver, a la vista después de las pestañas, como íconos. Con el mando
 // o el teclado, ↑ desde la primera fila y ▶ hasta el ícono; A lo abre. Con el mouse o el dedo, un clic o un toque.
 const MEDIA_TOOLS = [
+  // NQ-2 (Fernando, 16 nov 2026): «Decide por mí» donde más se duda, con su nombre a la vista (es una puerta, no una herramienta).
+  { id: "decide", icon: "spark", label: "Decide por mí", named: true, command: { type: "decide" } },
   { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
   { id: "collections", icon: "trophy", label: "Colecciones", command: { type: "collections" } },
   { id: "filter", icon: "sliders", label: "Filtro avanzado", command: { type: "filter" } },
@@ -2089,6 +2091,12 @@ function handleAction(action, { repeat = false } = {}) {
     return renderHints();
   }
   if (menuStillLoading(action)) return;
+  // NQ-5: R3 o D abren «Decide por mí» desde cualquier sección. Con otra vista encima (la ficha, una lista) no: se
+  // abriría detrás de ella; con «Decide por mí» ya abierta, tampoco.
+  if (action === "decide") {
+    if (topOverlay()) return sound.play("edge");
+    return runCommand({ type: "decide" });
+  }
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (overlays().some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });

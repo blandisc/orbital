@@ -33,6 +33,7 @@ log = logging.getLogger(__name__)
 GUIDE = 0x0400
 BACK = 0x0020
 START = 0x0010
+RIGHT_THUMB = 0x0080  # R3, el clic del stick derecho: «Decide por mí» (NQ-5, como el 11 del PADMAP de la interfaz)
 
 LB_BUTTON, RB_BUTTON = 0x0100, 0x0200
 
@@ -168,7 +169,7 @@ STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x20
 UI_ACTIONS = ((DPAD_UP | STICK_UP, "up"), (DPAD_DOWN | STICK_DOWN, "down"), (DPAD_LEFT | STICK_LEFT, "left"),
               (DPAD_RIGHT | STICK_RIGHT, "right"), (A_BUTTON, "select"), (B_BUTTON, "back"), (X_BUTTON, "alt"),
               (Y_BUTTON, "options"), (LB_BUTTON, "prevsection"), (RB_BUTTON, "nextsection"), (LT, "pageleft"),
-              (RT, "pageright"), (BACK, "search"), (START, "menu"))
+              (RT, "pageright"), (BACK, "search"), (START, "menu"), (RIGHT_THUMB, "decide"))
 # Como la interfaz (core/input.js): se activa al 55 % del recorrido y se suelta por debajo del 35 % (histéresis). Antes
 # era un solo umbral al 61 %: un stick que rondaba el borde se soltaba y se volvía a apretar solo, y en un panel el foco
 # brincaba o se trababa. Y la dirección se conserva hasta que cambia con claridad (en diagonal ya no alterna).

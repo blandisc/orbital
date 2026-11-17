@@ -9,7 +9,7 @@ export const KEYMAP = {
   Enter: "select", " ": "select", Escape: "back", Backspace: "back",
   x: "alt", y: "options", o: "options", m: "menu", ContextMenu: "options",
   PageUp: "pageleft", PageDown: "pageright", F5: "refresh", F2: "menu", F3: "options",
-  q: "prevsection", e: "nextsection", s: "search", "/": "search",
+  q: "prevsection", e: "nextsection", s: "search", "/": "search", d: "decide",
 };
 
 // Índices del mapeo estándar de la Gamepad API (Legion Go, Xbox, 8BitDo...).
@@ -18,6 +18,8 @@ export const PADMAP = {
   0: "select", 1: "back", 2: "alt", 3: "options", 4: "prevsection", 5: "nextsection", 6: "pageleft", 7: "pageright",
   // Vista (⧉) busca desde cualquier lugar; Menú (☰) abre el menú.
   8: "search", 9: "menu", 12: "up", 13: "down", 14: "left", 15: "right",
+  // R3 (clic del stick derecho): «Decide por mí» desde cualquier sección (NQ-5, Fernando, 16 nov 2026).
+  11: "decide",
   // 16 (Home/Guía) no: lo atiende el servidor para ir y volver entre Orbital y el juego.
 };
 

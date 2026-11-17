@@ -4,6 +4,7 @@ import { buildHome } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { Card } from "./card.js";
+import { DecideDoor, DecideDoorHero } from "./decide.js";
 import { ConsoleHero, ConsoleTile, FeatureHero } from "./tiles.js";
 import { SectionHead } from "./ui.js";
 
@@ -72,7 +73,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let focusId = "card:0";
   const memory = {}; // fila -> el último que enfocaste en ella (↑↓ vuelven ahí)
   let introduced = false;
-  let options = { runningId: null, glyphs: {}, airing: {}, mylistEdit: null };
+  let options = { runningId: null, glyphs: {}, airing: {}, mylistEdit: null, decide: null };
   let staged; // qué enseña arriba ahora (su identidad)
   let hiddenCount = 0;
   // Al recorrer rápido una fila solo se mueve el foco; lo de arriba cambia cuando te detienes.
@@ -80,14 +81,15 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let stageTimer;
 
   /** Qué es lo enfocado (no dónde está): un título, un juego o una consola. */
-  const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
+  const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : t?.kind === "decide" ? "decide" : null));
   const topId = () => (targets.has("card:0") ? "card:0" : "feature");
   /** La fila de un foco: «feature» (la invitación) y la barra de arriba cuentan como la primera. */
   const rowKey = (id) => (ROWS.some((r) => id.startsWith(`${r.key}:`)) ? id.split(":")[0] : "card");
   const visibleRows = () => rows.filter((r) => !r.row.hidden);
 
-  function render(libraryRows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, offline = false, mylist = [], mylistEdit = null } = {}) {
-    options = { runningId, glyphs, airing: airing || {}, mylistEdit };
+  function render(libraryRows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, offline = false, mylist = [], mylistEdit = null,
+    decide = null } = {}) {
+    options = { runningId, glyphs, airing: airing || {}, mylistEdit, decide };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
     // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
@@ -108,7 +110,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       targets.set("feature", { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     }
     // Sin el próximo estreno a la derecha (Fernando, 2 nov: quitarlo; los estrenos viven en Para ti y en el calendario).
-    fill(rowOf.card, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }), queue.map((item, i) => {
+    // NQ-1: la puerta de «Decide por mí», segunda (después de lo que te toca), cuando ya llegaron los tres de hoy.
+    const entries = decide?.picks?.length && queue.length ? [queue[0], { door: decide }, ...queue.slice(1)] : queue;
+    fill(rowOf.card, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }), entries.map((item, i) => {
+      if (item.door) {
+        targets.set(`card:${i}`, { kind: "decide", door: item.door });
+        return DecideDoor(item.door, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
+      }
       targets.set(`card:${i}`, { kind: "item", item });
       // Sin nombre debajo: lo enfocado ya lo dice arriba, en grande (como la fila de arriba del Apple TV). El logo va sobre su escena.
       const card = Card(item, { wide: true, onPress: pick(`card:${i}`) });
@@ -179,7 +187,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Arriba: lo enfocado de cualquier fila (D4-B: también una consola). Sin nada, la invitación a empezar. */
   function renderStage() {
     const target = stageTarget();
-    const key = target?.kind === "item" || target?.kind === "console" ? identity(target) : "feature";
+    const key = target?.kind === "item" || target?.kind === "console" ? identity(target) : target?.kind === "decide" ? "decide" : "feature";
     if (staged === key && hero.firstChild) return;
     staged = key;
     const id = [...targets].find(([, t]) => t === target)?.[0] ?? focusId;
@@ -192,6 +200,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
         reason: airing ? (airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`) : null });
     } else if (target?.kind === "console") {
       stage = ConsoleHero(target.console, { glyphs: options.glyphs, onAction: act });
+    } else if (target?.kind === "decide") {
+      stage = DecideDoorHero(target.door, { glyphs: options.glyphs, onAction: act });
     } else {
       stage = emptyFeature(model.consoles.length > 0, hiddenCount);
     }

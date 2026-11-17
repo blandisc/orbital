@@ -29,10 +29,27 @@ export function homeMyList(lists, items, trakt) {
 
 export function createHomeScreen({ state, ui, glyphs, inHome, getLists, getItems, traktLinked, renderHints, runCommand, goToSection,
   stepSection, openSearch, openTitle, openMenu, launch, loadLibrary, wantConsole }) {
+  let door = null; // NQ-1: { picks } de la puerta de «Decide por mí»
+  let doorAt = 0;
   function renderHome() {
     const mine = homeMyList(getLists(), getItems(), traktLinked());
+    loadDoor();
     ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing,
-      offline: state.online === false, mylist: mine.items, mylistEdit: mine.edit });
+      offline: state.online === false, mylist: mine.items, mylistEdit: mine.edit, decide: state.online === false ? null : door });
+  }
+
+  /** NQ-1: los tres de hoy para la puerta de «Decide por mí» (cada media hora). Sin propuestas (sin Stremio, sin red), no hay
+   * puerta: una tarjeta que abre una pantalla vacía no ayuda a decidir. */
+  function loadDoor() {
+    if (Date.now() - doorAt < 30 * 60_000) return;
+    doorAt = Date.now();
+    api.forYouDecide({}).then((res) => {
+      const picks = (res?.picks || []).filter((p) => p.image).slice(0, 3).map((p) => ({ title: p.title, image: p.image, hero: p.hero }));
+      const next = picks.length ? { picks } : null;
+      if (JSON.stringify(next) === JSON.stringify(door)) return;
+      door = next;
+      if (inHome()) renderHome();
+    }, () => { doorAt = 0; });
   }
 
   /** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
@@ -52,6 +69,7 @@ export function createHomeScreen({ state, ui, glyphs, inHome, getLists, getItems
   function homeFocused(target) {
     if (!inHome()) return;
     if (target?.kind === "console") ui.backdrop.show(null, { color: systemColor(target.console?.system) });
+    else if (target?.kind === "decide") ui.backdrop.show(target.door?.picks?.[0]?.hero || null); // la luz de la primera de hoy
     else ui.backdrop.show(target?.item?.hero || target?.item?.image || null, { tone: target?.item?.art_tone });
     // La luz del fondo se acerca a lo enfocado.
     const node = document.querySelector(`[data-focus-id="${ui.home.focusId}"]`);
@@ -71,6 +89,7 @@ export function createHomeScreen({ state, ui, glyphs, inHome, getLists, getItems
     }
     if (target.kind === "search") return action === "select" ? openSearch() : sound.play("error");
     if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : sound.play("error");
+    if (target.kind === "decide") return action === "select" ? runCommand({ type: "decide" }) : sound.play("error");
     if (target.kind === "console") {
       if (action === "alt" && target.console.last) return launch(target.console.last);
       if (action !== "select") return sound.play("error");
