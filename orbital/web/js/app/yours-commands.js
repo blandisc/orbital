@@ -151,7 +151,7 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
     },
     "rate": async (command, context) => {
       const { stars } = await api.myRating(command.kind, command.id).catch(() => ({ stars: null }));
-      const options = STARS.map(([n, words]) => ({ icon: "star", label: words, value: `${stars === n ? "✓ " : ""}${starText(n)}`,
+      const options = STARS.map(([n, words]) => ({ icon: "star", label: words, stars: n, mine: stars === n,
         command: { type: "rate-set", kind: command.kind, id: command.id, title: command.title, stars: n } }));
       if (stars) options.push({ icon: "star-off", label: "Quitar mi calificación", command: { type: "rate-set", kind: command.kind, id: command.id, title: command.title, stars: null } });
       return openMenu({ title: `¿Qué te pareció ${command.title}?`, options }, { ...nested(context), index: Math.max(0, STARS.findIndex(([n]) => n === stars)) });

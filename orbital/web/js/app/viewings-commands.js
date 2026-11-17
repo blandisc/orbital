@@ -88,7 +88,7 @@ export function watchedFixMenu(about, at) {
 
 /** Las estrellas de una temporada (G7). */
 export function seasonStarsMenu({ id, title, season }, stars = null) {
-  const options = STARS.map(([n, words]) => ({ icon: "star", label: words, value: `${stars === n ? "✓ " : ""}${starText(n)}`,
+  const options = STARS.map(([n, words]) => ({ icon: "star", label: words, stars: n, mine: stars === n,
     command: { type: "season-rate-set", id, title, season, stars: n } }));
   if (stars) options.push({ icon: "star-off", label: "Quitar mi calificación", command: { type: "season-rate-set", id, title, season, stars: null } });
   return { title: `¿Qué tal la temporada ${season}?`, subtitle: title, options };

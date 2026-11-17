@@ -28,6 +28,7 @@
   --palette-paper: #f5f4f0;
   --palette-red-400: #f0574d;
   --palette-amber-300: #f4c24d;
+  --palette-amber-700: #9a6a00; /* las estrellas sobre lo claro (el renglón enfocado de una hoja) */
   --palette-teal-300: #5fd6c6;
   /* Botones de cara del mando (convención Xbox, la del GameSir y la Legion Go) */
   --palette-pad-green: #5cbf6d;

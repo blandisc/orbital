@@ -285,3 +285,8 @@
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass-legible); color: var(--color-text); text-shadow: none;
 }
 .row-count:empty { display: none; }
+
+/* Stars (16 nov 2026): cinco estrellas, las que diste en ámbar y las demás tenues (como RatingStars del iPhone). */
+.stars { display: inline-flex; gap: var(--space-1); }
+.stars__star { color: var(--color-text-muted); }
+.stars__star--on { color: var(--color-rating); }

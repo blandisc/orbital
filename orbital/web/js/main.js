@@ -176,7 +176,7 @@ const ui = {
     onStatus: (about, { quick }) => runCommand(quick ? { type: "status-list", ...about } : { type: "status", ...about }),
     // G7-B: terminaste una temporada: si no la has calificado, el aviso lo pregunta (Y › «Calificar»).
     onSeasonDone: (season) => api.seasonRating(season.id, season.season).then(({ stars }) => stars || undoable(`¿Qué tal ${season.title}, temporada ${season.season}?`,
-      "La terminaste", () => runCommand({ type: "season-rate", ...season }), { label: "Calificar" })).catch(() => {}),
+      "La terminaste", () => runCommand({ type: "season-rate", ...season }), { label: "Calificar", rating: true })).catch(() => {}),
     downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
@@ -2002,8 +2002,8 @@ async function saveOrder(editable, ids) {
 }
 
 /** Un cambio con «Deshacer» (Y mientras se ve el aviso; con el mouse o el dedo, en el aviso): el gestor de lo tuyo. */
-function undoable(message, detail, undo, { label = "Deshacer", tone = "info" } = {}) {
-  ui.toast.show(message, { tone, detail: detail || "", duration: UNDO_MS,
+function undoable(message, detail, undo, { label = "Deshacer", tone = "info", rating = false } = {}) {
+  ui.toast.show(message, { tone, detail: detail || "", duration: UNDO_MS, rating,
     ...offerToastAction({ label, button: "options", duration: UNDO_MS, run: () => {
       Promise.resolve(undo()).then(() => sound.play("select")).catch((err) => {
         sound.play("error");

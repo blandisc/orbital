@@ -234,6 +234,12 @@ export function SectionHead(title, { level = "subsection", icon = null, reason =
 
 /** Botón del mando + qué hace: «A Continuar». `glyph` puede traer dos («LB RB»). El pie de
  * controles (hints.js) y cualquier leyenda se arman con esta misma pieza. */
+/** Cinco estrellas: las que diste en ámbar (`--color-rating`, como las del iPhone y de Trakt) y las demás tenues. Con 0, la
+ * invitación a calificar (todas tenues). Fernando, 16 nov 2026: «adentro ponle color a las estrellas». */
+export const Stars = (n = 0, { className = null } = {}) => h("span", { class: ["stars", className], role: "img",
+  "aria-label": n ? `${n} de 5 estrellas` : "Sin calificar" },
+Array.from({ length: 5 }, (_, i) => h("span", { class: ["stars__star", i < n && "stars__star--on"], "aria-hidden": "true" }, "★")));
+
 export const KeyHint = (glyph, label, { className = null, small = true } = {}) =>
   h("span", { class: ["key-hint", className] }, String(glyph).split(" ").map((g) => Glyph(g, { small })),
     h("span", { class: "key-hint__label" }, label));

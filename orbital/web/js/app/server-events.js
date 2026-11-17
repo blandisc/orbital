@@ -231,7 +231,10 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
           ? offerVoiceAction({ kind: "undo", label: "Calificar", button: "options",
             run: () => runCommand({ type: "rate", kind: event.kind, id: event.meta_id, title: String(event.title || "").split(" · ")[0] }) })
           : {};
-        ui.toast.show(message, { heading, image: findItem(event.id)?.image, ...rate });
+        // Con «Calificar»: «¿Qué tal Oppenheimer?» con sus estrellas vacías y «La terminaste» abajo (Fernando, 16 nov: «pulir
+        // la notificación de calificar, está medio cruda»).
+        if (rate.action) ui.toast.show(message, { heading: `¿Qué tal ${String(event.title || "").split(" · ")[0]}?`, image: findItem(event.id)?.image, rating: true, ...rate });
+        else ui.toast.show(message, { heading, image: findItem(event.id)?.image, ...rate });
       }
       loadLibrary({ keepId: event.id });
       pollStatus();

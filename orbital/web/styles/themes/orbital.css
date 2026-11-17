@@ -58,6 +58,7 @@
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
   --color-rating: var(--color-warning);
+  --color-rating-on-light: var(--palette-amber-700); /* las estrellas en un renglón enfocado (blanco): el ámbar claro no se lee */
   /* El mazo «¿Qué vemos hoy?», como Tinder (DS.Match del iPhone, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» en el
      azul de Orbital; la carta se tiñe de ese color al decidir. */
   --color-match-pass: var(--color-danger);

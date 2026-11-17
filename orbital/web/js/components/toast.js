@@ -1,6 +1,6 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
-import { KeyHint } from "./ui.js";
+import { KeyHint, Stars } from "./ui.js";
 
 /**
  * Avisos: los mismos del iPhone (`Toast` / `BannerView`). Una píldora arriba a la derecha, debajo de la barra de estado:
@@ -107,7 +107,7 @@ export function createToast({ onTone = () => {} } = {}) {
     const action = toast.onPress && toast.actionLabel
       ? h("span", { class: "toast__action" },
         toast.actionGlyph ? KeyHint(toast.actionGlyph, toast.actionLabel) : h("span", {}, toast.actionLabel),
-        svg(ICONS.chevron))
+        !toast.rating && svg(ICONS.chevron))
       : null;
     // La sombra y el vidrio van aparte del texto: primero sale el ícono, la cajita crece desde él y luego llega el texto
     // (toast.css). Son piezas nuevas en cada aviso, así que la entrada se repite sola.
@@ -120,10 +120,12 @@ export function createToast({ onTone = () => {} } = {}) {
       lead(toast),
       h("span", { class: "toast__body" },
         h("span", { class: "toast__title" }, title),
+        // Calificar (como la pastilla «¿Qué tal…?» del iPhone): las cinco estrellas vacías invitan antes del detalle.
+        toast.rating ? Stars(0, { className: "toast__stars" }) : null,
         detail ? h("span", { class: "toast__detail" }, detail) : null),
       action);
     el.className = ["toast", `toast--${toast.tone}`, detail || toast.image ? "toast--two-line" : null,
-      toast.image ? "toast--rich" : null].filter(Boolean).join(" ");
+      toast.image ? "toast--rich" : null, toast.rating ? "toast--rate" : null].filter(Boolean).join(" ");
     el.setAttribute("role", toast.tone === "error" ? "alert" : "status");
     el.hidden = false;
     clearTimeout(timer);
@@ -135,17 +137,17 @@ export function createToast({ onTone = () => {} } = {}) {
   /**
    * `message`: el título (con « · », también el detalle). Opciones: `tone`, `detail`, `image`, `heading` (el título
    * cuando `message` es el detalle: «Hades» / «Jugaste 2 h»), `action` ({ label, glyph, onPress }), `duration`,
-   * `countdown`, `urgent`. Las de antes siguen: `error`, `voice`, `onPress`.
+   * `countdown`, `urgent`, `rating` (calificar: estrellas vacías y la acción en pastilla). Las de antes siguen: `error`, `voice`, `onPress`.
    */
   function show(message, { tone = "", error = false, voice = false, countdown = 0, duration = 0, onPress = null, urgent = false,
-    heading = "", image = "", detail = "", action = null } = {}) {
+    heading = "", image = "", detail = "", action = null, rating = false } = {}) {
     if (!message) return;
     const text = heading || message;
     const below = heading ? message : detail;
     const last = queue.at(-1) || current;
     if (last?.message === text && (last?.detail || "") === (below || "")) return; // el mismo aviso dos veces seguidas no aporta
     const toast = {
-      message: text, detail: below, image, countdown, duration,
+      message: text, detail: below, image, countdown, duration, rating,
       tone: toneOf({ tone, error, voice, message: text }),
       onPress: action?.onPress || onPress, actionLabel: action?.label || "", actionGlyph: action?.glyph || "",
     };

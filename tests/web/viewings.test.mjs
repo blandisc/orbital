@@ -47,7 +47,8 @@ test("Historial: las repetidas dicen «Repetida» y arriba se borran todas; ☰ 
 test("las estrellas de una temporada y la pregunta al terminarla", () => {
   const stars = seasonStarsMenu({ id: "tt1", title: "The Bear", season: 3 }, 4);
   assert.equal(stars.title, "¿Qué tal la temporada 3?");
-  assert.equal(stars.options[1].value, "✓ ★★★★");
+  assert.equal(stars.options[1].stars, 4); // en color, con ✓ en la tuya (Stars, 16 nov 2026)
+  assert.equal(stars.options[1].mine, true);
   assert.equal(stars.options.at(-1).label, "Quitar mi calificación");
   const seasons = [{ season: 1, episodes: [{ id: "a" }, { id: "b" }] }, { season: 2, episodes: [{ id: "c" }, { id: "d" }] }];
   const st = (entries) => new Map(entries);

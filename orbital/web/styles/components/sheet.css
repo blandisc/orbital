@@ -130,3 +130,10 @@
 [data-input="touch"] .sheet__title { padding-right: var(--touch-back-room); }
 [data-input="touch"] .sheet__item { min-height: var(--touch-target); }
 [data-input="touch"] .sheet__chev { min-width: var(--touch-target); min-height: var(--touch-target); opacity: var(--opacity-text); }.sheet__label .flag { margin-inline-end: var(--space-2); }
+
+/* Calificar: las cinco estrellas a la derecha, con ✓ en la tuya; en el renglón enfocado (blanco), ámbar oscuro y las vacías
+   en el gris del texto invertido. */
+.sheet__value--stars { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
+.sheet__mine { font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.is-focused .sheet__value--stars .stars__star { color: color-mix(in oklab, var(--inverse-fg) 28%, transparent); }
+.is-focused .sheet__value--stars .stars__star--on { color: var(--color-rating-on-light); }
