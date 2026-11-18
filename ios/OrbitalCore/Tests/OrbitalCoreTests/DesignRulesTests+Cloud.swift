@@ -33,4 +33,14 @@ extension DesignRulesTests {
         let found = hits("simultaneousGesture\\(LongPressGesture", in: try sources(), unless: "soltar-no-toca:")
         XCTAssertEqual(found, [], "al soltar, el toque no se manda también:\n" + found.joined(separator: "\n"))
     }
+
+    /// En las escenas de la guía nada se corta (18 nov 2026: el dibujo de Trakt decía «i…» e «iP»). El aparato de la escena
+    /// muestra su nombre solo si cabe entero; si no, el ícono solo. Regla en `docs/ios-interfaz.md` § «En las escenas de la
+    /// guía nada se corta».
+    func testSceneDeviceNeverCutsItsName() throws {
+        let file = try XCTUnwrap(try sources(["Design"]).first { $0.name == "StoryScenes+Thread.swift" }).lines.joined(separator: "\n")
+        let device = try XCTUnwrap(file.components(separatedBy: "struct SceneDevice").dropFirst().first)
+        XCTAssertTrue(device.contains("ViewThatFits"), "si el nombre no cabe, queda el ícono solo")
+        XCTAssertTrue(device.contains(".fixedSize()"), "el nombre nunca se trunca")
+    }
 }

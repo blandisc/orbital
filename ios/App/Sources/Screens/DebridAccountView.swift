@@ -306,7 +306,7 @@ struct DebridAccountView: View {
         }
         Section {
             DebridKeyField(debrid: model)
-            Link(destination: model.tokenURL) { Label("Sacar tu clave en \(cloud.keyPlace)", systemImage: "arrow.up.right") }
+            DebridKeyLink(debrid: model)
             if cloud == .realDebrid { DebridSharedOffer(debrid: model) }   // CX2-A: junto a «Pega tu clave», nunca en su lugar
         } header: { cloud == .realDebrid ? Text("O pega tu clave") : Text("Pega tu clave") } footer: { Self.keyFooter(cloud) }
         .listRowBackground(DS.surface)
@@ -364,7 +364,7 @@ private struct DebridChangeKeyPage: View {
             }
             Section {
                 DebridKeyField(debrid: model)
-                Link(destination: model.tokenURL) { Label("Sacar tu clave en \(model.connecting.keyPlace)", systemImage: "arrow.up.right") }
+                DebridKeyLink(debrid: model)
             } footer: { DebridAccountView.keyFooter(model.connecting) }
             .listRowBackground(DS.surface)
         }

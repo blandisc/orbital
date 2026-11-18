@@ -13,6 +13,7 @@ struct OnboardingTrakt: View {
     @State private var settings: ModelObserver<SettingsModel>
     @Environment(AppEnvironment.self) private var env
     @State private var connectingTV = false
+    @Environment(\.openURL) private var openURL
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); _settings = State(wrappedValue: ModelObserver(guide.settings))
@@ -22,16 +23,24 @@ struct OnboardingTrakt: View {
     var body: some View {
         let model = guide.model
         let linked = settings.model.traktLinked
+        // G5-B (Fernando, 18 nov 2026): con el código a la vista, el botón grande es «Copiar y abrir Trakt»; «Ahora no» abajo.
+        let open: (code: String, url: URL)? = {
+            if case .linking(let code, let url) = settings.model.trakt, let url = URL(string: url) { return (code, url) }
+            return nil
+        }()
         GuidePage(title: Text("Sigue donde te quedaste"),
                   message: Text("Trakt guarda lo que ves en todos tus aparatos. Es gratis."),
-                  step: step, primary: linked ? Text("Seguir") : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
+                  step: step, primary: linked ? Text("Seguir") : open != nil ? Text("Copiar y abrir Trakt") : Text("Ahora no"),
+                  secondary: !linked && open != nil ? Text("Ahora no") : nil,
+                  next: { if !linked, let open { DeviceCodeCard.copyAndOpen(open.code, open.url, openURL) } else { next() } },
+                  skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 StorySceneView(scene: .handoff, tint: DS.ListTint.calendar)
                     .frame(height: DS.GuideScene.sceneHeight * DS.Explainer.restScale)
                     .accessibilityHidden(true)
                 switch settings.model.trakt {
                 case .linking(let code, let url):
-                    DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url))
+                    DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url), showsOpen: false)
                 case .linked(let name):
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
                     if let brought = model.brought {

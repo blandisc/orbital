@@ -63,6 +63,8 @@ struct GuideMiniHome: View {
     let more: [Suggestion]
     let logos: [String]
     var grow = false
+    /// Si elegiste algo en «¿Qué te gusta?»: si no, la primera fila no dice «Porque te gustó…» (G4-B, 18 nov 2026).
+    var chose = true
     @State private var landed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -72,15 +74,17 @@ struct GuideMiniHome: View {
                 OrbitalWordmark(size: DS.Size.headerWordmarkCompact, showsMark: false).foregroundStyle(DS.text)
                 Spacer()
             }
-            row(title: liked.first.map { Text("Porque te gustó \($0.title)") } ?? Text("Para ti"), items: Array(liked.prefix(3)), delay: 0)
+            row(title: chose ? liked.first.map { Text("Porque te gustó \(titleName($0.title, id: $0.imdb, kind: $0.kind))") } ?? Text("Para ti") : Text("Para ti"),
+                items: Array(liked.prefix(3)), delay: 0)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s2) {
-                    Text("Nuevo en tus plataformas").recipe(.footnote, color: DS.eyebrow)
+                    (logos.isEmpty ? Text("Lo popular de ahora") : Text("Nuevo en tus plataformas")).recipe(.footnote, color: DS.eyebrow)
                     ForEach(logos.prefix(3), id: \.self) { DSPlatformLogo(url: $0).frame(maxWidth: DS.GuideScene.logo) }
                 }
                 posters(Array(more.prefix(3)), delay: 3)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)   // F: la tarjeta a todo lo ancho (ocupaba la mitad)
         .padding(DS.Space.s4)
         .dsCard(.card)
         .scaleEffect(grow && !reduceMotion ? DS.GuideScene.grow : 1)

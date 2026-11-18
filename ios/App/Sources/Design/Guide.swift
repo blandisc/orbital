@@ -191,22 +191,27 @@ struct DeviceCodeCard: View {
     let service: String
     let code: String
     let url: URL?
+    /// Con su botón «Copiar y abrir». En la guía de Trakt no: ahí es el botón principal de la página (G5-B, 18 nov 2026).
+    var showsOpen = true
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Text("Escribe este código en \(Text(verbatim: Self.site(url)).bold())").recipe(.secondary, color: DS.textMuted)
             GuideCode(code: code)
-            if let url {
-                Button("Copiar y abrir \(service)", systemImage: "arrow.up.forward.app") {
-                    UIPasteboard.general.string = code   // en el mismo aparato: allá solo se pega
-                    openURL(url)
-                }
+            if showsOpen, let url {
+                Button("Copiar y abrir \(service)", systemImage: "arrow.up.forward.app") { Self.copyAndOpen(code, url, openURL) }
                 .dsGlassButton()
             }
             DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Copia el código y abre su página (en el mismo aparato: allá solo se pega).
+    static func copyAndOpen(_ code: String, _ url: URL, _ openURL: OpenURLAction) {
+        UIPasteboard.general.string = code
+        openURL(url)
     }
 
     /// «auth.trakt.tv/activate»: la dirección sin «https://» ni la diagonal del final, como se escribe.

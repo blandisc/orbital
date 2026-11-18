@@ -45,9 +45,18 @@ struct OnboardingDone: View {
         let liked = model.candidates.filter { model.liked.contains($0.imdb) }
         let more = model.candidates.filter { !model.liked.contains($0.imdb) }
         let logos = model.platforms.filter { model.chosenPlatforms.contains($0.brand) }.compactMap(\.logo)
-        GuidePage(title: Text("Tu Orbital ya está lista."), message: Text("Te armé Inicio con lo que te gusta."),
+        // G2-B y G4-B (18 nov 2026): no promete «lo que te gusta» si no elegiste nada, y sin nube dice dónde conectarla.
+        let cloud = model.offersDebrid && !model.isConnected(.debrid)
+        let message: Text = switch (liked.isEmpty, cloud) {
+        case (false, false): Text("Te armé Inicio con lo que te gusta.")
+        case (true, false): Text("Te armé Inicio con lo popular de ahora.")
+        case (false, true): Text("Te armé Inicio con lo que te gusta. Para ver películas, conecta tu nube en Ajustes › Cuentas cuando quieras.")
+        case (true, true): Text("Te armé Inicio con lo popular de ahora. Para ver películas, conecta tu nube en Ajustes › Cuentas cuando quieras.")
+        }
+        GuidePage(title: Text("Tu Orbital ya está lista."),
+                  message: message,
                   primary: Text("Ir a Inicio"), next: go) {
-            GuideMiniHome(liked: liked.isEmpty ? Array(more.prefix(3)) : liked, more: Array(more.dropFirst(liked.isEmpty ? 3 : 0)), logos: logos, grow: grow)
+            GuideMiniHome(liked: liked.isEmpty ? Array(more.prefix(3)) : liked, more: Array(more.dropFirst(liked.isEmpty ? 3 : 0)), logos: logos, grow: grow, chose: !liked.isEmpty)
         }
         .dsFeedback(.success, trigger: grow)
     }

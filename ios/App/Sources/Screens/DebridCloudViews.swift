@@ -21,7 +21,7 @@ struct DebridCloudChooser: View {
                 Button { model.target = cloud } label: {
                     HStack(spacing: DS.Space.s3) {
                         DSCloudMark(cloud: cloud)
-                        TorrentioRowLabel(title: Text(verbatim: cloud.name), detail: Text("Conectar con tu clave · \(cloud.keyPlace)"))   // no-es-título: el nombre de la nube
+                        TorrentioRowLabel(title: Text(verbatim: cloud.name), detail: Text("Conectar con tu clave"))   // G3-B: la dirección va adentro, en su página   // no-es-título: el nombre de la nube
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }

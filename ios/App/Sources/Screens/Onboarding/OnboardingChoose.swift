@@ -23,7 +23,10 @@ struct OnboardingLikes: View {
     var body: some View {
         let model = guide.model
         let chosen = model.liked.compactMap { id in model.candidates.first { $0.imdb == id } }
-        GuidePage(title: Text("¿Qué te gusta?"), message: chosen.count >= OnboardingModel.minimumLikes ? nil : Text("Elige 3 o más y armo tu Inicio con eso."),
+        // G4-B (18 nov 2026): la instrucción se queda y dice cuánto falta; sigue sin ser obligatoria.
+        let missing = OnboardingModel.minimumLikes - chosen.count
+        GuidePage(title: Text("¿Qué te gusta?"),
+                  message: missing > 1 ? Text("Elige 3 o más y armo tu Inicio con eso. Te faltan \(String(missing)).") : missing == 1 ? Text("Elige 3 o más y armo tu Inicio con eso. Te falta 1.") : Text("Listo: armo tu Inicio con eso. Puedes elegir más."),
                   step: step, next: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 GuideOrbit(picked: chosen, needed: OnboardingModel.minimumLikes)
@@ -171,7 +174,7 @@ struct OnboardingHave: View {
 
     static func words(_ piece: OnboardingModel.Piece) -> (symbol: String, tint: Color, title: LocalizedStringKey, detail: LocalizedStringKey) {
         switch piece {
-        case .debrid: ("cloud.fill", DS.ListTint.flame, "Tu nube", "Real-Debrid, TorBox o AllDebrid: para ver aquí mismo, al instante.")   // edición: la pieza solo sale con `offersDebrid` (instantStreams)
+        case .debrid: ("cloud.fill", DS.ListTint.flame, "Tu nube", "Un servicio de pago, como una suscripción, que guarda películas y series para que empiecen al instante. Sirve Real-Debrid, TorBox o AllDebrid.")   // edición: la pieza solo sale con `offersDebrid` (instantStreams)
         case .trakt: ("checkmark.seal.fill", DS.ListTint.chart, "Trakt", "Tu avance, en todos tus aparatos. Gratis.")
         case .tv: ("tv.fill", DS.ListTint.series, "Orbital en la TV", "Tu iPhone como su control.")
         }

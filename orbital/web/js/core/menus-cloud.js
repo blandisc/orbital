@@ -190,7 +190,7 @@ export function debridChooseMenu(rd) {
     subtitle: "Para que los videos arranquen al instante, Orbital usa un servicio de pago que guarda películas y series: tu nube. Sirve cualquiera de estos tres.",
     options: [
       { heading: true, label: "Ya tengo cuenta" },
-      ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: c.name, hint: `Conectar con tu clave · ${c.key}`,
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: c.name, hint: "Conectar con tu clave", // G3-B (18 nov): la dirección va en su página
         command: { type: "rd-service", service } })),
       { heading: true, label: "Todavía no tengo" },
       ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: `Ver ${c.name}`, hint: `${c.site} · ábrelo en tu celular con un código QR`,

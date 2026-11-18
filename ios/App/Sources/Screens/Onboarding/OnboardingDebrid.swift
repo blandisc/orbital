@@ -25,8 +25,8 @@ struct OnboardingSeeHere: View {
         let model = debrid.model
         GuidePage(title: Text("Ve todo al instante, aquí"),
                   step: step,
-                  primary: model.ready ? Text("Seguir") : Text("Conectar tu nube"),
-                  secondary: model.ready ? nil : Text("Cuando quiera ver algo"),
+                  primary: model.ready ? Text("Seguir") : Text("Elegir tu nube"),   // G1-B (18 nov 2026)
+                  secondary: model.ready ? nil : Text("Ahora no, después"),
                   next: { if model.ready { next() } else { choosing = true } },
                   skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
@@ -40,7 +40,7 @@ struct OnboardingSeeHere: View {
                     }
                     .accessibilityElement()
                     .accessibilityLabel(Text("Así funciona: tocas «Ver», la nube lo tiene y lo ves"))
-                Text("Es un servicio de pago que guarda películas y series: tu nube. Sirve Real-Debrid, TorBox o AllDebrid.")
+                Text("Para ver aquí necesitas una nube: un servicio de pago que guarda películas y series. Sirve Real-Debrid, TorBox o AllDebrid.")
                     .recipe(.secondary, color: DS.textMuted)
                 if model.ready, let status = model.status {
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success,
@@ -125,6 +125,27 @@ struct DebridKeyField: View {
                     .accessibilityIdentifier("debrid-open-apitoken")
             }
         }
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }   // F: la raya de abajo, de orilla a orilla (salía una rayita suelta a la derecha)
+    }
+}
+
+/// «Sacar tu clave» y, abajo, dónde (`real-debrid.com/apitoken`): en dos renglones para que la dirección nunca se parta a
+/// media palabra (F, 18 nov 2026: salía «real- / debrid.com/apitoken»). Lo usan «Pega tu clave» y «Cambiar la clave».
+struct DebridKeyLink: View {
+    @State private var observer: ModelObserver<DebridModel>
+    init(debrid: DebridModel) { _observer = State(wrappedValue: ModelObserver(debrid)) }
+
+    var body: some View {
+        let model = observer.model
+        Link(destination: model.tokenURL) {
+            HStack(spacing: DS.Space.s3) {
+                TorrentioRowLabel(title: Text("Sacar tu clave"), detail: Text(verbatim: model.connecting.keyPlace))
+                Spacer(minLength: DS.Space.s2)
+                Image(systemName: "arrow.up.right").foregroundStyle(DS.textMuted).accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("debrid-key-link")
     }
 }
 

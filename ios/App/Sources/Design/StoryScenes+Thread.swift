@@ -24,10 +24,15 @@ struct SceneDevice: View {
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
-                label.recipe(.footnote, color: DS.textMuted)
-                Spacer(minLength: 0)
+            // En la miniatura angosta el nombre no cabe junto al ícono: antes se cortaba («i…», «iP»; recorrido de la
+            // guía, 18 nov). Si no cabe entero, queda solo el ícono y el nombre lo dice VoiceOver.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) {
+                    icon
+                    label.recipe(.footnote, color: DS.textMuted).lineLimit(1).fixedSize()
+                    Spacer(minLength: 0)
+                }
+                HStack { icon.accessibilityLabel(label); Spacer(minLength: 0) }
             }
             GeometryReader { geo in
                 Capsule().fill(DS.fill).overlay(alignment: .leading) {
@@ -39,6 +44,8 @@ struct SceneDevice: View {
         .padding(DS.Space.s3)
         .dsCard(.card)
     }
+
+    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.text) }
 }
 
 /// «Porque viste Interestelar» y tres carteles que caen en su fila, uno tras otro.

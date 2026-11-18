@@ -1150,6 +1150,12 @@ El paso donde estás sigue en el plan de la guía aunque ahí mismo conectes la 
 no regresa al principio. `OnboardingModel.plan` incluye los pasos visitados (`reached`).
 `OnboardingModelTests.testConnectingOnItsStepKeepsThePlace` lo vigila.
 
+### En las escenas de la guía nada se corta (18 nov 2026)
+
+Las miniaturas de la guía son angostas: un nombre junto a un ícono no cabe y salía «i…», «iP» en el dibujo de Trakt. Si un
+texto puede no caber, va dentro de `ViewThatFits` con una versión sin texto (solo el ícono, y el nombre para VoiceOver); nunca
+se trunca. `DesignRulesTests.testSceneDeviceNeverCutsItsName` vigila `SceneDevice`.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

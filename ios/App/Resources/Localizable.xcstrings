@@ -45378,6 +45378,160 @@
           }
         }
       }
+    },
+    "Elegir tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your cloud"
+          }
+        }
+      }
+    },
+    "Ahora no, después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now, later"
+          }
+        }
+      }
+    },
+    "Para ver aquí necesitas una nube: un servicio de pago que guarda películas y series. Sirve Real-Debrid, TorBox o AllDebrid.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch here you need a cloud: a paid service that stores movies and shows. Real-Debrid, TorBox or AllDebrid all work."
+          }
+        }
+      }
+    },
+    "Elige 3 o más y armo tu Inicio con eso. Te faltan %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick 3 or more and I'll build your Home with them. %@ to go."
+          }
+        }
+      }
+    },
+    "Listo: armo tu Inicio con eso. Puedes elegir más.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: I'll build your Home with them. You can pick more."
+          }
+        }
+      }
+    },
+    "Un servicio de pago, como una suscripción, que guarda películas y series para que empiecen al instante. Sirve Real-Debrid, TorBox o AllDebrid.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A paid service, like a subscription, that stores movies and shows so they start instantly. Real-Debrid, TorBox or AllDebrid all work."
+          }
+        }
+      }
+    },
+    "Te armé Inicio con lo popular de ahora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I built your Home with what's popular now."
+          }
+        }
+      }
+    },
+    "Copiar y abrir Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy and open Trakt"
+          }
+        }
+      }
+    },
+    "Conectar con tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect with your key"
+          }
+        }
+      }
+    },
+    "Sacar tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get your key"
+          }
+        }
+      }
+    },
+    "Lo popular de ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular right now"
+          }
+        }
+      }
+    },
+    "Te armé Inicio con lo que te gusta. Para ver películas, conecta tu nube en Ajustes › Cuentas cuando quieras.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I built your Home with what you like. To watch movies, connect your cloud in Settings › Accounts whenever you like."
+          }
+        }
+      }
+    },
+    "Te armé Inicio con lo popular de ahora. Para ver películas, conecta tu nube en Ajustes › Cuentas cuando quieras.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I built your Home with what's popular now. To watch movies, connect your cloud in Settings › Accounts whenever you like."
+          }
+        }
+      }
+    },
+    "Elige 3 o más y armo tu Inicio con eso. Te falta 1.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick 3 or more and I'll build your Home with them. 1 to go."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

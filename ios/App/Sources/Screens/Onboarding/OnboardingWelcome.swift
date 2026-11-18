@@ -63,7 +63,11 @@ struct OnboardingWelcome: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Backdrop())
         .contentShape(Rectangle())
-        .simultaneousGesture(TapGesture().onEnded { touched += 1; attract = false })
+        .simultaneousGesture(TapGesture().onEnded {
+            touched += 1; attract = false
+            // F (18 nov 2026): un toque antes de que salga «Empezar» no se pierde: el texto y el botón salen ya (parecía trabada).
+            if !showsButton { withAnimation(DS.Motion.base(reduceMotion)) { appeared = true; showsButton = true } }
+        })
         .dsFeedback(.impact(flexibility: .soft), trigger: moon)
         .task { await model.loadCandidates() }
         .task {
