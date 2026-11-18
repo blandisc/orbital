@@ -576,37 +576,6 @@ struct TitleView: View {
 
 }
 
-/// Las pestañas bajo el arte de la ficha en el iPad y la Mac (FE1/FE2-B, como la TV).
-enum WideTab: Hashable {
-    case episodes, cast, similar, details
-
-    var title: Text {
-        switch self {
-        case .episodes: Text("Episodios")
-        case .cast: Text("Reparto")
-        case .similar: Text("Parecidas")
-        case .details: Text("Detalles")
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .episodes: "list.and.film"
-        case .cast: "person.2"
-        case .similar: "square.stack"
-        case .details: "info.circle"
-        }
-    }
-
-    /// Solo las que tienen algo: Episodios en las series, Reparto y Parecidas si TMDB los trae; Detalles siempre.
-    static func available(series: Bool, extras: TitleExtras?) -> [WideTab] {
-        var tabs: [WideTab] = series ? [.episodes] : []
-        if let extras, !(extras.crew + extras.cast).isEmpty { tabs.append(.cast) }
-        if let extras, extras.collection != nil || !extras.recommendations.isEmpty { tabs.append(.similar) }
-        return tabs + [.details]
-    }
-}
-
 /// Cierra la pantalla cuando `closing` se vuelve verdadero. Aparte para que solo esta pieza lea `dismiss`, que cambia con cada
 /// movimiento de la navegación (V9).
 private struct DismissWhen: ViewModifier {
@@ -615,10 +584,4 @@ private struct DismissWhen: ViewModifier {
     func body(content: Content) -> some View {
         content.onChange(of: closing) { _, close in if close { dismiss() } }
     }
-}
-
-extension VerticalAlignment {
-    private enum BandAnchor: AlignmentID { static func defaultValue(in d: ViewDimensions) -> CGFloat { d[.top] } }
-    /// M2: la sinopsis de la banda se alinea con la orilla de arriba de «Ver».
-    static let bandAnchor = VerticalAlignment(BandAnchor.self)
 }
