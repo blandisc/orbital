@@ -1,0 +1,240 @@
+<title>Ficha ancha de Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: una columna de lectura; cada decisión, una fila de maquetas lado a lado con su código. Oscuro a propósito: la ficha es la sala. */
+:root {
+  --sala: #0b0e10; --panel: #13181b; --linea: #263036; --texto: #eef2f1; --suave: #9aa7a6;
+  --voz: #4fd1c5; --papel: #f3f1ea; --ambar: #e8a650; --rojo: #ff6b6b;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif; --cuerpo: "Inter", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--sala); color: var(--texto); font-family: var(--cuerpo); font-size: 15px; line-height: 1.55; }
+.page { max-width: 1180px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 40px); }
+h2 { font-size: 24px; }
+h3 { font-size: 17px; }
+p { margin: 0; max-width: 68ch; }
+.porque { color: var(--voz); font-size: 13px; font-weight: 600; }
+.intro { display: grid; gap: 14px; }
+.intro p { color: var(--suave); }
+.reglas { display: grid; gap: 8px; padding: 18px 20px; background: var(--panel); border: 1px solid var(--linea); border-radius: 14px; }
+.reglas li { color: var(--suave); }
+.reglas b { color: var(--texto); }
+section { display: grid; gap: 20px; }
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.opcion { display: grid; gap: 12px; align-content: start; min-width: 0; padding: 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--linea); }
+.opcion.reco { border-color: var(--voz); }
+.cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.codigo { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--voz); }
+.sello { font-size: 12px; font-weight: 600; color: var(--sala); background: var(--voz); padding: 2px 8px; border-radius: 6px; }
+.sello.ya { background: var(--linea); color: var(--suave); }
+.pro, .contra { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.pro li::marker { content: "+  "; color: var(--voz); }
+.contra li::marker { content: "–  "; color: var(--rojo); }
+.par { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.etq { font-size: 12px; color: var(--suave); }
+.reco-box { padding: 20px; border-radius: 16px; background: color-mix(in oklab, var(--voz) 10%, var(--panel)); border: 1px solid color-mix(in oklab, var(--voz) 45%, transparent); display: grid; gap: 8px; }
+.dictado { font-family: var(--display); font-size: 18px; color: var(--voz); }
+
+/* ——— Maquetas: arte dibujado con degradados; nada es una captura ——— */
+.m { position: relative; width: 100%; overflow: hidden; border-radius: 10px; background: var(--sala); border: 1px solid var(--linea); container-type: inline-size; }
+.mac { aspect-ratio: 16 / 10; }
+.uw { aspect-ratio: 21 / 9; }
+.ipv { aspect-ratio: 3 / 4; max-width: 300px; justify-self: center; }
+.iph { aspect-ratio: 4 / 3; }
+.arte { position: absolute; inset: 0; background:
+  radial-gradient(circle at 64% 30%, #d9b48a 0 6%, transparent 6.4%),
+  radial-gradient(ellipse at 64% 62%, #2f4b52 0 17%, transparent 17.5%),
+  radial-gradient(circle at 80% 38%, #b98f6a 0 4.5%, transparent 4.8%),
+  radial-gradient(ellipse at 80% 66%, #3b3b2e 0 12%, transparent 12.4%),
+  radial-gradient(circle at 47% 40%, #c49a77 0 4%, transparent 4.3%),
+  radial-gradient(ellipse at 47% 70%, #2b3a3a 0 11%, transparent 11.4%),
+  linear-gradient(160deg, #5f8a8a 0%, #2c4a50 45%, #172529 100%); }
+.arte.centro { background:
+  radial-gradient(circle at 50% 28%, #d9b48a 0 9%, transparent 9.4%),
+  radial-gradient(ellipse at 50% 60%, #2f4b52 0 24%, transparent 24.5%),
+  radial-gradient(circle at 76% 38%, #b98f6a 0 6%, transparent 6.4%),
+  radial-gradient(circle at 24% 40%, #c49a77 0 6%, transparent 6.4%),
+  linear-gradient(170deg, #5f8a8a 0%, #2c4a50 45%, #172529 100%); }
+.velo-izq { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,14,16,.92) 0%, rgba(11,14,16,.55) 38%, transparent 62%); }
+.velo-abajo { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(11,14,16,.85) 78%, var(--sala) 100%); }
+.lados { position: absolute; inset: 0; background: linear-gradient(160deg, #3f5c5e, #1d2c30); filter: blur(6px); opacity: .55; }
+.escenario { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 72%; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+/* piezas de la columna */
+.col { position: absolute; display: grid; gap: 1.2cqi; }
+.logo { height: 4.2cqi; width: 22cqi; border-radius: 1cqi; background: linear-gradient(90deg, var(--papel) 0 18%, transparent 18% 26%, var(--ambar) 26% 50%, transparent 50% 58%, var(--papel) 58% 76%, transparent 76% 84%, var(--papel) 84%); opacity: .95; }
+.datos { height: 1cqi; width: 20cqi; border-radius: 1cqi; background: var(--suave); opacity: .6; }
+.ver { height: 3.6cqi; width: 26cqi; border-radius: 1cqi; background: var(--papel); }
+.acciones { display: flex; gap: .8cqi; }
+.acciones i { display: block; width: 5.6cqi; height: 3.6cqi; border-radius: .8cqi; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); }
+.acciones.iconos i { width: 3.6cqi; border-radius: 50%; }
+.lineas { display: grid; gap: .7cqi; }
+.lineas b { display: block; height: .8cqi; border-radius: 1cqi; background: var(--texto); opacity: .55; }
+.fila { position: absolute; display: flex; gap: 1cqi; }
+.fila i { display: block; width: 12cqi; aspect-ratio: 16/9; border-radius: .8cqi; background: #26343a; }
+.titfila { position: absolute; height: 1.2cqi; width: 12cqi; border-radius: 1cqi; background: var(--texto); opacity: .7; }
+.pestanas { position: absolute; display: flex; gap: 2cqi; }
+.pestanas b { display: block; height: 1.4cqi; width: 9cqi; border-radius: 1cqi; background: var(--suave); opacity: .5; }
+.pestanas b:first-child { background: var(--texto); opacity: .9; }
+.mi { position: absolute; display: grid; gap: .8cqi; }
+.lado { position: absolute; top: 0; bottom: 0; left: 0; width: 7%; background: #11171a; border-right: 1px solid var(--linea); }
+.guia { position: absolute; top: 0; bottom: 0; border-left: 1px dashed rgba(79,209,197,.6); }
+.lista { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--suave); }
+.lista b { color: var(--texto); }
+.aviso { font-size: 14px; padding: 10px 12px; border-radius: 10px; background: color-mix(in oklab, var(--ambar) 14%, var(--panel)); border: 1px solid color-mix(in oklab, var(--ambar) 40%, transparent); }
+.acciones.con-nombre { gap: 1.4cqi; }
+.acciones.con-nombre i { position: relative; margin-bottom: 1.4cqi; }
+.acciones.con-nombre i::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); top: calc(100% + .5cqi); width: 4.4cqi; height: .7cqi; border-radius: 1cqi; background: var(--suave); opacity: .7; }
+@media (max-width: 640px) { .ipv { max-width: 100%; } }
+@media (prefers-reduced-motion: no-preference) { .opcion { transition: border-color .2s; } }
+</style>
+
+<main class="page">
+  <header class="intro">
+    <span class="porque">Para dictar con códigos · 18 nov 2026</span>
+    <h1>La ficha ancha de Orbital, replanteada</h1>
+    <p>La ficha es la «landing» de cada película o serie. En el iPhone ya funciona; en la Mac y el iPad se ha ido parchando con márgenes. Aquí van tres caminos para la Mac y dos para el iPad. Cada uno trae lo que cambia para quien la usa, lo que gana, lo que pierde y una maqueta. Al final está mi recomendación.</p>
+    <ul class="reglas">
+      <li><b>Lo que no cambia:</b> se ve como la ficha de la TV (FE2-B del 4 nov): arte a sangre, fondo de sala oscura, y abajo episodios, reparto y parecidas.</li>
+      <li><b>Lo que ya está en main desde hoy:</b> el escenario centrado en el ultrawide, el margen que crece y el «más» que solo sale si el texto se corta.</li>
+      <li><b>Encuadre del arte (todas las opciones):</b> la cara cae en la zona que el texto deja libre. Con la columna a la izquierda va a la derecha; con todo al centro, arriba del texto; con el iPad parado, al centro arriba.</li>
+      <li><b>Lo que descartaste el 4 nov y no vuelvo a proponer:</b> la ficha en panel lateral, la tarjeta grande con póster y la ventana flotante.</li>
+    </ul>
+  </header>
+
+  <!-- ——— MAC ——— -->
+  <section>
+    <div class="intro">
+      <span class="porque">Mac · ventanas de 1100 a 3440 pt</span>
+      <h2>Mac: cómo se acomoda la parte de arriba</h2>
+      <p>El problema de fondo: en una ventana ancha, una columna angosta de botones deja casi toda la pantalla para el arte, y la columna se siente «clavada a la izquierda». Las tres opciones resuelven eso de forma distinta.</p>
+    </div>
+    <div class="opciones">
+      <article class="opcion">
+        <div class="cab"><span class="codigo">M1</span><h3>Escenario con columna</h3><span class="sello ya">Lo de hoy</span></div>
+        <div class="par">
+          <div class="m mac"><div class="arte"></div><div class="velo-izq"></div><div class="velo-abajo"></div>
+            <div class="col" style="left:7%;bottom:22%"><div class="logo"></div><div class="datos"></div><div class="ver"></div><div class="acciones"><i></i><i></i><i></i><i></i></div><div class="lineas"><b style="width:26cqi"></b><b style="width:24cqi"></b></div></div>
+            <div class="titfila" style="left:7%;bottom:15%"></div><div class="fila" style="left:7%;bottom:-2%"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          <span class="etq">Mac 16:10</span>
+          <div class="m uw"><div class="lados"></div><div class="escenario"><div class="arte"></div></div><div class="velo-abajo"></div>
+            <div class="col" style="left:21%;bottom:20%"><div class="logo"></div><div class="datos"></div><div class="ver"></div><div class="acciones"><i></i><i></i><i></i><i></i></div></div></div>
+          <span class="etq">Ultrawide 21:9</span>
+        </div>
+        <p>La columna de la TV: logo, datos, «Ver», cuatro mosaicos y la sinopsis, sobre el arte.</p>
+        <ul class="pro"><li>Igual que la TV y que lo que ya probaste.</li><li>Cero trabajo extra.</li></ul>
+        <ul class="contra"><li>En pantalla grande, la mitad derecha queda solo para el arte y la columna se ve alta y angosta.</li><li>El arte ocupa siempre el 82 % de la pantalla: los tráilers o episodios nunca se asoman sin desplazar.</li><li>Si la columna crece («Continuar T2 E6», «Pedir a la nube», letra grande), sube hasta chocar con la barra de arriba.</li></ul>
+      </article>
+
+      <article class="opcion reco">
+        <div class="cab"><span class="codigo">M2</span><h3>Banda de cine a dos columnas</h3><span class="sello">Recomendada</span></div>
+        <div class="par">
+          <div class="m mac"><div class="arte"></div><div class="velo-izq" style="opacity:.6"></div><div class="velo-abajo"></div>
+            <div class="col" style="left:7%;bottom:26%"><div class="logo"></div><div class="datos"></div><div class="ver" style="background:linear-gradient(var(--papel),var(--papel)) top/100% 82% no-repeat, linear-gradient(90deg,var(--voz) 62%, #5a6466 62%) bottom/100% 18% no-repeat"></div><div class="acciones iconos con-nombre"><i></i><i></i><i></i><i></i></div></div>
+            <div class="mi" style="left:46%;bottom:27%"><div class="lineas"><b style="width:30cqi"></b><b style="width:28cqi"></b><b style="width:22cqi"></b></div><div class="datos" style="width:16cqi;margin-top:1cqi"></div></div>
+            <div class="titfila" style="left:7%;bottom:16%"></div><div class="fila" style="left:7%;bottom:1%"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          <span class="etq">Mac 16:10</span>
+          <div class="m uw"><div class="lados"></div><div class="escenario"><div class="arte"></div></div><div class="velo-abajo"></div>
+            <div class="col" style="left:21%;bottom:24%"><div class="logo"></div><div class="datos"></div><div class="ver"></div><div class="acciones iconos"><i></i><i></i><i></i><i></i></div></div>
+            <div class="mi" style="left:50%;bottom:26%"><div class="lineas"><b style="width:24cqi"></b><b style="width:22cqi"></b><b style="width:18cqi"></b></div></div></div>
+          <span class="etq">Ultrawide 21:9</span>
+        </div>
+        <p>Abajo del arte, una banda de lado a lado del escenario.</p>
+        <ul class="lista">
+          <li><b>A la izquierda, lo que se hace:</b> logo, datos, el botón grande y las acciones (A1). El botón dice «Ver», o «Continuar T2 E5 · faltan 23 min» con su barra de avance; en una serie, debajo va la lista desplegable de temporadas, como hoy.</li>
+          <li><b>A la derecha, lo que se lee:</b> la sinopsis completa, a un ancho de lectura cómodo. «Dirección · Con» se queda abajo, para no repetirlo.</li>
+          <li><b>El arte</b> baja de alto para que la primera fila se asome.</li>
+        </ul>
+        <ul class="pro"><li>La pantalla se reparte a lo ancho: ya no hay una columna clavada ni media pantalla vacía.</li><li>La parte de arriba es más baja: los tráilers o los episodios se asoman sin desplazar.</li><li>La sinopsis completa cabe en tres o cuatro renglones anchos, y el «más» casi nunca hace falta.</li></ul>
+        <ul class="contra"><li>Es el cambio más grande de los tres: un acomodo nuevo, probado en todos los tamaños.</li><li>Con una sinopsis corta, el lado derecho queda casi vacío; en ventanas angostas (menos de ~1200 pt) o con letra grande vuelve a ser una columna.</li><li>Se separa un poco de la TV (allá todo va en una columna); se anota en el registro de paridad.</li></ul>
+      </article>
+
+      <article class="opcion">
+        <div class="cab"><span class="codigo">M3</span><h3>Cartelera al centro</h3></div>
+        <div class="par">
+          <div class="m mac"><div class="arte centro"></div><div class="velo-abajo"></div>
+            <div class="col" style="left:50%;transform:translateX(-50%);bottom:20%;justify-items:center"><div class="logo"></div><div class="datos"></div><div class="ver"></div><div class="acciones iconos"><i></i><i></i><i></i><i></i></div><div class="lineas" style="justify-items:center"><b style="width:30cqi"></b><b style="width:26cqi"></b></div></div>
+            <div class="titfila" style="left:7%;bottom:9%"></div><div class="fila" style="left:7%;bottom:-6%"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          <span class="etq">Mac 16:10</span>
+          <div class="m uw"><div class="lados"></div><div class="escenario"><div class="arte centro"></div></div><div class="velo-abajo"></div>
+            <div class="col" style="left:50%;transform:translateX(-50%);bottom:16%;justify-items:center"><div class="logo"></div><div class="datos"></div><div class="ver"></div><div class="acciones iconos"><i></i><i></i><i></i><i></i></div></div></div>
+          <span class="etq">Ultrawide 21:9</span>
+        </div>
+        <p>Todo al centro, como un cartel de cine: logo, datos, «Ver» y las acciones centrados bajo el arte, con la cara arriba del texto. Va aquí porque hoy pediste «más centrado»; es la lectura más literal de eso.</p>
+        <ul class="pro"><li>Lo más simétrico y lo que más «se ve centrado».</li><li>La misma composición que el iPad parado (I1).</li></ul>
+        <ul class="contra"><li>Tapa justo el centro del arte, donde suelen estar las caras.</li><li>Los botones al centro ya se descartaron en el iPad (FE2-A, 4 nov).</li><li>Las filas de abajo siguen a la izquierda, así que la vista salta de centro a orilla.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- ——— iPad ——— -->
+  <section>
+    <div class="intro">
+      <span class="porque">iPad · parado y acostado</span>
+      <h2>iPad: dos posiciones, dos acomodos</h2>
+      <p>Acostado, el iPad se comporta como una Mac chica: sigue el acomodo de la opción de Mac que elijas (M1, M2 o M3), pero conserva los mosaicos grandes con nombre, porque se usa con el dedo. Parado, la pantalla es más alta que ancha y una columna a la izquierda deja un hueco a la derecha. La decisión es cómo se ve parado.</p>
+    </div>
+    <div class="opciones">
+      <article class="opcion reco">
+        <div class="cab"><span class="codigo">I1</span><h3>Parado: cartel centrado</h3><span class="sello">Recomendada</span></div>
+        <div class="m ipv"><div class="arte centro"></div><div class="velo-abajo"></div>
+          <div class="col" style="left:50%;transform:translateX(-50%);bottom:15%;justify-items:center;gap:2.2cqi"><div class="logo" style="height:7cqi;width:40cqi"></div><div class="datos" style="width:46cqi;height:1.8cqi"></div><div class="ver" style="width:64cqi;height:7cqi"></div><div class="acciones" style="gap:1.6cqi"><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i></div><div class="lineas" style="justify-items:center;gap:1.4cqi"><b style="width:70cqi;height:1.6cqi"></b><b style="width:62cqi;height:1.6cqi"></b></div></div>
+          <div class="pestanas" style="left:8%;bottom:4%"><b style="width:16cqi;height:2.4cqi"></b><b style="width:16cqi;height:2.4cqi"></b><b style="width:16cqi;height:2.4cqi"></b></div></div>
+        <p>Así quedó hoy: el arte arriba, con la cara al centro; abajo todo centrado (logo, datos, «Ver», los cuatro mosaicos con su nombre y la sinopsis). Falta un pulido: que las pestañas Reparto · Parecidas · Detalles arranquen en la orilla de «Ver». Hoy arrancan más a la izquierda.</p>
+        <p class="aviso">Ojo: el 4 nov descartaste los botones al centro (FE2-A). Propongo reabrirlo solo para el iPad parado. En ese momento la pantalla es alta y angosta, y la columna a la izquierda deja el hueco que hoy te molestó. Acostado sigue a la izquierda, como decidiste.</p>
+        <ul class="pro"><li>Usa todo el ancho y se ve equilibrado: nada clavado a la orilla.</li><li>Los mosaicos con nombre son fáciles de tocar con el dedo.</li></ul>
+        <ul class="contra"><li>Al girar el iPad, la columna cambia de lugar (del centro a la izquierda).</li><li>No es igual a la TV: allá todo va a la izquierda. Es distinto a propósito, porque la tele nunca está parada.</li></ul>
+      </article>
+
+      <article class="opcion">
+        <div class="cab"><span class="codigo">I2</span><h3>Parado: cartel a la izquierda</h3></div>
+        <div class="m ipv"><div class="arte"></div><div class="velo-abajo"></div>
+          <div class="col" style="left:8%;bottom:15%;gap:2.2cqi"><div class="logo" style="height:7cqi;width:40cqi"></div><div class="datos" style="width:46cqi;height:1.8cqi"></div><div class="ver" style="width:64cqi;height:7cqi"></div><div class="acciones" style="gap:1.6cqi"><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i><i style="width:15cqi;height:9cqi"></i></div><div class="lineas" style="gap:1.4cqi"><b style="width:76cqi;height:1.6cqi"></b><b style="width:66cqi;height:1.6cqi"></b></div></div>
+          <div class="pestanas" style="left:8%;bottom:4%"><b style="width:16cqi;height:2.4cqi"></b><b style="width:16cqi;height:2.4cqi"></b><b style="width:16cqi;height:2.4cqi"></b></div></div>
+        <p>Lo mismo, pero alineado a la izquierda, como la TV y como el iPad acostado.</p>
+        <ul class="pro"><li>Una sola regla para todo: la columna siempre a la izquierda.</li><li>Al girar el iPad, nada cambia de lado.</li></ul>
+        <ul class="contra"><li>Es lo que te pareció «clavado a la izquierda»: a la derecha de los botones queda un hueco.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro">
+      <span class="porque">Para cualquier opción</span>
+      <h2>Detalles que van con lo que elijas</h2>
+    </div>
+    <div class="opciones">
+      <article class="opcion">
+        <div class="cab"><span class="codigo">A1</span><h3>Acciones de la Mac: ícono con su nombre debajo</h3><span class="sello">Recomendada</span></div>
+        <div class="m mac" style="aspect-ratio: 16/5"><div class="col" style="left:8%;top:24%"><div class="ver"></div><div class="acciones iconos con-nombre"><i></i><i></i><i></i><i></i></div></div><div class="col" style="left:56%;top:24%"><div class="ver"></div><div class="acciones"><i></i><i></i><i></i><i></i></div></div></div>
+        <p>En la Mac, Guardar · Descargar · Vista · Tráiler pasan de mosaicos (a la derecha en la maqueta) a cuatro círculos con su nombre chico debajo, siempre visible (a la izquierda). No son cápsulas de texto. El nombre sigue diciendo el estado: «Guardada», «45 %», «En pausa». En el iPad se quedan los mosaicos.</p>
+        <ul class="pro"><li>La columna baja de alto y el arte respira.</li><li>Nada se esconde: se lee sin pasar el puntero, también con teclado.</li></ul>
+        <ul class="contra"><li>Es una pieza nueva del catálogo, distinta del mosaico del iPad.</li></ul>
+      </article>
+      <article class="opcion">
+        <div class="cab"><span class="codigo">A2</span><h3>Atrás y compartir en el escenario</h3><span class="sello ya">No la recomiendo</span></div>
+        <div class="m uw"><div class="lados"></div><div class="escenario"><div class="arte"></div></div><div class="guia" style="left:14%"></div><div class="guia" style="left:86%"></div>
+          <div style="position:absolute;left:15.5%;top:6%;width:3.4cqi;height:3.4cqi;border-radius:50%;background:rgba(255,255,255,.18)"></div><div style="position:absolute;right:15.5%;top:6%;width:3.4cqi;height:3.4cqi;border-radius:50%;background:rgba(255,255,255,.18)"></div></div>
+        <p>En el ultrawide, «‹» y compartir se alinean a las orillas del escenario (las líneas punteadas), no a las de la ventana: quedan cerca de lo que acompañan.</p>
+        <ul class="pro"><li>Ya no hay que cruzar la pantalla para regresar.</li></ul>
+        <ul class="contra"><li>«‹» y compartir son botones del sistema: para moverlos hay que dibujarlos a mano, y en el iPad se perdería el gesto de deslizar para regresar.</li><li>Solo cambia algo en el ultrawide; es mucho riesgo para eso.</li></ul>
+      </article>
+      <article class="opcion">
+        <div class="cab"><span class="codigo">A3</span><h3>Tráiler de fondo al quedarte</h3><span class="sello ya">No la recomiendo</span></div>
+        <p>A los pocos segundos en la ficha, el tráiler empezaría a correr en silencio detrás del texto, como en Netflix.</p>
+        <ul class="pro"><li>Da vida a la ficha.</li></ul>
+        <ul class="contra"><li>Mueve el encuadre: la cara deja de quedar donde la receta la pone.</li><li>Gasta datos y batería solo por abrir una ficha.</li><li>Compite con la reproducción: Real-Debrid no aguanta dos conexiones a la vez.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <aside class="reco-box">
+    <span class="porque">Mi recomendación</span>
+    <p class="dictado">M2 · I1 · A1</p>
+    <p>En la Mac, M2: reparte la parte de arriba a lo ancho, sin columna clavada ni hueco, y deja ver lo de abajo sin desplazar. En el iPad parado, I1, reabriendo los botones al centro solo para esa posición; acostado, el iPad sigue a M2 con sus mosaicos. En la Mac, A1, con el nombre siempre visible. A2 y A3 no, por lo que arriesgan. La TV no cambia; la diferencia de M2 entra al registro de paridad.</p>
+    <p style="color:var(--suave)">Para elegir otra cosa basta con dictar los códigos, por ejemplo «M1 · I2». Si no te late ninguna, dime qué te molesta de la que más se acerque y la ajusto.</p>
+  </aside>
+</main>
