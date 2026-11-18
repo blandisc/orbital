@@ -120,6 +120,20 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
 .nudge .grow { flex: 1; min-width: 0; }
 .nudge button { background: var(--text); color: var(--ink); border: 0; border-radius: 999px; padding: 6px 11px; font: 600 12px var(--sans); cursor: pointer; }
 .tasks { display: grid; gap: 9px; }
+.langblock { display: grid; gap: 7px; }
+.langblock .lb { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.langseg { display: flex; gap: 6px; flex-wrap: wrap; }
+.langseg button { flex: 1; min-width: 0; background: var(--raised); color: var(--text); border: 1.5px solid transparent; border-radius: 12px; padding: 9px 6px; font: 600 12.5px var(--sans); cursor: pointer; white-space: nowrap; }
+.langseg button[aria-pressed="true"] { border-color: var(--fresh); color: var(--fresh); }
+.preview { background: #0f0e17; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 12px 12px 0; }
+.pv-poster { aspect-ratio: 2/3; border-radius: 10px; }
+.pv-body { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.pv-title { font: 700 16px/1.15 var(--display); }
+.pv-kind { font-size: 11.5px; color: var(--muted); }
+.pv-line { font-size: 12.5px; color: var(--muted); }
+.pv-btn { justify-self: start; margin-top: 4px; background: var(--fresh); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: 600 12px var(--sans); }
+.pv-tabs { grid-column: 1 / -1; display: flex; justify-content: space-around; border-top: 1px solid var(--line); margin: 0 -12px; padding: 9px 0; font-size: 11.5px; color: var(--faint); }
+.pv-tabs .on { color: var(--text); font-weight: 600; }
 .lrow { display: flex; gap: 8px; align-items: center; background: var(--raised); border-radius: 14px; padding: 10px 10px 10px 12px; font-size: 14.5px; }
 .lrow .grow { flex: 1; min-width: 0; }
 .lrow .sub { display: block; color: var(--muted); font-size: 12px; }
@@ -200,7 +214,7 @@ const LANGS = {
 };
 let S;
 function reset() {
-  S = { step: "welcome", hist: [], uiLang: "es", trakt: null, picked: null, cloud: null, langs: ["latino", "original", "en"], tasks: {}, sheet: null, traktSub: null, tour: null };
+  S = { step: "welcome", hist: [], uiLang: "es", metaLang: "es", trakt: null, picked: null, cloud: null, langs: ["latino", "original", "en"], tasks: {}, sheet: null, traktSub: null, tour: null };
 }
 reset();
 let edition = "plus", device = "iphone";
@@ -218,7 +232,7 @@ function back() { if (S.sheet) { S.sheet = null; return render(); } if (S.tour) 
 
 const NOTES = {
   welcome: ["K2-B", "¿Qué es Orbital?", "Una pantalla que se mueve sola, unos 15 segundos. La promesa no nombra a Trakt (es marca de otro). En Plus y Ultra se suma «y míralo todo aquí»; en Orbital, de la tienda, nunca se menciona ver.", ["Sin «Saltar» aquí: aún no hay nada que saltar.", "Cambia la versión arriba y mira la última línea."]],
-  lang: ["Tu pedido (18 nov)", "El idioma de Orbital", "Decide en qué idioma salen los títulos, las sinopsis y la app. Es lo primero porque cambia todo lo que ves después. Arranca con el del iPhone ya marcado: casi todos solo tocan «Continuar».", ["Hoy existe en Ajustes como «Idioma de la app y de las fichas» (español o inglés).", "El idioma de lo que ves y oyes se pregunta después, en Plus."]],
+  lang: ["Tu pedido (18 nov)", "Elige tu idioma", "Dos partes con vista previa en vivo: los menús y botones, y los títulos y sinopsis de las películas y series. Arranca con el del iPhone ya marcado: casi todos solo tocan «Continuar».", ["Hoy la app tiene un solo ajuste para las dos cosas (español o inglés): separarlas y sumar portugués es trabajo nuevo.", "En qué idioma suenan se pregunta después, en Plus y Ultra."]],
   trakt: ["K1-B", "Trakt, muy recomendado", "Dice qué ganas y qué pasa si no lo conectas. «Ahora no» siempre a la vista. «Crear una» explica cómo y te deja volver al mismo punto.", ["Conectar es con un código, como hoy.", "Sin Trakt: lo tuyo se guarda solo en este teléfono."]],
   win: ["J3 · K4-B", "Tu primer logro, antes de pedir más", "Con Trakt: «Trajimos tus vistos y tu lista». Sin Trakt: un «Decide por mí» de verdad; eliges uno y queda en Mi lista.", ["Los gustos con pósters ya no existen (K5-B).", "El porqué de cada cartel enseña de dónde salen las sugerencias."]],
   cloud: ["K3-B · B2", "Para verlo aquí: tu nube", "Qué es, que se paga en su página y que es una cuenta por persona. La palabra «torrent» no sale; quien quiera el detalle toca «¿Cómo funciona?».", ["Solo en Plus y Ultra.", "«Ya tengo» abre las tres nubes; Real-Debrid conecta con código."]],
@@ -245,11 +259,28 @@ const V = {
       <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Empezar</button></div></div></div>`;
   },
   lang() {
-    const opt = (v, t, sub) => `<button class="choice ${S.uiLang === v ? "on" : ""}" data-a="ui" data-v="${v}"><span class="grow">${t}<span class="sub">${sub}</span></span><span class="tick">${S.uiLang === v ? "✓" : ""}</span></button>`;
-    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">¿En qué idioma quieres Orbital?</h2>
-      <p class="s">Así salen los títulos, las sinopsis y toda la app. Tomamos el de tu iPhone.</p></div>
-      <div class="col"><div class="list">${opt("es", "Español", "Duna, El origen, El oso")}${opt("en", "English", "Dune, Inception, The Bear")}</div>
-      <p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.</p>
+    const UI = {
+      es: { name: "Español", flag: "🇲🇽", tabs: ["Inicio", "Explorar", "Biblioteca", "Buscar"], btn: "Ver" },
+      en: { name: "English", flag: "🇺🇸", tabs: ["Home", "Explore", "Library", "Search"], btn: "Play" },
+      pt: { name: "Português", flag: "🇧🇷", tabs: ["Início", "Explorar", "Biblioteca", "Buscar"], btn: "Assistir" }
+    };
+    const META = {
+      es: { title: "Duna: Parte dos", line: "Paul Atreides se une a los Fremen para vengar a su familia.", kind: "Película · 2024 · 2 h 46 min" },
+      en: { title: "Dune: Part Two", line: "Paul Atreides unites with the Fremen to avenge his family.", kind: "Movie · 2024 · 2 h 46 min" },
+      pt: { title: "Duna: Parte Dois", line: "Paul Atreides se une aos Fremen para vingar sua família.", kind: "Filme · 2024 · 2 h 46 min" }
+    };
+    const ui = UI[S.uiLang], meta = META[S.metaLang];
+    const seg = (key, cur) => `<div class="langseg">${Object.keys(UI).map(k => `<button data-a="${key}" data-v="${k}" aria-pressed="${k === cur}">${UI[k].flag} ${UI[k].name}</button>`).join("")}</div>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">Elige tu idioma</h2>
+      <p class="s">Así se verá Orbital. Puedes tener los menús en un idioma y las películas en otro.</p>
+      <div class="langblock"><span class="lb">Los menús y botones</span>${seg("ui", S.uiLang)}</div>
+      <div class="langblock"><span class="lb">Los títulos y las sinopsis</span>${seg("meta", S.metaLang)}</div></div>
+      <div class="col"><div class="preview">
+        <div class="pv-poster" style="background:${POSTERS.dune[1]}"></div>
+        <div class="pv-body"><b class="pv-title">${meta.title}</b><span class="pv-kind">${meta.kind}</span><span class="pv-line">${meta.line}</span>
+        <span class="pv-btn">▶ ${ui.btn}</span></div>
+        <div class="pv-tabs">${ui.tabs.map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</div></div>
+      <p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.${watches() ? " En qué idioma suenan, lo eliges más adelante." : ""}</p>
       <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
   },
   trakt() {
@@ -390,6 +421,7 @@ document.addEventListener("click", e => {
   else if (a === "back") back();
   else if (a === "skipall") go("home");
   else if (a === "ui") { S.uiLang = v; render(); }
+  else if (a === "meta") { S.metaLang = v; render(); }
   else if (a === "sub") { S.traktSub = v || null; render(); }
   else if (a === "traktok") { S.trakt = true; S.traktSub = null; go("win"); }
   else if (a === "notrakt") { S.trakt = false; S.traktSub = null; go("win"); }
