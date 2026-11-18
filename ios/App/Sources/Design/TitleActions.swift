@@ -52,10 +52,37 @@ struct ActionTileLabel: View {
     /// El color del arte suele ser claro: en el modo claro se oscurece para que «Guardada» se lea sobre el papel.
     private var ink: Color { scheme == .light ? tint.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : tint }
 
+    /// A1 (Fernando, 18 nov 2026): en la Mac, círculo con el nombre debajo, siempre visible (`\.roundActionTiles`).
+    @Environment(\.roundActionTiles) private var round
+
     var body: some View {
+        if round && style == .title { roundBody } else { tileBody }
+    }
+
+    /// A1: el ícono en un círculo y el nombre chico debajo (dice el estado: «Guardada», «45 %»). Sin tarjeta: la columna baja
+    /// de alto y el arte respira. No es una cápsula de texto.
+    private var roundBody: some View {
+        let tint = ink
+        return VStack(spacing: DS.Space.s2) {
+            ZStack {
+                Circle().fill(active ? tint.opacity(DesignTokens.Opacity.track) : DS.fill)
+                Circle().strokeBorder(active ? tint.opacity(DesignTokens.Opacity.faint) : DS.hairline, lineWidth: DS.Size.hairline)
+                if let progress { DownloadRing(fraction: progress, tint: tint, lineWidth: DS.TitleAction.ringSmallLine).padding(DS.Space.s2) }
+                Image(systemName: symbol).font(iconFont)
+                    .foregroundStyle(active ? tint : DS.text)
+                    .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: active)
+            }
+            .frame(width: DS.ActionTile.round * iconScale, height: DS.ActionTile.round * iconScale)
+            names
+        }
+        .contentShape(Rectangle())
+    }
+
+    private var tileBody: some View {
         let tint = ink
         let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-        VStack(spacing: DS.ActionTile.gap) {
+        return VStack(spacing: DS.ActionTile.gap) {
             ZStack {
                 if let progress { DownloadRing(fraction: progress, tint: tint, lineWidth: DS.TitleAction.ringSmallLine) }
                 Image(systemName: symbol).font(iconFont)
@@ -111,6 +138,31 @@ struct ActionTileLabel: View {
                 .contentTransition(.numericText())
         }
     }
+}
+
+/// A1: una fila cuyos extremos tocan las orillas (el primero a la izquierda, el último a la derecha) y el aire repartido en
+/// medio; cada uno mide lo suyo.
+struct SpreadRow: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let need = sizes.reduce(0) { $0 + $1.width }
+        return CGSize(width: max(proposal.width ?? need, need), height: sizes.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let gap = subviews.count > 1 ? max(0, bounds.width - sizes.reduce(0) { $0 + $1.width }) / CGFloat(subviews.count - 1) : 0
+        var x = bounds.minX
+        for (view, size) in zip(subviews, sizes) {
+            view.place(at: CGPoint(x: x, y: bounds.minY), anchor: .topLeading, proposal: ProposedViewSize(size))
+            x += size.width + gap
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// A1: las acciones de la ficha como círculos con nombre (la Mac, con puntero); en iPhone e iPad, mosaicos para el dedo.
+    @Entry var roundActionTiles = false
 }
 
 /// La fila de tarjetas de acción: todas del mismo ancho, el que pide el nombre más largo. Si así no caben, dice que no (mide

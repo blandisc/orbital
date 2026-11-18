@@ -5,14 +5,14 @@ import OrbitalModels
 /// La ficha: sinopsis, créditos, detalles y lo de TMDB (reparto, tráileres, parecidas). Aparte de TitleView para que ninguno pase de su tope.
 extension TitleView {
     /// La sinopsis en tres renglones y, si se corta, «más» para leerla completa.
-    @ViewBuilder func synopsis(_ model: TitleModel, centered: Bool = false) -> some View {
+    @ViewBuilder func synopsis(_ model: TitleModel, centered: Bool = false, lines: Int = DS.TitleAction.synopsisLines) -> some View {
         if model.overview.isEmpty, model.isLoading {
             // Esqueleto: el lugar de la sinopsis mientras llega (antes la ficha se veía vacía la primera vez).
-            Text(verbatim: String(repeating: "placeholder ", count: 24)).recipe(.secondary).lineLimit(DS.TitleAction.synopsisLines)
+            Text(verbatim: String(repeating: "placeholder ", count: 24)).recipe(.secondary).lineLimit(lines)
                 .redacted(reason: .placeholder).accessibilityHidden(true)
         } else if !model.overview.isEmpty {
             // «más» solo si de verdad se corta (`FoldingText`), no por número de letras.
-            FoldingText(text: model.overview, lines: DS.TitleAction.synopsisLines, tint: artInk, alignment: centered ? .center : .leading,
+            FoldingText(text: model.overview, lines: lines, tint: artInk, alignment: centered ? .center : .leading,
                         identifier: "title-synopsis-more")
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         }

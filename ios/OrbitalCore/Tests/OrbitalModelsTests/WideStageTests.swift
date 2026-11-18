@@ -29,3 +29,11 @@ final class WideStageTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(s.margin, 40)
     }
 }
+
+extension WideStageTests {
+    func testPortraitRowsStartAtTheCenteredColumn() {
+        let s = WideStage(window: CGSize(width: 1032, height: 1376), heroHeight: 1100, stageAspect: 2.4, portraitBelow: 1.15,
+                          marginShare: 0.05, minMargin: 40, column: 520)
+        XCTAssertEqual(s.leading, 256, "parado, lo de abajo arranca en la orilla de la columna centrada")
+    }
+}

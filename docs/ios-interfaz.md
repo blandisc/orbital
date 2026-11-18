@@ -1082,7 +1082,19 @@ centre». La ficha del iPad y la Mac se arma así (`WideStage`, en OrbitalModels
 3. **Vertical.** Si la ventana es más alta que ancha (iPad parado), la columna va al centro con el texto centrado, sin el
    velo de la izquierda, y el arte se centra en el sujeto (`FocalPoint`).
 
-No se arregla la ficha moviendo márgenes sueltos: se cambia la receta y sus números.
+4. **Banda a dos columnas (M2, 18 nov 2026).** En una ventana acostada de 1100 pt o más (la Mac, el iPad acostado sin la
+   barra lateral), bajo el arte va una banda: a la izquierda lo que se hace (logo, datos, «Ver» o «Continuar», acciones), a
+   la derecha la sinopsis a un ancho de lectura (hasta cuatro renglones). El arte baja al 72 % para que la primera fila
+   (tráilers o episodios) se asome sin desplazar. Con letra de accesibilidad o una ventana más angosta, la columna de
+   siempre. «Dirección · Con» se queda abajo (no se repite).
+5. **Acciones de la Mac (A1).** Guardar · Descargar · Vista · Tráiler son círculos con su nombre chico debajo, siempre
+   visible (el nombre dice el estado: «Guardada», «45 %»); en iPhone e iPad, mosaicos para el dedo
+   (`\.roundActionTiles`, `ActionTileLabel.roundBody`).
+6. **Vertical (I1).** Con el iPad parado, la columna va al centro y lo de abajo (pestañas, reparto) arranca en su orilla.
+   Reabre los botones al centro (FE2-A, descartado el 4 nov) solo para esa posición; acostado sigue a la izquierda.
+
+No se arregla la ficha moviendo márgenes sueltos: se cambia la receta y sus números. Canvas de la decisión:
+`docs/producto/ficha-ancha-2026-11-18/propuesta.html`.
 
 ### «más» solo si el texto se corta (17 nov 2026)
 

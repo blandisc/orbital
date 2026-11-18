@@ -105,6 +105,12 @@ extension DesignRulesTests {
         // La ficha ancha (iPad, Mac): el margen crece con la ventana; con 40 pt fijos «Ver» quedaba clavado a la izquierda.
         XCTAssertTrue(try code("TitleView+Detalles.swift").contains("wideStage.leading"), "ficha ancha: el margen sale de la receta `WideStage`")
         XCTAssertTrue(try code("TitleView.swift").contains("StageSides(") && code("TitleView.swift").contains("StageEdges("), "ficha ancha: escenario centrado con arte a los lados")
+        // M2 · I1 · A1 (Fernando, 18 nov 2026): banda a dos columnas en ventanas anchas y acostadas (Mac, iPad acostado),
+        // con el arte más bajo; en la Mac las acciones son círculos con su nombre siempre visible.
+        let title = try code("TitleView.swift")
+        XCTAssertTrue(title.contains("if wideBand {") && title.contains("DS.TitleAction.bandHeroShare"), "M2: la banda a dos columnas con el arte más bajo")
+        XCTAssertTrue(title.contains(".environment(\\.roundActionTiles, roundTiles)") && title.contains("roundTiles: Bool { ThisDevice.isMac"), "A1: círculos con nombre solo en la Mac")
+        XCTAssertTrue(try code("TitleActions.swift").contains("private var roundBody"), "A1: la pieza del círculo vive en el catálogo")
         // «más» solo si el texto de verdad se corta: nada de contar letras.
         XCTAssertTrue(try code("TitleView+Detalles.swift").contains("FoldingText("), "la sinopsis usa `FoldingText`")
         for file in files where file.lines.joined().contains("\"más\"") || file.lines.joined().contains("\"Más\"") {

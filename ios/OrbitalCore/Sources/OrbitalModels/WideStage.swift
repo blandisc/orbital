@@ -20,18 +20,24 @@ public struct WideStage: Equatable, Sendable {
     /// Cuánto crecen la columna y el logo con un escenario grande (1 hasta `growFrom`).
     public let grow: CGFloat
 
-    /// Dónde empieza la columna y lo de abajo, desde la orilla de la ventana.
-    public var leading: CGFloat { portrait ? margin : x + margin }
+    /// El ancho de la columna centrada (vertical): lo de abajo arranca en su orilla, no en el margen de la ventana.
+    public let column: CGFloat
+    let windowWidth: CGFloat
+    /// Dónde empieza la columna y lo de abajo, desde la orilla de la ventana. Vertical: la orilla de la columna centrada (I1;
+    /// antes las pestañas arrancaban más a la izquierda que «Ver»).
+    public var leading: CGFloat { portrait ? max(margin, ((windowWidth - column) / 2).rounded()) : x + margin }
     /// Si sobra ventana a los lados (hace falta el arte difuminado).
     public var hasSides: Bool { x > 0.5 }
 
     public init(window: CGSize, heroHeight: CGFloat, stageAspect: CGFloat, portraitBelow: CGFloat, marginShare: CGFloat, minMargin: CGFloat,
-                maxMargin: CGFloat = .greatestFiniteMagnitude, growFrom: CGFloat = .greatestFiniteMagnitude, growMax: CGFloat = 1) {
+                maxMargin: CGFloat = .greatestFiniteMagnitude, growFrom: CGFloat = .greatestFiniteMagnitude, growMax: CGFloat = 1, column: CGFloat = 0) {
         let w = max(0, window.width), h = max(1, heroHeight)
+        windowWidth = w
         portrait = w / max(1, window.height) < portraitBelow
         width = min(w, (h * stageAspect).rounded())
         x = ((w - width) / 2).rounded()
         margin = min(maxMargin, max(minMargin, (width * marginShare).rounded()))
         grow = min(growMax, max(1, width / growFrom))
+        self.column = column * grow
     }
 }

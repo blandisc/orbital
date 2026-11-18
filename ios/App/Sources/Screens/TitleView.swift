@@ -222,19 +222,39 @@ struct TitleView: View {
                         .overlay { if !stage.portrait { ArtVeil(kind: .leading, strength: .deep) } }
                         .overlay { ArtVeil(kind: .bottom, at: stage.portrait ? DS.TitleAction.wideVeilFrom * 0.8 : DS.TitleAction.wideVeilFrom,
                                            until: DS.TitleAction.wideVeilSolid, strength: .deep) }
-                    VStack(alignment: stage.portrait ? .center : .leading, spacing: DS.Layout.betweenSubsections) {
-                        TitleLogo(url: model.logo, title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
-                            .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: stage.portrait ? .center : .leading)
-                        facts(model, leading: !stage.portrait)
-                        actions(model)
-                        synopsis(model, centered: stage.portrait)
+                    let column = typeSize.isAccessibilitySize ? DS.TitleAction.readableWidth : DS.TitleAction.wideColumn * stage.grow   // letra grande: más ancho, no cuatro botones apretados
+                    if wideBand {
+                        // M2: la banda de cine a dos columnas. A la izquierda lo que se hace; a la derecha lo que se lee.
+                        // La sinopsis arranca a la altura de «Ver» (`.bandAnchor`), no flota por la base.
+                        HStack(alignment: .bandAnchor, spacing: DS.TitleAction.bandGap) {
+                            VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                                TitleLogo(url: model.logo, title: name, size: .hero, grow: stage.grow)
+                                    .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: .leading)
+                                facts(model, leading: true)
+                                actions(model).alignmentGuide(.bandAnchor) { $0[.top] }
+                            }
+                            .frame(width: column, alignment: .leading)
+                            synopsis(model, lines: DS.TitleAction.bandSynopsisLines)
+                                .frame(minWidth: DS.TitleAction.bandSynopsisMin, maxWidth: DS.TitleAction.bandReading, alignment: .leading)
+                                .alignmentGuide(.bandAnchor) { $0[.top] }
+                        }
+                        .padding(.horizontal, side).padding(.bottom, DS.Layout.betweenSections)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        VStack(alignment: stage.portrait ? .center : .leading, spacing: DS.Layout.betweenSubsections) {
+                            TitleLogo(url: model.logo, title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
+                                .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: stage.portrait ? .center : .leading)
+                            facts(model, leading: !stage.portrait)
+                            actions(model)
+                            synopsis(model, centered: stage.portrait)
+                        }
+                        .frame(maxWidth: column, alignment: stage.portrait ? .center : .leading)
+                        .padding(.horizontal, stage.portrait ? DS.TitleAction.wideSide : side).padding(.bottom, DS.Layout.betweenSections)
+                        .frame(maxWidth: .infinity, alignment: stage.portrait ? .center : .leading)
                     }
-                    .frame(maxWidth: typeSize.isAccessibilitySize ? DS.TitleAction.readableWidth : DS.TitleAction.wideColumn * stage.grow, alignment: stage.portrait ? .center : .leading)   // letra grande: más ancho, no cuatro botones apretados
-                    .padding(.horizontal, side).padding(.bottom, DS.Layout.betweenSections)
-                    .frame(maxWidth: .infinity, alignment: stage.portrait ? .center : .leading)
                 }
                 // El arte sube detrás del reloj y de la barra, como en la TV.
-                .frame(height: viewport.height * DS.TitleAction.wideHeroShare + topInset)
+                .frame(height: viewport.height * wideHeroShare + topInset)
                 .padding(.top, -topInset)
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     wideSections(model)
@@ -358,10 +378,23 @@ struct TitleView: View {
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
     /// La receta de la ficha ancha para esta ventana (`WideStage`).
     var wideStage: WideStage {
-        WideStage(window: viewport, heroHeight: viewport.height * DS.TitleAction.wideHeroShare + topInset, stageAspect: DS.TitleAction.stageAspect,
+        WideStage(window: viewport, heroHeight: viewport.height * wideHeroShare + topInset, stageAspect: DS.TitleAction.stageAspect,
                   portraitBelow: DS.TitleAction.portraitBelow, marginShare: DS.TitleAction.stageMarginShare, minMargin: DS.TitleAction.wideSide,
-                  maxMargin: DS.TitleAction.stageMarginMax, growFrom: DS.TitleAction.stageGrowFrom, growMax: DS.TitleAction.stageGrowMax)
+                  maxMargin: DS.TitleAction.stageMarginMax, growFrom: DS.TitleAction.stageGrowFrom, growMax: DS.TitleAction.stageGrowMax,
+                  column: DS.TitleAction.wideColumn)
     }
+
+    /// M2: la banda a dos columnas en ventanas anchas y acostadas (Mac, iPad acostado), salvo con letra de accesibilidad.
+    /// Solo si la sinopsis cabe con su ancho mínimo junto a la columna (en ~1100–1300 pt quedaba apretada, en cuatro renglones
+    /// cortados): si no, la columna de siempre.
+    var wideBand: Bool {
+        let room = viewport.width * (1 - 2 * DS.TitleAction.stageMarginShare) - DS.TitleAction.wideColumn - DS.TitleAction.bandGap
+        return viewport.width >= DS.TitleAction.bandFrom && room >= DS.TitleAction.bandSynopsisMin
+            && viewport.width >= viewport.height * DS.TitleAction.portraitBelow && !typeSize.isAccessibilitySize
+    }
+
+    /// Lo alto del arte: más bajo con la banda, para que la primera fila se asome sin desplazar.
+    var wideHeroShare: CGFloat { wideBand ? DS.TitleAction.bandHeroShare : DS.TitleAction.wideHeroShare }
     var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
     /// En la TV y Compartir: botones de ícono en la barra de arriba (con su nombre para VoiceOver). El corazón ya no va aquí
@@ -400,7 +433,10 @@ struct TitleView: View {
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
             // Los cuatro en un renglón si sus nombres caben enteros; si no (SE con letra grande, letra de accesibilidad), 2×2.
             // Nunca se achica la letra para que quepan.
-            if typeSize.isAccessibilitySize { actionGrid(model) } else {
+            if roundTiles {
+                // A1: los círculos de orilla a orilla del botón (con `ActionTileRow` quedaban hacia adentro).
+                SpreadRow { actionTiles(model) }
+            } else if typeSize.isAccessibilitySize { actionGrid(model) } else {
                 ViewThatFits(in: .horizontal) {
                     ActionTileRow { actionTiles(model) }
                     actionGrid(model)
@@ -408,7 +444,11 @@ struct TitleView: View {
             }
         }
         .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
+        .environment(\.roundActionTiles, roundTiles)
     }
+
+    /// A1: en la Mac, las acciones son círculos con su nombre.
+    private var roundTiles: Bool { ThisDevice.isMac && !typeSize.isAccessibilitySize }
 
     private func actionGrid(_ model: TitleModel) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: 2), spacing: DS.Space.s2) { actionTiles(model) }
@@ -575,4 +615,10 @@ private struct DismissWhen: ViewModifier {
     func body(content: Content) -> some View {
         content.onChange(of: closing) { _, close in if close { dismiss() } }
     }
+}
+
+extension VerticalAlignment {
+    private enum BandAnchor: AlignmentID { static func defaultValue(in d: ViewDimensions) -> CGFloat { d[.top] } }
+    /// M2: la sinopsis de la banda se alinea con la orilla de arriba de «Ver».
+    static let bandAnchor = VerticalAlignment(BandAnchor.self)
 }

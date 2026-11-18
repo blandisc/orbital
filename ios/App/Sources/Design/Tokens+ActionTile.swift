@@ -14,6 +14,8 @@ extension DS {
             let icon: CGFloat
         }
         /// En la ficha: 8 de aire arriba y abajo, 64 de alto con un renglón (lo de antes) y 80 con el renglón del estado.
+        /// A1: el círculo de una acción de la ficha en la Mac.
+        static var round: CGFloat { DS.Mac.sized(48) }
         static let title = Metrics(pad: DS.Space.s2, minHeight: 64, icon: DS.TitleAction.ringSmall)
         /// Las teclas del control: su alto de siempre (más bajo en pantallas chicas) y 4 de aire (antes 0: con un nombre de dos
         /// renglones el ícono tocaba la orilla).
