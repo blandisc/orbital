@@ -84,6 +84,8 @@ struct OrbitalWordmark: View {
     var animated = false
     /// Sin el planeta: solo la palabra y su luna (en un iPhone angosto no cabe todo en la barra de Inicio).
     var showsMark = true
+    /// Sin la palabra: solo el planeta (la barra de la Mac en una ventana angosta, donde no cabe todo).
+    var showsWord = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var landed = false
     @State private var hops = 0
@@ -91,7 +93,8 @@ struct OrbitalWordmark: View {
     var body: some View {
         let still = !animated || reduceMotion
         HStack(alignment: .center, spacing: size * DS.Brand.markGap) {
-            if showsMark { OrbitalMark(size: size * DS.Brand.markScale, animated: animated) }
+            if showsMark || !showsWord { OrbitalMark(size: size * DS.Brand.markScale, animated: animated) }
+            if showsWord {
             HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {
                 Text(verbatim: "orbital").font(DS.Brand.wordFont(size)).tracking(size * DS.Brand.tracking)
                 // La luna, en el turquesa de la marca (como la barra de la TV y el ícono).
@@ -105,6 +108,7 @@ struct OrbitalWordmark: View {
                         SpringKeyframe(-size * DS.Brand.moon, duration: DS.Brand.drawSeconds / 3)
                         SpringKeyframe(0, duration: DS.Brand.drawSeconds / 2)
                     }
+            }
             }
         }
         .contentShape(Rectangle())

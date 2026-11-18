@@ -327,8 +327,11 @@ struct HomeView: View {
         }
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $heroSlot)
-        .overlay(alignment: .bottom) {
+        // En ventana ancha (Mac, iPad) los puntos van bajo el texto, en su misma orilla: al centro quedaban sueltos a media
+        // portada, lejos de lo que cuentan (pulida de Inicio, 17 nov 2026). En el iPhone, al centro.
+        .overlay(alignment: WindowMetrics.roomy ? .bottomLeading : .bottom) {
             PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
+                .padding(.leading, WindowMetrics.roomy ? DS.Space.gutter * (scheme == .dark ? 1 : 2) : 0)   // la orilla del texto (en claro, también la de la tarjeta)
                 .padding(.bottom, heroOverlap + DS.Space.s3)
                 .allowsHitTesting(false)   // tocar los puntos no abre la ficha
         }

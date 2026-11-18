@@ -61,7 +61,7 @@ final class MacTourTests: XCTestCase {
     }
 
     private static let sizes: [(String, CGSize)] = [
-        ("chica", CGSize(width: 420, height: 720)),
+        ("chica", CGSize(width: 560, height: 720)),
         ("mediana", CGSize(width: 960, height: 680)),
         ("grande", CGSize(width: 1440, height: 900)),
     ]
@@ -137,5 +137,17 @@ final class MacTourTests: XCTestCase {
             await tab(0)
         }
         env.applyAppearance()
+    }
+}
+
+/// Las cinco medidas de rendimiento de la Mac (`MacSelfCheck.perf`, en `Support/Perf.swift`). Xcode a veces no logra arrancar
+/// la prueba en la Mac («test runner hung»); entonces se piden a la app abierta desde Xcode con el archivo
+/// `tmp/mac-check-request` de su contenedor (ver `MacSelfCheck`).
+@MainActor
+final class MacPerformanceTests: XCTestCase {
+    func testFiveMetrics() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.isiOSAppOnMac, "solo en la Mac")
+        try? await Task.sleep(for: .seconds(8))
+        await MacSelfCheck.perf(label: "prueba")
     }
 }

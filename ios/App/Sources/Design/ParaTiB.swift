@@ -357,6 +357,7 @@ struct DecideDoor: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .macCardWidth()
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityIdentifier(id)
     }

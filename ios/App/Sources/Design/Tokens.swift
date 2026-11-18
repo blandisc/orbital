@@ -313,8 +313,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
         static let fade: Animation = .easeInOut(duration: DesignTokens.Motion.base)
-        /// El arte que respira: parejo y muy lento (16 s, como la TV), para que no se note que se mueve, solo que está vivo.
-        static let breathe: Animation = .linear(duration: 16)
         /// Lo que se va de una fila (lo que terminaste de ver) se encoge a esto mientras se desvanece.
         static let leaveScale: CGFloat = 0.85
         /// Los estantes que llegan: suben esto, cada uno este tiempo después del anterior, y a partir del quinto ya no esperan más.

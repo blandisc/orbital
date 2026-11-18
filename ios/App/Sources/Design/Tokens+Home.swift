@@ -21,13 +21,19 @@ extension DS {
                 // Acostado (iPad, Mac a pantalla completa) 1.9 dejaba la portada en casi toda la ventana y «Seguir viendo»
                 // abajo, fuera de la vista: no pasa de `maxHeightShare` del alto de la ventana (más apaisada si hace falta).
                 let base = size.height > size.width ? aspectWidePortrait : aspectWide
-                return min(aspectWideMax, max(base, size.width / (size.height * maxHeightShare)))
+                let fitted = max(base, size.width / (size.height * maxHeightShare))
+                // En la Mac no hay tope: más apaisada, el arte va a la derecha sobre su copia difuminada (`PosterView`,
+                // `sideFade`), así en un monitor ultrawide la portada no pasa de su parte del alto (antes llenaba la ventana).
+                return ProcessInfo.processInfo.isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)
             }
             return size.height < shortScreen ? aspectShort : aspect
         }
         /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
         /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
         static let maxHeightShare: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
+        /// Un arte a sangre mucho más angosto que su marco (la Mac, sobre todo un monitor ultrawide) va a la derecha y se funde
+        /// hacia la izquierda en su copia difuminada (`PosterView`): esta parte de su ancho, desde la izquierda, se funde.
+        static let sideFade: CGFloat = 0.45
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).
         static let overlap: CGFloat = 44
     }

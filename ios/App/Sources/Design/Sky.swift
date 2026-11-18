@@ -19,7 +19,7 @@ struct SkyField: View {
     /// Quieto con «Reducir movimiento» y en las pruebas de interfaz (`-demo-no-idle`: si no, la app nunca queda en reposo).
     private var still: Bool {
         #if DEBUG
-        if Demo.noIdle { return true }
+        if Demo.noIdle || MacSelfCheck.off.contains("sky") { return true }
         #endif
         return systemReduceMotion
     }

@@ -42,7 +42,8 @@ struct BleedArt<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @State private var breath: CGFloat = 1
+    /// Desde cuándo respira (nil: quieto). Ver `Breathing`.
+    @State private var breathFrom: Date?
 
     /// «Reducir movimiento» o «Reducir transparencia»: al recogerse, solo se desvanece (sin desenfoque ni estirarse).
     private var quiet: Bool { reduceMotion || reduceTransparency }
@@ -84,24 +85,57 @@ struct BleedArt<Content: View>: View {
     }
 
     private var art: some View {
-        TallArtPicker(key: tall, wide: url, tallBox: aspect.map { Double($0) < ArtFit.tallBelow } ?? false) { art, wide in
-            PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback)
-                .scaleEffect(breath)
-        }
-            .task(id: url) {
-                breath = 1
-                guard breathes, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
-                #if DEBUG
-                if Demo.noIdle { return }   // las pruebas de interfaz esperan a que la app esté quieta
-                #endif
-                try? await Task.sleep(for: .seconds(DS.TitleHero.breatheDelay))   // primero que se asiente lo que acaba de abrir
-                guard !Task.isCancelled else { return }
-                withAnimation(DS.Motion.breathe) { breath = DS.TitleHero.breatheScale }
-            }
-            // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
+        // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
+        breathing(aspect: aspect)
             .overlay(ArtVeil(at: DS.Backdrop.scrimStart))
             .overlay(alignment: .top) {
                 if !fadesTop { ArtVeil(kind: .top, at: 1).frame(height: DS.TitleHero.topVeil).allowsHitTesting(false).accessibilityHidden(true) }
+            }
+    }
+
+    private func breathing(aspect: CGFloat?) -> some View {
+        TallArtPicker(key: tall, wide: url, tallBox: aspect.map { Double($0) < ArtFit.tallBelow } ?? false) { art, wide in
+            // Respira a pasos (`Breathing`), no con `withAnimation` ni con un `TimelineView`: animado, SwiftUI volvía a calcular
+            // la pantalla en cada cuadro (165 por segundo en el monitor de la Mac) durante 16 s cada vez que volvías a Inicio, y
+            // con un `TimelineView` su reloj seguía corriendo después de terminar (~40 % de CPU con Inicio quieto; Fernando,
+            // 17 nov 2026: «muchos problemas de performance en la Mac»).
+            Breathing(from: breathFrom) {
+                PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback)
+            }
+        }
+            .task(id: url) {
+                breathFrom = nil
+                guard breathes, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+                #if DEBUG
+                if Demo.noIdle || MacSelfCheck.off.contains("breath") { return }   // las pruebas de interfaz esperan a que la app esté quieta
+                #endif
+                try? await Task.sleep(for: .seconds(DS.TitleHero.breatheDelay))   // primero que se asiente lo que acaba de abrir
+                guard !Task.isCancelled else { return }
+                breathFrom = .now
+            }
+    }
+}
+
+/// El arte que respira: se acerca a `DS.TitleHero.breatheScale` en `breatheDuration`, parejo, a pasos de `breatheFrame` (20 por
+/// segundo; cada paso mueve menos de un punto: no se nota que va a saltos) y se queda. Solo esta vista se vuelve a pintar, y
+/// al terminar ya no hay nada corriendo. Sin `from`, quieto. El acercamiento va en el render (`visualEffect`), no en el acomodo.
+struct Breathing<Content: View>: View {
+    let from: Date?
+    @ViewBuilder let content: () -> Content
+    @State private var scale: CGFloat = 1
+
+    var body: some View {
+        content()
+            .visualEffect { [scale] view, _ in view.scaleEffect(scale) }
+            .task(id: from) {
+                scale = 1
+                guard let from else { return }
+                while !Task.isCancelled {
+                    let t = min(1, max(0, Date().timeIntervalSince(from) / DS.TitleHero.breatheDuration))
+                    scale = 1 + (DS.TitleHero.breatheScale - 1) * CGFloat(t)
+                    if t >= 1 { break }
+                    try? await Task.sleep(for: .seconds(DS.TitleHero.breatheFrame))
+                }
             }
     }
 }
@@ -243,3 +277,4 @@ struct RowTile: View {
 
 // Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.dsPrimaryButton()` (vidrio con letra oscura); secundario: `.dsGlassButton()`;
 // sobre fondos lisos, `.borderedProminent` / `.bordered`. No hay estilos de botón propios (`DesignTests` lo vigila).
+

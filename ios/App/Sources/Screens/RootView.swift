@@ -506,6 +506,7 @@ struct MainTabs: View {
                 }
                 Perf.cycle("done", n)
             }
+            await MacSelfCheck.runIfRequested()   // la Mac: medidas y recorrido sin manos, si se pidieron
             #endif
         }
         #if DEBUG

@@ -280,7 +280,11 @@ private struct ChannelDrift: ViewModifier {
     @State private var start = Date()
 
     func body(content: Content) -> some View {
+        #if DEBUG
+        let on = running && visible && !MacSelfCheck.off.contains("drift")
+        #else
         let on = running && visible
+        #endif
         TimelineView(.animation(minimumInterval: DS.HomeChannels.driftFrame, paused: !on)) { context in
             content.scaleEffect(on ? Self.scale(after: context.date.timeIntervalSince(start)) : 1)
         }

@@ -62,14 +62,18 @@ struct PosterView: View {
 
     /// Llena el marco y se recorta (hacia el sujeto si el recorte es grande, `FocusedFill`); si la imagen es mucho más angosta
     /// que el marco (un póster en un lugar ancho), va completa sobre su copia difuminada: se ve el póster entero, no una tira
-    /// del medio (`ArtFit`).
+    /// del medio (`ArtFit`). A sangre (la portada de Inicio, la ficha ancha) va a la derecha y se funde hacia la izquierda en
+    /// esa copia, sin orillas duras: ahí queda el texto (Fernando, 17 nov 2026: en el monitor ultrawide salía al centro, con
+    /// dos cortes a los lados).
     private func filled(_ image: Image, source: UIImage?, key: String) -> some View {
         GeometryReader { box in
             if let size = source?.size, ArtFit.choose(image: size, box: box.size) == .whole {
-                ZStack {
+                ZStack(alignment: bleed ? .trailing : .center) {
                     image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height).clipped()
                         .blur(radius: DS.Image.wholeBlur, opaque: true).overlay(DS.scrim)
                     image.resizable().scaledToFit()
+                        .mask(LinearGradient(stops: [.init(color: bleed ? .clear : .black, location: 0), .init(color: .black, location: bleed ? DS.HomeHero.sideFade : 0)],
+                                             startPoint: .leading, endPoint: .trailing))
                 }
                 .frame(width: box.size.width, height: box.size.height)
             } else {

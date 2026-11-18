@@ -1037,6 +1037,29 @@ una letra por renglón. `DesignRulesTests+Wide.testWideRoomFollowsTheWindowNotTh
 
 `DesignRulesTests+Wide` lo cuida (`testMacHasItsOwnSizes`, `testMacTabsLiveInTheLogoRow`, `testMacRowsFillTheWindow`, `testMacGlassControlsHaveABase`) y `DesignRulesTests+MacLayout` el replanteamiento (`testMacLooksLikeTheDesktop`).
 
+### Rendimiento de la Mac y el ultrawide (17 nov 2026)
+
+Fernando: «muchos problemas de performance en la Mac… un monitor ultrawide y no funciona». Reglas:
+
+- **Nada de fondo deja corriendo el reloj de pantalla.** Una animación larga (`withAnimation` de 16 s, `repeatForever`) o un
+  `TimelineView` con calendario propio mantienen el reloj de SwiftUI a 165 Hz aunque ya terminaron: Inicio quieto gastaba
+  ~48 % de CPU. Lo largo va a pasos con una tarea que se detiene sola (`Breathing`: 20 por segundo, 16 s y fin). El cielo de
+  la Mac va a 2 cuadros por segundo (`DS.Sky.calmFrame`).
+- **Ultrawide:** la portada de Inicio no se topa a lo ancho en la Mac (56 % del alto); cuando la caja es mucho más ancha que
+  la imagen, el arte va a la derecha y se funde a la izquierda sobre su copia desenfocada (`PosterView`, `.whole`). Las
+  tarjetas a lo ancho («Decide por mí», «Porque viste…») crecen hasta `DS.Mac.cardWide` (`macCardWidth()`).
+- **La ventana más chica de la Mac es 560 pt**; abajo de 760 la barra lleva solo el planeta, sin «orbital».
+
+**Cómo medir (solo Debug, sin manos):** escribe en
+`~/Library/Containers/<contenedor>/Data/tmp/mac-check-request` una orden por renglón (`wait 10`, `perf <nombre>`, `tour`,
+`size full|W H`, `cpu <nombre>`, `off sky|breath|drift`) y corre la app desde Xcode. A los 10 s `MacSelfCheck` (en
+`Perf.swift`) la lee y deja `mac-perf-<nombre>.txt` con las cinco medidas en grande (1440×900) y ultrawide (la pantalla
+entera): CPU en reposo (10 s), cuadros perdidos y peor cuadro al desplazar Inicio, peor cuadro al abrir una ficha, peor
+cuadro al cambiar el tamaño y memoria. `tour` deja capturas de cada pantalla en cinco tamaños en `mac-tour/`. No midas
+mientras corre `sample`: detiene la app y ensucia el desplazamiento.
+
+`DesignRulesTests+MacLayout.testMacPerformanceAndWideWindows` lo vigila.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

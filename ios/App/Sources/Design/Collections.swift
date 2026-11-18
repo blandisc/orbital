@@ -220,7 +220,7 @@ struct BecauseCard<Related: View>: View {
     private var index: Int { seeds.firstIndex { $0.id == selected } ?? 0 }
     private var current: BecauseSeed? { seeds.indices.contains(index) ? seeds[index] : seeds.first }
 
-    var body: some View { bodyContent.pointerHover(.lift) }
+    var body: some View { bodyContent.pointerHover(.lift).macCardWidth() }
     @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader

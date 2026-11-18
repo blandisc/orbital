@@ -181,3 +181,278 @@ extension View {
         if HitchMeter.current === self { HitchMeter.current = nil }
     }
 }
+
+#if DEBUG
+/// Medidas y recorrido de la Mac sin manos (Fernando, 17 nov 2026: «tráeme 5 métricas de performance» y «que funcione bien en
+/// distintas resoluciones, tengo un monitor ultrawide»). La app abierta desde Xcode lo hace sola si al arrancar encuentra el
+/// archivo `tmp/mac-check-request` en su contenedor (Xcode no siempre logra arrancar `OrbitalMacTests` en la Mac). El archivo
+/// dice qué hacer, una palabra por renglón: `perf <etiqueta>` (las cinco medidas, en `tmp/mac-perf-<etiqueta>.txt`) y
+/// `tour` (una captura de cada pantalla en cinco tamaños de ventana, en `tmp/mac-tour/`). Ver `docs/ios-interfaz.md`
+/// § «Rendimiento de la Mac».
+@MainActor enum MacSelfCheck {
+    private static var tmp: URL { URL(fileURLWithPath: NSTemporaryDirectory()) }
+    private static var env: AppEnvironment { AppEnvironment.shared }
+    private static var window: UIWindow? { AppWindows.all.first(where: \.isKeyWindow) ?? AppWindows.all.first }
+
+    /// `off sky`, `off breath`, `off drift`… en el archivo de petición: apaga esa animación desde el arranque (para encontrar
+    /// qué gasta). Se lee una vez, al arrancar.
+    nonisolated static let off: Set<String> = {
+        let request = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("mac-check-request")
+        guard ProcessInfo.processInfo.isiOSAppOnMac, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
+        return Set(text.split(separator: "\n").compactMap { line in line.hasPrefix("off ") ? String(line.dropFirst(4)) : nil })
+    }()
+
+    static func runIfRequested() async {
+        _ = off
+        guard ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        let request = tmp.appendingPathComponent("mac-check-request")
+        guard let text = try? String(contentsOf: request, encoding: .utf8) else { return }
+        try? FileManager.default.removeItem(at: request)
+        try? await Task.sleep(for: .seconds(10))   // que Inicio termine de cargar
+        for line in text.split(separator: "\n") {
+            let words = line.split(separator: " ").map(String.init)
+            switch words.first {
+            case "perf": await perf(label: words.dropFirst().first ?? "medida")
+            case "tour": await tour()
+            // `size full` o `size 1440 900`: deja la ventana de ese tamaño (para medir desde fuera con `sample`).
+            case "size": resize(words.count > 2 ? CGSize(width: Double(words[1]) ?? 1440, height: Double(words[2]) ?? 900) : screenSize)
+            case "free": free()
+            case "scroll":   // desplaza Inicio abajo y arriba (6 s) y anota los cuadros perdidos
+                if let scroll = mainScroll() {
+                    let top = -scroll.adjustedContentInset.top
+                    let bottom = max(top, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)
+                    let meter = FrameMeter()
+                    meter.start { progress in
+                        let f = progress < 0.5 ? progress * 2 : (1 - progress) * 2
+                        scroll.contentOffset.y = top + (bottom - top) * f
+                    }
+                    await wait(6.3)
+                    let result = meter.stop()
+                    let line = "scroll lost \(Int(result.lostPerSecond)) worst \(Int(result.worst))\n"
+                    let out = tmp.appendingPathComponent("mac-cpu.txt")
+                    if let h = try? FileHandle(forWritingTo: out) { h.seekToEndOfFile(); h.write(Data(line.utf8)); try? h.close() } else { try? Data(line.utf8).write(to: out) }
+                }
+            case "mark": try? Data().write(to: tmp.appendingPathComponent("mac-mark-\(words.dropFirst().first ?? "x")"))
+            // `cpu <etiqueta>`: el CPU en reposo de 10 s, sin moverse de donde está. `ficha`: abre una serie y regresa.
+            case "cpu": await idleCPU(label: words.dropFirst().first ?? "cpu")
+            case "ficha":
+                env.pendingTitle = TitleRoute(kind: "series", metaID: "tt0386676", title: "", poster: nil)
+                await wait(5)
+                env.ui.goBack = true
+                await wait(3)
+            case "wait": await wait(Double(words.dropFirst().first ?? "5") ?? 5)
+            default: break
+            }
+        }
+        try? Data("listo\n".utf8).write(to: tmp.appendingPathComponent("mac-check-done"))
+    }
+
+    private static func wait(_ seconds: Double) async { try? await Task.sleep(for: .seconds(seconds)) }
+
+    /// La ventana fija a ese tamaño (en la Mac, mínimo = máximo); `free` la deja libre otra vez.
+    static func resize(_ size: CGSize) {
+        guard let limits = AppWindows.scene?.sizeRestrictions else { return }
+        limits.minimumSize = CGSize(width: min(size.width, WindowMetrics.minimum.width), height: min(size.height, WindowMetrics.minimum.height))
+        limits.maximumSize = size
+        limits.minimumSize = size
+    }
+
+    static func free() {
+        guard let limits = AppWindows.scene?.sizeRestrictions else { return }
+        limits.minimumSize = WindowMetrics.minimum
+        limits.maximumSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+    }
+
+    /// Lo más grande que cabe en la pantalla (en el ultrawide de Fernando, 3440 × 1440 a 77 %).
+    static var screenSize: CGSize {
+        let bounds = window?.screen.bounds.size ?? CGSize(width: 4400, height: 1800)
+        return CGSize(width: bounds.width, height: bounds.height - 80)
+    }
+
+    private static func cpuSeconds() -> Double {
+        var usage = rusage(); getrusage(RUSAGE_SELF, &usage)
+        return Double(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + Double(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / 1_000_000
+    }
+
+    private static func memoryMB() -> Double {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count) } }
+        return result == KERN_SUCCESS ? Double(info.phys_footprint) / 1_048_576 : -1
+    }
+
+    /// El ScrollView vertical más grande de la ventana (el de la pestaña a la vista).
+    private static func mainScroll() -> UIScrollView? {
+        var best: UIScrollView?
+        func walk(_ view: UIView) {
+            if let scroll = view as? UIScrollView, !scroll.isHidden, scroll.window != nil, scroll.alpha > 0,
+               scroll.contentSize.height > scroll.bounds.height * 1.3,
+               scroll.bounds.width * scroll.bounds.height > (best.map { $0.bounds.width * $0.bounds.height } ?? 0) { best = scroll }
+            view.subviews.forEach(walk)
+        }
+        if let window { walk(window) }
+        return best
+    }
+
+    private static func idleCPU(label: String) async {
+        let cpu0 = cpuSeconds(), t0 = CACurrentMediaTime()
+        await wait(10)
+        let line = "\(label) idle-cpu \(String(format: "%.1f", (cpuSeconds() - cpu0) / (CACurrentMediaTime() - t0) * 100))\n"
+        print("MAC-PERF " + line)
+        let out = tmp.appendingPathComponent("mac-cpu.txt")
+        if let handle = try? FileHandle(forWritingTo: out) { handle.seekToEndOfFile(); handle.write(Data(line.utf8)); try? handle.close() }
+        else { try? Data(line.utf8).write(to: out) }
+    }
+
+    /// Las cinco medidas, en una ventana grande y en una del tamaño de la pantalla:
+    ///   1. `idle-cpu`: CPU en reposo en Inicio, sin tocar nada, 10 s (% de un núcleo).
+    ///   2. `scroll-lost`: al desplazar Inicio abajo y arriba (6 s), ms de cuadros perdidos por segundo (y `scroll-worst`).
+    ///   3. `title-worst`: el cuadro más largo (ms) al abrir la ficha de una serie.
+    ///   4. `resize-worst`: el cuadro más largo (ms) al cambiar la ventana de tamaño.
+    ///   5. `memory`: la memoria de la app al final (MB, `phys_footprint`).
+    static func perf(label: String) async {
+        var lines: [String] = []
+        let out = tmp.appendingPathComponent("mac-perf-\(label).txt")
+        func record(_ size: String, _ name: String, _ value: Double) {
+            let line = "\(size) \(name) \(String(format: "%.1f", value))"
+            print("MAC-PERF " + line); lines.append(line)
+            try? Data((lines.joined(separator: "\n") + "\n").utf8).write(to: out)
+        }
+        env.ui.openTab = 0
+        await wait(2)
+        for (name, size) in [("grande", CGSize(width: 1440, height: 900)), ("ultrawide", screenSize)] {
+            let meter = FrameMeter(); meter.start()
+            resize(size)
+            await wait(3)
+            record(name, "resize-worst", meter.stop().worst)
+            await wait(3)
+
+            let cpu0 = cpuSeconds(), t0 = CACurrentMediaTime()
+            await wait(10)
+            record(name, "idle-cpu", (cpuSeconds() - cpu0) / (CACurrentMediaTime() - t0) * 100)
+
+            if let scroll = mainScroll() {
+                let top = -scroll.adjustedContentInset.top
+                let bottom = max(top, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)
+                let scrollMeter = FrameMeter()
+                scrollMeter.start { progress in
+                    let f = progress < 0.5 ? progress * 2 : (1 - progress) * 2
+                    scroll.contentOffset.y = top + (bottom - top) * f
+                }
+                await wait(6.3)
+                let result = scrollMeter.stop()
+                record(name, "scroll-lost", result.lostPerSecond)
+                record(name, "scroll-worst", result.worst)
+                scroll.contentOffset.y = top
+            } else {
+                record(name, "scroll-lost", -1)
+            }
+            await wait(2)
+
+            let titleMeter = FrameMeter(); titleMeter.start()
+            env.pendingTitle = TitleRoute(kind: "series", metaID: "tt0386676", title: "", poster: nil)
+            await wait(4)
+            record(name, "title-worst", titleMeter.stop().worst)
+            env.ui.goBack = true
+            await wait(2.5)
+        }
+        let back = FrameMeter(); back.start()
+        resize(CGSize(width: 1440, height: 900))
+        await wait(3)
+        record("regreso", "resize-worst", back.stop().worst)
+        record("final", "memory", memoryMB())
+        free()
+    }
+
+    /// Una captura de cada pantalla en cinco tamaños, de la ventana chica al ultrawide completo.
+    static func tour() async {
+        let folder = tmp.appendingPathComponent("mac-tour")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        func shot(_ name: String) {
+            guard let window else { return }
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+            try? image.pngData()?.write(to: folder.appendingPathComponent("\(name).png"))
+            print("MAC-TOUR shot \(name) \(Int(window.bounds.width))x\(Int(window.bounds.height))")
+        }
+        let full = screenSize
+        let sizes: [(String, CGSize)] = [
+            ("1-chica", CGSize(width: 560, height: 720)),
+            ("2-mediana", CGSize(width: 960, height: 680)),
+            ("3-grande", CGSize(width: 1440, height: 900)),
+            ("4-ultrawide-media", CGSize(width: full.width / 2 + 200, height: full.height)),
+            ("5-ultrawide", full),
+        ]
+        for (label, size) in sizes {
+            resize(size)
+            await wait(2)
+            for (index, name) in [(0, "inicio"), (1, "explorar"), (2, "buscar"), (3, "biblioteca")] {
+                env.ui.openTab = index
+                await wait(3)
+                shot("\(label)-\(name)")
+                // Inicio y Explorar también más abajo: dos pantallas más.
+                if index < 2, let scroll = mainScroll() {
+                    let top = -scroll.adjustedContentInset.top
+                    for page in 1...2 {
+                        scroll.contentOffset.y = min(top + scroll.bounds.height * 0.85 * CGFloat(page), scroll.contentSize.height - scroll.bounds.height)
+                        await wait(2)
+                        shot("\(label)-\(name)-\(page + 1)")
+                    }
+                    scroll.contentOffset.y = top
+                    await wait(1)
+                }
+            }
+            env.ui.openTab = 0
+            await wait(1.5)
+            env.pendingTitle = TitleRoute(kind: "movie", metaID: "tt1160419", title: "", poster: nil)
+            await wait(5)
+            shot("\(label)-ficha-pelicula")
+            env.ui.goBack = true
+            await wait(2)
+            env.pendingTitle = TitleRoute(kind: "series", metaID: "tt0386676", title: "", poster: nil)
+            await wait(5)
+            shot("\(label)-ficha-serie")
+            env.ui.goBack = true
+            await wait(2)
+            env.ui.openSettings = true
+            await wait(3)
+            shot("\(label)-ajustes")
+            env.ui.goBack = true
+            await wait(2)
+        }
+        free()
+    }
+}
+
+/// Cuenta los cuadros de la pantalla: el más largo y cuánto se atrasaron (más de cuadro y medio). `step` mueve algo en cada
+/// cuadro (de 0 a 1 en 6 s), como un dedo que desplaza.
+@MainActor final class FrameMeter: NSObject {
+    struct Result { let worst: Double; let lostPerSecond: Double }
+    private var link: CADisplayLink?, first: CFTimeInterval = 0, last: CFTimeInterval = 0
+    private var worst: CFTimeInterval = 0, lost: CFTimeInterval = 0
+    private var step: ((Double) -> Void)?
+
+    func start(step: ((Double) -> Void)? = nil) {
+        self.step = step
+        let link = CADisplayLink(target: self, selector: #selector(tick(_:)))
+        link.add(to: .main, forMode: .common)
+        self.link = link
+    }
+
+    @objc private func tick(_ link: CADisplayLink) {
+        if first == 0 { first = link.timestamp }
+        if last > 0 {
+            let gap = link.timestamp - last
+            worst = max(worst, gap)
+            lost += max(0, gap - link.duration * 1.5)
+        }
+        last = link.timestamp
+        step?(min(1, (link.timestamp - first) / 6))
+    }
+
+    func stop() -> Result {
+        link?.invalidate(); link = nil
+        let span = max(0.001, last - first)
+        return Result(worst: worst * 1000, lostPerSecond: lost * 1000 / span)
+    }
+}
+#endif

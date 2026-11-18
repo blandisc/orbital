@@ -75,4 +75,29 @@ extension DesignRulesTests {
             XCTAssertFalse(text.contains("Escribe este código en \\("), "\(file.name): el código para conectar una cuenta va en `DeviceCodeCard`")
         }
     }
+    /// Rendimiento y tamaños de la Mac (17 nov 2026: «muchos problemas de performance… un monitor ultrawide y no funciona»).
+    /// Regla en `docs/ios-interfaz.md` § «Rendimiento de la Mac».
+    func testMacPerformanceAndWideWindows() throws {
+        let files = try sources(["Design", "Screens", "Platform"])
+        func code(_ name: String) throws -> String {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        }
+        // Una animación larga de fondo no va con `withAnimation` ni `TimelineView`: dejan el reloj de pantalla de SwiftUI
+        // corriendo a 165 Hz aunque ya terminaron (Inicio quieto gastaba ~48 % de CPU). La respiración va con `Breathing`.
+        let art = try code("Art.swift")
+        XCTAssertTrue(art.contains("struct Breathing<Content: View>: View") && art.contains("Breathing(from: breathFrom)"), "la portada respira con `Breathing` (una tarea que se detiene)")
+        XCTAssertFalse(art.contains("TimelineView"), "Art.swift: sin `TimelineView` (no suelta el reloj de pantalla)")
+        XCTAssertFalse(try code("Tokens.swift").contains("static let breathe"), "sin la animación larga `DS.Motion.breathe`")
+        // El cielo en la Mac a 2 cuadros por segundo (era ~9 de 10 % de la CPU en reposo).
+        XCTAssertTrue(try code("Tokens+Sky.swift").contains("isiOSAppOnMac ? 1.0 / 2"), "el cielo de la Mac, lento")
+        // Ultrawide: la portada de Inicio sin tope de ancho en la Mac y el arte a la derecha, fundido (no un cuadro al centro).
+        XCTAssertTrue(try code("Tokens+Home.swift").contains("isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)"), "Inicio: en la Mac la portada no se topa a lo ancho")
+        XCTAssertTrue(try code("Posters.swift").contains("ZStack(alignment: bleed ? .trailing : .center)"), "arte de portada en ventana muy ancha: a la derecha, fundido")
+        // Las tarjetas a lo ancho no se estiran sin fin.
+        XCTAssertTrue(try code("ParaTiB.swift").contains(".macCardWidth()"), "«Decide por mí» con ancho máximo en la Mac")
+        XCTAssertTrue(try code("Collections.swift").contains(".macCardWidth()"), "«Porque viste…» con ancho máximo en la Mac")
+        // La ventana más chica de la Mac: 560 (a 420 la barra de arriba se salía).
+        XCTAssertTrue(try code("WindowMetrics.swift").contains("isiOSAppOnMac ? 560 : 375"), "la ventana mínima de la Mac, 560")
+    }
 }

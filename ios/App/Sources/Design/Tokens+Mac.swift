@@ -40,9 +40,10 @@ extension DS {
             }
         }
         /// La portada de Inicio en la Mac (17 nov 2026, Fernando: «se sigue viendo la imagen demasiado grande, el icono muy pequeño,
-        /// los botones muy pequeños»): a lo más esta parte del alto de la ventana (con 0.6 casi no se veía lo de abajo), y su logo
-        /// y sus botones crecen `heroScale` sobre la letra de la Mac.
-        static let heroHeightShare: CGFloat = 0.46, heroScale: CGFloat = 1.5
+        /// los botones muy pequeños»): a lo más esta parte del alto de la ventana, y su logo y sus botones crecen `heroScale` sobre
+        /// la letra de la Mac. Antes el tope de proporción (`aspectWideMax`) la dejaba en ~67 % (y en el ultrawide, más alta que
+        /// la ventana); sin él manda esta parte, con el arte a la derecha cuando hace falta (`HomeHero.sideFade`).
+        static let heroHeightShare: CGFloat = 0.56, heroScale: CGFloat = 1.5
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
         static let railWidth: CGFloat = 188
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la
@@ -68,6 +69,11 @@ extension DS {
         /// RN2: desde este ancho de ventana la cápsula de pestañas va al centro con sus nombres; más angosta, junto al logo y
         /// solo con íconos (con la letra de la Mac, las tres con nombre miden ~330 pt y se encimaban con el logo y tu foto).
         static let centeredTabsFrom: CGFloat = 980
+        /// Más angosta que esto, la barra de arriba lleva solo el planeta, sin «orbital» (`AppMark`).
+        static let markOnlyBelow: CGFloat = 760
+        /// Lo más ancho que crece una tarjeta a lo ancho («Decide por mí», «Porque viste…»): en el ultrawide se estiraban a
+        /// 3440 pt, con la flecha en la otra orilla y media tarjeta vacía (17 nov 2026). `macCardWidth()`.
+        static let cardWide: CGFloat = 1600
         /// RB2: qué parte del alto de la ventana ocupa un aviso vacío (`DSEmptyState`) en la Mac: queda al centro de lo visible.
         static let emptyShare: CGFloat = 0.72
         /// RN2: el puntito de Biblioteca (algo bajando) en la cápsula de pestañas.

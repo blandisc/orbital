@@ -37,6 +37,8 @@ extension DS {
     enum TitleHero {
         /// El arte que respira (ficha y portada de Inicio): espera esto y se acerca a esta escala (3 %, como la TV).
         static let breatheDelay: Double = 1.5, breatheScale: CGFloat = 1.03
+        /// Cuánto tarda en acercarse (16 s, parejo, como la TV) y cada cuánto da un paso (`Breathing`).
+        static let breatheDuration: Double = 16, breatheFrame: Double = 1.0 / 20
         /// El velo de arriba de la ficha (el arte llega sólido hasta arriba): cubre el reloj y la barra.
         static let topVeil: CGFloat = 150
         /// El desenfoque máximo (y desde qué progreso) y desde cuándo se desvanece el arte.
