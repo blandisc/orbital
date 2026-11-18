@@ -48,10 +48,10 @@ struct HomeView: View {
         _inbox = State(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
     }
 
-    /// Lo de arriba: «Aprende», sin internet, lo que se ve en la TV y lo que la TV te mandó. En partes: el compilador de la CI
+    /// Lo de arriba: «Termina de preparar Orbital», sin internet, lo que se ve en la TV y lo que la TV te mandó. En partes: el compilador de la CI
     /// (Xcode 26.3) no alcanzaba a revisar todo Inicio de una vez.
     @ViewBuilder private func topCards(_ model: HomeModel) -> some View {
-        HomeLearnTop()   // los círculos de «Aprende» y «Termina de preparar Orbital»
+        HomeLearnTop()   // «Termina de preparar Orbital» (las historias de «Aprende» viven solo en Ajustes desde el 18 nov)
         if model.offline {
             // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
             DegradedNotice(state: .offline) { Task { await model.refresh() } }
@@ -216,8 +216,8 @@ struct HomeView: View {
         // alto y eso mueve un poco el desplazamiento; sin margen, encoger y crecer se alternaban sin fin y el iPhone cerraba la app
         // (Fernando, 4 nov: «cuando bajas y le picas X, truenan»).
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, scrolled in
-            if !collapsed, scrolled > DS.HomeStories.collapseAt { collapsed = true }
-            else if collapsed, scrolled < DS.HomeStories.expandAt { collapsed = false }
+            if !collapsed, scrolled > DS.HomeHeaderScroll.collapseAt { collapsed = true }
+            else if collapsed, scrolled < DS.HomeHeaderScroll.expandAt { collapsed = false }
         }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
@@ -250,7 +250,7 @@ struct HomeView: View {
             await env.simpsons.prefetch()
             await SimpsonsWidgetPublisher.publishIfNeeded(env.simpsons, seasons: env.services.appSettings.simpsonsSeasons)   // el widget «Un Simpson del día»
         }
-        // El encabezado propio de Inicio (HE1-B): el logo, la cápsula y los tipos, o las historias de «Aprende» al deslizar.
+        // El encabezado propio de Inicio (HE1-B): el logo, la cápsula y los tipos (sin historias desde el 18 nov).
         .toolbar(.hidden, for: .navigationBar)
         .macTopShade()   // en la Mac, lo que sube no pasa crudo detrás del logo y las pestañas
         .safeAreaBar(edge: .top) {

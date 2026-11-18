@@ -1,0 +1,376 @@
+<title>Prototipo de la guía de Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Un aparato al centro que se toca de verdad; arriba, qué versión y qué pantalla; abajo, qué decisión está detrás de cada paso.
+   Se queda en oscuro a propósito: así se ve Orbital. */
+:root {
+  --sky: #0b0a14; --sky2: #171430; --panel: #16151f; --raised: #211f2e; --line: #2d2b3c;
+  --text: #f3f1ea; --muted: #a29fb3; --faint: #6f6c82; --fresh: #5fd6c4; --warm: #f0b35a; --ink: #111017;
+  --sans: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --display: "Space Grotesk", "Inter", -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--sky); color: var(--text); font: 15px/1.5 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 6px 0 0; max-width: 70ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { background: none; border: 0; color: var(--muted); font: 600 13px var(--sans); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--ink); }
+.seglabel { font-size: 12px; color: var(--faint); letter-spacing: .04em; }
+.restart { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 999px; padding: 7px 14px; font: 600 13px var(--sans); cursor: pointer; }
+.stage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; justify-items: center; } }
+
+/* El aparato */
+.device { width: 390px; max-width: 100%; height: 780px; border-radius: 48px; border: 10px solid #24222f; background: radial-gradient(120% 70% at 50% 0%, var(--sky2), var(--sky) 70%);
+  position: relative; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.device.ipad { width: 820px; height: 600px; border-radius: 34px; }
+.stars { position: absolute; inset: 0; pointer-events: none; opacity: .55;
+  background-image: radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 72% 9%, #fff, transparent), radial-gradient(1px 1px at 40% 62%, #fff, transparent), radial-gradient(1px 1px at 86% 44%, #fff, transparent), radial-gradient(1px 1px at 22% 84%, #fff, transparent), radial-gradient(1.5px 1.5px at 58% 30%, #cfe, transparent); }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 54px 22px 26px; gap: 14px; }
+.ipad .screen { padding: 34px 40px 28px; }
+.top { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+.back { width: 28px; height: 28px; border-radius: 50%; background: var(--raised); border: 0; color: var(--text); cursor: pointer; font-size: 15px; }
+.back[hidden] { display: none; }
+.dots { flex: 1; display: flex; gap: 6px; justify-content: center; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--fresh); width: 18px; border-radius: 3px; }
+.dots i.done { background: #3d7d74; }
+.skip { background: none; border: 0; color: var(--muted); font: 500 13px var(--sans); cursor: pointer; }
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.ipad .body.two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+.ipad .body.two > .col { display: flex; flex-direction: column; gap: 14px; }
+.t { font: 700 27px/1.12 var(--display); margin: 0; text-wrap: balance; }
+.s { color: var(--muted); margin: 0; font-size: 15px; }
+.small { color: var(--faint); font-size: 12.5px; margin: 0; }
+.actions { display: grid; gap: 9px; }
+.ipad .actions { max-width: 380px; }
+.btn { border: 0; border-radius: 999px; padding: 14px; font: 600 15px var(--sans); cursor: pointer; text-align: center; }
+.btn.p { background: var(--text); color: var(--ink); }
+.btn.g { background: var(--raised); color: var(--text); }
+.btn.q { background: none; color: var(--muted); padding: 8px; }
+.btn:focus-visible, .choice:focus-visible, .card:focus-visible { outline: 2px solid var(--fresh); outline-offset: 2px; }
+.choice { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--raised); border: 1.5px solid transparent; color: var(--text); border-radius: 16px; padding: 14px; cursor: pointer; font: 500 15px var(--sans); width: 100%; }
+.choice .sub { display: block; color: var(--muted); font-size: 13px; font-weight: 400; margin-top: 2px; }
+.choice .grow { flex: 1; min-width: 0; }
+.choice.on { border-color: var(--fresh); }
+.choice .tick { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 13px; color: var(--ink); flex: none; }
+.choice.on .tick { background: var(--fresh); border-color: var(--fresh); }
+.ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex: none; background: rgba(95,214,196,.13); color: var(--fresh); font: 700 13px var(--display); }
+.ico svg { width: 20px; height: 20px; }
+
+/* Órbita de bienvenida */
+.orbit { position: relative; height: 250px; flex: none; }
+.ipad .orbit { height: 330px; }
+.ring { position: absolute; left: 50%; top: 50%; width: 260px; height: 110px; margin: -55px 0 0 -130px; border: 1px solid rgba(95,214,196,.25); border-radius: 50%; transform: rotate(-12deg); }
+.sat { position: absolute; left: 50%; top: 50%; width: 64px; height: 96px; margin: -48px 0 0 -32px; border-radius: 9px; animation: spin 14s linear infinite; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+@keyframes spin { from { transform: rotate(0deg) translateX(118px) rotate(0deg) scale(var(--sc,1)); } to { transform: rotate(360deg) translateX(118px) rotate(-360deg) scale(var(--sc,1)); } }
+.core { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font: 700 30px var(--display); letter-spacing: -.01em; }
+.core::after { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fresh); margin-left: 3px; vertical-align: top; }
+.promise { display: grid; gap: 8px; }
+.promise div { display: flex; gap: 10px; align-items: center; font-size: 15px; opacity: 0; animation: rise .5s ease forwards; }
+.promise div b { color: var(--fresh); font-weight: 600; }
+.promise div:nth-child(2) { animation-delay: .35s; } .promise div:nth-child(3) { animation-delay: .7s; } .promise div:nth-child(4) { animation-delay: 1.05s; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Pósters */
+.poster { border-radius: 10px; position: relative; overflow: hidden; aspect-ratio: 2/3; display: flex; align-items: flex-end; padding: 8px; font: 700 12px/1.1 var(--display); color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.card { background: none; border: 0; padding: 0; cursor: pointer; display: grid; gap: 6px; text-align: left; color: var(--text); }
+.card .why { font-size: 11.5px; color: var(--muted); }
+.card.on .poster { outline: 2.5px solid var(--fresh); outline-offset: 2px; }
+.toast { background: rgba(95,214,196,.14); color: var(--fresh); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; font-weight: 600; }
+.code { font: 700 34px var(--display); letter-spacing: .12em; text-align: center; background: var(--raised); border-radius: 16px; padding: 18px; }
+.list { display: grid; gap: 8px; }
+.facts { display: grid; gap: 10px; }
+.fact { display: flex; gap: 12px; align-items: flex-start; background: var(--panel); border-radius: 14px; padding: 12px; font-size: 14px; }
+.fact .ico { width: 32px; height: 32px; }
+.fact b { display: block; }
+.fact span { color: var(--muted); font-size: 13px; }
+
+/* Reproductor y versiones */
+.player { border-radius: 14px; aspect-ratio: 16/9; background: linear-gradient(135deg, #3b2a1a, #0f0c0a 60%); position: relative; display: flex; align-items: flex-end; padding: 10px; }
+.flag { display: inline-flex; gap: 6px; align-items: center; background: rgba(0,0,0,.55); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; }
+.tip { background: var(--text); color: var(--ink); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; position: relative; }
+.tip b { display: block; margin-bottom: 2px; }
+.tip button { margin-top: 8px; background: var(--ink); color: var(--text); border: 0; border-radius: 999px; padding: 6px 12px; font: 600 12px var(--sans); cursor: pointer; }
+.ver { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; background: var(--raised); border-radius: 14px; padding: 12px; font-size: 14px; }
+.ver.best { border: 1.5px solid var(--fresh); }
+.ver .reason { grid-column: 2 / 4; color: var(--fresh); font-size: 12.5px; }
+.ver .meta { color: var(--muted); font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { background: var(--raised); border-radius: 999px; padding: 7px 12px; font-size: 13px; border: 1.5px solid transparent; cursor: pointer; color: var(--text); font-family: var(--sans); }
+.chip.on { border-color: var(--fresh); color: var(--fresh); }
+
+/* Inicio */
+.home-head { display: flex; align-items: center; gap: 10px; }
+.logo { font: 700 22px var(--display); flex: 1; }
+.logo::after { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--fresh); margin-left: 2px; vertical-align: top; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #5fd6c4, #3b5bdb); }
+.row-title { font: 600 14px var(--display); margin: 4px 0 0; }
+.row-title small { color: var(--fresh); font: 500 12px var(--sans); display: block; }
+.shelf { display: grid; grid-auto-flow: column; grid-auto-columns: 92px; gap: 8px; overflow: hidden; }
+.ipad .shelf { grid-auto-columns: 110px; }
+.nudge { display: flex; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 13px; }
+.nudge .grow { flex: 1; min-width: 0; }
+.nudge button { background: var(--text); color: var(--ink); border: 0; border-radius: 999px; padding: 6px 11px; font: 600 12px var(--sans); cursor: pointer; }
+.tasks { display: grid; gap: 9px; }
+.sheet { position: absolute; inset: auto 0 0 0; background: #1b1a26; border-radius: 26px 26px 0 0; padding: 18px 20px 26px; display: grid; gap: 12px; box-shadow: 0 -20px 50px rgba(0,0,0,.5); max-height: 86%; overflow-y: auto; }
+.ipad .sheet { left: 50%; right: auto; width: 460px; margin-left: -230px; bottom: 50%; transform: translateY(50%); border-radius: 22px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head b { font: 700 17px var(--display); }
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+
+/* Notas a la derecha */
+.notes { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.note { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 6px; }
+.note .codes { color: var(--fresh); font: 700 13px var(--display); letter-spacing: .04em; }
+.note h2 { font: 700 18px/1.2 var(--display); margin: 0; }
+.note p { margin: 0; color: var(--muted); font-size: 14px; }
+.note ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 3px; }
+.legend { font-size: 13px; color: var(--faint); }
+@media (prefers-reduced-motion: reduce) { .sat, .promise div { animation: none; opacity: 1; } }
+@media (max-width: 440px) { .device { height: 720px; border-width: 6px; border-radius: 36px; } .screen { padding: 40px 16px 20px; } .t { font-size: 24px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Prototipo de la guía de Orbital</h1>
+    <p class="lede">Se toca como la app. Arriba eliges la versión y la pantalla; a la derecha está qué decisión hay detrás de cada paso. Es para probar el orden y las palabras, no el diseño final de cada pantalla.</p>
+  </header>
+  <div class="bar">
+    <span class="seglabel">Versión</span>
+    <div class="seg" id="ed"><button data-v="orbital">Orbital</button><button data-v="plus" aria-pressed="true">Plus</button><button data-v="ultra">Ultra</button></div>
+    <span class="seglabel">Pantalla</span>
+    <div class="seg" id="dev"><button data-v="iphone" aria-pressed="true">iPhone</button><button data-v="ipad">iPad y Mac</button></div>
+    <button class="restart" id="restart">Empezar de nuevo</button>
+  </div>
+  <div class="stage">
+    <div class="device" id="device"><div class="stars"></div><div class="screen" id="screen"></div></div>
+    <aside class="notes" id="notes"></aside>
+  </div>
+</div>
+
+<script>
+const POSTERS = {
+  arrival: ["Arrival", "linear-gradient(170deg,#6b7a8f,#1f2633)"], interstellar: ["Interestelar", "linear-gradient(170deg,#c9ccd2,#3a3f48)"],
+  br2049: ["Blade Runner 2049", "linear-gradient(170deg,#e0703a,#3b1d1a)"], dune: ["Duna", "linear-gradient(170deg,#d39a55,#4a2c16)"],
+  severance: ["Severance", "linear-gradient(170deg,#e9ece9,#46644f)"], bear: ["El oso", "linear-gradient(170deg,#3f69a8,#162236)"],
+  shogun: ["Shōgun", "linear-gradient(170deg,#8b2d2d,#1b0f10)"], matrix: ["Matrix", "linear-gradient(170deg,#3f8a4f,#0d1a10)"],
+  origin: ["El origen", "linear-gradient(170deg,#4d5c74,#11151d)"], chern: ["Chernobyl", "linear-gradient(170deg,#7a8578,#232822)"]
+};
+const poster = (k, extra = "") => `<div class="poster" style="background:${POSTERS[k][1]}" ${extra}>${POSTERS[k][0]}</div>`;
+const ICON = {
+  globe: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15"/></svg>',
+  cloud: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 16a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 15.6 8 4 4 0 0 1 15 16z"/></svg>',
+  trakt: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="6" height="10" rx="1.5"/><rect x="12" y="5" width="6" height="10" rx="1.5"/><path d="M8 10h4"/></svg>',
+  card: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="5" width="15" height="10" rx="2"/><path d="M2.5 8.5h15"/></svg>',
+  bolt: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 2 4 11h5l-1 7 7-9h-5z"/></svg>',
+  user: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3.5"/><path d="M3.5 17c1.2-3 3.6-4.5 6.5-4.5s5.3 1.5 6.5 4.5"/></svg>',
+  dice: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="3"/><circle cx="7" cy="7" r="1" fill="currentColor"/><circle cx="13" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>',
+  plus: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4v12M4 10h12"/></svg>',
+  play: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 4v12l10-6z"/></svg>',
+  filter: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h14M6 10h8M8.5 15h3"/></svg>',
+  tv: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6"/></svg>'
+};
+
+let S;
+function reset() {
+  S = { step: "welcome", hist: [], uiLang: "es", trakt: null, picked: null, cloud: null, watch: "latino", tasks: {}, sheet: null, traktSub: null, tour: null };
+}
+reset();
+let edition = "plus", device = "iphone";
+const watches = () => edition !== "orbital";
+
+function plan() {
+  const p = ["welcome", "lang", "trakt", "win"];
+  if (watches()) p.push("cloud", "how");
+  p.push("tour", "home");
+  return p;
+}
+function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; render(); }
+function next() { const p = plan(); go(p[p.indexOf(S.step) + 1]); }
+function back() { if (S.sheet) { S.sheet = null; return render(); } if (S.tour) { S.tour = null; return render(); } if (S.traktSub) { S.traktSub = null; return render(); } S.step = S.hist.pop() || "welcome"; render(); }
+
+const NOTES = {
+  welcome: ["K2-B", "¿Qué es Orbital?", "Una pantalla que se mueve sola, unos 15 segundos. La promesa no nombra a Trakt (es marca de otro). En Plus y Ultra se suma «y míralo todo aquí»; en Orbital, de la tienda, nunca se menciona ver.", ["Sin «Saltar» aquí: aún no hay nada que saltar.", "Cambia la versión arriba y mira la última línea."]],
+  lang: ["Tu pedido (18 nov)", "El idioma de Orbital", "Decide en qué idioma salen los títulos, las sinopsis y la app. Es lo primero porque cambia todo lo que ves después. Arranca con el del iPhone ya marcado: casi todos solo tocan «Continuar».", ["Hoy existe en Ajustes como «Idioma de la app y de las fichas» (español o inglés).", "El idioma de lo que ves y oyes se pregunta después, en Plus."]],
+  trakt: ["K1-B", "Trakt, muy recomendado", "Dice qué ganas y qué pasa si no lo conectas. «Ahora no» siempre a la vista. «Crear una» explica cómo y te deja volver al mismo punto.", ["Conectar es con un código, como hoy.", "Sin Trakt: lo tuyo se guarda solo en este teléfono."]],
+  win: ["J3 · K4-B", "Tu primer logro, antes de pedir más", "Con Trakt: «Trajimos tus vistos y tu lista». Sin Trakt: un «Decide por mí» de verdad; eliges uno y queda en Mi lista.", ["Los gustos con pósters ya no existen (K5-B).", "El porqué de cada cartel enseña de dónde salen las sugerencias."]],
+  cloud: ["K3-B · B2", "Para verlo aquí: tu nube", "Qué es, que se paga en su página y que es una cuenta por persona. La palabra «torrent» no sale; quien quiera el detalle toca «¿Cómo funciona?».", ["Solo en Plus y Ultra.", "«Ya tengo» abre las tres nubes; Real-Debrid conecta con código."]],
+  how: ["V1-B", "¿Cómo te gusta ver?", "La pregunta que más cambia lo que vas a ver. Aquí va la explicación para quien viene de Netflix: muchas copias, cada una con sus idiomas, y Orbital elige por ti.", ["«Otro orden» abre Tus idiomas completo.", "Con esto «Ver» atina desde la primera vez."]],
+  tour: ["K4-B · V6-B · V4-B", "Lo principal, haciéndolo", "Tres acciones reales. En Plus con nube, la tercera es un «Ver» de verdad: ves la bandera de lo que va a sonar y, la primera vez en «Versión», qué es cada renglón y por qué elegimos la ✦.", ["En Orbital, la tercera es el filtro avanzado.", "Se puede seguir sin hacerlas todas."]],
+  home: ["HE1 · P2", "Inicio", "Arriba, lo que guardaste. Sin círculos de historias: «Aprende» vive solo en Ajustes. Lo que dejaste para después aparece como tarjeta con su botón, y se puede cerrar.", ["Ultra: la TV se ofrece aquí, después de aterrizar.", "Sin Trakt: la tarjeta lo vuelve a ofrecer."]]
+};
+
+function head(showBack = true) {
+  const p = plan(); const i = p.indexOf(S.step);
+  const dots = p.slice(0, -1).map((s, j) => `<i class="${j < i ? "done" : j === i ? "on" : ""}"></i>`).join("");
+  const canSkip = S.step !== "welcome" && S.step !== "home";
+  return `<div class="top"><button class="back" data-a="back" aria-label="Atrás" ${showBack && S.step !== "welcome" ? "" : "hidden"}>‹</button><div class="dots">${S.step === "home" ? "" : dots}</div>${canSkip ? '<button class="skip" data-a="skipall">Saltar guía</button>' : '<span style="width:70px"></span>'}</div>`;
+}
+
+const V = {
+  welcome() {
+    const sats = ["dune", "severance", "arrival", "bear", "br2049", "shogun"].map((k, i) =>
+      `<div class="sat" style="background:${POSTERS[k][1]};animation-delay:-${i * 14 / 6}s;--sc:${i % 2 ? .8 : 1}"></div>`).join("");
+    const lines = [["Descubre", "lo mejor para esta noche"], ["Guarda", "tus listas y lo que viste"], ["Encuentra", "lo parecido a lo que te encantó"]];
+    if (watches()) lines.push(["Y míralo", "todo aquí mismo"]);
+    return `${head()}<div class="body two"><div class="orbit"><div class="ring"></div>${sats}<div class="core">orbital</div></div>
+      <div class="col"><div class="promise">${lines.map(l => `<div><b>${l[0]}</b> ${l[1]}</div>`).join("")}</div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Empezar</button></div></div></div>`;
+  },
+  lang() {
+    const opt = (v, t, sub) => `<button class="choice ${S.uiLang === v ? "on" : ""}" data-a="ui" data-v="${v}"><span class="grow">${t}<span class="sub">${sub}</span></span><span class="tick">${S.uiLang === v ? "✓" : ""}</span></button>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">¿En qué idioma quieres Orbital?</h2>
+      <p class="s">Así salen los títulos, las sinopsis y toda la app. Tomamos el de tu iPhone.</p></div>
+      <div class="col"><div class="list">${opt("es", "Español", "Duna, El origen, El oso")}${opt("en", "English", "Dune, Inception, The Bear")}</div>
+      <p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.</p>
+      <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
+  },
+  trakt() {
+    if (S.traktSub === "code") return `${head()}<div class="body"><span class="ico">${ICON.trakt}</span><h2 class="t">Conecta tu Trakt</h2>
+      <p class="s">Abre trakt.tv/activate en cualquier aparato y escribe este código.</p><div class="code">7F3K 9QP2</div>
+      <div class="actions"><button class="btn p" data-a="traktok">Copiar y abrir Trakt</button><button class="btn q" data-a="sub" data-v="">Cancelar</button></div>
+      <p class="small">En el prototipo, el primer botón simula que ya lo aprobaste.</p></div>`;
+    if (S.traktSub === "new") return `${head()}<div class="body"><span class="ico">${ICON.user}</span><h2 class="t">Crear tu cuenta de Trakt</h2>
+      <div class="facts"><div class="fact"><span class="ico">1</span><div><b>Se crea en trakt.tv</b><span>Es gratis. Con tu correo, o con Google o Apple.</span></div></div>
+      <div class="fact"><span class="ico">2</span><div><b>Confirma tu correo</b><span>Trakt te manda un enlace.</span></div></div>
+      <div class="fact"><span class="ico">3</span><div><b>Vuelve aquí</b><span>Sigues justo donde ibas y la conectas con un código.</span></div></div></div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="sub" data-v="code">Ya la creé, conectar</button><button class="btn q" data-a="sub" data-v="">Regresar</button></div></div>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.trakt}</span><h2 class="t">Lo tuyo, en todos tus aparatos</h2>
+      <p class="s">Orbital funciona con Trakt, un servicio gratis que guarda lo que ves y tus listas. Con él te recomendamos a ti, te avisamos de estrenos y armamos tu año.</p>
+      <p class="small">Sin Trakt, lo tuyo se guarda solo en este ${device === "ipad" ? "aparato" : "iPhone"}.</p></div>
+      <div class="col"><div class="actions"><button class="btn p" data-a="sub" data-v="code">Ya tengo cuenta</button><button class="btn g" data-a="sub" data-v="new">Crear una</button><button class="btn q" data-a="notrakt">Ahora no</button></div></div></div>`;
+  },
+  win() {
+    if (S.trakt) return `${head()}<div class="body"><span class="ico">✓</span><h2 class="t">Trajimos lo tuyo</h2>
+      <p class="s">Lo que viste, tu lista y tus calificaciones ya están aquí.</p>
+      <div class="row-title"><small>Porque viste Shōgun</small>Para esta noche</div><div class="deck">${["arrival", "interstellar", "br2049"].map(k => poster(k)).join("")}</div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Continuar</button></div></div>`;
+    const cards = [["arrival", "Porque es lo más visto de la semana"], ["bear", "Corta: episodios de 30 min"], ["chern", "Calificación alta en Trakt"]];
+    return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">Decide por mí</h2>
+      <p class="s">Toca la que se te antoje y la guardamos en Mi lista.</p>
+      <div class="deck">${cards.map(c => `<button class="card ${S.picked === c[0] ? "on" : ""}" data-a="pick" data-v="${c[0]}">${poster(c[0])}<span class="why">${c[1]}</span></button>`).join("")}</div>
+      ${S.picked ? `<div class="toast">✓ ${POSTERS[S.picked][0]} quedó en Mi lista</div>` : '<button class="btn q" data-a="shuffle">Otras tres</button>'}
+      <div class="actions" style="margin-top:auto"><button class="btn ${S.picked ? "p" : "g"}" data-a="next">${S.picked ? "Continuar" : "Ahora no"}</button></div></div>`;
+  },
+  cloud() {
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.cloud}</span><h2 class="t">Para verlo aquí, conecta tu nube</h2>
+      <p class="s">Tu nube es un servicio aparte que guarda películas y series y las tiene listas para ti. Orbital la busca, elige la mejor y la reproduce.</p>
+      <div class="facts"><div class="fact"><span class="ico">${ICON.card}</span><div><b>Se paga en su página</b><span>Orbital no cobra nada.</span></div></div>
+      <div class="fact"><span class="ico">${ICON.user}</span><div><b>Una cuenta por persona</b><span>Si dos la usan a la vez, se corta.</span></div></div></div></div>
+      <div class="col"><div class="actions"><button class="btn p" data-a="sheet" data-v="clouds">Ya tengo</button><button class="btn g" data-a="sheet" data-v="how">¿Cómo funciona?</button><button class="btn q" data-a="nocloud">Ahora no</button></div>
+      ${S.cloud ? `<div class="toast">✓ ${S.cloud} conectada</div>` : ""}</div></div>`;
+  },
+  how() {
+    const opt = (v, t, sub) => `<button class="choice ${S.watch === v ? "on" : ""}" data-a="watch" data-v="${v}"><span class="grow">${t}<span class="sub">${sub}</span></span><span class="tick">${S.watch === v ? "✓" : ""}</span></button>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">¿Cómo te gusta ver?</h2>
+      <p class="s">En otras apps hay una sola copia y le cambias el audio. Aquí cada película tiene varias copias, y cada una trae sus idiomas. Dinos cómo te gusta y Orbital elige la copia y le pone subtítulos.</p></div>
+      <div class="col"><div class="list">${opt("latino", "Doblado al latino", "Y si no hay, en su idioma con subtítulos")}${opt("original", "En su idioma, con subtítulos", "Subtítulos en español solo cuando hacen falta")}${opt("castellano", "Doblado al castellano", "El de España")}</div>
+      <button class="btn q" data-a="sheet" data-v="order">Otro orden</button>
+      <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
+  },
+  tour() {
+    if (S.tour === "decide") return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">Decide por mí</h2><p class="s">Está en Inicio y en Explorar. Cada vez que no sepas qué ver, tócalo.</p>
+      <div class="deck">${["shogun", "matrix", "origin"].map(k => `<button class="card" data-a="taskdone" data-v="decide">${poster(k)}</button>`).join("")}</div><p class="small">Toca una para seguir.</p></div>`;
+    if (S.tour === "save") return `${head()}<div class="body"><span class="ico">${ICON.plus}</span><h2 class="t">Guárdala para después</h2><p class="s">El + de cualquier ficha la manda a Mi lista${S.trakt ? ", y también a tu Trakt" : ""}.</p>
+      <div style="width:46%">${poster("interstellar")}</div><div class="actions"><button class="btn p" data-a="taskdone" data-v="save">＋ Mi lista</button></div></div>`;
+    if (S.tour === "filter") return `${head()}<div class="body"><span class="ico">${ICON.filter}</span><h2 class="t">Filtro avanzado</h2><p class="s">En Buscar: género, década, duración, calificación y en qué plataforma está.</p>
+      <div class="chips">${["Comedia", "Años 90", "Menos de 2 h", "Más de 8 ★", "Netflix", "Max"].map((c, i) => `<button class="chip ${i % 2 ? "" : "on"}">${c}</button>`).join("")}</div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="filter">Ver 38 resultados</button></div></div>`;
+    if (S.tour === "play") {
+      const flag = { latino: "🇲🇽 Latino", original: "🇺🇸 Inglés · subtítulos en español", castellano: "🇪🇸 Castellano" }[S.watch];
+      return `${head()}<div class="body"><div class="player"><span class="flag">${flag}</span></div>
+      <div class="tip"><b>«Ver» ya eligió por ti</b>Va en ${flag.replace(/^\S+\s/, "").toLowerCase()}. ¿Otra? Toca la bandera.<br><button data-a="sheet" data-v="versions">Ver las versiones</button></div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="play">Listo</button></div></div>`;
+    }
+    const third = watches() && S.cloud ? ["play", ICON.play, "Dale «Ver» a una", "Arranca en tu idioma"] : ["filter", ICON.filter, "Prueba el filtro", "Encuentra algo exacto"];
+    const tasks = [["decide", ICON.dice, "Pide un «Decide por mí»", "Tres opciones con su porqué"], ["save", ICON.plus, "Guarda una en Mi lista", "Para no olvidarla"], third];
+    const done = tasks.filter(t => S.tasks[t[0]]).length;
+    return `${head()}<div class="body two"><div class="col"><h2 class="t">Prueba lo principal</h2><p class="s">Tres cosas, un toque cada una. ${done}/3</p></div>
+      <div class="col"><div class="tasks">${tasks.map(t => `<button class="choice ${S.tasks[t[0]] ? "on" : ""}" data-a="tour" data-v="${t[0]}"><span class="ico">${t[1]}</span><span class="grow">${t[2]}<span class="sub">${t[3]}</span></span><span class="tick">${S.tasks[t[0]] ? "✓" : ""}</span></button>`).join("")}</div>
+      <div class="actions"><button class="btn ${done === 3 ? "p" : "g"}" data-a="next">${done === 3 ? "Ir a Inicio" : "Seguir sin probar"}</button></div></div></div>`;
+  },
+  home() {
+    const nudges = [];
+    if (!S.trakt) nudges.push([ICON.trakt, "Guarda lo tuyo en todos tus aparatos", "Conectar Trakt"]);
+    if (watches() && !S.cloud) nudges.push([ICON.cloud, "Falta tu nube para ver aquí", "Conectar"]);
+    if (edition === "ultra") nudges.push([ICON.tv, "¿Tienes Orbital en la TV?", "Conectar"]);
+    const saved = [S.picked, S.tasks.save ? "interstellar" : null].filter(Boolean);
+    return `<div class="top"></div><div class="body"><div class="home-head"><span class="logo">orbital</span><span class="avatar" title="Ajustes (ahí vive Aprende)"></span></div>
+      ${nudges.map(n => `<div class="nudge"><span class="ico">${n[0]}</span><span class="grow">${n[1]}</span><button>${n[2]}</button></div>`).join("")}
+      ${saved.length ? `<div class="row-title"><small>Lo que guardaste</small>Mi lista</div><div class="shelf">${saved.map(k => poster(k)).join("")}</div>` : ""}
+      <div class="row-title"><small>${S.trakt ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</div>
+      <div class="shelf">${["br2049", "dune", "arrival", "matrix", "origin"].map(k => poster(k)).join("")}</div>
+      <div class="row-title"><small>En tus plataformas</small>Nuevo esta semana</div>
+      <div class="shelf">${["severance", "bear", "shogun", "chern", "interstellar"].map(k => poster(k)).join("")}</div></div>`;
+  }
+};
+
+const SHEETS = {
+  clouds: () => `<div class="sheet-head"><b>Tu nube</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <p class="s">¿Cuál tienes?</p><div class="list">${[["Real-Debrid", "Con un código"], ["TorBox", "Con tu clave"], ["AllDebrid", "Con tu clave"]].map(c =>
+      `<button class="choice" data-a="cloudok" data-v="${c[0]}"><span class="ico">${ICON.cloud}</span><span class="grow">${c[0]}<span class="sub">${c[1]}</span></span><span>›</span></button>`).join("")}</div>
+    <p class="small">¿Aún no tienes? Se contrata en su página. Cuando tengas tu cuenta, vuelve aquí.</p>`,
+  how: () => `<div class="sheet-head"><b>¿Cómo funciona?</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <div class="facts"><div class="fact"><span class="ico">${ICON.cloud}</span><div><b>Tu nube guarda las películas</b><span>En sus servidores. Lo que ya tiene arranca al instante; lo que no, se lo pides y lo baja en minutos.</span></div></div>
+    <div class="fact"><span class="ico">${ICON.bolt}</span><div><b>Orbital busca en toda la red</b><span>Encuentra varias copias de lo que quieres ver y le pide a tu nube la mejor para ti.</span></div></div>
+    <div class="fact"><span class="ico">${ICON.card}</span><div><b>Hay tres, y hacen lo mismo</b><span>Real-Debrid, TorBox y AllDebrid. Cada una se paga en su página.</span></div></div></div>
+    <p class="small">Lo técnico (cómo viajan los archivos) vive en Ajustes › Aprende.</p>`,
+  order: () => `<div class="sheet-head"><b>Tus idiomas</b><button class="btn q" data-a="sheet" data-v="">Listo</button></div>
+    <p class="s">El de arriba es el que quieres. Arrastra para ordenar.</p><div class="list">${["Español latino", "Idioma original", "Inglés", "Castellano"].map((l, i) =>
+      `<div class="choice"><span class="ico">${i + 1}</span><span class="grow">${l}</span><span style="color:var(--faint)">≡</span></div>`).join("")}</div>`,
+  versions: () => `<div class="sheet-head"><b>Versión</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <p class="s">Cada renglón es otra copia de la película, con sus idiomas. La ✦ es la que elegimos para ti.</p>
+    <div class="ver best"><span>✦</span><span>${{ latino: "🇲🇽 Latino", original: "🇺🇸 Inglés + subtítulos", castellano: "🇪🇸 Castellano" }[S.watch]} · 1080p</span><span class="meta">⚡</span><span class="reason">${S.watch === "latino" ? "Latino comprobado" : "Tu idioma"} · lista al instante</span></div>
+    <div class="ver"><span></span><span>🇺🇸 Inglés · 4K</span><span class="meta">⚡</span><span class="reason" style="color:var(--muted)">Mejor imagen, pesa más</span></div>
+    <div class="ver"><span></span><span>🇪🇸 Castellano · 1080p</span><span class="meta">Pedir</span><span class="reason" style="color:var(--muted)">Hay que pedirla: unos minutos</span></div>`
+};
+
+function render() {
+  const el = document.getElementById("screen");
+  let html = V[S.step]();
+  if (S.sheet) html += `<div class="scrim" data-a="sheet" data-v=""></div><div class="sheet">${SHEETS[S.sheet]()}</div>`;
+  el.innerHTML = html;
+  const n = NOTES[S.step];
+  document.getElementById("notes").innerHTML = `<div class="note"><span class="codes">${n[0]}</span><h2>${n[1]}</h2><p>${n[2]}</p><ul>${n[3].map(x => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="note"><span class="codes">El recorrido en ${{ orbital: "Orbital", plus: "Plus", ultra: "Ultra" }[edition]}</span><p>${plan().map(s => s === S.step ? `<b style="color:var(--text)">${NOTES[s][1]}</b>` : NOTES[s][1]).join(" → ")}</p></div>
+    <p class="legend">Lo que no está aquí y se enseña en su momento: la primera vez en Buscar (filtros), en los subtítulos del reproductor (desfase), cuando algo no está en tu idioma (aviso al arrancar), y todas las historias en Ajustes › Aprende.</p>`;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-a]"); if (!t) return;
+  const a = t.dataset.a, v = t.dataset.v;
+  if (a === "next") next();
+  else if (a === "back") back();
+  else if (a === "skipall") go("home");
+  else if (a === "ui") { S.uiLang = v; render(); }
+  else if (a === "sub") { S.traktSub = v || null; render(); }
+  else if (a === "traktok") { S.trakt = true; S.traktSub = null; go("win"); }
+  else if (a === "notrakt") { S.trakt = false; S.traktSub = null; go("win"); }
+  else if (a === "pick") { S.picked = v; S.tasks.decide = true; render(); }
+  else if (a === "shuffle") { render(); }
+  else if (a === "sheet") { S.sheet = v || null; render(); }
+  else if (a === "cloudok") { S.cloud = v; S.sheet = null; render(); }
+  else if (a === "nocloud") { S.cloud = null; next(); }
+  else if (a === "watch") { S.watch = v; render(); }
+  else if (a === "tour") { S.tour = v; render(); }
+  else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; render(); }
+});
+function seg(id, cb) {
+  document.getElementById(id).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...e.currentTarget.children].forEach(x => x.setAttribute("aria-pressed", x === b)); cb(b.dataset.v);
+  });
+}
+seg("ed", v => { edition = v; reset(); render(); });
+seg("dev", v => { device = v; document.getElementById("device").classList.toggle("ipad", v === "ipad"); render(); });
+document.getElementById("restart").addEventListener("click", () => { reset(); render(); });
+render();
+</script>

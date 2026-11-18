@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalModels
 
 /// Ajustes › Aprende (G3): todas las historias por tema (el punto de «nuevo» en las que no has visto), ver la guía otra vez,
-/// «Volver a ver los avisos» (los avisos sobre la pantalla y los círculos de Inicio, desde cero) y, con tu TV, lo que se puede
+/// «Volver a ver los avisos» (los avisos sobre la pantalla, desde cero) y, con tu TV, lo que se puede
 /// hacer con ella. Una sola entrada en Ajustes (revisión del 11 nov: antes eran cuatro casi iguales).
 struct LearnView: View {
     /// «Qué puedes hacer con la TV» (el recorrido de la TV), solo con tu Orbital prendida en Ajustes.
@@ -63,7 +63,7 @@ struct LearnView: View {
                     SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
                 }
                 .accessibilityIdentifier("learn-reset")
-            } footer: { Text("Los avisos sobre la pantalla y los círculos de Inicio vuelven a salir, uno a la vez.") }
+            } footer: { Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez.") }
             .listRowBackground(DS.surface)
         }
         .scrollContentBackground(.hidden).background(Backdrop())

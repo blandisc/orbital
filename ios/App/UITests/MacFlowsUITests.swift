@@ -153,10 +153,8 @@ final class MacFlowsUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["mac-tabs"].firstMatch.waitForExistence(timeout: 15), "«Saltar» no llevó a la app")
         shot("guia-saltada")
         // ⌘, no se usa aquí: en el iPad (simulador, iPadOS 27) abre los Ajustes del sistema, no los de Orbital (hallazgo de
-        // la tercera vuelta). Se llega como con el dedo: con historias nuevas tu foto abre su renglón y ahí está tu perfil (EH1).
+        // la tercera vuelta). Se llega como con el dedo: tu foto abre Ajustes (sin historias en Inicio desde el 18 nov).
         let learn = app.buttons["settings-learn"].firstMatch
-        let ring = app.buttons["home-stories-ring"].firstMatch
-        if ring.waitForExistence(timeout: 5) { ring.tap(); sleep(1) }
         let profile = app.buttons["Ajustes"].firstMatch
         XCTAssertTrue(profile.waitForExistence(timeout: 8), "sin camino a Ajustes desde Inicio")
         shot("camino-a-ajustes")

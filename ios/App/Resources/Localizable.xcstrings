@@ -3542,13 +3542,13 @@
         }
       }
     },
-    "Los avisos sobre la pantalla y los círculos de Inicio vuelven a salir, uno a la vez.": {
+    "Los avisos sobre la pantalla vuelven a salir, uno a la vez.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The on-screen tips and the circles on Home show up again, one at a time."
+            "value": "The on-screen tips show up again, one at a time."
           }
         }
       }

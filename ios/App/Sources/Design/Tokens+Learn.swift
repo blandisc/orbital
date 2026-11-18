@@ -71,8 +71,6 @@ extension DS {
         static let cubeAngle: Double = 90, cubePerspective: CGFloat = 0.6   // ds-exception: grados y profundidad del cubo (como Instagram)
         /// Bajar más que esto la cierra.
         static let closeDrag: CGFloat = 120
-        /// El círculo de Inicio: su anillo y el cuadro de adentro.
-        static let ring: CGFloat = 64, ringStroke: CGFloat = 2.5, tile: CGFloat = 52
     }
 
     /// Los avisos sobre la pantalla (F3).
@@ -147,19 +145,7 @@ extension DS {
         static let narrowScreen: CGFloat = 390
     }
 
-    enum HomeStories {
-        /// El círculo encogido al bajar (el normal es `DS.Story.ring`).
-        static let compactRing: CGFloat = 40, compactTile: CGFloat = 32
-        /// HH3: el círculo de historia dentro de la cápsula, del alto de tu foto.
-        static let capsuleRing: CGFloat = 28, capsuleTile: CGFloat = 22
-        /// HH2: cuánto crece tu foto al latir una vez.
-        static let pulse: CGFloat = 1.12   // ds-exception: escala, no un tamaño
-        /// HH2: cuánto espera para latir al llegar, y cuánto dura crecida.
-        static let pulseDelay: Duration = .milliseconds(600), pulseHold: Duration = .milliseconds(250)
-        /// Deslizar más de esta fracción del ancho (o rápido) abre o cierra.
-        static let commit: CGFloat = 0.28   // ds-exception: fracción del ancho, no un espacio
-        /// Lo que sale se aleja un poco y se apaga, para que se lea la profundidad (no se va entero de golpe).
-        static let away: CGFloat = 0.35   // ds-exception: fracción del ancho del encabezado
+    enum HomeHeaderScroll {
         /// Cuánto hay que bajar para que el encabezado se encoja, y hasta dónde hay que subir para que vuelva a crecer: el margen
         /// es más grande que lo que cambia de alto el encabezado, así nunca rebota entre los dos.
         static let collapseAt: CGFloat = 96, expandAt: CGFloat = 16

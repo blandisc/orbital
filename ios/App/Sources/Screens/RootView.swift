@@ -102,7 +102,7 @@ struct RootView: View {
         content.fullScreenCover(isPresented: showingGuide) { OnboardingView { ui.showingGuide = false }.environment(env) }
     }
 
-    /// Una historia de «Aprende Orbital» (G3): desde los círculos de Inicio, Ajustes o «Ver la historia» de un aviso.
+    /// Una historia de «Aprende Orbital» (G3): desde Ajustes o «Ver la historia» de un aviso.
     private func withStories<V: View>(_ content: V) -> some View {
         content.fullScreenCover(item: openStory) { (route: StoryRoute) in storyDeck(route).environment(env) }
     }
