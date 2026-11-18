@@ -250,7 +250,7 @@ class _Sources(_Accounts):
         return {"label": f"Pedir a la nube en {streams.LANG_NAMES.get(want, want).lower()}", "hash": pick.info_hash}
 
     def wanted_blocked(self, kind: str, video_id: str, prefs: streams.Preferences, found: list[streams.Source]) -> bool:
-        """La versión en tu idioma existe, pero Real-Debrid no la dejó bajar y no hay otra en tu idioma (Fernando, 18 nov:
+        """La versión en tu idioma existe, pero tu nube no la dejó bajar y no hay otra en tu idioma (Fernando, 18 nov:
         Los Simpson T37 E3; con tu clave, Torrentio ni la lista). La ficha lo dice en vez de «No hay en latino». Se busca
         también en lo que existe sin Real-Debrid (lo mismo que usa «Pedir a la nube»)."""
         refused = self.rd.refused()

@@ -2,7 +2,7 @@ import { CLOUD_ROW, languageAddMenu, languageMenu, languagesMenu } from "../core
 
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, renderHints, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -43,6 +43,21 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       if (fresh) applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, ...fresh } });
       return openMenu(debridAccountMenu(state.settings?.realdebrid, { rowHiddenAt: state.settings?.cloud_row_hidden }), nested(context));
     },
+    // Ajustes › Cuentas › Tu nube (18 nov): Real-Debrid, TorBox o AllDebrid
+    "rd-services": async (command, context) => openMenu(debridServiceMenu(state.settings?.realdebrid), nested(context)),
+    "rd-service": async (command, context) => {
+      const fresh = await api.debridService(command.service);
+      applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, ...fresh } });
+      api.settings().then(applySettings).catch(() => {});
+      sound.play("select");
+      if (!fresh?.linked) { // sin su clave: directo a pegarla (aquí o desde el celular)
+        ui.sheet.close();
+        ui.login.open(debridLogin(command.service));
+        return renderHints();
+      }
+      ui.toast.show(`Ahora usas ${fresh.name}`, { tone: "success", detail: fresh.user ? `Cuenta ${fresh.user}` : "" });
+      return openMenu(debridAccountMenu(state.settings?.realdebrid, { rowHiddenAt: state.settings?.cloud_row_hidden }), context);
+    },
     "rd-other-version": async (command) => {
       ui.sheet.close();
       return openSources(command.play);
@@ -50,17 +65,18 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
     "rd-requests": async (command, context) => {
       const res = await api.debridRequests();
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
-      return openMenu(debridRequestsMenu(res.requests || []), nested(context));
+      return openMenu(debridRequestsMenu(res.requests || [], state.settings?.realdebrid?.service), nested(context));
     },
     "rd-request-menu": async (command, context) => {
       let found = state.settings?.realdebrid;
       if (!(found?.requests || []).some((r) => r.hash === command.hash)) found = await api.debridRequests(); // desde la ficha
       const req = (found?.requests || []).find((r) => r.hash === command.hash);
       if (!req) return;
-      return openMenu(debridRequestMenu(req, { account: found.account, instead: command.instead || null, row: !!command.row }), nested(context));
+      return openMenu(debridRequestMenu(req, { account: found.account, instead: command.instead || null, row: !!command.row,
+        service: state.settings?.realdebrid?.service }), nested(context));
     },
     "rd-cancel-ask": async (command, context) => openMenu(debridCancelMenu(command), nested(context)),
-    "explain": async (command, context) => openMenu(explainerMenu(command.topic), nested(context)), // AU1-A
+    "explain": async (command, context) => openMenu(explainerMenu(command.topic, state.settings?.realdebrid?.service), nested(context)), // AU1-A
     // Ajustes › Cuentas: un aparato con su llave (K1-A) y «Quitar», que pide confirmar
     "device-menu": async (command, context) => {
       const device = (state.settings?.paired_devices || []).find((d) => d.device_id === command.id);
@@ -90,10 +106,10 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
       sound.play("select");
       ui.toast.show(command.done ? `Quité ${command.title || "el archivo"}` : `Cancelé ${command.title || "el pedido"}`,
-        { detail: "Se quitó de tu Real-Debrid" });
+        { detail: cloudSay("Se quitó de tu Real-Debrid", command.service) });
       // Regresa a «Tus pedidos» (se sale de la confirmación y de la hoja del pedido); desde la ficha, se cierra.
       const back = context?.stack?.length > 1 ? { ...context, stack: context.stack.slice(0, -2) } : null;
-      return back ? openMenu(debridRequestsMenu(res.requests || []), back) : ui.sheet.close();
+      return back ? openMenu(debridRequestsMenu(res.requests || [], state.settings?.realdebrid?.service), back) : ui.sheet.close();
     },
     // «Ocultar esta fila» (Fernando, 4 nov): se guarda cuándo, y vuelve sola al pedir algo después (menus.cloudRowHidden).
     "rd-row": async (command, context) => {
@@ -101,10 +117,10 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       applySettings(await api.setSettings({ cloud_row_hidden: at }));
       sound.play("select");
       if (command.hide) {
-        ui.toast.show(`Oculté la fila «${CLOUD_ROW}»`, { duration: UNDO_MS, detail: "Vuelve sola al pedir algo · Ajustes › Cuentas › Real-Debrid",
+        ui.toast.show(`Oculté la fila «${CLOUD_ROW}»`, { duration: UNDO_MS, detail: cloudSay("Vuelve sola al pedir algo · Ajustes › Cuentas › Real-Debrid", state.settings?.realdebrid?.service),
           action: { label: "Deshacer", onPress: async () => applySettings(await api.setSettings({ cloud_row_hidden: 0 })) } });
       } else {
-        ui.toast.show("Ya se ve la fila de Real-Debrid", { tone: "success" });
+        ui.toast.show(`Ya se ve la fila «${CLOUD_ROW}»`, { tone: "success" });
       }
       if (command.from !== "settings") return ui.sheet.close();
       return openMenu(debridAccountMenu(state.settings?.realdebrid, { rowHiddenAt: state.settings?.cloud_row_hidden }), context);

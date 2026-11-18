@@ -10,7 +10,7 @@ import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints } from 
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { tokenMs } from "./core/tokens.js";
-import { cloudRow, DEBRID_FORM, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
+import { cloudRow, cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
@@ -202,7 +202,7 @@ const ui = {
         api.settings().then(applySettings).catch(() => {});
         ui.sources.close();
       } catch (err) {
-        ui.toast.show(err.message || "Real-Debrid no pudo con ese pedido", { tone: "warn" });
+        ui.toast.show(err.message || "La nube no pudo con ese pedido", { tone: "warn" });
       }
     },
     requests: () => state.settings?.realdebrid?.requests || [],
@@ -211,7 +211,7 @@ const ui = {
       if (!state.settings || state.settings.learn_debrid_flow) return;
       state.settings.learn_debrid_flow = true;
       api.setSettings({ learn_debrid_flow: true }).catch(() => {});
-      setTimeout(() => openMenu(debridFlowMenu()), 600); // que se vea primero lo que la trajo
+      setTimeout(() => openMenu(debridFlowMenu(state.settings?.realdebrid?.service)), 600); // que se vea primero lo que la trajo
     },
     onMove: () => { sound.play("move"); renderHints(); },
     onChange: () => renderHints(),
@@ -426,12 +426,16 @@ async function keysSaved(form, status, { removed = false } = {}) {
 /** Real-Debrid conectada (pegada en la TV o desde un celular tras «Usar»): Cuentas se repinta en su lugar. */
 function debridSaved(res) {
   sound.play("select");
-  ui.toast.show("Real-Debrid conectada", { tone: "success", detail: res?.user ? `Cuenta ${res.user}` : "" });
+  ui.toast.show(`${res?.name || "Real-Debrid"} conectada`, { tone: "success", detail: res?.user ? `Cuenta ${res.user}` : "" });
   api.settings().then(applySettings).catch(() => {});
   renderHints();
 }
 
-const debridForm = () => ({ ...DEBRID_FORM, submit: (values, signal) => api.debridKey(values.token.trim(), signal) });
+/** Conectar tu nube (la de `service` o la que usas): su formulario y su clave, que la consola prueba antes de guardar. */
+const debridLogin = (service) => {
+  const form = debridForm(service || state.settings?.realdebrid?.service);
+  return { ...form, submit: (values, signal) => api.debridKey(values.token.trim(), signal, form.remote) };
+};
 
 /** Escribir una clave con el teclado en pantalla (o pegarla con Ctrl+V). */
 function keysForm(service) {
@@ -1812,9 +1816,9 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const torrentioMenus = { main: (entry) => torrentioMenu(entry, state.settings?.languages || []), languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
+  const torrentioMenus = { main: (entry) => torrentioMenu(entry, state.settings?.languages || [], state.settings?.realdebrid?.service), languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }),
     ...savedTable(), ...viewingsCommands({ ...deps, openListForm }) };
   return commandTable;
@@ -1905,7 +1909,7 @@ async function runCommand(command, context = null) {
       case "rd-connect": // Conectar Real-Debrid: pegarla aquí o con el QR desde cualquier celular (CA2-A, TEC-4)
         sound.play("open");
         loginFrom = { context };
-        ui.login.open(debridForm());
+        ui.login.open(debridLogin(command.service));
         return renderHints();
       case "rd-remote-confirm": {
         const res = await api.debridRemoteConfirm(command.code);

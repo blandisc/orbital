@@ -311,7 +311,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       at = versionStart(rows, best());
       start = { ...at };
       // PT7 (Fernando, 4 nov): sin nada al instante, el aviso del iPhone arriba: «Real-Debrid aún no tiene este título.»
-      subtitle.textContent = !groups.now.length && rows.length ? "Real-Debrid aún no tiene este título. Se piden y te aviso cuando estén."
+      subtitle.textContent = !groups.now.length && rows.length ? "Tu nube aún no tiene este título. Se piden y te aviso cuando estén."
         : rows.some((row) => row.ask)
           ? "«Al instante»: arranca en segundos. Las de abajo, la nube primero las baja: se piden y te avisa." // RX4-A
           : "«Al instante»: arranca en segundos.";

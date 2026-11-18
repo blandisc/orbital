@@ -57,6 +57,7 @@ const SOURCE = {
   trakt: ["Trakt", "img/ratings/trakt.svg"], letterboxd: ["Letterboxd", "img/ratings/letterboxd.svg"],
   stremio: ["Stremio", "img/consoles/stremio.svg"], orbital: ["Orbital", null],
   realdebrid: ["Real-Debrid", null, "cloudDownload"], // sin logo propio: su nube (la de «Tus pedidos»)
+  torbox: ["TorBox", null, "cloudDownload"], alldebrid: ["AllDebrid", null, "cloudDownload"], // 18 nov: las otras dos nubes
 };
 export function SourceBadge(source) {
   const [name, logo, icon = "mark"] = SOURCE[source] ?? [];

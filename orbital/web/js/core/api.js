@@ -242,7 +242,9 @@ export const api = {
   // Escribir desde el celular: un código de un solo uso por formulario (remote_input.py).
   remoteInputStart: (title, fields, purpose) => post("/api/remote-input", { title, fields, purpose }),
   /** La clave de Real-Debrid pegada en la TV, o la que llegó del celular tras «Usar» (la consola la prueba antes). */
-  debridKey: (token, signal) => post("/api/realdebrid/key", { token }, { signal, timeout: 20000 }),
+  debridKey: (token, signal, service = "realdebrid") => post("/api/realdebrid/key", { token, service }, { signal, timeout: 20000 }),
+  /** Ajustes › Cuentas › Tu nube: Real-Debrid, TorBox o AllDebrid (la clave de cada una se queda guardada). */
+  debridService: (service) => post("/api/debrid/service", { service }, { timeout: 20000 }),
   openSubtitlesLogin: (username, password, signal) => post("/api/opensubtitles/login", { username, password }, { signal, timeout: 20000 }),
   openSubtitlesLogout: () => post("/api/opensubtitles/logout", {}),
   debridRemoteConfirm: (code) => post("/api/realdebrid/remote/confirm", { code }, { timeout: 20000 }),

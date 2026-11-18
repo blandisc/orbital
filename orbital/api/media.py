@@ -318,7 +318,7 @@ def router(d: Deps) -> APIRouter:
         chosen = catalog.watch.choose_source(kind, video or id, prefs, catalog.watch.resume_choice(id, video or id))
         note = watch.version_note(chosen, prefs) if chosen else None
         if chosen and note and catalog.watch.wanted_blocked(kind, video or id, prefs, found):  # existe, pero Real-Debrid no deja
-            note = watch.version_note(chosen, prefs, blocked=True)
+            note = watch.version_note(chosen, prefs, blocked=catalog.watch.debrid_name)
         recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles),
                        "lang": watch.version_lang(chosen, prefs), "dub": chosen.dub, "note": note} if chosen else None
         downloads = catalog.watch.downloads

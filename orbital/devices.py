@@ -50,7 +50,7 @@ def _hash(secret: str) -> str:
 
 def pairable(platform: object) -> str:
     if platform == "mac":
-        raise PairError(422, "La Mac no se conecta a la TV: recibe tu clave de Real-Debrid por iCloud, desde tu iPhone.")
+        raise PairError(422, "La Mac no se conecta a la TV: recibe la clave de tu nube por iCloud, desde tu iPhone.")
     return platform if platform in PAIRED else "iphone"
 
 

@@ -52,18 +52,23 @@ def version_lang(source: streams.Source, prefs: streams.Preferences) -> str:
 WANTED_NAMES = {"es-419": "latino", "es-ES": "castellano"}
 
 
-def version_note(source: streams.Source, prefs: streams.Preferences, blocked: bool = False) -> str | None:
+BLOCKED = "Hay {want}, pero Real-Debrid no lo dejó bajar: va en {have}"  # con el nombre de tu nube
+
+
+def version_note(source: streams.Source, prefs: streams.Preferences, blocked: bool | str = False) -> str | None:
     """Si lo que va a sonar se sale de lo que pediste para ese título: «Solo en castellano: no hay latino», «No hay en
     inglés: va en español». None si es lo pedido (lo normal no se anuncia). `blocked`: la de tu idioma existe pero
-    Real-Debrid no la dejó bajar (`wanted_blocked`); se dice así para que no parezca que Orbital no la encontró."""
+    tu nube no la dejó bajar (`wanted_blocked`); se dice así para que no parezca que Orbital no la encontró. `blocked`
+    puede ser el nombre de tu nube («TorBox»); con True, Real-Debrid."""
+    cloud = blocked if isinstance(blocked, str) else "Real-Debrid"
     lang = (source.languages or [""])[0]
     have = source.dub if lang == "es" and source.dub else streams.LANG_NAMES.get(lang, lang).lower()
     if prefs.audio not in source.languages:
         want = WANTED_NAMES.get(prefs.spanish) if prefs.audio == "es" and prefs.spanish else streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
-        return f"Hay {want}, pero Real-Debrid no lo dejó bajar: va en {have}" if blocked else f"No hay en {want}: va en {have}"
+        return BLOCKED.replace("Real-Debrid", cloud).format(want=want, have=have) if blocked else f"No hay en {want}: va en {have}"
     if prefs.audio == "es" and prefs.spanish in WANTED_NAMES and source.dub and streams.DUB_CODES.get(source.dub) != prefs.spanish:
         want = WANTED_NAMES[prefs.spanish]
-        return f"Hay {want}, pero Real-Debrid no lo dejó bajar: va en {source.dub}" if blocked else f"Solo en {source.dub}: no hay {want}"
+        return BLOCKED.replace("Real-Debrid", cloud).format(want=want, have=source.dub) if blocked else f"Solo en {source.dub}: no hay {want}"
     return None
 
 

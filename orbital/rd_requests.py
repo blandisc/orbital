@@ -623,7 +623,7 @@ class RdRequests:
             return len(waiting) > 1
         self._update(req["hash"], {"retried": True, "rd_id": rd_id, "state": QUEUED, "progress_at": time.time()})
         self.publish({"type": "toast", "ok": True, "message": f"Volví a pedir {req.get('title') or 'tu pedido'}",
-                      "detail": f"Ya se liberó un lugar en tu {self.name}"})
+                      "detail": "Ya se liberó un lugar en tu Real-Debrid".replace("Real-Debrid", self.name)})
         return True
 
     def _update(self, info_hash: str, change: dict) -> dict:
