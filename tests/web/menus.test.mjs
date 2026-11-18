@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, languageAddMenu, languageMenu, languagesMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
-import { addonHealth, addonMenu, addonRows, cloudSay, debridForm, debridServiceMenu, explainerMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
+import { addonHealth, addonMenu, addonRows, cloudSay, debridForm, debridServiceMenu, debridSignupMenu, explainerMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
@@ -122,12 +122,12 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.ok(languageAddMenu(languages).options.every((o) => !languages.includes(o.command.languages.at(-1)) && o.command.languages.length === 5));
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""]]); // 4 nov: Stremio ya no se conecta
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Tu nube", "Conectar"], ["Conectar un aparato", ""]]); // 4 nov: Stremio ya no se conecta
   assert.deepEqual(accounts.options[0].command, { type: "rd-account" }); // Real-Debrid primero (SS-1); sin cuenta, primero eliges tu nube (18 nov)
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio", "Pasar a Trakt"], ["Claves de Explorar", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Tu nube", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio", "Pasar a Trakt"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
@@ -756,7 +756,7 @@ test("resumen sin Stremio: lo que falta para películas y series (corte S4, AD-1
   const now = Date.UTC(2026, 10, 3);
   const labels = (settings) => settingsMissing({ companion_seen: 1, ...settings }, { now }).map((o) => o.label);
   assert.deepEqual(labels({ stremio_linked: false }), []); // Stremio ya no hace falta
-  assert.deepEqual(labels({ realdebrid: { linked: false } }), ["Real-Debrid sin conectar"]);
+  assert.deepEqual(labels({ realdebrid: { linked: false } }), ["Tu nube sin conectar"]);
   assert.deepEqual(labels({ realdebrid: { linked: true, problem: "expired" } }), ["Tu Real-Debrid venció"]);
   assert.deepEqual(labels({ realdebrid: { linked: true, days: 3 } }), ["Tu Real-Debrid vence en 3 días"]);
   assert.deepEqual(labels({ realdebrid: { linked: true, days: 18 } }), []);
@@ -919,7 +919,7 @@ test("tu nube: Real-Debrid, TorBox o AllDebrid, con su nombre y su página (Fern
   // Lo de siempre no cambia con Real-Debrid; con otra, cada texto la nombra a ella.
   assert.equal(debridRow({ linked: true, problem: "bad_key" }).value, "Vuelve a conectar Real-Debrid");
   assert.equal(debridRow({ linked: true, problem: "bad_key", service: "torbox" }).value, "Vuelve a conectar TorBox");
-  assert.equal(debridRow({ linked: false, service: "alldebrid" }).label, "AllDebrid");
+  assert.equal(debridRow({ linked: false, service: "alldebrid" }).label, "Tu nube"); // sin cuenta: la que tengas de las tres
   const expired = debridRow({ linked: true, problem: "expired", service: "alldebrid" });
   assert.equal(expired.value, "Tu AllDebrid venció");
   assert.ok(expired.hint.includes("alldebrid.com") && !expired.hint.includes("real-debrid"));
@@ -951,4 +951,25 @@ test("tu nube: Real-Debrid, TorBox o AllDebrid, con su nombre y su página (Fern
     "Se paga en torbox.app. Te avisamos 14 días antes, 3 días antes y el día que vence.");
   assert.ok(explainerMenu("clouds").options.length === 5);
   assert.equal(cloudSay("Real-Debrid aún no lo tiene · real-debrid.com", "alldebrid"), "AllDebrid aún no lo tiene · alldebrid.com");
+});
+
+test("la bienvenida y Cuentas sin nube: entras con cualquiera de las tres, o ves dónde sacar una (Fernando, 18 nov)", () => {
+  const setup = moviesSetupMenu({ realdebrid: { linked: false } });
+  assert.deepEqual([setup.options[0].label, setup.options[0].value, setup.options[0].command], ["1 · Tu nube", "Conectar", { type: "rd-account" }]);
+  assert.ok(setup.options[0].hint.includes("Real-Debrid, TorBox o AllDebrid"));
+  assert.equal(moviesSetupMenu({ realdebrid: { linked: true, name: "TorBox" } }).options[0].label, "1 · TorBox");
+  const choose = debridAccountMenu({ linked: false, service: "realdebrid" });
+  assert.equal(choose.title, "Tu nube");
+  const labels = choose.options.map((o) => o.label);
+  assert.deepEqual(labels.slice(0, 8), ["Ya tengo cuenta", "Real-Debrid", "TorBox", "AllDebrid", "Todavía no tengo", "Ver Real-Debrid", "Ver TorBox", "Ver AllDebrid"]);
+  assert.deepEqual(choose.options[2].command, { type: "rd-service", service: "torbox" });
+  assert.deepEqual(choose.options[7].command, { type: "debrid-signup", service: "alldebrid" });
+  assert.ok(choose.options[7].hint.startsWith("alldebrid.com"));
+  // Con una nube ya elegida pero sin clave, la hoja no cambia los nombres de las otras dos.
+  assert.deepEqual(debridAccountMenu({ linked: false, service: "torbox" }).options.slice(1, 4).map((o) => o.label), ["Real-Debrid", "TorBox", "AllDebrid"]);
+  const signup = debridSignupMenu("torbox");
+  assert.equal(signup.qr, "/api/debrid/qr.svg?service=torbox");
+  assert.ok(signup.subtitle.includes("torbox.app") && signup.subtitle.includes("torbox.app/settings"));
+  assert.deepEqual(signup.options[0].command, { type: "rd-service", service: "torbox" });
+  assert.equal(debridSignupMenu("otra").qr, "/api/debrid/qr.svg?service=realdebrid");
 });

@@ -82,8 +82,12 @@ export function moviesSetupMenu(settings = {}) {
     title: "Películas y series",
     subtitle: "Tres pasos, una sola vez. Cada uno se puede dejar para después.",
     options: [
-      { icon: "bolt", label: `1 · ${rd?.name || "Real-Debrid"}`, hint: "Tu nube: hace que los videos arranquen al instante", value: rd?.linked ? "✓ Conectada" : "Conectar",
-        ok: !!rd?.linked, command: { type: "rd-account" } }, // sin cuenta: primero eliges cuál de las tres
+      // 18 nov (Fernando): entras con cualquiera de las tres; sin cuenta, la hoja dice cuáles sirven y dónde sacar una.
+      rd?.linked
+        ? { icon: "bolt", label: `1 · ${rd.name || "Real-Debrid"}`, hint: "Tu nube: hace que los videos arranquen al instante", value: "✓ Conectada",
+          ok: true, command: { type: "rd-account" } }
+        : { icon: "bolt", label: "1 · Tu nube", hint: "Real-Debrid, TorBox o AllDebrid: la que tengas, o elige una", value: "Conectar",
+          command: { type: "rd-account" } },
       { icon: "addon", label: "2 · Complementos", hint: on.length ? on.join(" y ") : "Los recomendados ya vienen armados",
         value: on.length ? `✓ ${on.length} ${on.length === 1 ? "prendido" : "prendidos"}` : "Prender",
         ok: on.length > 0, command: { type: "settings", page: "addons" } },

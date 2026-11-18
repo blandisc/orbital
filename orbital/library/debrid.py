@@ -30,6 +30,8 @@ KEY_URLS = {"realdebrid": "https://real-debrid.com/apitoken", "torbox": "https:/
             "alldebrid": "https://alldebrid.com/apikeys/"}
 RENEW_URLS = {"realdebrid": "https://real-debrid.com/premium", "torbox": "https://torbox.app/pricing",
               "alldebrid": "https://alldebrid.com/offer/"}
+# Dónde se saca una cuenta (los planes): «Todavía no tengo» lo enseña con un QR para abrirlo en el celular.
+SIGNUP_URLS = RENEW_URLS
 # La clave de cada uno en el llavero de la consola (cifrada). La de Real-Debrid es la de siempre (corte S2).
 KEYS = {"realdebrid": "realdebrid_token", "torbox": "torbox_token", "alldebrid": "alldebrid_token"}
 CAUSES = ("invalid_session", "no_premium", "refused", "too_many", "slow_down", "gone", "other")

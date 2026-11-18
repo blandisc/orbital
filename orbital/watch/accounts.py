@@ -124,7 +124,7 @@ class _Accounts(_Library):
     def debrid_services(self) -> list[dict]:
         """Las tres nubes para «Tu nube»: cuál es, si ya tiene clave guardada y dónde se saca."""
         return [{"service": s, "name": debrid.NAMES[s], "linked": bool(self.debrid_key(s)), "key_url": debrid.KEY_URLS[s],
-                 "site": debrid.SITES[s]} for s in debrid.SERVICES]
+                 "site": debrid.SITES[s], "signup_url": debrid.SIGNUP_URLS[s]} for s in debrid.SERVICES]
 
     # --- Ajustes › Complementos («La TV sin Stremio», S1) ---------------------
     def addon_status(self) -> dict:

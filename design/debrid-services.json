@@ -57,6 +57,8 @@
   },
   "words": {
     "_": "Los textos de design/vocabulario.json que dicen «Real-Debrid» se escriben así y se dicen con el nombre de la tuya («TorBox no lo dejó bajar», «Vuelve a conectar AllDebrid»); «real-debrid.com» con su página. «La nube» sigue siendo la palabra de todos los días. «No se renueva solo» es solo de Real-Debrid: con las otras, «Revisa tu plan».",
+    "onboarding": "Sin nube (la bienvenida «Películas y series › 1 · Tu nube», Ajustes › Cuentas y el Resumen): una sola hoja «Tu nube» que dice para qué es y que sirve cualquiera de las tres. «Ya tengo cuenta»: Real-Debrid, TorBox, AllDebrid, cada una con «Conectar con tu clave · <dónde se saca>». «Todavía no tengo»: «Ver <nube>» con su página de planes (signup: la TV la enseña con un QR para el celular; el iPhone la abre). Nunca «Real-Debrid» a secas antes de que elijas.",
+    "signup_urls": {"realdebrid": "https://real-debrid.com/premium", "torbox": "https://torbox.app/pricing", "alldebrid": "https://alldebrid.com/offer/"},
     "picker": "«Tu nube»: las tres en este orden, cada una con «La que usas», «Clave guardada» o «Sin clave», y «¿Qué es esto?» (cuatro puntos: las tres hacen lo mismo; cada una deja bajar cosas distintas; cada una se paga en su página; lo que pediste se queda en su nube). Sin recomendar una."
   }
 }

@@ -278,6 +278,14 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
         esa nube (Real-Debrid si no dice)."""
         return save_debrid_key(app, token, "tv", service)
 
+    @app.get("/api/debrid/qr.svg")
+    def debrid_qr(service: str = "") -> Response:
+        """«Todavía no tengo»: el QR de la página de planes de esa nube, para abrirla en el celular (solo las tres)."""
+        if service not in debrid.SERVICES:
+            return Response(status_code=404)
+        return Response(companion.qr_svg(debrid.SIGNUP_URLS[service]), media_type="image/svg+xml",
+                        headers={"Cache-Control": "max-age=86400"})
+
     @app.post("/api/debrid/service")
     def debrid_service(service: str = Body("", embed=True)) -> dict:
         """Ajustes › Cuentas › Tu nube: Real-Debrid, TorBox o AllDebrid. La clave de cada una se queda guardada."""

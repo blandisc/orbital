@@ -28,6 +28,7 @@
 /* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
    mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
 .sheet__meter { padding: 0 var(--space-2) var(--space-6); margin-top: calc(-1 * var(--space-3)); } /* PT9: la barra del pedido, bajo su texto */
+.sheet__qr { display: block; width: 12rem; height: 12rem; margin: 0 auto var(--space-6); border-radius: var(--radius-sm); } /* 18 nov: un enlace para el celular */
 .sheet__steps { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
 .sheet__step { display: grid; justify-items: center; gap: var(--space-2); width: 7.5rem; text-align: center; transform-origin: 50% 40%; }
 .sheet__step-tile { display: grid; place-items: center; width: var(--explain-step); height: var(--explain-step); border-radius: var(--radius-lg);

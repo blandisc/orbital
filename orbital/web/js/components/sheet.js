@@ -25,8 +25,10 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const steps = h("div", { class: "sheet__steps", hidden: true, "aria-hidden": "true" });
   // PT9 (Fernando, 4 nov): cuánto lleva algo (un pedido a la nube), con su barra bajo el texto (`meter`: 0–1).
   const meter = h("div", { class: "sheet__meter", hidden: true });
+  // 18 nov: un enlace para abrir en el celular («Todavía no tengo» una nube): su QR bajo el texto (`qr`: la imagen).
+  const qr = h("img", { class: "sheet__qr", alt: "", hidden: true });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, meter, steps, list);
+  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, qr, meter, steps, list);
   const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   // AU4-A (Fernando, 3 nov): si hay más abajo, la orilla se difumina en vez de partir el último renglón a la mitad.
   const more = () => panel.classList.toggle("sheet__panel--more", panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2);
@@ -73,6 +75,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
     steps.hidden = !menu.steps?.length;
+    qr.hidden = !menu.qr;
+    if (menu.qr && qr.getAttribute("src") !== menu.qr) qr.src = menu.qr;
+    qr.alt = menu.qrLabel || "";
     mount(meter, menu.meter > 0 ? Progress(menu.meter, { label: menu.meterLabel || "Cuánto lleva" }) : null);
     meter.hidden = !meter.firstChild;
     mount(steps, ...(menu.steps || []).flatMap((step, i) => [i > 0 && h("span", { class: "sheet__step-arrow" }, "›"),

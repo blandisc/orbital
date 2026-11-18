@@ -348,7 +348,7 @@ def demo_debrid(catalog) -> None:
     problem = os.environ.get("ORBITAL_DEMO_RD") or None
     watch.credentials.set("realdebrid_token", "DEMODEMO3F2A")  # el Torrentio de Orbital se arma con ella (corte S3)
     cloud = os.environ.get("ORBITAL_DEMO_CLOUD") or "realdebrid"
-    if cloud != "realdebrid":
+    if cloud not in ("realdebrid", "none"):
         watch.credentials.set(f"{cloud}_token", "DEMODEMO3F2A")
         watch.state.set_setting("debrid_service", cloud)
     watch.rd_token = lambda: "DEMODEMO3F2A"
@@ -375,6 +375,12 @@ def demo_debrid(catalog) -> None:
         "premium": problem is None, "expires": expires,
         "days": None if problem == "expired" else days, "problem": problem, "ends_with": "3F2A"})
     watch.debrid_status = lambda fresh=False: watch._rd_status[2]  # «Revisar» la cuenta no sale a internet
+    if cloud == "none":  # `ORBITAL_DEMO_CLOUD=none`: la bienvenida sin nube (elegir cualquiera de las tres)
+        watch.credentials.set("realdebrid_token", None)
+        watch.rd_token = lambda: None
+        watch.rd.token = watch.rd_token
+        watch._rd_status = (0.0, None, {"linked": False, "service": "realdebrid", "name": "Real-Debrid"})
+        return
     rows = [("Shōgun · T1 E2", "tt2788316:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
             ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]

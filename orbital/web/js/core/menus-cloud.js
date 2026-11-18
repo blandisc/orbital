@@ -125,6 +125,9 @@ const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX
 
 /** El renglón de Real-Debrid en Cuentas: cuántos días te quedan o, si algo falla, cuál de las tres causas. */
 export function debridRow(rd) {
+  // Sin cuenta todavía no es «Real-Debrid»: es tu nube, la que tengas de las tres (18 nov, Fernando).
+  if (!rd?.linked) return { icon: "cloudDownload", label: "Tu nube", value: "Conectar", warn: true,
+    hint: "Real-Debrid, TorBox o AllDebrid · para que los videos arranquen al instante", command: { type: "rd-account" } };
   return inCloud(debridRowWords(rd), rd?.service);
 }
 
@@ -170,7 +173,44 @@ function debridExpiryWords(rd, seen = "") {
 
 /** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
 export function debridAccountMenu(rd, { rowHiddenAt = 0 } = {}) {
+  if (!rd?.linked) return debridChooseMenu(rd); // sin cuenta: primero cuál de las tres (o dónde sacar una)
   return inCloud(debridAccountWords(rd, { rowHiddenAt }), rd?.service);
+}
+
+/** Sin nube todavía (la bienvenida y Ajustes › Cuentas, 18 nov): conectar la que ya tienes, cualquiera de las tres, o
+ *  ver dónde sacar una. Orbital no recomienda ni cobra: las tres sirven igual. */
+export function debridChooseMenu(rd) {
+  const pending = (rd?.requests || []).length > 0;
+  return {
+    title: "Tu nube",
+    subtitle: "Para que los videos arranquen al instante, Orbital usa un servicio de pago que guarda películas y series: tu nube. Sirve cualquiera de estos tres.",
+    options: [
+      { heading: true, label: "Ya tengo cuenta" },
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "key", label: c.name, hint: `Conectar con tu clave · ${c.key}`,
+        command: { type: "rd-service", service } })),
+      { heading: true, label: "Todavía no tengo" },
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "phone", label: `Ver ${c.name}`, hint: `${c.site} · ábrelo en tu celular con un código QR`,
+        command: { type: "debrid-signup", service } })),
+      { icon: "phone", label: "Mándala desde tu iPhone", hint: "Si ya la tienes ahí: Ajustes › Cuentas › Tu nube › Pasar a la TV", command: { type: "stay" } },
+      pending && { icon: "cloudDownload", label: "Tus pedidos", hint: "Lo que pediste antes", command: { type: "rd-requests" } },
+      explainRow("clouds"),
+    ].filter(Boolean),
+  };
+}
+
+/** «Todavía no tengo» una nube: el QR de su página de planes para abrirla en el celular, y conectarla al volver. */
+export function debridSignupMenu(service) {
+  const s = cloudOf(service);
+  const c = CLOUDS[s];
+  return {
+    title: c.name,
+    subtitle: `Escanéalo con tu celular para abrir ${c.site}. Cuando tengas tu cuenta, regresa aquí y conéctala con tu clave (${c.key}).`,
+    qr: `/api/debrid/qr.svg?service=${s}`, qrLabel: `Código QR de ${c.site}`,
+    options: [
+      { icon: "key", label: "Ya la tengo: conectar", hint: "Pegar tu clave aquí o desde cualquier celular", command: { type: "rd-service", service: s } },
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+    ],
+  };
 }
 
 /** «Tu nube» (18 nov): cuál de las tres usa Orbital. La clave de cada una se queda guardada: volver es un toque. */

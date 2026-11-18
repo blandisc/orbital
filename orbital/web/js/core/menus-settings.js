@@ -162,8 +162,8 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
   }
   const rd = settings.realdebrid;
   if (rd && !rd.linked) {
-    missing.push(inCloud({ icon: "cloudDownload", label: "Real-Debrid sin conectar", hint: "Sin Real-Debrid los videos no arrancan al instante", value: "Conectar", warn: true,
-      command: { type: "rd-account" } }, rd.service));
+    missing.push({ icon: "cloudDownload", label: "Tu nube sin conectar", hint: "Sin ella los videos no arrancan al instante · Real-Debrid, TorBox o AllDebrid",
+      value: "Conectar", warn: true, command: { type: "rd-account" } });
   } else if (rd?.problem && rd.problem !== "offline") {
     missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver" });
   } else if (rd?.days != null && rd.days <= 7) {

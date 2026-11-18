@@ -2,7 +2,7 @@ import { CLOUD_ROW, languageAddMenu, languageMenu, languagesMenu } from "../core
 
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, renderHints, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, debridSignupMenu, renderHints, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -45,6 +45,7 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
     },
     // Ajustes › Cuentas › Tu nube (18 nov): Real-Debrid, TorBox o AllDebrid
     "rd-services": async (command, context) => openMenu(debridServiceMenu(state.settings?.realdebrid), nested(context)),
+    "debrid-signup": async (command, context) => openMenu(debridSignupMenu(command.service), nested(context)),
     "rd-service": async (command, context) => {
       const fresh = await api.debridService(command.service);
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, ...fresh } });

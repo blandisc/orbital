@@ -308,3 +308,19 @@ def test_el_contrato_de_las_tres_nubes_es_el_que_usa_la_tv():
         assert debrid.ERRORS_FILES[service].is_file()
     assert data["client"]["torbox"]["counts_active"] is torbox.TorBox.counts_active
     assert data["client"]["alldebrid"]["counts_active"] is alldebrid.AllDebrid.counts_active
+
+
+def test_el_qr_de_la_pagina_de_cada_nube(library):
+    """«Todavía no tengo» una nube: el QR de su página de planes, solo de las tres."""
+    from fastapi.testclient import TestClient
+
+    from orbital.server import create_app
+    client = TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1))
+    assert client.get("/api/debrid/qr.svg?service=torbox").headers["content-type"].startswith("image/svg+xml")
+    assert client.get("/api/debrid/qr.svg?service=premiumize").status_code == 404
+
+
+def test_la_pagina_de_planes_de_cada_nube_es_la_del_contrato():
+    from orbital.shared import design_file
+    data = json.loads(design_file("debrid-services.json").read_text(encoding="utf-8"))
+    assert data["words"]["signup_urls"] == debrid.SIGNUP_URLS
