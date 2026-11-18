@@ -159,6 +159,48 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
 .legend { font-size: 13px; color: var(--faint); }
 @media (prefers-reduced-motion: reduce) { .sat, .promise div { animation: none; opacity: 1; } }
 @media (max-width: 440px) { .device { height: 720px; border-width: 6px; border-radius: 36px; } .screen { padding: 40px 16px 20px; } .t { font-size: 24px; } }
+.promise div:nth-child(5) { animation-delay: 1.4s; }
+.switch { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--raised); border: 0; color: var(--text); border-radius: 14px; padding: 12px 14px; font: 500 14.5px var(--sans); cursor: pointer; width: 100%; }
+.switch .grow { flex: 1; min-width: 0; } .switch .sub { display: block; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.switch i { width: 42px; height: 25px; border-radius: 13px; background: var(--line); position: relative; flex: none; transition: background .2s; }
+.switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: var(--text); transition: transform .2s; }
+.switch[aria-checked="true"] i { background: var(--fresh); } .switch[aria-checked="true"] i::after { transform: translateX(17px); }
+.flash { animation: flash .8s ease; }
+@keyframes flash { 0% { background: rgba(95,214,196,.35); border-radius: 6px; } 100% { background: transparent; } }
+.benefits { display: grid; gap: 10px; } .benefits > div { display: flex; gap: 12px; align-items: center; font-weight: 600; font-size: 15px; }
+.benefits .sub, .wait .sub { display: block; color: var(--muted); font-size: 13px; font-weight: 400; }
+.code { border: 0; color: var(--text); cursor: pointer; width: 100%; }
+.wait { display: flex; gap: 12px; align-items: center; background: var(--panel); border-radius: 14px; padding: 12px; font-size: 14px; }
+.spin { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--line); border-top-color: var(--fresh); animation: rot 1s linear infinite; flex: none; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.flow { display: flex; align-items: center; gap: 6px; } .flow span { flex: 1; background: var(--panel); border-radius: 12px; padding: 10px 8px; font-size: 11.5px; color: var(--muted); text-align: center; }
+.flow b { display: block; color: var(--text); font: 700 13px var(--display); } .flow i { color: var(--fresh); font-style: normal; }
+.plats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.plats button { background: var(--raised); color: var(--text); border: 1.5px solid transparent; border-radius: 14px; padding: 14px 10px; font: 600 14px var(--display); cursor: pointer; }
+.plats button[aria-pressed="true"] { border-color: var(--fresh); color: var(--fresh); }
+.choice.big { padding: 18px 14px; font-size: 16px; font-weight: 600; } .bflag { font-size: 26px; }
+.flag.big { font-size: 15px; padding: 8px 14px; }
+.ver { border: 1.5px solid transparent; color: var(--text); font-family: var(--sans); text-align: left; cursor: pointer; width: 100%; }
+.ver.best { padding: 16px 12px; } .ver.on { border-color: var(--fresh); background: rgba(95,214,196,.08); }
+.choice.on .tick { animation: pop .35s ease; } @keyframes pop { 0% { transform: scale(.4); } 70% { transform: scale(1.2); } 100% { transform: none; } }
+.nudge .x { background: none; color: var(--muted); padding: 4px 6px; font-size: 16px; }
+.btn svg { width: 16px; height: 16px; vertical-align: -3px; }
+@media (prefers-reduced-motion: reduce) { .flash, .spin, .choice.on .tick { animation: none; } }
+.link { background: none; border: 0; color: var(--fresh); font: inherit; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.subline { display: flex; gap: 10px; align-items: center; text-align: left; background: var(--panel); border: 0; color: var(--text); border-radius: 14px; padding: 11px 14px; font: 500 14px var(--sans); cursor: pointer; width: 100%; }
+.subline .grow { flex: 1; } .subline .sub { display: block; color: var(--muted); font-size: 12px; font-weight: 400; } .subline .link { text-decoration: none; font-weight: 600; }
+.langseg.wrap button { flex: 1 0 30%; }
+.playbtn { display: flex; align-items: stretch; border-radius: 999px; overflow: hidden; background: var(--fresh); color: var(--ink); font: 700 15px var(--sans); }
+.playbtn span { flex: 1; padding: 11px 14px; } .pflag { background: rgba(0,0,0,.14); border: 0; font-size: 20px; padding: 0 14px; cursor: pointer; animation: nudgeflag 1.6s ease 2; }
+@keyframes nudgeflag { 50% { transform: scale(1.18); } }
+.stars5 { display: flex; gap: 4px; } .stars5 button { background: none; border: 0; font-size: 30px; color: var(--line); cursor: pointer; padding: 0 2px; } .stars5 button.on { color: var(--warm); }
+.remote { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-top: auto; } .remote button { background: var(--raised); color: var(--text); border: 0; border-radius: 16px; padding: 16px 8px; font: 600 14px var(--sans); cursor: pointer; } .remote .mainr { background: var(--text); color: var(--ink); }
+.keybox { display: flex; align-items: center; gap: 8px; background: var(--raised); border-radius: 14px; padding: 8px 8px 8px 14px; color: var(--muted); font-size: 14px; } .keybox span { flex: 1; } .keybox button { background: var(--text); color: var(--ink); border: 0; border-radius: 999px; padding: 7px 12px; font: 600 12.5px var(--sans); cursor: pointer; }
+.tvpill { display: inline-flex; gap: 5px; align-items: center; background: rgba(95,214,196,.13); color: var(--fresh); border-radius: 999px; padding: 4px 9px; font-size: 11.5px; font-weight: 600; } .tvpill svg { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) { .pflag { animation: none; } }
+.ask { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 13.5px; display: grid; gap: 6px; } .ask .row2 { display: flex; gap: 8px; } .ask .btn { padding: 9px 14px; font-size: 13.5px; }
+.pins { display: flex; gap: 10px; justify-content: center; background: none; border: 0; cursor: pointer; } .pins span { width: 52px; height: 62px; border-radius: 14px; background: var(--raised); border: 1.5px solid var(--line); display: grid; place-items: center; font: 700 28px var(--display); color: var(--text); }
+.player.big { aspect-ratio: 16/10; } .playing { position: absolute; inset: 0; display: grid; place-items: center; font-size: 40px; color: rgba(255,255,255,.85); }
 </style>
 
 <div class="wrap">
@@ -199,54 +241,89 @@ const ICON = {
   plus: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4v12M4 10h12"/></svg>',
   play: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 4v12l10-6z"/></svg>',
   filter: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h14M6 10h8M8.5 15h3"/></svg>',
+  bell: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"/></svg>',
+  devices: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="11" height="8" rx="1.2"/><rect x="13.5" y="7" width="4.5" height="9" rx="1.2"/><path d="M5 15h5"/></svg>',
+  ear: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a4 4 0 1 1 8 0c0 2.5-2.5 3.2-2.5 5.5a2.5 2.5 0 0 1-4.6 1.3M9 8.5a1.5 1.5 0 0 1 3 0"/></svg>',
   tv: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6"/></svg>'
 };
 
 // [nombre, detalle, ¿de los más usados?, bandera]
 const LANGS = {
   latino: ["Español latino (doblado)", "El de México y Latinoamérica", true, "🇲🇽"],
-  original: ["Idioma original", "Con subtítulos en tu idioma", true, "🎬"],
+  original: ["Idioma original", "El de la película, con subtítulos", true, "🎬"],
   en: ["Inglés", "", true, "🇺🇸"],
   castellano: ["Castellano (doblado)", "El de España", true, "🇪🇸"],
   pt: ["Portugués", "", true, "🇧🇷"],
   fr: ["Francés", "", false, "🇫🇷"], it: ["Italiano", "", false, "🇮🇹"], de: ["Alemán", "", false, "🇩🇪"],
   ja: ["Japonés", "", false, "🇯🇵"], ko: ["Coreano", "", false, "🇰🇷"], zh: ["Chino", "", false, "🇨🇳"], hi: ["Hindi", "", false, "🇮🇳"]
 };
+const lname = id => LANGS[id][0].replace(" (doblado)", "");
+// El idioma de la app decide el doblaje que se propone primero (P6).
+const DUB = { es: "latino", en: "en", pt: "pt" };
+const SUBNAME = { es: "español", en: "inglés", pt: "portugués" };
+const PLATFORMS = ["Netflix", "Max", "Disney+", "Prime Video", "Apple TV+", "Paramount+", "Mubi", "ViX"];
+const SUBS = ["es", "en", "pt", "fr", "it", "de", "ja", "ko"];
+const SUBNAMES = { es: "español", en: "inglés", pt: "portugués", fr: "francés", it: "italiano", de: "alemán", ja: "japonés", ko: "coreano" };
 let S;
 function reset() {
-  S = { step: "welcome", hist: [], uiLang: "es", metaLang: "es", trakt: null, picked: null, cloud: null, langs: ["latino", "original", "en"], tasks: {}, sheet: null, traktSub: null, tour: null };
+  S = { step: "welcome", hist: [], uiLang: "es", metaLang: "es", splitMeta: false, flash: null,
+    trakt: null, traktNew: false, traktSub: null, traktWait: false, saved: [], decidedInWin: false, shuffled: false, platforms: [], otherPlat: false,
+    cloud: null, cloudLater: false, keyFor: null, keyPasted: false, listen: "dub", subs: "es", subsOpen: false, langs: ["latino", "original"], showOrder: false,
+    tv: null, noTV: false, fromTV: false, tvCode: false, tasks: {}, ver: 0, verOpen: false, requested: false, rated: 0, remote: false,
+    sheet: null, tour: null, dismissed: [], toast: null, notif: null, pin: false, rdWait: false };
 }
 reset();
 let edition = "plus", device = "iphone";
 const watches = () => edition !== "orbital";
+const here = () => device === "ipad" ? "aparato" : "iPhone";
+const sub1 = s => s[0].toUpperCase() + s.slice(1);
 
 function plan() {
-  const p = ["welcome", "lang", "trakt", "win"];
-  if (watches()) p.push("cloud", "how");
+  const p = ["welcome", "lang"];
+  if (edition === "ultra") p.push("tvfirst");
+  if (S.fromTV) { p.push("win", "tour", "home"); return p; }
+  p.push("trakt", "win");
+  if (!watches()) p.push("platforms");
+  else { p.push("cloud"); if (S.cloud) p.push("how"); }
   p.push("tour", "home");
   return p;
 }
-function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; render(); }
+// Los puntitos no cambian de número al conectar la nube (G15): cuentan el camino más largo de esa versión.
+function dotPlan() { const keep = S.cloud; if (watches() && !S.fromTV) S.cloud = S.cloud || "x"; const p = plan(); S.cloud = keep; return p; }
+function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; S.toast = null; render(); }
 function next() { const p = plan(); go(p[p.indexOf(S.step) + 1]); }
-function back() { if (S.sheet) { S.sheet = null; return render(); } if (S.tour) { S.tour = null; return render(); } if (S.traktSub) { S.traktSub = null; return render(); } S.step = S.hist.pop() || "welcome"; render(); }
+function back() {
+  if (S.sheet) { S.sheet = null; return render(); }
+  if (S.tour) { S.tour = null; return render(); }
+  if (S.traktSub) { S.traktSub = null; S.traktWait = false; return render(); }
+  S.step = S.hist.pop() || "welcome"; S.toast = null; render();
+}
+function saveTitle(k) { if (!S.saved.includes(k)) S.saved.push(k); }
+function approveTrakt() { if (S.step !== "trakt" || !S.traktWait) return; S.traktWait = false; S.trakt = true; S.traktSub = null; go("win"); }
 
 const NOTES = {
-  welcome: ["K2-B", "¿Qué es Orbital?", "Una pantalla que se mueve sola, unos 15 segundos. La promesa no nombra a Trakt (es marca de otro). En Plus y Ultra se suma «y míralo todo aquí»; en Orbital, de la tienda, nunca se menciona ver.", ["Sin «Saltar» aquí: aún no hay nada que saltar.", "Cambia la versión arriba y mira la última línea."]],
-  lang: ["Tu pedido (18 nov)", "Elige tu idioma", "Dos partes con vista previa en vivo: los menús y botones, y los títulos y sinopsis de las películas y series. Arranca con el del iPhone ya marcado: casi todos solo tocan «Continuar».", ["Hoy la app tiene un solo ajuste para las dos cosas (español o inglés): separarlas y sumar portugués es trabajo nuevo.", "En qué idioma suenan se pregunta después, en Plus y Ultra."]],
-  trakt: ["K1-B", "Trakt, muy recomendado", "Dice qué ganas y qué pasa si no lo conectas. «Ahora no» siempre a la vista. «Crear una» explica cómo y te deja volver al mismo punto.", ["Conectar es con un código, como hoy.", "Sin Trakt: lo tuyo se guarda solo en este teléfono."]],
-  win: ["J3 · K4-B", "Tu primer logro, antes de pedir más", "Con Trakt: «Trajimos tus vistos y tu lista». Sin Trakt: un «Decide por mí» de verdad; eliges uno y queda en Mi lista.", ["Los gustos con pósters ya no existen (K5-B).", "El porqué de cada cartel enseña de dónde salen las sugerencias."]],
-  cloud: ["K3-B · B2", "Para verlo aquí: tu nube", "Qué es, que se paga en su página y que es una cuenta por persona. La palabra «torrent» no sale; quien quiera el detalle toca «¿Cómo funciona?».", ["Solo en Plus y Ultra.", "«Ya tengo» abre las tres nubes; Real-Debrid conecta con código."]],
-  how: ["V1-B · tu pedido", "¿En qué idiomas ves?", "Tú eliges y ordenas tus idiomas: arriba el que quieres. «Agregar un idioma» abre una lista con los más usados primero. Con la explicación para quien viene de Netflix: muchas copias, cada una con sus idiomas.", ["Es lo mismo que hoy está en Ajustes › Tus idiomas, traído a la guía.", "En el iPhone se ordena arrastrando; aquí, con las flechas."]],
-  tour: ["K4-B · tus 5 funciones", "Lo principal de Orbital", "Las cinco funciones que más importan, cada una se prueba con un toque: Decide por mí, buscar y el filtro avanzado, tus listas, versiones e idiomas, y tus series al día.", ["En Orbital (la de la tienda) no hay versiones: entra «Dónde verla».", "Versiones se explica aunque no hayas conectado tu nube.", "Se puede seguir a Inicio sin probarlas todas."]],
-  home: ["HE1 · P2", "Inicio", "Arriba, lo que guardaste. Sin círculos de historias: «Aprende» vive solo en Ajustes. Lo que dejaste para después aparece como tarjeta con su botón, y se puede cerrar.", ["Ultra: la TV se ofrece aquí, después de aterrizar.", "Sin Trakt: la tarjeta lo vuelve a ofrecer."]]
+  welcome: ["K2-B · U1-B", "¿Qué es Orbital?", "Una pantalla que se mueve sola, unos 15 segundos. Plus suma «y míralo todo aquí»; Ultra, además, «y mándalo a tu TV». La de la tienda nunca habla de ver.", ["Cambia la versión arriba y mira las últimas líneas."]],
+  lang: ["G1-B · G2 · G3", "¿En qué idioma lees Orbital?", "Una sola decisión, ya marcada con la del iPhone. Quien quiere las películas en otro idioma prende el interruptor. La vista previa parpadea donde cambió.", ["Sin banderas: un idioma no es un país.", "Separar app y fichas y sumar portugués es trabajo nuevo en la app."]],
+  tvfirst: ["U7 · U6", "¿Ya usas Orbital en la TV?", "Solo en Ultra y justo al principio: quien ya configuró la TV la conecta con el código que sale en la tele y se trae su Trakt, su servicio de nube y sus idiomas. Se salta tres pasos.", ["Quien no tiene la TV sigue el camino de Plus y no se le vuelve a preguntar.", "Trabajo nuevo en la app y en la TV."]],
+  trakt: ["K1-B · G4 · G13 · G14", "Trakt, muy recomendado", "Tres beneficios con ícono y «Orbital no publica nada por ti». Tras «Copiar y abrir Trakt» espera y sigue solo; si tarda, «Revisar ahora». Si regresas ya conectado, dice «✓ Trakt conectado».", ["«Crear una» explica cómo y te deja volver al mismo punto."]],
+  win: ["K4-B · G6 · G7 · G11", "Tu primer logro", "Con historial en Trakt: tus recomendaciones, cada una se guarda con un toque. Sin Trakt o con cuenta nueva: un «Decide por mí» de verdad, con «Otras tres» que sí cambia.", ["Los porqués enseñan de dónde salen las sugerencias."]],
+  platforms: ["A1-B · A6", "¿Qué plataformas tienes?", "Solo en la de la tienda. Con esto «Dónde verla» dice «Incluida en tu plan» con la tuya y la fila «En tus plataformas» es verdad. «Otra…» para la que no está.", ["Se puede saltar.", "Trabajo nuevo en la app."]],
+  cloud: ["P1 · P2-B · P12 · P13 · P18", "Para ver aquí: un servicio de nube", "Un dibujo de tres pasos y tres botones: «Ya tengo uno», «Aún no tengo», «Ahora no». Conectar se ve completo: código en Real-Debrid, clave con «¿Dónde está mi clave?» y «Pegar» en los otros.", ["Siempre «tu servicio de nube», en masculino.", "«Aún no tengo» deja volver con «Ya lo contraté, conectar»."]],
+  how: ["P5-B · P15 · P19", "¿En qué idioma quieres oír películas y series?", "Dos tarjetas grandes y los subtítulos en un renglón que se abre. Parte del idioma del paso 2. «Otro orden» para quien quiere más.", ["Solo si conectaste tu servicio de nube; si no, se pregunta al conectarlo.", "En la app se ordena arrastrando."]],
+  tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. Sin nube o en la de la tienda, «Dónde verla» en lugar de versiones. No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
+  playing: ["P20", "Tu primera película", "El momento «ajá» de Plus y Ultra: al terminar el recorrido, «Ver algo ahora» arranca una película lista al instante en tu idioma.", ["Solo si ya conectaste tu servicio de nube."]],
+  home: ["G9 · P17 · U9", "Inicio", "Arriba, lo que guardaste. Una sola tarjeta pendiente a la vez. Con servicio de nube: «Listas al instante ⚡». Con TV: «En la TV · conectada».", ["«En tus plataformas» solo si dijiste cuáles tienes."]]
 };
 
 function head(showBack = true) {
-  const p = plan(); const i = p.indexOf(S.step);
+  const p = dotPlan(); const i = p.indexOf(S.step);
   const dots = p.slice(0, -1).map((s, j) => `<i class="${j < i ? "done" : j === i ? "on" : ""}"></i>`).join("");
   const canSkip = S.step !== "welcome" && S.step !== "home";
   return `<div class="top"><button class="back" data-a="back" aria-label="Atrás" ${showBack && S.step !== "welcome" ? "" : "hidden"}>‹</button><div class="dots">${S.step === "home" ? "" : dots}</div>${canSkip ? '<button class="skip" data-a="skipall">Saltar guía</button>' : '<span style="width:70px"></span>'}</div>`;
 }
+const toast = () => S.toast ? `<div class="toast">${S.toast}</div>` : "";
+const f = k => (S.flash === k || S.flash === "all") ? " flash" : "";
+const svc = c => c === "Real-Debrid" ? "Con un código" : "Con tu clave";
 
 const V = {
   welcome() {
@@ -254,153 +331,253 @@ const V = {
       `<div class="sat" style="background:${POSTERS[k][1]};animation-delay:-${i * 14 / 6}s;--sc:${i % 2 ? .8 : 1}"></div>`).join("");
     const lines = [["Descubre", "lo mejor para esta noche"], ["Guarda", "tus listas y lo que viste"], ["Encuentra", "lo parecido a lo que te encantó"]];
     if (watches()) lines.push(["Y míralo", "todo aquí mismo"]);
+    if (edition === "ultra") lines.push(["Y mándalo", "a tu TV"]);
     return `${head()}<div class="body two"><div class="orbit"><div class="ring"></div>${sats}<div class="core">orbital</div></div>
       <div class="col"><div class="promise">${lines.map(l => `<div><b>${l[0]}</b> ${l[1]}</div>`).join("")}</div>
       <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Empezar</button></div></div></div>`;
   },
   lang() {
     const UI = {
-      es: { name: "Español", flag: "🇲🇽", tabs: ["Inicio", "Explorar", "Biblioteca", "Buscar"], btn: "Ver" },
-      en: { name: "English", flag: "🇺🇸", tabs: ["Home", "Explore", "Library", "Search"], btn: "Play" },
-      pt: { name: "Português", flag: "🇧🇷", tabs: ["Início", "Explorar", "Biblioteca", "Buscar"], btn: "Assistir" }
+      es: { name: "Español", tabs: ["Inicio", "Explorar", "Biblioteca", "Buscar"], btn: "Ver" },
+      en: { name: "English", tabs: ["Home", "Explore", "Library", "Search"], btn: "Play" },
+      pt: { name: "Português", tabs: ["Início", "Explorar", "Biblioteca", "Buscar"], btn: "Assistir" }
     };
     const META = {
       es: { title: "Duna: Parte dos", line: "Paul Atreides se une a los Fremen para vengar a su familia.", kind: "Película · 2024 · 2 h 46 min" },
       en: { title: "Dune: Part Two", line: "Paul Atreides unites with the Fremen to avenge his family.", kind: "Movie · 2024 · 2 h 46 min" },
       pt: { title: "Duna: Parte Dois", line: "Paul Atreides se une aos Fremen para vingar sua família.", kind: "Filme · 2024 · 2 h 46 min" }
     };
-    const ui = UI[S.uiLang], meta = META[S.metaLang];
-    const seg = (key, cur) => `<div class="langseg">${Object.keys(UI).map(k => `<button data-a="${key}" data-v="${k}" aria-pressed="${k === cur}">${UI[k].flag} ${UI[k].name}</button>`).join("")}</div>`;
-    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">Elige tu idioma</h2>
-      <p class="s">Así se verá Orbital. Puedes tener los menús en un idioma y las películas en otro.</p>
-      <div class="langblock"><span class="lb">Los menús y botones</span>${seg("ui", S.uiLang)}</div>
-      <div class="langblock"><span class="lb">Los títulos y las sinopsis</span>${seg("meta", S.metaLang)}</div></div>
-      <div class="col"><div class="preview">
+    const ui = UI[S.uiLang], meta = META[S.splitMeta ? S.metaLang : S.uiLang];
+    const seg = (key, cur) => `<div class="langseg">${Object.keys(UI).map(k => `<button data-a="${key}" data-v="${k}" aria-pressed="${k === cur}">${UI[k].name}</button>`).join("")}</div>`;
+    const title = `<span class="ico">${ICON.globe}</span><h2 class="t">¿En qué idioma lees Orbital?</h2><p class="s">Ya marcamos el de tu ${here()}. Así se ve:</p>`;
+    const preview = `<div class="preview">
         <div class="pv-poster" style="background:${POSTERS.dune[1]}"></div>
-        <div class="pv-body"><b class="pv-title">${meta.title}</b><span class="pv-kind">${meta.kind}</span><span class="pv-line">${meta.line}</span>
-        <span class="pv-btn">▶ ${ui.btn}</span></div>
-        <div class="pv-tabs">${ui.tabs.map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</div></div>
-      <p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.${watches() ? " En qué idioma suenan, lo eliges más adelante." : ""}</p>
-      <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
+        <div class="pv-body"><b class="pv-title${f("meta")}">${meta.title}</b><span class="pv-kind${f("meta")}">${meta.kind}</span><span class="pv-line${f("meta")}">${meta.line}</span>
+        <span class="pv-btn${f("ui")}">▶ ${ui.btn}</span></div>
+        <div class="pv-tabs${f("ui")}">${ui.tabs.map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</div></div>`;
+    const pick = `${seg("ui", S.uiLang)}
+      <button class="switch" data-a="split" role="switch" aria-checked="${S.splitMeta}"><span class="grow">Títulos y sinopsis en otro idioma<span class="sub">Por ejemplo, la app en español y las películas en inglés</span></span><i></i></button>
+      ${S.splitMeta ? `<div class="langblock"><span class="lb">Títulos y sinopsis</span>${seg("meta", S.metaLang)}</div>` : ""}`;
+    const foot = `<p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.${watches() ? " En qué idioma quieres oír películas y series, te lo preguntamos después." : ""}</p>
+      <div class="actions"><button class="btn p" data-a="next">Continuar</button></div>`;
+    return device === "ipad"
+      ? `${head()}<div class="body two"><div class="col">${title}${pick}</div><div class="col">${preview}${foot}</div></div>`
+      : `${head()}<div class="body">${title}${preview}${pick}<div style="margin-top:auto;display:grid;gap:9px">${foot}</div></div>`;
+  },
+  tvfirst() {
+    if (S.fromTV) return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Listo, trajimos lo de tu TV</h2>
+      <div class="facts">${[[ICON.trakt, "Tu Trakt", "Lo que viste y tus listas"], [ICON.cloud, "Tu servicio de nube", "Ya puedes ver aquí"], [ICON.ear, "Tus idiomas", "Los mismos que en la TV"]].map(x => `<div class="fact"><span class="ico">${x[0]}</span><div><b>✓ ${x[1]}</b><span>${x[2]}</span></div></div>`).join("")}</div>
+      <p class="small">Y tu ${here()} ya es el control de tu TV.</p>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Continuar</button></div></div>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.tv}</span><h2 class="t">¿Ya usas Orbital en la TV?</h2>
+      <p class="s">Conéctala y traemos tu Trakt, tu servicio de nube y tus idiomas. Además, tu ${here()} se vuelve el control.</p>
+      <div class="flow"><span><b>Eliges aquí</b>en tu ${here()}</span><i>→</i><span><b>Se ve allá</b>en tu TV</span></div></div>
+      <div class="col"><div class="actions"><button class="btn p" data-a="sheet" data-v="tvcode">Sí, conectar mi TV</button><button class="btn q" data-a="notv">No, empezar desde cero</button></div>
+      <p class="small">¿La tienes pero no a la mano? Sigue sin ella y conéctala cuando quieras en Ajustes › TV.</p></div></div>`;
   },
   trakt() {
     if (S.traktSub === "code") return `${head()}<div class="body"><span class="ico">${ICON.trakt}</span><h2 class="t">Conecta tu Trakt</h2>
-      <p class="s">Abre trakt.tv/activate en cualquier aparato y escribe este código.</p><div class="code">7F3K 9QP2</div>
-      <div class="actions"><button class="btn p" data-a="traktok">Copiar y abrir Trakt</button><button class="btn q" data-a="sub" data-v="">Cancelar</button></div>
-      <p class="small">En el prototipo, el primer botón simula que ya lo aprobaste.</p></div>`;
+      <p class="s">Abre trakt.tv/activate en cualquier aparato y escribe este código.</p>
+      <button class="code" data-a="copy">7F3K 9QP2<span class="small" style="display:block;letter-spacing:0;font-weight:500">${S.toast === "copied" ? "✓ Copiado" : "Toca para copiar"}</span></button>
+      ${S.traktWait ? `<div class="wait"><span class="spin"></span><span>Esperando a que lo apruebes en Trakt…<span class="sub">Cuando lo apruebes, seguimos solos.</span></span></div>` : ""}
+      <div class="actions" style="margin-top:auto">${S.traktWait ? '<button class="btn g" data-a="traktcheck">¿Ya lo aprobaste? Revisar ahora</button><button class="btn q" data-a="traktok">Abrir Trakt otra vez</button>' : '<button class="btn p" data-a="traktok">Copiar y abrir Trakt</button>'}<button class="btn q" data-a="sub" data-v="">Cancelar</button></div>
+      <p class="small">En el prototipo, a los cuatro segundos simula que ya lo aprobaste.</p></div>`;
     if (S.traktSub === "new") return `${head()}<div class="body"><span class="ico">${ICON.user}</span><h2 class="t">Crear tu cuenta de Trakt</h2>
       <div class="facts"><div class="fact"><span class="ico">1</span><div><b>Se crea en trakt.tv</b><span>Es gratis. Con tu correo, o con Google o Apple.</span></div></div>
       <div class="fact"><span class="ico">2</span><div><b>Confirma tu correo</b><span>Trakt te manda un enlace.</span></div></div>
       <div class="fact"><span class="ico">3</span><div><b>Vuelve aquí</b><span>Sigues justo donde ibas y la conectas con un código.</span></div></div></div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="sub" data-v="code">Ya la creé, conectar</button><button class="btn q" data-a="sub" data-v="">Regresar</button></div></div>`;
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="newcode">Ya la creé, conectar</button><button class="btn q" data-a="sub" data-v="">Regresar</button></div></div>`;
+    const devices = edition === "ultra" ? "iPhone, iPad, Mac y la TV" : "iPhone, iPad y Mac";
+    const acts = S.trakt
+      ? `<div class="toast">✓ Trakt conectado</div><div class="actions"><button class="btn p" data-a="next">Continuar</button></div>`
+      : `<div class="actions"><button class="btn p" data-a="sub" data-v="code">Ya tengo cuenta</button><button class="btn g" data-a="sub" data-v="new">Crear una gratis</button><button class="btn q" data-a="notrakt">Ahora no</button></div>
+      <p class="small">Orbital no publica nada por ti. Sin Trakt, lo tuyo se guarda solo en este ${here()}.</p>`;
     return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.trakt}</span><h2 class="t">Lo tuyo, en todos tus aparatos</h2>
-      <p class="s">Orbital funciona con Trakt, un servicio gratis que guarda lo que ves y tus listas. Con él te recomendamos a ti, te avisamos de estrenos y armamos tu año.</p>
-      <p class="small">Sin Trakt, lo tuyo se guarda solo en este ${device === "ipad" ? "aparato" : "iPhone"}.</p></div>
-      <div class="col"><div class="actions"><button class="btn p" data-a="sub" data-v="code">Ya tengo cuenta</button><button class="btn g" data-a="sub" data-v="new">Crear una</button><button class="btn q" data-a="notrakt">Ahora no</button></div></div></div>`;
+      <p class="s">Trakt es un servicio gratis que guarda lo que ves y tus listas. Conéctalo y Orbital:</p>
+      <div class="benefits"><div><span class="ico">${ICON.dice}</span><span>Te recomienda a ti<span class="sub">Según lo que ya viste</span></span></div>
+      <div><span class="ico">${ICON.bell}</span><span>Te avisa de estrenos<span class="sub">De las series que sigues</span></span></div>
+      <div><span class="ico">${ICON.devices}</span><span>Te sigue a todos lados<span class="sub">${devices}</span></span></div></div></div>
+      <div class="col">${acts}</div></div>`;
   },
   win() {
-    if (S.trakt) return `${head()}<div class="body"><span class="ico">✓</span><h2 class="t">Trajimos lo tuyo</h2>
-      <p class="s">Lo que viste, tu lista y tus calificaciones ya están aquí.</p>
-      <div class="row-title"><small>Porque viste Shōgun</small>Para esta noche</div><div class="deck">${["arrival", "interstellar", "br2049"].map(k => poster(k)).join("")}</div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Continuar</button></div></div>`;
-    const cards = [["arrival", "Porque es lo más visto de la semana"], ["bear", "Corta: episodios de 30 min"], ["chern", "Calificación alta en Trakt"]];
-    return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">Decide por mí</h2>
-      <p class="s">Toca la que se te antoje y la guardamos en Mi lista.</p>
-      <div class="deck">${cards.map(c => `<button class="card ${S.picked === c[0] ? "on" : ""}" data-a="pick" data-v="${c[0]}">${poster(c[0])}<span class="why">${c[1]}</span></button>`).join("")}</div>
-      ${S.picked ? `<div class="toast">✓ ${POSTERS[S.picked][0]} quedó en Mi lista</div>` : '<button class="btn q" data-a="shuffle">Otras tres</button>'}
-      <div class="actions" style="margin-top:auto"><button class="btn ${S.picked ? "p" : "g"}" data-a="next">${S.picked ? "Continuar" : "Ahora no"}</button></div></div>`;
+    const deck = cards => `<div class="deck">${cards.map(c => `<button class="card ${S.saved.includes(c[0]) ? "on" : ""}" data-a="save" data-v="${c[0]}">${poster(c[0])}<span class="why">${c[1]}</span></button>`).join("")}</div>`;
+    const last = S.saved.length ? `<div class="toast">✓ ${POSTERS[S.saved[S.saved.length - 1]][0]} quedó en Mi lista</div>` : "";
+    if (S.trakt && !S.traktNew) return `${head()}<div class="body"><span class="ico">✓</span><h2 class="t">Trajimos lo tuyo</h2>
+      <p class="s">Lo que viste, tu lista y tus calificaciones ya están aquí. Esto es para ti; toca una para guardarla.</p>
+      <div class="row-title"><small>Porque viste Shōgun</small>Para esta noche</div>
+      ${deck([["arrival", "Ciencia ficción pausada"], ["interstellar", "Del director de El origen"], ["br2049", "Otro mundo enorme, como Shōgun"]])}
+      ${last}<div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Continuar</button></div></div>`;
+    const sets = [[["arrival", "Lo más visto de la semana"], ["bear", "Corta: episodios de 30 min"], ["chern", "De las mejor calificadas"]],
+                  [["severance", "Para maratonear"], ["matrix", "Un clásico que vale la pena"], ["origin", "Menos de 2 h y media"]]];
+    const title = S.traktNew ? "Tu Trakt ya está conectado. Empecemos a llenarlo" : "Decide por mí";
+    return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">${title}</h2>
+      <p class="s">Tres opciones para esta noche, cada una con su porqué. Toca la que se te antoje y la guardamos.</p>
+      ${deck(sets[S.shuffled ? 1 : 0])}
+      ${last || '<button class="btn q" data-a="shuffle">Otras tres</button>'}
+      <div class="actions" style="margin-top:auto"><button class="btn ${S.saved.length ? "p" : "g"}" data-a="next">${S.saved.length ? "Continuar" : "Ahora no"}</button></div></div>`;
+  },
+  platforms() {
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.tv}</span><h2 class="t">¿Qué plataformas tienes?</h2>
+      <p class="s">Así te decimos qué puedes ver sin pagar más, y lo nuevo en lo tuyo.</p></div>
+      <div class="col"><div class="plats">${PLATFORMS.map(p => `<button data-a="plat" data-v="${p}" aria-pressed="${S.platforms.includes(p)}">${p}</button>`).join("")}<button data-a="otherplat" aria-pressed="${S.otherPlat}" style="grid-column:1/-1">${S.otherPlat ? "✓ Te la buscamos en la ficha" : "Otra…"}</button></div>
+      <p class="small">Solo se guarda en Orbital. Lo cambias en Ajustes.</p>
+      <div class="actions"><button class="btn ${S.platforms.length ? "p" : "g"}" data-a="next">${S.platforms.length ? "Continuar" : "Ahora no"}</button></div></div></div>`;
   },
   cloud() {
-    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.cloud}</span><h2 class="t">Para verlo aquí, conecta tu nube</h2>
-      <p class="s">Tu nube es un servicio aparte que guarda películas y series y las tiene listas para ti. Orbital la busca, elige la mejor y la reproduce.</p>
+    const flow = `<div class="flow"><span><b>Orbital</b>busca y elige</span><i>→</i><span><b>Tu servicio</b>la tiene lista</span><i>→</i><span><b>Tu pantalla</b>la reproduce</span></div>`;
+    const acts = S.cloud
+      ? `<div class="toast">✓ ${S.cloud} conectado. Ya puedes ver aquí.</div><div class="actions"><button class="btn p" data-a="next">Continuar</button><button class="btn q" data-a="sheet" data-v="clouds">Cambiar</button></div>`
+      : `<div class="actions"><button class="btn p" data-a="sheet" data-v="clouds">Ya tengo uno</button><button class="btn g" data-a="sheet" data-v="none">Aún no tengo</button><button class="btn q" data-a="nocloud">Ahora no</button></div>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.cloud}</span><h2 class="t">Para ver aquí, conecta un servicio de nube</h2>
+      <p class="s">Es aparte de Orbital: guarda las películas y las tiene listas para ti. <button class="link" data-a="sheet" data-v="how">¿Cómo funciona?</button></p>${flow}
       <div class="facts"><div class="fact"><span class="ico">${ICON.card}</span><div><b>Se paga en su página</b><span>Orbital no cobra nada.</span></div></div>
       <div class="fact"><span class="ico">${ICON.user}</span><div><b>Una cuenta por persona</b><span>Si dos la usan a la vez, se corta.</span></div></div></div></div>
-      <div class="col"><div class="actions"><button class="btn p" data-a="sheet" data-v="clouds">Ya tengo</button><button class="btn g" data-a="sheet" data-v="how">¿Cómo funciona?</button><button class="btn q" data-a="nocloud">Ahora no</button></div>
-      ${S.cloud ? `<div class="toast">✓ ${S.cloud} conectada</div>` : ""}</div></div>`;
+      <div class="col">${acts}</div></div>`;
   },
   how() {
-    const rows = S.langs.map((id, i) => `<div class="lrow"><span class="rank">${i + 1}</span><span class="grow">${LANGS[id][0]}<span class="sub">${i === 0 ? "El que quieres" : LANGS[id][1]}</span></span>
+    const dub = DUB[S.uiLang];
+    const big = (v, flag, t, sub) => `<button class="choice big ${S.listen === v ? "on" : ""}" data-a="listen" data-v="${v}"><span class="bflag">${flag}</span><span class="grow">${t}<span class="sub">${sub}</span></span><span class="tick">${S.listen === v ? "✓" : ""}</span></button>`;
+    const rows = S.langs.map((id, i) => `<div class="lrow"><span class="rank">${i + 1}</span><span class="grow">${LANGS[id][0]}<span class="sub">${LANGS[id][1]}</span></span>
       <button class="mini" data-a="up" data-v="${i}" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑</button><button class="mini" data-a="down" data-v="${i}" aria-label="Bajar" ${i === S.langs.length - 1 ? "disabled" : ""}>↓</button><button class="mini" data-a="drop" data-v="${i}" aria-label="Quitar" ${S.langs.length === 1 ? "disabled" : ""}>×</button></div>`).join("");
     const left = Object.keys(LANGS).filter(id => !S.langs.includes(id));
     const options = `<option value="">Agregar un idioma…</option><optgroup label="Los más usados">${left.filter(id => LANGS[id][2]).map(id => `<option value="${id}">${LANGS[id][0]}</option>`).join("")}</optgroup><optgroup label="Todos">${left.filter(id => !LANGS[id][2]).map(id => `<option value="${id}">${LANGS[id][0]}</option>`).join("")}</optgroup>`;
-    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.globe}</span><h2 class="t">¿En qué idiomas ves?</h2>
-      <p class="s">En otras apps hay una sola copia y le cambias el audio. Aquí cada película tiene varias copias, y cada una trae sus idiomas. Ordena los tuyos: Orbital busca la copia en el primero y, si no hay, en el siguiente.</p></div>
-      <div class="col"><div class="list">${rows}</div>
-      <select class="pick" id="addlang" aria-label="Agregar un idioma">${options}</select>
-      <p class="small">Si suena en un idioma que no es el primero, salen subtítulos en ${LANGS[S.langs[0]][0].toLowerCase().replace(" (doblado)", "")}.</p>
+    const order = S.showOrder ? `<div class="list">${rows}</div><select class="pick" id="addlang" aria-label="Agregar un idioma">${options}</select><p class="small">«Ver» busca una versión en el primero; si no hay, en el siguiente.</p>` : "";
+    const subs = S.subsOpen ? `<div class="langseg wrap">${SUBS.map(k => `<button data-a="subs" data-v="${k}" aria-pressed="${S.subs === k}">${sub1(SUBNAMES[k])}</button>`).join("")}</div>` : "";
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.ear}</span><h2 class="t">¿En qué idioma quieres oír películas y series?</h2>
+      <p class="s">Cada una viene en varias versiones y cada versión suena en su idioma. Dinos cuál prefieres y «Ver» la elige por ti.</p></div>
+      <div class="col">${big("dub", LANGS[dub][3], `Doblada al ${lname(dub).toLowerCase()}`, "Si no existe, en su idioma con subtítulos")}
+      ${big("orig", "🎬", "En su idioma, con subtítulos", "Como se filmó")}
+      <button class="subline" data-a="subsopen"><span class="grow">Subtítulos en ${SUBNAMES[S.subs]}<span class="sub">Solo salen cuando no suena en tu idioma</span></span><span class="link">${S.subsOpen ? "Listo" : "Cambiar"}</span></button>${subs}
+      <button class="btn q" data-a="order" style="justify-self:start">${S.showOrder ? "Ocultar el orden" : "Otro orden ›"}</button>${order}
       <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
   },
   tour() {
-    const say = () => LANGS[S.langs[0]][3] + " " + LANGS[S.langs[0]][0];
-    if (S.tour === "decide") return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">Decide por mí</h2><p class="s">Cuando no sepas qué ver: tres opciones con su porqué. ¿Ninguna? Pide otras tres.</p>
-      <div class="deck">${[["shogun", "Porque viste Severance"], ["matrix", "Un clásico que no has visto"], ["origin", "Dura menos de 2 h y media"]].map(c => `<button class="card" data-a="taskdone" data-v="decide">${poster(c[0])}<span class="why">${c[1]}</span></button>`).join("")}</div><p class="small">Vive en Inicio y en Explorar. Toca una para seguir.</p></div>`;
-    if (S.tour === "search") return `${head()}<div class="body"><span class="ico">${ICON.filter}</span><h2 class="t">Busca o filtra</h2><p class="s">Escribe un título, un actor o un director. O abre el filtro y junta lo que quieras: género, década, duración, calificación y dónde está.</p>
-      <div class="searchbox">⌕ Busca películas, series o personas</div>
-      <div class="chips">${["Comedia", "Años 90", "Menos de 2 h", "Más de 8 ★", "Netflix", "Max"].map((c, i) => `<button class="chip ${i % 2 ? "" : "on"}">${c}</button>`).join("")}</div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="search">Ver 38 resultados</button></div></div>`;
-    if (S.tour === "lists") return `${head()}<div class="body"><span class="ico">${ICON.plus}</span><h2 class="t">Tus listas</h2><p class="s">El + la guarda en Mi lista o en una lista tuya. Cuando la veas, márcala vista y califícala: así te recomendamos mejor${S.trakt ? " (todo va también a tu Trakt)" : ""}.</p>
+    if (S.tour === "versions") {
+      const first = S.langs[0];
+      const firstName = first === "original" ? `Inglés (original) · subtítulos en ${SUBNAMES[S.subs]}` : lname(first);
+      const flag0 = first === "original" ? "🎬" : LANGS[first][3];
+      const VERS = [[flag0, firstName, "1080p", "⚡", first === "latino" ? "Latino comprobado · lista al instante" : "Tu idioma · lista al instante"],
+                    ["🇺🇸", "Inglés", "4K", "⚡", "Mejor imagen, pesa más"],
+                    ["🇪🇸", "Castellano", "1080p", "Pedir", "Hay que pedirla: unos minutos"]];
+      if (first !== "latino") VERS[1] = ["🇲🇽", "Español latino", "1080p", "⚡", "Doblada"];
+      const cur = VERS[S.ver];
+      if (!S.verOpen) return `${head()}<div class="body"><h2 class="t">«Ver» ya eligió por ti</h2>
+        <p class="s">El botón dice en qué idioma va a sonar. ¿Quieres otra versión? Toca el idioma.</p>
+        <div class="lists-demo"><div style="width:36%">${poster("dune")}</div><div style="flex:1;display:grid;gap:8px;align-content:start"><b class="pv-title">Duna: Parte dos</b><span class="pv-kind">Película · 2024</span>
+        <div class="playbtn"><span>▶ Ver</span><button class="pflag" data-a="veropen" aria-label="Cambiar versión">${flag0}</button></div>
+        <div class="tip"><b>¿Otra?</b>Toca el idioma, junto a «Ver».</div></div></div></div>`;
+      const pend = !S.requested ? "" : S.notif == null
+        ? `<div class="ask"><b>La pedimos a tu servicio de nube.</b> Mientras, sigue en ${VERS[0][1].toLowerCase().split(" ·")[0]}. ¿Te avisamos cuando esté lista?<span class="small">Orbital solo te avisa de lo tuyo: versiones pedidas y estrenos de tus series.</span><div class="row2"><button class="btn p" data-a="notif" data-v="yes">Sí, avísame</button><button class="btn q" data-a="notif" data-v="no">Ahora no</button></div></div>`
+        : `<div class="toast">${S.notif ? "✓ Te avisamos cuando esté lista." : "Va. La verás en Descargas cuando esté lista."} Mientras, sigue en ${VERS[0][1].toLowerCase().split(" ·")[0]}.</div>`;
+      const changed = S.ver ? `<div class="toast">Listo: ahora suena en ${cur[1].toLowerCase()}. La próxima vez, «Ver» vuelve a elegir por ti.</div>` : "";
+      return `${head()}<div class="body"><h2 class="t">Elige otra versión</h2>
+        <p class="s">Cada versión cambia el idioma o la calidad. La ✦ es la que «Ver» eligió para ti.</p>
+        <div class="player"><span class="flag big${f("ver")}">${cur[0]} ${cur[1]} · ${cur[2]}</span></div>
+        <div class="list">${VERS.map((v, i) => `<button class="ver ${i === 0 ? "best" : ""} ${S.ver === i ? "on" : ""}" data-a="pickver" data-v="${i}"><span>${i === 0 ? "✦" : ""}</span><span>${v[0]} ${v[1]} · ${v[2]}</span><span class="meta">${v[3]}</span><span class="reason"${i ? ' style="color:var(--muted)"' : ""}>${v[4]}</span></button>`).join("")}</div>
+        <p class="small">⚡ lista al instante · Pedir: tarda unos minutos</p>${changed}${pend}
+        <div class="actions" style="margin-top:auto"><button class="btn ${S.ver || S.requested ? "p" : "g"}" data-a="taskdone" data-v="versions">${S.ver || S.requested ? "Entendido" : "Me quedo con esta"}</button></div></div>`;
+    }
+    if (S.tour === "decide") return `${head()}<div class="body"><span class="ico">${ICON.dice}</span><h2 class="t">Decide por mí</h2><p class="s">Cuando no sepas qué ver: tres opciones con su porqué. Toca una para guardarla.</p>
+      <div class="deck">${[["shogun", S.trakt && !S.traktNew ? "Porque viste Severance" : "La más comentada"], ["matrix", "Un clásico que vale la pena"], ["origin", "Menos de 2 h y media"]].map(c => `<button class="card" data-a="tourpick" data-v="${c[0]}">${poster(c[0])}<span class="why">${c[1]}</span></button>`).join("")}</div><p class="small">Vive en Inicio y en Explorar.</p></div>`;
+    if (S.tour === "seen") return `${head()}<div class="body"><span class="ico">★</span><h2 class="t">Ya la vi</h2><p class="s">Toca las estrellas: con eso Orbital te conoce${S.trakt ? " y se guarda en tu Trakt" : ""}.</p>
+      <div class="lists-demo"><div style="width:38%">${poster("matrix")}</div><div style="flex:1;display:grid;gap:10px;align-content:start"><b class="pv-title">Matrix</b><span class="pv-kind">Película · 1999</span>
+      <div class="stars5">${[1, 2, 3, 4, 5].map(n => `<button data-a="rate" data-v="${n}" aria-label="${n} estrellas" class="${n <= S.rated ? "on" : ""}">★</button>`).join("")}</div><button class="btn q" data-a="notseen" style="justify-self:start;padding:4px 0">No la he visto</button></div></div></div>`;
+    if (S.tour === "follow") return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Tus series, al día</h2><p class="s">«Seguir viendo» te deja en el episodio donde ibas, y te avisamos cuando sale el siguiente. Toca «Seguir».</p>
+      <div class="nudge"><span class="ico">▶</span><span class="grow">Shōgun<span class="sub" style="display:block;color:var(--muted)">T1 E7 · donde te quedaste</span></span><button data-a="taskdone" data-v="follow">Seguir</button></div></div>`;
+    if (S.tour === "lists") return `${head()}<div class="body"><span class="ico">${ICON.plus}</span><h2 class="t">Tus listas</h2><p class="s">El + la guarda en Mi lista o en una lista tuya. Toca «Para el fin de semana».${S.trakt ? " Todo va también a tu Trakt." : ""}</p>
       <div class="lists-demo"><div style="width:38%">${poster("interstellar")}</div><div class="list" style="flex:1">
-        <button class="choice on"><span class="grow">Mi lista</span><span class="tick">✓</span></button>
-        <button class="choice"><span class="grow">Para el fin de semana</span><span class="tick"></span></button>
-        <button class="choice"><span class="grow">Ya la vi<span class="sub">★★★★☆</span></span></button></div></div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="lists">Listo</button></div></div>`;
-    if (S.tour === "versions") return `${head()}<div class="body"><span class="ico">${ICON.play}</span><h2 class="t">Versiones e idiomas</h2>
-      <p class="s">Cada película tiene varias copias. «Ver» ya elige la mejor en tu idioma, y el botón te dice cuál va a sonar.</p>
-      <div class="player"><span class="flag">${say()}</span></div>
-      <div class="tip"><b>¿Quieres otra?</b>Toca la bandera y elige otra copia: otro idioma, mejor imagen o una que pese menos.<br><button data-a="sheet" data-v="versions">Ver las versiones</button></div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="versions">Entendido</button></div></div>`;
-    if (S.tour === "follow") return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Tus series, al día</h2><p class="s">«Seguir viendo» te deja en el episodio donde ibas, y el calendario te avisa cuándo sale el siguiente.</p>
-      <div class="nudge"><span class="ico">▶</span><span class="grow">Shōgun<span class="sub" style="display:block;color:var(--muted)">T1 E7 · quedan 24 min</span></span><button>Seguir</button></div>
-      <div class="nudge"><span class="ico">📅</span><span class="grow">Severance<span class="sub" style="display:block;color:var(--muted)">Nuevo episodio el viernes</span></span></div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="follow">Listo</button></div></div>`;
-    if (S.tour === "where") return `${head()}<div class="body"><span class="ico">${ICON.globe}</span><h2 class="t">Dónde verla</h2><p class="s">Cada ficha te dice en qué plataformas está en tu país, y te lleva directo.</p>
-      <div class="list"><div class="choice"><span class="grow">Netflix<span class="sub">Incluida en tu plan</span></span><span>↗</span></div><div class="choice"><span class="grow">Apple TV<span class="sub">Renta o compra</span></span><span>↗</span></div></div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="taskdone" data-v="where">Listo</button></div></div>`;
+        <div class="choice on"><span class="grow">Mi lista</span><span class="tick">✓</span></div>
+        <button class="choice" data-a="taskdone" data-v="lists"><span class="grow">Para el fin de semana</span><span class="tick"></span></button>
+        <div class="choice"><span class="grow">Nueva lista…</span></div></div></div></div>`;
+    if (S.tour === "where") {
+      const mine = S.platforms[0];
+      const rows = (mine ? [[mine, "Incluida en tu plan"]] : [["Netflix", "Con suscripción"]]).concat([["Apple TV", "Renta o compra"]]);
+      return `${head()}<div class="body"><span class="ico">${ICON.globe}</span><h2 class="t">Dónde verla</h2><p class="s">Cada ficha te dice en qué plataformas está en tu país${mine ? ", con las tuyas arriba," : ""} y te lleva directo. Toca una.</p>
+      <div class="list">${rows.map(r => `<button class="choice" data-a="taskdone" data-v="where"><span class="grow">${r[0]}<span class="sub">${r[1]}</span></span><span>↗</span></button>`).join("")}</div></div>`;
+    }
+    if (S.tour === "tvsend") return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Mándala a la TV</h2>
+      <p class="s">${S.remote ? "Ya se ve en tu TV, y el iPhone es el control. Toca «Pausa»." : "En cualquier ficha, este botón la abre en tu TV."}</p>
+      <div class="player"><span class="flag">${S.remote ? "En tu TV · " : ""}Duna: Parte dos</span></div>
+      ${S.remote ? `<div class="remote"><button data-a="noop">−10 s</button><button class="mainr" data-a="taskdone" data-v="tvsend">❚❚ Pausa</button><button data-a="noop">+10 s</button></div>`
+        : `<div class="actions" style="margin-top:auto"><button class="btn p" data-a="remote">${ICON.tv} Ver en la TV</button></div>`}</div>`;
     const all = {
+      versions: [ICON.play, "Cambia de versión", "Otro idioma u otra calidad"],
       decide: [ICON.dice, "Decide por mí", "Tres opciones con su porqué"],
-      search: [ICON.filter, "Busca o filtra", "Por título, persona o con el filtro avanzado"],
-      lists: [ICON.plus, "Tus listas", "Guardar, marcar visto y calificar"],
-      versions: [ICON.play, "Versiones e idiomas", "Qué es una copia y cómo cambiarla"],
-      follow: [ICON.tv, "Tus series, al día", "Seguir viendo y estrenos"],
-      where: [ICON.globe, "Dónde verla", "En qué plataforma está"]
+      follow: [ICON.tv, "Tus series, al día", "Sigue donde te quedaste"],
+      seen: ["★", "Ya la vi", "Califícala con un toque"],
+      lists: [ICON.plus, "Guarda en tus listas", "Mi lista y las tuyas"],
+      where: [ICON.globe, "Dónde verla", "En qué plataforma está"],
+      tvsend: [ICON.tv, "Mándala a la TV", "El iPhone es tu control"]
     };
-    const ids = watches() ? ["decide", "search", "lists", "versions", "follow"] : ["decide", "search", "lists", "follow", "where"];
-    const done = ids.filter(id => S.tasks[id]).length;
-    return `${head()}<div class="body two"><div class="col"><h2 class="t">Lo principal de Orbital</h2><p class="s">Cinco cosas, un minuto. Toca cada una para probarla. ${done}/5</p></div>
+    const canWatch = watches() && S.cloud;
+    const first = canWatch ? "versions" : !watches() ? "where" : S.decidedInWin ? "follow" : "decide";
+    const ids = [first, "seen", "lists"];
+    if (edition === "ultra" && S.tv) ids.push("tvsend");
+    const done = ids.every(id => S.tasks[id]);
+    const n = ids.length === 4 ? "Cuatro" : "Tres";
+    return `${head()}<div class="body two"><div class="col"><h2 class="t">Prueba lo principal</h2><p class="s">${n} toques, menos de un minuto.</p></div>
       <div class="col"><div class="tasks">${ids.map(id => `<button class="choice ${S.tasks[id] ? "on" : ""}" data-a="tour" data-v="${id}"><span class="ico">${all[id][0]}</span><span class="grow">${all[id][1]}<span class="sub">${all[id][2]}</span></span><span class="tick">${S.tasks[id] ? "✓" : ""}</span></button>`).join("")}</div>
-      <div class="actions"><button class="btn ${done === 5 ? "p" : "g"}" data-a="next">${done === 5 ? "Ir a Inicio" : "Seguir a Inicio"}</button></div></div></div>`;
+      ${toast()}<p class="small">Buscar, los filtros${first === "follow" ? "" : " y tus series al día"} te los enseñamos la primera vez que entres.</p>
+      <div class="actions"><button class="btn ${done ? "p" : "g"}" data-a="${done && canWatch ? "playnow" : "next"}">${done && canWatch ? "▶ Ver algo ahora" : "Ir a Inicio"}</button></div></div></div>`;
+  },
+  playing() {
+    const first = S.langs[0];
+    const name = first === "original" ? `Inglés (original) · subtítulos en ${SUBNAMES[S.subs]}` : lname(first);
+    return `<div class="top"></div><div class="body"><div class="player big"><span class="playing">▶</span><span class="flag big">${first === "original" ? "🎬" : LANGS[first][3]} ${name} · ⚡</span></div>
+      <h2 class="t">Duna: Parte dos</h2><p class="s">Arrancó al instante, en tu idioma, con la versión que «Ver» eligió. Esto es Orbital.</p>
+      ${S.tv ? `<button class="btn g" data-a="noop">${ICON.tv} Pasarla a la TV</button>` : ""}
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="tohome">Ir a Inicio</button></div></div>`;
   },
   home() {
-    const nudges = [];
-    if (!S.trakt) nudges.push([ICON.trakt, "Guarda lo tuyo en todos tus aparatos", "Conectar Trakt"]);
-    if (watches() && !S.cloud) nudges.push([ICON.cloud, "Falta tu nube para ver aquí", "Conectar"]);
-    if (edition === "ultra") nudges.push([ICON.tv, "¿Tienes Orbital en la TV?", "Conectar"]);
-    const saved = [S.picked, S.tasks.save ? "interstellar" : null].filter(Boolean);
-    return `<div class="top"></div><div class="body"><div class="home-head"><span class="logo">orbital</span><span class="avatar" title="Ajustes (ahí vive Aprende)"></span></div>
-      ${nudges.map(n => `<div class="nudge"><span class="ico">${n[0]}</span><span class="grow">${n[1]}</span><button>${n[2]}</button></div>`).join("")}
+    const all = [];
+    if (!S.trakt) all.push(["trakt", ICON.trakt, "Guarda lo tuyo en todos tus aparatos", "Conectar Trakt"]);
+    if (watches() && !S.cloud) all.push(["cloud", ICON.cloud, S.cloudLater ? "¿Ya tienes tu servicio de nube?" : "Conecta tu servicio de nube para ver aquí", "Conectar"]);
+    if (edition === "ultra" && !S.tv && !S.noTV) all.push(["tv", ICON.tv, "Usa tu iPhone como control de Orbital en la TV", "Conectar"]);
+    const nudge = all.find(n => !S.dismissed.includes(n[0]));
+    const card = nudge ? `<div class="nudge"><span class="ico">${nudge[1]}</span><span class="grow">${nudge[2]}</span><button data-a="noop">${nudge[3]}</button><button class="x" data-a="dismiss" data-v="${nudge[0]}" aria-label="Cerrar">×</button></div>` : "";
+    const saved = S.saved;
+    const mine = !watches() && S.platforms.length;
+    const ready = watches() && S.cloud ? `<div class="row-title"><small>⚡ Listas al instante en tu idioma</small>Para ver ya</div><div class="shelf">${["dune", "arrival", "br2049", "origin", "matrix"].map(k => poster(k)).join("")}</div>` : "";
+    return `<div class="top"></div><div class="body"><div class="home-head"><span class="logo">orbital</span>${S.tv ? `<span class="tvpill">${ICON.tv} En la TV · conectada</span>` : ""}<span class="avatar" title="Ajustes (ahí vive Aprende)"></span></div>
       ${saved.length ? `<div class="row-title"><small>Lo que guardaste</small>Mi lista</div><div class="shelf">${saved.map(k => poster(k)).join("")}</div>` : ""}
-      <div class="row-title"><small>${S.trakt ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</div>
+      ${card}${ready}
+      <div class="row-title"><small>${S.trakt && !S.traktNew ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</div>
       <div class="shelf">${["br2049", "dune", "arrival", "matrix", "origin"].map(k => poster(k)).join("")}</div>
-      <div class="row-title"><small>En tus plataformas</small>Nuevo esta semana</div>
+      <div class="row-title"><small>${mine ? "En tus plataformas" : "Lo que se estrena"}</small>Nuevo esta semana</div>
       <div class="shelf">${["severance", "bear", "shogun", "chern", "interstellar"].map(k => poster(k)).join("")}</div></div>`;
   }
 };
 
 const SHEETS = {
-  clouds: () => `<div class="sheet-head"><b>Tu nube</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
-    <p class="s">¿Cuál tienes?</p><div class="list">${[["Real-Debrid", "Con un código"], ["TorBox", "Con tu clave"], ["AllDebrid", "Con tu clave"]].map(c =>
-      `<button class="choice" data-a="cloudok" data-v="${c[0]}"><span class="ico">${ICON.cloud}</span><span class="grow">${c[0]}<span class="sub">${c[1]}</span></span><span>›</span></button>`).join("")}</div>
-    <p class="small">¿Aún no tienes? Se contrata en su página. Cuando tengas tu cuenta, vuelve aquí.</p>`,
+  clouds: () => `<div class="sheet-head"><b>¿Cuál tienes?</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <div class="list">${["Real-Debrid", "TorBox", "AllDebrid"].map(c =>
+      `<button class="choice" data-a="keyfor" data-v="${c}"><span class="ico">${ICON.cloud}</span><span class="grow">${c}<span class="sub">${svc(c)}</span></span><span>›</span></button>`).join("")}</div>`,
+  key: () => S.keyFor === "Real-Debrid"
+    ? `<div class="sheet-head"><b>Conecta Real-Debrid</b><button class="btn q" data-a="sheet" data-v="clouds">Atrás</button></div>
+      <p class="s">Abre real-debrid.com/device y escribe este código.</p><div class="code">K4 7P 2M</div>
+      ${S.rdWait ? `<div class="wait"><span class="spin"></span><span>Esperando a que lo apruebes en Real-Debrid…<span class="sub">Cuando lo apruebes, seguimos solos.</span></span></div><button class="btn g" data-a="rdcheck">¿Ya lo aprobaste? Revisar ahora</button>` : '<button class="btn p" data-a="rdwait">Copiar y abrir Real-Debrid</button>'}<p class="small">En el prototipo, a los cuatro segundos simula que ya lo aprobaste.</p>`
+    : `<div class="sheet-head"><b>Conecta ${S.keyFor}</b><button class="btn q" data-a="sheet" data-v="clouds">Atrás</button></div>
+      <div class="facts"><div class="fact"><span class="ico">1</span><div><b>Entra a tu cuenta</b><span>En la página de ${S.keyFor}.</span></div></div>
+      <div class="fact"><span class="ico">2</span><div><b>Busca «API» o «Clave»</b><span>Está en los ajustes de tu cuenta.</span></div></div>
+      <div class="fact"><span class="ico">3</span><div><b>Cópiala y vuelve</b><span>La pegas aquí abajo.</span></div></div></div>
+      <button class="btn g" data-a="noop">¿Dónde está mi clave? Abrir su página ↗</button>
+      <div class="keybox"><span>${S.keyPasted ? "••••••••••••••••" : "Tu clave"}</span><button data-a="paste">Pegar</button></div>
+      <button class="btn ${S.keyPasted ? "p" : "g"}" data-a="${S.keyPasted ? "cloudok" : "noop"}">Conectar</button>`,
+  none: () => `<div class="sheet-head"><b>Aún no tienes uno</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <p class="s">Hay tres y hacen lo mismo. Si dudas, elige cualquiera: puedes cambiar después. Se contrata en su página.</p>
+    <div class="list">${["Real-Debrid", "TorBox", "AllDebrid"].map(c => `<div class="choice"><span class="ico">${ICON.cloud}</span><span class="grow">${c}</span><span class="small">Abrir su página ↗</span></div>`).join("")}</div>
+    <button class="btn p" data-a="sheet" data-v="clouds">Ya lo contraté, conectar</button>
+    <button class="btn q" data-a="later">Seguir sin él por ahora</button>
+    <p class="small">Te lo recordamos en Inicio. Mientras, Orbital ya te sirve para descubrir y guardar.</p>`,
   how: () => `<div class="sheet-head"><b>¿Cómo funciona?</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
-    <div class="facts"><div class="fact"><span class="ico">${ICON.cloud}</span><div><b>Tu nube guarda las películas</b><span>En sus servidores. Lo que ya tiene arranca al instante; lo que no, se lo pides y lo baja en minutos.</span></div></div>
-    <div class="fact"><span class="ico">${ICON.bolt}</span><div><b>Orbital busca en toda la red</b><span>Encuentra varias copias de lo que quieres ver y le pide a tu nube la mejor para ti.</span></div></div>
-    <div class="fact"><span class="ico">${ICON.card}</span><div><b>Hay tres, y hacen lo mismo</b><span>Real-Debrid, TorBox y AllDebrid. Cada una se paga en su página.</span></div></div></div>
-    <p class="small">Lo técnico (cómo viajan los archivos) vive en Ajustes › Aprende.</p>`,
-  versions: () => `<div class="sheet-head"><b>Versión</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
-    <p class="s">Cada renglón es otra copia de la película, con sus idiomas. La ✦ es la que elegimos para ti.</p>
-    <div class="ver best"><span>✦</span><span>${LANGS[S.langs[0]][3]} ${LANGS[S.langs[0]][0].replace(" (doblado)", "")} · 1080p</span><span class="meta">⚡</span><span class="reason">${S.langs[0] === "latino" ? "Latino comprobado" : "Tu primer idioma"} · lista al instante</span></div>
-    <div class="ver"><span></span><span>🇺🇸 Inglés · 4K</span><span class="meta">⚡</span><span class="reason" style="color:var(--muted)">Mejor imagen, pesa más</span></div>
-    <div class="ver"><span></span><span>🇪🇸 Castellano · 1080p</span><span class="meta">Pedir</span><span class="reason" style="color:var(--muted)">Hay que pedirla: unos minutos</span></div>`
+    <div class="facts"><div class="fact"><span class="ico">${ICON.cloud}</span><div><b>Tu servicio de nube guarda las películas</b><span>En sus servidores. Lo que ya tiene arranca al instante; lo que no, se lo pides y lo baja en minutos.</span></div></div>
+    <div class="fact"><span class="ico">${ICON.bolt}</span><div><b>Orbital busca en toda la red</b><span>Encuentra varias versiones de lo que quieres ver y le pide a tu servicio la mejor para ti.</span></div></div>
+    <div class="fact"><span class="ico">${ICON.card}</span><div><b>Hay tres, y hacen lo mismo</b><span>Real-Debrid, TorBox y AllDebrid. Cada uno se paga en su página.</span></div></div></div>
+    <p class="small">Lo técnico vive en Ajustes › Aprende.</p>`,
+  tvcode: () => `<div class="sheet-head"><b>Conecta tu TV</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <p class="s">En la TV, abre Ajustes › Conectar iPhone. Ahí aparece un código: escríbelo aquí.</p>
+    <button class="pins" data-a="typepin" aria-label="Escribir el código">${(S.pin ? "4812" : "    ").split("").map(d => `<span>${d.trim()}</span>`).join("")}</button>
+    <button class="btn ${S.pin ? "p" : "g"}" data-a="${S.pin ? "tvok" : "noop"}">Conectar</button><p class="small">En el prototipo, toca los cuadros para escribirlo.</p><p class="small">El iPhone y la TV tienen que estar en la misma red de casa.</p>`
 };
 
 function render() {
@@ -408,32 +585,66 @@ function render() {
   let html = V[S.step]();
   if (S.sheet) html += `<div class="scrim" data-a="sheet" data-v=""></div><div class="sheet">${SHEETS[S.sheet]()}</div>`;
   el.innerHTML = html;
+  S.flash = null;
   const n = NOTES[S.step];
   document.getElementById("notes").innerHTML = `<div class="note"><span class="codes">${n[0]}</span><h2>${n[1]}</h2><p>${n[2]}</p><ul>${n[3].map(x => `<li>${x}</li>`).join("")}</ul></div>
     <div class="note"><span class="codes">El recorrido en ${{ orbital: "Orbital", plus: "Plus", ultra: "Ultra" }[edition]}</span><p>${plan().map(s => s === S.step ? `<b style="color:var(--text)">${NOTES[s][1]}</b>` : NOTES[s][1]).join(" → ")}</p></div>
-    <p class="legend">Lo que no está aquí y se enseña en su momento: la primera vez en Buscar (filtros), en los subtítulos del reproductor (desfase), cuando algo no está en tu idioma (aviso al arrancar), y todas las historias en Ajustes › Aprende.</p>`;
+    <p class="legend">Se enseña en su momento, no aquí: la primera vez en Buscar (filtros), en los subtítulos del reproductor (desfase), cuando algo no está en tu idioma (aviso al arrancar), y todas las historias en Ajustes › Aprende.</p>`;
 }
 
+function setListen(v) {
+  S.listen = v; const dub = DUB[S.uiLang];
+  const rest = S.langs.filter(x => x !== dub && x !== "original");
+  S.langs = v === "dub" ? [dub, "original", ...rest] : ["original", dub, ...rest.filter(x => x !== "en")];
+}
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-a]"); if (!t) return;
   const a = t.dataset.a, v = t.dataset.v;
   if (a === "next") next();
   else if (a === "back") back();
   else if (a === "skipall") go("home");
-  else if (a === "ui") { S.uiLang = v; render(); }
-  else if (a === "meta") { S.metaLang = v; render(); }
-  else if (a === "sub") { S.traktSub = v || null; render(); }
-  else if (a === "traktok") { S.trakt = true; S.traktSub = null; go("win"); }
+  else if (a === "ui") { S.uiLang = v; S.subs = v; if (!S.splitMeta) S.metaLang = v; setListen(S.listen); S.flash = S.splitMeta ? "ui" : "all"; render(); }
+  else if (a === "meta") { S.metaLang = v; S.flash = "meta"; render(); }
+  else if (a === "split") { S.splitMeta = !S.splitMeta; if (!S.splitMeta) S.metaLang = S.uiLang; render(); }
+  else if (a === "sub") { S.traktSub = v || null; S.traktWait = false; S.toast = null; render(); }
+  else if (a === "newcode") { S.traktNew = true; S.traktSub = "code"; render(); }
+  else if (a === "copy") { S.toast = "copied"; render(); }
+  else if (a === "traktok") { S.traktWait = true; render(); setTimeout(approveTrakt, 4000); }
+  else if (a === "traktcheck") approveTrakt();
   else if (a === "notrakt") { S.trakt = false; S.traktSub = null; go("win"); }
-  else if (a === "pick") { S.picked = v; S.tasks.decide = true; render(); }
-  else if (a === "shuffle") { render(); }
+  else if (a === "save") { S.saved.includes(v) ? S.saved.splice(S.saved.indexOf(v), 1) : saveTitle(v); if (!S.trakt || S.traktNew) S.decidedInWin = S.saved.length > 0; render(); }
+  else if (a === "shuffle") { S.shuffled = !S.shuffled; render(); }
+  else if (a === "plat") { S.platforms.includes(v) ? S.platforms.splice(S.platforms.indexOf(v), 1) : S.platforms.push(v); render(); }
+  else if (a === "otherplat") { S.otherPlat = !S.otherPlat; render(); }
   else if (a === "sheet") { S.sheet = v || null; render(); }
-  else if (a === "cloudok") { S.cloud = v; S.sheet = null; render(); }
+  else if (a === "keyfor") { S.keyFor = v; S.keyPasted = false; S.rdWait = false; S.sheet = "key"; render(); }
+  else if (a === "paste") { S.keyPasted = true; render(); }
+  else if (a === "cloudok") { S.cloud = S.keyFor; S.sheet = null; render(); }
+  else if (a === "later") { S.cloudLater = true; S.cloud = null; next(); }
   else if (a === "nocloud") { S.cloud = null; next(); }
+  else if (a === "listen") { setListen(v); render(); }
+  else if (a === "order") { S.showOrder = !S.showOrder; render(); }
+  else if (a === "subsopen") { S.subsOpen = !S.subsOpen; render(); }
+  else if (a === "subs") { S.subs = v; S.subsOpen = false; render(); }
+  else if (a === "tvok") { S.tv = true; S.fromTV = true; S.trakt = true; S.cloud = "Real-Debrid"; S.sheet = null; render(); }
+  else if (a === "notv") { S.noTV = true; next(); }
   else if (a === "up" || a === "down") { const i = +v, j = a === "up" ? i - 1 : i + 1; [S.langs[i], S.langs[j]] = [S.langs[j], S.langs[i]]; render(); }
   else if (a === "drop") { S.langs.splice(+v, 1); render(); }
-  else if (a === "tour") { S.tour = v; render(); }
-  else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; render(); }
+  else if (a === "tour") { S.tour = v; S.ver = 0; S.verOpen = false; S.requested = false; S.rated = 0; S.remote = false; S.toast = null; render(); }
+  else if (a === "veropen") { S.verOpen = true; render(); }
+  else if (a === "pickver") { if (+v === 2) { S.requested = true; S.ver = 0; S.notif = null; } else { S.ver = +v; S.requested = false; } S.flash = "ver"; render(); }
+  else if (a === "rate") { S.rated = +v; render(); setTimeout(() => { if (S.tour === "seen") { S.tasks.seen = true; S.tour = null; S.toast = `✓ Calificaste Matrix con ${v} ★. Con eso te conocemos mejor.`; render(); } }, 600); }
+  else if (a === "remote") { S.remote = true; render(); }
+  else if (a === "tourpick") { saveTitle(v); S.tasks.decide = true; S.tour = null; S.toast = `✓ ${POSTERS[v][0]} quedó en Mi lista`; render(); }
+  else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; S.toast = { lists: "✓ Interestelar quedó en «Para el fin de semana»", tvsend: "✓ Pausaste la TV desde el iPhone", follow: "✓ Sigues Shōgun donde te quedaste", where: "✓ Te llevamos directo a la plataforma" }[v] || null; if (v === "lists") saveTitle("interstellar"); render(); }
+  else if (a === "playnow") go("playing");
+  else if (a === "tohome") go("home");
+  else if (a === "notif") { S.notif = v === "yes"; render(); }
+  else if (a === "typepin") { S.pin = true; render(); }
+  else if (a === "rdwait") { S.rdWait = true; render(); setTimeout(() => { if (S.rdWait) { S.rdWait = false; S.cloud = "Real-Debrid"; S.sheet = null; render(); } }, 4000); }
+  else if (a === "rdcheck") { S.rdWait = false; S.cloud = "Real-Debrid"; S.sheet = null; render(); }
+  else if (a === "notseen") { S.tasks.seen = true; S.tour = null; S.toast = "Sin problema: no la marcamos."; render(); }
+  else if (a === "dismiss") { S.dismissed.push(v); render(); }
 });
 function seg(id, cb) {
   document.getElementById(id).addEventListener("click", e => {
