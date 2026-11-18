@@ -191,7 +191,8 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
 .subline .grow { flex: 1; } .subline .sub { display: block; color: var(--muted); font-size: 12px; font-weight: 400; } .subline .link { text-decoration: none; font-weight: 600; }
 .langseg.wrap button { flex: 1 0 30%; }
 .playbtn { display: flex; align-items: stretch; border-radius: 999px; overflow: hidden; background: var(--fresh); color: var(--ink); font: 700 15px var(--sans); }
-.playbtn span { flex: 1; padding: 11px 14px; } .pflag { background: rgba(0,0,0,.14); border: 0; font-size: 20px; padding: 0 14px; cursor: pointer; animation: nudgeflag 1.6s ease 2; }
+.playbtn span { flex: 1; padding: 11px 14px; } .pflag small { font: 600 12px var(--sans); }
+.pflag { background: rgba(0,0,0,.14); border: 0; font-size: 20px; padding: 0 14px; cursor: pointer; animation: nudgeflag 1.6s ease 2; }
 @keyframes nudgeflag { 50% { transform: scale(1.18); } }
 .stars5 { display: flex; gap: 4px; } .stars5 button { background: none; border: 0; font-size: 30px; color: var(--line); cursor: pointer; padding: 0 2px; } .stars5 button.on { color: var(--warm); }
 .remote { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-top: auto; } .remote button { background: var(--raised); color: var(--text); border: 0; border-radius: 16px; padding: 16px 8px; font: 600 14px var(--sans); cursor: pointer; } .remote .mainr { background: var(--text); color: var(--ink); }
@@ -201,6 +202,15 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
 .ask { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 13.5px; display: grid; gap: 6px; } .ask .row2 { display: flex; gap: 8px; } .ask .btn { padding: 9px 14px; font-size: 13.5px; }
 .pins { display: flex; gap: 10px; justify-content: center; background: none; border: 0; cursor: pointer; } .pins span { width: 52px; height: 62px; border-radius: 14px; background: var(--raised); border: 1.5px solid var(--line); display: grid; place-items: center; font: 700 28px var(--display); color: var(--text); }
 .player.big { aspect-ratio: 16/10; } .playing { position: absolute; inset: 0; display: grid; place-items: center; font-size: 40px; color: rgba(255,255,255,.85); }
+.welcome-lang { display: grid; gap: 6px; justify-items: center; position: relative; z-index: 2; }
+.welcome-lang + .orbit { margin: 46px 0 40px; }
+.ipad .welcome-lang + .orbit { margin: 40px 0 0; }
+.langseg.pill { background: var(--panel); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: nowrap; width: 220px; }
+.langseg.pill button { border-radius: 999px; padding: 7px 10px; border: 0; background: none; color: var(--muted); }
+.langseg.pill button[aria-pressed="true"] { background: var(--text); color: var(--ink); }
+.dubline { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.inl { background: var(--panel); color: var(--fresh); border: 1.5px solid var(--fresh); border-radius: 10px; padding: 5px 8px; font: 600 15px var(--sans); }
+.err { background: rgba(240,120,90,.12); color: #ffb39e; border-radius: 12px; padding: 10px 12px; font-size: 13.5px; }
 </style>
 
 <div class="wrap">
@@ -214,6 +224,7 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
     <span class="seglabel">Pantalla</span>
     <div class="seg" id="dev"><button data-v="iphone" aria-pressed="true">iPhone</button><button data-v="ipad">iPad y Mac</button></div>
     <button class="restart" id="restart">Empezar de nuevo</button>
+    <button class="restart" id="fails" aria-pressed="false">Simular fallas: no</button>
   </div>
   <div class="stage">
     <div class="device" id="device"><div class="stars"></div><div class="screen" id="screen"></div></div>
@@ -259,7 +270,8 @@ const LANGS = {
 };
 const lname = id => LANGS[id][0].replace(" (doblado)", "");
 // El idioma de la app decide el doblaje que se propone primero (P6).
-const DUB = { es: "latino", en: "en", pt: "pt" };
+const DUB = { es: "latino", en: "en" };
+const DUBS = ["latino", "castellano", "en", "pt", "fr", "it", "de", "ja", "ko"];
 const SUBNAME = { es: "español", en: "inglés", pt: "portugués" };
 const PLATFORMS = ["Netflix", "Max", "Disney+", "Prime Video", "Apple TV+", "Paramount+", "Mubi", "ViX"];
 const SUBS = ["es", "en", "pt", "fr", "it", "de", "ja", "ko"];
@@ -268,20 +280,22 @@ let S;
 function reset() {
   S = { step: "welcome", hist: [], uiLang: "es", metaLang: "es", splitMeta: false, flash: null,
     trakt: null, traktNew: false, traktSub: null, traktWait: false, saved: [], decidedInWin: false, shuffled: false, platforms: [], otherPlat: false,
-    cloud: null, cloudLater: false, keyFor: null, keyPasted: false, listen: "dub", subs: "es", subsOpen: false, langs: ["latino", "original"], showOrder: false,
+    cloud: null, cloudLater: false, keyFor: null, keyPasted: false, listen: "dub", subs: "es", subsOpen: false, langs: ["latino", "original"], dub: "latino", showOrder: false, failed: {}, metaOpen: false,
     tv: null, noTV: false, fromTV: false, tvCode: false, tasks: {}, ver: 0, verOpen: false, requested: false, rated: 0, remote: false,
     sheet: null, tour: null, dismissed: [], toast: null, notif: null, pin: false, rdWait: false };
 }
 reset();
-let edition = "plus", device = "iphone";
+let edition = "plus", device = "iphone", fails = false;
 const watches = () => edition !== "orbital";
-const here = () => device === "ipad" ? "aparato" : "iPhone";
+const here = () => device === "ipad" ? "iPad" : "iPhone";
 const sub1 = s => s[0].toUpperCase() + s.slice(1);
 
 function plan() {
-  const p = ["welcome", "lang"];
-  if (edition === "ultra") p.push("tvfirst");
-  if (S.fromTV) { p.push("win", "tour", "home"); return p; }
+  const p = ["welcome"];
+  if (device === "ipad") p.push("fromphone");
+  if (edition === "ultra" && !S.fromPhone) p.push("tvfirst");
+  if (S.fromPhone) { p.push("home"); return p; }
+  if (S.fromTV) { if (S.fromTV && S.tvNoCloud) p.push("cloud"); p.push("win", "tour", "home"); return p; }
   p.push("trakt", "win");
   if (!watches()) p.push("platforms");
   else { p.push("cloud"); if (S.cloud) p.push("how"); }
@@ -289,27 +303,30 @@ function plan() {
   return p;
 }
 // Los puntitos no cambian de número al conectar la nube (G15): cuentan el camino más largo de esa versión.
-function dotPlan() { const keep = S.cloud; if (watches() && !S.fromTV) S.cloud = S.cloud || "x"; const p = plan(); S.cloud = keep; return p; }
+function dotPlan() { const keep = S.cloud; if (watches() && !S.fromTV && !S.fromPhone) S.cloud = S.cloud || "x"; const p = plan(); S.cloud = keep; return p; }
 function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; S.toast = null; render(); }
-function next() { const p = plan(); go(p[p.indexOf(S.step) + 1]); }
+function next() { if (S.fromHome && S.step === "cloud" && S.cloud) return go("how"); if (S.fromHome) { S.fromHome = false; return go("home"); } const p = plan(); go(p[p.indexOf(S.step) + 1]); }
 function back() {
   if (S.sheet) { S.sheet = null; return render(); }
   if (S.tour) { S.tour = null; return render(); }
   if (S.traktSub) { S.traktSub = null; S.traktWait = false; return render(); }
   S.step = S.hist.pop() || "welcome"; S.toast = null; render();
 }
+function findTV() { if (S.sheet !== "tvcode" || S.tvSearch) return; if (fails && !S.failed.tv) { S.failed.tv = 1; S.tvSearch = "none"; } else S.tvSearch = "found"; render(); }
 function saveTitle(k) { if (!S.saved.includes(k)) S.saved.push(k); }
-function approveTrakt() { if (S.step !== "trakt" || !S.traktWait) return; S.traktWait = false; S.trakt = true; S.traktSub = null; go("win"); }
+function approveTrakt() { if (S.step !== "trakt" || !S.traktWait) return; S.traktWait = false;
+  if (S.fromHome && !(fails && !S.failed.trakt)) { S.fromHome = false; S.trakt = true; S.traktSub = null; S.toast = null; return go("home"); }
+  if (fails && !S.failed.trakt) { S.failed.trakt = 1; return render(); } S.trakt = true; S.traktSub = null; go("win"); }
 
 const NOTES = {
-  welcome: ["K2-B · U1-B", "¿Qué es Orbital?", "Una pantalla que se mueve sola, unos 15 segundos. Plus suma «y míralo todo aquí»; Ultra, además, «y mándalo a tu TV». La de la tienda nunca habla de ver.", ["Cambia la versión arriba y mira las últimas líneas."]],
-  lang: ["G1-B · G2 · G3", "¿En qué idioma lees Orbital?", "Una sola decisión, ya marcada con la del iPhone. Quien quiere las películas en otro idioma prende el interruptor. La vista previa parpadea donde cambió.", ["Sin banderas: un idioma no es un país.", "Separar app y fichas y sumar portugués es trabajo nuevo en la app."]],
-  tvfirst: ["U7 · U6", "¿Ya usas Orbital en la TV?", "Solo en Ultra y justo al principio: quien ya configuró la TV la conecta con el código que sale en la tele y se trae su Trakt, su servicio de nube y sus idiomas. Se salta tres pasos.", ["Quien no tiene la TV sigue el camino de Plus y no se le vuelve a preguntar.", "Trabajo nuevo en la app y en la TV."]],
+  welcome: ["Tu pedido (18 nov) · K2-B · U1-B", "¿Qué es Orbital? Y tu idioma", "Arriba, Español o English, ya marcado con el del iPhone: toda la bienvenida cambia al tocarlo. Abajo, «Títulos y sinopsis en otro idioma» abre una vista previa para quien los quiere distintos. Plus suma «y míralo todo aquí»; Ultra, «y mándalo a tu TV».", ["La app queda en español o inglés; las fichas pueden ir también en portugués.", "El resto del prototipo sigue en español.", "Separar app y fichas es trabajo nuevo en la app."]],
+  fromphone: ["G20", "¿Ya usas Orbital en tu iPhone?", "Solo en iPad y Mac: si ya la usas en el iPhone, se trae todo con tu cuenta de Apple y te saltas la guía.", ["Trabajo nuevo en la app."]],
+  tvfirst: ["U7 · U6", "¿Ya usas Orbital en la TV?", "Solo en Ultra y justo al principio: Orbital encuentra la TV sola en tu red (con código de respaldo) y se trae tu Trakt, tu servicio de nube y tus idiomas. Si la TV no tenía algo, lo pide después. Con «Simular fallas», la TV no aparece a la primera y no trae servicio de nube.", ["Quien no tiene la TV sigue el camino de Plus y no se le vuelve a preguntar.", "Trabajo nuevo en la app y en la TV."]],
   trakt: ["K1-B · G4 · G13 · G14", "Trakt, muy recomendado", "Tres beneficios con ícono y «Orbital no publica nada por ti». Tras «Copiar y abrir Trakt» espera y sigue solo; si tarda, «Revisar ahora». Si regresas ya conectado, dice «✓ Trakt conectado».", ["«Crear una» explica cómo y te deja volver al mismo punto."]],
   win: ["K4-B · G6 · G7 · G11", "Tu primer logro", "Con historial en Trakt: tus recomendaciones, cada una se guarda con un toque. Sin Trakt o con cuenta nueva: un «Decide por mí» de verdad, con «Otras tres» que sí cambia.", ["Los porqués enseñan de dónde salen las sugerencias."]],
   platforms: ["A1-B · A6", "¿Qué plataformas tienes?", "Solo en la de la tienda. Con esto «Dónde verla» dice «Incluida en tu plan» con la tuya y la fila «En tus plataformas» es verdad. «Otra…» para la que no está.", ["Se puede saltar.", "Trabajo nuevo en la app."]],
-  cloud: ["P1 · P2-B · P12 · P13 · P18", "Para ver aquí: un servicio de nube", "Un dibujo de tres pasos y tres botones: «Ya tengo uno», «Aún no tengo», «Ahora no». Conectar se ve completo: código en Real-Debrid, clave con «¿Dónde está mi clave?» y «Pegar» en los otros.", ["Siempre «tu servicio de nube», en masculino.", "«Aún no tengo» deja volver con «Ya lo contraté, conectar»."]],
-  how: ["P5-B · P15 · P19", "¿En qué idioma quieres oír películas y series?", "Dos tarjetas grandes y los subtítulos en un renglón que se abre. Parte del idioma del paso 2. «Otro orden» para quien quiere más.", ["Solo si conectaste tu servicio de nube; si no, se pregunta al conectarlo.", "En la app se ordena arrastrando."]],
+  cloud: ["P1 · P2-B · P12 · P13 · P18", "Para ver aquí: un servicio de nube", "Un dibujo de tres pasos y tres botones: «Ya tengo uno», «Aún no tengo», «Ahora no». Conectar se ve completo: código en Real-Debrid, clave con «¿Dónde está mi clave?» y «Pegar» en los otros. «Aún no tengo» sugiere el que se conecta con código. Con «Simular fallas» arriba, la clave falla una vez.", ["Siempre «tu servicio de nube», en masculino.", "«Aún no tengo» deja volver con «Ya lo contraté, conectar»."]],
+  how: ["P5-B · P15 · P19", "¿En qué idioma quieres oír películas y series?", "Arriba, «En [idioma]»: tú eliges el doblaje (latino, castellano, inglés…), no viene fijo. Abajo, «En su idioma, con subtítulos». Los subtítulos en un renglón que se abre. «Más de un idioma» para quien quiere un orden.", ["Solo si conectaste tu servicio de nube; si no, se pregunta al conectarlo.", "En la app se ordena arrastrando."]],
   tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. Sin nube o en la de la tienda, «Dónde verla» en lugar de versiones. No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
   playing: ["P20", "Tu primera película", "El momento «ajá» de Plus y Ultra: al terminar el recorrido, «Ver algo ahora» arranca una película lista al instante en tu idioma.", ["Solo si ya conectaste tu servicio de nube."]],
   home: ["G9 · P17 · U9", "Inicio", "Arriba, lo que guardaste. Una sola tarjeta pendiente a la vez. Con servicio de nube: «Listas al instante ⚡». Con TV: «En la TV · conectada».", ["«En tus plataformas» solo si dijiste cuáles tienes."]]
@@ -327,58 +344,44 @@ const svc = c => c === "Real-Debrid" ? "Con un código" : "Con tu clave";
 
 const V = {
   welcome() {
+    const en = S.uiLang === "en";
     const sats = ["dune", "severance", "arrival", "bear", "br2049", "shogun"].map((k, i) =>
       `<div class="sat" style="background:${POSTERS[k][1]};animation-delay:-${i * 14 / 6}s;--sc:${i % 2 ? .8 : 1}"></div>`).join("");
-    const lines = [["Descubre", "lo mejor para esta noche"], ["Guarda", "tus listas y lo que viste"], ["Encuentra", "lo parecido a lo que te encantó"]];
-    if (watches()) lines.push(["Y míralo", "todo aquí mismo"]);
-    if (edition === "ultra") lines.push(["Y mándalo", "a tu TV"]);
-    return `${head()}<div class="body two"><div class="orbit"><div class="ring"></div>${sats}<div class="core">orbital</div></div>
-      <div class="col"><div class="promise">${lines.map(l => `<div><b>${l[0]}</b> ${l[1]}</div>`).join("")}</div>
-      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Empezar</button></div></div></div>`;
+    const lines = en ? [["Discover", "the best for tonight"], ["Keep", "your lists and what you watched"], ["Find", "more like what you loved"]]
+                     : [["Descubre", "lo mejor para esta noche"], ["Guarda", "tus listas y lo que viste"], ["Encuentra", "lo parecido a lo que te encantó"]];
+    if (watches()) lines.push(en ? ["And watch", "it all right here"] : ["Y míralo", "todo aquí mismo"]);
+    else lines.push(en ? ["And it tells you", "where to watch it"] : ["Y te dice", "dónde verla"]);
+    if (edition === "ultra") lines.push(en ? ["And send it", "to your TV"] : ["Y mándalo", "a tu TV"]);
+    const pick = `<div class="welcome-lang"><div class="langseg pill${f("all")}">${[["es", "Español"], ["en", "English"]].map(([k, n]) => `<button data-a="ui" data-v="${k}" aria-pressed="${S.uiLang === k}">${n}</button>`).join("")}</div>
+      <button class="link small" data-a="sheet" data-v="meta">${S.splitMeta ? (en ? `Titles in ${{ es: "Spanish", en: "English", pt: "Portuguese" }[S.metaLang]} · Change` : `Títulos en ${{ es: "español", en: "inglés", pt: "portugués" }[S.metaLang]} · Cambiar`) : (en ? "Titles and synopses in another language" : "Títulos y sinopsis en otro idioma")}</button></div>`;
+    return `<div class="top"><span style="width:28px"></span><div class="dots"></div><span style="width:70px"></span></div><div class="body two"><div class="col">${pick}<div class="orbit"><div class="ring"></div>${sats}<div class="core">orbital</div></div></div>
+      <div class="col"><div class="promise${f("all")}">${lines.map(l => `<div><b>${l[0]}</b> ${l[1]}</div>`).join("")}</div>
+      <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">${en ? "Get started" : "Empezar"}</button></div></div></div>`;
   },
-  lang() {
-    const UI = {
-      es: { name: "Español", tabs: ["Inicio", "Explorar", "Biblioteca", "Buscar"], btn: "Ver" },
-      en: { name: "English", tabs: ["Home", "Explore", "Library", "Search"], btn: "Play" },
-      pt: { name: "Português", tabs: ["Início", "Explorar", "Biblioteca", "Buscar"], btn: "Assistir" }
-    };
-    const META = {
-      es: { title: "Duna: Parte dos", line: "Paul Atreides se une a los Fremen para vengar a su familia.", kind: "Película · 2024 · 2 h 46 min" },
-      en: { title: "Dune: Part Two", line: "Paul Atreides unites with the Fremen to avenge his family.", kind: "Movie · 2024 · 2 h 46 min" },
-      pt: { title: "Duna: Parte Dois", line: "Paul Atreides se une aos Fremen para vingar sua família.", kind: "Filme · 2024 · 2 h 46 min" }
-    };
-    const ui = UI[S.uiLang], meta = META[S.splitMeta ? S.metaLang : S.uiLang];
-    const seg = (key, cur) => `<div class="langseg">${Object.keys(UI).map(k => `<button data-a="${key}" data-v="${k}" aria-pressed="${k === cur}">${UI[k].name}</button>`).join("")}</div>`;
-    const title = `<span class="ico">${ICON.globe}</span><h2 class="t">¿En qué idioma lees Orbital?</h2><p class="s">Ya marcamos el de tu ${here()}. Así se ve:</p>`;
-    const preview = `<div class="preview">
-        <div class="pv-poster" style="background:${POSTERS.dune[1]}"></div>
-        <div class="pv-body"><b class="pv-title${f("meta")}">${meta.title}</b><span class="pv-kind${f("meta")}">${meta.kind}</span><span class="pv-line${f("meta")}">${meta.line}</span>
-        <span class="pv-btn${f("ui")}">▶ ${ui.btn}</span></div>
-        <div class="pv-tabs${f("ui")}">${ui.tabs.map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</div></div>`;
-    const pick = `${seg("ui", S.uiLang)}
-      <button class="switch" data-a="split" role="switch" aria-checked="${S.splitMeta}"><span class="grow">Títulos y sinopsis en otro idioma<span class="sub">Por ejemplo, la app en español y las películas en inglés</span></span><i></i></button>
-      ${S.splitMeta ? `<div class="langblock"><span class="lb">Títulos y sinopsis</span>${seg("meta", S.metaLang)}</div>` : ""}`;
-    const foot = `<p class="small">Lo cambias cuando quieras en Ajustes › Idiomas.${watches() ? " En qué idioma quieres oír películas y series, te lo preguntamos después." : ""}</p>
-      <div class="actions"><button class="btn p" data-a="next">Continuar</button></div>`;
-    return device === "ipad"
-      ? `${head()}<div class="body two"><div class="col">${title}${pick}</div><div class="col">${preview}${foot}</div></div>`
-      : `${head()}<div class="body">${title}${preview}${pick}<div style="margin-top:auto;display:grid;gap:9px">${foot}</div></div>`;
+  fromphone() {
+    if (S.fromPhone) return `${head()}<div class="body"><span class="ico">✓</span><h2 class="t">Listo, trajimos lo de tu iPhone</h2>
+      <div class="facts">${[[ICON.trakt, "Tu Trakt y tus listas"], ...(watches() ? [[ICON.cloud, "Tu servicio de nube"], [ICON.ear, "Tus idiomas"]] : [[ICON.tv, "Tus plataformas"]]), ...(edition === "ultra" ? [[ICON.tv, "La conexión con tu TV"]] : [])].map(x => `<div class="fact"><span class="ico">${x[0]}</span><div><b>✓ ${x[1]}</b></div></div>`).join("")}</div>
+      <p class="small">No repites la guía: vas directo a Inicio.</p><div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Ir a Inicio</button></div></div>`;
+    return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.devices}</span><h2 class="t">¿Ya usas Orbital en tu iPhone?</h2>
+      <p class="s">Traemos todo de ahí con tu cuenta de Apple: tu Trakt, tus listas${watches() ? ", tu servicio de nube y tus idiomas" : " y tus plataformas"}. No repites nada.</p></div>
+      <div class="col">${S.failed.phone === 1 ? `<div class="err">No encontramos Orbital en tu cuenta de Apple. ¿Tu iPhone usa otra cuenta? Revísalo en sus Ajustes, o empieza aquí.</div>` : ""}<div class="actions"><button class="btn p" data-a="fromphone">${S.failed.phone ? "Buscar otra vez" : "Sí, traer de mi iPhone"}</button><button class="btn q" data-a="next">No, empezar aquí</button></div></div></div>`;
   },
   tvfirst() {
     if (S.fromTV) return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Listo, trajimos lo de tu TV</h2>
-      <div class="facts">${[[ICON.trakt, "Tu Trakt", "Lo que viste y tus listas"], [ICON.cloud, "Tu servicio de nube", "Ya puedes ver aquí"], [ICON.ear, "Tus idiomas", "Los mismos que en la TV"]].map(x => `<div class="fact"><span class="ico">${x[0]}</span><div><b>✓ ${x[1]}</b><span>${x[2]}</span></div></div>`).join("")}</div>
+      <div class="facts">${[[ICON.trakt, "Tu Trakt", "Lo que viste y tus listas", true], [ICON.cloud, "Tu servicio de nube", S.cloud ? "Ya puedes ver aquí" : "Tu TV no tenía uno: lo conectas en el siguiente paso", !!S.cloud], [ICON.ear, "Tus idiomas", "Los mismos que en la TV", true]].map(x => `<div class="fact"><span class="ico">${x[0]}</span><div><b>${x[3] ? "✓" : "○"} ${x[1]}</b><span>${x[2]}</span></div></div>`).join("")}</div>
       <p class="small">Y tu ${here()} ya es el control de tu TV.</p>
       <div class="actions" style="margin-top:auto"><button class="btn p" data-a="next">Continuar</button></div></div>`;
     return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.tv}</span><h2 class="t">¿Ya usas Orbital en la TV?</h2>
       <p class="s">Conéctala y traemos tu Trakt, tu servicio de nube y tus idiomas. Además, tu ${here()} se vuelve el control.</p>
       <div class="flow"><span><b>Eliges aquí</b>en tu ${here()}</span><i>→</i><span><b>Se ve allá</b>en tu TV</span></div></div>
-      <div class="col"><div class="actions"><button class="btn p" data-a="sheet" data-v="tvcode">Sí, conectar mi TV</button><button class="btn q" data-a="notv">No, empezar desde cero</button></div>
-      <p class="small">¿La tienes pero no a la mano? Sigue sin ella y conéctala cuando quieras en Ajustes › TV.</p></div></div>`;
+      <div class="col"><div class="actions"><button class="btn p" data-a="sheet" data-v="tvcode">Sí, conectar mi TV</button><button class="btn g" data-a="next">La tengo, la conecto luego</button><button class="btn q" data-a="notv">No tengo Orbital en la TV</button></div>
+      <p class="small">«Luego» te la recuerda en Inicio; también está en Ajustes › TV.</p></div></div>`;
   },
   trakt() {
     if (S.traktSub === "code") return `${head()}<div class="body"><span class="ico">${ICON.trakt}</span><h2 class="t">Conecta tu Trakt</h2>
       <p class="s">Abre trakt.tv/activate en cualquier aparato y escribe este código.</p>
-      <button class="code" data-a="copy">7F3K 9QP2<span class="small" style="display:block;letter-spacing:0;font-weight:500">${S.toast === "copied" ? "✓ Copiado" : "Toca para copiar"}</span></button>
+      <button class="code" data-a="copy">${S.failed.trakt ? "M2X8 4KD7" : "7F3K 9QP2"}<span class="small" style="display:block;letter-spacing:0;font-weight:500">${S.toast === "copied" ? "✓ Copiado" : "Toca para copiar"}</span></button>
+      ${S.failed.trakt === 1 && !S.traktWait ? `<div class="err">Ese código venció. Ya te dimos uno nuevo: vuelve a escribirlo en Trakt.</div>` : ""}
       ${S.traktWait ? `<div class="wait"><span class="spin"></span><span>Esperando a que lo apruebes en Trakt…<span class="sub">Cuando lo apruebes, seguimos solos.</span></span></div>` : ""}
       <div class="actions" style="margin-top:auto">${S.traktWait ? '<button class="btn g" data-a="traktcheck">¿Ya lo aprobaste? Revisar ahora</button><button class="btn q" data-a="traktok">Abrir Trakt otra vez</button>' : '<button class="btn p" data-a="traktok">Copiar y abrir Trakt</button>'}<button class="btn q" data-a="sub" data-v="">Cancelar</button></div>
       <p class="small">En el prototipo, a los cuatro segundos simula que ya lo aprobaste.</p></div>`;
@@ -419,7 +422,7 @@ const V = {
   platforms() {
     return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.tv}</span><h2 class="t">¿Qué plataformas tienes?</h2>
       <p class="s">Así te decimos qué puedes ver sin pagar más, y lo nuevo en lo tuyo.</p></div>
-      <div class="col"><div class="plats">${PLATFORMS.map(p => `<button data-a="plat" data-v="${p}" aria-pressed="${S.platforms.includes(p)}">${p}</button>`).join("")}<button data-a="otherplat" aria-pressed="${S.otherPlat}" style="grid-column:1/-1">${S.otherPlat ? "✓ Te la buscamos en la ficha" : "Otra…"}</button></div>
+      <div class="col"><div class="plats">${PLATFORMS.map(p => `<button data-a="plat" data-v="${p}" aria-pressed="${S.platforms.includes(p)}">${p}</button>`).join("")}${S.platforms.filter(p => !PLATFORMS.includes(p)).map(p => `<button data-a="plat" data-v="${p}" aria-pressed="true">${p}</button>`).join("")}<button data-a="sheet" data-v="moreplat" style="grid-column:1/-1">Otra…</button></div>
       <p class="small">Solo se guarda en Orbital. Lo cambias en Ajustes.</p>
       <div class="actions"><button class="btn ${S.platforms.length ? "p" : "g"}" data-a="next">${S.platforms.length ? "Continuar" : "Ahora no"}</button></div></div></div>`;
   },
@@ -435,8 +438,8 @@ const V = {
       <div class="col">${acts}</div></div>`;
   },
   how() {
-    const dub = DUB[S.uiLang];
-    const big = (v, flag, t, sub) => `<button class="choice big ${S.listen === v ? "on" : ""}" data-a="listen" data-v="${v}"><span class="bflag">${flag}</span><span class="grow">${t}<span class="sub">${sub}</span></span><span class="tick">${S.listen === v ? "✓" : ""}</span></button>`;
+    const big = (v, flag, inner, sub) => `<div class="choice big ${S.listen === v ? "on" : ""}" data-a="listen" data-v="${v}" role="button" tabindex="0"><span class="bflag">${flag}</span><span class="grow">${inner}<span class="sub">${sub}</span></span><span class="tick">${S.listen === v ? "✓" : ""}</span></div>`;
+    const dubSel = `<select id="dubpick" class="inl" aria-label="Idioma del doblaje">${DUBS.map(id => `<option value="${id}" ${S.dub === id ? "selected" : ""}>${lname(id)}</option>`).join("")}</select>`;
     const rows = S.langs.map((id, i) => `<div class="lrow"><span class="rank">${i + 1}</span><span class="grow">${LANGS[id][0]}<span class="sub">${LANGS[id][1]}</span></span>
       <button class="mini" data-a="up" data-v="${i}" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑</button><button class="mini" data-a="down" data-v="${i}" aria-label="Bajar" ${i === S.langs.length - 1 ? "disabled" : ""}>↓</button><button class="mini" data-a="drop" data-v="${i}" aria-label="Quitar" ${S.langs.length === 1 ? "disabled" : ""}>×</button></div>`).join("");
     const left = Object.keys(LANGS).filter(id => !S.langs.includes(id));
@@ -445,30 +448,32 @@ const V = {
     const subs = S.subsOpen ? `<div class="langseg wrap">${SUBS.map(k => `<button data-a="subs" data-v="${k}" aria-pressed="${S.subs === k}">${sub1(SUBNAMES[k])}</button>`).join("")}</div>` : "";
     return `${head()}<div class="body two"><div class="col"><span class="ico">${ICON.ear}</span><h2 class="t">¿En qué idioma quieres oír películas y series?</h2>
       <p class="s">Cada una viene en varias versiones y cada versión suena en su idioma. Dinos cuál prefieres y «Ver» la elige por ti.</p></div>
-      <div class="col">${big("dub", LANGS[dub][3], `Doblada al ${lname(dub).toLowerCase()}`, "Si no existe, en su idioma con subtítulos")}
+      <div class="col">${big("dub", LANGS[S.dub][3], `<span class="dubline">En ${dubSel}</span>`, "Doblada cuando exista; si no, en su idioma con subtítulos")}
       ${big("orig", "🎬", "En su idioma, con subtítulos", "Como se filmó")}
       <button class="subline" data-a="subsopen"><span class="grow">Subtítulos en ${SUBNAMES[S.subs]}<span class="sub">Solo salen cuando no suena en tu idioma</span></span><span class="link">${S.subsOpen ? "Listo" : "Cambiar"}</span></button>${subs}
-      <button class="btn q" data-a="order" style="justify-self:start">${S.showOrder ? "Ocultar el orden" : "Otro orden ›"}</button>${order}
+      <button class="btn q" data-a="order" style="justify-self:start">${S.showOrder ? "Ocultar el orden" : "Más de un idioma ›"}</button>${order}
       <div class="actions"><button class="btn p" data-a="next">Continuar</button></div></div></div>`;
   },
   tour() {
     if (S.tour === "versions") {
       const first = S.langs[0];
-      const firstName = first === "original" ? `Inglés (original) · subtítulos en ${SUBNAMES[S.subs]}` : lname(first);
+      const firstName = first === "original" ? `Inglés (original), subtítulos en ${SUBNAMES[S.subs]}` : lname(first);
+      const shortName = first === "original" ? "Original" : lname(first).replace("Español ", "").replace(/^./, c => c.toUpperCase());
       const flag0 = first === "original" ? "🎬" : LANGS[first][3];
-      const VERS = [[flag0, firstName, "1080p", "⚡", first === "latino" ? "Latino comprobado · lista al instante" : "Tu idioma · lista al instante"],
+      const VERS = [[flag0, firstName, first === "original" ? "4K" : "1080p", "⚡", first === "latino" ? "Latino comprobado · lista al instante" : "Tu idioma · lista al instante"],
                     ["🇺🇸", "Inglés", "4K", "⚡", "Mejor imagen, pesa más"],
                     ["🇪🇸", "Castellano", "1080p", "Pedir", "Hay que pedirla: unos minutos"]];
-      if (first !== "latino") VERS[1] = ["🇲🇽", "Español latino", "1080p", "⚡", "Doblada"];
+      if (first !== "latino") VERS[1] = (first === "en" || first === "original") ? ["🇲🇽", "Español latino", "1080p", "⚡", "Doblada"] : ["🇺🇸", "Inglés", "4K", "⚡", "Mejor imagen, pesa más"];
+      if (first === "castellano") VERS[2] = ["🇲🇽", "Español latino", "1080p", "Pedir", "Hay que pedirla: unos minutos"];
       const cur = VERS[S.ver];
       if (!S.verOpen) return `${head()}<div class="body"><h2 class="t">«Ver» ya eligió por ti</h2>
         <p class="s">El botón dice en qué idioma va a sonar. ¿Quieres otra versión? Toca el idioma.</p>
         <div class="lists-demo"><div style="width:36%">${poster("dune")}</div><div style="flex:1;display:grid;gap:8px;align-content:start"><b class="pv-title">Duna: Parte dos</b><span class="pv-kind">Película · 2024</span>
-        <div class="playbtn"><span>▶ Ver</span><button class="pflag" data-a="veropen" aria-label="Cambiar versión">${flag0}</button></div>
+        <div class="playbtn"><span>▶ Ver</span><button class="pflag" data-a="veropen" aria-label="Cambiar versión">${flag0} <small>${shortName}</small></button></div>
         <div class="tip"><b>¿Otra?</b>Toca el idioma, junto a «Ver».</div></div></div></div>`;
       const pend = !S.requested ? "" : S.notif == null
         ? `<div class="ask"><b>La pedimos a tu servicio de nube.</b> Mientras, sigue en ${VERS[0][1].toLowerCase().split(" ·")[0]}. ¿Te avisamos cuando esté lista?<span class="small">Orbital solo te avisa de lo tuyo: versiones pedidas y estrenos de tus series.</span><div class="row2"><button class="btn p" data-a="notif" data-v="yes">Sí, avísame</button><button class="btn q" data-a="notif" data-v="no">Ahora no</button></div></div>`
-        : `<div class="toast">${S.notif ? "✓ Te avisamos cuando esté lista." : "Va. La verás en Descargas cuando esté lista."} Mientras, sigue en ${VERS[0][1].toLowerCase().split(" ·")[0]}.</div>`;
+        : `<div class="toast">${S.notif ? "✓ Te avisamos cuando esté lista." : "Va. La verás en la ficha cuando esté lista."} Mientras, sigue en ${VERS[0][1].toLowerCase().split(" ·")[0]}.</div>`;
       const changed = S.ver ? `<div class="toast">Listo: ahora suena en ${cur[1].toLowerCase()}. La próxima vez, «Ver» vuelve a elegir por ti.</div>` : "";
       return `${head()}<div class="body"><h2 class="t">Elige otra versión</h2>
         <p class="s">Cada versión cambia el idioma o la calidad. La ✦ es la que «Ver» eligió para ti.</p>
@@ -484,19 +489,23 @@ const V = {
       <div class="stars5">${[1, 2, 3, 4, 5].map(n => `<button data-a="rate" data-v="${n}" aria-label="${n} estrellas" class="${n <= S.rated ? "on" : ""}">★</button>`).join("")}</div><button class="btn q" data-a="notseen" style="justify-self:start;padding:4px 0">No la he visto</button></div></div></div>`;
     if (S.tour === "follow") return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Tus series, al día</h2><p class="s">«Seguir viendo» te deja en el episodio donde ibas, y te avisamos cuando sale el siguiente. Toca «Seguir».</p>
       <div class="nudge"><span class="ico">▶</span><span class="grow">Shōgun<span class="sub" style="display:block;color:var(--muted)">T1 E7 · donde te quedaste</span></span><button data-a="taskdone" data-v="follow">Seguir</button></div></div>`;
-    if (S.tour === "lists") return `${head()}<div class="body"><span class="ico">${ICON.plus}</span><h2 class="t">Tus listas</h2><p class="s">El + la guarda en Mi lista o en una lista tuya. Toca «Para el fin de semana».${S.trakt ? " Todo va también a tu Trakt." : ""}</p>
+    if (S.tour === "lists") return `${head()}<div class="body"><span class="ico">${ICON.plus}</span><h2 class="t">Tus listas</h2><p class="s">El + la guarda en Mi lista, o en una lista que tú armes. Toca «Mi lista».${S.trakt ? " Se guarda también en tu Trakt." : ""}</p>
       <div class="lists-demo"><div style="width:38%">${poster("interstellar")}</div><div class="list" style="flex:1">
-        <div class="choice on"><span class="grow">Mi lista</span><span class="tick">✓</span></div>
-        <button class="choice" data-a="taskdone" data-v="lists"><span class="grow">Para el fin de semana</span><span class="tick"></span></button>
-        <div class="choice"><span class="grow">Nueva lista…</span></div></div></div></div>`;
+        <button class="choice" data-a="taskdone" data-v="lists"><span class="grow">Mi lista</span><span class="tick"></span></button>
+        <div class="choice"><span class="grow">Nueva lista…<span class="sub">Por ejemplo, «Para ver con mi familia»</span></span></div></div></div></div>`;
     if (S.tour === "where") {
       const mine = S.platforms[0];
       const rows = (mine ? [[mine, "Incluida en tu plan"]] : [["Netflix", "Con suscripción"]]).concat([["Apple TV", "Renta o compra"]]);
+      const target = mine ? `a ${S.platforms.length > 1 ? "tus plataformas" : mine}` : "a mis plataformas";
       return `${head()}<div class="body"><span class="ico">${ICON.globe}</span><h2 class="t">Dónde verla</h2><p class="s">Cada ficha te dice en qué plataformas está en tu país${mine ? ", con las tuyas arriba," : ""} y te lleva directo. Toca una.</p>
-      <div class="list">${rows.map(r => `<button class="choice" data-a="taskdone" data-v="where"><span class="grow">${r[0]}<span class="sub">${r[1]}</span></span><span>↗</span></button>`).join("")}</div></div>`;
+      <div class="list">${rows.map(r => `<button class="choice" data-a="taskdone" data-v="where"><span class="grow">${r[0]}<span class="sub">${r[1]}</span></span><span>↗</span></button>`).join("")}</div>
+      <div class="row-title" style="margin-top:6px"><small>Otra ficha</small>Severance</div>
+      <div class="choice"><span class="grow">Solo en renta o compra<span class="sub">${mine ? "No está en las tuyas" : "Ninguna con suscripción"}</span></span></div>
+      ${S.whenAsk ? `<div class="ask"><b>¿Te avisamos cuando llegue ${target}?</b><span class="small">Orbital solo te avisa de lo tuyo.</span><div class="row2"><button class="btn p" data-a="taskdone" data-v="whennotify">Sí, avísame</button><button class="btn q" data-a="taskdone" data-v="where">Ahora no</button></div></div>`
+        : `<button class="btn g" data-a="${mine ? "whenask" : "sheet"}" data-v="${mine ? "" : "pickplats"}">🔔 Avísame cuando llegue ${target}</button>`}</div>`;
     }
     if (S.tour === "tvsend") return `${head()}<div class="body"><span class="ico">${ICON.tv}</span><h2 class="t">Mándala a la TV</h2>
-      <p class="s">${S.remote ? "Ya se ve en tu TV, y el iPhone es el control. Toca «Pausa»." : "En cualquier ficha, este botón la abre en tu TV."}</p>
+      <p class="s">${S.remote ? `Ya se ve en tu TV, y tu ${here()} es el control. Toca «Pausa».` : "En cualquier ficha, este botón la abre en tu TV."}</p>
       <div class="player"><span class="flag">${S.remote ? "En tu TV · " : ""}Duna: Parte dos</span></div>
       ${S.remote ? `<div class="remote"><button data-a="noop">−10 s</button><button class="mainr" data-a="taskdone" data-v="tvsend">❚❚ Pausa</button><button data-a="noop">+10 s</button></div>`
         : `<div class="actions" style="margin-top:auto"><button class="btn p" data-a="remote">${ICON.tv} Ver en la TV</button></div>`}</div>`;
@@ -507,18 +516,18 @@ const V = {
       seen: ["★", "Ya la vi", "Califícala con un toque"],
       lists: [ICON.plus, "Guarda en tus listas", "Mi lista y las tuyas"],
       where: [ICON.globe, "Dónde verla", "En qué plataforma está"],
-      tvsend: [ICON.tv, "Mándala a la TV", "El iPhone es tu control"]
+      tvsend: [ICON.tv, "Mándala a la TV", `Tu ${here()} es el control`]
     };
     const canWatch = watches() && S.cloud;
     const first = canWatch ? "versions" : !watches() ? "where" : S.decidedInWin ? "follow" : "decide";
     const ids = [first, "seen", "lists"];
-    if (edition === "ultra" && S.tv) ids.push("tvsend");
+    if (edition === "ultra" && S.tv && canWatch) ids.push("tvsend");
     const done = ids.every(id => S.tasks[id]);
     const n = ids.length === 4 ? "Cuatro" : "Tres";
     return `${head()}<div class="body two"><div class="col"><h2 class="t">Prueba lo principal</h2><p class="s">${n} toques, menos de un minuto.</p></div>
       <div class="col"><div class="tasks">${ids.map(id => `<button class="choice ${S.tasks[id] ? "on" : ""}" data-a="tour" data-v="${id}"><span class="ico">${all[id][0]}</span><span class="grow">${all[id][1]}<span class="sub">${all[id][2]}</span></span><span class="tick">${S.tasks[id] ? "✓" : ""}</span></button>`).join("")}</div>
       ${toast()}<p class="small">Buscar, los filtros${first === "follow" ? "" : " y tus series al día"} te los enseñamos la primera vez que entres.</p>
-      <div class="actions"><button class="btn ${done ? "p" : "g"}" data-a="${done && canWatch ? "playnow" : "next"}">${done && canWatch ? "▶ Ver algo ahora" : "Ir a Inicio"}</button></div></div></div>`;
+      <div class="actions">${canWatch ? `<button class="btn p" data-a="playnow">▶ Ver algo ahora</button><button class="btn q" data-a="next">Ir a Inicio</button>` : `<button class="btn ${done ? "p" : "g"}" data-a="next">Ir a Inicio</button>`}</div></div></div>`;
   },
   playing() {
     const first = S.langs[0];
@@ -532,13 +541,15 @@ const V = {
     const all = [];
     if (!S.trakt) all.push(["trakt", ICON.trakt, "Guarda lo tuyo en todos tus aparatos", "Conectar Trakt"]);
     if (watches() && !S.cloud) all.push(["cloud", ICON.cloud, S.cloudLater ? "¿Ya tienes tu servicio de nube?" : "Conecta tu servicio de nube para ver aquí", "Conectar"]);
-    if (edition === "ultra" && !S.tv && !S.noTV) all.push(["tv", ICON.tv, "Usa tu iPhone como control de Orbital en la TV", "Conectar"]);
+    if (edition === "ultra" && !S.tv && !S.noTV) all.push(["tv", ICON.tv, `Usa tu ${here()} como control de Orbital en la TV`, "Conectar"]);
     const nudge = all.find(n => !S.dismissed.includes(n[0]));
-    const card = nudge ? `<div class="nudge"><span class="ico">${nudge[1]}</span><span class="grow">${nudge[2]}</span><button data-a="noop">${nudge[3]}</button><button class="x" data-a="dismiss" data-v="${nudge[0]}" aria-label="Cerrar">×</button></div>` : "";
+    const card = nudge ? `<div class="nudge"><span class="ico">${nudge[1]}</span><span class="grow">${nudge[2]}</span><button data-a="nudge" data-v="${nudge[0]}">${nudge[3]}</button><button class="x" data-a="dismiss" data-v="${nudge[0]}" aria-label="Cerrar">×</button></div>` : "";
     const saved = S.saved;
     const mine = !watches() && S.platforms.length;
     const ready = watches() && S.cloud ? `<div class="row-title"><small>⚡ Listas al instante en tu idioma</small>Para ver ya</div><div class="shelf">${["dune", "arrival", "br2049", "origin", "matrix"].map(k => poster(k)).join("")}</div>` : "";
     return `<div class="top"></div><div class="body"><div class="home-head"><span class="logo">orbital</span>${S.tv ? `<span class="tvpill">${ICON.tv} En la TV · conectada</span>` : ""}<span class="avatar" title="Ajustes (ahí vive Aprende)"></span></div>
+      ${S.watched ? `<div class="row-title"><small>Donde te quedaste</small>Seguir viendo</div><div class="nudge"><span class="ico">▶</span><span class="grow">Duna: Parte dos<span class="sub" style="display:block;color:var(--muted)">Te quedaste al principio</span></span><button data-a="noop">Seguir</button></div>` : ""}
+      ${S.trakt && !S.traktNew ? `${S.watched ? "" : `<div class="row-title"><small>Donde te quedaste</small>Seguir viendo</div>`}<div class="nudge"><span class="ico">▶</span><span class="grow">Shōgun<span class="sub" style="display:block;color:var(--muted)">T1 E7 · el siguiente episodio</span></span><button data-a="noop">${watches() && S.cloud ? "Ver" : "Marcar visto"}</button></div>` : ""}
       ${saved.length ? `<div class="row-title"><small>Lo que guardaste</small>Mi lista</div><div class="shelf">${saved.map(k => poster(k)).join("")}</div>` : ""}
       ${card}${ready}
       <div class="row-title"><small>${S.trakt && !S.traktNew ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</div>
@@ -548,13 +559,34 @@ const V = {
   }
 };
 
+const META = {
+  es: { title: "Duna: Parte dos", line: "Paul Atreides se une a los Fremen para vengar a su familia.", kind: "Película · 2024 · 2 h 46 min" },
+  en: { title: "Dune: Part Two", line: "Paul Atreides unites with the Fremen to avenge his family.", kind: "Movie · 2024 · 2 h 46 min" },
+  pt: { title: "Duna: Parte Dois", line: "Paul Atreides se une aos Fremen para vingar sua família.", kind: "Filme · 2024 · 2 h 46 min" }
+};
+const UIW = { es: { tabs: ["Inicio", "Explorar", "Biblioteca", "Buscar"], btn: "Ver" }, en: { tabs: ["Home", "Explore", "Library", "Search"], btn: "Play" } };
 const SHEETS = {
+  meta: () => { const m = META[S.splitMeta ? S.metaLang : S.uiLang], ui = UIW[S.uiLang], en = S.uiLang === "en";
+    return `<div class="sheet-head"><b>${en ? "Titles and synopses" : "Títulos y sinopsis"}</b><button class="btn q" data-a="sheet" data-v="">${en ? "Done" : "Listo"}</button></div>
+    <div class="preview"><div class="pv-poster" style="background:${POSTERS.dune[1]}"></div>
+      <div class="pv-body"><b class="pv-title${f("meta")}">${m.title}</b><span class="pv-kind${f("meta")}">${m.kind}</span><span class="pv-line${f("meta")}">${m.line}</span><span class="pv-btn">▶ ${ui.btn}</span></div>
+      <div class="pv-tabs">${ui.tabs.map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</div></div>
+    <button class="switch" data-a="split" role="switch" aria-checked="${S.splitMeta}"><span class="grow">${en ? "In another language" : "En otro idioma"}<span class="sub">${en ? "For example, the app in English and movies in Spanish" : "Por ejemplo, la app en español y las películas en inglés"}</span></span><i></i></button>
+    ${S.splitMeta ? `<div class="langseg">${[["es", "Español"], ["en", "English"], ["pt", "Português"]].map(([k, n]) => `<button data-a="meta" data-v="${k}" aria-pressed="${S.metaLang === k}">${n}</button>`).join("")}</div>` : ""}
+    <p class="small">${en ? "Change it anytime in Settings › Languages." : "Lo cambias cuando quieras en Ajustes › Idiomas."}</p>`; },
+  pickplats: () => `<div class="sheet-head"><b>¿Qué plataformas tienes?</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+    <p class="s">Así sabemos cuándo avisarte.</p>
+    <div class="plats">${PLATFORMS.map(p => `<button data-a="plat" data-v="${p}" aria-pressed="${S.platforms.includes(p)}">${p}</button>`).join("")}</div>
+    <button class="btn ${S.platforms.length ? "p" : "g"}" data-a="${S.platforms.length ? "platsdone" : "noop"}">Listo</button>`,
+  moreplat: () => `<div class="sheet-head"><b>Otra plataforma</b><button class="btn q" data-a="sheet" data-v="">Listo</button></div>
+    <div class="searchbox">⌕ Busca tu plataforma</div>
+    <div class="plats">${["Crunchyroll", "Pluto TV", "Claro video", "Tubi", "MGM+", "Plex", "BritBox", "Filmin"].map(p => `<button data-a="plat" data-v="${p}" aria-pressed="${S.platforms.includes(p)}">${p}</button>`).join("")}</div>`,
   clouds: () => `<div class="sheet-head"><b>¿Cuál tienes?</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
     <div class="list">${["Real-Debrid", "TorBox", "AllDebrid"].map(c =>
       `<button class="choice" data-a="keyfor" data-v="${c}"><span class="ico">${ICON.cloud}</span><span class="grow">${c}<span class="sub">${svc(c)}</span></span><span>›</span></button>`).join("")}</div>`,
   key: () => S.keyFor === "Real-Debrid"
     ? `<div class="sheet-head"><b>Conecta Real-Debrid</b><button class="btn q" data-a="sheet" data-v="clouds">Atrás</button></div>
-      <p class="s">Abre real-debrid.com/device y escribe este código.</p><div class="code">K4 7P 2M</div>
+      <p class="s">Abre real-debrid.com/device y escribe este código.</p>${S.failed.rd === 1 && !S.rdWait ? `<div class="err">Ese código venció. Ya te dimos uno nuevo: vuelve a escribirlo en Real-Debrid.</div>` : ""}<div class="code">${S.failed.rd ? "Q9 3T 8V" : "K4 7P 2M"}</div>
       ${S.rdWait ? `<div class="wait"><span class="spin"></span><span>Esperando a que lo apruebes en Real-Debrid…<span class="sub">Cuando lo apruebes, seguimos solos.</span></span></div><button class="btn g" data-a="rdcheck">¿Ya lo aprobaste? Revisar ahora</button>` : '<button class="btn p" data-a="rdwait">Copiar y abrir Real-Debrid</button>'}<p class="small">En el prototipo, a los cuatro segundos simula que ya lo aprobaste.</p>`
     : `<div class="sheet-head"><b>Conecta ${S.keyFor}</b><button class="btn q" data-a="sheet" data-v="clouds">Atrás</button></div>
       <div class="facts"><div class="fact"><span class="ico">1</span><div><b>Entra a tu cuenta</b><span>En la página de ${S.keyFor}.</span></div></div>
@@ -562,10 +594,11 @@ const SHEETS = {
       <div class="fact"><span class="ico">3</span><div><b>Cópiala y vuelve</b><span>La pegas aquí abajo.</span></div></div></div>
       <button class="btn g" data-a="noop">¿Dónde está mi clave? Abrir su página ↗</button>
       <div class="keybox"><span>${S.keyPasted ? "••••••••••••••••" : "Tu clave"}</span><button data-a="paste">Pegar</button></div>
-      <button class="btn ${S.keyPasted ? "p" : "g"}" data-a="${S.keyPasted ? "cloudok" : "noop"}">Conectar</button>`,
+      ${S.failed.key === 1 ? `<div class="err">${S.keyFor === "AllDebrid" ? "Tu cuenta de AllDebrid no tiene un plan activo. Renuévalo en su página y vuelve a intentarlo." : "Esa clave no funcionó. Revisa que la copiaste completa, sin espacios, y pégala otra vez."}</div>` : ""}
+      <button class="btn ${S.keyPasted ? "p" : "g"}" data-a="${S.keyPasted ? "keycheck" : "noop"}">Conectar</button>`,
   none: () => `<div class="sheet-head"><b>Aún no tienes uno</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
-    <p class="s">Hay tres y hacen lo mismo. Si dudas, elige cualquiera: puedes cambiar después. Se contrata en su página.</p>
-    <div class="list">${["Real-Debrid", "TorBox", "AllDebrid"].map(c => `<div class="choice"><span class="ico">${ICON.cloud}</span><span class="grow">${c}</span><span class="small">Abrir su página ↗</span></div>`).join("")}</div>
+    <p class="s">Hay tres y hacen lo mismo. Se contrata en su página y puedes cambiar después.</p>
+    <div class="list">${[["Real-Debrid", "Sugerido: se conecta con un código, sin copiar claves"], ["TorBox", "Se conecta con tu clave"], ["AllDebrid", "Se conecta con tu clave"]].map((c, i) => `<button class="choice ${i ? "" : "on"}" data-a="noop"><span class="ico">${ICON.cloud}</span><span class="grow">${c[0]}<span class="sub">${c[1]}</span></span><span class="small">Abrir ↗</span></button>`).join("")}</div>
     <button class="btn p" data-a="sheet" data-v="clouds">Ya lo contraté, conectar</button>
     <button class="btn q" data-a="later">Seguir sin él por ahora</button>
     <p class="small">Te lo recordamos en Inicio. Mientras, Orbital ya te sirve para descubrir y guardar.</p>`,
@@ -574,10 +607,21 @@ const SHEETS = {
     <div class="fact"><span class="ico">${ICON.bolt}</span><div><b>Orbital busca en toda la red</b><span>Encuentra varias versiones de lo que quieres ver y le pide a tu servicio la mejor para ti.</span></div></div>
     <div class="fact"><span class="ico">${ICON.card}</span><div><b>Hay tres, y hacen lo mismo</b><span>Real-Debrid, TorBox y AllDebrid. Cada uno se paga en su página.</span></div></div></div>
     <p class="small">Lo técnico vive en Ajustes › Aprende.</p>`,
-  tvcode: () => `<div class="sheet-head"><b>Conecta tu TV</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
-    <p class="s">En la TV, abre Ajustes › Conectar iPhone. Ahí aparece un código: escríbelo aquí.</p>
-    <button class="pins" data-a="typepin" aria-label="Escribir el código">${(S.pin ? "4812" : "    ").split("").map(d => `<span>${d.trim()}</span>`).join("")}</button>
-    <button class="btn ${S.pin ? "p" : "g"}" data-a="${S.pin ? "tvok" : "noop"}">Conectar</button><p class="small">En el prototipo, toca los cuadros para escribirlo.</p><p class="small">El iPhone y la TV tienen que estar en la misma red de casa.</p>`
+  tvcode: () => {
+    if (S.tvSearch === "found") return `<div class="sheet-head"><b>Conecta tu TV</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+      <div class="choice on"><span class="ico">${ICON.tv}</span><span class="grow">Orbital en tu TV<span class="sub">En esta red de casa</span></span></div>
+      <button class="btn p" data-a="tvok">Conectar</button><button class="btn q" data-a="tvsearch" data-v="code">No es la mía: usar un código</button>`;
+    if (S.tvSearch === "code") return `<div class="sheet-head"><b>Conecta con un código</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+      <p class="s">En la TV, abre Ajustes › Conectar un aparato. Ahí aparece un código: escríbelo aquí.</p>
+      <button class="pins" data-a="typepin" aria-label="Escribir el código">${(S.pin ? "4812" : "    ").split("").map(d => `<span>${d.trim()}</span>`).join("")}</button>
+      ${S.failed.pin === 1 ? `<div class="err">Ese código no coincide con el de tu TV. Revísalo: cambia cada vez que abres esa pantalla.</div>` : ""}
+      <button class="btn ${S.pin ? "p" : "g"}" data-a="${S.pin ? "pincheck" : "noop"}">Conectar</button><p class="small">En el prototipo, toca los cuadros para escribirlo.</p>`;
+    if (S.tvSearch === "none") return `<div class="sheet-head"><b>No encontramos tu TV</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+      <div class="err">Revisa que la TV esté prendida con Orbital abierto, y que los dos estén en la misma red de casa.</div>
+      <button class="btn p" data-a="tvsearch" data-v="go">Buscar otra vez</button><button class="btn q" data-a="tvsearch" data-v="code">Usar un código</button>`;
+    return `<div class="sheet-head"><b>Conecta tu TV</b><button class="btn q" data-a="sheet" data-v="">Cerrar</button></div>
+      <div class="wait"><span class="spin"></span><span>Buscando tu TV en esta red de casa…<span class="sub">Ten Orbital abierto en la TV.</span></span></div>`;
+  }
 };
 
 function render() {
@@ -593,17 +637,18 @@ function render() {
 }
 
 function setListen(v) {
-  S.listen = v; const dub = DUB[S.uiLang];
+  S.listen = v; const dub = S.dub;
   const rest = S.langs.filter(x => x !== dub && x !== "original");
   S.langs = v === "dub" ? [dub, "original", ...rest] : ["original", dub, ...rest.filter(x => x !== "en")];
 }
 document.addEventListener("click", e => {
+  if (e.target.closest("select")) return;
   const t = e.target.closest("[data-a]"); if (!t) return;
   const a = t.dataset.a, v = t.dataset.v;
   if (a === "next") next();
   else if (a === "back") back();
   else if (a === "skipall") go("home");
-  else if (a === "ui") { S.uiLang = v; S.subs = v; if (!S.splitMeta) S.metaLang = v; setListen(S.listen); S.flash = S.splitMeta ? "ui" : "all"; render(); }
+  else if (a === "ui") { S.uiLang = v; S.subs = v; S.dub = DUB[v]; if (!S.splitMeta) S.metaLang = v; setListen(S.listen); S.flash = S.splitMeta ? "ui" : "all"; render(); }
   else if (a === "meta") { S.metaLang = v; S.flash = "meta"; render(); }
   else if (a === "split") { S.splitMeta = !S.splitMeta; if (!S.splitMeta) S.metaLang = S.uiLang; render(); }
   else if (a === "sub") { S.traktSub = v || null; S.traktWait = false; S.toast = null; render(); }
@@ -611,12 +656,12 @@ document.addEventListener("click", e => {
   else if (a === "copy") { S.toast = "copied"; render(); }
   else if (a === "traktok") { S.traktWait = true; render(); setTimeout(approveTrakt, 4000); }
   else if (a === "traktcheck") approveTrakt();
-  else if (a === "notrakt") { S.trakt = false; S.traktSub = null; go("win"); }
+  else if (a === "notrakt") { S.trakt = false; S.traktSub = null; if (S.fromHome) { S.fromHome = false; return go("home"); } go("win"); }
   else if (a === "save") { S.saved.includes(v) ? S.saved.splice(S.saved.indexOf(v), 1) : saveTitle(v); if (!S.trakt || S.traktNew) S.decidedInWin = S.saved.length > 0; render(); }
   else if (a === "shuffle") { S.shuffled = !S.shuffled; render(); }
   else if (a === "plat") { S.platforms.includes(v) ? S.platforms.splice(S.platforms.indexOf(v), 1) : S.platforms.push(v); render(); }
   else if (a === "otherplat") { S.otherPlat = !S.otherPlat; render(); }
-  else if (a === "sheet") { S.sheet = v || null; render(); }
+  else if (a === "sheet") { S.sheet = v || null; if (v === "tvcode") { S.tvSearch = null; render(); setTimeout(findTV, 1500); return; } render(); }
   else if (a === "keyfor") { S.keyFor = v; S.keyPasted = false; S.rdWait = false; S.sheet = "key"; render(); }
   else if (a === "paste") { S.keyPasted = true; render(); }
   else if (a === "cloudok") { S.cloud = S.keyFor; S.sheet = null; render(); }
@@ -626,23 +671,30 @@ document.addEventListener("click", e => {
   else if (a === "order") { S.showOrder = !S.showOrder; render(); }
   else if (a === "subsopen") { S.subsOpen = !S.subsOpen; render(); }
   else if (a === "subs") { S.subs = v; S.subsOpen = false; render(); }
-  else if (a === "tvok") { S.tv = true; S.fromTV = true; S.trakt = true; S.cloud = "Real-Debrid"; S.sheet = null; render(); }
+  else if (a === "tvok") { S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = fails ? null : "Real-Debrid"; S.tvNoCloud = fails; S.sheet = null; render(); }
   else if (a === "notv") { S.noTV = true; next(); }
   else if (a === "up" || a === "down") { const i = +v, j = a === "up" ? i - 1 : i + 1; [S.langs[i], S.langs[j]] = [S.langs[j], S.langs[i]]; render(); }
   else if (a === "drop") { S.langs.splice(+v, 1); render(); }
-  else if (a === "tour") { S.tour = v; S.ver = 0; S.verOpen = false; S.requested = false; S.rated = 0; S.remote = false; S.toast = null; render(); }
+  else if (a === "tour") { S.whenAsk = false; S.tour = v; S.ver = 0; S.verOpen = false; S.requested = false; S.rated = 0; S.remote = false; S.toast = null; render(); }
   else if (a === "veropen") { S.verOpen = true; render(); }
   else if (a === "pickver") { if (+v === 2) { S.requested = true; S.ver = 0; S.notif = null; } else { S.ver = +v; S.requested = false; } S.flash = "ver"; render(); }
   else if (a === "rate") { S.rated = +v; render(); setTimeout(() => { if (S.tour === "seen") { S.tasks.seen = true; S.tour = null; S.toast = `✓ Calificaste Matrix con ${v} ★. Con eso te conocemos mejor.`; render(); } }, 600); }
   else if (a === "remote") { S.remote = true; render(); }
   else if (a === "tourpick") { saveTitle(v); S.tasks.decide = true; S.tour = null; S.toast = `✓ ${POSTERS[v][0]} quedó en Mi lista`; render(); }
-  else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; S.toast = { lists: "✓ Interestelar quedó en «Para el fin de semana»", tvsend: "✓ Pausaste la TV desde el iPhone", follow: "✓ Sigues Shōgun donde te quedaste", where: "✓ Te llevamos directo a la plataforma" }[v] || null; if (v === "lists") saveTitle("interstellar"); render(); }
-  else if (a === "playnow") go("playing");
+  else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; S.toast = { lists: "✓ Interestelar quedó en Mi lista", tvsend: `✓ Pausaste la TV desde tu ${here()}`, follow: "✓ Sigues Shōgun donde te quedaste", where: "✓ Te llevamos directo a la plataforma", whennotify: "✓ Te avisamos cuando llegue a las tuyas" }[v] || null; if (v === "whennotify") S.tasks.where = true; if (v === "lists") saveTitle("interstellar"); render(); }
+  else if (a === "playnow") { S.watched = true; go("playing"); }
+  else if (a === "pincheck") { if (fails && !S.failed.pin) { S.failed.pin = 1; S.pin = false; return render(); } S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = fails ? null : "Real-Debrid"; S.tvNoCloud = fails; S.sheet = null; render(); }
+  else if (a === "nudge") { S.fromHome = true; if (v === "trakt") { S.traktSub = null; go("trakt"); } else if (v === "cloud") go("cloud"); else { S.fromHome = false; S.sheet = "tvcode"; S.tvSearch = null; render(); setTimeout(findTV, 1500); } }
+  else if (a === "platsdone") { S.sheet = null; S.whenAsk = true; render(); }
+  else if (a === "whenask") { S.whenAsk = true; render(); }
+  else if (a === "fromphone") { if (fails && !S.failed.phone) { S.failed.phone = 1; return render(); } S.fromPhone = true; S.trakt = true; if (watches()) S.cloud = "Real-Debrid"; else S.platforms = ["Netflix"]; if (edition === "ultra") S.tv = true; render(); }
+  else if (a === "keycheck") { if (fails && !S.failed.key) { S.failed.key = 1; S.keyPasted = false; return render(); } S.cloud = S.keyFor; S.sheet = null; render(); }
+  else if (a === "tvsearch") { if (v === "go") { S.tvSearch = null; render(); setTimeout(findTV, 1500); } else { S.tvSearch = v; render(); } }
   else if (a === "tohome") go("home");
   else if (a === "notif") { S.notif = v === "yes"; render(); }
   else if (a === "typepin") { S.pin = true; render(); }
-  else if (a === "rdwait") { S.rdWait = true; render(); setTimeout(() => { if (S.rdWait) { S.rdWait = false; S.cloud = "Real-Debrid"; S.sheet = null; render(); } }, 4000); }
-  else if (a === "rdcheck") { S.rdWait = false; S.cloud = "Real-Debrid"; S.sheet = null; render(); }
+  else if (a === "rdwait") { S.rdWait = true; render(); setTimeout(() => { if (S.rdWait) { S.rdWait = false; if (fails && !S.failed.rd) { S.failed.rd = 1; return render(); } S.cloud = "Real-Debrid"; S.sheet = null; render(); } }, 4000); }
+  else if (a === "rdcheck") { S.rdWait = false; if (fails && !S.failed.rd) { S.failed.rd = 1; return render(); } S.cloud = "Real-Debrid"; S.sheet = null; render(); }
   else if (a === "notseen") { S.tasks.seen = true; S.tour = null; S.toast = "Sin problema: no la marcamos."; render(); }
   else if (a === "dismiss") { S.dismissed.push(v); render(); }
 });
@@ -654,7 +706,11 @@ function seg(id, cb) {
 }
 seg("ed", v => { edition = v; reset(); render(); });
 seg("dev", v => { device = v; document.getElementById("device").classList.toggle("ipad", v === "ipad"); render(); });
-document.addEventListener("change", e => { if (e.target.id === "addlang" && e.target.value) { S.langs.push(e.target.value); render(); } });
+document.addEventListener("change", e => {
+  if (e.target.id === "addlang" && e.target.value) { S.langs.push(e.target.value); render(); }
+  if (e.target.id === "dubpick") { S.dub = e.target.value; setListen("dub"); render(); }
+});
 document.getElementById("restart").addEventListener("click", () => { reset(); render(); });
+document.getElementById("fails").addEventListener("click", e => { fails = !fails; e.currentTarget.setAttribute("aria-pressed", fails); e.currentTarget.textContent = "Simular fallas: " + (fails ? "sí" : "no"); reset(); render(); });
 render();
 </script>
