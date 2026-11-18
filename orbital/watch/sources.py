@@ -7,9 +7,9 @@ import time
 from dataclasses import replace
 
 from .. import player, rd_requests
-from ..library import cinemeta, realdebrid, streams, stremio_api, torrentio
+from ..library import cinemeta, debrid, streams, stremio_api, torrentio
 from .accounts import _Accounts
-from .base import DEBRID_CAUSES
+from .base import debrid_causes
 from .versions import choice_line, language_code, player_ui_day, ready_now, spanish_variant
 
 log = logging.getLogger("orbital.watch")  # el mismo nombre de siempre: los avisos y la bitácora no cambian
@@ -193,7 +193,7 @@ class _Sources(_Accounts):
             stuck = str(req.get("detail") or "").startswith("Sigue sin bajar")  # 24 h sin avanzar: su hoja ofrece otra
             return {**out, "why": "requested", "message": req["message"],
                     "detail": req["detail"] if stuck or req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED)
-                    else rd_requests.CLOUD}
+                    else rd_requests.cloud(self.debrid_service)}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
             day = player_ui_day(when)
@@ -209,7 +209,7 @@ class _Sources(_Accounts):
             return {**out, "offer": offer} if offer else out
         outcome = self.streams.outcome.get(f"{kind}:{video_id}")
         if self.rd.client() is not None:  # tu cuenta va antes que lo de cada versión (el orden de vocabulario.json)
-            cause = DEBRID_CAUSES.get(self.debrid_status(fresh=outcome == "debrid-account").get("problem") or "")
+            cause = debrid_causes(self.debrid_service).get(self.debrid_status(fresh=outcome == "debrid-account").get("problem") or "")
             if cause:
                 return {**out, "why": "debrid-account", "message": cause[0], "detail": cause[1]}
         if outcome == "offline":
@@ -219,10 +219,10 @@ class _Sources(_Accounts):
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
         if self.rd.client() is None:
-            # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar Real-Debrid, nunca
+            # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar tu nube, nunca
             # «Nadie lo tiene» sin salida (análisis de fondo con el iPhone, escenario 16).
-            return {**out, "why": "debrid-account", "message": "Vuelve a conectar Real-Debrid",
-                    "detail": "Ajustes › Cuentas › Real-Debrid"}
+            return {**out, "why": "debrid-account", "message": f"Vuelve a conectar {self.debrid_name}",
+                    "detail": f"Ajustes › Cuentas › {self.debrid_name}"}
         exists = bool(found) or bool(self.rd.candidates(kind, video_id, prefs))
         if exists and self.rd.client() is not None and req and req.get("mine") and req["state"] in (
                 rd_requests.REFUSED, rd_requests.TOO_MANY):
@@ -281,7 +281,7 @@ class _Sources(_Accounts):
             season, episode = (int(parts[1]), int(parts[2])) if kind == "series" and len(parts) == 3 and                 parts[1].isdigit() and parts[2].isdigit() else (None, None)
             return self.rd.request(kind, video_id, title or "tu pedido", prefs, meta_id=meta_id, season=season,
                                    episode=episode, want=want)
-        except realdebrid.RealDebridError as exc:
+        except debrid.DebridError as exc:
             raise LookupError(str(exc)) from exc
 
     def _release_of(self, kind: str, meta_id: str, video_id: str) -> float | None:

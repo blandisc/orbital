@@ -17,7 +17,7 @@ from ..config import Config
 from ..credentials import Credentials
 from ..events import EventBus
 from ..launcher import Launcher
-from ..library import cinemeta, localize, stremio_api
+from ..library import cinemeta, debrid, localize, stremio_api
 from ..library.models import LibraryItem
 from ..rd_requests import RdRequests
 from ..scrobble import TraktScrobbler
@@ -34,10 +34,23 @@ ADDONS_KEY = "stremio_addons"  # tus complementos: cifrados como la clave de ses
 RD_KEY = "realdebrid_token"  # la clave fija de tu Real-Debrid, propia de la consola (corte S2), cifrada como las demás
 RD_ACCOUNT = "rd:account"
 RD_STATUS_TTL = 1800
-# Las tres causas de tu cuenta (AD-5), con las palabras de design/vocabulario.json: (texto, detalle).
-DEBRID_CAUSES = {"expired": ("Tu Real-Debrid venció", "Renovar en real-debrid.com, desde tu celular"),
-                 "no_premium": ("Tu cuenta no tiene Premium", "Sin Premium no arranca nada al instante"),
-                 "bad_key": ("Vuelve a conectar Real-Debrid", "Tu clave ya no sirve · Ajustes › Cuentas › Real-Debrid")}
+DEBRID_SERVICE = "debrid_service"  # tu nube (Ajustes): realdebrid, torbox o alldebrid; sin elegir, Real-Debrid
+
+
+def account_pref(service: str) -> str:
+    """Dónde se anota de dónde salió la clave de esa nube («rd:account» para Real-Debrid, como siempre)."""
+    return RD_ACCOUNT if service == "realdebrid" else f"{service}:account"
+
+
+def debrid_causes(service: str = "realdebrid") -> dict[str, tuple[str, str]]:
+    """Las tres causas de tu cuenta (AD-5), con las palabras de design/vocabulario.json y el nombre de tu nube."""
+    n, site = debrid.name(service), debrid.SITES[debrid.valid(service)]
+    return {"expired": (f"Tu {n} venció", f"Renovar en {site}, desde tu celular"),
+            "no_premium": ("Tu cuenta no tiene Premium", "Sin Premium no arranca nada al instante"),
+            "bad_key": (f"Vuelve a conectar {n}", f"Tu clave ya no sirve · Ajustes › Cuentas › {n}")}
+
+
+DEBRID_CAUSES = debrid_causes()  # las de Real-Debrid (lo de antes); con tu nube, `debrid_causes(service)`
 STREMIO_STALE_SECONDS = 180
 
 

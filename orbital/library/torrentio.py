@@ -75,15 +75,29 @@ def parts(options: dict) -> list[str]:
     return out
 
 
-def manifest_url(options: dict, key: str | None, base: str = BASE) -> str | None:
-    """La dirección del manifiesto con tu clave al final. None sin clave."""
+# Las tres nubes que Orbital maneja (debrid.SERVICES), con el nombre que les da Torrentio en su dirección.
+DEBRID_PARAMS = ("realdebrid", "torbox", "alldebrid")
+
+
+def manifest_url(options: dict, key: str | None, base: str = BASE, service: str = "realdebrid") -> str | None:
+    """La dirección del manifiesto con tu clave al final («realdebrid=…», «torbox=…» o «alldebrid=…»). None sin clave."""
     if not key:
         return None
-    return f"{base}/{'|'.join([*parts(options), 'realdebrid=' + urllib.parse.quote(key, safe='')])}/manifest.json"
+    service = service if service in DEBRID_PARAMS else "realdebrid"
+    return f"{base}/{'|'.join([*parts(options), f'{service}=' + urllib.parse.quote(key, safe='')])}/manifest.json"
 
 
 def parse(url: str) -> tuple[dict, str | None] | None:
-    """Lo que trae una dirección de Torrentio (de tu Stremio): (opciones, tu clave). None si no es un Torrentio."""
+    """Lo que trae una dirección de Torrentio (de tu Stremio): (opciones, tu clave). None si no es un Torrentio. La
+    clave puede ser de cualquiera de las tres nubes; cuál es lo dice `parse_service`."""
+    found = parse_service(url)
+    return (found[0], found[1]) if found else None
+
+
+def parse_service(url: str) -> tuple[dict, str | None, str | None] | None:
+    """(opciones, tu clave, su nube) de una dirección de Torrentio. Antes solo se leía «realdebrid=»: un Torrentio con
+    TorBox o AllDebrid se quedaba sin clave (Fernando, 18 nov). Otra nube que Orbital no maneja (Premiumize…) se conserva
+    tal cual en `verbatim`, sin clave para Orbital."""
     decoded = urllib.parse.unquote(url or "")
     if "://" not in decoded:
         return None
@@ -92,7 +106,7 @@ def parse(url: str) -> tuple[dict, str | None] | None:
     if "torrentio" not in host.lower():
         return None
     options: dict = {"language": [], "qualityfilter": []}  # sin opciones, Torrentio no esconde nada ni pone idiomas
-    key = None
+    key = service = None
     as_list = lambda value: [x.strip() for x in value.split(",") if x.strip()]  # noqa: E731
     for part in (p for p in path.split("|") if p):
         name, _, value = part.partition("=")
@@ -105,11 +119,11 @@ def parse(url: str) -> tuple[dict, str | None] | None:
             options["limit"] = int(value)
         elif name == "sizefilter":
             options["sizefilter"] = value
-        elif name == "realdebrid":
-            key = value
+        elif name in DEBRID_PARAMS and value and key is None:
+            key, service = value, name
         elif name not in SECRET_KEYS:
             options.setdefault("verbatim", []).append(part)
-    return options, key
+    return options, key, service
 
 
 def is_torrentio(url: str) -> bool:

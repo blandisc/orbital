@@ -15,6 +15,7 @@ from .. import companion, devices
 from ..api.play import humane_error  # noqa: F401 - se importa desde aquí
 from ..api.ui import SETTINGS  # noqa: F401
 from ..config import Config
+from ..library import debrid
 from ..remote_input import RemoteInput
 
 
@@ -247,8 +248,8 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
         info = companion.tunnel_info(config)  # el celular entra por el túnel de Tailscale (ya no hace falta Alexa)
         if not info["ready"]:
             return {"ready": False, "reason": info.get("reason", "")}
-        if purpose == "realdebrid":  # CA2-A: los campos y las palabras los pone el servidor, no la interfaz
-            code = remote.start(*RD_FORM, purpose="realdebrid", lead=RD_LEAD, submit_label="Usar esta clave")
+        if purpose in debrid.SERVICES:  # CA2-A: los campos y las palabras los pone el servidor, no la interfaz
+            code = remote.start(*debrid_form(purpose), purpose=purpose, lead=debrid_lead(purpose), submit_label="Usar esta clave")
         else:
             code = remote.start(title, fields)
         if code is None:
@@ -260,17 +261,30 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
 
     @app.post("/api/realdebrid/remote/confirm")
     def debrid_remote_confirm(code: str = Body("", embed=True)) -> dict:
-        """«¿Usar la cuenta fernando?» → Sí: la clave que llegó del celular se guarda (la interfaz nunca la ve)."""
-        values = remote.take(code, purpose="realdebrid")
+        """«¿Usar la cuenta fernando?» → Sí: la clave que llegó del celular se guarda en la nube de ese formulario (la
+        interfaz nunca la ve)."""
+        for service in debrid.SERVICES:
+            values = remote.take(code, purpose=service)
+            if values is not None:
+                break
         urls.pop(code, None)
         if values is None:
-            raise HTTPException(409, "Ese código ya no sirve. Vuelve a abrir Conectar Real-Debrid.")
-        return save_debrid_key(app, values.get("token", ""), "celular")
+            raise HTTPException(409, "Ese código ya no sirve. Vuelve a abrir Conectar tu nube.")
+        return save_debrid_key(app, values.get("token", ""), "celular", service)
 
     @app.post("/api/realdebrid/key")
-    def debrid_key(token: str = Body("", embed=True)) -> dict:
-        """La clave pegada en la TV (TEC-4, sin túnel o sin celular): probada antes de guardarla."""
-        return save_debrid_key(app, token, "tv")
+    def debrid_key(token: str = Body(""), service: str | None = Body(None)) -> dict:
+        """La clave pegada en la TV (TEC-4, sin túnel o sin celular): probada antes de guardarla. Con `service`, la de
+        esa nube (Real-Debrid si no dice)."""
+        return save_debrid_key(app, token, "tv", service)
+
+    @app.post("/api/debrid/service")
+    def debrid_service(service: str = Body("", embed=True)) -> dict:
+        """Ajustes › Cuentas › Tu nube: Real-Debrid, TorBox o AllDebrid. La clave de cada una se queda guardada."""
+        try:
+            return app.state.catalog.watch.set_debrid_service(service)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/remote-input/qr.svg")
     def remote_qr(code: str = "") -> Response:
@@ -293,15 +307,26 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
         return {"ok": True}
 
 
-RD_FORM = ("Conectar Real-Debrid", [{"name": "token", "label": "Tu clave de Real-Debrid", "secret": True}])
+def debrid_form(service: str) -> tuple[str, list[dict]]:
+    """El formulario del celular para la clave de esa nube."""
+    name = debrid.name(service)
+    return (f"Conectar {name}", [{"name": "token", "label": f"Tu clave de {name}", "secret": True}])
 
-RD_LEAD = "Ábrela en real-debrid.com/apitoken, cópiala y pégala aquí."
+
+def debrid_lead(service: str) -> str:
+    return f"Ábrela en {debrid.KEY_URLS[debrid.valid(service)].removeprefix('https://')}, cópiala y pégala aquí."
 
 
-def save_debrid_key(app: FastAPI, token: object, source: str) -> dict:
+RD_FORM = debrid_form("realdebrid")
+RD_LEAD = debrid_lead("realdebrid")
+
+
+def save_debrid_key(app: FastAPI, token: object, source: str, service: str | None = None) -> dict:
     watch = app.state.catalog.watch
+    if service is not None and service not in debrid.SERVICES:
+        raise HTTPException(422, "Esa nube no la conozco")
     try:
-        return watch.set_rd_token(str(token or ""), "TV" if source == "tv" else "celular", source=source)
+        return watch.set_rd_token(str(token or ""), "TV" if source == "tv" else "celular", source=source, service=service)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except ConnectionError as exc:

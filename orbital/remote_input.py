@@ -24,7 +24,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 TTL = 600.0  # s: lo que dura un código
-TTLS = {"realdebrid": 1200.0}  # la clave de Real-Debrid: 20 min (hay que ir a buscarla a real-debrid.com)
+# La clave de tu nube: 20 min (hay que ir a buscarla a su página). El propósito es el nombre de la nube.
+TTLS = {"realdebrid": 1200.0, "torbox": 1200.0, "alldebrid": 1200.0}
 MAX_FAILS = 5  # claves que Real-Debrid no reconoce: al quinto fallo el código se acaba
 # El código de acceso rápido (sin escanear: «…ts.net/clave · KQ7MXR»): sin letras que se confundan (0/O, 1/I/L, 5/S, 2/Z,
 # 8/B). 6 de 25 = 244 millones; con 5 fallos en total (no por IP: por el túnel todo llega de 127.0.0.1) adivinarlo es

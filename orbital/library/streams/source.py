@@ -68,12 +68,12 @@ class Source:
     @property
     def info_hash(self) -> str | None:
         """La huella del torrent (40 hexadecimales): la de Torrentio sin Real-Debrid, o la que va en su dirección de
-        Real-Debrid (/resolve/realdebrid/<clave>/<huella>/…). Con ella se pide justo esta versión (T8-A)."""
+        Real-Debrid (/resolve/<nube>/<clave>/<huella>/…, con cualquiera de las tres). Con ella se pide justo esta versión (T8-A)."""
         raw = self.stream.get("infoHash")
         if isinstance(raw, str) and re.fullmatch(r"[0-9a-fA-F]{40}", raw):
             return raw.lower()
         url = self.stream.get("url")
-        found = re.search(r"/resolve/realdebrid/[^/]+/([0-9a-fA-F]{40})(?:/|$)", url) if isinstance(url, str) else None
+        found = re.search(r"/resolve/(?:realdebrid|torbox|alldebrid)/[^/]+/([0-9a-fA-F]{40})(?:/|$)", url) if isinstance(url, str) else None
         return found.group(1).lower() if found else None
 
     def public(self) -> dict:
@@ -153,7 +153,10 @@ def torrentio_notice(stream: dict) -> str | None:
     if m:
         return m.group(1)
     name = f"{stream.get('name') or ''} {stream.get('title') or ''}".lower()
-    return "failed_access" if "rd error" in name else None
+    return "failed_access" if _ERROR_MARK.search(name) else None
+
+
+_ERROR_MARK = re.compile(r"\b(rd|tb|ad) error\b")  # «[RD error]», «[TB error]», «[AD error]»: tu nube no deja
 
 
 def _who(addon: str, transport_url: str) -> str:
@@ -173,6 +176,7 @@ def addon_kind(addon: str, transport_url: str) -> str:
 
 
 DEBRID_MARK = re.compile(r"\[(RD|AD|PM|DL|TB|OC)[ +\]]")
+_INSTANT_TAG = re.compile(r"\[(RD|TB|AD)\+\]")  # ya está en tu nube: «[RD+]», «[TB+]», «[AD+]»
 
 
 def instant_mark(name: str, addon: str, transport_url: str) -> tuple[bool, bool]:
@@ -184,12 +188,12 @@ def instant_mark(name: str, addon: str, transport_url: str) -> tuple[bool, bool]
     waiting = "⏳" in head or "⬇" in head
     marked = bool(DEBRID_MARK.search(name))
     if "torrentio" in who:
-        return "[RD+]" in name or "+]" in head, marked
+        return bool(_INSTANT_TAG.search(name)) or "+]" in head, marked
     if "comet" in who:
         return bolt or "+]" in head, marked or bolt or waiting
     if "mediafusion" in who:
         return bolt, bolt or waiting or marked
-    return "[RD+]" in name or "+]" in head or bolt, marked or bolt or waiting
+    return bool(_INSTANT_TAG.search(name)) or "+]" in head or bolt, marked or bolt or waiting
 
 
 def parse(stream: dict, addon: str, transport_url: str, index: int, original: str | None = None) -> Source:

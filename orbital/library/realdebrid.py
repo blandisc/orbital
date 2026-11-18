@@ -20,6 +20,7 @@ from pathlib import Path
 
 from ..net import NET_FAILURES, read_body, urlopen
 from ..shared import design_file
+from .debrid import DebridError, episode_file
 
 log = logging.getLogger(__name__)
 
@@ -68,46 +69,17 @@ FAILED = {"error", "virus", "dead", "magnet_error"}
 _TOKEN = re.compile(r"realdebrid=([A-Za-z0-9]+)")
 
 
-class RealDebridError(Exception):
+class RealDebridError(DebridError):
     """Real-Debrid dijo que no (o no contestó). El mensaje va en palabras; `status` es el HTTP y `code` su error_code.
     Qué quiere decir cada uno lo dice design/realdebrid-errors.json (`cause`), igual que en el iPhone. Sin `status` ni
-    `code` (no contestó, o una falla de Orbital) la causa es «other»."""
+    `code` (no contestó, o una falla de Orbital) la causa es «other». Es un `debrid.DebridError`: quien atiende a cualquier
+    nube lo atiende igual."""
 
-    def __init__(self, message: str, status: int | None = None, code: int | None = None) -> None:
-        super().__init__(message)
-        self.status, self.code = status, code
+    service = "realdebrid"
 
     @property
     def cause(self) -> str:
-        return cause_of(self.status, self.code)
-
-    @property
-    def gone(self) -> bool:
-        """Ese torrent ya no está en tu cuenta (lo borraste o lo canceló otro aparato)."""
-        return self.cause == "gone"
-
-    @property
-    def too_many(self) -> bool:
-        """Un límite de tu cuenta (descargas a la vez, tráfico, uso justo): se vuelve a pedir cuando haya lugar."""
-        return self.cause == "too_many"
-
-    @property
-    def refused(self) -> bool:
-        """Real-Debrid no deja bajar esa versión: no se vuelve a pedir."""
-        return self.cause == "refused"
-
-    @property
-    def slow_down(self) -> bool:
-        """Muchas preguntas seguidas o un servicio de paso caído: se espera y se vuelve a preguntar."""
-        return self.cause == "slow_down"
-
-    @property
-    def bad_key(self) -> bool:
-        return self.cause == "invalid_session"
-
-    @property
-    def no_premium(self) -> bool:
-        return self.cause == "no_premium"
+        return cause_of(self.status, self.code if isinstance(self.code, int) else None)
 
 
 def token_in(url: str) -> str | None:
@@ -117,14 +89,24 @@ def token_in(url: str) -> str | None:
 
 
 def without_debrid(base: str) -> str:
-    """La misma dirección de Torrentio, con tus opciones (orden, idioma, calidades) pero sin Real-Debrid: así enseña los
-    torrents que existen aunque Real-Debrid no los tenga."""
-    decoded = urllib.parse.unquote(base)
-    head, _, tail = decoded.partition("://")
-    host, _, path = tail.partition("/")
-    options = [o for o in path.split("|") if o and not o.startswith(("realdebrid=", "debridoptions="))]
-    rest = "|".join(options)
-    return f"{head}://{host}/{urllib.parse.quote(rest, safe='=,')}".rstrip("/")
+    """La misma dirección de Torrentio sin tu nube (cualquiera de las tres): `debrid.without_debrid`."""
+    from .debrid import without_debrid as plain
+    return plain(base)
+
+
+def account_from(user: dict) -> dict:
+    """El /user de Real-Debrid en la forma de las tres nubes."""
+    expires = None
+    raw = str(user.get("expiration") or "")
+    if raw:
+        from datetime import datetime
+        try:
+            expires = datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            expires = None
+    got = user.get("id")
+    return {"id": str(got) if got is not None else None, "username": str(user.get("username") or "") or None,
+            "premium": user.get("type") == "premium", "expires": expires}
 
 
 def magnet(info_hash: str) -> str:
@@ -132,6 +114,9 @@ def magnet(info_hash: str) -> str:
 
 
 class RealDebrid:
+    service = "realdebrid"
+    counts_active = True  # `active_count` dice cuántas deja tu cuenta: «Muchas descargas activas» espera lugar
+
     def __init__(self, token: str, opener=None) -> None:
         self.token = token
         self.opener = opener or urlopen
@@ -152,6 +137,15 @@ class RealDebrid:
 
     def user(self) -> dict:
         return self._call("GET", "user") or {}
+
+    def account(self) -> dict:
+        """Tu cuenta en la forma de las tres nubes: {"id", "username", "premium", "expires" (segundos o None)}."""
+        return account_from(self.user())
+
+    def prepare(self, torrent: dict, file_idx: int | None = None, pack: bool = False) -> None:
+        """Lo que Real-Debrid necesita antes de bajar: elegir los archivos (solo deja una vez) si el torrent espera."""
+        if torrent.get("status") == "waiting_files_selection" and torrent.get("id"):
+            self.select(torrent["id"], file_idx, pack)
 
     def add(self, info_hash: str, file_idx: int | None = None, pack: bool = False) -> str:
         """Pide el torrent y elige qué bajar (Real-Debrid solo deja elegir una vez): el archivo del episodio si se sabe cuál;
@@ -195,7 +189,8 @@ class RealDebrid:
             if not exc.gone:
                 raise
 
-    def link(self, info: dict, file_idx: int | None = None) -> tuple[str, str] | None:
+    def link(self, info: dict, file_idx: int | None = None, season: int | None = None,
+             episode: int | None = None) -> tuple[str, str] | None:
         """Ya bajado: (enlace para el reproductor, nombre del archivo). El de ese archivo si se dice cuál (un episodio de un
         paquete); si no, el video más grande que eligió."""
         links = [x for x in info.get("links") or [] if isinstance(x, str)]
@@ -204,7 +199,11 @@ class RealDebrid:
             return None
         pairs = list(zip(links, files, strict=False)) or [(links[0], {})]  # los enlaces van en el orden de los archivos elegidos
         exact = [p for p in pairs if file_idx is not None and p[1].get("id") == file_idx + 1]
-        best = exact[0][0] if exact else max(pairs, key=lambda p: p[1].get("bytes", 0))[0]
+        if exact:
+            best = exact[0][0]
+        else:
+            pick = episode_file([f for _, f in pairs], None, season, episode)
+            best = next((link for link, f in pairs if f is pick), None) or max(pairs, key=lambda p: p[1].get("bytes", 0))[0]
         out = self._call("POST", "unrestrict/link", {"link": best}) or {}
         url = out.get("download")
         return (url, str(out.get("filename") or "")) if isinstance(url, str) and url.startswith("https://") else None

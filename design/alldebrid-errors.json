@@ -1,0 +1,47 @@
+{
+  "_": "Lo mismo que realdebrid-errors.json, para AllDebrid (Fernando, 18 nov 2026: Orbital con Real-Debrid, TorBox o AllDebrid). La TV la lee en orbital/library/alldebrid.py y el iPhone en su traductor de AllDebrid. AllDebrid contesta {\"status\": \"error\", \"error\": {\"code\", \"message\"}}; los códigos son los de su API v4 (docs.alldebrid.com). Primero manda el código; sin él (o con uno que no está aquí), el HTTP.",
+  "version": 1,
+  "codes": {
+    "AUTH_MISSING_APIKEY": {"cause": "invalid_session"},
+    "AUTH_BAD_APIKEY": {"cause": "invalid_session"},
+    "AUTH_BLOCKED": {"cause": "no_premium", "_": "Clave bloqueada por país o IP (una VPN)."},
+    "AUTH_USER_BANNED": {"cause": "no_premium"},
+    "MUST_BE_PREMIUM": {"cause": "no_premium"},
+    "MAGNET_MUST_BE_PREMIUM": {"cause": "no_premium"},
+    "FREE_TRIAL_LIMIT_REACHED": {"cause": "no_premium"},
+    "NO_SERVER": {"cause": "no_premium", "_": "Desde un servidor o VPN que AllDebrid no deja."},
+    "MAGNET_NO_SERVER": {"cause": "no_premium"},
+    "MAGNET_TOO_MANY_ACTIVE": {"cause": "too_many", "_": "30 a la vez: se vuelve a pedir cuando haya lugar."},
+    "MAGNET_INVALID_ID": {"cause": "gone"},
+    "MAGNET_INVALID_URI": {"cause": "refused"},
+    "MAGNET_INVALID_FILE": {"cause": "refused"},
+    "MAGNET_FILE_UPLOAD_FAILED": {"cause": "refused"},
+    "MAGNET_NO_URI": {"cause": "other"},
+    "MAGNET_PROCESSING": {"cause": "other"},
+    "LINK_DOWN": {"cause": "refused"},
+    "LINK_HOST_NOT_SUPPORTED": {"cause": "refused"},
+    "LINK_NOT_SUPPORTED": {"cause": "refused"},
+    "LINK_TEMPORARY_UNAVAILABLE": {"cause": "slow_down"},
+    "LINK_HOST_UNAVAILABLE": {"cause": "slow_down"},
+    "LINK_HOST_FULL": {"cause": "slow_down"},
+    "LINK_TOO_MANY_DOWNLOADS": {"cause": "too_many"},
+    "LINK_HOST_LIMIT_REACHED": {"cause": "too_many"},
+    "LINK_ERROR": {"cause": "other"}
+  },
+  "http": {
+    "401": "invalid_session",
+    "403": "no_premium",
+    "404": "gone",
+    "429": "slow_down",
+    "503": "slow_down"
+  },
+  "cases": [
+    {"http": 200, "code": "AUTH_BAD_APIKEY", "cause": "invalid_session"},
+    {"http": 200, "code": "MAGNET_TOO_MANY_ACTIVE", "cause": "too_many"},
+    {"http": 200, "code": "MAGNET_INVALID_ID", "cause": "gone"},
+    {"http": 200, "code": "MUST_BE_PREMIUM", "cause": "no_premium"},
+    {"http": 200, "code": "LINK_DOWN", "cause": "refused"},
+    {"http": 429, "code": null, "cause": "slow_down"},
+    {"http": null, "code": null, "cause": "other"}
+  ]
+}

@@ -4,8 +4,9 @@
     "path": "/api/realdebrid/requests"
   },
   "response": {
-    "account": null,
+    "account": "7",
     "requests": [],
+    "service": "realdebrid",
     "version": 1
   },
   "status": 200

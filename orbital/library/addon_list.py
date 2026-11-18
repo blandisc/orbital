@@ -33,14 +33,15 @@ TEMPLATES = {"torrentio": {"name": "Torrentio", "url": None, "default": True},
 COMET_BASE = "https://comet.elfhosted.com"
 
 
-def comet_url(key: str | None) -> str | None:
-    """Comet con tu Real-Debrid, armado igual que el iPhone (AddonTemplates.swift): su configuración como JSON en base64
-    en la ruta; solo lo que ya está en Real-Debrid. Si el base64 trae «/» o «+», un espacio más al final lo limpia."""
+def comet_url(key: str | None, service: str = "realdebrid") -> str | None:
+    """Comet con tu nube, armado igual que el iPhone (AddonTemplates.swift): su configuración como JSON en base64 en la
+    ruta; solo lo que ya está en tu nube. Si el base64 trae «/» o «+», un espacio más al final lo limpia."""
     if not key:
         return None
     import base64
     import json
-    text = json.dumps({"cachedOnly": True, "debridServices": [{"apiKey": key, "service": "realdebrid"}]},
+    service = service if service in torrentio.DEBRID_PARAMS else "realdebrid"
+    text = json.dumps({"cachedOnly": True, "debridServices": [{"apiKey": key, "service": service}]},
                       separators=(",", ":"), sort_keys=True)
     for _ in range(4):
         encoded = base64.b64encode(text.encode()).decode()
@@ -133,13 +134,14 @@ class AddonList:
     """La lista y sus cambios. `store` es el llavero de la consola (credentials.Credentials o un dict en pruebas)."""
 
     def __init__(self, store, legacy: Callable[[], Iterable[str]] = lambda: (),
-                 key: Callable[[], str | None] = lambda: None, on_key: Callable[[str], None] = lambda key: None,
-                 stremio: Callable[[], bool] = lambda: True) -> None:
+                 key: Callable[[], str | None] = lambda: None, on_key: Callable[..., None] = lambda key, service="realdebrid": None,
+                 stremio: Callable[[], bool] = lambda: True, service: Callable[[], str] = lambda: "realdebrid") -> None:
         self.store = store
         self.stremio = stremio  # hay cuenta de Stremio conectada: sin ella (y sin haber elegido), la lista es la tuya
         self.legacy = legacy  # los que agregaste con `orbital stremio addon add` (antes de S1): se traen como de Stremio
-        self.key = key  # tu clave de Real-Debrid (la de la consola): con ella se arma Torrentio
-        self.on_key = on_key  # la clave que venía en un Torrentio traído, para la consola si todavía no tiene
+        self.key = key  # la clave de tu nube (la de la consola): con ella se arma Torrentio
+        self.service = service  # cuál es tu nube: Real-Debrid, TorBox o AllDebrid (debrid.SERVICES)
+        self.on_key = on_key  # la clave (y su nube) que venía en un Torrentio traído, para la consola si todavía no tiene
         self._lock = threading.RLock()
 
     # --- leer ----------------------------------------------------------------------------------------------------
@@ -179,13 +181,13 @@ class AddonList:
         for ident, template in TEMPLATES.items():  # lo de Orbital siempre está (apagado o prendido)
             if not any(e.template == ident for e in out):
                 out.append(Entry(id=ident, origin="orbital", name=template["name"], template=ident, order=len(out)))
-        key = self.key()
+        key, service = self.key(), self.service()
         for entry in out:
             if entry.template == "torrentio":
                 entry.options = entry.options if entry.options is not None else dict(torrentio.RECOMMENDED)
-                entry.built = torrentio.manifest_url(entry.options, key)
+                entry.built = torrentio.manifest_url(entry.options, key, service=service)
             elif entry.template == "comet":
-                entry.built = comet_url(key)
+                entry.built = comet_url(key, service)
         return sorted(out, key=lambda e: e.order)
 
     def torrentio(self) -> Entry:
@@ -270,10 +272,10 @@ class AddonList:
     def _adopt(self, entries: list[Entry], url: str, place: Entry | None = None) -> None:
         """Un Torrentio de tu Stremio: el de Orbital toma sus opciones (si no las cambiaste aquí) y su lugar, y la clave
         que traía queda como la de la consola si todavía no tiene. Arma la misma dirección: nada cambia en tus versiones."""
-        parsed = torrentio.parse(url)
+        parsed = torrentio.parse_service(url)
         if parsed is None:
             return
-        options, key = parsed
+        options, key, service = parsed
         mine = next(e for e in entries if e.template == "torrentio")
         if not mine.extra.get("set_here"):
             mine.options = options
@@ -281,7 +283,7 @@ class AddonList:
             mine.order = place.order
             mine.enabled = dict(place.enabled)
         if key and not self.key():
-            self.on_key(key)
+            self.on_key(key, service or "realdebrid")
 
     def adopt_torrentio(self) -> bool:
         """Al arrancar: los Torrentio que ya habías traído de Stremio pasan al de Orbital (corte S3). True si cambió algo."""

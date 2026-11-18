@@ -120,8 +120,9 @@ class Watch(_Details):
         self._saving = threading.Lock()
         # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).
         self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons,
-                                               key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought,
-                                               stremio=lambda: self.stremio_linked or bool(self.own_addons()))
+                                               key=lambda: self.debrid_key(), on_key=self._rd_key_brought,
+                                               stremio=lambda: self.stremio_linked or bool(self.own_addons()),
+                                               service=lambda: self.debrid_service)
         self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
         self.addon_list.drop_local()  # 4 nov: sin el servidor de Stremio, «Archivos de la TV» ya no sirve
         if self.addon_list.needs_copy:  # 4 nov: las fuentes salían de tu cuenta de Stremio; se copian una vez a tu lista
@@ -144,7 +145,8 @@ class Watch(_Details):
         opensubtitles.install(self.opensubtitles)
         # Lo que Real-Debrid aún no tiene se le pide desde la ficha o el reproductor; ya bajado, es una versión más.
         self._rd_status: tuple[float, str | None, dict] = (0.0, None, {})
-        self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event), token=self.rd_token)
+        self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event), token=self.rd_token,
+                             service=lambda: self.debrid_service)
         self.rd.start()  # lo que quedó bajando antes de reiniciar se vuelve a seguir
         self.streams.facts = self._title_facts  # el idioma original (TMDB): de qué idioma es una fuente que no lo dice
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"

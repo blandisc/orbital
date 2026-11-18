@@ -9,9 +9,9 @@ import threading
 import time
 from dataclasses import asdict
 
-from ..library import addons, realdebrid, stremio_api, torrentio
+from ..library import addons, debrid, stremio_api, torrentio
 from ..net import NET_FAILURES
-from .base import ADDONS_KEY, RD_ACCOUNT, RD_KEY, RD_STATUS_TTL, STREMIO_KEY
+from .base import ADDONS_KEY, DEBRID_SERVICE, RD_STATUS_TTL, STREMIO_KEY, account_pref
 from .items import addon_gives
 from .library import _Library
 
@@ -21,55 +21,81 @@ log = logging.getLogger("orbital.watch")  # el mismo nombre de siempre: los avis
 class _Accounts(_Library):
     """Real-Debrid y tus complementos: la clave, el estado de la cuenta, traer y cambiar complementos."""
 
-    # --- Real-Debrid propio («La TV sin Stremio», corte S2) ------------------
+    # --- Tu nube propia: Real-Debrid, TorBox o AllDebrid («La TV sin Stremio», corte S2; 18 nov: las tres) --------
+    @property
+    def debrid_service(self) -> str:
+        """Tu nube: la que elegiste en Ajustes › Cuentas; sin elegir, Real-Debrid (era la única)."""
+        return debrid.valid(self.setting(DEBRID_SERVICE, debrid.DEFAULT))
+
+    @property
+    def debrid_name(self) -> str:
+        return debrid.name(self.debrid_service)
+
+    def set_debrid_service(self, service: str) -> dict:
+        """Ajustes › Cuentas › Tu nube: cambia cuál se usa. La clave de cada una se queda guardada (volver es un toque).
+        ValueError si no es una de las tres."""
+        if service not in debrid.SERVICES:
+            raise ValueError("Esa nube no la conozco")
+        if service != self.debrid_service:
+            self.state.set_setting(DEBRID_SERVICE, service)
+            self._rd_status = (0.0, None, {})
+            self.addons.forget()
+            self.streams.forget_all()
+            self.events.publish({"type": "settings-changed"})
+        return self.debrid_status(fresh=True)
+
+    def debrid_key(self, service: str | None = None) -> str | None:
+        """La clave guardada de esa nube (o de la tuya), sin mirar Torrentio."""
+        return self.credentials.get(debrid.KEYS[debrid.valid(service or self.debrid_service)])
+
     def rd_token(self) -> str | None:
-        """La clave de tu Real-Debrid. La consola guarda la suya; la primera vez la toma de tu Torrentio y lo avisa (AD-2).
-        Si la tomó de ahí y tu Torrentio trae otra, cambia a esa: nunca se queda con una vieja."""
-        own = self.credentials.get(RD_KEY)
-        source = self.state.prefs(RD_ACCOUNT).get("source")
+        """La clave de tu nube. La consola guarda la suya; la primera vez la toma de tu Torrentio y lo avisa (AD-2).
+        Si la tomó de ahí y tu Torrentio trae otra, cambia a esa: nunca se queda con una vieja. Solo la de tu nube: un
+        Torrentio con otra no cuenta."""
+        service = self.debrid_service
+        own = self.debrid_key(service)
+        source = self.state.prefs(account_pref(service)).get("source")
         if own and source not in (None, "torrentio"):  # te la mandó el iPhone: no se cambia sola
             return own
-        torrentio = self.rd._torrentio_token() if hasattr(self, "rd") else None
+        torrentio = self.rd._torrentio_token() if hasattr(self, "rd") else None  # solo si es de tu nube
         if not torrentio or torrentio == own:
             return own or torrentio
-        self.credentials.set(RD_KEY, torrentio)
-        self.state.set_pref(RD_ACCOUNT, "source", "torrentio")
+        self.credentials.set(debrid.KEYS[service], torrentio)
+        self.state.set_pref(account_pref(service), "source", "torrentio")
         self._rd_status = (0.0, None, {})
+        name = debrid.name(service)
         self.events.publish({"type": "toast", "ok": True,
-                             "message": "Tu Torrentio trae otra clave de Real-Debrid: ahora uso esa" if own
-                             else "Tomé tu clave de Real-Debrid de tu Torrentio",
-                             "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
+                             "message": f"Tu Torrentio trae otra clave de {name}: ahora uso esa" if own
+                             else f"Tomé tu clave de {name} de tu Torrentio",
+                             "detail": f"La ves en Ajustes › Cuentas › {name}"})
         return torrentio
 
     def debrid_status(self, fresh: bool = False) -> dict:
-        """Tu Real-Debrid para Ajustes › Cuentas y para la ficha: {"linked", "source", "user", "premium", "expires",
-        "days", "problem", "ends_with"}. `problem`: "expired" | "no_premium" | "bad_key" | "offline" | None. Le pregunta a
-        Real-Debrid como mucho cada media hora (o al ver un «RD error»)."""
+        """Tu nube para Ajustes › Cuentas y para la ficha: {"linked", "service", "name", "source", "user", "premium",
+        "expires", "days", "problem", "ends_with"}. `problem`: "expired" | "no_premium" | "bad_key" | "offline" | None. Le
+        pregunta a tu nube como mucho cada media hora (o al ver un «RD error»)."""
+        service = self.debrid_service
+        base = {"service": service, "name": debrid.name(service)}
         token = self.rd_token()
         if not token:
-            return {"linked": False}
+            return {"linked": False, **base}
         when, cached_token, cached = self._rd_status
-        if not fresh and cached_token == token and time.time() - when < RD_STATUS_TTL:
+        if not fresh and cached_token == token and cached.get("service") == service and time.time() - when < RD_STATUS_TTL:
             return cached
-        out = {"linked": True, "source": self.state.prefs(RD_ACCOUNT).get("source") or "torrentio", "user": None,
-               "premium": False, "expires": None, "days": None, "problem": None, "ends_with": token[-4:].upper()}
+        out = {"linked": True, **base, "source": self.state.prefs(account_pref(service)).get("source") or "torrentio",
+               "user": None, "premium": False, "expires": None, "days": None, "problem": None,
+               "ends_with": token[-4:].upper()}
         try:
-            user = realdebrid.RealDebrid(token).user()
-        except realdebrid.RealDebridError as exc:
+            account = debrid.account(debrid.client(service, token))
+        except debrid.DebridError as exc:
             out["problem"] = "bad_key" if exc.bad_key else "no_premium" if exc.no_premium else "offline"
-            if out["problem"] == "offline" and cached:  # sin internet: lo de la última vez
+            if out["problem"] == "offline" and cached and cached.get("service") == service:  # sin internet: lo de antes
                 return cached
         else:
-            out["user"] = str(user.get("username") or "") or None
-            expires = None
-            try:
-                raw = str(user.get("expiration") or "")
-                from datetime import datetime
-                expires = datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp() if raw else None
-            except ValueError:
-                expires = None
+            out["user"] = account.get("username")
+            expires = account.get("expires")
             out["expires"] = expires
-            out["premium"] = user.get("type") == "premium"
+            out["premium"] = bool(account.get("premium"))
             if expires:
                 out["days"] = max(0, math.ceil((expires - time.time()) / 86400))
             if not out["premium"]:
@@ -81,16 +107,24 @@ class _Accounts(_Library):
         """Para Ajustes (sin esperar a Real-Debrid): lo último que se supo, y si ya es viejo se pregunta por detrás; al
         tenerlo llega «settings-changed». Con «Tus pedidos» (la libreta, sin enlaces)."""
         when, token, cached = self._rd_status
-        current = self.credentials.get(RD_KEY) or (self.rd._torrentio_token() if not token else token)
+        service = self.debrid_service
+        current = self.debrid_key(service) or (self.rd._torrentio_token() if not token else token)
+        base = {"service": service, "name": debrid.name(service), "services": self.debrid_services()}
         if not current:
-            return {"linked": False, "account": None, "requests": self.rd.listing()["requests"]}
-        if not cached or token != current or time.time() - when >= RD_STATUS_TTL:
+            return {"linked": False, **base, "account": None, "requests": self.rd.listing()["requests"]}
+        if not cached or token != current or cached.get("service") != service or time.time() - when >= RD_STATUS_TTL:
             def ask() -> None:
                 self.debrid_status()
                 self.events.publish({"type": "settings-changed"})
             threading.Thread(target=ask, daemon=True, name="rd-status").start()
         listed = self.rd.listing()
-        return {**(cached or {"linked": True, "loading": True}), "account": listed["account"], "requests": listed["requests"]}
+        known = cached if cached and cached.get("service") == service else {"linked": True, "loading": True}
+        return {**known, **base, "account": listed["account"], "requests": listed["requests"]}
+
+    def debrid_services(self) -> list[dict]:
+        """Las tres nubes para «Tu nube»: cuál es, si ya tiene clave guardada y dónde se saca."""
+        return [{"service": s, "name": debrid.NAMES[s], "linked": bool(self.debrid_key(s)), "key_url": debrid.KEY_URLS[s],
+                 "site": debrid.SITES[s]} for s in debrid.SERVICES]
 
     # --- Ajustes › Complementos («La TV sin Stremio», S1) ---------------------
     def addon_status(self) -> dict:
@@ -199,54 +233,63 @@ class _Accounts(_Library):
         return {**self.addon_status(), "previous": before}
 
     @staticmethod
-    def check_rd_token(token: str) -> str:
-        """El usuario de Real-Debrid de esa clave (para «¿Usar la cuenta fernando?»). ValueError si no la reconoce y
+    def check_rd_token(token: str, service: str = "realdebrid") -> str:
+        """El usuario de esa clave en esa nube (para «¿Usar la cuenta fernando?»). ValueError si no la reconoce y
         ConnectionError si no contesta. Una cuenta sin Premium sí cuenta: la clave sirve."""
-        token = token.strip()
-        if not 20 <= len(token) <= 128 or not token.isalnum():
-            raise ValueError("Esa no parece una clave de Real-Debrid")
+        token, service = token.strip(), debrid.valid(service)
+        name = debrid.name(service)
+        if not debrid.looks_like_key(token):
+            raise ValueError(f"Esa no parece una clave de {name}")
         try:
             try:
-                user = realdebrid.RealDebrid(token).user()
-            except realdebrid.RealDebridError as exc:
-                if not (exc.bad_key and token != token.upper()):
+                account = debrid.account(debrid.client(service, token))
+            except debrid.DebridError as exc:
+                if not (exc.bad_key and service == "realdebrid" and token != token.upper()):
                     raise
-                user = realdebrid.RealDebrid(token.upper()).user()  # escrita en minúsculas con el teclado de la TV
-        except realdebrid.RealDebridError as exc:
+                account = debrid.account(debrid.client(service, token.upper()))  # escrita en minúsculas con el teclado de la TV
+        except debrid.DebridError as exc:
             if exc.bad_key:
-                raise ValueError("Real-Debrid no reconoce esa clave") from exc
+                raise ValueError(f"{name} no reconoce esa clave") from exc
             if exc.no_premium:
                 return ""
-            raise ConnectionError("Real-Debrid no contestó. Inténtalo en un momento.") from exc
-        return str(user.get("username") or "")
+            raise ConnectionError(f"{name} no contestó. Inténtalo en un momento.") from exc
+        return str(account.get("username") or "")
 
-    def set_rd_token(self, token: str, by: str, source: str = "iphone") -> dict:
-        """Tu clave fija de Real-Debrid: «Pasar a la TV» desde el iPhone (K1-A), desde cualquier celular (CA2-A) o pegada
-        en la TV (TEC-4). Se prueba con Real-Debrid antes de guardarla; si no sirve, la de antes se queda. ValueError si
-        Real-Debrid no la reconoce y ConnectionError si no contesta. Nunca se reemplaza sola (solo la de Torrentio)."""
+    def set_rd_token(self, token: str, by: str, source: str = "iphone", service: str | None = None) -> dict:
+        """La clave fija de tu nube: «Pasar a la TV» desde el iPhone (K1-A), desde cualquier celular (CA2-A) o pegada en
+        la TV (TEC-4). Se prueba antes de guardarla; si no sirve, la de antes se queda. Con `service`, esa nube queda
+        como la tuya. ValueError si no la reconoce y ConnectionError si no contesta. Nunca se reemplaza sola (solo la de
+        Torrentio)."""
         token = token.strip()
-        self.check_rd_token(token)
-        changed = self.credentials.get(RD_KEY) != token
-        self.credentials.set(RD_KEY, token)
-        self.state.set_pref(RD_ACCOUNT, "source", source)
+        service = debrid.valid(service or self.debrid_service)
+        self.check_rd_token(token, service)
+        changed = self.debrid_key(service) != token or service != self.debrid_service
+        self.credentials.set(debrid.KEYS[service], token)
+        self.state.set_pref(account_pref(service), "source", source)
+        self.state.set_setting(DEBRID_SERVICE, service)
         self._rd_status = (0.0, None, {})
         self.addons.forget()
         self.streams.forget_all()
         if changed and source == "iphone":  # lo de la TV y el celular lo confirmaste en la TV: ahí se dice
-            self.events.publish({"type": "toast", "ok": True, "message": f"«{by}» cambió la clave de Real-Debrid",
+            self.events.publish({"type": "toast", "ok": True, "message": f"«{by}» cambió la clave de {debrid.name(service)}",
                                  "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
         self.events.publish({"type": "settings-changed"})
         status = self.debrid_status(fresh=True)
         return {k: v for k, v in status.items() if k != "token"}
 
-    def _rd_key_brought(self, key: str) -> None:
-        """La clave que venía en el Torrentio que trajiste de Stremio: la consola la guarda como suya y lo dice."""
-        if self.credentials.get(RD_KEY):
+    def _rd_key_brought(self, key: str, service: str = "realdebrid") -> None:
+        """La clave que venía en el Torrentio que trajiste de Stremio: la consola la guarda como suya y lo dice. Si todavía
+        no tenías nube con clave, esa queda como tu nube."""
+        service = debrid.valid(service)
+        if self.debrid_key(service):
             return
-        self.credentials.set(RD_KEY, key)
-        self.state.set_pref(RD_ACCOUNT, "source", "torrentio")
-        self.events.publish({"type": "toast", "ok": True, "message": "Tomé tu clave de Real-Debrid de tu Torrentio",
-                             "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
+        self.credentials.set(debrid.KEYS[service], key)
+        self.state.set_pref(account_pref(service), "source", "torrentio")
+        if not self.debrid_key(self.debrid_service):
+            self.state.set_setting(DEBRID_SERVICE, service)
+        name = debrid.name(service)
+        self.events.publish({"type": "toast", "ok": True, "message": f"Tomé tu clave de {name} de tu Torrentio",
+                             "detail": f"La ves en Ajustes › Cuentas › {name}"})
 
     def set_addon_source(self, source: str) -> dict:
         """Solo «own» (4 nov: ya no se regresa a los de tu cuenta de Stremio). ValueError con otra cosa."""

@@ -16,7 +16,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ..library import addon_list, realdebrid, stremio_api
+from ..library import addon_list, debrid, stremio_api
 from .deps import Deps
 
 
@@ -188,7 +188,7 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
         local_only(request)
         try:
             watch.rd.cancel(body.hash)
-        except realdebrid.RealDebridError as exc:
+        except debrid.DebridError as exc:
             raise HTTPException(409, str(exc)) from exc
         return watch.rd.listing()
 
