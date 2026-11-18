@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guía: áreas de mejora</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1b22;--muted:#5d5b66;--line:#e3e1da;--fresh:#127a6c;--warn:#b4441f;--ph:#15141c;--phr:#24222e;--pht:#f1f0f5;--phm:#9b98a8;--phf:#5fd6c4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--fresh:#5fd6c4;--warn:#ff8a65}}
+:root[data-theme="dark"]{--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--fresh:#5fd6c4;--warn:#ff8a65}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:28px;margin:0 0 6px}h2{font-size:20px;margin:36px 0 10px}p{margin:0 0 10px}.m{color:var(--muted)}
+.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.sc b{font-size:26px;display:block}
+.top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 16px}
+.top li{padding:8px 0;border-bottom:1px solid var(--line)}.top li:last-child{border:0}
+.code{display:inline-block;font:700 13px ui-monospace,monospace;color:var(--fresh);border:1.5px solid var(--fresh);border-radius:7px;padding:1px 7px;margin-right:6px}
+.dec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.dec h3{margin:0 0 4px;font-size:17px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:12px}
+.opt{border:1px solid var(--line);border-radius:14px;padding:12px}.opt.rec{border:2px solid var(--fresh)}
+.opt h4{margin:0 0 8px;font-size:15px}.tag{font-size:12px;font-weight:700;color:var(--fresh)}
+.phone{background:var(--ph);color:var(--pht);border-radius:22px;padding:14px;font-size:12.5px;min-height:150px;display:grid;gap:8px;align-content:start}
+.phone .t{font-weight:700;font-size:15px}.phone .s{color:var(--phm)}
+.seg{display:flex;gap:5px}.seg span{flex:1;text-align:center;background:var(--phr);border-radius:9px;padding:6px 2px}.seg .on{outline:1.5px solid var(--phf);color:var(--phf)}
+.btn{background:var(--phf);color:#0f0e17;border-radius:999px;padding:7px;text-align:center;font-weight:700}
+.btn.g{background:var(--phr);color:var(--pht)}.btn.x{background:none;color:var(--phm);border:1px dashed var(--phm)}
+.row{display:flex;justify-content:space-between;background:var(--phr);border-radius:9px;padding:7px 9px}
+.big{background:var(--phr);border-radius:12px;padding:12px;font-weight:600}.big.on{outline:1.5px solid var(--phf)}
+.sw{display:flex;justify-content:space-between;align-items:center}.sw i{width:30px;height:17px;border-radius:9px;background:var(--phm);display:inline-block}
+.pros{font-size:13.5px;margin:8px 0 0}.pros li{margin:2px 0}
+.list{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.list div{padding:9px 0;border-bottom:1px solid var(--line)}.list div:last-child{border:0}
+.ok li{margin:3px 0}
+</style></head><body><main>
+<h1>Guía de bienvenida: qué mejorar</h1>
+<p class="m">Un asesor experto en bienvenidas de apps revisó el prototipo en sus tres versiones. Lo leyó en el código, no lo tocó en pantalla. Revisé yo el hallazgo más grave (P1) y es cierto. 18 nov 2026.</p>
+
+<div class="scores">
+<div class="sc"><b>7.5/10</b>Orbital (tienda). Corta y sin hablar de ver. Promete «en tus plataformas» sin preguntar cuáles tienes.</div>
+<div class="sc"><b>7/10</b>Plus. Buen orden, pero lo más difícil (las versiones) queda al final, es opcional y se puede saltar sin verlo.</div>
+<div class="sc"><b>6/10</b>Ultra. Es Plus con una tarjeta de la TV al final. La TV no sale en la promesa ni en el recorrido.</div>
+</div>
+
+<h2>Lo que más pesa, en orden</h2>
+<ol class="top">
+<li><span class="code">P1</span>En el paso de la nube, al conectarla no aparece «Continuar». La única salida es «Ahora no», que borra la conexión. Es un error y lo corrijo sin preguntarte.</li>
+<li><span class="code">P7</span>Que las versiones sean la primera tarea del recorrido, con la lista a la vista y un toque real. Y usar solo la palabra «versión», nunca «copia» (<span class="code">P4</span>).</li>
+<li><span class="code">P5</span>El idioma en que suenan, con dos tarjetas grandes en vez de una lista. Y que los dos pasos de idioma se distingan: uno es «leer» y el otro «oír» (<span class="code">G2</span>).</li>
+<li><span class="code">P2</span>Un camino para quien todavía no tiene nube.</li>
+<li><span class="code">G8</span>Un recorrido de tres toques reales en lugar de cinco láminas. <span class="code">G9</span> En Inicio, una tarjeta pendiente a la vez.</li>
+</ol>
+
+<h2>Lo que necesito que decidas</h2>
+
+<div class="dec"><h3><span class="code">G1</span>Paso 2: los dos idiomas que se leen</h3>
+<p class="m">Tu pedido eran dos selectores visibles. El asesor cree que casi nadie quiere los menús en un idioma y las fichas en otro, y que dos filas iguales parecen la misma pregunta dos veces.</p>
+<div class="opts">
+<div class="opt"><h4>G1-A · Dos selectores a la vista (como está)</h4>
+<div class="phone"><div class="t">Elige tu idioma</div><div class="s">Los menús y botones</div><div class="seg"><span class="on">Español</span><span>English</span><span>Português</span></div><div class="s">Los títulos y las sinopsis</div><div class="seg"><span class="on">Español</span><span>English</span><span>Português</span></div><div class="btn">Continuar</div></div>
+<ul class="pros"><li>Gana: queda claro desde el principio que se pueden separar.</li><li>Pierde: más que leer, y parece que pregunta dos veces lo mismo.</li></ul></div>
+<div class="opt rec"><h4>G1-B · Uno, y el segundo si lo pides <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="t">¿En qué idioma lees Orbital?</div><div class="seg"><span class="on">Español</span><span>English</span><span>Português</span></div><div class="sw"><span>Títulos y sinopsis en otro idioma</span><i></i></div><div class="s">(la vista previa sigue igual)</div><div class="btn">Continuar</div></div>
+<ul class="pros"><li>Gana: una sola decisión para casi todos, y quien quiere separar puede hacerlo.</li><li>Pierde: la opción de separar se ve menos.</li></ul></div>
+</div></div>
+
+<div class="dec"><h3><span class="code">P5</span>Plus y Ultra: en qué idioma quieres oír</h3>
+<p class="m">Hoy es una lista que se ordena con flechas, y en ella «Idioma original» e «Inglés» se pisan. Es lo que ya habías aprobado como V1-B.</p>
+<div class="opts">
+<div class="opt"><h4>P5-A · Lista ordenable (como está)</h4>
+<div class="phone"><div class="t">¿En qué idiomas ves?</div><div class="row"><span>1 Español latino</span><span>↑ ↓ ×</span></div><div class="row"><span>2 Idioma original</span><span>↑ ↓ ×</span></div><div class="row"><span>3 Inglés</span><span>↑ ↓ ×</span></div><div class="btn g">Agregar un idioma…</div></div>
+<ul class="pros"><li>Gana: control total desde el primer día.</li><li>Pierde: es denso, hay que pensarlo y confunde.</li></ul></div>
+<div class="opt rec"><h4>P5-B · Dos tarjetas y «otro orden» <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="t">¿En qué idioma quieres oír las películas?</div><div class="big on">Doblada al español latino</div><div class="big">En su idioma, con subtítulos</div><div class="s">Otro orden ›</div><div class="btn">Continuar</div></div>
+<ul class="pros"><li>Gana: un toque, y se entiende sin leer.</li><li>Pierde: quien quiere un orden fino da un paso más.</li></ul></div>
+</div></div>
+
+<div class="dec"><h3><span class="code">P7</span>Dónde explicar las versiones</h3>
+<div class="opts">
+<div class="opt"><h4>P7-A · Cuarta tarea opcional (como está)</h4>
+<div class="phone"><div class="t">Versiones e idiomas</div><div class="s">Una película trae varias versiones…</div><div class="btn g">Ver las versiones</div><div class="btn">Entendido</div></div>
+<ul class="pros"><li>Gana: no frena a nadie.</li><li>Pierde: casi todos dan «Entendido» sin ver la lista, y es lo que más cuesta.</li></ul></div>
+<div class="opt rec"><h4>P7-B · Primera tarea, lista a la vista y un toque <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="t">«Ver» ya eligió por ti</div><div class="row"><span>✦ Español latino · 1080p</span><span>⚡</span></div><div class="row"><span>Inglés · 4K</span><span>⚡</span></div><div class="row"><span>Castellano · 1080p</span><span>Pedir</span></div><div class="s">⚡ lista al instante · Pedir: tarda unos minutos</div><div class="s">¿No es la que quieres? Toca otra.</div></div>
+<ul class="pros"><li>Gana: lo aprende haciéndolo, que era tu K4-B.</li><li>Pierde: un toque más al principio del recorrido.</li></ul></div>
+</div></div>
+
+<div class="dec"><h3><span class="code">P2</span>Quien aún no tiene nube</h3>
+<div class="opts">
+<div class="opt"><h4>P2-A · Solo «Ya tengo» y «Ahora no» (como está)</h4>
+<div class="phone"><div class="t">Para verlo aquí, conecta tu nube</div><div class="btn">Ya tengo</div><div class="btn g">¿Cómo funciona?</div><div class="btn x">Ahora no</div></div>
+<ul class="pros"><li>Gana: menos botones.</li><li>Pierde: quien no tiene nube no sabe qué hacer y se va.</li></ul></div>
+<div class="opt rec"><h4>P2-B · Botón «Aún no tengo» <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="t">Para ver aquí necesitas un servicio de nube</div><div class="btn">Ya tengo una</div><div class="btn g">Aún no tengo</div><div class="s">→ las tres hacen lo mismo, elige cualquiera · «Te lo recordamos en Inicio»</div></div>
+<ul class="pros"><li>Gana: nadie se queda atorado y sabe qué sigue.</li><li>Pierde: un botón más.</li></ul></div>
+</div></div>
+
+<div class="dec"><h3><span class="code">A1</span>Orbital (tienda): preguntar tus plataformas</h3>
+<div class="opts">
+<div class="opt"><h4>A1-A · No preguntar (como está)</h4>
+<div class="phone"><div class="t">Dónde verla</div><div class="row"><span>Netflix</span><span>¿la tienes?</span></div><div class="row"><span>Max</span><span>¿la tienes?</span></div></div>
+<ul class="pros"><li>Gana: un paso menos.</li><li>Pierde: «En tus plataformas» no puede ser cierto.</li></ul></div>
+<div class="opt rec"><h4>A1-B · «¿Qué plataformas tienes?» con logos, saltable <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="t">¿Qué plataformas tienes?</div><div class="seg"><span class="on">Netflix</span><span>Max</span><span class="on">Disney+</span></div><div class="seg"><span>Prime</span><span>Apple TV+</span><span>Mubi</span></div><div class="btn">Continuar</div><div class="s">Ahora no</div></div>
+<ul class="pros"><li>Gana: la versión de la tienda también se siente tuya, como Plus con la nube.</li><li>Pierde: un paso más, y es trabajo nuevo en la app.</li></ul></div>
+</div></div>
+
+<div class="dec"><h3><span class="code">U1</span>Ultra: dónde aparece la TV</h3>
+<div class="opts">
+<div class="opt"><h4>U1-A · Solo una tarjeta en Inicio (como está)</h4>
+<div class="phone"><div class="t">¿Tienes Orbital en la TV?</div><div class="btn g">Conectar</div></div>
+<ul class="pros"><li>Gana: no estorba.</li><li>Pierde: Ultra se ve igual que Plus.</li></ul></div>
+<div class="opt rec"><h4>U1-B · En la promesa, en la tarjeta y en el recorrido <span class="tag">RECOMENDADA</span></h4>
+<div class="phone"><div class="s">Bienvenida: … «Y mándalo a tu TV»</div><div class="big">Usa tu iPhone como control de Orbital en la TV</div><div class="s">Recorrido, si ya está conectada: «Mándala a la TV»</div></div>
+<ul class="pros"><li>Gana: queda claro por qué es Ultra.</li><li>Pierde: una línea y una tarea más.</li></ul></div>
+</div></div>
+
+<h2>Arreglos menores de texto (los hago sin preguntar)</h2>
+<div class="list">
+<div><span class="code">G3</span>Quitar la bandera de México del idioma de la app. Las banderas se quedan solo para distinguir doblajes (latino o castellano).</div>
+<div><span class="code">G4</span>Trakt: «Trakt es un servicio gratis que guarda lo que ves y tus listas… Orbital no publica nada por ti.» Así no suena obligatorio.</div>
+<div><span class="code">G5</span>Después de «Copiar y abrir Trakt», mostrar «Esperando a que lo apruebes…» y avanzar solo.</div>
+<div><span class="code">G6</span>El logro con Trakt: que los carteles también se guarden con un toque.</div>
+<div><span class="code">G7</span>Sin Trakt, cambiar «Calificación alta en Trakt» por «De las mejor calificadas».</div>
+<div><span class="code">G8</span>Quitar la cifra inventada «Ver 38 resultados» y el contador «0/5».</div>
+<div><span class="code">P3</span>«Para ver aquí necesitas un servicio de nube. Es aparte de Orbital…» en vez de «Tu nube», que suena a iCloud.</div>
+<div><span class="code">P6</span>Que el orden de audio parta del idioma del paso 2.</div>
+<div><span class="code">P9</span>Si dijiste «Ahora no» a la nube, no preguntar el idioma de audio: se pregunta al conectarla.</div>
+<div><span class="code">A2</span>En la versión de la tienda, subir «Dónde verla» al segundo lugar del recorrido.</div>
+</div>
+
+<h2>Lo que está bien y no se toca</h2>
+<ul class="ok">
+<li>El orden: qué es Orbital, Trakt, un primer logro y luego la nube. Se da algo antes de pedir más.</li>
+<li>«Ahora no» siempre a la vista, y «Saltar guía».</li>
+<li>El idioma ya marcado con el del iPhone, y la vista previa en vivo.</li>
+<li>«Sin Trakt, lo tuyo se guarda solo en este iPhone».</li>
+<li>«Se paga en su página. Orbital no cobra nada» y «Una cuenta por persona».</li>
+<li>Los porqués de «Decide por mí» y de la ✦ recomendada.</li>
+<li>La versión de la tienda nunca habla de ver.</li>
+</ul>
+
+<h2>Para la pulida visual (siguiente paso)</h2>
+<p class="m">Bienvenida con carteles reales y las líneas entrando al ritmo de la órbita. Idioma con la vista previa arriba, y lo que cambia parpadea suave. Trakt con tres renglones con ícono y el código grande. En el logro, el cartel vuela a «Mi lista». La nube con un dibujo simple: Orbital, la nube y tu pantalla. En el recorrido, más aire y una palomita animada. En las versiones, la recomendada más alta y una bandera grande.</p>
+<p><b>Para dictar:</b> por ejemplo «G1-B, P5-B, P7-B, P2-B, A1-B, U1-B». Mi recomendación es todo B.</p>
+</main></body></html>
