@@ -86,6 +86,30 @@ section{display:grid;gap:14px}
 </section>
 
 <section>
+  <h2>El consultor: 8 de 10, y lo de versiones e idiomas</h2>
+  <p class="intro">Un consultor experto en guías de bienvenida (Fable) revisó el concepto por su cuenta y estudió en el código cómo funcionan hoy las versiones y los subtítulos. Le pone <b>8 de 10</b> y coincide con K1 a K5. Le cambia tres cosas: falta preguntar <b>cómo te gusta ver</b>; en Plus, el recorrido debe incluir un «Ver» de verdad; y el paso «Más subtítulos» (cuenta de OpenSubtitles) sale de la guía, porque la búsqueda de subtítulos ya viene prendida sin cuenta.</p>
+  <div class="grid2">
+    <div class="card"><span class="eyebrow">Cómo funciona hoy (del código)</span><ul>
+      <li><b>Una versión es otra copia</b> de la misma película, con sus propios idiomas, calidad y peso. Por eso «cada versión tiene su idioma».</li>
+      <li><b>«Ver» elige solo</b> con tu orden de idiomas, y el botón muestra la bandera de lo que va a sonar.</li>
+      <li><b>Los subtítulos casi nunca los baja la persona</b>: si el video no los trae, la app los busca sola en internet. Los de internet a veces van desfasados.</li>
+      <li><b>El idioma a veces es deducido</b>: «Comprobado», «Lo dice el nombre», «Tal vez»… No se puede prometer «siempre en latino».</li></ul></div>
+    <div class="card rec"><span class="eyebrow">La explicación para alguien que viene de Netflix</span>
+      <p class="say">«En Netflix hay una sola copia de cada película y tú le cambias el audio. Aquí hay muchas copias, y cada una trae sus idiomas. Tú di una vez cómo te gusta ver; Orbital elige la copia y le pone subtítulos. Si un día no atina, la cambias en dos toques, sin perder el minuto.»</p>
+      <p class="small">El consultor la comparó con lo que hace el código y aguanta. Evita prometer «siempre en tu idioma».</p></div>
+  </div>
+  <div class="flow">
+    <div class="ph mod"><span class="n">En la guía · tras la nube</span><span class="t">¿Cómo te gusta ver?</span><span class="btn g">Doblado al latino</span><span class="btn g">En su idioma, con subtítulos</span><span class="s">Otro orden · Lo cambias en Ajustes › Tus idiomas</span><span class="feel">Nuevo</span></div>
+    <div class="ph mod"><span class="n">Primer «Ver»</span><span class="t">«Ver» ya eligió por ti: latino</span><span class="s">¿Otra? Toca la bandera.</span><span class="feel">Existe; cambia el texto</span></div>
+    <div class="ph mod"><span class="n">Primera vez en «Versión»</span><span class="t">Cada renglón es otra copia</span><span class="s">La ✦ es la que elegimos para ti. Debajo, su porqué: «Latino comprobado · lista al instante».</span><span class="feel">La leyenda existe; la frase es nueva</span></div>
+    <div class="ph mod"><span class="n">Primera vez en subtítulos</span><span class="t">Los buscamos por ti</span><span class="s">¿Van desfasados? Prueba el siguiente o toca «Sincronizar con una línea».</span><span class="feel">Nuevo</span></div>
+    <div class="ph mod"><span class="n">No existe en tu idioma</span><span class="t">No hay en latino</span><span class="s">Va en inglés con subtítulos en español.</span><span class="feel">Nuevo: hoy solo cambia la bandera</span></div>
+    <div class="ph mod"><span class="n">Sin subtítulos en español</span><span class="t">No hay para esta versión</span><span class="s">Prueba otra versión: puede traerlos.</span><span class="btn g">Ver versiones</span><span class="feel">A medias hoy</span></div>
+  </div>
+  <div class="later"><b>Lo que la app debería cambiar para que haya menos que explicar:</b> «versión» hoy significa dos cosas (la copia del video y «2 de 7 versiones» de subtítulos) · los subtítulos en español salen aunque el audio ya esté en español (lo confirmé en el código; falta verlo en pantalla) · la recomendada no dice por qué · «Tal vez» no trae su botón de «Probar» · el glosario ⓘ mezcla lo esencial con siglas (REMUX, x265).</div>
+</section>
+
+<section>
   <h2>Las decisiones</h2>
 
   <div class="dec"><div class="head"><span class="code">K1</span><h3>¿Trakt es obligatorio?</h3></div>
@@ -120,9 +144,43 @@ section{display:grid;gap:14px}
     </div></div>
 </section>
 
+<section>
+  <h2>Versiones e idiomas: decisiones del consultor</h2>
+  <div class="dec"><div class="head"><span class="code">V1</span><h3>¿La guía pregunta cómo te gusta ver? (Plus y Ultra)</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · no, latino para todos</span><p>Guía más corta. Quien prefiere el idioma original batalla desde el primer día.</p></div>
+      <div class="opt rec"><span class="l">B · sí, dos tarjetas</span><p>Diez segundos más, y «Ver» atina desde la primera vez. Es la pregunta que más cambia lo que vas a ver.</p></div>
+    </div></div>
+  <div class="dec"><div class="head"><span class="code">V2</span><h3>¿Cuándo salen solos los subtítulos?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · siempre en español, como hoy</span><p>Aunque la película ya suene en español.</p></div>
+      <div class="opt rec"><span class="l">B · solo si el audio no está en tu idioma</span><p>Como en Netflix. «Siempre» queda como opción en Ajustes. Antes lo compruebo en pantalla.</p></div>
+    </div></div>
+  <div class="dec"><div class="head"><span class="code">V3</span><h3>¿«Versión» para una sola cosa?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · como hoy</span><p>«Versión» para el video y para los subtítulos.</p></div>
+      <div class="opt rec"><span class="l">B · «versión» solo el video</span><p>En subtítulos: «Subtítulo 2 de 7». Barato y quita la confusión de raíz. La TV se ajusta igual.</p></div>
+    </div></div>
+  <div class="dec"><div class="head"><span class="code">V4</span><h3>¿La recomendada dice su porqué?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · solo el ícono ✦</span><p>Como hoy.</p></div>
+      <div class="opt rec"><span class="l">B · una línea gris con el motivo</span><p>«Latino comprobado · lista al instante». Enseña el criterio donde se necesita.</p></div>
+    </div></div>
+  <div class="dec"><div class="head"><span class="code">V5</span><h3>¿Avisar cuando no existe en tu idioma?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · como hoy</span><p>Arranca con el siguiente idioma y solo cambia la bandera.</p></div>
+      <div class="opt rec"><span class="l">B · aviso breve al arrancar</span><p>«No hay en latino. Va en inglés con subtítulos.» Evita el «¿por qué está en inglés?».</p></div>
+    </div></div>
+  <div class="dec"><div class="head"><span class="code">V6</span><h3>¿Qué se prueba en el recorrido de Plus y Ultra?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · Decide por mí, Mi lista y el filtro</span><p>Lo mismo que la versión de la tienda.</p></div>
+      <div class="opt rec"><span class="l">B · Decide por mí, Mi lista y un «Ver» de verdad</span><p>Si ya hay nube. Quien instaló Plus vino a ver; el filtro queda con su aviso.</p></div>
+    </div></div>
+</section>
+
 <section class="dictate">
   <span class="code">Para contestar, dicta los códigos</span>
-  <p class="say">Mi recomendación (y la del asesor): «K1-B, K2-B, K3-B, K4-B, K5-B».</p>
+  <p class="say">Mi recomendación (y la del asesor): «K1-B, K2-B, K3-B, K4-B, K5-B, V1-B a V6-B».</p>
   <p class="small">Con eso dibujo las pantallas de verdad para iPhone, iPad y Mac en otro Canvas, antes de construir.</p>
 </section>
 </main>
