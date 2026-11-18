@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Decide por mí en la guía</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1b22;--muted:#5d5b66;--line:#e3e1da;--fresh:#127a6c;--ph:#15141c;--phr:#24222e;--pht:#f1f0f5;--phm:#9b98a8;--phf:#5fd6c4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--fresh:#5fd6c4}}
+:root[data-theme="dark"]{--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--fresh:#5fd6c4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:28px 16px 60px}h1{font-size:26px;margin:0 0 8px}p{margin:0 0 10px}.m{color:var(--muted)}
+.code{display:inline-block;font:700 13px ui-monospace,monospace;color:var(--fresh);border:1.5px solid var(--fresh);border-radius:7px;padding:1px 7px;margin-right:6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}.opt.rec{border:2px solid var(--fresh)}
+.opt h3{margin:0 0 10px;font-size:16px}.tag{font-size:12px;font-weight:700;color:var(--fresh)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.flow span{background:var(--ph);color:var(--pht);border-radius:10px;padding:6px 9px;font-size:12.5px}.flow .x{text-decoration:line-through;opacity:.5}.flow .n{outline:1.5px solid var(--phf);color:var(--phf)}
+ul{margin:6px 0 0;padding-left:18px;font-size:14px}li{margin:3px 0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px}
+</style></head><body><main>
+<h1>«Decide por mí» dentro de la guía</h1>
+<p class="m">18 nov 2026. Sale en dos lugares: en el paso 4, «Tu primer logro», para quien no conecta Trakt o crea una cuenta nueva, y en el recorrido de Plus cuando no hay servicio de nube.</p>
+<div class="box"><b>Para qué la puse:</b> que quien llega sin historial reciba algo antes de que le pidamos más, como conectar la nube. Además, lo que guarda alimenta «Porque guardaste…» en Inicio, y enseña que cada sugerencia trae su porqué.<br><br><b>Por qué pesa poco:</b> pide decidir qué ver justo cuando la persona apenas está conociendo la app, y lo que guarda ahí es casi al azar. Inicio ya le da ese primer logro: abre con filas llenas de cosas para ver.</div>
+<div class="opts">
+<div class="opt rec"><h3><span class="code">DP-A</span>Quitarla de la guía <span class="tag">RECOMENDADA</span></h3>
+<div class="flow"><span>Bienvenida</span><span>Trakt</span><span class="x">Decide por mí</span><span>Servicio de nube</span><span>Recorrido</span><span class="n">Inicio</span></div>
+<ul><li>Gana: un paso menos para quien llega sin Trakt.</li><li>Gana: el recorrido de Plus sin nube enseña «Tus series, al día».</li><li>«Decide por mí» se enseña la primera vez que aparece en Inicio, con un aviso.</li><li>Pierde: Inicio arranca con «Lo popular de ahora» en vez de «Porque guardaste…».</li></ul></div>
+<div class="opt"><h3><span class="code">DP-B</span>Dejarla como está</h3>
+<div class="flow"><span>Bienvenida</span><span>Trakt</span><span>Decide por mí</span><span>Servicio de nube</span><span>Recorrido</span><span>Inicio</span></div>
+<ul><li>Gana: quien no tiene Trakt guarda algo desde el primer minuto.</li><li>Pierde: un paso más, de poco valor, y se repite en el recorrido.</li></ul></div>
+</div>
+<p style="margin-top:16px"><b>Para dictar:</b> «DP-A» o «DP-B». Recomiendo DP-A.</p>
+</main></body></html>
