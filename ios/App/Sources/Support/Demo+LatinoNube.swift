@@ -1,6 +1,8 @@
 #if DEBUG
 import Foundation
 import OrbitalCore
+import OrbitalModels
+import OrbitalAddons
 
 /// `-demo-latino-nube` con `-demo-title movie:tt1160419 -demo-open sources`: «Versión» como la vio Fernando el 12 nov con Los
 /// Simpson T11E2 (solo llegó Comet, todo en inglés, y Torrentio, que tenía el latino, no contestó a tiempo). Nada sale a internet.
@@ -8,6 +10,8 @@ import OrbitalCore
 /// - Comet da tres en inglés que arrancan al instante; una es «Multi»: se revisa por dentro (su encabezado dice inglés y
 ///   francés: «Comprobado»). Con `-demo-latino-nube found`, su encabezado trae una pista «Español Latino» y pasa a latino.
 /// - Tu Torrentio sin Real-Debrid sí tiene una en latino: «Hay latino, pero hay que pedirlo a la nube» arriba de la lista.
+/// - Con `-demo-latino-nube refused`, esa latina ya la rechazó Real-Debrid (LN2, Los Simpson T37E3, 18 nov): «Hay latino, pero
+///   Real-Debrid no lo dejó bajar», sin «Pedir a la nube».
 enum DemoLatinoNube {
     static var mode: String? { Demo.has("-demo-latino-nube") ? (Demo.value(after: "-demo-latino-nube") ?? "") : nil }
     static var isOn: Bool { mode != nil }
@@ -15,6 +19,15 @@ enum DemoLatinoNube {
     static let lanes = ["torrentio", "comet"]
     static let multi = "https://demo.orbital.invalid/comet/playback/multi.mkv"
     static let latinoHash = "6c3f0b4a1e2d5f7a8b9c0d1e2f3a4b5c6d7e8f90"
+
+    /// `refused`: la libreta ya trae la latina rechazada por Real-Debrid.
+    @MainActor static func seed(_ services: Services) {
+        guard mode == "refused" else { return }
+        services.debridRequests.requester.book.put(DebridRequest(
+            hash: latinoHash, rdID: "DEMOLN2", title: "Dune", kind: "movie", metaID: id, videoIDs: [id], season: nil, episode: nil,
+            language: "es-419", device: services.deviceName, createdAt: Date().addingTimeInterval(-600), rdStatus: "", percent: 0,
+            seeders: 15, state: .refused))
+    }
 
     static func respond(_ request: HTTPRequest) async -> HTTPResponse? {
         guard let mode else { return nil }

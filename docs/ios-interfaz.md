@@ -316,6 +316,11 @@ app te lo dice aunque no arranque al instante; y si un complemento no contestó,
 - **Tu idioma que hay que pedir se dice arriba**: si ninguna versión de tu idioma arranca al instante pero alguna existe (en
   la lista o en tu Torrentio sin Real-Debrid), «Hay latino, pero hay que pedirlo a la nube» con «Pedir a la nube»
   (`VersionYoursAside`, la misma acción de R4). No sale si ya la pediste: su renglón dice cómo va.
+- **Tu idioma rechazado también se dice** (LN2, 18 nov 2026, Los Simpson T37E3): si la única de tu idioma la rechazó
+  Real-Debrid, en su lugar «Hay latino, pero Real-Debrid no lo dejó bajar · Prueba otra versión», con el triángulo y sin
+  «Pedir a la nube», porque pedirla otra vez falla igual (`VersionYoursRefused`, en «Versión» de la ficha y del reproductor).
+  Nunca el inglés sin explicación. La TV lo dice en la nota de la ficha. Lo cuidan `LatinoRechazadoTests` y
+  `testVersionSaysWhenRealDebridRefusedYourLanguage`.
 - **Revisar por dentro**: de las que arrancan al instante con idioma dudoso (MKV que solo dice su idioma original o nada,
   o «Multi»/«Dual»), se leen las pistas de audio de su encabezado (un pedazo del principio, nunca el archivo), hasta 3, una
   a la vez, nunca con el reproductor abierto ni la que estás viendo, y cada una una sola vez. Lo leído queda «Comprobado» y

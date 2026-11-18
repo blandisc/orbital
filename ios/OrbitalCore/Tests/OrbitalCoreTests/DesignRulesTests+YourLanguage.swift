@@ -35,4 +35,22 @@ extension DesignRulesTests {
         let gestures = try XCTUnwrap(files.first { $0.name == "PlayerScreen+Gestos.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(gestures.contains("notice.opensVersion ? { openDock(version: true) }"), "el botón del aviso abre «Versión»")
     }
+
+    /// LN2 · 18 nov 2026 (Los Simpson T37E3): si Real-Debrid rechazó la única de tu idioma, «Versión» de la ficha y del
+    /// reproductor lo dicen con la misma pieza, sin «Pedir a la nube» (pedirla otra vez falla igual).
+    func testVersionSaysWhenRealDebridRefusedYourLanguage() throws {
+        let files = try sources(["Design", "Screens"])
+        for name in ["SourcesSheet.swift", "PlayerScreen+Panel.swift"] {
+            let text = try XCTUnwrap(files.first { $0.name == name }).lines.joined(separator: "\n")
+            XCTAssertNotNil(text.range(of: #"model\.yoursRefused[\s\S]{0,200}VersionYoursRefused\("#, options: .regularExpression),
+                            "\(name): «Versión» enseña `VersionYoursRefused` cuando el modelo dice que Real-Debrid rechazó tu idioma")
+        }
+        let piece = try XCTUnwrap(files.first { $0.name == "VersionRequests.swift" }).lines.joined(separator: "\n")
+        let card = try XCTUnwrap(piece.range(of: "struct VersionYoursRefused")).lowerBound
+        let body = String(piece[card...])
+        XCTAssertTrue(body.contains("pero Real-Debrid no lo dejó bajar"), "dice por qué no está tu idioma")
+        XCTAssertTrue(body.contains("DebridRequestWords.Icon.refused"), "con el triángulo de «no lo dejó bajar»")
+        XCTAssertFalse(body.contains("Pedir a la nube"), "sin «Pedir a la nube»: pedirla otra vez falla igual")
+    }
 }
+

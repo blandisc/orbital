@@ -322,6 +322,9 @@ struct SourcesSheet: View {
             let name = VersionText.inline(VersionText.name(yours.code, ui), ui)
             VersionYoursAside(language: Text.withFlagImages(LanguageFlags.flagged(name, yours.code)), option: yours.option,
                               status: requestStatus(yours.id), request: { ask(yours.id) })
+        } else if request != nil, let code = model.yoursRefused {
+            // LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (18 nov).
+            VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)))
         }
         VersionLegend()
         VersionLanguageList(rows: model.languageRows, uiLanguage: ui) { row, option, showsLanguage in

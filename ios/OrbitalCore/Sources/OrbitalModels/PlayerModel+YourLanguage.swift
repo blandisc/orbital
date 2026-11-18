@@ -11,6 +11,8 @@ extension PlayerModel {
     public var yoursToRequest: RequestableVersion? { rd.yours?.version }
     /// Su torrent (para decir cómo va si ya la pediste).
     public var yoursToRequestHash: String? { rd.yours?.source.torrent?.hash }
+    /// LN2 · «Hay latino, pero Real-Debrid no lo dejó bajar»: el idioma, si la única de tu idioma la rechazó Real-Debrid.
+    public var yoursRefused: String? { rd.yours == nil ? rd.yoursRefused : nil }
 
     /// Lo elegido, a la bitácora con su idioma; si no es el tuyo, se busca si existe para pedir.
     func noteChoice(_ found: Source, prefs: Preferences, generation mine: Int) {
@@ -27,7 +29,14 @@ extension PlayerModel {
         guard let all = await requests.torrents(kind: request.kind, videoID: request.videoID, prefs: prefs), mine == generation else { return }
         let refused = requests.requester.refused(metaID: request.metaID)
         guard let pick = Self.yoursFromLookup(all, choices: sourceChoices, prefs: prefs, kind: request.kind, limitGB: settings.value.warnCellularOverGB, refused: refused) else {
-            Self.note("tu idioma tampoco está para pedir (\(all.count) torrents sin Real-Debrid)")
+            let refusedYours = all.compactMap { s -> Source? in
+                guard let hash = s.torrent?.hash, refused.contains(hash) else { return nil }
+                var s = s
+                s.refused = true
+                return s
+            }
+            rd.yoursRefused = SourcesModel.yoursRefused(sourceChoices + refusedYours, prefs: prefs)
+            Self.note("tu idioma tampoco está para pedir (\(all.count) torrents sin Real-Debrid)\(rd.yoursRefused.map { "; Real-Debrid rechazó la de \($0)" } ?? "")")
             return
         }
         rd.yours = pick

@@ -35,6 +35,7 @@ enum AppComposition {
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
             Demo.seedLibrary(services)    // «Seguir viendo» de la demo (antes llegaba con Stremio)
             Demo.seedRequests(services)   // `-demo-rd-request`: tus pedidos a Real-Debrid de mentira
+            DemoLatinoNube.seed(services)   // `-demo-latino-nube refused`: Real-Debrid ya rechazó el latino (LN2)
             Demo.seedDebrid(services)     // `-demo-rd revoked`: una cuenta confirmada ayer cuya clave ya no sirve
             DemoViento.seed(services)     // `-demo-viento ready`: el pedido de «El viento tiene miedo» ya listo
             Demo.seedAddons(services)     // `-demo-addons`, `-demo-torrentio`: Complementos y Torrentio de mentira

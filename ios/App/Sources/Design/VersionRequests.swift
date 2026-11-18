@@ -89,3 +89,23 @@ struct VersionYoursAside: View {
         .accessibilityIdentifier("sources-yours-aside")
     }
 }
+
+/// LN2 · «Hay latino, pero Real-Debrid no lo dejó bajar» (Fernando, 18 nov, Los Simpson T37E3): tu idioma existía, pero la
+/// única que lo trae la rechazó Real-Debrid. Hermana de `VersionYoursAside`, en su lugar y con el triángulo de «no lo dejó
+/// bajar»; sin «Pedir a la nube», porque pedirla otra vez falla igual. La TV dice lo mismo en la nota de la ficha.
+struct VersionYoursRefused: View {
+    /// «🇲🇽 latino», ya con su bandera.
+    let language: Text
+
+    var body: some View {
+        IconBeside(symbol: DebridRequestWords.Icon.refused, color: DS.warning) {
+            Text("Hay \(language), pero Real-Debrid no lo dejó bajar").recipe(.labelLarge, color: DS.text).fixedSize(horizontal: false, vertical: true)   // edición: un rechazo solo existe con pedidos a la nube (Real-Debrid)
+            Text("Prueba otra versión").recipe(.caption)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Space.s3)
+        .dsCard(translucent: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("sources-yours-refused")
+    }
+}

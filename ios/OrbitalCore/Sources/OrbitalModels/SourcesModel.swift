@@ -55,6 +55,9 @@ public final class SourcesModel: ObservableModel {
     /// «Hay latino, pero hay que pedirlo a la nube» (Fernando, 12 nov): tu idioma existe y ninguna de las que arrancan al
     /// instante lo trae; la mejor de tu idioma para pedir.
     public internal(set) var yoursToRequest: RequestableVersion? { didSet { if oldValue != yoursToRequest { changed() } } }
+    /// LN2 · «Hay latino, pero Real-Debrid no lo dejó bajar» (Fernando, 18 nov, Los Simpson T37E3): tu idioma existía, pero la
+    /// única que lo trae la rechazó Real-Debrid. El código del idioma; nil si no pasa.
+    public internal(set) var yoursRefused: String? { didSet { if oldValue != yoursRefused { changed() } } }
     /// Quien abrió la hoja dice si el reproductor está abierto: con él abierto no se revisa el audio de nada (Real-Debrid no
     /// aguanta dos conexiones al mismo archivo).
     public var playerOpen: @MainActor () -> Bool = { false }
@@ -90,7 +93,7 @@ public final class SourcesModel: ObservableModel {
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
             emptyCause = await emptyCause(thrown: error, canRequest: false)
-            sources = []; requestable = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []; yoursToRequest = nil
+            sources = []; requestable = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []; yoursToRequest = nil; yoursRefused = nil
             // Ningún complemento contestó: con internet son ellos, no tu conexión (`Degraded`).
             self.error = error is StreamFinderError
                 ? (services.isOnline() ? "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato." : StreamFinderError.unreachable.description)
@@ -110,12 +113,13 @@ public final class SourcesModel: ObservableModel {
         languageRows = grouped.main; moreLanguages = grouped.more; hiddenCount = grouped.hidden
         // Invariante 1 (la ficha y «Versión» no se contradicen): si tu lista no trae nada que pedir (Real-Debrid no tiene nada o tu
         // Torrentio solo da lo que ya está), la ficha ofrece «Pedir a la nube» con lo que existe sin Real-Debrid; aquí también.
-        let extra = await Self.requestableAside(found, services: services, kind: kind, videoID: videoID, metaID: metaID, prefs: prefs)
+        let (extra, refusedAside) = await Self.requestableAside(found, services: services, kind: kind, videoID: videoID, metaID: metaID, prefs: prefs)
         guard !Task.isCancelled, ticket == loadCount else { return }
         requestable = extra
         toRequest = Self.toRequest(found + extra, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
         yoursToRequest = Self.yoursToRequest(Streams.rank(found + extra, prefs: prefs, kind: kind), rows: grouped.main, prefs: prefs,
                                              limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
+        yoursRefused = yoursToRequest == nil ? Self.yoursRefused(found + refusedAside, prefs: prefs) : nil
         error = !sources.isEmpty ? nil : toRequest.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después."
             : "Real-Debrid aún no tiene este título."   // y abajo, «Hay que pedirlas»
         emptyCause = !sources.isEmpty ? nil : await emptyCause(thrown: nil, canRequest: !toRequest.isEmpty)
@@ -141,7 +145,9 @@ public final class SourcesModel: ObservableModel {
     /// sin Real-Debrid (`TitleModel.offerToRequest`, R4): tu lista no trae ninguna que pedir, nada arranca al instante y tu
     /// cuenta puede pedir (vencida, sin Premium o con la clave vieja, la salida es otra). Los torrents de Torrentio sin
     /// Real-Debrid que no están ya en tu lista ni los rechazó Real-Debrid, marcados «por bajar».
-    static func requestableAside(_ found: [Source], services: Services, kind: String, videoID: String, metaID: String, prefs: Preferences) async -> [Source] {
+    /// También devuelve, aparte, las de tu idioma que Real-Debrid ya rechazó (marcadas `refused`): no se ofrecen, pero dicen por
+    /// qué tu idioma no está (LN2).
+    static func requestableAside(_ found: [Source], services: Services, kind: String, videoID: String, metaID: String, prefs: Preferences) async -> (extra: [Source], refused: [Source]) {
         let requests = services.debridRequests
         // También si tu idioma no está entre las que arrancan al instante ni entre las que hay que pedir de tu lista (FQ1-A, como
         // «Pedir a la nube en latino» de la ficha): Fernando, 12 nov, Los Simpson T11E2, solo llegó Comet en inglés y el latino
@@ -149,14 +155,21 @@ public final class SourcesModel: ObservableModel {
         let missingYours = !hasYours(found, prefs: prefs)
         let nothingToAsk = !found.contains(where: { !$0.instant && !hidden($0) && !$0.refused && $0.torrent != nil }) &&
             !(toPlay(found, resume: nil, family: nil)?.instant ?? false)
-        guard requests.canRequest, missingYours || nothingToAsk else { return [] }
+        guard requests.canRequest, missingYours || nothingToAsk else { return ([], []) }
         let account = UnavailableCause.Account.from(nil, saved: services.debrid.saved, now: services.now())
         guard account == .ok || account == .unknown,
-              !(await services.finder.notices(kind: kind, videoID: videoID)).contains(where: \.aboutTheAccount) else { return [] }
-        guard let all = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { return [] }
-        let known = Set(found.compactMap { $0.torrent?.hash }).union(requests.requester.refused(metaID: metaID))
+              !(await services.finder.notices(kind: kind, videoID: videoID)).contains(where: \.aboutTheAccount) else { return ([], []) }
+        guard let all = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { return ([], []) }
+        let refusedHashes = requests.requester.refused(metaID: metaID)
+        let known = Set(found.compactMap { $0.torrent?.hash }).union(refusedHashes)
         let indices = Set(found.map(\.index))
-        return all.compactMap { s in
+        let refused: [Source] = all.compactMap { s in
+            guard let hash = s.torrent?.hash, refusedHashes.contains(hash), !indices.contains(s.index), speaksYours(s, prefs: prefs) else { return nil }
+            var s = s
+            s.debrid = true; s.cached = false; s.refused = true
+            return s
+        }
+        let extra: [Source] = all.compactMap { s in
             guard let hash = s.torrent?.hash, !known.contains(hash), !indices.contains(s.index), !hidden(s) else { return nil }
             // Solo por tu idioma: lo demás ya está en tu lista.
             if !nothingToAsk, !speaksYours(s, prefs: prefs) { return nil }
@@ -164,6 +177,7 @@ public final class SourcesModel: ObservableModel {
             s.debrid = true; s.cached = false
             return s
         }
+        return (extra, refused)
     }
 
     /// Todas, en el orden de la recomendación (incluidas las ocultas): «Todas las fuentes».

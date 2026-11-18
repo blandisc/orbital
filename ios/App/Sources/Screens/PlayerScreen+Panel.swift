@@ -167,6 +167,10 @@ extension PlayerScreen {
                     VersionYoursAside(language: Text.withFlagImages(LanguageFlags.flagged(name, yours.code)), option: yours.option,
                                       status: yoursStatus(model), request: { Task { await requestYoursFromPlayer(model) } })
                         .padding(.bottom, DS.Space.s3)
+                } else if !dockState.versionShowsAll, let code = model.yoursRefused {
+                    // LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (18 nov).
+                    VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)))
+                        .padding(.bottom, DS.Space.s3)
                 }
                 if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,

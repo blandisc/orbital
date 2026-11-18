@@ -16,6 +16,8 @@ struct PlayerDebridState {
     var shortDuration: (seconds: Double, since: Date)?
     /// Tu idioma no arranca al instante, pero existe para pedir (lo que tu Torrentio sin Real-Debrid dice que hay): la mejor.
     var yours: (version: RequestableVersion, source: Source)?
+    /// LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (su código).
+    var yoursRefused: String?
 }
 
 /// Real-Debrid en el reproductor (R5, R6, D5): los avisos de Torrentio, los reintentos que no piden descargas y la causa en

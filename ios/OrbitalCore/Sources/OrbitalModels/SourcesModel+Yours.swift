@@ -68,4 +68,14 @@ extension SourcesModel {
         let evidence = pick.audio.filter { rowCode($0) == code }.map(\.evidence).min() ?? .name
         return RequestableVersion(code: code, option: option(pick, code: code, evidence: evidence, limitGB: limitGB, recommended: false))
     }
+
+    /// LN2 · «Hay latino, pero Real-Debrid no lo dejó bajar» (Fernando, 18 nov, Los Simpson T37E3: la única latina la rechazó
+    /// Real-Debrid y salía el inglés sin explicación, como si Orbital no hubiera encontrado el latino). Ninguna de tu idioma
+    /// arranca al instante ni queda para pedir, y alguna que suena seguro en tu idioma la rechazó Real-Debrid: su idioma. Sin
+    /// «Pedir a la nube»: pedirla otra vez falla igual. Quien llama ya sabe que no hay una de tu idioma para pedir.
+    public static func yoursRefused(_ sources: [Source], prefs: Preferences) -> String? {
+        guard !YourLanguageNow.available(sources, prefs: prefs),
+              let s = sources.first(where: { $0.refused && !hidden($0) && !$0.isOtherTitle && speaksYours($0, prefs: prefs) }) else { return nil }
+        return Streams.playingLanguage(s, prefs).map(rowCode) ?? prefs.wanted
+    }
 }
