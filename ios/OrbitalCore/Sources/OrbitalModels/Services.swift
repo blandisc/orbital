@@ -484,8 +484,10 @@ public final class Services: ObservableModel {
     public func freshenDebrid() async {
         guard await debrid.renewIfNeeded() else { return }
         await resetAccountCaches()
-        if kv.data(Self.tvFollowsDebridKey) != nil, canShareKeysWithTV, let key = addonList.debridToken {
-            _ = try? await orbital.putRealDebrid(token: key, service: debrid.service)
+        // La renovada es de Real-Debrid. Si en este iPhone ya usas otra nube, no se manda nada: mandar la clave de la otra
+        // cambiaría de nube a la TV sin que lo pidas (DN1); la TV sigue con lo que le pasaste.
+        if kv.data(Self.tvFollowsDebridKey) != nil, canShareKeysWithTV, debrid.service == .realDebrid, let key = addonList.debridToken {
+            _ = try? await orbital.putRealDebrid(token: key, service: .realDebrid)
         }
     }
     public static let tvFollowsDebridKey = "debrid-tv-follows-code"
@@ -536,10 +538,9 @@ public final class Services: ObservableModel {
         return added
     }
 
-    /// Sin clave de Real-Debrid en la app, la de tu Torrentio importado (B-P1-2): así hay estado de tu cuenta, avisos de
-    /// vencimiento y «venció» en vez de un fallo sin explicación.
+    /// Las claves de tu Torrentio importado (B-P1-2, contrato `from_torrentio`): cada una para su nube; sin nube con clave,
+    /// la primera queda como la tuya. Así hay estado de tu cuenta, avisos de vencimiento y «venció» en vez de un fallo.
     public func adoptDebridKeyFromImport() async {
-        guard !debrid.hasToken else { return }
         let urls = addonList.installed.filter { !$0.isBuiltIn }.compactMap { addonList.resolvedURL($0) }
         if await debrid.adoptKey(fromAddonURLs: urls) { await resetAccountCaches() }
     }

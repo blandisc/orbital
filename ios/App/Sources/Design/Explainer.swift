@@ -26,6 +26,32 @@ struct DSIconTile: View {
     }
 }
 
+/// DN1 · el ícono de cada nube (Fernando, 18 nov 2026: «a cada uno de los servicios ponle un ícono»): el cuadro de color
+/// de `DSIconTile` con sus iniciales del contrato (`design/debrid-services.json` › `tag`: RD, TB, AD), cada una con su color.
+/// No es su logo: así no depende de imágenes de otros.
+struct DSCloudMark: View {
+    let cloud: DebridService
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
+    var body: some View {
+        let side = DS.Explainer.cloudMark * min(scale, DS.Explainer.maxScale)
+        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+            .fill(Self.tint(cloud).opacity(DS.Explainer.tileFill))
+            .frame(width: side, height: side)
+            .overlay { Text(verbatim: cloud.tag).font(DS.TextRecipe.badge.font).foregroundStyle(Self.tint(cloud)) }
+            .accessibilityHidden(true)
+    }
+
+    /// Real-Debrid verde agua, TorBox azul, AllDebrid naranja (de `DS.ListTint`; la TV usa los mismos: `CLOUDS` › `tint`).
+    static func tint(_ cloud: DebridService) -> Color {
+        switch cloud {
+        case .realDebrid: DS.ListTint.calendar
+        case .torBox: DS.ListTint.series
+        case .allDebrid: DS.ListTint.flame
+        }
+    }
+}
+
 /// Una idea de «¿Qué es esto?»: su cuadro de color a la izquierda, centrado con el texto, el título y una explicación corta.
 /// Con letra de accesibilidad el cuadro va arriba (no aprieta el texto en una columna angosta).
 struct DSExplainerCard: View {

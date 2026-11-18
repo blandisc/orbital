@@ -65,6 +65,9 @@ public final class OnboardingModel: ObservableModel {
 
     /// ¿Se ofrece conectar OpenSubtitles? Con la clave de la app y sin tu cuenta todavía (se lee al abrir la guía).
     public var offersSubtitles = false { didSet { if oldValue != offersSubtitles { changed() } } }
+    /// Los pasos donde ya estuviste: siguen en el plan aunque ahí mismo conectes la pieza (si no, la luna del arco regresaba
+    /// al principio al conectar tu nube o Trakt; 18 nov 2026). Regla en `docs/ios-interfaz.md` § «La guía no se reacomoda».
+    private var visited: Set<Step> = [] { didSet { if oldValue != visited { changed() } } }
 
     public func isConnected(_ piece: Piece) -> Bool {
         switch piece {
@@ -87,9 +90,9 @@ public final class OnboardingModel: ObservableModel {
     /// van juntos en una sola pantalla de «tus aparatos» (Q3).
     public var plan: [Step] {
         var out: [Step] = [.welcome, .likes, .have]
-        if offersDebrid, !isConnected(.debrid), answers[.debrid] != .later { out.append(.debrid) }
-        let trakt = offersTrakt && !isConnected(.trakt) && answers[.trakt] == .has
-        let tv = offersTV && !isConnected(.tv) && answers[.tv] == .has
+        if offersDebrid, visited.contains(.debrid) || (!isConnected(.debrid) && answers[.debrid] != .later) { out.append(.debrid) }
+        let trakt = offersTrakt && (visited.contains(.trakt) || (!isConnected(.trakt) && answers[.trakt] == .has))
+        let tv = offersTV && (visited.contains(.tv) || (!isConnected(.tv) && answers[.tv] == .has))
         if trakt { out.append(.trakt) }
         if tv && !trakt { out.append(.tv) }
         // Más subtítulos (OpenSubtitles): solo si esta versión trae la clave de la app y aún no está tu cuenta.
@@ -118,6 +121,7 @@ public final class OnboardingModel: ObservableModel {
 
     /// Guarda en qué paso vas (para seguir ahí si cierras la app antes de 24 h).
     public func reached(_ step: Step) {
+        visited.insert(step)
         guard step != .welcome, step != .done else { return }
         let saved: [String: String] = ["step": step.rawValue, "at": String(services.now().timeIntervalSince1970)]
         services.kv.set(Self.progressKey, data: try? JSONEncoder().encode(saved))

@@ -36,6 +36,24 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertNil(guide.next(after: .done))
     }
 
+    /// Conectar tu nube (o Trakt) en su propio paso no reacomoda la guía: el paso sigue y la luna no regresa al principio
+    /// (18 nov 2026, se vio con toques en la hoja «Tu nube»).
+    func testConnectingOnItsStepKeepsThePlace() async throws {
+        let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
+        let guide = OnboardingModel(rig.services)
+        guide.toggle(.trakt)
+        guide.reached(.debrid)
+        let before = guide.position(.debrid)
+        XCTAssertEqual(before.current, 3)
+        await rig.services.debrid.save(token: token, status: DebridStatus(service: "Real-Debrid", username: "fer", isPremium: true,
+                                                                            expires: nil, checkedAt: Date(), userID: "1"), share: false)
+        XCTAssertTrue(guide.isConnected(.debrid))
+        XCTAssertEqual(guide.position(.debrid).current, before.current, "el paso donde estás no se mueve al conectar")
+        XCTAssertEqual(guide.next(after: .debrid), .trakt)
+        let fresh = OnboardingModel(rig.services)
+        XCTAssertFalse(fresh.plan.contains(.debrid), "si ya estaba conectada antes de llegar, no se explica")
+    }
+
     func testTheTVStepOnlyWhereThereIsTV() throws {
         let rig = try ServicesRig(signedIn: false, traktClientID: "CID", allowsOrbital: false)
         let guide = OnboardingModel(rig.services)

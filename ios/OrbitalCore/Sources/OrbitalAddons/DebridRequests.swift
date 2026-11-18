@@ -279,7 +279,10 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         let videos = stored.videoIDs + incoming.videoIDs.filter { !stored.videoIDs.contains($0) }
         let files = stored.files.merging(incoming.files) { mine, _ in mine }
         var out: DebridRequest
-        if let new = incoming.rdID, !new.isEmpty, let old = stored.rdID, !old.isEmpty, new != old {
+        let newID = incoming.rdID.map { new in stored.rdID.map { !new.isEmpty && !$0.isEmpty && new != $0 } ?? false } ?? false
+        // DN1 (contrato `merge` › «otra nube»): de otra nube es un pedido nuevo; sin `service`, la guardada es de Real-Debrid.
+        let otherCloud = incoming.service.map { $0 != (stored.service ?? .realDebrid) } ?? false
+        if newID || otherCloud {
             out = incoming
         } else {
             out = stored

@@ -148,6 +148,8 @@ def clean(raw: object) -> dict | None:
 def merge(old: dict, new: dict) -> dict:
     """Dos entradas de la misma huella, juntas campo por campo (contrato, «merge»): los relojes nunca deciden."""
     fresh = bool(new.get("rd_id") and old.get("rd_id") and new["rd_id"] != old["rd_id"])  # volver a pedir da otro rd_id
+    # DN1 («otra nube»): lo que una nube no dejó bajar no cuenta para otra; sin «service», la guardada es de Real-Debrid.
+    fresh = fresh or bool(new.get("service") and new["service"] != (old.get("service") or "realdebrid"))
     if fresh:
         out = {**new}
     else:

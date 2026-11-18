@@ -159,8 +159,10 @@ public final class DebridRequestsModel: ObservableModel {
             onReady?(request)
         }
         if notifiesTVRequests, let mine = requester.knownAccount, !mine.isEmpty {
+            // `knownAccount` lleva la nube («torbox:42»); el pedido, la cuenta sola y su nube aparte (DN1).
+            let (cloud, account) = DebridOwner.split(mine)
             for request in requester.book.all where request.device == Self.tvDevice && request.state == .ready && !request.notified
-                && request.account == mine {
+                && request.account == account && (request.service ?? .realDebrid) == cloud {
                 for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
                 await requester.markNotified(hash: request.hash)
                 onReady?(request)

@@ -136,6 +136,7 @@
       "percent, progress_at": "el mayor",
       "state": "el de mayor precedencia: gone > ready > refused > no_peers > downloading > queued > too_many (too_many se reintenta más tarde, así que cualquier otro le gana)",
       "pedido nuevo": "si llega un `rd_id` no vacío y distinto del guardado, es un pedido nuevo (volver a pedir siempre da otro rd_id): reemplaza la entrada, con video_ids y files unidos. Así gone o refused no atoran un nuevo pedido",
+      "otra nube": "DN1: si llega con `service` y es otra nube que la de la guardada (sin `service`, Real-Debrid), también es un pedido nuevo y reemplaza la entrada: lo que una nube no dejó bajar no cuenta para otra",
       "rd_id": "el primero que no venga vacío",
       "title, by, since": "los del primero que lo anotó",
       "all_files": "true si cualquiera de las dos lo dice",

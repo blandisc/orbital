@@ -179,7 +179,7 @@ struct IPodWheel: View {
                         .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.longPressDelay).onEnded { _ in held = true; click(hold) })
+                .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.longPressDelay).onEnded { _ in held = true; click(hold) })   // soltar-no-toca: `held`
                     .accessibilityLabel(Text("Menú: cerrar el reproductor"))
                     .accessibilityAction(named: Text("Bloquear pantalla")) { hold() }
                     .accessibilityIdentifier("ipod-menu")

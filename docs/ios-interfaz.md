@@ -1137,6 +1137,19 @@ página en su hoja, `DebridCloudSheet`).
 - **Antes de elegir no se nombra ninguna sola.** Primero «Ya tengo cuenta» y «Todavía no tengo», y no se recomienda ninguna.
 - `DesignRulesTests+Cloud.swift` lo vigila.
 
+### Mantener no es tocar (18 nov 2026)
+
+Un botón que además se mantiene presionado (para explicar, para la segunda acción del control) no hace también lo del toque
+al soltar. Cada `LongPressGesture` simultáneo lleva en su renglón `// soltar-no-toca: <cómo>` (una marca `held` que el
+botón revisa). Se vio en «¿Qué ya tienes?»: mantener para leer qué es marcaba la tarjeta como «la tengo».
+`DesignRulesTests.testHoldingIsNotAlsoTapping` lo vigila.
+
+### La guía no se reacomoda (18 nov 2026)
+
+El paso donde estás sigue en el plan de la guía aunque ahí mismo conectes la pieza (tu nube, Trakt, la TV): la luna del arco
+no regresa al principio. `OnboardingModel.plan` incluye los pasos visitados (`reached`).
+`OnboardingModelTests.testConnectingOnItsStepKeepsThePlace` lo vigila.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

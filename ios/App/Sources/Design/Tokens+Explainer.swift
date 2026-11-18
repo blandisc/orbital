@@ -13,5 +13,7 @@ extension DS {
         static let step: Duration = .seconds(1.6)
         /// RX3-A · «Así funciona» espera esto antes de salir: que se vea primero lo que la trajo (la versión «↓ Por pedir»).
         static let introDelay: Duration = .milliseconds(600)
+        /// DN1 · el cuadro de cada nube en «Tu nube» (`DSCloudMark`): del alto de un renglón de dos líneas.
+        static let cloudMark: CGFloat = 36
     }
 }

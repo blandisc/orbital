@@ -8,9 +8,9 @@ import { languagesLine } from "./menus-languages.js";
 // --- Tu nube (Fernando, 18 nov 2026: «que pueda funcionar con TorBox, AllDebrid y Real-Debrid. Solamente esos tres») ----
 // Los textos se escriben con Real-Debrid (los de design/vocabulario.json) y se dicen con el nombre y la página de la tuya.
 export const CLOUDS = {
-  realdebrid: { name: "Real-Debrid", site: "real-debrid.com", key: "real-debrid.com/apitoken" },
-  torbox: { name: "TorBox", site: "torbox.app", key: "torbox.app/settings" },
-  alldebrid: { name: "AllDebrid", site: "alldebrid.com", key: "alldebrid.com/apikeys" },
+  realdebrid: { name: "Real-Debrid", tag: "RD", tint: "calendar", site: "real-debrid.com", key: "real-debrid.com/apitoken" },
+  torbox: { name: "TorBox", tag: "TB", tint: "series", site: "torbox.app", key: "torbox.app/settings" },
+  alldebrid: { name: "AllDebrid", tag: "AD", tint: "flame", site: "alldebrid.com", key: "alldebrid.com/apikeys" },
 };
 export const cloudOf = (service) => (CLOUDS[service] ? service : "realdebrid");
 export const cloudName = (service) => CLOUDS[cloudOf(service)].name;
@@ -177,6 +177,10 @@ export function debridAccountMenu(rd, { rowHiddenAt = 0 } = {}) {
   return inCloud(debridAccountWords(rd, { rowHiddenAt }), rd?.service);
 }
 
+/** El ícono de cada nube (Fernando, 18 nov: «a cada uno de los servicios ponle un ícono»): sus iniciales del contrato
+ *  (`tag`) en su color, el mismo cuadro que `DSCloudMark` del iPhone. */
+const cloudMark = (c) => ({ initials: c.tag, tint: c.tint });
+
 /** Sin nube todavía (la bienvenida y Ajustes › Cuentas, 18 nov): conectar la que ya tienes, cualquiera de las tres, o
  *  ver dónde sacar una. Orbital no recomienda ni cobra: las tres sirven igual. */
 export function debridChooseMenu(rd) {
@@ -186,10 +190,10 @@ export function debridChooseMenu(rd) {
     subtitle: "Para que los videos arranquen al instante, Orbital usa un servicio de pago que guarda películas y series: tu nube. Sirve cualquiera de estos tres.",
     options: [
       { heading: true, label: "Ya tengo cuenta" },
-      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "key", label: c.name, hint: `Conectar con tu clave · ${c.key}`,
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: c.name, hint: `Conectar con tu clave · ${c.key}`,
         command: { type: "rd-service", service } })),
       { heading: true, label: "Todavía no tengo" },
-      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "phone", label: `Ver ${c.name}`, hint: `${c.site} · ábrelo en tu celular con un código QR`,
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: `Ver ${c.name}`, hint: `${c.site} · ábrelo en tu celular con un código QR`,
         command: { type: "debrid-signup", service } })),
       { icon: "phone", label: "Mándala desde tu iPhone", hint: "Si ya la tienes ahí: Ajustes › Cuentas › Tu nube › Pasar a la TV", command: { type: "stay" } },
       pending && { icon: "cloudDownload", label: "Tus pedidos", hint: "Lo que pediste antes", command: { type: "rd-requests" } },
@@ -221,7 +225,7 @@ export function debridServiceMenu(rd) {
     title: "Tu nube",
     subtitle: "Es la que hace que los videos arranquen al instante. Orbital funciona con estas tres; tú pagas la que elijas en su página.",
     options: [
-      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "cloud", label: c.name,
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ ...cloudMark(c), label: c.name,
         value: service === current ? "La que usas" : saved[service] ? "Clave guardada" : "Sin clave", ok: service === current,
         hint: service === current ? c.site : saved[service] ? `${c.site} · cámbiate sin volver a pegarla` : `${c.site} · necesitas su clave`,
         command: service === current ? { type: "back" } : { type: "rd-service", service } })),

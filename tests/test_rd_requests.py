@@ -350,3 +350,14 @@ def test_finished_and_deleted_in_real_debrid_leaves_the_row(setup):
     rd.list.clear()
     rd.missing.add("RD1")
     assert reqs.tick() is False and reqs.status("tt9") is None
+
+
+def test_a_request_from_another_cloud_is_new():
+    """DN1 (contrato «merge» › «otra nube»): lo que Real-Debrid no dejó bajar no atora el mismo pedido con TorBox."""
+    refused = {"hash": "a" * 40, "state": "refused", "account": "111", "video_ids": ["tt1"], "files": {}}
+    torbox = {"hash": "a" * 40, "state": "downloading", "rd_id": "555", "account": "42", "service": "torbox",
+              "video_ids": ["tt1"], "files": {}}
+    out = rd_requests.merge(refused, torbox)
+    assert (out["state"], out["service"], out["account"], out["rd_id"]) == ("downloading", "torbox", "42", "555")
+    assert rd_requests.merge(refused, {**torbox, "service": "realdebrid", "rd_id": None})["state"] == "refused"
+    assert rd_requests.merge(refused, {k: v for k, v in torbox.items() if k not in ("service", "rd_id")})["state"] == "refused"

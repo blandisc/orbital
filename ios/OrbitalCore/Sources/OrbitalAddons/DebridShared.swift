@@ -110,8 +110,9 @@ extension DebridAccount {
     /// «Usar la nueva» / «Usar la clave de tus aparatos Apple»: se comprueba y se guarda en este aparato.
     public func useShared() async throws -> DebridStatus {
         guard let shared = sharedKey, !shared.key.isEmpty else { throw DebridError.unexpected }
-        let status = try await provider.status(token: shared.key)
-        guard save(token: shared.key, status: status, share: false) else { throw DebridError.unexpected }
+        // La copia compartida es de Real-Debrid aunque ahora uses otra nube (DN1): nunca se prueba contra TorBox o AllDebrid.
+        let status = try await providers(.realDebrid).status(token: shared.key)
+        guard save(token: shared.key, status: status, share: false, service: .realDebrid) else { throw DebridError.unexpected }
         return status
     }
 

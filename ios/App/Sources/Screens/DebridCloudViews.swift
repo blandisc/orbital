@@ -19,8 +19,11 @@ struct DebridCloudChooser: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Button { model.target = cloud } label: {
-                    TorrentioRowLabel(title: Text(verbatim: cloud.name), detail: Text("Conectar con tu clave · \(cloud.keyPlace)"))   // no-es-título: el nombre de la nube
-                        .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                    HStack(spacing: DS.Space.s3) {
+                        DSCloudMark(cloud: cloud)
+                        TorrentioRowLabel(title: Text(verbatim: cloud.name), detail: Text("Conectar con tu clave · \(cloud.keyPlace)"))   // no-es-título: el nombre de la nube
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("cloud-connect-\(cloud.rawValue)")
@@ -32,7 +35,13 @@ struct DebridCloudChooser: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Link(destination: cloud.signupURL) {
-                    Label { TorrentioRowLabel(title: Text("Ver \(cloud.name)"), detail: Text(verbatim: cloud.site)) } icon: { Image(systemName: "arrow.up.right") }   // no-es-título: el nombre de la nube
+                    HStack(spacing: DS.Space.s3) {
+                        DSCloudMark(cloud: cloud)
+                        TorrentioRowLabel(title: Text("Ver \(cloud.name)"), detail: Text(verbatim: cloud.site))   // no-es-título: el nombre de la nube
+                        Spacer(minLength: DS.Space.s2)
+                        Image(systemName: "arrow.up.right").foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("cloud-signup-\(cloud.rawValue)")
             }
@@ -59,7 +68,8 @@ struct DebridCloudList: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Button { Task { await model.use(cloud) } } label: {
-                    HStack {
+                    HStack(spacing: DS.Space.s3) {
+                        DSCloudMark(cloud: cloud)
                         Text(verbatim: cloud.name).foregroundStyle(DS.text)   // no-es-título: el nombre de la nube
                         Spacer(minLength: DS.Space.s2)
                         Text(Self.value(cloud, model)).foregroundStyle(cloud == model.service ? DS.success : DS.textMuted)

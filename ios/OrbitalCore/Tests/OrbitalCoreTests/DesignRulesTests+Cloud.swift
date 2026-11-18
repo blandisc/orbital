@@ -25,4 +25,12 @@ extension DesignRulesTests {
         let sheet = try XCTUnwrap(files.first { $0.name == "DebridCloudViews.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(sheet.contains("DebridAccountView(debrid: debrid)"), "la hoja es la página de Ajustes › Cuentas")
     }
+
+    /// Mantener presionado no es también tocar (18 nov 2026: en «¿Qué ya tienes?» mantener para leer qué es marcaba la
+    /// tarjeta como «la tengo»). Todo `LongPressGesture` simultáneo dice en su renglón cómo evita que al soltar el botón
+    /// haga también lo del toque: `// soltar-no-toca: <cómo>`. Regla en `docs/ios-interfaz.md` § «Mantener no es tocar».
+    func testHoldingIsNotAlsoTapping() throws {
+        let found = hits("simultaneousGesture\\(LongPressGesture", in: try sources(), unless: "soltar-no-toca:")
+        XCTAssertEqual(found, [], "al soltar, el toque no se manda también:\n" + found.joined(separator: "\n"))
+    }
 }

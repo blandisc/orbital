@@ -106,7 +106,7 @@ extension PlayerScreen {
             // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
             // En cualquier lugar de la pantalla, no solo la mitad derecha (Fernando, 3 nov 2026: «que se pueda picar desde el
             // lado izquierdo, derecho, desde cualquier lugar»).
-            .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
+            .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)   // soltar-no-toca: no es botón
                 .onEnded { _ in holdFastForward(model) })
             .dsFeedback(.impact, trigger: drag.isFastForwarding)
             .dsFeedback(.impact(weight: .light), trigger: skipHaptic)

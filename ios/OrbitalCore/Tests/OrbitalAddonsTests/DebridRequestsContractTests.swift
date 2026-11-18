@@ -107,6 +107,19 @@ final class DebridRequestsContractTests: XCTestCase {
         XCTAssertEqual(DebridRequest.merge(entry(.ready, rd: nil), entry(.queued, rd: "RD9")).state, .ready, "llenar un rd_id vacío no es un pedido nuevo")
     }
 
+    /// DN1 (contrato `merge` › «otra nube»): un rechazo de Real-Debrid no atora el mismo pedido hecho con TorBox.
+    func testARequestFromAnotherCloudIsNew() {
+        let refused = entry(.refused, rd: nil, account: "111")
+        var torbox = entry(.downloading, rd: "555", percent: 5, account: "42", at: 10)
+        torbox.service = .torBox
+        let out = DebridRequest.merge(refused, torbox)
+        XCTAssertEqual(out.state, .downloading, "lo que una nube no dejó bajar no cuenta para otra")
+        XCTAssertEqual(out.service, .torBox); XCTAssertEqual(out.account, "42"); XCTAssertEqual(out.rdID, "555")
+        var same = entry(.downloading, rd: nil, at: 10); same.service = .realDebrid
+        XCTAssertEqual(DebridRequest.merge(refused, same).state, .refused, "de la misma nube, el rechazo se queda")
+        XCTAssertEqual(DebridRequest.merge(refused, entry(.downloading, rd: nil, at: 10)).state, .refused, "sin decir la nube, nada cambia")
+    }
+
     // MARK: lápidas
 
     func testCancelWhenRealDebridNoLongerHasItCountsAsDone() async throws {

@@ -112,6 +112,8 @@ struct OnboardingHave: View {
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var explaining: OnboardingModel.Piece?
     @State private var taps = 0
+    /// La que se mantuvo presionada: al soltar, el toque del botón no la marca (mantener solo explica).
+    @State private var held: OnboardingModel.Piece?
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); self.step = step; self.back = back; self.next = next; self.skip = skip
@@ -146,6 +148,7 @@ struct OnboardingHave: View {
         let words = Self.words(piece)
         let on = model.isConnected(piece) || model.answers[piece] == .has
         Button {
+            if held == piece { held = nil; return }   // se mantuvo para leer qué es: no se marca
             guard !model.isConnected(piece) else { return }
             model.toggle(piece); taps += 1
         } label: {
@@ -159,7 +162,7 @@ struct OnboardingHave: View {
             .dsCard(fill: on ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(LongPressGesture().onEnded { _ in withAnimation(DS.Motion.fade) { explaining = explaining == piece ? nil : piece } })
+        .simultaneousGesture(LongPressGesture().onEnded { _ in held = piece; withAnimation(DS.Motion.fade) { explaining = explaining == piece ? nil : piece } })   // soltar-no-toca: `held`
         .accessibilityLabel(Text(words.title))
         .accessibilityValue(on ? Text("Lo tengo") : Text("No lo tengo"))
         .accessibilityHint(Text(words.detail))

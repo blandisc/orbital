@@ -178,6 +178,23 @@ final class DebridServicesTests: XCTestCase {
         XCTAssertEqual(vault.debridToken(.allDebrid), "ABCDEFGHIJ1234567890")
     }
 
+    /// Contrato `from_torrentio`: con Real-Debrid ya conectado, la clave de TorBox de tu Torrentio queda para TorBox (no se
+    /// tira) y tu nube sigue siendo Real-Debrid.
+    func testAnImportedKeyStaysForItsCloudWhenYouAlreadyHaveOne() async throws {
+        let vault = InMemoryAddonVault()
+        let fake = FakeCloud()
+        fake.answers["GET user/me"] = (200, #"{"success": true, "data": {"id": 42, "email": "a@b.c", "plan": 2}}"#)
+        let account = DebridAccount(providers: DebridClients.live(fetch: fake.fetch).providers, vault: vault)
+        _ = await account.save(token: String(repeating: "QX7MZ2K9PL", count: 5) + "AB",
+                               status: DebridStatus(service: "Real-Debrid", username: "fer", isPremium: true, expires: nil, checkedAt: Date()), share: false)
+        let key = "1a2b3c4d-1111-2222-3333-444455556666"
+        let switched = await account.adoptKey(fromAddonURLs: ["https://torrentio.strem.fun/torbox=\(key)/manifest.json"])
+        XCTAssertFalse(switched, "tu nube no cambia")
+        XCTAssertEqual(vault.debridService, .realDebrid)
+        XCTAssertEqual(vault.debridToken(.torBox), key, "la de TorBox queda para TorBox")
+        XCTAssertFalse(account.keyCameFromImport, "la de Real-Debrid la pegaste tú")
+    }
+
     func testARequestIsYoursOnlyInYourCloudAndAccount() throws {
         var request = DebridRequest(hash: "abc", account: "42", title: "X", kind: "movie", metaID: "tt1", videoIDs: ["tt1"], device: "TV", createdAt: Date())
         request.service = .torBox

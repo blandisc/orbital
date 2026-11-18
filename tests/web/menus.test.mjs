@@ -973,3 +973,18 @@ test("la bienvenida y Cuentas sin nube: entras con cualquiera de las tres, o ves
   assert.deepEqual(signup.options[0].command, { type: "rd-service", service: "torbox" });
   assert.equal(debridSignupMenu("otra").qr, "/api/debrid/qr.svg?service=realdebrid");
 });
+
+test("DN1 · cada nube lleva su ícono (sus iniciales en su color), el mismo del iPhone (DSCloudMark)", async () => {
+  const { CLOUDS, debridChooseMenu } = await import("../../orbital/web/js/core/menus-cloud.js");
+  const { readFileSync } = await import("node:fs");
+  const contract = JSON.parse(readFileSync(new URL("../../design/debrid-services.json", import.meta.url))).services;
+  const swift = readFileSync(new URL("../../ios/App/Sources/Design/Explainer.swift", import.meta.url), "utf8");
+  const swiftCase = { realdebrid: "realDebrid", torbox: "torBox", alldebrid: "allDebrid" };
+  for (const [service, c] of Object.entries(CLOUDS)) {
+    assert.equal(c.tag, contract[service].tag, `${service}: las iniciales salen del contrato`);
+    assert.match(swift, new RegExp(`case \\.${swiftCase[service]}: DS\\.ListTint\\.${c.tint}`), `${service}: mismo color en el iPhone`);
+  }
+  const rows = [...debridChooseMenu({}).options, ...debridServiceMenu({ service: "torbox" }).options].filter((o) => Object.values(CLOUDS).some((c) => o.label?.endsWith(c.name)));
+  assert.equal(rows.length, 9);
+  for (const row of rows) assert.ok(row.initials && row.tint && !row.icon, `«${row.label}» lleva sus iniciales, no un ícono genérico`);
+});

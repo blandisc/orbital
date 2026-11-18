@@ -138,7 +138,7 @@ struct RemoteKey: View {
         .foregroundStyle(DS.text)
         .simultaneousGesture(DragGesture(minimumDistance: 0).updating($pressed) { _, state, _ in state = true })
         .dsFeedback(.impact(flexibility: .soft), trigger: taps)
-        .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
+        .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in   // soltar-no-toca: `heldAt`
             guard let longPress else { return }
             held += 1; heldAt = Date(); longPress()
         })

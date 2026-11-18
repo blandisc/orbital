@@ -94,7 +94,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
         onClick: (event) => tapReady(event) && !busy() && press(i) }),
     }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
     h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark", option.tint && "sheet__icon--tint"], "data-tint": option.tint },
-      option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
+      option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" })
+        : option.initials ? h("span", { class: "sheet__initials", "aria-hidden": "true" }, option.initials) // una nube: RD, TB, AD (DN1)
+        : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, ...Flags(option.flags), option.label),
       below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),

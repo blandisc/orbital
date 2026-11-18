@@ -32,7 +32,10 @@ struct DebridAccountView: View {
             DebridSharedPrompt(debrid: model)   // CX2-A: otra cuenta en tus aparatos Apple, solo cuando pasa
             // P6-A: lo que dice la página es verdad al abrirla. Se le pregunta a Real-Debrid si tu clave sirve; mientras, lo
             // último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó en esta visita.
-            if !model.hasToken && model.target == nil { DebridCloudChooser(debrid: model) }
+            // Con la clave de otra nube guardada (quitaste la de la que usabas), «Tu nube» sigue a la vista para cambiarte a
+            // ella sin volver a pegarla, como la TV (`debridAccountWords` › «Tu nube»).
+            let anyKey = DebridService.allCases.contains { model.hasKey($0) }
+            if !anyKey && model.target == nil { DebridCloudChooser(debrid: model) }
             else if !model.hasToken || model.target != nil { connect(model) }
             else {
                 switch model.keyCheck {
@@ -44,7 +47,7 @@ struct DebridAccountView: View {
                     else { unknown(model) }
                 }
             }
-            if model.hasToken && model.target == nil { DebridCloudList(debrid: model) }
+            if anyKey && model.target == nil { DebridCloudList(debrid: model) }
             // IOS-9, IOS-15: la explicación va al final; el problema, si hay, es lo primero que se ve al abrir.
             if model.hasToken && model.target == nil && model.service == .realDebrid { Section {
                 Button { explaining = true } label: {

@@ -124,8 +124,11 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         guard case .offer(let from, let account) = await mac.debrid.checkShared() else { return XCTFail() }
         XCTAssertEqual(from, "ipad", "no se promete «tu iPhone» si vino del iPad (UX-19)"); XCTAssertEqual(account.username, "fer")
         XCTAssertNil(local.get(AddonKeys.realDebridToken), "solo se ofrece: no se toma sola")
+        await mac.debrid.use(.torBox)   // DN1: la oferta quedó a la vista y ya cambiaste de nube
         _ = try await mac.debrid.useShared()
         XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1)
+        XCTAssertEqual(mac.debrid.service, .realDebrid, "la copia compartida es de Real-Debrid: nunca se prueba ni se guarda en TorBox")
+        XCTAssertNil(local.get(DebridService.torBox.keyStore))
     }
 
     func testAKeyFromBeforeIsSharedOnTheFirstCheck() async {

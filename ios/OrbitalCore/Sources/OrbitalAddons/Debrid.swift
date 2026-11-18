@@ -268,7 +268,8 @@ public actor DebridAccount {
     /// llavero para esa nube, esa queda como la tuya y se anota de dónde salió. Devuelve true si la tomó.
     @discardableResult
     public func adoptKey(fromAddonURLs urls: [String]) async -> Bool {
-        guard !hasToken, keySource != Self.removedByYou else { return false }
+        guard keySource != Self.removedByYou else { return false }
+        let hadCloud = hasToken
         var seen = Set<String>()
         let candidates = urls.flatMap(Self.cloudKeys(in:)).filter { seen.insert($0.service.rawValue + $0.key).inserted }
         // La que ya usas primero; luego en el orden de «Tu nube».
@@ -276,15 +277,20 @@ public actor DebridAccount {
             let rank = { (s: DebridService) in s == self.service ? -1 : DebridService.allCases.firstIndex(of: s) ?? 9 }
             return rank(a.service) != rank(b.service) ? rank(a.service) < rank(b.service) : a.key < b.key
         }
-        for (cloud, key) in ordered where cloud.looksLikeKey(key) {
+        // Contrato `from_torrentio`: cada clave queda para su nube (sin pisar la que ya tenías guardada); si todavía no tenías
+        // nube con clave, la primera que sirva queda como la tuya.
+        var took = false
+        for (cloud, key) in ordered where cloud.looksLikeKey(key) && !hasKey(cloud) {
             guard let status = try? await providers(cloud).status(token: key) else { continue }
             vault.setSecret(cloud.keyStore, key)
-            vault.setDebridService(cloud)
-            vault.setData(AddonKeys.debridKeySource, Data(Self.fromImportedTorrentio.utf8))
             remember(status)
-            return true
+            if !hadCloud && !took {
+                vault.setDebridService(cloud)
+                vault.setData(AddonKeys.debridKeySource, Data(Self.fromImportedTorrentio.utf8))
+            }
+            took = true
         }
-        return false
+        return took && !hadCloud
     }
 
     /// Las claves de las tres nubes que trae una dirección con la forma de Torrentio (`…|torbox=CLAVE|…`).
