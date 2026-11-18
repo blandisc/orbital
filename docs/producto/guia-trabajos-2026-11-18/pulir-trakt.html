@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulir Trakt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600&display=swap">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1b22;--muted:#5d5b66;--line:#e3e1da;--accent:#127a6c;
+  --sky:#0b0a14;--sky2:#171430;--raised:#211f2e;--pt:#f3f1ea;--pm:#a9a6ba;--fresh:#5fd6c4;--ink:#111017}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4}}
+:root[data-theme="dark"]{--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,-apple-system,system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:28px 16px 60px}
+h1{font:600 27px/1.15 Sora,Inter,sans-serif;margin:0 0 8px}h2{font:600 19px Sora,Inter,sans-serif;margin:36px 0 4px}
+p{margin:0 0 10px}.m{color:var(--muted)}
+.code{display:inline-block;font:700 13px ui-monospace,monospace;color:var(--accent);border:1.5px solid var(--accent);border-radius:7px;padding:1px 7px;margin-right:6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:14px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:10px;align-content:start}.opt.rec{border:2px solid var(--accent)}
+.opt h3{margin:0;font-size:15.5px}.tag{font-size:12px;font-weight:700;color:var(--accent)}
+.opt ul{margin:0;padding-left:18px;font-size:13.5px}.opt li{margin:2px 0}
+.mv{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}.mv b{color:var(--text)}
+.keep{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:14px}
+/* teléfono */
+.phone{width:250px;height:500px;margin:0 auto;border-radius:36px;border:8px solid #24222f;background:radial-gradient(120% 60% at 50% 18%,var(--sky2),var(--sky) 70%);position:relative;overflow:hidden;color:var(--pt);display:flex;flex-direction:column;padding:30px 16px 18px;gap:9px;font-size:12px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--pm);min-height:18px}
+.dots{display:flex;gap:4px}.dots i{width:5px;height:5px;border-radius:50%;background:#3a3748}.dots i.on{background:var(--pt);width:14px;border-radius:3px}
+.ic{width:38px;height:38px;border-radius:12px;background:rgba(95,214,196,.13);color:var(--fresh);display:grid;place-items:center}
+.ic svg{width:20px;height:20px}
+.h{font:600 18px/1.18 Sora,Inter,sans-serif;margin:0}.h.c{text-align:center}
+.s{font-size:11.5px;color:var(--pm);margin:0;line-height:1.4}.s.c{text-align:center}
+.ben{display:grid;gap:8px}.ben div{display:flex;gap:9px;align-items:center}.ben i{width:26px;height:26px;border-radius:8px;background:rgba(95,214,196,.13);color:var(--fresh);display:grid;place-items:center;font-style:normal;flex:none;font-size:12px}
+.ben span{font-size:11.5px}.ben small{display:block;color:var(--pm);font-size:10px}
+.acts{margin-top:auto;display:grid;gap:6px}
+.b{border-radius:999px;padding:9px;text-align:center;font-weight:600;font-size:12px}
+.b.p{background:var(--pt);color:var(--ink)}.b.g{background:#262434;color:var(--pt)}.b.q{color:var(--pm);font-weight:500;padding:4px}
+.note{font-size:9.5px;color:var(--pm);text-align:center}
+.stage{position:relative;height:170px;flex:none}
+.dev{position:absolute;border:2px solid #5a5770;border-radius:10px;background:#141322}
+.card{position:absolute;display:flex;gap:6px;align-items:center;background:#2a2838;border-radius:9px;padding:5px 7px 5px 5px;font-size:9.5px;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.card .po{width:20px;height:30px;border-radius:3px;background:linear-gradient(170deg,#8b2d2d,#1b0f10);flex:none}
+.card b{display:block;font-size:10px}.card .bar{height:2px;background:#4a4760;border-radius:2px;margin-top:3px}.card .bar i{display:block;height:2px;width:62%;background:var(--fresh);border-radius:2px}
+.arc{position:absolute;inset:0}
+.codebox{background:#1d1b2a;border-radius:14px;padding:14px;text-align:center;font:700 22px ui-monospace,monospace;letter-spacing:.12em}
+.codebox small{display:block;font:500 10px Inter,sans-serif;letter-spacing:0;color:var(--pm);margin-top:4px}
+.web{flex:1;background:#f4f4f6;border-radius:14px 14px 0 0;margin:6px -16px -18px;color:#222;display:flex;flex-direction:column;overflow:hidden}
+.web .url{background:#e6e6ea;font-size:10px;padding:7px 10px;display:flex;justify-content:space-between;color:#555}
+.web .f{padding:16px 14px;display:grid;gap:8px}
+.web .in{height:28px;border-radius:7px;background:#fff;border:1px solid #d8d8de;font-size:10px;color:#999;padding:7px 9px}
+.web .btn{height:30px;border-radius:7px;background:#3a3a44;color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600}
+.web .alt{font-size:10px;color:#666;text-align:center}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.toast{background:#1e3b36;color:var(--fresh);border-radius:12px;padding:9px 11px;font-weight:600;font-size:12px}
+.av{width:56px;height:56px;border-radius:50%;background:linear-gradient(140deg,#5fd6c4,#3a6db3);display:grid;place-items:center;font:600 22px Sora,sans-serif;color:#0b0a14;margin:6px auto 0}
+.cnt{display:flex;justify-content:center;gap:22px;margin-top:4px}.cnt div{text-align:center}.cnt b{display:block;font:600 22px Sora,sans-serif}.cnt span{font-size:10px;color:var(--pm)}
+.strip{display:flex;gap:5px;justify-content:center;margin-top:6px}.strip i{width:30px;height:45px;border-radius:4px;flex:none}
+.steps{font-size:12.5px;color:var(--muted)}.steps b{color:var(--text)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.phone.mini{width:auto;max-width:150px;height:300px;border-width:6px;border-radius:26px;padding:20px 10px 12px}
+.phone.mini .web{margin:6px -10px -12px}
+.ben i svg{width:15px;height:15px}
+.sys{position:relative;z-index:1;margin:auto 0;background:rgba(48,46,60,.97);border-radius:12px;padding:10px 10px 0;text-align:center;font-size:9px;display:grid;gap:4px}
+.sys span{color:var(--pm)}.sysb{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #4a4760;margin:4px -10px 0}.sysb span{padding:7px;color:#7fb8ff}
+.fallback{position:absolute;left:0;right:0;bottom:8px;z-index:2;text-align:center;font-size:8.5px;color:#555}
+.note2{font-size:12.5px;color:var(--muted);margin:0}
+</style></head><body><main>
+<h1>Pulir el paso de Trakt</h1>
+<p class="m">18 nov 2026. Es la segunda pantalla de la guía, justo después de la bienvenida. Trakt es un servicio gratis que guarda lo que ves y tus listas; con él, Orbital te recomienda según tus gustos y lo tuyo te sigue a todos tus aparatos. Hoy la app dice «Sigue donde te quedaste», enseña el código solo y tiene «Copiar y abrir Trakt» y «Ahora no». Hay tres cosas que decidir: cómo se cuenta, cómo se conecta y qué pasa al conectar.</p>
+
+<h2><span class="code">TK-V</span>Cómo se cuenta para qué sirve</h2>
+<p class="m">La bienvenida ya usó renglones con ícono; si Trakt los repite, las dos pantallas se sienten iguales.</p>
+<div class="opts">
+<div class="opt"><h3><span class="code">TK-V1</span>Tres beneficios con ícono</h3>
+<div class="phone"><div class="top"><span>‹</span><span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></span><span>Saltar</span></div>
+<span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="6" height="10" rx="1.5"/><rect x="12" y="5" width="6" height="10" rx="1.5"/><path d="M8 10h4"/></svg></span>
+<p class="h">Lo tuyo, en todos tus aparatos</p><p class="s">Trakt es un servicio gratis que guarda lo que ves y tus listas. Conéctalo y Orbital:</p>
+<div class="ben"><div><i><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="3"/><circle cx="7" cy="7" r="1" fill="currentColor"/><circle cx="13" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg></i><span>Te recomienda a ti<small>Según lo que ya viste</small></span></div><div><i><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"/></svg></i><span>Te avisa de estrenos<small>Dentro de la app, de las series que sigues</small></span></div><div><i><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="11" height="8" rx="1.2"/><rect x="13.5" y="7" width="4.5" height="9" rx="1.2"/><path d="M5 15h5"/></svg></i><span>Te sigue a todos lados<small>iPhone, iPad y Mac</small></span></div></div>
+<div class="acts"><div class="b p">Conectar Trakt</div><div class="b q">Ahora no</div></div></div>
+<ul><li>Gana: dice tres cosas concretas, incluidos los estrenos.</li><li>Pierde: misma forma que la bienvenida, renglón tras renglón; más lectura para un paso que se puede saltar.</li></ul></div>
+
+<div class="opt rec"><h3><span class="code">TK-V2</span>Una escena: tu serie pasa de un aparato a otro <span class="tag">RECOMENDADA</span></h3>
+<div class="phone"><div class="top"><span>‹</span><span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></span><span>Saltar</span></div>
+<div class="stage">
+ <svg class="arc" viewBox="0 0 218 170" fill="none"><path d="M52 112 C80 30 140 30 168 92" stroke="#5fd6c4" stroke-opacity=".5" stroke-width="1.5" stroke-dasharray="3 4"/></svg>
+ <div class="dev" style="left:22px;top:70px;width:52px;height:92px;border-radius:12px"></div>
+ <div class="dev" style="left:128px;top:62px;width:84px;height:62px;border-radius:8px"></div><div style="position:absolute;left:158px;top:126px;width:24px;height:3px;border-radius:2px;background:#5a5770"></div>
+ <div class="card" style="left:66px;top:18px"><span class="po"></span><span><b>Shōgun</b>T1 E7 · quedan 18 min<span class="bar"><i></i></span></span></div>
+</div>
+<p class="h c">Sigue donde te quedaste, en cualquier aparato</p><p class="s c">Trakt guarda lo que ves y tus listas, y Orbital te recomienda según eso. Es gratis.</p>
+<div class="acts"><div class="b p">Conectar Trakt</div><div class="b q">Ahora no</div><div class="note">Sin Trakt, lo tuyo queda en este iPhone. Lo conectas cuando quieras desde Inicio o Ajustes.</div></div></div>
+<ul><li>Gana: se entiende de un vistazo; misma forma que la bienvenida (escena arriba, pocas palabras abajo) sin repetir sus renglones.</li><li>Cambia por versión: en Orbital (la de la tienda, que no reproduce) dice «Tus series y tus listas, en todos tus aparatos» y la tarjeta dice «Shōgun · vista», sin barra. En Plus y Ultra, como en la maqueta.</li><li>El aparato de la izquierda es en el que estás (iPhone, o iPad o Mac si no tienes iPhone); el de la derecha, otro tuyo: iPad o Mac, o la TV en Ultra.</li><li>Pierde: «Te avisa de estrenos» no sale aquí; se enseña en el recorrido. (De todos modos los avisos son dentro de la app: con la cuenta de Apple gratuita no hay notificaciones.)</li></ul>
+<div class="mv"><b>Cómo se movería:</b> la tarjeta sale del aparato de la izquierda, viaja por el arco punteado y se asienta en el otro con un resorte suave; la barrita turquesa conserva el mismo punto. Una sola vez, y después todo quieto.</div></div>
+</div>
+
+<h2><span class="code">TK-C</span>Cómo se conecta</h2>
+<div class="opts">
+<div class="opt"><h3><span class="code">TK-C1</span>Código (como hoy en la app)</h3>
+<div class="phone"><div class="top"><span>‹</span><span></span><span></span></div>
+<p class="h">Conecta tu Trakt</p><p class="s">Abre trakt.tv/activate en cualquier aparato y escribe este código.</p>
+<div class="codebox">7F3K 9QP2<small>Toca para copiar</small></div>
+<div class="acts"><div class="b p">Copiar y abrir Trakt</div><div class="b q">Ahora no</div></div></div>
+<p class="steps"><b>Pasos:</b> copiar · Safari se abre · pegar el código · entrar a Trakt · aprobar · volver a Orbital.</p>
+<ul><li>Gana: ya está hecho y funciona igual que en la TV.</li><li>Pierde: el ir y venir a Safari y pegar el código; es donde más gente se pierde.</li></ul></div>
+
+<div class="opt"><h3><span class="code">TK-C2</span>Código ya puesto</h3>
+<div class="phone"><div class="top"><span>‹</span><span></span><span></span></div>
+<p class="h">Conecta tu Trakt</p><p class="s">Te abrimos Trakt con tu código ya escrito. Solo apruébalo y vuelve.</p>
+<div class="codebox" style="font-size:17px;opacity:.6">7F3K 9QP2<small>Por si te lo pide</small></div>
+<div class="acts"><div class="b p">Abrir Trakt</div><div class="b q">Ahora no</div></div></div>
+<p class="steps"><b>Pasos:</b> Safari se abre · entrar a Trakt · aprobar · volver a Orbital.</p>
+<ul><li>Gana: el mismo camino de hoy, sin copiar ni pegar; cambio pequeño.</li><li>Pierde: sigue el ir y venir a Safari. Hay que comprobar que Trakt acepte el código en el enlace; si no, se queda como hoy.</li></ul></div>
+
+<div class="opt rec"><h3><span class="code">TK-C3</span>Entras a Trakt sin salir de la app <span class="tag">RECOMENDADA</span></h3>
+<div class="pair">
+<div class="phone mini"><div class="top"><span></span></div><p class="h" style="font-size:13px">Sigue donde te quedaste…</p><div class="dim"></div>
+ <div class="sys"><b>«Orbital» quiere usar «trakt.tv» para iniciar sesión</b><span>Esto permite a la app y al sitio web compartir información sobre ti.</span><div class="sysb"><span>Cancelar</span><span><b>Continuar</b></span></div></div></div>
+<div class="phone mini" style="padding-bottom:0"><div class="top"><span></span></div><div class="dim" style="top:40px"></div>
+ <div class="web" style="position:relative;z-index:1"><div class="url"><span>Cancelar</span><span>🔒 trakt.tv</span><span></span></div>
+ <div class="f"><div class="in" style="height:20px"></div><div class="in" style="height:20px"></div><div class="btn">Sign in</div><div class="alt">…</div><div class="btn" style="background:#5f5f6b">Authorize</div></div></div>
+ <div class="fallback">¿No puedes entrar aquí? <u>Usa un código</u></div></div>
+</div>
+<p class="note2">La hoja de la derecha es de Trakt: su diseño y su idioma (a veces inglés) los pone Trakt, no nosotros.</p>
+<p class="steps"><b>Pasos:</b> «Continuar» en el aviso del iPhone · entrar a Trakt (si ya entraste en Safari, se salta) · autorizar · regresas solo.</p>
+<ul><li>Gana: sin código ni Safari; es como «Iniciar sesión con…» en cualquier app. Si ya entraste a Trakt en Safari, son dos toques.</li><li>Gana: si algo falla (cancelas, sin red, Trakt caído), abajo está «Usa un código», que es TK-C1. Nadie se queda atorado.</li><li>Pierde: hay que registrar Orbital una sola vez en Trakt (lo hago yo, con tu OK) y comprobar que Trakt lo permita; si no, nos quedamos con C2.</li><li>Pierde: la cuenta nueva se crea en esa hoja, pero Trakt puede pedir confirmar el correo antes de autorizar.</li><li>La TV sigue con código (ahí no hay teclado cómodo). Es una diferencia a propósito y la anoto en el registro de paridad.</li></ul>
+<div class="mv"><b>Cómo se movería:</b> la hoja sube como cualquier hoja del iPhone; al autorizar, baja sola y aparece el momento de «Conectado» (TK-L).</div></div>
+</div>
+
+<h2><span class="code">TK-L</span>Qué pasa al conectar</h2>
+<p class="m">Lo que sigue es «Trajimos lo tuyo», el mosaico con todo lo tuyo. Este momento no lo repite: solo te reconoce.</p>
+<div class="opts">
+<div class="opt"><h3><span class="code">TK-L1</span>Aviso y «Continuar»</h3>
+<div class="phone"><div class="top"><span>‹</span><span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></span><span></span></div>
+<p class="h">Sigue donde te quedaste, en cualquier aparato</p>
+<div class="toast">✓ Trakt conectado</div>
+<div class="acts"><div class="b p">Continuar</div></div></div>
+<ul><li>Gana: rápido y claro.</li><li>Pierde: no se siente que llegó algo tuyo.</li></ul></div>
+
+<div class="opt rec"><h3><span class="code">TK-L2</span>Te reconoce: tu nombre y tus números <span class="tag">RECOMENDADA</span></h3>
+<div class="phone"><div class="top"><span>‹</span><span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i></span><span></span></div>
+<div style="height:40px"></div>
+<div class="av">F</div><p class="h c">Listo, Fernando</p><p class="s c">Tu Trakt ya está conectado.</p>
+<div class="cnt"><div><b>312</b><span>vistas</span></div><div><b>48</b><span>en Mi lista</span></div><div><b>9</b><span>series que sigues</span></div></div>
+<div class="acts"><div class="b p">Continuar</div></div></div>
+<ul><li>Gana: el momento en que la app te reconoce; los números le dan peso a haber conectado. Hoy la app ya dice «Conectado como…» con vistas y lista; la foto y «series que sigues» son nuevas.</li><li>El nombre es el de tu perfil de Trakt (si no tiene, tu usuario; si tampoco, solo «Listo»). La foto, la de Trakt; si no hay, tu inicial.</li><li>Cuenta nueva: «Tu Trakt está listo. Lo que veas se guarda aquí», sin ceros.</li><li>Si los números tardan, sale «Listo» y se llenan cuando lleguen; «Continuar» se puede tocar desde el principio.</li><li>Pierde: un momento más en la guía.</li></ul>
+<div class="mv"><b>Cómo se movería:</b> la foto aparece con un resorte pequeño y los tres números cuentan de 0 a su valor a la vez (0.6 s). Nada más: los pósters se guardan para «Trajimos lo tuyo».</div></div>
+</div>
+
+<h2>Se queda igual</h2>
+<div class="keep">«Ahora no» siempre a la vista y sin castigo · el recordatorio «Conectar Trakt» en Inicio y en Ajustes · si tarda o falla, «Reintentar» con un mensaje claro · en iPad y Mac, lo mismo (nunca piden la TV) · el paso se traduce igual que la bienvenida (Español / English).</div>
+
+<h2>Lo que encontraron las revisiones y voy a corregir aparte</h2>
+<div class="keep">En Ultra, el prototipo da por hecho que Trakt llega conectado desde la TV, pero en la app cada aparato conecta su propio Trakt, y la pantalla «Conecta tu TV» marca «✓ Tu Trakt» aunque la TV no lo tenga. Lo ajusto en el prototipo para que diga la verdad. No cambia nada de lo que eliges aquí.</div>
+
+<p style="margin-top:22px"><b>Para dictar:</b> una de cada grupo, por ejemplo «TK-V2, TK-C3, TK-L2». Recomiendo <b>TK-V2, TK-C3 y TK-L2</b>. Cuando elijas, te traigo la alta fidelidad con su animación, como la de la bienvenida.</p>
+</main>
+</body></html>
