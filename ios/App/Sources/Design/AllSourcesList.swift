@@ -265,14 +265,14 @@ struct AllSourcesList: View {
                 }
             }
             switch SourceSpeed(source) {
-            case .inRealDebrid: Text("Ya está en la nube").recipe(.footnote, color: DS.text)
-            case .realDebridMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote)
+            case .inCloud: Text("Ya está en la nube").recipe(.footnote, color: DS.text)
+            case .cloudMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote)
             case .unknown: EmptyView()
             }
             if source.tags.contains(Streams.otherTitleTag) {
                 Text("¿Otro título? El nombre dice otro año: puede ser otra película.").recipe(.footnote)
             }
-            if let request, SourceSpeed(source) == .realDebridMustDownload {
+            if let request, SourceSpeed(source) == .cloudMustDownload {
                 if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
                     Button { request(source) } label: { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
                         .dsPrimaryButton().dsControlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
@@ -368,16 +368,16 @@ struct AllSourcesList: View {
 
     private func speedColor(_ source: Source) -> Color? {
         switch SourceSpeed(source) {
-        case .inRealDebrid: DS.AllSourcesList.ready
-        case .realDebridMustDownload: DS.AllSourcesList.mustDownload
+        case .inCloud: DS.AllSourcesList.ready
+        case .cloudMustDownload: DS.AllSourcesList.mustDownload
         case .unknown: nil
         }
     }
 
     private func speedText(_ source: Source) -> Text? {
         switch SourceSpeed(source) {
-        case .inRealDebrid: Text("en la nube")
-        case .realDebridMustDownload: Text("Todavía no está en la nube")
+        case .inCloud: Text("en la nube")
+        case .cloudMustDownload: Text("Todavía no está en la nube")
         case .unknown: nil
         }
     }

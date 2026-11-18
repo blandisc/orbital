@@ -63,7 +63,7 @@ final class VersionRowsTests: XCTestCase {
         let request = SourcesModel.toRequest(ranked, shown: rows.main + rows.more, prefs: prefs, limitGB: 5)
         XCTAssertEqual(request.map(\.option.id), [103, 104], "la inglesa de 720p ya es la chip de su fila: no se repite")
         XCTAssertEqual(request.map(\.code), ["es-419", "es-419"])
-        XCTAssertTrue(request.allSatisfy { $0.option.speed == .realDebridMustDownload })
+        XCTAssertTrue(request.allSatisfy { $0.option.speed == .cloudMustDownload })
         XCTAssertNotNil(ranked.first { $0.index == 103 }?.torrent, "se puede pedir esa misma")
     }
 }

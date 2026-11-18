@@ -1,16 +1,17 @@
 import SwiftUI
 import OrbitalModels
 
-/// Ajustes › Cuentas (maqueta 11): cada cuenta con su papel dicho en el título. Real-Debrid (de ahí salen los videos),
+/// Ajustes › Cuentas (maqueta 11): cada cuenta con su papel dicho en el título. Tu nube (Real-Debrid, TorBox o AllDebrid,
+/// DN1: de ahí salen los videos),
 /// Trakt · principal (lo tuyo entre aparatos) y Stremio · respaldo (la copia, el único lugar donde dice Stremio). Tu Orbital
 /// vive aparte, en Ajustes › Orbital en la TV.
 extension SettingsView {
-    /// Lo que dice el renglón «Cuentas»: cuánto le queda a tu Real-Debrid, o que falta.
+    /// Lo que dice el renglón «Cuentas»: cuánto le queda a tu nube, o que falta.
     var debridValue: Text {
-        guard let status = debrid.model.status else { return Text("Falta Real-Debrid") }
-        // IOS-17: «143 días» no dice de qué; «Real-Debrid · 143 días».
+        guard let status = debrid.model.status else { return Text("Falta tu nube") }
+        // IOS-17: «143 días» no dice de qué; «TorBox · 143 días».
         let value = DebridModel.summary(status, now: Date()).state == .free ? Text("Cuenta gratuita") : DebridWords.short(status)
-        return Text("\(Text(verbatim: "Real-Debrid")) · \(value)")
+        return Text("\(Text(verbatim: debrid.model.service.name)) · \(value)")
     }
 
     /// «N cosas no se pudieron guardar en Trakt» (revisión del 11 nov 2026): solo si hay algo; abre qué fue, cuándo y por qué.
@@ -69,17 +70,19 @@ extension SettingsView {
         return model.importedAt != nil ? Text("Tu archivo") : Text("No conectado")
     }
 
-    /// Real-Debrid: un renglón con cuánto le queda (ámbar desde 14 días antes) que lleva a su página (D1).
+    /// Tu nube: un renglón con cuál usas y cuánto le queda (ámbar desde 14 días antes) que lleva a su página (D1, DN1).
     @ViewBuilder private var debridSection: some View {
         let model = debrid.model
         Section {
-            PaneLink(Text(verbatim: "Real-Debrid")) { DebridAccountView(debrid: model) } label: {
-                SettingsRow(title: "Real-Debrid", symbol: "externaldrive.badge.checkmark",
+            PaneLink(Text("Tu nube")) { DebridAccountView(debrid: model) } label: {
+                SettingsRow(title: "Tu nube", symbol: "externaldrive.badge.checkmark",
                             tint: model.status.map(DebridAccountView.isWarning) == true ? DS.warning : DS.ListTint.calendar,
-                            value: model.status.map { DebridWords.short($0) } ?? Text("Falta tu clave"))
+                            value: model.hasToken
+                                ? Text("\(Text(verbatim: model.service.name)) · \(model.status.map { DebridWords.short($0) } ?? Text("Guardada"))")
+                                : Text("Elegir"))
             }
             .accessibilityIdentifier("settings-debrid")
-        } footer: { Text("De ahí salen los videos. Tu cuenta, tu clave y tus pedidos.") }
+        } footer: { Text("Real-Debrid, TorBox o AllDebrid: de ahí salen los videos. Tu cuenta, tu clave y tus pedidos.") }
         .listRowBackground(DS.surface)
         .task { await model.load(force: true) }
     }

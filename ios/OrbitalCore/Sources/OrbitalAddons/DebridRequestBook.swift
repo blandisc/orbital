@@ -133,15 +133,20 @@ public final class DebridRequestBook: @unchecked Sendable {
 public struct DebridRequestPull: Equatable, Sendable {
     public var version: Int
     public var account: String?
+    /// DN1 · la nube de la TV (`service` de la respuesta; sin decirlo, Real-Debrid): `account` es de esa.
+    public var service: DebridService = .realDebrid
     public var requests: [DebridRequest]
-    public init(version: Int = 1, account: String?, requests: [DebridRequest]) { self.version = version; self.account = account; self.requests = requests }
+    public init(version: Int = 1, account: String?, service: DebridService = .realDebrid, requests: [DebridRequest]) {
+        self.version = version; self.account = account; self.service = service; self.requests = requests
+    }
 
     /// Del cuerpo de la respuesta; cada entrada por separado (una mala se salta). nil si no tiene esa forma.
     public static func parse(_ data: Data) -> DebridRequestPull? {
         guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any], let rows = json["requests"] as? [Any] else { return nil }
         let account = (json["account"] as? String) ?? (json["account"] as? NSNumber)?.stringValue
         let list = (try? JSONSerialization.data(withJSONObject: rows)).map(DebridRequestBook.decodeEach) ?? []
-        return DebridRequestPull(version: (json["version"] as? NSNumber)?.intValue ?? 1, account: account?.isEmpty == false ? account : nil, requests: list)
+        return DebridRequestPull(version: (json["version"] as? NSNumber)?.intValue ?? 1, account: account?.isEmpty == false ? account : nil,
+                                 service: DebridService.read(json["service"] as? String), requests: list)
     }
 }
 

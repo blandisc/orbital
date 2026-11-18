@@ -24,7 +24,7 @@ extension PlayerScreen {
         }
         if let index = dockState.slowPick {
             // Cerrarla es «Mejor no»: sigue la que ves.
-            return ChoiceCard(title: Text("Real-Debrid aún no tiene esta versión"),   // edición: solo al elegir una por pedir (instantStreams)
+            return ChoiceCard(title: Text("Real-Debrid aún no tiene esta versión", cloud: env.services.debrid.service, locale: env.uiLocale),   // edición: solo al elegir una por pedir (instantStreams)
                               detail: Text("Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto."),
                               primary: ChoiceAction(id: "slow-pick-open", title: Text("Abrirla de todos modos"), symbol: DS.Symbol.cloud) {
                                   dockState.slowPick = nil

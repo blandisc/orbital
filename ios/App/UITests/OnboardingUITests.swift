@@ -81,14 +81,14 @@ class GuideUITestCase: XCTestCase {
         app.buttons["have-debrid"].tap(); app.buttons["have-trakt"].tap()
         next(); wait("Ve todo al instante, aquí")
         XCTAssertTrue(app.buttons["guide-skip"].exists, "«Cuando quiera ver algo» siempre deja seguir")
-        let byHand = app.buttons["debrid-by-hand"].firstMatch
-        XCTAssertTrue(byHand.waitForExistence(timeout: 10), "«Otra forma: escribirla»")
-        app.scrollViews.firstMatch.swipeUp()
-        byHand.tap(); c("04-clave-a-mano")
+        // DN1: «Conectar tu nube» abre la hoja «Tu nube»: primero cuál de las tres, nunca Real-Debrid solo.
+        next(); wait("Ya tengo cuenta"); c("04-tu-nube")
+        XCTAssertTrue(app.buttons["cloud-connect-torbox"].exists && app.buttons["cloud-connect-alldebrid"].exists, "las tres nubes")
+        app.buttons["cloud-connect-realdebrid"].tap(); c("04-clave-a-mano")
         enter(Self.badToken); wait("no reconoce"); c("05-clave-no-reconocida")
         enter(Self.shortToken); wait("incompleta")
         enter(Self.freeToken); wait("Tu cuenta es gratuita")
-        enter(Self.goodToken); wait("fernando · Premium"); c("06-clave-buena")
+        enter(Self.goodToken); wait("Real-Debrid · fernando", 15); c("06-clave-buena")   // conectada: la hoja se cierra sola
         next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")
         wait("Conectado como fernando", 20); c("08-trakt-conectado")
         next()
@@ -133,17 +133,21 @@ final class OnboardingUITests: GuideUITestCase {
         wait("Todo lo que quieres ver, en un solo lugar.")
     }
 
-    /// RC1 · Real-Debrid con código: sin copiar ni pegar, el código grande y, al aprobarlo, conectado solo.
+    /// RC1 · Real-Debrid con código (en la hoja «Tu nube», DN1): sin copiar ni pegar, el código grande y, al aprobarlo, conectado solo.
     func testRealDebridConnectsWithACode() {
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
         wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
         next(); wait("¿Qué te gusta?")
         next(); wait("¿Qué ya tienes?")
         next(); wait("Ve todo al instante, aquí")
-        next()   // «Conectar con un código»
+        next()   // «Conectar tu nube» (DN1): la hoja «Tu nube», Real-Debrid y «Conectar con un código»
+        app.buttons["cloud-connect-realdebrid"].firstMatch.waitForExistence(timeout: 10)
+        app.buttons["cloud-connect-realdebrid"].firstMatch.tap()
+        app.buttons["debrid-code-start"].firstMatch.waitForExistence(timeout: 10)
+        app.buttons["debrid-code-start"].firstMatch.tap()
         wait("Escribe este código en real-debrid.com/device")
         XCTAssertTrue(app.descendants(matching: .any)["debrid-code"].firstMatch.waitForExistence(timeout: 5))
-        wait("fernando · Premium", 20)
+        wait("Real-Debrid · fernando", 20)
         XCTAssertTrue(nextButton().isEnabled, "conectada: «Seguir»")
     }
 }

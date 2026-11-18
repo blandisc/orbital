@@ -58,6 +58,8 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     public var files: [String: Int]
     /// El id de usuario de Real-Debrid de quien lo pidió (nunca la clave). nil = de la misma cuenta (lo de antes).
     public var account: String?
+    /// DN1 · la nube donde se pidió («torbox», «alldebrid»); nil = Real-Debrid (lo de antes del 18 nov).
+    public var service: DebridService?
     /// Su id en esa cuenta (nil si lo pidió Torrentio al abrirlo y todavía no se encuentra).
     public var rdID: String?
     public var title: String
@@ -118,13 +120,19 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
 
     /// Es de otra cuenta de Real-Debrid (las dos se saben y no son la misma): se enseña, pero no se sigue, no se cancela y
     /// no sale como versión (ese enlace no existe en tu cuenta).
+    /// `mine` es quién eres (`DebridOwner`): tu nube y tu cuenta. Lo de otra nube siempre es de otro (se cancela desde esa).
     public func isOther(account mine: String?) -> Bool {
-        guard let account, !account.isEmpty, let mine, !mine.isEmpty else { return false }
-        return account != mine
+        let me = DebridOwner.split(mine)
+        if (service ?? .realDebrid) != me.service { return true }
+        guard let account, !account.isEmpty, let id = me.account else { return false }
+        return account != id
     }
 
+    /// La nube donde se pidió (sin decirlo, Real-Debrid).
+    public var cloud: DebridService { service ?? .realDebrid }
+
     enum CodingKeys: String, CodingKey {
-        case hash, files, account, legacyFileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season,
+        case hash, files, account, service, legacyFileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season,
              episode, language, release, device = "by", createdAt = "since", updatedAt = "updated", rdStatus = "rd_status", percent, seeders,
              state, progressAt = "progress_at", notified, nudged, pack = "all_files", legacyPack = "pack", pending, retried
     }
@@ -140,6 +148,13 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         rdID = (try? c.decodeIfPresent(String.self, forKey: .rdID)).flatMap { $0.isEmpty ? nil : $0 }
         account = (try? c.decodeIfPresent(String.self, forKey: .account)) ?? nil
         if account == nil, let number = try? c.decodeIfPresent(Int.self, forKey: .account) { account = String(number) }
+        // Sin «service», Real-Debrid; uno que no es de las tres no se anota (la TV contesta 422).
+        if let raw = try? c.decodeIfPresent(String.self, forKey: .service), !raw.isEmpty {
+            guard let known = DebridService(rawValue: raw.lowercased()) else {
+                throw DecodingError.dataCorruptedError(forKey: .service, in: c, debugDescription: "nube desconocida")
+            }
+            service = known == .realDebrid ? nil : known
+        }
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
         kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "movie"
         metaID = try c.decodeIfPresent(String.self, forKey: .metaID) ?? ""
@@ -172,6 +187,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         let videos = local ? videoIDs : Array(videoIDs.prefix(Self.maxVideos))
         try c.encode(hash, forKey: .hash)
         try c.encode(account, forKey: .account)
+        try c.encodeIfPresent(service?.rawValue, forKey: .service)
         try c.encode(rdID, forKey: .rdID)
         try c.encode(local ? title : String(title.prefix(Self.maxTitle)), forKey: .title)
         try c.encode(kind, forKey: .kind)
@@ -275,6 +291,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
             out.state = incoming.state.precedence > stored.state.precedence ? incoming.state : stored.state
             out.rdID = stored.rdID ?? incoming.rdID
             out.account = stored.account ?? incoming.account
+            out.service = stored.service ?? incoming.service   // el «service» que ya tenía se queda
             if out.title.isEmpty { out.title = incoming.title }
             if out.device.isEmpty { out.device = incoming.device }
             if out.metaID.isEmpty { out.metaID = incoming.metaID; out.kind = incoming.kind }

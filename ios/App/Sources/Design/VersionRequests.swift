@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// T8-A · «Hay que pedirlas · tardan» (Fernando, 3 nov, probando la 1729: «no encuentro nada que no esté al instante»): las
 /// versiones que Real-Debrid aún no tiene, después de las que arrancan al instante. Antes la de al instante tapaba a las demás
@@ -96,10 +97,12 @@ struct VersionYoursAside: View {
 struct VersionYoursRefused: View {
     /// «🇲🇽 latino», ya con su bandera.
     let language: Text
+    /// Tu nube («Hay latino, pero TorBox no lo dejó bajar»).
+    var service: DebridService = .realDebrid
 
     var body: some View {
         IconBeside(symbol: DebridRequestWords.Icon.refused, color: DS.warning) {
-            Text("Hay \(language), pero Real-Debrid no lo dejó bajar").recipe(.labelLarge, color: DS.text).fixedSize(horizontal: false, vertical: true)   // edición: un rechazo solo existe con pedidos a la nube (Real-Debrid)
+            (service == .realDebrid ? Text("Hay \(language), pero Real-Debrid no lo dejó bajar") : Text("Hay \(language), pero \(service.name) no lo dejó bajar")).recipe(.labelLarge, color: DS.text).fixedSize(horizontal: false, vertical: true)   // edición: un rechazo solo existe con pedidos a la nube (Real-Debrid)
             Text("Prueba otra versión").recipe(.caption)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

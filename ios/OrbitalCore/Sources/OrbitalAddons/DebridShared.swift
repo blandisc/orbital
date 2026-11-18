@@ -74,6 +74,7 @@ extension DebridAccount {
 
     /// Al abrir la app, al volver a ella y al abrir tu cuenta (TEC-6: lo de iCloud puede llegar en cualquier momento).
     public func checkShared() async -> SharedDebrid {
+        guard service == .realDebrid else { return .none }   // la copia compartida es solo de Real-Debrid (DN1)
         let local = vaultRef.secret(AddonKeys.realDebridToken) ?? ""
         guard let shared = sharedKey else {
             // Lo de antes de CX2-A (migración): la clave de este aparato se queda y, además, se deja la copia compartida.

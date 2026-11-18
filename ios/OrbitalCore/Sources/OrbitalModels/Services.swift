@@ -243,7 +243,8 @@ public final class Services: ObservableModel {
         let vault = AppAddonVault(secrets: secrets, kv: kv)
         let addonList = AddonList(vault: vault)
         self.addonList = addonList
-        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, platform: platform,
+        let clouds = DebridClients.live(fetch: RealDebrid.fetch(http), clock: clock)   // DN1: Real-Debrid, TorBox o AllDebrid
+        self.debrid = DebridAccount(providers: clouds.providers, vault: vault, platform: platform,
                                     deviceName: { kv.data(Services.deviceNameKey).flatMap { String(data: $0, encoding: .utf8) } }, clock: clock)
         self.debridReminders = DebridReminderBook(vault: vault)
         let deviceName = deviceName ?? device?.name ?? "iPhone"
@@ -285,9 +286,10 @@ public final class Services: ObservableModel {
             kv.data(Services.deviceNameKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { $0.isEmpty ? nil : $0 } ?? systemName
         }
         // Se junta con la libreta de tu Orbital (corte S2 de la TV, contrato «requests») si la tienes conectada.
-        let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: RealDebridTorrents(http: http),
-                                        token: { vault.secret(AddonKeys.realDebridToken) }, device: requestsBy,
-                                        account: { await debrid.accountID() }, knownAccount: debrid.saved?.userID, clock: clock,
+        let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: ActiveDebridTorrents(vault: vault, clients: clouds),
+                                        token: { vault.debridToken() }, device: requestsBy,
+                                        account: { await debrid.owner() }, knownAccount: debrid.savedOwner,
+                                        currentOwner: { debrid.savedOwner ?? DebridOwner.make(debrid.service, account: nil) }, clock: clock,
                                         sync: OrbitalRemoteDebridRequestSync(remote: makeOrbital))
         // K1: con llave, `enabled[<id de este aparato>]`; sin ella, `enabled[<plataforma>]` (lo de antes).
         self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: makeOrbital),
@@ -331,7 +333,8 @@ public final class Services: ObservableModel {
                                         listedOnly: !asked || (r.coversWholeTorrent && r.files[videoID] == nil))
                 }
             }, link: { hash, videoID in await requester.streamLink(hash: hash, videoID: videoID) },
-               refused: { metaID in requester.refused(metaID: metaID) })
+               refused: { metaID in requester.refused(metaID: metaID) },
+               cloud: { vault.debridService })   // DN1: lo pedido y listo dice «[TB+] TorBox» con TorBox
         }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
@@ -482,7 +485,7 @@ public final class Services: ObservableModel {
         guard await debrid.renewIfNeeded() else { return }
         await resetAccountCaches()
         if kv.data(Self.tvFollowsDebridKey) != nil, canShareKeysWithTV, let key = addonList.debridToken {
-            _ = try? await orbital.putRealDebrid(token: key)
+            _ = try? await orbital.putRealDebrid(token: key, service: debrid.service)
         }
     }
     public static let tvFollowsDebridKey = "debrid-tv-follows-code"

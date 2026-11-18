@@ -28,11 +28,13 @@ public struct RDTorrent: Equatable, Sendable {
 
     /// El enlace del archivo `fileIdx` (el de Torrentio, desde 0) entre lo bajado; sin saber cuál, el del video más grande.
     /// nil si no está bajado o ese archivo no se eligió.
-    public func link(fileIdx: Int?) -> String? {
+    /// Con `episode` (TorBox y AllDebrid, DN1), primero el archivo que dice «S01E03» en su nombre (`DebridFilePick`).
+    public func link(fileIdx: Int?, episode: (season: Int, episode: Int)? = nil) -> String? {
         let chosen = files.filter(\.selected).sorted { $0.id < $1.id }
         guard !links.isEmpty else { return nil }
         guard !chosen.isEmpty, chosen.count == links.count else { return links.count == 1 ? links[0] : nil }
-        let target = fileIdx.map { $0 + 1 } ?? chosen.filter(\.isVideo).max { $0.bytes < $1.bytes }?.id
+        let target = episode.flatMap { DebridFilePick.pick(chosen, fileIdx: fileIdx, season: $0.season, episode: $0.episode)?.id }
+            ?? fileIdx.map { $0 + 1 } ?? chosen.filter(\.isVideo).max { $0.bytes < $1.bytes }?.id
         guard let target, let at = chosen.firstIndex(where: { $0.id == target }) else { return nil }
         return links[at]
     }

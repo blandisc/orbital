@@ -69,7 +69,7 @@ final class LatinoRuletaTests: XCTestCase {
         let keyless = sources(Self.keylessStreams, addon: "Torrentio")
         let pick = try XCTUnwrap(PlayerModel.yoursFromLookup(keyless, choices: sources(Self.cometStreams), prefs: latino, limitGB: 5))
         XCTAssertEqual(pick.version.code, "es-419")
-        XCTAssertEqual(pick.version.option.speed, .realDebridMustDownload)
+        XCTAssertEqual(pick.version.option.speed, .cloudMustDownload)
         XCTAssertNotEqual(pick.source.torrent?.hash, String(repeating: "4", count: 40))
         let known = Set(keyless.filter { SourcesModel.speaksYours($0, prefs: latino) }.compactMap { $0.torrent?.hash })
         XCTAssertNil(PlayerModel.yoursFromLookup(keyless, choices: sources(Self.cometStreams), prefs: latino, limitGB: 5, refused: known),

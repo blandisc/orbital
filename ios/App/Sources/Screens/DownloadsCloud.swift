@@ -88,7 +88,11 @@ struct DownloadsCloudPart: View {
         .contextMenu {
             Button("Abrir la ficha", systemImage: "info.circle") { CloudWords(env).open(request) }
             if !other {
-                Button(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? DebridRequestWords.Icon.remove : DebridRequestWords.Icon.cancel, role: .destructive) { sheets.cancelling = request }
+                Button(role: .destructive) { sheets.cancelling = request } label: {
+                    Label { finished ? Text("Quitar de tu Real-Debrid", cloud: request.cloud, locale: env.uiLocale) : Text("Cancelar pedido") } icon: {
+                        Image(systemName: finished ? DebridRequestWords.Icon.remove : DebridRequestWords.Icon.cancel)
+                    }
+                }
             }
         }
         .accessibilityIdentifier("debrid-request-\(request.hash.prefix(8))")
@@ -136,14 +140,15 @@ struct CloudSheetsHost: ViewModifier {
                 }
                 #endif
             }
-            .sheet(isPresented: $sheets.explaining) { DebridExplainer() }
+            .sheet(isPresented: $sheets.explaining) { DebridExplainer(service: env.services.debrid.service) }
             .sheet(item: $sheets.opened) { which in
                 if let request = model.requests.first(where: { $0.hash == which.id }) { sheet(request, model) }
             }
             // IOS-7: la misma pregunta que la hoja; lo terminado se quita («¿Quitarlo de tu Real-Debrid?»), no se cancela.
             .debridCancelConfirmation(isPresented: Binding(get: { sheets.cancelling != nil }, set: { if !$0 { sheets.cancelling = nil } }),
                                       name: sheets.cancelling.map(CloudWords(env).name) ?? "",
-                                      finished: sheets.cancelling.map { DebridRequestWords.group($0.state) == .finished } ?? false) {
+                                      finished: sheets.cancelling.map { DebridRequestWords.group($0.state) == .finished } ?? false,
+                                      service: sheets.cancelling?.cloud ?? env.services.debrid.service, locale: env.uiLocale) {
                 if let request = sheets.cancelling { CloudWords(env).cancel(request) }
             }
     }
@@ -185,7 +190,7 @@ struct CloudSheetsHost: ViewModifier {
     }
 
     func cancel(_ request: DebridRequest) {
-        let env = env, message = tr("No pude hablar con Real-Debrid")
+        let env = env, message = request.cloud.spoken(tr("No pude hablar con Real-Debrid"))
         Task { if await !env.services.debridRequests.cancel(request) { env.notify(message, tone: .warn) } }
     }
 

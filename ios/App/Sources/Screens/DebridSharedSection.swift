@@ -35,10 +35,10 @@ struct DebridSharedPrompt: View {
     /// que este aparato («Tu iPad cambió…» leído en un iPad parecía hablar de sí mismo).
     private func changedTitle(_ from: String) -> Text {
         if let device = DebridModel.deviceWord(from) {
-            return from == env.services.platform ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple")
-                                                 : Text("Tu \(device) cambió la clave de Real-Debrid")
+            return from == env.services.platform ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple")   // solo Real-Debrid: la copia de tus aparatos Apple
+                                                 : Text("Tu \(device) cambió la clave de Real-Debrid")   // solo Real-Debrid
         }
-        return from.isEmpty ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple") : Text("\(from) cambió la clave de Real-Debrid")
+        return from.isEmpty ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple") : Text("\(from) cambió la clave de Real-Debrid")   // solo Real-Debrid
     }
 
     /// Se compara la cuenta, no las letras: «La nueva es de la cuenta ana · la de este iPhone, de fer».

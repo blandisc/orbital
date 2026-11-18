@@ -100,11 +100,11 @@ extension DebridAccount {
     /// Aprobaste el código: se cambia por la llave, se comprueba con Real-Debrid y se guarda como si la hubieras pegado (los
     /// recomendados se arman con ella). No se comparte con tus otros aparatos Apple: vence y cada uno conecta el suyo.
     public func connect(code: DebridDeviceCode, clientID: String, clientSecret: String) async throws -> DebridStatus {
-        guard let rd = provider as? RealDebrid else { throw DebridError.unexpected }
+        guard let rd = providers(.realDebrid) as? RealDebrid else { throw DebridError.unexpected }   // el código es solo de Real-Debrid
         let token = try await rd.token(clientID: clientID, clientSecret: clientSecret, code: code.deviceCode)
         let status = try await rd.status(token: token.access)
         guard status.isPremium else { return status }
-        guard save(token: token.access, status: status, share: false) else { throw DebridError.unexpected }
+        guard save(token: token.access, status: status, share: false, service: .realDebrid) else { throw DebridError.unexpected }
         storeOAuth(DebridOAuth(clientID: clientID, clientSecret: clientSecret, refreshToken: token.refresh,
                                expiresAt: now().addingTimeInterval(token.expiresIn)))
         return status
@@ -113,7 +113,7 @@ extension DebridAccount {
     /// Si la llave está por vencer (o ya venció), pide otra. true si la cambió (hay que poner al día lo que la usa).
     @discardableResult
     public func renewIfNeeded() async -> Bool {
-        guard let session = oauth, let rd = provider as? RealDebrid, session.expiresAt.timeIntervalSince(now()) < Self.renewBefore else { return false }
+        guard let session = oauth, let rd = providers(.realDebrid) as? RealDebrid, session.expiresAt.timeIntervalSince(now()) < Self.renewBefore else { return false }
         guard let fresh = try? await rd.token(clientID: session.clientID, clientSecret: session.clientSecret, code: session.refreshToken) else { return false }
         guard vaultRef.storeSecret(AddonKeys.realDebridToken, fresh.access) else { return false }
         storeOAuth(DebridOAuth(clientID: session.clientID, clientSecret: session.clientSecret, refreshToken: fresh.refresh,

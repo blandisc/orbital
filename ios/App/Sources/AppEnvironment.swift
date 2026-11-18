@@ -117,8 +117,8 @@ final class AppEnvironment {
                 perform: @escaping () -> Void) {
         let language = services.appSettings.uiLanguage
         let serial = notices.register(perform)
-        notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: .perform(serial),
-                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
+        notices.show(Notice(text: say(text, language), tone: tone, action: .perform(serial),
+                            detail: detail.map { say($0, language) }, actionTitle: Strings.tr(actionTitle, language: language),
                             actionSymbol: actionSymbol))
     }
 
@@ -126,8 +126,8 @@ final class AppEnvironment {
     func notify(_ text: String, detail: String? = nil, tone: NoticeTone = .success, actionTitle: String, actionSymbol: String? = nil,
                 perform: @escaping () -> Void, secondTitle: String, secondSymbol: String, second: @escaping () -> Void) {
         let language = services.appSettings.uiLanguage
-        var notice = Notice(text: Strings.message(text, language: language), tone: tone, action: .perform(notices.register(perform)),
-                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
+        var notice = Notice(text: say(text, language), tone: tone, action: .perform(notices.register(perform)),
+                            detail: detail.map { say($0, language) }, actionTitle: Strings.tr(actionTitle, language: language),
                             actionSymbol: actionSymbol)
         notice.second = notices.register(second)
         notice.secondTitle = Strings.tr(secondTitle, language: language)
@@ -175,17 +175,21 @@ final class AppEnvironment {
     /// `failure`: la causa, si es un error (F10: los de red, Trakt, Real-Debrid y descargas se traducen por su clave).
     func notify(_ text: String, detail: String? = nil, failure: Error? = nil, tone: NoticeTone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
         let language = services.appSettings.uiLanguage
-        notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: action,
-                            detail: detail.map { Strings.message($0, language: language) } ?? failure.map { Strings.message($0, language: language) },
+        notices.show(Notice(text: say(text, language), tone: tone, action: action,
+                            detail: detail.map { say($0, language) } ?? failure.map { spoken(Strings.message($0, language: language)) },
                             actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
     }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
-    func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
+    func message(_ text: String) -> String { say(text, services.appSettings.uiLanguage) }
+    /// Un texto ya traducido dicho con tu nube: lo que se escribió con «Real-Debrid» (o «real-debrid.com») dice «TorBox» o
+    /// «alldebrid.com» (`design/debrid-services.json › words`). La clave del catálogo y su inglés siguen siendo los de siempre.
+    func spoken(_ text: String) -> String { services.debrid.service.spoken(text) }
+    private func say(_ text: String, _ language: String) -> String { spoken(Strings.message(text, language: language)) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
     func notify(format key: String, _ args: CVarArg..., detail: String? = nil, failure: Error? = nil, tone: NoticeTone = .info, action: BannerAction? = nil) {
         let language = services.appSettings.uiLanguage
         notices.show(Notice(text: String(format: Strings.tr(key, language: language), arguments: args), tone: tone, action: action,
-                            detail: detail.map { Strings.message($0, language: language) } ?? failure.map { Strings.message($0, language: language) }))
+                            detail: detail.map { say($0, language) } ?? failure.map { spoken(Strings.message($0, language: language)) }))
     }
 
     /// Lo que bajaste de ese video, sin red (si ya no está, a Descargas).
@@ -199,7 +203,7 @@ final class AppEnvironment {
     /// Lo que pasó al pedir una descarga, dicho igual en toda la app (la ficha, Para ti, Mi media y lo que manda la TV).
     /// `.queued` lo dice quien la pidió (cada uno a su manera: el anillo, «Bajando la recomendada»).
     /// Sin archivo para bajar: «Real-Debrid no tiene…» solo donde hay Real-Debrid (Ultra y Plus); en Orbital, sin nombrarlo
-    /// (revisión 2, D1-B: la versión de la App Store nunca dice «Real-Debrid»).
+    /// (revisión 2, D1-B: la versión de la App Store nunca dice «Real-Debrid»). Es la clave: `notify` la dice con tu nube.
     var noFileWords: String {
         services.capabilities.instantStreams ? "Real-Debrid no tiene un archivo de este título" : "No encontré un archivo de este título"   // edición: el primero solo con instantStreams
     }

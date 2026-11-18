@@ -75,18 +75,20 @@ public enum DebridError: Error, Equatable, Sendable, CustomStringConvertible {
     case unexpected
     /// D4: no te alcanzan los puntos para un canje.
     case notEnoughPoints
-    public var description: String {
+    public var description: String { text(.realDebrid) }
+    /// DN1 · dicho con el nombre y la página de tu nube.
+    public func text(_ service: DebridService) -> String {
         switch self {
         case .notEnoughPoints: "Todavía no te alcanzan los puntos para canjear."
-        case .malformedToken: "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken."
-        case .invalidToken: "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken."
-        case .network: "No pude hablar con Real-Debrid. Revisa tu conexión."
-        case .unexpected: "Real-Debrid contestó algo raro. Intenta otra vez."
+        case .malformedToken: "La clave está incompleta. Cópiala completa de \(service.keyPlace)."
+        case .invalidToken: "\(service.name) no reconoce esa clave. Revisa que sea la de \(service.keyPlace)."
+        case .network: "No pude hablar con \(service.name). Revisa tu conexión."
+        case .unexpected: "\(service.name) contestó algo raro. Intenta otra vez."
         }
     }
 }
 
-/// Un servicio de descarga (Real-Debrid hoy; AllDebrid, Premiumize o TorBox caben después sin tocar lo demás).
+/// Una nube (`DebridService`): Real-Debrid, TorBox o AllDebrid (DN1).
 public protocol DebridProvider: Sendable {
     var name: String { get }
     /// Dónde se renueva.
@@ -165,7 +167,11 @@ public struct RealDebrid: DebridProvider {
 /// Nada se bloquea si no se puede leer el estado: la clave sigue en las URLs de tus complementos.
 public actor DebridAccount {
     public static let statusTTL: TimeInterval = 24 * 3600
-    public nonisolated let provider: DebridProvider
+    /// DN1 · cada nube con su cuenta; `provider` es la de la nube que usas (la del llavero).
+    public nonisolated let providers: @Sendable (DebridService) -> DebridProvider
+    public nonisolated var provider: DebridProvider { providers(service) }
+    /// La nube que usas (Ajustes › Cuentas › Tu nube).
+    public nonisolated var service: DebridService { vault.debridService }
     private let vault: AddonVault
     private let clock: @Sendable () -> Date
 
@@ -178,20 +184,42 @@ public actor DebridAccount {
 
     public init(provider: DebridProvider, vault: AddonVault, platform: String = "iphone", deviceName: @escaping @Sendable () -> String? = { nil },
                 clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.provider = provider; self.vault = vault; self.vaultRef = vault; self.platform = platform; self.clock = clock
+        self.init(providers: { _ in provider }, vault: vault, platform: platform, deviceName: deviceName, clock: clock)
+    }
+
+    public init(providers: @escaping @Sendable (DebridService) -> DebridProvider, vault: AddonVault, platform: String = "iphone",
+                deviceName: @escaping @Sendable () -> String? = { nil }, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.providers = providers; self.vault = vault; self.vaultRef = vault; self.platform = platform; self.clock = clock
         self.deviceName = deviceName
     }
 
-    public nonisolated var hasToken: Bool { !(vault.secret(AddonKeys.realDebridToken) ?? "").isEmpty }
+    public nonisolated var hasToken: Bool { vault.debridToken() != nil }
+    /// Si esa nube tiene su clave guardada («Clave guardada» o «Sin clave» en «Tu nube»).
+    public nonisolated func hasKey(_ service: DebridService) -> Bool { vault.debridToken(service) != nil }
+    /// Quién eres en la libreta de pedidos: tu nube y tu cuenta (`DebridOwner`).
+    public nonisolated var savedOwner: String? {
+        service == .realDebrid ? saved?.userID : DebridOwner.make(service, account: saved?.userID)
+    }
+    public func owner() async -> String? {
+        let id = await accountID()
+        return service == .realDebrid ? id : DebridOwner.make(service, account: id)
+    }
+
+    /// «Tu nube» · cambia la que usas. Su clave (si ya la tenía) se queda; lo guardado de las otras, también.
+    public func use(_ service: DebridService) {
+        guard service != self.service else { return }
+        vault.setDebridService(service)
+        lastTrouble = nil
+    }
 
     /// Lo último que se supo (sin preguntar).
     public nonisolated var saved: DebridStatus? {
-        vault.data(AddonKeys.debridStatus).flatMap { try? Self.decoder.decode(DebridStatus.self, from: $0) }
+        vault.data(service.statusStore).flatMap { try? Self.decoder.decode(DebridStatus.self, from: $0) }
     }
 
     /// El estado: el guardado si es de hoy; si no (o con `force`), se le pregunta al servicio. Sin respuesta, el guardado.
     public func status(force: Bool = false) async -> DebridStatus? {
-        guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty else { return nil }
+        guard let token = vault.debridToken() else { return nil }
         if !force, let saved, clock().timeIntervalSince(saved.checkedAt) < Self.statusTTL { return saved }
         guard let fresh = try? await provider.status(token: token) else { return saved }
         remember(fresh)
@@ -218,7 +246,7 @@ public actor DebridAccount {
     /// P6-A · al abrir tu cuenta: se le pregunta ya a Real-Debrid si tu clave sirve (lo que dice la pantalla es verdad al
     /// abrirla). Sin esperar a nadie ni recordar la respuesta.
     public func checkNow() async -> DebridHealth {
-        guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty else { return .noKey }
+        guard let token = vault.debridToken() else { return .noKey }
         do {
             let fresh = try await provider.status(token: token)
             remember(fresh)
@@ -231,25 +259,41 @@ public actor DebridAccount {
     }
 
     /// La demostración (`-demo-rd revoked`): una cuenta que ya se había confirmado antes.
-    public nonisolated func rememberForDemo(_ status: DebridStatus) { vault.setData(AddonKeys.debridStatus, try? Self.encoder.encode(status)) }
+    public nonisolated func rememberForDemo(_ status: DebridStatus) { vault.setData(service.statusStore, try? Self.encoder.encode(status)) }
     public static let troubleEvery: TimeInterval = 5 * 60
     private var lastTrouble: (at: Date, health: DebridHealth)?
 
-    /// Si no tienes clave en la app pero tu Torrentio importado de Stremio la trae en su URL (`realdebrid=…`), se toma de
-    /// ahí (como la TV, AD-2): se comprueba con Real-Debrid, se guarda en el llavero y se anota de dónde salió. Devuelve
-    /// true si la tomó.
+    /// Si no tienes clave en la app pero tu Torrentio importado de Stremio la trae en su URL (`realdebrid=…`, `torbox=…` o
+    /// `alldebrid=…`, punto 1 del 18 nov), se toma de ahí (como la TV, AD-2): se comprueba con su nube, se guarda en el
+    /// llavero para esa nube, esa queda como la tuya y se anota de dónde salió. Devuelve true si la tomó.
     @discardableResult
     public func adoptKey(fromAddonURLs urls: [String]) async -> Bool {
         guard !hasToken, keySource != Self.removedByYou else { return false }
-        let candidates = urls.flatMap(Self.realDebridKeys(in:))
-        for key in Array(Set(candidates)).sorted() where RealDebrid.looksLikeToken(key) {
-            guard let status = try? await provider.status(token: key) else { continue }
-            vault.setSecret(AddonKeys.realDebridToken, key)
+        var seen = Set<String>()
+        let candidates = urls.flatMap(Self.cloudKeys(in:)).filter { seen.insert($0.service.rawValue + $0.key).inserted }
+        // La que ya usas primero; luego en el orden de «Tu nube».
+        let ordered = candidates.sorted { a, b in
+            let rank = { (s: DebridService) in s == self.service ? -1 : DebridService.allCases.firstIndex(of: s) ?? 9 }
+            return rank(a.service) != rank(b.service) ? rank(a.service) < rank(b.service) : a.key < b.key
+        }
+        for (cloud, key) in ordered where cloud.looksLikeKey(key) {
+            guard let status = try? await providers(cloud).status(token: key) else { continue }
+            vault.setSecret(cloud.keyStore, key)
+            vault.setDebridService(cloud)
             vault.setData(AddonKeys.debridKeySource, Data(Self.fromImportedTorrentio.utf8))
             remember(status)
             return true
         }
         return false
+    }
+
+    /// Las claves de las tres nubes que trae una dirección con la forma de Torrentio (`…|torbox=CLAVE|…`).
+    static func cloudKeys(in url: String) -> [(service: DebridService, key: String)] {
+        guard let regex = try? NSRegularExpression(pattern: "(?i)(realdebrid|torbox|alldebrid)=([A-Za-z0-9-]+)") else { return [] }
+        return regex.matches(in: url, range: NSRange(url.startIndex..., in: url)).compactMap { m in
+            guard let s = Range(m.range(at: 1), in: url), let k = Range(m.range(at: 2), in: url) else { return nil }
+            return (DebridService.read(String(url[s])), String(url[k]))
+        }
     }
     public static let fromImportedTorrentio = "imported-torrentio"
     static let removedByYou = "removed"
@@ -266,32 +310,36 @@ public actor DebridAccount {
 
     /// Lo que se enseña de tu clave (D1): sus últimas 4 letras («3F2A»); nunca completa. nil sin clave.
     public nonisolated var keyTail: String? {
-        guard let token = vault.secret(AddonKeys.realDebridToken), token.count >= 4 else { return nil }
+        guard let token = vault.debridToken(), token.count >= 4 else { return nil }
         return String(token.suffix(4)).uppercased()
     }
 
     /// D4: canjea tus puntos por días de Premium y vuelve a leer tu cuenta. Solo Real-Debrid lo tiene.
     public func redeemPoints() async throws -> DebridStatus? {
-        guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty, let rd = provider as? RealDebrid else { throw DebridError.unexpected }
+        guard service == .realDebrid, let token = vault.debridToken(), let rd = provider as? RealDebrid else { throw DebridError.unexpected }
         try await rd.convertPoints(token: token)
         return await status(force: true)
     }
 
     /// Comprueba una clave sin guardarla (la guía y «Cambiar clave»): el estado, o por qué no sirve.
-    public func verify(_ token: String) async throws -> DebridStatus {
-        try await provider.status(token: token.trimmingCharacters(in: .whitespacesAndNewlines))
+    public func verify(_ token: String, service cloud: DebridService? = nil) async throws -> DebridStatus {
+        try await providers(cloud ?? service).status(token: token.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     /// Guarda una clave ya comprobada (y su estado) en este aparato y deja la copia para tus aparatos Apple (CX2-A). Los
     /// recomendados se rearman solos con ella. false si el llavero no la aceptó: entonces nada cambia (TEC-5).
     @discardableResult
-    public func save(token: String, status: DebridStatus, share: Bool = true) -> Bool {
+    /// `service` (DN1): la clave es de esa nube y esa queda como la tuya; sin decirlo, la que usas.
+    public func save(token: String, status: DebridStatus, share: Bool = true, service cloud: DebridService? = nil) -> Bool {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard vault.storeSecret(AddonKeys.realDebridToken, clean) else { return false }
+        let cloud = cloud ?? service
+        guard vault.storeSecret(cloud.keyStore, clean) else { return false }
+        vault.setDebridService(cloud)
         vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
-        vault.setSecret(AddonKeys.realDebridOAuth, nil)  // una pegada no se renueva (la de código vuelve a anotar su conexión)
         lastTrouble = nil
         remember(status)
+        guard cloud == .realDebrid else { return true }   // la copia para tus aparatos Apple y la conexión con código: solo Real-Debrid
+        vault.setSecret(AddonKeys.realDebridOAuth, nil)  // una pegada no se renueva (la de código vuelve a anotar su conexión)
         if share { publishShared(clean) }
         markSharedSeen(clean)
         return true
@@ -300,11 +348,13 @@ public actor DebridAccount {
     /// «Quitar»: se olvida la clave, su estado y los avisos. `everywhere` (CX3-A, «De todos tus aparatos Apple»): también la
     /// copia compartida, y tus otros aparatos que usaban esa misma clave la quitan al abrir Orbital.
     public func remove(everywhere: Bool = false) {
-        let old = vault.secret(AddonKeys.realDebridToken) ?? ""
-        if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
-        vault.setSecret(AddonKeys.realDebridToken, nil)
-        vault.setSecret(AddonKeys.realDebridOAuth, nil)
-        vault.setData(AddonKeys.debridStatus, nil)
+        if service == .realDebrid {
+            let old = vault.secret(AddonKeys.realDebridToken) ?? ""
+            if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
+            vault.setSecret(AddonKeys.realDebridOAuth, nil)
+        }
+        vault.setSecret(service.keyStore, nil)
+        vault.setData(service.statusStore, nil)
         vault.setData(AddonKeys.reminders, nil)
         // La quitaste tú: no se vuelve a tomar sola de tu Torrentio importado.
         vault.setData(AddonKeys.debridKeySource, Data(Self.removedByYou.utf8))
@@ -313,7 +363,10 @@ public actor DebridAccount {
 
     func now() -> Date { clock() }
 
-    private func remember(_ status: DebridStatus) { vault.setData(AddonKeys.debridStatus, try? Self.encoder.encode(status)) }
+    private func remember(_ status: DebridStatus) {
+        let cloud = DebridService.allCases.first { $0.name == status.service } ?? service
+        vault.setData(cloud.statusStore, try? Self.encoder.encode(status))
+    }
 
     static let encoder: JSONEncoder = { let e = JSONEncoder(); e.dateEncodingStrategy = .secondsSince1970; return e }()
     static let decoder: JSONDecoder = { let d = JSONDecoder(); d.dateDecodingStrategy = .secondsSince1970; return d }()

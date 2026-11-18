@@ -64,7 +64,7 @@ struct TorrentioSettings: View {
                 Section {
                     TorrentioProbeRow(probe: model.probe, sample: TorrentioProbe.sample.name) { fix in model.apply(fix) }
                 } footer: {
-                    if !model.hasKey { Text("Sin tu clave de Real-Debrid no se sabe cuáles arrancan al instante.") }
+                    if !model.hasKey { Text("Sin tu clave de Real-Debrid no se sabe cuáles arrancan al instante.", cloud: env.services.debrid.service, locale: env.uiLocale) }
                 }
                 .listRowBackground(DS.surface)
                 .accessibilityIdentifier("torrentio-probe")
@@ -85,7 +85,7 @@ struct TorrentioSettings: View {
             Button("Volver a lo recomendado", role: .destructive) { model.resetToRecommended() }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Tus idiomas, calidades y demás opciones vuelven a como vienen con Orbital.") }
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .torrentio) }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .torrentio, service: env.services.debrid.service) }
         .task { await model.syncWithTV(); env.announceAddonClash() }   // S3: tus opciones y las de tu TV, juntas
         .task { if model.probe == .idle || model.probe == .unreachable { model.scheduleProbe(now: true) } }   // al regresar de una subpágina no se vuelve a probar lo mismo
         .accessibilityElement(children: .contain)

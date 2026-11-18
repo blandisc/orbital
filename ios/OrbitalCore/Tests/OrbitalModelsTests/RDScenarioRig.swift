@@ -279,8 +279,8 @@ final class RDScenarioRig {
         func res(_ s: Source) -> JSON { .string(card(s.index)?.quality ?? SourcesModel.quality(s)) }
         func hash(_ index: Int) -> JSON { list.source(index)?.torrent.map { .string($0.hash) } ?? .string("#\(index)") }
         func state(_ o: VersionOption) -> String {
-            o.refused ? "refused" : o.requested ? "requested_ready" : o.inCloud ? "requested_pending" : o.speed == .inRealDebrid ? "instant"
-                : o.speed == .realDebridMustDownload ? "to_request" : "direct"
+            o.refused ? "refused" : o.requested ? "requested_ready" : o.inCloud ? "requested_pending" : o.speed == .inCloud ? "instant"
+                : o.speed == .cloudMustDownload ? "to_request" : "direct"
         }
         var out: [String: JSON] = [:]
         out["title"] = .string(title.title)

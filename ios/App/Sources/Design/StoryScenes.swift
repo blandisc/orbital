@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalModels
+import OrbitalAddons
 
 /// Las escenas de «Aprende Orbital» (versión final, 4 nov 2026: «que las animaciones representen los elementos reales… show,
 /// don't tell»): la pantalla de la app en miniatura, un dedo fantasma que hace el gesto y lo que pasa. Cada escena avanza por
@@ -8,6 +9,8 @@ import OrbitalModels
 struct StorySceneView: View {
     let scene: LearnStory.Scene
     let tint: Color
+    /// La nube que se ve en su página («torbox.app»).
+    var cloud: DebridService = .realDebrid
 
     var body: some View {
         SceneScreen {
@@ -15,7 +18,7 @@ struct StorySceneView: View {
             case .titlePlay: SceneTitlePlay()
             case .versionLight: SceneVersionLight()
             case .storageStill: SceneStorageStill()
-            case .payPlans: ScenePayPlans()
+            case .payPlans: ScenePayPlans(cloud: cloud)
             case .twoPhones: SceneTwoPhones()
             case .typedVersion: SceneTypedVersion()
             case .languageOrder: SceneLanguages(drag: false)
@@ -258,11 +261,12 @@ struct SceneStorageStill: View {
 
 /// La página de Real-Debrid: se elige 15 días; luego el aviso de Orbital antes de que se acabe.
 struct ScenePayPlans: View {
+    var cloud: DebridService = .realDebrid
     var body: some View {
         SceneLoop(steps: 4) { step in
             ZStack(alignment: .top) {
                 VStack(spacing: DS.Space.s2) {
-                    Text(verbatim: "real-debrid.com").recipe(.footnote, color: DS.textMuted)
+                    Text(verbatim: cloud.site).recipe(.footnote, color: DS.textMuted)
                     ForEach(["15", "30", "90"], id: \.self) { days in
                         SceneRow(title: Text("\(days) días"), lit: days == "15" && step >= 1) {
                             Image(systemName: days == "15" && step >= 1 ? "checkmark.circle.fill" : "circle").foregroundStyle(DS.fresh)

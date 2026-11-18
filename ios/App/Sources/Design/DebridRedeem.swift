@@ -25,7 +25,7 @@ struct DebridRedeemSheet: View {
             .accessibilityElement(children: .combine)
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 IconBeside(symbol: "arrow.triangle.2.circlepath") {
-                    Text("Real-Debrid cambia todos tus puntos por días de Premium.").recipe(.secondary, color: DS.text)
+                    Text("Real-Debrid cambia todos tus puntos por días de Premium.").recipe(.secondary, color: DS.text)   // solo Real-Debrid: canjear puntos
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 IconBeside(symbol: "exclamationmark.triangle", color: DS.warning) {

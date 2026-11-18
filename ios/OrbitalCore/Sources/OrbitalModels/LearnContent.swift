@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// «Aprende Orbital», versión final (Fernando, 4 nov 2026: «que no sean tantas, pero que haya buen contenido»; revisión de un
 /// director de contenido visual, `docs/producto/guia-aprende/historias-contenido.html`). Seis historias por lo que quieres
@@ -51,6 +52,8 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
     public var cards: [Card]
     public var action: (title: String, destination: Destination)?
     public var needs: Needs = .always
+    /// La nube que nombra («TorBox guarda el video»): la app traduce la clave y luego dice el nombre de la tuya.
+    public var cloud: DebridService = .realDebrid
 
     public static func == (a: LearnStory, b: LearnStory) -> Bool { a.id == b.id && a.cards == b.cards }
 }
@@ -63,6 +66,21 @@ public enum LearnContent {
         .init(scene: .payPlans, title: "Desde unos 3 €", line: "Por 15 días, y no se renueva solo.", seconds: 5, mark: .trick),
         .init(scene: .twoPhones, title: "Una cuenta, una persona", line: "Si dos la usan a la vez, se corta.", seconds: 4),
     ], action: ("Conectar Real-Debrid", .connectDebrid), needs: .instant)
+
+    /// «Ver al instante» con tu nube (`design/debrid-services.json › words`): los textos con «Real-Debrid» se dicen con su
+    /// nombre y el precio por días de Real-Debrid («no se renueva solo») es solo suyo: con las otras, «Revisa tu plan».
+    public static func instant(_ cloud: DebridService) -> LearnStory {
+        var story = instant
+        story.cloud = cloud
+        guard !cloud.renewsByHand else { return story }
+        story.cards = story.cards.map { card in
+            guard card.scene == .payPlans else { return card }
+            var plan = card
+            plan.title = "Se paga en su página"; plan.line = "Revisa tu plan."
+            return plan
+        }
+        return story
+    }
 
     public static let language = LearnStory(id: "language", title: "En tu idioma", symbol: "character.bubble.fill", tint: "watching", cards: [
         .init(scene: .typedVersion, title: "Habla como tú", line: "«Ver» elige tu idioma y tu calidad.", seconds: 4),

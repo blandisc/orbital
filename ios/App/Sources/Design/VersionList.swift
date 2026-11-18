@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// V1 · «Versión» como lista (Fernando, 9 nov: V1 + V3): renglones con íconos, sin cápsulas. Tu idioma va primero con su
 /// bandera de encabezado; los demás, bajo «Otros idiomas» con la bandera en cada renglón. Tocar el renglón reproduce (o la
@@ -69,7 +70,7 @@ struct VersionMark: Equatable {
 
     /// ⚡ al instante, ☁︎ hay que pedirla (o cómo va, si ya la pediste), el triángulo si Real-Debrid no la dejó bajar y ⓘ si
     /// el idioma es «tal vez» (el triángulo es solo de «no lo dejó bajar», PT10; amarillo solo para eso, I6).
-    static func marks(_ option: VersionOption, cloud: DebridRequestStatus?, _ tr: (String) -> String) -> [VersionMark] {
+    static func marks(_ option: VersionOption, cloud: DebridRequestStatus?, service: DebridService = .realDebrid, _ tr: (String) -> String) -> [VersionMark] {
         var marks: [VersionMark] = []
         // I6 · la duda va en gris (ⓘ): el amarillo queda para el riesgo de verdad (Real-Debrid no la dejó bajar).
         if option.evidence == .maybe { marks.append(VersionMark(symbol: "info.circle", color: DS.textMuted, words: tr("Tal vez"))) }
@@ -80,12 +81,12 @@ struct VersionMark: Equatable {
             marks.append(VersionMark(symbol: DS.Symbol.otherTitle, color: DS.textMuted, words: tr("¿Otro título? El nombre dice otro año: puede ser otra película."), tip: true))
         }
         if option.refused {
-            marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: tr("Real-Debrid no lo dejó bajar")))   // edición: un rechazo solo existe con pedidos a la nube (instantStreams)
-        } else if option.speed == .realDebridMustDownload, let cloud {
+            marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: service.spoken(tr("Real-Debrid no lo dejó bajar"))))   // edición: un rechazo solo existe con pedidos a la nube (instantStreams)
+        } else if option.speed == .cloudMustDownload, let cloud {
             marks.append(VersionMark(symbol: cloud.symbol, color: cloud.warn ? DS.warning : DS.textMuted, words: cloud.title))
-        } else if option.speed == .realDebridMustDownload {
+        } else if option.speed == .cloudMustDownload {
             marks.append(VersionMark(symbol: DS.Symbol.cloud, color: DS.textMuted, words: tr("Hay que pedirla")))
-        } else if option.speed == .inRealDebrid {
+        } else if option.speed == .inCloud {
             marks.append(VersionMark(symbol: DS.Symbol.instant, color: DS.success, words: tr(option.requested ? "Al instante · la pediste" : "Al instante")))
         }
         return marks
@@ -102,6 +103,8 @@ struct VersionListRow<Menu: View>: View {
     var showsLanguage = false
     /// Ya pedida: cómo va en la nube.
     var cloud: DebridRequestStatus?
+    /// Tu nube («TorBox no lo dejó bajar»).
+    var service: DebridService = .realDebrid
     let action: () -> Void
     @ViewBuilder let menu: () -> Menu
     @Environment(\.locale) private var locale
@@ -110,7 +113,7 @@ struct VersionListRow<Menu: View>: View {
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
-        let marks = VersionMark.marks(option, cloud: cloud, tr)
+        let marks = VersionMark.marks(option, cloud: cloud, service: service, tr)
         let language = VersionText.name(code, uiLanguage)
         let size = VersionText.size(option, locale: locale)
         Button(action: action) {
@@ -142,7 +145,7 @@ struct VersionListRow<Menu: View>: View {
         .buttonStyle(.plain)
         .contextMenu { menu() } preview: { VersionPreview(option: option, code: code, uiLanguage: uiLanguage, marks: marks) }
         .accessibilityLabel(Text(verbatim: ([language, option.quality, size] + marks.map(\.words) + [option.recommended ? tr("Recomendada") : nil]).compactMap { $0 }.joined(separator: ", ")))
-        .accessibilityHint(Text(option.speed == .realDebridMustDownload && !option.refused ? "Toca para pedirla. Mantén presionado para más." : "Toca para verla. Mantén presionado para más."))
+        .accessibilityHint(Text(option.speed == .cloudMustDownload && !option.refused ? "Toca para pedirla. Mantén presionado para más." : "Toca para verla. Mantén presionado para más."))
         .accessibilityIdentifier("version-\(code)-\(option.quality)")
     }
 

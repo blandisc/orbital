@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// K1 · las llaves por aparato (AD-3; design/addons-contract.json, «devices» y «secrets»): el QR v2, emparejar, la lista de
 /// aparatos de tu TV, quitar uno y la clave de Real-Debrid entre el iPhone y la TV. La llave nunca sale del llavero de este
@@ -66,7 +67,11 @@ public struct OrbitalPairResult: Sendable, Equatable, CustomStringConvertible {
 /// La cuenta de Real-Debrid de tu TV tras «Pasar a la TV»: nunca la clave, solo sus últimas letras («••••3F2A»).
 public struct OrbitalTVDebrid: Sendable, Equatable {
     public var user: String, premium: Bool, expires: Date?, tail: String
-    public init(user: String, premium: Bool, expires: Date?, tail: String) { self.user = user; self.premium = premium; self.expires = expires; self.tail = tail }
+    /// DN1 · la nube de la TV (`service` de `GET /api/realdebrid`; sin decirlo, Real-Debrid).
+    public var service: DebridService = .realDebrid
+    public init(user: String, premium: Bool, expires: Date?, tail: String, service: DebridService = .realDebrid) {
+        self.user = user; self.premium = premium; self.expires = expires; self.tail = tail; self.service = service
+    }
 }
 
 extension OrbitalRemote {
@@ -154,11 +159,16 @@ extension OrbitalRemote {
     // MARK: Real-Debrid entre los dos (solo con llave, por el puerto público)
 
     /// «Pasar a la TV»: la TV la comprueba con Real-Debrid antes de guardarla (422 si no la reconoce: se queda la de antes).
-    public func putRealDebrid(token: String) async throws -> OrbitalTVDebrid {
+    /// DN1 · `{token, service}`: con otra nube que no sea Real-Debrid se dice cuál (sin «service» la TV entiende Real-Debrid,
+    /// así el iPhone de antes no se rompe), y esa queda como la nube de la TV.
+    public func putRealDebrid(token: String, service: DebridService = .realDebrid) async throws -> OrbitalTVDebrid {
         guard hasDeviceKey else { throw Failure.needsKey }
-        let json = try await send("api/realdebrid", method: "PUT", body: JSON.object(["token": .string(token)]).serialized())
+        var body: [String: JSON] = ["token": .string(token)]
+        if service != .realDebrid { body["service"] = .string(service.rawValue) }
+        let json = try await send("api/realdebrid", method: "PUT", body: JSON.object(body).serialized())
         return OrbitalTVDebrid(user: json?["user"]?.string ?? "", premium: json?["premium"]?.bool ?? false,
-                               expires: Self.date(json?["expires"]), tail: json?["ends_with"]?.string ?? "")
+                               expires: Self.date(json?["expires"]), tail: json?["ends_with"]?.string ?? "",
+                               service: DebridService.read(json?["service"]?.string ?? service.rawValue))
     }
 
     /// «Pasar a la TV» tu cuenta de OpenSubtitles (`PUT /api/opensubtitles`): usuario y token, nunca la contraseña.
@@ -174,18 +184,23 @@ extension OrbitalRemote {
     public func realDebridAccount() async throws -> OrbitalTVDebrid? {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/realdebrid", method: "GET", body: nil)
+        let service = DebridService.read(json?["service"]?.string)
         guard json?["linked"]?.bool != false, let user = json?["user"]?.nonEmptyString else {
-            return json?["linked"]?.bool == true ? OrbitalTVDebrid(user: "", premium: false, expires: nil, tail: json?["ends_with"]?.string ?? "") : nil
+            return json?["linked"]?.bool == true ? OrbitalTVDebrid(user: "", premium: false, expires: nil, tail: json?["ends_with"]?.string ?? "", service: service) : nil
         }
         return OrbitalTVDebrid(user: user, premium: json?["premium"]?.bool ?? false, expires: Self.date(json?["expires"]),
-                               tail: json?["ends_with"]?.string ?? "")
+                               tail: json?["ends_with"]?.string ?? "", service: service)
     }
 
     /// «Usar la de la TV»: la clave completa (`?full=1`). nil si la TV no tiene una.
-    public func realDebridKey() async throws -> String? {
+    public func realDebridKey() async throws -> String? { try await tvDebridKey()?.token }
+
+    /// DN1 · la clave de la TV y de qué nube es.
+    public func tvDebridKey() async throws -> (token: String, service: DebridService)? {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/realdebrid", method: "GET", query: [URLQueryItem(name: "full", value: "1")], body: nil)
-        return json?["token"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let token = json?["token"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines) else { return nil }
+        return (token, DebridService.read(json?["service"]?.string))
     }
 
     /// Una fecha de la TV: segundos desde 1970 o ISO 8601.

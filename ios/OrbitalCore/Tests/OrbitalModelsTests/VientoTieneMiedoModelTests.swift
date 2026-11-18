@@ -57,7 +57,7 @@ final class VientoTieneMiedoModelTests: XCTestCase {
         let offered = try XCTUnwrap(TitleModel.shownInstant(found, prefs: latino))
         XCTAssertEqual(offered.torrent?.hash, Self.yts720)
         let cards = SourcesModel.languageRows(found, prefs: latino, limitGB: 5).main.flatMap(\.options)
-        XCTAssertTrue(cards.contains { $0.id == offered.index && $0.speed == .inRealDebrid })
+        XCTAssertTrue(cards.contains { $0.id == offered.index && $0.speed == .inCloud })
     }
 
     // MARK: 3, 4 y 5 · «Ya está»
@@ -92,6 +92,6 @@ final class VientoTieneMiedoModelTests: XCTestCase {
         let card = try XCTUnwrap(row.options.first { $0.recommended })
         XCTAssertEqual(card.id, playing.index, "la recomendada de la lista es la misma que «Ver»")
         XCTAssertTrue(card.requested)
-        XCTAssertEqual(card.speed, .inRealDebrid, "«Al instante · la pediste»")
+        XCTAssertEqual(card.speed, .inCloud, "«Al instante · la pediste»")
     }
 }

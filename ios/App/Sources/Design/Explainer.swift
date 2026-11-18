@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalAddons
 
 // «¿Qué es esto?» (O2, T1, C1, D1): las hojas que explican donde surge la duda. Fernando, 3 nov, probando la 1729: «le falta
 // espacio, se corta el texto abajo», «hazlo más gráfico, con algo animado» y «los íconos están descentrados; más grandes y con
@@ -118,13 +119,16 @@ struct DebridExplainer: View {
     /// De qué se explica: los pedidos (O2), Torrentio (T1), los complementos (C1) o tu cuenta de Real-Debrid (D1).
     enum Topic { case requests, torrentio, addons, realDebrid }
     var topic: Topic = .requests
+    /// La nube que se nombra («TorBox es la nube», «¿Qué es AllDebrid?»).
+    var service: DebridService = .realDebrid
     /// R14-B · este aparato también avisa lo que pidió la TV (solo el iPhone; lo pone la app con `debridTVNotices`).
     @Environment(\.debridTVNotices) private var tvNotices
+    @Environment(\.locale) private var locale
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?") : Text("¿Qué es esto?"))
+                DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?", cloud: service, locale: locale) : Text("¿Qué es esto?"))
                     .padding(.bottom, DS.Space.s1)
                 switch topic {
                 case .requests: DebridFlowStrip(); requests
@@ -144,7 +148,7 @@ struct DebridExplainer: View {
     @ViewBuilder private var requests: some View {
         card("magnifyingglass", DS.ListTint.library, Text("Tus complementos buscan dónde verlo"),
              Text("Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."))
-        card("icloud.fill", DS.ListTint.series, Text("Real-Debrid es la nube"),
+        card("icloud.fill", DS.ListTint.series, Text("Real-Debrid es la nube", cloud: service, locale: locale),
              Text("Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."))
         card(DS.Symbol.cloudFill, DS.ListTint.calendar, Text("Pedir a la nube es que lo baje por ti"),
              Text("Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
@@ -160,7 +164,7 @@ struct DebridExplainer: View {
     @ViewBuilder private var torrentio: some View {
         card("magnifyingglass", DS.ListTint.library, Text("Torrentio es un buscador"),
              Text("Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."))
-        card("externaldrive.fill.badge.checkmark", DS.ListTint.series, Text("Real-Debrid las sirve"),
+        card("externaldrive.fill.badge.checkmark", DS.ListTint.series, Text("Real-Debrid las sirve", cloud: service, locale: locale),
              Text("Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por pedir»): suele tardar de minutos a horas; si poca gente la comparte, hasta días."))
         card("slider.horizontal.3", DS.ListTint.spark, Text("Aquí decides cuáles te enseña"),
              Text("Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."))
@@ -181,7 +185,9 @@ struct DebridExplainer: View {
         card(DS.Symbol.cloudFill, DS.ListTint.calendar, Text("Lo que no tiene, lo baja"),
              Text("Se lo pides y lo baja: suele tardar de minutos a horas; si poca gente lo comparte, hasta días."))
         card("creditcard.fill", DS.ListTint.bookmark, Text("Cuesta y vence"),
-             Text("Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence."))
+             // «No se renueva solo» es solo de Real-Debrid; con las otras, «Revisa tu plan» (`design/debrid-services.json`).
+             service.renewsByHand ? Text("Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence.")
+                : Text("Te avisamos 14 días antes, 3 días antes y el día que vence. Revisa tu plan en \(service.site)."))
         card("key.fill", DS.ListTint.trophy, Text("Tu clave"),
              Text("Conecta Orbital con tu cuenta. Vive en el llavero de este aparato y nunca se muestra completa."))
     }

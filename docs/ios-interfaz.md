@@ -1126,6 +1126,17 @@ Inicio replanteado para Mac e iPad (MI2 · II1 · C1–C6, `docs/producto/inicio
   abierto a la derecha angosta la columna y puede volver el cine.
 - **«Decide por mí» es tarjeta con espacio (C6).** Al final de «Seguir viendo» (cine) o en el panel (tablero), sin la tira.
 
+### Tu nube: nunca Real-Debrid a secas (18 nov 2026)
+
+DN1: Orbital funciona con Real-Debrid, TorBox o AllDebrid, una a la vez (Ajustes › Cuentas › Tu nube; la guía abre la misma
+página en su hoja, `DebridCloudSheet`).
+
+- **Los textos dicen tu nube.** Usa `service.name`, `service.site` y `service.keyPlace`, o `Text(_:cloud:locale:)` para un texto
+  del catálogo. «Real-Debrid» a secas solo vale si el texto nombra las tres, o si es algo que solo tiene Real-Debrid (el código de
+  real-debrid.com/device, canjear puntos) y se marca `// solo Real-Debrid`.
+- **Antes de elegir no se nombra ninguna sola.** Primero «Ya tengo cuenta» y «Todavía no tengo», y no se recomienda ninguna.
+- `DesignRulesTests+Cloud.swift` lo vigila.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

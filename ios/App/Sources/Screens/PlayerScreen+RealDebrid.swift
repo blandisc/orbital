@@ -50,8 +50,8 @@ extension PlayerScreen {
             show(PlayerNotice(title: DebridRequestWords.title(request, tr),
                               detail: off && !warn ? tr("Avisos apagados · actívalos") : DebridRequestWords.detail(request, now: Date(), notifies: notifies, tr),
                               tone: warn || off ? .warn : .success, opensNotificationSettings: off && !warn))
-        case .failed(let cause?, _): show(PlayerNotice(title: cause.title(tr), detail: cause.detail(tr), tone: .warn))
-        case .failed(nil, let error): show(PlayerNotice(title: error.words(tr), detail: nil, tone: .warn))
+        case .failed(let cause?, _): show(PlayerNotice(title: cause.title(tr, service: env.services.debrid.service), detail: cause.detail(tr), tone: .warn))
+        case .failed(nil, let error): show(PlayerNotice(title: error.words(tr, service: env.services.debrid.service), detail: nil, tone: .warn))
         case .nobodyHasIt: show(PlayerNotice(title: UnavailableCause.nobodyHasIt.title(tr), detail: UnavailableCause.nobodyHasIt.detail(tr), tone: .info))
         }
     }

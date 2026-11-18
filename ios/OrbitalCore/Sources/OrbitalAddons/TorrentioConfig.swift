@@ -66,15 +66,18 @@ public enum TorrentioConfig {
         return parts(options).filter { part in order.contains { part.hasPrefix("\($0)=") } }.joined(separator: "|")
     }
 
-    /// La dirección del manifiesto con tu clave al final (`realdebrid=…`). nil sin clave.
-    public static func manifestURL(base: String = AddonCatalog.torrentioBase, options: AddonOptions, token: String?) -> String? {
-        guard let token, !token.isEmpty, let key = token.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else { return nil }
-        return "\(base)/\((parts(options) + ["realdebrid=\(key)"]).joined(separator: "|"))/manifest.json"
+    /// La dirección del manifiesto con tu clave al final (`realdebrid=…`, `torbox=…` o `alldebrid=…`, la de tu nube). nil sin clave.
+    public static func manifestURL(base: String = AddonCatalog.torrentioBase, options: AddonOptions, token: String?,
+                                   service: DebridService = .realDebrid) -> String? {
+        var allowed = CharacterSet.alphanumerics; allowed.insert("-")   // la de TorBox lleva guiones
+        guard let token, !token.isEmpty, let key = token.addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
+        return "\(base)/\((parts(options) + ["\(service.torrentioParam)=\(key)"]).joined(separator: "|"))/manifest.json"
     }
 
     /// Lo que trae una dirección de Torrentio (de tu Stremio): todas sus opciones, las que no se conocen tal cual en
-    /// `verbatim`, y tu clave de Real-Debrid aparte (nunca va a las opciones). nil si no es un Torrentio.
-    public static func parse(_ url: String) -> (options: AddonOptions, key: String?)? {
+    /// `verbatim`, y la clave de tu nube aparte con de cuál es (nunca va a las opciones; `from_torrentio`: Real-Debrid,
+    /// TorBox o AllDebrid; antes se tiraban las de TorBox y AllDebrid). nil si no es un Torrentio.
+    public static func parse(_ url: String) -> (options: AddonOptions, key: String?, service: DebridService?)? {
         let decoded = url.removingPercentEncoding ?? url
         guard let scheme = decoded.range(of: "://") else { return nil }
         var rest = decoded[scheme.upperBound...]
@@ -83,7 +86,7 @@ public enum TorrentioConfig {
         guard pieces[0].lowercased().contains("torrentio") else { return nil }
         // Sin opciones, Torrentio no esconde nada ni pone idiomas primero (no son los valores de fábrica de Orbital).
         var options = AddonOptions(excludedQualities: [], languages: [])
-        var key: String?
+        var key: String?, service: DebridService?
         let services = Set(AddonSecrets.services.split(separator: "|").map(String.init))
         func list(_ value: String) -> [String] { value.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
         for part in (pieces.count > 1 ? pieces[1] : "").split(separator: "|").map(String.init) where !part.isEmpty {
@@ -97,13 +100,15 @@ public enum TorrentioConfig {
             case "limit": if let n = Int(value), (1...999).contains(n) { options.limit = n } else { options.verbatim.append(part) }
             case "sizefilter": options.sizeFilter = value
             case "debridoptions": options.debridOptions = list(value)
-            case "realdebrid": key = value
-            // La clave de otro servicio es un secreto: no se guarda en las opciones (Orbital solo usa Real-Debrid).
+            case "realdebrid", "torbox", "alldebrid":
+                // Con dos, la de Real-Debrid (lo de antes); si no, la primera.
+                if !value.isEmpty, key == nil || name == "realdebrid" { key = value; service = DebridService.read(name) }
+            // La clave de otro servicio (Premiumize…) es un secreto: no se guarda en las opciones (Orbital no la usa).
             case _ where services.contains(name): continue
             default: if AddonSecrets.keys(in: part).isEmpty { options.verbatim.append(part) }
             }
         }
-        return (options, key)
+        return (options, key, service)
     }
 
     /// Una dirección de Torrentio (de cualquier instancia).

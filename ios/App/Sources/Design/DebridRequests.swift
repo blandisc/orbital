@@ -1,4 +1,6 @@
 import SwiftUI
+import OrbitalCore
+import OrbitalAddons
 
 // Los pedidos a Real-Debrid (Fase 2): cómo va uno, la hoja de un pedido, «¿Qué es esto?» (O2) y la línea antes de pedir
 // permiso de avisos (R10). Las piezas reciben los textos ya en el idioma de la app (`DebridRequestWords`); no leen la app.
@@ -59,12 +61,16 @@ struct DebridWhereLine: View {
     var tv = false
     /// RX2-A · arriba ya dice cuánto falta (la hoja del pedido): sin «Suele tardar…», que lo contradecía.
     var paced = false
+    /// La nube que se nombra («La nube es tu TorBox»).
+    var service: DebridService = .realDebrid
     var explain: (() -> Void)?
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             IconBeside(symbol: DS.Symbol.cloud) {
-                Text("\(DeviceWords.text("La nube es tu Real-Debrid: lo baja por ti, no en este iPhone.", mac: "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac."))\(Text(verbatim: " "))\(tv ? Text("Cuando termine, arranca al instante aquí y en tu TV.") : Text("Cuando termine, arranca al instante aquí."))\(Text(verbatim: paced ? "" : " "))\(paced ? Text(verbatim: "") : notifies ? Text("Suele tardar de minutos a horas; te aviso.") : Text("Suele tardar de minutos a horas."))")
+                // IOS-12: la palabra de la Mac se elige en el código, como `DeviceWords`.
+                Text("\(Text(ThisDevice.platform == "mac" ? "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac." : "La nube es tu Real-Debrid: lo baja por ti, no en este iPhone.", cloud: service, locale: locale))\(Text(verbatim: " "))\(tv ? Text("Cuando termine, arranca al instante aquí y en tu TV.") : Text("Cuando termine, arranca al instante aquí."))\(Text(verbatim: paced ? "" : " "))\(paced ? Text(verbatim: "") : notifies ? Text("Suele tardar de minutos a horas; te aviso.") : Text("Suele tardar de minutos a horas."))")
                     .recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             }
             if let explain {
@@ -114,13 +120,16 @@ struct DebridRequestSheet: View {
     /// Para `DebridWhereLine`: este aparato avisa y hay TV.
     var notifies = true
     var tv = false
+    /// La nube del pedido (`request.cloud`): uno de otra nube se dice con su nombre.
+    var service: DebridService = .realDebrid
+    @Environment(\.locale) private var locale
     @State private var confirmingCancel = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since))
             status.padding(DS.Space.s4).dsCard(.card)
-            if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv, paced: true) }   // dónde y cómo (3 nov)
+            if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv, paced: true, service: service) }   // dónde y cómo (3 nov)
             if notificationsOff && !finished {
                 Button(action: turnOnNotifications) {
                     Label("Avisos apagados · actívalos", systemImage: "bell.slash").font(DS.TextRecipe.footnote.font)
@@ -147,7 +156,10 @@ struct DebridRequestSheet: View {
                         .accessibilityIdentifier("debrid-wait")
                 }
                 if let manageDownloads {
-                    Link(destination: manageDownloads) { Label("Abrir tus descargas de Real-Debrid", systemImage: "arrow.up.right").frame(maxWidth: .infinity) }
+                    Link(destination: manageDownloads) {
+                        Label { Text("Abrir tus descargas de Real-Debrid", cloud: service, locale: locale) } icon: { Image(systemName: "arrow.up.right") }
+                            .frame(maxWidth: .infinity)
+                    }
                         .dsPrimaryButton(size: .large)
                         .accessibilityIdentifier("debrid-manage-downloads")
                 }
@@ -163,7 +175,10 @@ struct DebridRequestSheet: View {
                 }
                 if cancel != nil {
                     Button(role: .destructive) { confirmingCancel = true } label: {
-                        Label(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? DS.Symbol.removeRequest : DS.Symbol.cancelRequest).frame(maxWidth: .infinity)
+                        Label { finished ? Text("Quitar de tu Real-Debrid", cloud: service, locale: locale) : Text("Cancelar pedido") } icon: {
+                            Image(systemName: finished ? DS.Symbol.removeRequest : DS.Symbol.cancelRequest)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                     .dsSecondaryButton().dsControlSize(.large)
                     .accessibilityIdentifier(finished ? "debrid-remove-finished" : "debrid-cancel")
@@ -176,7 +191,7 @@ struct DebridRequestSheet: View {
         // Quien la abre la mide (`fittedSheet`): sin el margen de abajo, que ya pone la barra de inicio (dejaba un hueco al pie;
         // Fernando, 4 nov 2026, la 1774).
         .dsSheetContent(bottom: false)
-        .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished) { cancel?() }
+        .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished, service: service) { cancel?() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-request-sheet")
     }
@@ -186,8 +201,10 @@ extension View {
     /// La misma pregunta en la ficha, en la hoja y en la lista (IOS-7): «¿Cancelar el pedido?» con «Seguir esperando» (sin
     /// eso iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» opuestos) o, si ya terminó, «¿Quitarlo de tu
     /// Real-Debrid?» con «Quitar» y «Cancelar» (como la TV, `debridCancelMenu`).
-    func debridCancelConfirmation(isPresented: Binding<Bool>, name: String, finished: Bool, perform: @escaping () -> Void) -> some View {
-        confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?") : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta (cancelar o quitar un pedido), como la TV
+    /// `service`: la nube del pedido («¿Quitarlo de tu TorBox?»); `locale`, el idioma de la app.
+    func debridCancelConfirmation(isPresented: Binding<Bool>, name: String, finished: Bool, service: DebridService = .realDebrid,
+                                  locale: Locale = Locale(identifier: "es"), perform: @escaping () -> Void) -> some View {
+        confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?", cloud: service, locale: locale) : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta (cancelar o quitar un pedido), como la TV
             if finished {
                 Button("Quitar", role: .destructive, action: perform)
                 Button("Cancelar", role: .cancel) {}
@@ -207,12 +224,13 @@ struct DebridNotifyPrompt: View {
     let notNow: () -> Void
     /// Hay TV («arranca al instante aquí y en tu TV»).
     var tv = false
+    var service: DebridService = .realDebrid
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text("Para avisarte cuando esté"),
                           subtitle: Text("Orbital te manda un aviso cuando la nube termine. Solo eso: nada de promociones."))
-            DebridWhereLine(notifies: false, tv: tv)   // el primer «Pedir a la nube»: dónde y cómo, antes de pedir permiso
+            DebridWhereLine(notifies: false, tv: tv, service: service)   // el primer «Pedir a la nube»: dónde y cómo, antes de pedir permiso
             VStack(spacing: DS.Space.s2) {
                 Button(action: allow) { Label("Permitir avisos", systemImage: "bell").frame(maxWidth: .infinity) }
                     .dsPrimaryButton(size: .large)
@@ -229,12 +247,14 @@ struct DebridNotifyPrompt: View {
 /// pedir» (en «Versión» o en la ficha). Los tres pasos animados, que no ocupa espacio en este aparato y «Entendido». Quién
 /// la enseña y cómo recuerda que ya se vio: `DebridFlowIntroHost`.
 struct DebridFlowIntro: View {
+    var service: DebridService = .realDebrid
     let done: () -> Void
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text("Así funciona"),
-                          subtitle: Text("La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti."))
+                          subtitle: Text("La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti.", cloud: service, locale: locale))
             DebridFlowStrip()
             IconBeside(symbol: "internaldrive") {
                 DeviceWords.text("No ocupa espacio en este iPhone.", mac: "No ocupa espacio en esta Mac.").recipe(.secondary, color: DS.text)
@@ -246,6 +266,15 @@ struct DebridFlowIntro: View {
         .dsSheetContent()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-flow-intro")
+    }
+}
+
+extension Text {
+    /// Un texto del catálogo escrito con «Real-Debrid», dicho con tu nube («TorBox es la nube», «Quitar de tu AllDebrid»): se
+    /// traduce con su clave de siempre y luego se cambia el nombre (`DebridService.spoken`). Con Real-Debrid, el `Text` de siempre.
+    init(_ key: String, cloud: DebridService, locale: Locale) {
+        if cloud == .realDebrid { self.init(LocalizedStringKey(key)) }
+        else { self.init(verbatim: cloud.spoken(Strings.tr(key, language: locale.language.languageCode?.identifier ?? "es"))) }
     }
 }
 

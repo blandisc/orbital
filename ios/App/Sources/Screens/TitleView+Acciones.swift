@@ -25,7 +25,7 @@ extension TitleView {
     func tell(_ cause: UnavailableCause, _ model: TitleModel) {
         let ui = env.services.appSettings.uiLanguage, tr = { (key: String) in Strings.tr(key, language: ui) }
         let detail = cause.detail(tr, languageName: { Streams.versionLanguageName($0, in: ui).lowercased() })
-        let title = cause.title(tr)
+        let title = cause.title(tr, service: env.services.debrid.service)
         guard let action = cause.action else { return env.notify(title, detail: detail, tone: .warn) }
         let label = UnavailableCause.label(action, tr)
         switch action {

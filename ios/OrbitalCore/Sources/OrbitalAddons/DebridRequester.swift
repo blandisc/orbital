@@ -24,27 +24,31 @@ public struct DebridWish: Equatable, Sendable {
 /// que cambia se anota en la libreta y se le manda a la TV (`DebridRequestSync`).
 public actor DebridRequester {
     public nonisolated let book: DebridRequestBook
-    private let api: RealDebridTorrents
+    private let api: any DebridTorrentAPI
     private let token: @Sendable () -> String?
     private let device: @Sendable () -> String
     private let account: @Sendable () async -> String?
     private let clock: @Sendable () -> Date
     private let sync: DebridRequestSync
     private nonisolated let lastAccount = AccountMemo()
+    /// DN1 · quién eres ahora sin preguntar (tu nube y su cuenta guardada): al cambiar de nube cambia al momento.
+    private nonisolated let currentOwner: (@Sendable () -> String?)?
 
     /// - account: el id de usuario de tu Real-Debrid (`GET /user`, guardado), nunca la clave; nil si no se sabe.
     /// - knownAccount: el que ya se sabía al abrir la app (para decir sin esperar qué es de otra cuenta).
-    public init(book: DebridRequestBook, api: RealDebridTorrents, token: @escaping @Sendable () -> String?, device: @escaping @Sendable () -> String,
+    public init(book: DebridRequestBook, api: any DebridTorrentAPI, token: @escaping @Sendable () -> String?, device: @escaping @Sendable () -> String,
                 account: @escaping @Sendable () async -> String? = { nil }, knownAccount: String? = nil,
+                currentOwner: (@Sendable () -> String?)? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, sync: DebridRequestSync = NoDebridRequestSync()) {
         self.book = book; self.api = api; self.token = token; self.device = device; self.account = account; self.clock = clock; self.sync = sync
+        self.currentOwner = currentOwner
         lastAccount.value = knownAccount
     }
 
     /// El nombre de este aparato en lo que anota (`by`).
     public nonisolated var deviceName: String { device() }
     /// La cuenta de Real-Debrid de este aparato, la última que se supo (sin preguntar).
-    public nonisolated var knownAccount: String? { lastAccount.value }
+    public nonisolated var knownAccount: String? { currentOwner.map { $0() } ?? lastAccount.value }
 
     private func currentAccount() async -> String? {
         if let fresh = await account(), !fresh.isEmpty { lastAccount.value = fresh; return fresh }
@@ -98,9 +102,10 @@ public actor DebridRequester {
         }
         let token = try key()
         let now = clock()
-        var entry = DebridRequest(hash: wish.hash, files: wish.fileIdx.map { [wish.videoID: $0] } ?? [:], account: mine, title: wish.title, kind: wish.kind,
-                                  metaID: wish.metaID, videoIDs: [wish.videoID], season: wish.season, episode: wish.episode, language: wish.language,
-                                  release: wish.release, device: device(), createdAt: now)
+        var entry = DebridRequest(hash: wish.hash, files: wish.fileIdx.map { [wish.videoID: $0] } ?? [:], account: DebridOwner.split(mine).account,
+                                  title: wish.title, kind: wish.kind, metaID: wish.metaID, videoIDs: [wish.videoID], season: wish.season,
+                                  episode: wish.episode, language: wish.language, release: wish.release, device: device(), createdAt: now)
+        entry.service = Self.cloud(of: mine)
         entry.retried = auto
         if let replacing {
             entry.videoIDs = replacing.videoIDs + entry.videoIDs.filter { !replacing.videoIDs.contains($0) }
@@ -158,9 +163,10 @@ public actor DebridRequester {
     public func noteOpened(_ wish: DebridWish) async {
         let mine = await currentAccount()
         if let known = book.find(hash: wish.hash), known.state != .gone, !known.isOther(account: mine) { return }
-        let entry = DebridRequest(hash: wish.hash, files: wish.fileIdx.map { [wish.videoID: $0] } ?? [:], account: mine, title: wish.title, kind: wish.kind,
-                                  metaID: wish.metaID, videoIDs: [wish.videoID], season: wish.season, episode: wish.episode, language: wish.language,
-                                  release: wish.release, device: device(), createdAt: clock())
+        var entry = DebridRequest(hash: wish.hash, files: wish.fileIdx.map { [wish.videoID: $0] } ?? [:], account: DebridOwner.split(mine).account,
+                                  title: wish.title, kind: wish.kind, metaID: wish.metaID, videoIDs: [wish.videoID], season: wish.season,
+                                  episode: wish.episode, language: wish.language, release: wish.release, device: device(), createdAt: clock())
+        entry.service = Self.cloud(of: mine)
         book.put(entry)
         await push(entry)
     }
@@ -181,7 +187,7 @@ public actor DebridRequester {
         for request in active {
             var updated = request
             var touched = false
-            if updated.account == nil, let mine { updated.account = mine; touched = true }
+            if updated.account == nil, let id = DebridOwner.split(mine).account { updated.account = id; touched = true }
             let match = torrents.first { $0.id == request.rdID } ?? torrents.first { $0.hash == request.hash }
             if let match {
                 if match.status == "waiting_files_selection", let pack = try? await selectFiles(id: match.id, fileIdx: request.fileIdx, token: token),
@@ -226,7 +232,8 @@ public actor DebridRequester {
         }
         guard let pulled = await sync.pull() else { return }
         for var remote in pulled.requests {
-            if remote.account == nil { remote.account = pulled.account }   // sin `account`: la de quien la guarda
+            // Sin `account`: la de quien la guarda, si es de la misma nube que la TV.
+            if remote.account == nil, remote.cloud == pulled.service { remote.account = pulled.account }
             book.absorb(remote, watchReady: watchReady)
         }
         book.prune(now: clock(), account: await currentAccount())
@@ -298,13 +305,22 @@ public actor DebridRequester {
         guard let request = book.find(hash: hash), request.state == .ready, let id = request.rdID, let token = try? key() else { return nil }
         let file = request.files[videoID] ?? (request.videoIDs == [videoID] && !request.coversWholeTorrent ? request.fileIdx : nil)
         guard file != nil || (request.videoIDs == [videoID] && !request.coversWholeTorrent),
-              let info = try? await api.info(id: id, token: token), info.status == "downloaded", let link = info.link(fileIdx: file) else { return nil }
+              let info = try? await api.info(id: id, token: token), info.status == "downloaded",
+              let link = info.link(fileIdx: file, episode: request.cloud == .realDebrid ? nil : DebridFilePick.episode(of: videoID)) else { return nil }
         return try? await api.unrestrict(link: link, token: token)
     }
 
     /// Ya se avisó que está listo / que sigue atorado.
     public func markNotified(hash: String) { book.update(hash: hash) { $0.notified = true } }
     public func markNudged(hash: String) { book.update(hash: hash) { $0.nudged = true } }
+}
+
+extension DebridRequester {
+    /// La nube de quien pide (`DebridOwner`): nil = Real-Debrid, como se anota en la libreta.
+    static func cloud(of owner: String?) -> DebridService? {
+        let service = DebridOwner.split(owner).service
+        return service == .realDebrid ? nil : service
+    }
 }
 
 /// La última cuenta de Real-Debrid que se supo (para decir sin esperar si un pedido es de otra cuenta).

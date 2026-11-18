@@ -190,8 +190,15 @@ public final class DebridRequestsModel: ObservableModel {
     /// lugar, queda «Pedir a la nube» a mano.
     func retryWhenFree() async {
         guard hasKey(), !requester.waitingForSlot(account: requester.knownAccount).isEmpty else { return }
-        if let fresh = await requester.activeCount() { activeCount = fresh }
-        guard let slots = activeCount, slots.active < slots.limit else { return }
+        let waiting = requester.waitingForSlot(account: requester.knownAccount).count
+        var slots: (active: Int, limit: Int)?
+        if DebridOwner.split(requester.knownAccount).service.countsActive {
+            if let fresh = await requester.activeCount() { activeCount = fresh }
+            slots = activeCount
+        } else {
+            slots = (0, waiting)   // TorBox no dice su límite: cada uno se vuelve a intentar una vez, sin preguntar cuántas hay
+        }
+        guard let slots, slots.active < slots.limit else { return }
         let made = await requester.retryWhenFree(slots: slots)
         guard !made.isEmpty else { return }
         reload()

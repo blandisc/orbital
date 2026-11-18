@@ -56,12 +56,12 @@ final class LatinoNubeModelTests: XCTestCase {
         let rig = try rig()
         try serve(rig)
         let list = try await list(rig)
-        XCTAssertFalse(list.languageRows.contains { $0.code == "es-419" && $0.options.contains { $0.speed != .realDebridMustDownload } },
+        XCTAssertFalse(list.languageRows.contains { $0.code == "es-419" && $0.options.contains { $0.speed != .cloudMustDownload } },
                        "precondición: ningún latino arranca al instante")
         let yours = try XCTUnwrap(list.yoursToRequest, "el renglón «hay que pedirlo»")
         XCTAssertEqual(yours.code, "es-419")
         XCTAssertEqual(list.source(yours.option.id)?.torrent?.hash, Self.latinoHash)
-        XCTAssertEqual(yours.option.speed, .realDebridMustDownload)
+        XCTAssertEqual(yours.option.speed, .cloudMustDownload)
     }
 
     /// «Revisar por dentro»: la «MULTi» que arranca al instante trae una pista «Español Latino»; queda «Comprobado» en latino,
@@ -72,7 +72,7 @@ final class LatinoNubeModelTests: XCTestCase {
         let list = try await list(rig)
         let row = try XCTUnwrap(list.languageRows.first { $0.code == "es-419" })
         let card = try XCTUnwrap(row.options.first { list.source($0.id)?.playbackURL?.absoluteString == Self.multi })
-        XCTAssertNotEqual(card.speed, .realDebridMustDownload)
+        XCTAssertNotEqual(card.speed, .cloudMustDownload)
         let key = try XCTUnwrap(list.source(card.id)?.key)
         XCTAssertTrue(rig.services.titlePrefs.checkedAudio(key)?.contains { $0.code == "es-419" } == true, "queda guardado")
         XCTAssertNil(list.yoursToRequest, "ya hay latino al instante: no se ofrece pedir")

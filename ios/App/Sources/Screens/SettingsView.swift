@@ -290,7 +290,7 @@ struct SettingsView: View {
     private func connections(_ model: SettingsModel) -> Text {
         var parts: [String] = []
         if case .linked = model.trakt { parts.append("Trakt") }
-        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append("Real-Debrid") }   // edición: solo con `settingsEntries.realDebrid`
+        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append(debrid.model.service.name) }   // edición: solo con `settingsEntries.realDebrid`
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")
@@ -348,7 +348,7 @@ struct SettingsView: View {
             DSToggleRow("Pedir solo el siguiente episodio", detail: "Si la nube aún no lo tiene, se lo pide 3 min antes del final del que ves.",
                         isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
                 .accessibilityIdentifier("settings-auto-request-next")
-        } header: { Text(verbatim: "Real-Debrid") }   // edición: solo con instantStreams
+        } header: { Text(verbatim: env.services.debrid.service.name) }   // edición: solo con instantStreams
         .listRowBackground(DS.surface) }
     }
 
@@ -367,7 +367,7 @@ struct SettingsView: View {
                 PaneLink(Text("Probar la velocidad")) { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
                     .accessibilityIdentifier("speed-test")
             } footer: {
-                Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")   // edición: solo con instantStreams
+                Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.", cloud: env.services.debrid.service, locale: env.uiLocale)   // edición: solo con instantStreams
             }
             .listRowBackground(DS.surface)
         }
@@ -390,7 +390,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("release-alerts")
         } footer: {
             if env.services.capabilities.instantStreams {
-                Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")   // edición: solo con instantStreams
+                Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.", cloud: env.services.debrid.service, locale: env.uiLocale)   // edición: solo con instantStreams
             } else {
                 Text("De las series que sigues en Trakt. Te avisa en cuanto sale. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
             }

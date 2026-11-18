@@ -3,7 +3,8 @@ import OrbitalCore
 import OrbitalAddons
 import OrbitalModels
 
-/// Ajustes › Cuentas › Real-Debrid (D1): quién eres, Premium hasta cuándo y cuántos días quedan, «Renovar», canjear tus
+/// Ajustes › Cuentas › Tu nube (D1, DN1: Real-Debrid, TorBox o AllDebrid). Sin nube, primero cuál (`DebridCloudChooser`);
+/// con nube, las tres arriba de tu cuenta (`DebridCloudList`). De tu cuenta: quién eres, Premium hasta cuándo y cuántos días quedan, «Renovar», canjear tus
 /// puntos (D4, solo aquí y solo si tienes), tu clave («termina en ••••3F2A · nunca se muestra completa»), «Tus pedidos» (D3, un atajo a Descargas › Lo que pediste, RX1-A)
 /// y «¿Qué es Real-Debrid?». Sin clave: el campo para pegarla.
 struct DebridAccountView: View {
@@ -31,7 +32,8 @@ struct DebridAccountView: View {
             DebridSharedPrompt(debrid: model)   // CX2-A: otra cuenta en tus aparatos Apple, solo cuando pasa
             // P6-A: lo que dice la página es verdad al abrirla. Se le pregunta a Real-Debrid si tu clave sirve; mientras, lo
             // último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó en esta visita.
-            if !model.hasToken { connect(model) }
+            if !model.hasToken && model.target == nil { DebridCloudChooser(debrid: model) }
+            else if !model.hasToken || model.target != nil { connect(model) }
             else {
                 switch model.keyCheck {
                 case .rejected: rejected(model)
@@ -42,21 +44,22 @@ struct DebridAccountView: View {
                     else { unknown(model) }
                 }
             }
+            if model.hasToken && model.target == nil { DebridCloudList(debrid: model) }
             // IOS-9, IOS-15: la explicación va al final; el problema, si hay, es lo primero que se ve al abrir.
-            Section {
+            if model.hasToken && model.target == nil && model.service == .realDebrid { Section {
                 Button { explaining = true } label: {
-                    if typeSize.isAccessibilitySize { Text("¿Qué es Real-Debrid?").foregroundStyle(DS.text) }
-                    else { TorrentioRowLabel(title: Text("¿Qué es Real-Debrid?"), detail: Text("Por qué arranca al instante y qué cuesta")) }
+                    if typeSize.isAccessibilitySize { Text("¿Qué es Real-Debrid?").foregroundStyle(DS.text) }   // solo Real-Debrid (con otra nube, «¿Qué es esto?» de «Tu nube»)
+                    else { TorrentioRowLabel(title: Text("¿Qué es Real-Debrid?"), detail: Text("Por qué arranca al instante y qué cuesta")) }   // solo Real-Debrid
                 }
                 .accessibilityIdentifier("debrid-explain")
             }
-            .listRowBackground(DS.surface)
+            .listRowBackground(DS.surface) }
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: "Real-Debrid")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(title(model)).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid) }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid, service: model.service) }
         .sheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
             DebridRedeemSheet(points: Strings.count(model.status?.points ?? 0, language: env.services.appSettings.uiLanguage),
                               redeem: { confirmRedeem = false; Task { await model.redeemPoints() } }, close: { confirmRedeem = false })
@@ -66,6 +69,8 @@ struct DebridAccountView: View {
         .dsFeedback(.success, trigger: model.redeem) { _, new in new == .done }
         .task { await model.checkShared() }   // CX2-A: la copia de tus aparatos Apple, cada vez que se abre
         .task { guard !checked else { return }; checked = true; await model.recheck() }
+        .onChange(of: model.service) { _, _ in Task { await model.recheck() } }   // cambiaste de nube: se le pregunta a la nueva
+        .onDisappear { if model.hasToken { model.target = nil } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.checkShared() } } }   // TEC-6
         #if DEBUG
         .task { if Demo.isOn, Demo.cx == "remove-choice" { try? await Task.sleep(for: .seconds(1)); confirmRemove = true } }
@@ -90,9 +95,12 @@ struct DebridAccountView: View {
                 Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
             }
             // D4: solo aquí, solo si tienes puntos, y preguntando antes (no se deshace). Nunca en las pruebas: solo la demo.
-            if let points = status.points, points > 0, usable && !Self.isUrgent(state, days) { redeemRow(points, model) }
+            if model.service == .realDebrid, let points = status.points, points > 0, usable && !Self.isUrgent(state, days) { redeemRow(points, model) }
             redeemResult(model)
-        } header: { Text("Tu cuenta") } footer: { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
+        } header: { Text("Tu cuenta") } footer: {
+            if model.service.renewsByHand { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
+            else { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. Revisa tu plan en \(model.service.site).") }
+        }
         .listRowBackground(DS.surface)
         requestsSection()
         DebridTVSection(debrid: model)   // K1: «Pasar a la TV» y «Usar la de la TV», solo con llave y una TV que las reparte
@@ -110,18 +118,18 @@ struct DebridAccountView: View {
                 case .expired:
                     DSProblem(title: Text(verbatim: UnavailableCause.debridExpired.title { Strings.tr($0, language: ui) }), detail: expiry(status)) {
                         renewButton(Text("Renovar"), model)
-                        if points > 0 { redeemButton(points) }
+                        if points > 0 && model.service == .realDebrid { redeemButton(points) }
                     }
                 case .free:
                     DSProblem(title: Text(verbatim: UnavailableCause.noPremium.title { Strings.tr($0, language: ui) }),
                               detail: Text("Sin Premium no arranca nada al instante.")) {
                         renewButton(Text("Hacerla Premium"), model)
-                        if points > 0 { redeemButton(points) }
+                        if points > 0 && model.service == .realDebrid { redeemButton(points) }
                     }
                 case .active, .expiringSoon:   // quedan 3 días o menos: el mismo bloque, tranquilo
-                    DSProblem(title: expiry(status), detail: Text("No se renueva solo."), symbol: "calendar.badge.clock") {
+                    DSProblem(title: expiry(status), detail: model.service.renewsByHand ? Text("No se renueva solo.") : Text("Revisa tu plan."), symbol: "calendar.badge.clock") {
                         renewButton(Text("Renovar"), model)
-                        if points > 0 { redeemButton(points) }
+                        if points > 0 && model.service == .realDebrid { redeemButton(points) }
                     }
                 }
             }
@@ -197,7 +205,7 @@ struct DebridAccountView: View {
                 case .checking, .saved:
                     TorrentioRowLabel(title: playable ? Text("Guardada") : Text("Guardada · sin Premium"),
                                       detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
-                case .rejected: TorrentioRowLabel(title: Text("No sirve"), detail: Text("termina en ••••\(tail) · Real-Debrid ya no la acepta"))
+                case .rejected: TorrentioRowLabel(title: Text("No sirve"), detail: Text("termina en ••••\(tail) · \(model.service.name) ya no la acepta"))
                 }
                 Spacer(minLength: DS.Space.s2)
                 switch key {
@@ -210,7 +218,7 @@ struct DebridAccountView: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("debrid-key-state")
             if model.keyCameFromImport {
-                Text("Tomé tu clave de Real-Debrid de tu Torrentio").recipe(.footnote, color: DS.textMuted)
+                Text("Tomé tu clave de \(model.service.name) de tu Torrentio").recipe(.footnote, color: DS.textMuted)
             }
             if key != .rejected {   // rechazada, «Cambiar la clave» ya es el arreglo de arriba
                 PaneLink(Text("Cambiar la clave")) { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar la clave").foregroundStyle(DS.text) }
@@ -224,22 +232,32 @@ struct DebridAccountView: View {
                     Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
                         .accessibilityIdentifier("debrid-remove-everywhere")
                     Button("Cancelar", role: .cancel) {}
-                } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.") }
-        } header: { Text("Tu clave") } footer: { Self.keyFooter }
+                } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de \(model.service.name) no se toca.") }
+        } header: { Text("Tu clave") } footer: { Self.keyFooter(model.service) }
         .listRowBackground(DS.surface)
     }
 
     /// UX-4, TEC-18 · dónde vive, sin prometer lo que iCloud no asegura.
-    @MainActor static var keyFooter: Text {
-        DeviceWords.text("Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.",
-                         mac: "Sale de real-debrid.com/apitoken. Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.")
+    @MainActor static func keyFooter(_ cloud: DebridService) -> Text {
+        if cloud == .realDebrid {   // solo Real-Debrid: la frase de siempre, con su inglés
+            return DeviceWords.text("Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.",
+                                    mac: "Sale de real-debrid.com/apitoken. Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.")
+        }
+        return DeviceWords.text("Sale de \(cloud.keyPlace). Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.",
+                                mac: "Sale de \(cloud.keyPlace). Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.")
+    }
+
+    /// El título: la nube que conectas o la que usas; sin elegir, «Tu nube».
+    private func title(_ model: DebridModel) -> Text {
+        if let target = model.target { return Text(verbatim: target.name) }
+        return model.hasToken ? Text(verbatim: model.service.name) : Text("Tu nube")
     }
 
     /// P6-A · Real-Debrid ya no acepta tu clave (la cambiaste en real-debrid.com): se dice arriba, con su arreglo.
     @ViewBuilder private func rejected(_ model: DebridModel) -> some View {
         Section {
             DSProblem(title: Text(verbatim: UnavailableCause.reconnectDebrid.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }),
-                      detail: Text("Tu clave ya no sirve. Pega la nueva de real-debrid.com/apitoken.")) {
+                      detail: Text("Tu clave ya no sirve. Pega la nueva de \(model.service.keyPlace).")) {
                 // Un botón (no NavigationLink: en una lista, el enlace ignora el estilo y no se veía).
                 Button { changingKey = true } label: { Label("Cambiar la clave", systemImage: "key").frame(maxWidth: .infinity) }
                     .dsProblemFix(primary: true)
@@ -269,24 +287,34 @@ struct DebridAccountView: View {
                 .foregroundStyle(DS.text)
             Button("Reintentar") { Task { await model.recheck() } }
                 .accessibilityIdentifier("debrid-retry")
-        } header: { Text("Tu cuenta") } footer: { Text("Real-Debrid no contestó. Tu clave sigue guardada.") }
+        } header: { Text("Tu cuenta") } footer: { Text("\(model.service.name) no contestó. Tu clave sigue guardada.") }
         .listRowBackground(DS.surface)
         keySection(model, .saved)
     }
 
     @ViewBuilder private func connect(_ model: DebridModel) -> some View {
-        // RC1: lo más fácil primero, con un código como Trakt; pegar la clave queda abajo.
-        Section {
-            DebridCodeConnect(debrid: model)
-        } header: { Text("Conectar") } footer: { Text("Escribes un código corto en real-debrid.com/device y listo, sin copiar ni pegar.") }
-        .listRowBackground(DS.surface)
+        let cloud = model.connecting
+        // RC1: lo más fácil primero, con un código como Trakt; pegar la clave queda abajo. El código es solo de Real-Debrid.
+        if cloud == .realDebrid {
+            Section {
+                DebridCodeConnect(debrid: model)
+            } header: { Text("Conectar") } footer: { Text("Escribes un código corto en real-debrid.com/device y listo, sin copiar ni pegar.") }
+            .listRowBackground(DS.surface)
+        }
         Section {
             DebridKeyField(debrid: model)
-            Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
-            DebridSharedOffer(debrid: model)   // CX2-A: junto a «Pega tu clave», nunca en su lugar
-        } header: { Text("O pega tu clave") } footer: { Self.keyFooter }
+            Link(destination: model.tokenURL) { Label("Sacar tu clave en \(cloud.keyPlace)", systemImage: "arrow.up.right") }
+            if cloud == .realDebrid { DebridSharedOffer(debrid: model) }   // CX2-A: junto a «Pega tu clave», nunca en su lugar
+        } header: { cloud == .realDebrid ? Text("O pega tu clave") : Text("Pega tu clave") } footer: { Self.keyFooter(cloud) }
         .listRowBackground(DS.surface)
-        DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
+        if !model.hasToken { DebridTVSection(debrid: model) }   // K1: sin clave aquí, «Usar la de la TV»
+        if model.target != nil {   // DN1: volver a la lista sin conectar
+            Section {
+                Button(model.hasToken ? "Seguir con \(model.service.name)" : "Elegir otra nube") { model.target = nil }
+                    .accessibilityIdentifier("cloud-back")
+            }
+            .listRowBackground(DS.surface)
+        }
     }
 
     /// «Vence el 21 nov · quedan 18 días»; «Vence hoy»; «Venció el 2 nov»; sin fecha, lo de siempre. La fecha corta, como la TV (PT15).
@@ -317,7 +345,7 @@ struct DebridAccountView: View {
 }
 
 /// «Cambiar la clave» (como la TV, PT15): el campo siempre empieza vacío (la clave nunca se muestra completa, ni la que pegaste la vez pasada) y,
-/// en cuanto Real-Debrid acepta la nueva, regresa a tu cuenta, que ya dice «Conectada ✓».
+/// en cuanto tu nube acepta la nueva, regresa a tu cuenta, que ya dice «Conectada ✓».
 private struct DebridChangeKeyPage: View {
     @State private var observer: ModelObserver<DebridModel>
     @Environment(\.dismiss) private var dismiss
@@ -327,12 +355,14 @@ private struct DebridChangeKeyPage: View {
     var body: some View {
         let model = observer.model
         Form {
-            Section { DebridCodeConnect(debrid: model) } header: { Text("Con un código") }
-                .listRowBackground(DS.surface)
+            if model.connecting == .realDebrid {
+                Section { DebridCodeConnect(debrid: model) } header: { Text("Con un código") }
+                    .listRowBackground(DS.surface)
+            }
             Section {
                 DebridKeyField(debrid: model)
-                Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
-            } footer: { DebridAccountView.keyFooter }
+                Link(destination: model.tokenURL) { Label("Sacar tu clave en \(model.connecting.keyPlace)", systemImage: "arrow.up.right") }
+            } footer: { DebridAccountView.keyFooter(model.connecting) }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)

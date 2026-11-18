@@ -105,11 +105,13 @@ struct AddonRowLabel: View {
     /// M6: solo da torrents (`AddonTorrentsLine`); `tv`: hay una TV emparejada.
     var torrents = false
     var tv = false
+    /// Tu nube («usa tu TorBox»).
+    var service: DebridService = .realDebrid
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text(verbatim: addon.name).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-            AddonWhat(addon: addon).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+            AddonWhat(addon: addon, service: service).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             if torrents { AddonTorrentsLine(tv: tv) }
             else { AddonHealthLine(state: health, enabled: addon.enabled, english: english) }
         }
@@ -120,14 +122,21 @@ struct AddonRowLabel: View {
 /// Qué aporta un complemento, en una línea: «Fuentes de video · usa tu Real-Debrid», «Subtítulos», «Listas · agregado por ti».
 struct AddonWhat: View {
     let addon: InstalledAddon
+    /// Tu nube («usa tu TorBox»).
+    var service: DebridService = .realDebrid
 
     var body: some View { text }
 
     var text: Text {
         let kinds = addon.resources.contains("stream") ? Text("Fuentes de video")
             : addon.resources.contains("subtitles") ? Text("Subtítulos") : Text("Listas")
-        if addon.isBuiltIn { return addon.usesDebrid ? Text("\(kinds) · usa tu Real-Debrid") : kinds }
-        return addon.usesDebrid ? Text("\(kinds) · agregado por ti · usa tu Real-Debrid") : Text("\(kinds) · agregado por ti")
+        // Con Real-Debrid, la clave de siempre (con su inglés); con las otras, su nombre.
+        let rd = service == .realDebrid
+        if addon.isBuiltIn {
+            return !addon.usesDebrid ? kinds : rd ? Text("\(kinds) · usa tu Real-Debrid") : Text("\(kinds) · usa tu \(service.name)")
+        }
+        return !addon.usesDebrid ? Text("\(kinds) · agregado por ti")
+            : rd ? Text("\(kinds) · agregado por ti · usa tu Real-Debrid") : Text("\(kinds) · agregado por ti · usa tu \(service.name)")
     }
 }
 

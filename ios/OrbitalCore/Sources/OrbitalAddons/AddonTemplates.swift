@@ -13,13 +13,13 @@ public struct AddonTemplate: Sendable, Equatable, Identifiable {
     public var onByDefault: Bool
     /// Si su URL se arma con `AddonOptions` (Torrentio): sus opciones se guardan escritas, no «las de la app».
     public var usesOptions = false
-    fileprivate var build: @Sendable (_ token: String?, _ options: AddonOptions) -> String?
+    fileprivate var build: @Sendable (_ token: String?, _ options: AddonOptions, _ service: DebridService) -> String?
 
     public static func == (a: AddonTemplate, b: AddonTemplate) -> Bool { a.id == b.id }
 
-    /// La URL del manifiesto; nil si pide una clave que no hay.
-    public func manifestURL(token: String?, options: AddonOptions? = nil) -> String? {
-        build(token.flatMap { $0.isEmpty ? nil : $0 }, options ?? AddonOptions())
+    /// La URL del manifiesto con la clave de tu nube; nil si pide una clave que no hay.
+    public func manifestURL(token: String?, options: AddonOptions? = nil, service: DebridService = .realDebrid) -> String? {
+        build(token.flatMap { $0.isEmpty ? nil : $0 }, options ?? AddonOptions(), service)
     }
 }
 
@@ -29,9 +29,9 @@ public enum AddonCatalog {
     /// Torrentio con Real-Debrid: `https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr,unknown|realdebrid={CLAVE}/manifest.json`,
     /// con todas tus opciones en el orden de Torrentio (`TorrentioConfig`), igual que la TV.
     public static let torrentio = AddonTemplate(
-        id: "torrentio", name: "Torrentio", summary: "Fuentes de video, servidas por tu Real-Debrid", resources: ["stream"],
+        id: "torrentio", name: "Torrentio", summary: "Fuentes de video, servidas por tu nube", resources: ["stream"],
         usesDebrid: true, onByDefault: true, usesOptions: true
-    ) { token, options in TorrentioConfig.manifestURL(options: options, token: token) }
+    ) { token, options, service in TorrentioConfig.manifestURL(options: options, token: token, service: service) }
 
     public static let cometBase = "https://comet.elfhosted.com"
 
@@ -39,11 +39,11 @@ public enum AddonCatalog {
     /// (`/{base64}/manifest.json`), como la arma su página. Solo lo cacheado en tu Real-Debrid. Viene apagado en la guía
     /// hasta probarlo con una cuenta real.
     public static let comet = AddonTemplate(
-        id: "comet", name: "Comet", summary: "Más fuentes de video, también de tu Real-Debrid", resources: ["stream"],
+        id: "comet", name: "Comet", summary: "Más fuentes de video, también de tu nube", resources: ["stream"],
         usesDebrid: true, onByDefault: false
-    ) { token, _ in
+    ) { token, _, service in
         guard let token else { return nil }
-        let settings: [String: Any] = ["debridServices": [["service": "realdebrid", "apiKey": token]], "cachedOnly": true]
+        let settings: [String: Any] = ["debridServices": [["service": service.cometService, "apiKey": token]], "cachedOnly": true]
         guard let json = try? JSONSerialization.data(withJSONObject: settings, options: [.sortedKeys]),
               var text = String(data: json, encoding: .utf8) else { return nil }
         // El base64 normal puede traer «/» o «+», que rompen la ruta: un espacio más al final del JSON (que no cambia nada)
@@ -60,7 +60,7 @@ public enum AddonCatalog {
     public static let openSubtitles = AddonTemplate(
         id: "opensubtitles", name: "OpenSubtitles", summary: "Subtítulos en tu idioma", resources: ["subtitles"],
         usesDebrid: false, onByDefault: true
-    ) { _, _ in "https://opensubtitles-v3.strem.io/manifest.json" }
+    ) { _, _, _ in "https://opensubtitles-v3.strem.io/manifest.json" }
 
     /// Los recomendados, en el orden en que se preguntan.
     public static let recommended: [AddonTemplate] = [torrentio, comet, openSubtitles]

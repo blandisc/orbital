@@ -4,23 +4,17 @@ import OrbitalModels
 import OrbitalAddons
 
 /// 4 · Ver aquí mismo (D1; G4 de la revisión): una escena viva en lugar de dos pantallas de lectura. La ficha, el dedo toca
-/// «Ver» y arranca; abajo, una sola línea con el precio y la regla de una cuenta por persona (Q2: el detalle vive en la
-/// historia «Ver al instante»). Un solo botón: «Abrir Real-Debrid y copiar clave»; al volver, si copiaste algo, «Pegar tu
-/// clave» con un toque. Escribirla a mano queda en «Otra forma». Pagar no detiene la guía: «Cuando quiera ver algo».
+/// «Ver» y arranca; abajo, una sola línea: es un servicio de pago y sirve cualquiera de las tres. DN1 (18 nov 2026): un solo
+/// botón, «Conectar tu nube», abre la hoja «Tu nube» (la misma de Ajustes › Cuentas): «Ya tengo cuenta» o «Todavía no
+/// tengo». Nunca dice «Real-Debrid» solo antes de elegir. Pagar no detiene la guía: «Cuando quiera ver algo».
 struct OnboardingSeeHere: View {
-    private func isFailed(_ flow: DebridModel.CodeFlow) -> Bool { if case .failed = flow { return true }; return false }
-
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
     let next: () -> Void
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var debrid: ModelObserver<DebridModel>
-    @State private var opened = false
-    @State private var canPaste = false
-    @State private var byHand = false
-    @Environment(\.openURL) private var openURL
-    @Environment(\.scenePhase) private var scenePhase
+    @State private var choosing = false
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); _debrid = State(wrappedValue: ModelObserver(guide.debrid))
@@ -31,10 +25,9 @@ struct OnboardingSeeHere: View {
         let model = debrid.model
         GuidePage(title: Text("Ve todo al instante, aquí"),
                   step: step,
-                  primary: model.ready ? Text("Seguir") : Text("Conectar con un código"),
-                  primaryEnabled: model.ready || model.codeFlow == .idle || isFailed(model.codeFlow),
+                  primary: model.ready ? Text("Seguir") : Text("Conectar tu nube"),
                   secondary: model.ready ? nil : Text("Cuando quiera ver algo"),
-                  next: { if model.ready { next() } else { model.connectWithCode() } },
+                  next: { if model.ready { next() } else { choosing = true } },
                   skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 StorySceneView(scene: .titlePlay, tint: DS.ListTint.flame)
@@ -47,50 +40,23 @@ struct OnboardingSeeHere: View {
                     }
                     .accessibilityElement()
                     .accessibilityLabel(Text("Así funciona: tocas «Ver», la nube lo tiene y lo ves"))
-                Text("Unos 3 € cada 15 días · una cuenta por persona").recipe(.secondary, color: DS.textMuted)
-                // El campo no se quita mientras se revisa la clave (antes desaparecía y perdía el teclado).
-                if case .ok(let status) = model.check {
-                    GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text(verbatim: "\(status.username) · Premium"), detail: DebridWords.text(status))
-                } else {
-                    DebridCodeConnect(debrid: model, showsStart: false)
-                    if byHand && (canPaste || opened) {
-                        Button {
-                            if let text = UIPasteboard.general.string { model.token = text; Task { await model.verify() } }
-                        } label: { Label("Pegar tu clave", systemImage: "doc.on.clipboard").frame(maxWidth: .infinity) }
-                            .dsGlassButton().dsControlSize(.large)
-                            .accessibilityIdentifier("debrid-paste")
-                    }
-                    if byHand {
-                        DebridKeyField(debrid: model)   // dice lo que contestó Real-Debrid, con su arreglo
-                    } else {
-                        switch model.check {
-                        case .checking: DSInlineProgress(text: Text("Revisando tu cuenta…"))
-                        case .free: DSNotice(text: "Tu cuenta es gratuita: necesitas Premium para ver.", tone: .warn)
-                        case .failed(let message): DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
-                        default: EmptyView()
-                        }
-                        Button { withAnimation(DS.Motion.fade) { byHand = true; opened = true } } label: { Text("Otra forma: pegar la clave").recipe(.footnote, color: DS.textMuted) }
-                            .buttonStyle(.borderless)
-                            .accessibilityIdentifier("debrid-by-hand")
-                    }
-                    Button("Crear cuenta y pagar", systemImage: "arrow.up.right") { openURL(model.renewURL) }
-                        .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+                Text("Es un servicio de pago que guarda películas y series: tu nube. Sirve Real-Debrid, TorBox o AllDebrid.")
+                    .recipe(.secondary, color: DS.textMuted)
+                if model.ready, let status = model.status {
+                    GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success,
+                               title: Text(verbatim: "\(model.service.name) · \(status.username)"), detail: DebridWords.text(status))
                 }
                 DebridSharedOffer(debrid: model, carded: true)
             }
         }
         .dsFeedback(.success, trigger: model.ready)
-        .onDisappear { model.cancelCode() }
-        .task { await model.checkShared(); canPaste = UIPasteboard.general.hasStrings }
-        // De regreso de la página de Real-Debrid: si copiaste algo, «Pegar tu clave» a la vista.
-        .onChange(of: scenePhase) { _, phase in
-            guard phase == .active else { return }
-            canPaste = UIPasteboard.general.hasStrings
-        }
+        .sheet(isPresented: $choosing) { DebridCloudSheet(debrid: model) }
+        .onChange(of: model.ready) { _, ready in if ready { choosing = false } }
+        .task { await model.checkShared() }
     }
 }
 
-/// RC1 · conectar con un código, como Trakt (la guía y Ajustes › Real-Debrid): el código grande para real-debrid.com/device,
+/// RC1 · conectar con un código, como Trakt (solo Real-Debrid: Ajustes › Cuentas › Tu nube): el código grande para real-debrid.com/device,
 /// el botón que la abre y la espera; en cuanto lo apruebas, queda conectado solo. `showsStart`: con su propio botón para
 /// empezar (en Ajustes; en la guía lo empieza el botón de abajo).
 struct DebridCodeConnect: View {
@@ -110,7 +76,7 @@ struct DebridCodeConnect: View {
                 }
             case .asking: DSInlineProgress(text: Text("Pidiendo un código…"))
             case .waiting(let code, let url):
-                DeviceCodeCard(service: "Real-Debrid", code: code, url: url).accessibilityIdentifier("debrid-code")
+                DeviceCodeCard(service: "Real-Debrid", code: code, url: url).accessibilityIdentifier("debrid-code")   // solo Real-Debrid: el código es suyo
             case .connecting: DSInlineProgress(text: Text("Conectando…"))
             case .failed(let message):
                 DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
@@ -121,7 +87,7 @@ struct DebridCodeConnect: View {
     }
 }
 
-/// El campo de la clave con «Pegar» y lo que dijo Real-Debrid. Lo comparten la guía y Ajustes › Cuentas › «Cambiar clave».
+/// El campo de la clave con «Pegar» y lo que dijo tu nube (la que se conecta). Lo comparten la guía y Ajustes › Cuentas › «Cambiar clave».
 struct DebridKeyField: View {
     @State private var observer: ModelObserver<DebridModel>
     @Environment(\.openURL) private var openURL
@@ -154,7 +120,7 @@ struct DebridKeyField: View {
             case .failed(let message):
                 // IOS-9, IOS-18: en ámbar y con su arreglo (antes, rojo y sin botón).
                 DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
-                Button("Abrir real-debrid.com/apitoken", systemImage: "arrow.up.right") { openURL(debrid.tokenURL) }
+                Button("Abrir \(debrid.connecting.keyPlace)", systemImage: "arrow.up.right") { openURL(debrid.tokenURL) }
                     .dsGlassButton()
                     .accessibilityIdentifier("debrid-open-apitoken")
             }

@@ -241,7 +241,7 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     /// De qué complemento viene (Torrentio, Comet u otro): el ícono chico junto a la calidad.
     public var from: Streams.AddonKind = .other
     /// Qué tan rápido arranca, sin prometer de más.
-    public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
+    public var speed: SourceSpeed { cached ? .inCloud : debrid ? .cloudMustDownload : .unknown }
 }
 
 /// Una versión que Real-Debrid aún no tiene, con la fila de su idioma («Hay que pedirlas · tardan»).
@@ -302,7 +302,7 @@ extension SourcesModel {
     /// `inCloud` (N2-A): lo que ya pediste y sigue en camino no se vuelve a ofrecer (su lugar sí cuenta, como el de un chip).
     public static func toRequest(_ ranked: [Source], shown: [LanguageRow], prefs: Preferences, limitGB: Double, limit: Int = 6,
                                  inCloud: Set<Int> = []) -> [RequestableVersion] {
-        let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .realDebridMustDownload }.map(\.id) }).union(inCloud)
+        let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .cloudMustDownload }.map(\.id) }).union(inCloud)
         var seen = Set<String>(), out: [RequestableVersion] = []
         for s in ranked where !s.cached && s.debrid && !hidden(s) && !s.refused && s.torrent != nil {
             let audio = Streams.playingLanguage(s, prefs) ?? s.audio.first

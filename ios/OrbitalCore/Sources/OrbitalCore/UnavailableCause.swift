@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Por qué no hay una versión que arranque ya, en palabras y con UNA salida (D5, R1, R7). Las causas van en el orden de
 /// `design/vocabulario.json › causas` (la primera que aplique gana), el mismo de la TV; la ficha y el reproductor dicen lo
@@ -47,16 +48,17 @@ public enum UnavailableCause: Equatable, Sendable {
     // pendiente: texto de la tabla común con la TV — design/vocabulario.json › causas (3 nov 2026). RX4-A (3 nov): «la nube»
     // es Real-Debrid; la TV todavía dice «Bajando en Real-Debrid · » y «Real-Debrid todavía no lo tiene» (pendiente en el
     // vocabulario). Si cambia ahí, cambia aquí y en la TV.
-    /// El título, en español (la clave del catálogo de textos). `tr` traduce al idioma de la app.
-    public func title(_ tr: (String) -> String = { $0 }) -> String {
+    /// El título, en español (la clave del catálogo de textos). `tr` traduce al idioma de la app; `service`, la nube que se
+    /// nombra («Vuelve a conectar TorBox»).
+    public func title(_ tr: (String) -> String = { $0 }, service: DebridService = .realDebrid) -> String {
         switch self {
         case .downloading(let percent): String(format: tr("Bajando en la nube · %lld %%"), percent)
         case .unreleased(let day): String(format: tr("Aún no se estrena · sale %@"), day)
         case .cannotSearch: tr("No puedo buscar versiones")
-        case .debridExpired: tr("Tu Real-Debrid venció")
+        case .debridExpired: service.spoken(tr("Tu Real-Debrid venció"))
         case .noPremium: tr("Tu cuenta no tiene Premium")
-        case .reconnectDebrid: tr("Vuelve a conectar Real-Debrid")
-        case .debridRefused: tr("Real-Debrid no lo dejó bajar")
+        case .reconnectDebrid: service.spoken(tr("Vuelve a conectar Real-Debrid"))
+        case .debridRefused: service.spoken(tr("Real-Debrid no lo dejó bajar"))
         case .addonsOffline: tr("No pude conectar con tus complementos")
         case .noAddonsOn: tr("No tienes complementos prendidos")
         case .notInDebrid: tr("Todavía no está en la nube")

@@ -71,7 +71,7 @@ struct SourcesSheet: View {
 
     /// Tocar un renglón: la que hay que pedir se pide (ya pedida, cómo va); las demás se ven (o se bajan).
     private func open(_ option: VersionOption, code: String, _ purpose: Purpose = .watch) {
-        if option.speed == .realDebridMustDownload, request != nil {
+        if option.speed == .cloudMustDownload, request != nil {
             if requestStatus(option.id) != nil { waiting = Waiting(id: option.id) } else { ask(option.id) }
             return
         }
@@ -282,15 +282,15 @@ struct SourcesSheet: View {
     /// Un renglón de la lista con su menú de mantener presionado.
     private func versionRow(_ row: LanguageRow, _ option: VersionOption, showsLanguage: Bool, _ model: SourcesModel, _ ui: String) -> some View {
         VersionListRow(option: option, code: row.code, uiLanguage: ui, showsLanguage: showsLanguage,
-                       cloud: option.speed == .realDebridMustDownload ? requestStatus(option.id) : nil,
-                       action: { open(option, code: row.code) }) {
+                       cloud: option.speed == .cloudMustDownload ? requestStatus(option.id) : nil,
+                       service: env.services.debrid.service, action: { open(option, code: row.code) }) {
             actions(option, row, model, ui)
         }
     }
 
     /// Lo que antes tenía la tarjeta, al mantener presionado: Ver o Pedir, Descargar, Infuse y las otras de ese idioma y calidad.
     @ViewBuilder private func actions(_ option: VersionOption, _ row: LanguageRow, _ model: SourcesModel, _ ui: String) -> some View {
-        let mustAsk = option.speed == .realDebridMustDownload && request != nil
+        let mustAsk = option.speed == .cloudMustDownload && request != nil
         if mustAsk {
             if requestStatus(option.id) == nil { Button("Pedir a la nube", systemImage: DS.Symbol.cloud) { ask(option.id) } }
             else { Button("Ver cómo va", systemImage: DS.Symbol.cloud) { waiting = Waiting(id: option.id) } }
@@ -324,7 +324,8 @@ struct SourcesSheet: View {
                               status: requestStatus(yours.id), request: { ask(yours.id) })
         } else if request != nil, let code = model.yoursRefused {
             // LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (18 nov).
-            VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)))
+            VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)),
+                                service: env.services.debrid.service)
         }
         VersionLegend()
         VersionLanguageList(rows: model.languageRows, uiLanguage: ui) { row, option, showsLanguage in

@@ -69,7 +69,7 @@ extension TitleView {
     /// Debajo del botón mientras Real-Debrid lo baja: dónde (en su nube, no en el iPhone), cómo y «¿Qué es esto?».
     @ViewBuilder func debridWhere(_ model: TitleModel) -> some View {
         if let request = model.debridRequest, DebridRequestWords.group(request.state) == .pending {
-            DebridWhereLine(notifies: DebridRequestNotifier.canNotify, tv: env.services.orbital.isConfigured) { debridSheet = .explain }
+            DebridWhereLine(notifies: DebridRequestNotifier.canNotify, tv: env.services.orbital.isConfigured, service: request.cloud) { debridSheet = .explain }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -108,7 +108,7 @@ extension TitleView {
             case .refused: tell(.debridRefused, model)
             case .tooMany:
                 env.notify(DebridRequestWords.title(request, tr), detail: DebridRequestWords.detail(request, now: Date(), notifies: false, tr), tone: .warn,
-                           actionTitle: tr("Abrir")) { UIApplication.shared.open(DebridRequestSheetHost.downloadsURL) }   // IOS-9: con su arreglo
+                           actionTitle: tr("Abrir")) { UIApplication.shared.open(DebridRequestSheetHost.downloads(in: request.cloud)) }   // IOS-9: con su arreglo
             default:
                 let permission = await DebridRequestNotifier.permission()
                 if permission == .denied {
@@ -122,7 +122,7 @@ extension TitleView {
                 }
             }
         case .failed(let cause?, _): tell(cause, model)
-        case .failed(nil, let error): env.notify(error.words(tr), tone: .warn)
+        case .failed(nil, let error): env.notify(error.words(tr, service: env.services.debrid.service), tone: .warn)
         case .nobodyHasIt: tell(.nobodyHasIt, model)
         }
         await model.loadBestSource(onCellular: env.connectivity.isCellular)
@@ -142,7 +142,7 @@ extension TitleView {
             env.notify(tr("Pedido cancelado"), detail: request.title, tone: .info)
             await observerModel.loadBestSource(onCellular: env.connectivity.isCellular)
         } else {
-            env.notify(tr("No pude hablar con Real-Debrid"), tone: .warn)
+            env.notify(request.cloud.spoken(tr("No pude hablar con Real-Debrid")), tone: .warn)
         }
     }
 
@@ -150,7 +150,7 @@ extension TitleView {
     @ViewBuilder func debridSheetContent(_ kind: TitleDebridSheet, _ model: TitleModel) -> some View {
         switch kind {
         case .explain:
-            DebridExplainer().presentationDragIndicator(.visible)
+            DebridExplainer(service: env.services.debrid.service).presentationDragIndicator(.visible)
         case .notify:
             // La misma explicación que en el reproductor (P4-A): una sola pieza.
             DebridNotifyAsk { _ in debridSheet = nil; await sendRequest(model) }

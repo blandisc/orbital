@@ -37,10 +37,32 @@ public final class DebridModel: ObservableModel {
     }
 
     public var hasToken: Bool { services.debrid.hasToken }
+    /// DN1 · la nube que usas (Ajustes › Cuentas › Tu nube).
+    public var service: DebridService { services.debrid.service }
+    /// La nube que se está conectando en la hoja (la que tocaste en «Tu nube»; si no, la que usas). La clave pegada es de esta.
+    public var target: DebridService? { didSet { if oldValue != target { token = ""; check = .idle; changed() } } }
+    public var connecting: DebridService { target ?? service }
+    /// «Clave guardada» o «Sin clave» en «Tu nube».
+    public func hasKey(_ cloud: DebridService) -> Bool { services.debrid.hasKey(cloud) }
+
+    /// «Tu nube» · usar otra. Con su clave ya guardada, cambia ya (los complementos se rearman con ella); sin clave, queda
+    /// para conectarla («Conectar con tu clave»). true si ya cambió.
+    @discardableResult
+    public func use(_ cloud: DebridService) async -> Bool {
+        guard hasKey(cloud) else { target = cloud; return false }
+        await services.debrid.use(cloud)
+        target = nil
+        status = services.debrid.saved
+        services.addonList.startWithRecommended()
+        await services.resetAccountCaches()
+        await load()
+        changed()
+        return true
+    }
     /// La clave se tomó de tu Torrentio importado de Stremio (no la pegaste): se dice en Ajustes.
     public var keyCameFromImport: Bool { services.debrid.keyCameFromImport }
-    public var tokenURL: URL { services.debrid.provider.tokenURL }
-    public var renewURL: URL { services.debrid.provider.renewURL }
+    public var tokenURL: URL { connecting.keyURL }
+    public var renewURL: URL { service.renewURL }
     /// «Continuar» de la guía: la clave guardada sirve (Premium).
     public var ready: Bool { if case .ok = check { return true }; return hasToken && status?.isPremium == true }
 
@@ -64,15 +86,16 @@ public final class DebridModel: ObservableModel {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
         check = .checking
+        let cloud = connecting
         do {
-            let found = try await services.debrid.verify(clean)
+            let found = try await services.debrid.verify(clean, service: cloud)
             guard clean == token.trimmingCharacters(in: .whitespacesAndNewlines) else { return }   // cambiaste la clave mientras
             guard found.isPremium else { check = .free(found); return }
-            await keep(clean, found)
+            await keep(clean, found, service: cloud)
             check = .ok(found)
         } catch let error as DebridError {
-            check = .failed(error.description)
-        } catch { check = .failed(DebridError.unexpected.description) }
+            check = .failed(error.text(cloud))
+        } catch { check = .failed(DebridError.unexpected.text(cloud)) }
     }
 
     /// RC1 · pide un código y espera a que lo apruebes; en cuanto lo apruebas, queda conectado (sin copiar ni pegar).
@@ -84,7 +107,7 @@ public final class DebridModel: ObservableModel {
     public func cancelCode() { codeTask?.cancel(); codeTask = nil; codeFlow = .idle }
 
     private func runCode() async {
-        guard let rd = services.debrid.provider as? RealDebrid else { return codeFlow = .failed(DebridError.unexpected.description) }
+        guard let rd = services.debrid.providers(.realDebrid) as? RealDebrid else { return codeFlow = .failed(DebridError.unexpected.description) }
         codeFlow = .asking
         do {
             let code = try await rd.deviceCode()
@@ -111,8 +134,9 @@ public final class DebridModel: ObservableModel {
     }
 
     /// Guarda una clave que Real-Debrid ya aceptó (Premium): la pegada o la de tu TV.
-    func keep(_ clean: String, _ found: DebridStatus) async {
-        await services.debrid.save(token: clean, status: found)
+    func keep(_ clean: String, _ found: DebridStatus, service cloud: DebridService? = nil) async {
+        await services.debrid.save(token: clean, status: found, service: cloud ?? connecting)
+        target = nil
         services.addonList.startWithRecommended()
         await services.resetAccountCaches()
         status = found

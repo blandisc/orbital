@@ -30,7 +30,7 @@ struct AddonDetail: View {
         Form {
             Section {
                 LabeledContent { Text(addon.isBuiltIn ? "Viene con Orbital" : "Agregado por ti").foregroundStyle(DS.textMuted) } label: {
-                    AddonWhat(addon: addon).foregroundStyle(DS.text)
+                    AddonWhat(addon: addon, service: env.services.debrid.service).foregroundStyle(DS.text)
                 }
                 if addon.enabled, model.health(addon) != .unknown {
                     LabeledContent("Estado") { AddonHealthLine(state: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en")) }

@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Por qué algo no llegó, dicho por su causa de verdad, y qué puede hacer quien usa la app. Antes casi todo terminaba en
 /// «Revisa tu conexión» aunque el iPhone tuviera internet y el problema fuera Trakt, un complemento o Real-Debrid.
@@ -63,6 +64,10 @@ public enum Degraded: Equatable, Sendable {
         case .notConnected(.tmdb): "Falta la clave de TMDB"
         }
     }
+
+    /// El título y el detalle ya traducidos (`tr`) y dichos con tu nube: «TorBox no contesta» (`design/debrid-services.json`).
+    public func title(_ tr: (String) -> String, service: DebridService) -> String { service.spoken(tr(title)) }
+    public func detail(_ tr: (String) -> String, service: DebridService) -> String { service.spoken(tr(detail)) }
 
     /// Qué pasa y qué sigue funcionando, en una o dos frases.
     public var detail: String {

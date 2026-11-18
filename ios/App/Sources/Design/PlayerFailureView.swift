@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 // Piezas del reproductor: los botones con nombre, «Audio y subtítulos» (`SubtitleDock`) y sus partes.
 
@@ -41,6 +42,8 @@ struct PlayerFailureView: View {
     let close: () -> Void
     /// ¿Esta versión ve al instante (Real-Debrid y complementos)? Sin eso (Orbital, App Store), los textos no los nombran.
     var instant = true
+    /// Tu nube («TorBox aún no tiene esta película», «Vuelve a conectar AllDebrid»).
+    var service: DebridService = .realDebrid
     /// «¿Qué es esto?» (O2), en las causas de Real-Debrid.
     @State private var explaining = false
 
@@ -62,7 +65,7 @@ struct PlayerFailureView: View {
         }
         .background(DS.backdropDeep.ignoresSafeArea())
         .accessibilityElement(children: .contain)
-        .sheet(isPresented: $explaining) { DebridExplainer() }
+        .sheet(isPresented: $explaining) { DebridExplainer(service: service) }
     }
 
     /// Las causas de Real-Debrid llevan «¿Qué es esto?» (O2): es donde surge la duda.
@@ -128,6 +131,7 @@ struct PlayerFailureView: View {
     }
 
     private func tr(_ key: String) -> String { Strings.tr(key, language: uiLanguage) }
+    private var locale: Locale { Locale(identifier: uiLanguage) }
 
     private func perform(_ action: UnavailableCause.Action) -> (() -> Void)? {
         switch action {
@@ -155,7 +159,7 @@ struct PlayerFailureView: View {
     }
 
     private var title: Text {
-        if let cause { return Text(verbatim: cause.title(tr)) }
+        if let cause { return Text(verbatim: cause.title(tr, service: service)) }
         return switch failure {
         case .noSources: Text("Todavía no hay dónde verlo")
         case .noneWorked: Text("No pude reproducirlo")
@@ -179,8 +183,8 @@ struct PlayerFailureView: View {
         if cause != nil { return Text(verbatim: "") }
         return switch failure {
         case .noSources where !instant: isEpisode ? Text("Aún no hay versiones de este episodio. Prueba más tarde.") : Text("Aún no hay versiones de esta película. Prueba más tarde.")
-        case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")   // edición: solo con instantStreams (arriba, el de Orbital)
-            : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")   // edición: solo con instantStreams
+        case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.", cloud: service, locale: locale)   // edición: solo con instantStreams (arriba, el de Orbital)
+            : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.", cloud: service, locale: locale)   // edición: solo con instantStreams
         case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")
         case .sourceDied: Text("La versión dejó de responder. Al reintentar seguimos donde ibas, con otra si hace falta.")
         case .network: online ? Text("Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.")

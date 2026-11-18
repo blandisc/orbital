@@ -176,7 +176,7 @@ final class RDScenarioTests: XCTestCase {
         for wanted in list.toRequest {
             let s = try XCTUnwrap(list.source(wanted.id), "se puede pedir desde la lista")
             XCTAssertFalse(s.instant, "«\(s.release)» no arranca al instante: hay que pedirla")
-            XCTAssertEqual(wanted.option.speed, .realDebridMustDownload)
+            XCTAssertEqual(wanted.option.speed, .cloudMustDownload)
         }
         XCTAssertEqual(list.error, "Real-Debrid aún no tiene este título.")
         XCTAssertNil(SourcesModel.toPlay(list.ranked, resume: nil, family: nil), "nada que ver: lo de pedir nunca se reproduce")

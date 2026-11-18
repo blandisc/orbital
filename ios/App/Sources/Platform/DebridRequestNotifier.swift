@@ -73,7 +73,7 @@ enum DebridRequestNotifier {
         let content = UNMutableNotificationContent()
         let what = [AppEnvironment.shared.services.titleNames.name(request.title, id: request.metaID, kind: request.kind), episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
         content.title = String(format: Strings.tr("Volví a pedir %@", language: language), what)
-        content.body = Strings.tr("Ya se liberó un lugar en tu Real-Debrid", language: language)
+        content.body = request.cloud.spoken(Strings.tr("Ya se liberó un lugar en tu Real-Debrid", language: language))
         content.threadIdentifier = thread
         content.userInfo = ["kind": request.kind, "id": request.metaID, "title": request.title, "open": "title"]
         try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "retried." + request.hash, content: content, trigger: nil))

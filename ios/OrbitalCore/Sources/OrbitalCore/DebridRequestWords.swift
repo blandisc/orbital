@@ -14,7 +14,7 @@ public enum DebridRequestWords {
         case .queued: tr("En cola")
         case .downloading: UnavailableCause.downloading(percent: request.percent).title(tr)
         case .noPeers: tr("Sin gente que lo comparta")
-        case .refused: UnavailableCause.debridRefused.title(tr)
+        case .refused: UnavailableCause.debridRefused.title(tr, service: request.cloud)   // el de su nube: «TorBox no lo dejó bajar»
         case .tooMany: tr("Muchas descargas activas")
         case .ready: tr("Listo")
         case .gone: tr("Pedido cancelado")   // la lápida no se enseña; por si acaso, lo que pasó
@@ -87,7 +87,7 @@ public enum DebridRequestWords {
             : minutes < 48 * 60 ? tr("hace 1 día") : String(format: tr("hace %lld días"), minutes / (24 * 60))
         // Lo pidió la TV (su libreta, S2/S4): se dice así, no «lo pediste en TV».
         // IOS-19: lo de otra cuenta lo dice, como la TV («· con otra cuenta de Real-Debrid»).
-        let other = otherAccount ? " · " + tr("con otra cuenta de Real-Debrid") : ""
+        let other = otherAccount ? " · " + request.cloud.spoken(tr("con otra cuenta de Real-Debrid")) : ""
         if request.device == "TV" || (otherAccount && request.device.isEmpty) { return String(format: tr("Lo pidió la TV · %@"), ago) + other }
         if otherAccount { return String(format: tr("Lo pidió %@ · %@"), request.device, ago) + other }
         return String(format: tr("Lo pediste en %@ · %@"), request.device, ago)
@@ -180,11 +180,23 @@ public extension UnavailableCause {
 
 public extension RDRequestError {
     /// En palabras, para el aviso cuando no es una causa.
-    func words(_ tr: (String) -> String = { $0 }) -> String {
+    func words(_ tr: (String) -> String = { $0 }, service: DebridService = .realDebrid) -> String {
         switch self {
         case .tooManyActive: tr("Muchas descargas activas")
-        case .slowDown: tr("Real-Debrid pide esperar un momento")
-        default: tr("No pude hablar con Real-Debrid")
+        case .slowDown: service.spoken(tr("Real-Debrid pide esperar un momento"))
+        default: service.spoken(tr("No pude hablar con Real-Debrid"))
         }
+    }
+}
+
+public extension DebridService {
+    /// Un texto escrito con «Real-Debrid» (la clave del catálogo, ya traducida) dicho con tu nube: «TorBox no lo dejó bajar»,
+    /// «Vuelve a conectar AllDebrid», «torbox.app» por «real-debrid.com» (`design/debrid-services.json › words`). Así la
+    /// clave y su inglés siguen siendo los de siempre. «No se renueva solo» no se cambia aquí: lo decide quien lo dice
+    /// (`renewsByHand`).
+    func spoken(_ text: String) -> String {
+        guard self != .realDebrid else { return text }
+        return text.replacingOccurrences(of: DebridService.realDebrid.site, with: site)
+            .replacingOccurrences(of: DebridService.realDebrid.name, with: name)
     }
 }

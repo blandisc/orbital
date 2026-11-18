@@ -16,11 +16,13 @@ enum DebridReminderNotifier {
         guard services.debrid.hasToken, let status = await services.debrid.status() else { return }
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
-        let language = services.appSettings.uiLanguage
+        let language = services.appSettings.uiLanguage, cloud = services.debrid.service
         for reminder in services.debridReminders.toSchedule(status, now: Date()) {
             let content = UNMutableNotificationContent()
-            content.title = title(reminder.daysLeft, language: language)
-            content.body = Strings.tr("Renuévalo para no quedarte sin fuentes. No se renueva solo.", language: language)
+            content.title = title(reminder.daysLeft, language: language, service: cloud)
+            // «No se renueva solo» es solo de Real-Debrid; con las otras, «Revisa tu plan» (`design/debrid-services.json`).
+            content.body = cloud.renewsByHand ? Strings.tr("Renuévalo para no quedarte sin fuentes. No se renueva solo.", language: language)
+                : Strings.tr("Renuévalo para no quedarte sin fuentes. Revisa tu plan.", language: language)
             content.threadIdentifier = thread
             content.sound = .default
             let when = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminder.fireAt)
@@ -29,8 +31,9 @@ enum DebridReminderNotifier {
         }
     }
 
-    static func title(_ daysLeft: Int, language: String) -> String {
-        daysLeft == 0 ? Strings.tr("Tu Real-Debrid vence hoy", language: language)
-            : String(format: Strings.tr("Tu Real-Debrid vence en %lld días", language: language), daysLeft)
+    /// «Tu TorBox vence hoy»: con el nombre de tu nube.
+    static func title(_ daysLeft: Int, language: String, service: DebridService = .realDebrid) -> String {
+        service.spoken(daysLeft == 0 ? Strings.tr("Tu Real-Debrid vence hoy", language: language)
+            : String(format: Strings.tr("Tu Real-Debrid vence en %lld días", language: language), daysLeft))
     }
 }

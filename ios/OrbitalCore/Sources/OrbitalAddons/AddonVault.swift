@@ -38,6 +38,8 @@ public enum AddonKeys {
     /// Los que quitaste (su huella; su dirección solo mientras dura «Deshacer»).
     static let removed = "addons-removed"
     static let debridStatus = "debrid-status"
+    /// DN1 · la nube que usas (`DebridService`): «realdebrid», «torbox» o «alldebrid». Sin nada, Real-Debrid.
+    static let debridService = "debrid-service"
     /// De dónde salió tu clave de Real-Debrid (si se tomó de tu Torrentio importado).
     static let debridKeySource = "debrid-key-source"
     static let reminders = "debrid-reminders"

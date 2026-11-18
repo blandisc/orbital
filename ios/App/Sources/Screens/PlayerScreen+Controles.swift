@@ -28,7 +28,7 @@ extension PlayerScreen {
                               notifyAnswer: notices.notifyAnswer.flatMap { $0.videoID == model.request?.videoID ? $0.answer : nil },
                               openNotificationSettings: { DebridRequestNotifier.openSystemSettings() },
                               close: { Task { await close() } },
-                              instant: env.services.capabilities.instantStreams)
+                              instant: env.services.capabilities.instantStreams, service: env.services.debrid.service)
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
             // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).
@@ -339,7 +339,7 @@ extension PlayerScreen {
             show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? titleName(r.displayTitle, id: r.metaID, kind: r.kind) : subtitle), detail: tr("La misma versión que estás viendo"),
                               tone: .success, showsDownloads: true))
         case .already: inDownloads = true; alreadyDownloaded()
-        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr(env.noFileWords), tone: .info))
+        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: env.spoken(tr(env.noFileWords)), tone: .info))
         case .notEnoughSpace(let text): show(PlayerNotice(title: tr("No cabe en el iPhone"), detail: message(text), tone: .warn, showsDownloads: true))
         case .failed(let text): show(PlayerNotice(title: tr("No pude preparar la descarga"), detail: message(text), tone: .warn))
         }

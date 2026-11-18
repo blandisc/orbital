@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import OrbitalCore
+import OrbitalAddons
 
 /// Ajustes › Descargas › «Probar la velocidad»: las cuatro medidas de `DownloadSpeedTest`, qué quieren decir y un botón para
 /// copiarlas.
@@ -15,18 +16,18 @@ struct DownloadSpeedTestView: View {
                     LabeledContent {
                         if row.running { DSInlineProgress(text: Text("Midiendo…")) }
                         else if let rate = row.bytesPerSecond { Text(verbatim: DownloadSpeedTest.format(rate)).monospacedDigit().foregroundStyle(DS.text) }
-                        else if let failed = row.failed { Text(LocalizedStringKey(failed)).foregroundStyle(DS.warning) }
+                        else if let failed = row.failed { Text(failed, cloud: test.cloud, locale: env.uiLocale).foregroundStyle(DS.warning) }
                         else { Text(verbatim: "—") }
-                    } label: { Text(LocalizedStringKey(DownloadSpeedTest.title(row.kind))) }
+                    } label: { Text(DownloadSpeedTest.title(row.kind), cloud: test.cloud, locale: env.uiLocale) }
                 }
             } header: {
-                if let status = test.status { Text(LocalizedStringKey(status)) } else if let name = test.sourceName { Text(verbatim: name) }
+                if let status = test.status { Text(status, cloud: test.cloud, locale: env.uiLocale) } else if let name = test.sourceName { Text(verbatim: name) }
             } footer: {
                 Text("Unos segundos cada una, sin guardar nada. Hazla con Wi‑Fi y con la app abierta.")
             }
             .listRowBackground(DS.surface)
-            if let problem = test.problem { DSNotice(text: LocalizedStringKey(problem), tone: .warn).listRowBackground(Color.clear) }
-            if let verdict { Section { Text(verdict).recipe(.footnote, color: DS.text) } header: { Text("Qué quiere decir") }.listRowBackground(DS.surface) }
+            if let problem = test.problem { DSNotice(verbatim: test.cloud.spoken(Strings.tr(problem, language: env.language)), tone: .warn).listRowBackground(Color.clear) }
+            if let verdict = test.verdict { Section { Text(verdict, cloud: test.cloud, locale: env.uiLocale).recipe(.footnote, color: DS.text) } header: { Text("Qué quiere decir") }.listRowBackground(DS.surface) }
             Section {
                 Button(test.running ? "Midiendo…" : (test.rows.contains { $0.bytesPerSecond != nil } ? "Probar otra vez" : "Empezar")) {
                     Task { await test.run(services: env.services) }
@@ -43,16 +44,5 @@ struct DownloadSpeedTestView: View {
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Probar la velocidad").navigationBarTitleDisplayMode(.inline)
-    }
-
-    /// Una lectura sencilla de los números (cuál es el tope).
-    private var verdict: LocalizedStringKey? {
-        func value(_ kind: DownloadSpeedTest.Row.Kind) -> Double? { test.rows.first { $0.kind == kind }?.bytesPerSecond }
-        guard !test.running, let internet = value(.internet), let single = value(.single), let eight = value(.eight), let background = value(.background) else { return nil }
-        let best = max(single, eight)
-        if background < best * 0.6 { return "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento." }
-        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta." }
-        if best < internet * 0.5 { return "Real-Debrid te está dando menos que tu internet: puede ser su servidor de ese momento o la ruta hasta él." }
-        return "Real-Debrid y la app ya van a la velocidad de tu internet: el tope es tu conexión."
     }
 }

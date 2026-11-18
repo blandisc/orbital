@@ -24,16 +24,25 @@ struct DebridRequestSheetHost: View {
     @State private var explaining = false
     /// Tus descargas en Real-Debrid (IOS-9: el arreglo de «Muchas descargas activas»).
     static let downloadsURL = URL(string: "https://real-debrid.com/torrents")!
+    /// Tus descargas en la nube del pedido: la página de cada una.
+    static func downloads(in cloud: DebridService) -> URL {
+        switch cloud {
+        case .realDebrid: downloadsURL
+        case .torBox: URL(string: "https://torbox.app/dashboard")!
+        case .allDebrid: URL(string: "https://alldebrid.com/magnets/")!
+        }
+    }
 
     var body: some View {
         DebridRequestSheet(name: name, status: status, since: since, notificationsOff: notificationsOff,
                            turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, instead: instead, otherVersion: otherVersion,
                            openTitle: openTitle, finished: DebridRequestWords.group(request.state) == .finished, otherAccount: otherAccount,
-                           manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloadsURL : nil,
+                           manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloads(in: request.cloud) : nil,
                            cancel: cancel, explain: explain ?? { explaining = true }, close: close,
-                           notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured)
+                           notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured,
+                           service: request.cloud)
             .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
-            .sheet(isPresented: $explaining) { DebridExplainer() }
+            .sheet(isPresented: $explaining) { DebridExplainer(service: request.cloud) }
     }
 }
 
@@ -51,7 +60,8 @@ struct DebridNotifyAsk: View {
                 let granted = await DebridRequestNotifier.requestPermission()
                 await done(granted ? .authorized : .denied)
             }
-        }, notNow: { dismiss(); Task { await done(.notDetermined) } }, tv: AppEnvironment.shared.services.orbital.isConfigured)
+        }, notNow: { dismiss(); Task { await done(.notDetermined) } }, tv: AppEnvironment.shared.services.orbital.isConfigured,
+           service: AppEnvironment.shared.services.debrid.service)
         .fittedSheet()
     }
 }
@@ -76,7 +86,7 @@ struct DebridFlowIntroHost: ViewModifier {
                 env.services.kv.set(Self.seenKey, data: Data("1".utf8))
                 showing = true
             }
-            .sheet(isPresented: $showing) { DebridFlowIntro { showing = false }.fittedSheet() }
+            .sheet(isPresented: $showing) { DebridFlowIntro(service: env.services.debrid.service) { showing = false }.fittedSheet() }
     }
 
     private var allowed: Bool {

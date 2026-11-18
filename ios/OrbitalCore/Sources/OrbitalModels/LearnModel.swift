@@ -33,6 +33,7 @@ public final class LearnModel: ObservableModel {
     public var stories: [LearnStory] {
         let can = services.capabilities
         return LearnContent.all.filter { ($0.needs != .tv || can.console) && ($0.needs != .instant || can.instantStreams) }
+            .map { $0.id == LearnContent.instant.id ? LearnContent.instant(services.debrid.service) : $0 }   // con tu nube
     }
 
     public func seen(_ id: String) -> Bool { services.kv.data("learn.seen.\(id)") != nil }

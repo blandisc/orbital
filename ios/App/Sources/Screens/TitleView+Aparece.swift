@@ -23,7 +23,7 @@ extension TitleView {
                                   note: notifies ? Text("Reviso una vez al día, hasta el \(until)") : Text("Avisos apagados · actívalos"), play: { debridSheet = .appear },
                                   aside: notifies ? stop : opensNotificationSettings, warn: !notifies, tint: artAccent)
         }
-        let why = model.unavailableCause.map { cause in Text(verbatim: cause.title { Strings.tr($0, language: ui) }) } ?? Text("Nadie lo tiene todavía en internet")
+        let why = model.unavailableCause.map { cause in Text(verbatim: cause.title({ Strings.tr($0, language: ui) }, service: env.services.debrid.service)) } ?? Text("Nadie lo tiene todavía en internet")
         return ContinueAction(title: Text("Avisarme cuando aparezca"), symbol: "bell",
                               note: why,
                               play: { watchForIt(model) }, tint: artAccent)

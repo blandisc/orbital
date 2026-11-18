@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import OrbitalModels
+import OrbitalAddons
 
 /// Una historia de «Aprende Orbital» (G3) a pantalla completa, como las de Instagram y el Wrapped: avanza sola (5 s por
 /// tarjeta, 7 si el texto es largo), tocar a la izquierda regresa y a la derecha sigue, mantener pausa y bajar cierra. Con
@@ -26,6 +27,7 @@ struct StoryPlayer: View {
     @State private var turnsDone = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.locale) private var locale
 
     private var card: LearnStory.Card { story.cards[min(index, story.cards.count - 1)] }
     private var last: Bool { index >= story.cards.count - 1 }
@@ -37,18 +39,18 @@ struct StoryPlayer: View {
             bars
             HStack(spacing: DS.Space.s3) {
                 DSIconTile(symbol: story.symbol, tint: tint, side: DS.Story.hand)
-                Text(LocalizedStringKey(story.title)).recipe(.cardTitle, color: DS.paper)
+                Text(story.title, cloud: story.cloud, locale: locale).recipe(.cardTitle, color: DS.paper)   // no-es-título: el nombre de la historia
                 Text("\(String(index + 1)) de \(String(story.cards.count))").recipe(.footnote, color: DS.paper.opacity(DS.Opacity.dimmed))
                 Spacer()
                 DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close)
                     .accessibilityIdentifier("story-close")
             }
             Spacer(minLength: 0)
-            StoryCardView(card: card, tint: tint).id(index).transition(.opacity.combined(with: .move(edge: .trailing)))
+            StoryCardView(card: card, tint: tint, cloud: story.cloud).id(index).transition(.opacity.combined(with: .move(edge: .trailing)))
                 .environment(\.storyTurn, card.mark == .turn ? StoryTurn(waiting: waitingTurn, done: turnDone) : nil)
             Spacer(minLength: 0)
             if last, let action = story.action {
-                Button { onAction(action.destination) } label: { Text(LocalizedStringKey(action.title)).frame(maxWidth: .infinity) }
+                Button { onAction(action.destination) } label: { Text(action.title, cloud: story.cloud, locale: locale).frame(maxWidth: .infinity) }   // no-es-título: el botón de la historia
                     .dsPrimaryButton().dsControlSize(.large)
                     .accessibilityIdentifier("story-action")
             }
@@ -197,13 +199,16 @@ extension EnvironmentValues {
 struct StoryCardView: View {
     let card: LearnStory.Card
     let tint: Color
+    /// La nube de la historia («TorBox guarda el video»).
+    var cloud: DebridService = .realDebrid
+    @Environment(\.locale) private var locale
     @Environment(\.storyTurn) private var turn
     @State private var named = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s5) {
-            StorySceneView(scene: card.scene, tint: tint)
+            StorySceneView(scene: card.scene, tint: tint, cloud: cloud)
                 .frame(maxWidth: .infinity, maxHeight: DS.Scene.maxHeight)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -214,8 +219,8 @@ struct StoryCardView: View {
                     Label("Tu turno: inténtalo", systemImage: "hand.point.up.left.fill").recipe(.label, color: DS.eyebrow)
                         .transition(.opacity)
                 }
-                Text(LocalizedStringKey(card.title)).recipe(.display, color: DS.paper).fixedSize(horizontal: false, vertical: true)
-                Text(LocalizedStringKey(card.line)).recipe(.body, color: DS.paper).fixedSize(horizontal: false, vertical: true)
+                Text(card.title, cloud: cloud, locale: locale).recipe(.display, color: DS.paper).fixedSize(horizontal: false, vertical: true)   // no-es-título: la tarjeta
+                Text(card.line, cloud: cloud, locale: locale).recipe(.body, color: DS.paper).fixedSize(horizontal: false, vertical: true)
             }
             .opacity(named || reduceMotion ? 1 : 0)
             .offset(y: named || reduceMotion ? 0 : DS.Welcome.rise)

@@ -1,6 +1,7 @@
 import Foundation
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// Ajustes › Descargas › «Probar la velocidad»: de dónde viene la lentitud. Mide, unos segundos cada una y sin guardar nada:
 /// tu internet sin Real-Debrid (un archivo de prueba de OVH, en Francia como los servidores de Real-Debrid), Real-Debrid con una conexión, con ocho (como baja la app abierta), y con la app cerrada (la sesión de
@@ -22,6 +23,8 @@ final class DownloadSpeedTest {
     /// La fuente con que se probó («Shawshank · 1080p · 2.4 GB»), o por qué no se pudo.
     private(set) var sourceName: String?
     private(set) var problem: String?
+    /// La nube que se mide: los textos (claves con «Real-Debrid») se dicen con su nombre.
+    private(set) var cloud: DebridService = .realDebrid
     /// Qué está haciendo entre medidas («Buscando una fuente…»), para que no parezca trabada.
     private(set) var status: String?
 
@@ -49,7 +52,7 @@ final class DownloadSpeedTest {
 
     func run(services: Services) async {
         guard !running else { return }
-        running = true; problem = nil; sourceName = nil; status = nil
+        running = true; problem = nil; sourceName = nil; status = nil; cloud = services.debrid.service
         rows = Row.Kind.allCases.map { Row(kind: $0) }
         defer { running = false; status = nil; for i in rows.indices { rows[i].running = false } }
 
@@ -94,9 +97,20 @@ final class DownloadSpeedTest {
         if let sourceName { lines.append("Fuente: \(sourceName)") }
         for row in rows {
             let value = row.bytesPerSecond.map { Self.format($0) } ?? (row.failed ?? "—")
-            lines.append("\(Self.title(row.kind)): \(value)")
+            lines.append("\(cloud.spoken(Self.title(row.kind))): \(value)")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// Una lectura sencilla de los números (cuál es el tope). Es la clave del catálogo: la pantalla la dice con tu nube.
+    var verdict: String? {
+        func value(_ kind: Row.Kind) -> Double? { rows.first { $0.kind == kind }?.bytesPerSecond }
+        guard !running, let internet = value(.internet), let single = value(.single), let eight = value(.eight), let background = value(.background) else { return nil }
+        let best = max(single, eight)
+        if background < best * 0.6 { return "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento." }
+        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta." }
+        if best < internet * 0.5 { return "Real-Debrid te está dando menos que tu internet: puede ser su servidor de ese momento o la ruta hasta él." }
+        return "Real-Debrid y la app ya van a la velocidad de tu internet: el tope es tu conexión."
     }
 
     static func title(_ kind: Row.Kind) -> String {

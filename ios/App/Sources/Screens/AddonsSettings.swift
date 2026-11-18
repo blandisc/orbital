@@ -38,7 +38,7 @@ struct AddonsSettings: View {
                 ForEach(model.items) { addon in
                     PaneLink(Text(verbatim: addon.name)) { AddonDetail(addons: addons, id: addon.id) { remove($0, model) } } label: {
                         AddonRowLabel(addon: addon, health: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en"),
-                                      torrents: model.onlyTorrents(addon), tv: env.services.orbitalOn)
+                                      torrents: model.onlyTorrents(addon), tv: env.services.orbitalOn, service: env.services.debrid.service)
                     }
                     // Solo los traídos de Stremio se quitan; los que vienen con Orbital solo se apagan (C7). Con el dedo se desliza;
                     // con el mouse o el trackpad (Mac, iPad), el menú del clic secundario.
@@ -93,7 +93,7 @@ struct AddonsSettings: View {
         } message: { addon in
             AddonRemoveMessage(last: model.isLastSource(addon.id), tv: env.services.orbital.isConfigured)
         }
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons) }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons, service: env.services.debrid.service) }
         .environment(\.editMode, $editMode)
         .task {
             await model.prepare()
@@ -116,7 +116,7 @@ struct AddonsSettings: View {
                 .accessibilityIdentifier("addons-keep-\(candidate.id)")
             }
         } header: { Text("Tienes \(model.torrentioChoice.count) Torrentio") } footer: {
-            Text("Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone.")
+            Text("Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone.", cloud: env.services.debrid.service, locale: env.uiLocale)
         }
         .listRowBackground(DS.surface)
     }
@@ -141,7 +141,7 @@ extension AppEnvironment {
         let ui = services.appSettings.uiLanguage
         // «Se quedó la de la TV (9:40) · Usar la de este iPhone» no cabe en el aviso: la hora pasa abajo, con lo que chocó.
         let when = clash.at.map { Strings.clock($0, language: ui) }
-        let detail = (clash.options.map { Strings.tr($0, language: ui) } + [when].compactMap { $0 }).joined(separator: " · ")
+        let detail = (clash.options.map { services.debrid.service.spoken(Strings.tr($0, language: ui)) } + [when].compactMap { $0 }).joined(separator: " · ")
         notify("Se quedó la de la TV", detail: detail, tone: .info, actionTitle: "Usar la mía", actionSymbol: "iphone") {
             Task { await sync.useMine() }
         }

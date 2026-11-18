@@ -169,7 +169,8 @@ extension PlayerScreen {
                         .padding(.bottom, DS.Space.s3)
                 } else if !dockState.versionShowsAll, let code = model.yoursRefused {
                     // LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (18 nov).
-                    VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)))
+                    VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)),
+                                        service: env.services.debrid.service)
                         .padding(.bottom, DS.Space.s3)
                 }
                 if dockState.versionShowsAll {
@@ -179,7 +180,7 @@ extension PlayerScreen {
                     // V1: la misma lista con íconos que «Versión» de la ficha; tocar cambia a esa, mantener da sus detalles.
                     VersionLanguageList(rows: rows.main + rows.more, uiLanguage: ui) { row, option, showsLanguage in
                         VersionListRow(option: option, code: row.code, uiLanguage: ui, showsLanguage: showsLanguage,
-                                       action: { pickSource(option.id, model) }) {
+                                       service: env.services.debrid.service, action: { pickSource(option.id, model) }) {
                             Button("Cambiar a esta", systemImage: "play.fill") { pickSource(option.id, model) }
                         }
                     }

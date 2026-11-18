@@ -216,7 +216,7 @@ public final class AddonList: @unchecked Sendable {
     /// La URL de un complemento: la de un recomendado se arma con tu clave de ahora; la de uno pegado sale del llavero.
     public func resolvedURL(_ addon: InstalledAddon) -> String? {
         switch addon.origin {
-        case .recommended(let template): AddonCatalog.template(template)?.manifestURL(token: vault.secret(AddonKeys.realDebridToken), options: addon.options)
+        case .recommended(let template): AddonCatalog.template(template)?.manifestURL(token: vault.debridToken(), options: addon.options, service: vault.debridService)
         case .pasted, .imported: vault.secret(AddonKeys.addonURL(addon.id))
         }
     }
@@ -284,8 +284,10 @@ public final class AddonList: @unchecked Sendable {
     /// Hay que preguntar con cuál Torrentio quedarse: hay uno traído aparte y ya tienes tu clave en Cuentas.
     public var needsTorrentioChoice: Bool { !importedTorrentios.isEmpty && hasKey }
     private var hasKey: Bool { debridToken != nil }
-    /// Tu clave de Real-Debrid, solo para armar una dirección (la prueba de T9): nunca se enseña ni se anota.
-    public var debridToken: String? { vault.secret(AddonKeys.realDebridToken).flatMap { $0.isEmpty ? nil : $0 } }
+    /// La clave de tu nube, solo para armar una dirección (la prueba de T9): nunca se enseña ni se anota.
+    public var debridToken: String? { vault.debridToken() }
+    /// La nube que usas (la de `debridToken`).
+    public var debridService: DebridService { vault.debridService }
 
     /// Quedarse con un Torrentio (C5). Con el `id` de uno traído, todas sus opciones (las que la app no conoce, tal cual)
     /// pasan al de Orbital, que se arma con tu clave de Cuentas (nunca con la vieja de su dirección); con nil se queda el de
@@ -349,7 +351,7 @@ public final class AddonList: @unchecked Sendable {
     /// También las que vienen dentro de un complemento importado o pegado (su Torrentio de Stremio lleva la clave en la URL).
     public func secretsToRedact() -> [String] {
         let imported = installed.filter { !$0.isBuiltIn }.compactMap { vault.secret(AddonKeys.addonURL($0.id)) }.flatMap(AddonSecrets.keys(in:))
-        return Array(Set([vault.secret(AddonKeys.realDebridToken)].compactMap { $0 } + imported)).sorted()
+        return Array(Set(DebridService.allCases.compactMap { vault.debridToken($0) } + imported)).sorted()
     }
 }
 

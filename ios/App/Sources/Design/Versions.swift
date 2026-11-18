@@ -17,8 +17,8 @@ enum VersionText {
     /// Qué tan rápido arranca, en palabras: «Al instante» (ya está en Real-Debrid), «Todavía no está en la nube» o nada.
     static func speedText(_ speed: SourceSpeed) -> Text? {
         switch speed {
-        case .inRealDebrid: Text("Al instante")
-        case .realDebridMustDownload: Text("Todavía no está en la nube")
+        case .inCloud: Text("Al instante")
+        case .cloudMustDownload: Text("Todavía no está en la nube")
         case .unknown: nil
         }
     }

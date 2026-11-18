@@ -42,11 +42,12 @@ public enum TorrentioNotices {
         return videos[String(path[range])] ?? .downloadFailed   // otro aviso de Torrentio que todavía no se conoce
     }
 
-    /// El de una versión de un complemento: su dirección o su nombre («Torrentio\nRD error»).
+    /// El de una versión de un complemento: su dirección o su nombre («Torrentio\nRD error»; con TorBox «TB error», con
+    /// AllDebrid «AD error», DN1).
     public static func notice(name: String, url: URL?) -> StreamNotice? {
         if let byURL = notice(url: url) { return byURL }
         let lower = name.lowercased()
-        return lower.contains("rd error") || lower.contains("[rd error]") ? .access : nil
+        return ["rd", "tb", "ad"].contains { lower.contains("\($0) error") } ? .access : nil
     }
 }
 

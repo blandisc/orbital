@@ -3,6 +3,7 @@ import UIKit
 import CoreImage
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 // Las piezas del catálogo de Orbital para iPhone. Una pantalla se arma con estas; si falta una, se agrega aquí.
 // Equivalencias con la TV: Chip, Badge, Progress, SectionHead, Card (PosterCard), FeatureTile (HeroCard), Mosaic (`Design/Mosaic.swift` ↔ `foryou-mosaic`), Button, Sheet.
@@ -81,12 +82,14 @@ struct DSDegradedNotice: View {
     let act: () -> Void
     /// «Reintentar» al lado, cuando la salida principal es otra; nil: no se ofrece.
     var retry: (() -> Void)?
+    /// La nube que se nombra («TorBox no contesta»).
+    var service: DebridService = .realDebrid
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Label { Text(verbatim: text(state.title)).font(DS.TextRecipe.label.font) } icon: { Image(systemName: state.symbol) }
+            Label { Text(verbatim: state.title(text, service: service)).font(DS.TextRecipe.label.font) } icon: { Image(systemName: state.symbol) }
                 .foregroundStyle(color)
-            Text(verbatim: text(state.detail)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+            Text(verbatim: state.detail(text, service: service)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s2) {
                 Button(text(state.actionTitle), systemImage: actionSymbol, action: act).accessibilityIdentifier("degraded-action")

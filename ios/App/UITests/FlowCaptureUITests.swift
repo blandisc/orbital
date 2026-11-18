@@ -9,7 +9,7 @@ final class FlowCaptureUITests: GuideUITestCase {
 
     func test1Guide() { walkTheGuide(capture: ProcessInfo.processInfo.environment["ONLY"] == nil) }
 
-    /// Un renglón de Ajustes por su título (el renglón dice «Cuentas, Falta Real-Debrid»).
+    /// Un renglón de Ajustes por su título (el renglón dice «Cuentas, Falta tu nube»).
     func row(_ title: String) -> XCUIElement {
         app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
     }

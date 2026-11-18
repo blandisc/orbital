@@ -15,7 +15,7 @@ extension DebridModel {
         guard canShareWithTV, let key = services.addonList.debridToken else { return }
         tvShare = .working
         do {
-            tvShare = .passed(try await services.orbital.putRealDebrid(token: key))
+            tvShare = .passed(try await services.orbital.putRealDebrid(token: key, service: services.debrid.service))
             // RC1: con código la llave se renueva; la TV recibe cada renovación.
             services.kv.set(Services.tvFollowsDebridKey, data: services.debrid.connectedByCode ? Data("1".utf8) : nil)
             await compareWithTV()
@@ -29,17 +29,17 @@ extension DebridModel {
         guard canShareWithTV else { return }
         tvShare = .working
         do {
-            guard let key = try await services.orbital.realDebridKey(), !key.isEmpty else {
-                tvShare = .failed("Tu TV todavía no tiene clave de Real-Debrid."); return
+            guard let (key, cloud) = try await services.orbital.tvDebridKey(), !key.isEmpty else {
+                tvShare = .failed("Tu TV todavía no tiene la clave de su nube."); return
             }
-            let found = try await services.debrid.verify(key)
-            guard found.isPremium else { tvShare = .failed("Esa cuenta de Real-Debrid no tiene Premium: no la guardé."); return }
-            await keep(key, found)
+            let found = try await services.debrid.verify(key, service: cloud)
+            guard found.isPremium else { tvShare = .failed("Esa cuenta de \(cloud.name) no tiene Premium: no la guardé."); return }
+            await keep(key, found, service: cloud)
             tvShare = .used
             await compareWithTV()
         } catch let failure as OrbitalRemote.Failure { tvShare = .failed(failure.description) }
-        catch let error as DebridError { tvShare = .failed(error.description) }
-        catch { tvShare = .failed(DebridError.unexpected.description) }
+        catch let error as DebridError { tvShare = .failed(error.text(services.debrid.service)) }
+        catch { tvShare = .failed(DebridError.unexpected.text(services.debrid.service)) }
     }
 
     /// Al abrir la página: lo de la vez pasada no se queda (lo que dice la pantalla es verdad al abrirla).

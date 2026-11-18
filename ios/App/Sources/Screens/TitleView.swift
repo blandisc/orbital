@@ -156,7 +156,8 @@ struct TitleView: View {
         .debridFlowIntro(when: model.debridOffer != nil && model.debridRequest == nil)   // RX3-A: «Pedir a la nube» a la vista
         .task { _ = await DebridRequestNotifier.permission() }   // IOS-8: sin permiso no se promete «Te aviso»
         .debridCancelConfirmation(isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
-                                  name: cancelling?.title ?? "", finished: false) { if let request = cancelling { Task { await cancelRequest(request) } } }
+                                  name: cancelling?.title ?? "", finished: false,
+                                  service: cancelling?.cloud ?? env.services.debrid.service, locale: env.uiLocale) { if let request = cancelling { Task { await cancelRequest(request) } } }
         // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
         .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))

@@ -28,6 +28,7 @@ struct DegradedNotice: View {
     var retry: (() -> Void)?
 
     var body: some View {
-        DSDegradedNotice(state: state, text: { env.message($0) }, act: { env.perform(state.action, retry: retry) }, retry: retry)
+        DSDegradedNotice(state: state, text: { env.message($0) }, act: { env.perform(state.action, retry: retry) }, retry: retry,
+                         service: env.services.debrid.service)
     }
 }

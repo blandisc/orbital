@@ -77,8 +77,8 @@ final class AllSourcesTests: XCTestCase {
     }
 
     func testSpeedSaysOnlyWhatIsKnown() {
-        XCTAssertEqual(SourceSpeed(source(1, "1080p", cached: true)), .inRealDebrid)
-        XCTAssertEqual(SourceSpeed(source(1, "1080p", cached: false, debrid: true)), .realDebridMustDownload)
+        XCTAssertEqual(SourceSpeed(source(1, "1080p", cached: true)), .inCloud)
+        XCTAssertEqual(SourceSpeed(source(1, "1080p", cached: false, debrid: true)), .cloudMustDownload)
         XCTAssertEqual(SourceSpeed(source(1, "1080p", cached: false, debrid: false)), .unknown)
     }
 

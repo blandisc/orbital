@@ -3,16 +3,16 @@ import OrbitalCore
 
 /// Qué tan rápido arranca una fuente, sin prometer de más: solo se sabe que es al instante si Real-Debrid ya la tiene.
 public enum SourceSpeed: Sendable, Equatable {
-    /// Ya está en Real-Debrid ([RD+]): arranca al instante.
-    case inRealDebrid
-    /// Pasa por Real-Debrid pero aún no la tiene: la tiene que bajar antes (puede tardar en abrir).
-    case realDebridMustDownload
-    /// No se sabe (no pasa por Real-Debrid o el complemento no lo dice).
+    /// Ya está en tu nube ([RD+], [TB+], [AD+]): arranca al instante.
+    case inCloud
+    /// Pasa por tu nube pero aún no la tiene: la tiene que bajar antes (puede tardar en abrir).
+    case cloudMustDownload
+    /// No se sabe (no pasa por tu nube o el complemento no lo dice).
     case unknown
 
     public init(_ source: Source) {
-        if source.cached { self = .inRealDebrid }
-        else if source.debrid { self = .realDebridMustDownload }
+        if source.cached { self = .inCloud }
+        else if source.debrid { self = .cloudMustDownload }
         else { self = .unknown }
     }
 }

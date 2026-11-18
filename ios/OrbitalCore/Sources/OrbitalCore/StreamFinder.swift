@@ -124,10 +124,13 @@ public actor StreamFinder {
     /// no se entera de lo que bajó tu cuenta). Con esto, lo que pediste y ya está sale «Al instante · la pediste» y se recomienda.
     public func configureReady(_ ready: @escaping @Sendable (_ kind: String, _ videoID: String) -> [ReadyTorrent],
                                link: @escaping @Sendable (_ hash: String, _ videoID: String) async -> URL?,
-                               refused: @escaping @Sendable (_ metaID: String) -> Set<String> = { _ in [] }) {
-        self.ready = ready; self.readyLink = link; self.refusedHashes = refused
+                               refused: @escaping @Sendable (_ metaID: String) -> Set<String> = { _ in [] },
+                               cloud: @escaping @Sendable () -> DebridService = { .realDebrid }) {
+        self.ready = ready; self.readyLink = link; self.refusedHashes = refused; self.cloud = cloud
         cache = [:]
     }
+    /// La nube de lo que pediste: la versión de un pedido listo lleva su nombre («[TB+] TorBox»).
+    private var cloud: @Sendable () -> DebridService = { .realDebrid }
     /// Lo que Real-Debrid no dejó bajar en tu cuenta (FQ2-A): se marca y nunca se recomienda.
     private var refusedHashes: @Sendable (_ metaID: String) -> Set<String> = { _ in [] }
     /// De dónde es un título (lo mismo con que se ordenan las versiones): para leer igual lo que existe sin Real-Debrid.
@@ -207,7 +210,7 @@ public actor StreamFinder {
             // Torrentio no la lista (con «solo lo que ya está» o por su límite): se ve con el enlace de tu Real-Debrid.
             let link = readyLink
             guard let url = await Deadline.within(limits.readyLink, or: nil, { await link(missing.hash, videoID) }) else { continue }
-            var source = Self.readySource(missing, url: url, origin: titleOrigin)
+            var source = Self.readySource(missing, url: url, origin: titleOrigin, cloud: cloud())
             while seen.contains(source.index) { source.index = (source.index + 1) % (1 << 31) }
             sources.append(source); seen.insert(source.index)
         }
@@ -244,14 +247,14 @@ public actor StreamFinder {
     }
 
     /// Una versión hecha con el enlace de tu Real-Debrid para un pedido listo que Torrentio no lista.
-    static func readySource(_ torrent: ReadyTorrent, url: URL, origin: TitleOrigin?) -> Source {
-        var stream: [String: JSON] = ["name": .string("[RD+] Real-Debrid"), "title": .string(torrent.release ?? ""), "url": .string(url.absoluteString),
+    static func readySource(_ torrent: ReadyTorrent, url: URL, origin: TitleOrigin?, cloud: DebridService = .realDebrid) -> Source {
+        var stream: [String: JSON] = ["name": .string("[\(cloud.tag)+] \(cloud.name)"), "title": .string(torrent.release ?? ""), "url": .string(url.absoluteString),
                                       "infoHash": .string(torrent.hash)]
         if let idx = torrent.fileIdx { stream["fileIdx"] = .int(idx) }
         let json = JSON.object(stream)
         // Su número sale de la huella, no del enlace (que cambia cada vez que se pide).
         let index = Streams.stableIndex(addonURL: "realdebrid:ready", stream: .object(stream.filter { $0.key != "url" }))
-        var source = Streams.parse(json, addon: "Real-Debrid", transportURL: "", index: index, origin: origin)
+        var source = Streams.parse(json, addon: cloud.name, transportURL: "", index: index, origin: origin)
         source.cached = true; source.debrid = true; source.requested = true
         return source
     }
