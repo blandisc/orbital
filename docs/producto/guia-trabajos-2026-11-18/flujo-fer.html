@@ -1,0 +1,128 @@
+<title>Tu guía de Orbital</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{--bg:#0d0c14;--panel:#16151f;--raised:#1f1d2b;--line:#2b2939;--text:#f3f1ea;--muted:#a29fb3;--fresh:#5fd6c4;--warn:#f0b35a;
+--sans:"Inter",-apple-system,"Helvetica Neue",Arial,sans-serif;--display:"Space Grotesk","Inter",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);padding:28px 16px 56px}
+main{max-width:980px;margin:0 auto;display:grid;gap:34px}
+h1{font:700 32px/1.1 var(--display);margin:0;text-wrap:balance}
+h2{font:700 21px/1.2 var(--display);margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+p{margin:0}
+.lede,.intro{color:var(--muted);max-width:68ch}
+.lede{margin-top:10px}
+section{display:grid;gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:10px;align-content:start}
+.card.rec{border-color:var(--fresh)}
+.eyebrow{color:var(--fresh);font-weight:600;font-size:13px}
+.card ul{margin:0;padding-left:18px;color:var(--muted);display:grid;gap:4px}
+.card ul b{color:var(--text);font-weight:600}
+.agree{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.agree div{background:var(--raised);border-radius:12px;padding:12px;font-size:14px;color:var(--muted)}
+.agree b{color:var(--text);display:block;margin-bottom:2px}
+/* Recorrido en pantallas */
+.flow{display:grid;grid-auto-flow:column;grid-auto-columns:168px;gap:12px;overflow-x:auto;padding-bottom:8px}
+.ph{background:#121019;border:1px solid var(--line);border-radius:26px;padding:16px 12px;display:grid;gap:8px;align-content:start;min-height:290px}
+.ph.mod{border-color:var(--warn)}
+.ph .n{font:700 12px var(--display);color:var(--fresh)}
+.ph.mod .n{color:var(--warn)}
+.ph .t{font:700 15px/1.2 var(--display)}
+.ph .s{color:var(--muted);font-size:12px}
+.ph .row{display:flex;gap:5px}
+.ph .po{flex:1;aspect-ratio:2/3;border-radius:6px;background:linear-gradient(160deg,#3a3550,#1d1b29)}
+.ph .po.on{outline:2px solid var(--fresh)}
+.ph .big{aspect-ratio:2/3;width:70%;margin:0 auto;border-radius:10px;background:linear-gradient(160deg,#4a3f70,#1d1b29);outline:2px solid var(--fresh)}
+.btn{border-radius:999px;padding:7px;text-align:center;font-size:12px;font-weight:600}
+.btn.p{background:var(--text);color:#111}.btn.g{background:#2b2938}
+.feel{font-size:11.5px;color:var(--fresh)}
+.later{background:var(--panel);border:1px dashed var(--line);border-radius:16px;padding:14px 16px;color:var(--muted);font-size:14px}
+.later b{color:var(--text)}
+/* Decisiones */
+.dec{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:12px}
+.dec .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.code{font-weight:700;color:var(--fresh);letter-spacing:.04em;font-size:14px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{background:var(--raised);border:1px solid transparent;border-radius:14px;padding:12px;display:grid;gap:5px;align-content:start}
+.opt.rec{border-color:var(--fresh)}
+.opt .l{font-weight:600;font-size:14px}
+.opt.rec .l::after{content:"  · recomendada";color:var(--fresh)}
+.opt p{color:var(--muted);font-size:13px}
+.dictate{background:var(--panel);border:1px dashed var(--fresh);border-radius:16px;padding:18px;display:grid;gap:8px}
+.say{font:600 17px/1.45 var(--display)}
+.small{font-size:13px;color:var(--muted)}
+</style>
+<main>
+<header>
+  <h1>Tu guía: primero qué es Orbital, luego Trakt, la nube y el recorrido</h1>
+  <p class="lede">Este es tu orden, con lo que el asesor Fable y yo le ajustaríamos. Coincidimos los dos en que tu estructura corrige la falla más grave de hoy: pedir antes de explicar. También en que quitar los gustos con pósters tiene sentido, porque solo alimentan una fila y dejan de contar al conectar Trakt. Abajo, tu flujo y las cinco decisiones que te tocan (K1–K5). Reemplazan a J1–J7.</p>
+</header>
+
+<section>
+  <h2>Tu flujo, ajustado</h2>
+  <p class="intro">Verde: las tres versiones. Ámbar: solo Plus y Ultra, las que ven. Son ideas, no diseño final.</p>
+  <div class="flow">
+    <div class="ph"><span class="n">1 · ¿Qué es Orbital?</span><span class="t">Descubre lo mejor, guarda tus listas, encuentra lo parecido.</span><div class="row"><span class="po"></span><span class="po on"></span><span class="po"></span></div><span class="s">Una pantalla animada, unos 15 segundos. En Plus y Ultra suma: «y míralo todo aquí».</span><span class="btn p">Empezar</span></div>
+    <div class="ph"><span class="n">2 · Trakt</span><span class="t">Lo tuyo, en todos tus aparatos</span><span class="s">Trakt guarda lo que ves y tus listas; con él Orbital te recomienda a ti, te avisa de estrenos y arma tu año. Es gratis.</span><span class="btn p">Ya tengo cuenta</span><span class="btn g">Crear una</span><span class="btn g">Ahora no</span></div>
+    <div class="ph"><span class="n">2b · Tu primer logro</span><span class="t">Trajimos tus vistos y tu lista</span><span class="s">O, sin Trakt: un «Decide por mí» de verdad. Tres carteles, eliges uno y lo guardas.</span><span class="big"></span><span class="feel">El «ajá», antes de pedir más</span></div>
+    <div class="ph mod"><span class="n">3 · Para verlo aquí</span><span class="t">Conecta tu nube</span><span class="s">Es un servicio aparte que guarda películas y series y las tiene listas. Se paga en su página; Orbital no cobra. Una cuenta por persona.</span><span class="btn p">Ya tengo</span><span class="btn g">¿Qué es?</span><span class="btn g">Ahora no</span></div>
+    <div class="ph"><span class="n">4 · Lo principal, haciéndolo</span><span class="t">Prueba esto</span><span class="s">① Decide por mí ② Guárdala en Mi lista ③ Abre el filtro avanzado. Cada uno, un toque real.</span><span class="feel">Se aprende usando</span></div>
+    <div class="ph"><span class="n">5 · Inicio</span><span class="t">Ya es tuyo</span><span class="s">Lo que guardaste arriba. Lo que dejaste para después, con su botón ahí mismo.</span></div>
+  </div>
+  <div class="later"><b>Después, en su momento:</b> el detalle de cómo funciona la nube (y los torrents) vive en la historia «Ver al instante» de Aprende · la primera vez en «Versión» y en subtítulos, su aviso · la TV en Ultra, después de aterrizar · a quien dijo «Ahora no» a Trakt, una tarjeta en Inicio que lo vuelve a ofrecer y, mientras, le deja elegir gustos.</div>
+</section>
+
+<section>
+  <h2>Lo que le ajustamos y por qué</h2>
+  <div class="agree">
+    <div><b>Trakt, sin cerrar la puerta</b>Quien no tiene cuenta tiene que salir a otra página, registrarse y confirmar su correo antes de ver nada: ahí se va la gente. Y la app sí funciona sin Trakt; solo que lo suyo queda en este teléfono.</div>
+    <div><b>Un logro antes de la nube</b>Si no, en Plus son cuatro bloques de explicar y configurar sin tocar una película.</div>
+    <div><b>Presentación corta</b>Quien ya instaló ya decidió. Una pantalla que se mueve sola, con «Empezar» visible desde el principio.</div>
+    <div><b>«Trakt» fuera de la primera frase</b>Poner la marca de otro en la promesa de Orbital la ata a algo que no controlas. Se nombra en el paso 2.</div>
+    <div><b>Sin la palabra «torrent» en la guía</b>Despierta la duda de si es legal y no ayuda a usar la app. En la guía va lo que la persona necesita: qué es la nube y que se paga aparte. Y en la versión de la tienda no se menciona nada de ver: Apple lo revisa.</div>
+    <div><b>Recorrido que se toca</b>Las láminas al final son lo primero que se salta. Tres acciones reales se recuerdan.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Las decisiones</h2>
+
+  <div class="dec"><div class="head"><span class="code">K1</span><h3>¿Trakt es obligatorio?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · obligatorio</span><p>Todos tienen la app completa. Pierdes a quien no quiere otra cuenta, justo al principio.</p></div>
+      <div class="opt rec"><span class="l">B · muy recomendado, con «Ahora no»</span><p>Entra más gente. Quien no conecta tiene una app más sencilla, guardada solo en su teléfono, y se le vuelve a ofrecer en Inicio.</p></div>
+    </div>
+    <p class="small">Lo que no sabemos: cuánta de tu gente ya tiene Trakt. Si casi todos, A pierde poco.</p></div>
+
+  <div class="dec"><div class="head"><span class="code">K2</span><h3>¿Cómo es la presentación?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · página larga, tipo sitio web</span><p>Luce más y cuenta todo; retrasa la entrada.</p></div>
+      <div class="opt rec"><span class="l">B · una pantalla animada y corta</span><p>Tres o cuatro ideas que se mueven solas, unos 15 segundos.</p></div>
+    </div></div>
+
+  <div class="dec"><div class="head"><span class="code">K3</span><h3>¿Se explica qué son los torrents en la guía?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · sí, en la guía</span><p>Más transparente; despierta dudas y alarga.</p></div>
+      <div class="opt rec"><span class="l">B · en la guía solo la nube; el detalle en Aprende</span><p>Quien quiera saber cómo funciona por dentro lo encuentra. Nunca en la versión de la tienda.</p></div>
+    </div></div>
+
+  <div class="dec"><div class="head"><span class="code">K4</span><h3>¿Cómo es el recorrido final?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · láminas que se pasan</span><p>Rápido de hacer; casi todos lo saltan.</p></div>
+      <div class="opt rec"><span class="l">B · tres acciones reales</span><p>Decide por mí, guardar en Mi lista y el filtro, cada uno con un toque de verdad.</p></div>
+    </div></div>
+
+  <div class="dec"><div class="head"><span class="code">K5</span><h3>¿Y los gustos con pósters?</h3></div>
+    <div class="opts">
+      <div class="opt"><span class="l">A · se quitan</span><p>Más corto. Quien no conecta Trakt arranca con lo popular.</p></div>
+      <div class="opt rec"><span class="l">B · fuera de la guía, como tarjeta en Inicio</span><p>Solo para quien no conectó Trakt, para que «Porque te gustó…» no salga vacío.</p></div>
+    </div></div>
+</section>
+
+<section class="dictate">
+  <span class="code">Para contestar, dicta los códigos</span>
+  <p class="say">Mi recomendación (y la del asesor): «K1-B, K2-B, K3-B, K4-B, K5-B».</p>
+  <p class="small">Con eso dibujo las pantallas de verdad para iPhone, iPad y Mac en otro Canvas, antes de construir.</p>
+</section>
+</main>
