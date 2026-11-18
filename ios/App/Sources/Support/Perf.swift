@@ -191,6 +191,13 @@ extension View {
 /// § «Rendimiento de la Mac».
 @MainActor enum MacSelfCheck {
     private static var tmp: URL { URL(fileURLWithPath: NSTemporaryDirectory()) }
+    nonisolated static var simulator: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }
     private static var env: AppEnvironment { AppEnvironment.shared }
     private static var window: UIWindow? { AppWindows.all.first(where: \.isKeyWindow) ?? AppWindows.all.first }
 
@@ -198,13 +205,14 @@ extension View {
     /// qué gasta). Se lee una vez, al arrancar.
     nonisolated static let off: Set<String> = {
         let request = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("mac-check-request")
-        guard ProcessInfo.processInfo.isiOSAppOnMac, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
+        guard ProcessInfo.processInfo.isiOSAppOnMac || simulator, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
         return Set(text.split(separator: "\n").compactMap { line in line.hasPrefix("off ") ? String(line.dropFirst(4)) : nil })
     }()
 
     static func runIfRequested() async {
         _ = off
-        guard ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        // La Mac, o el simulador (el iPad: la misma revisión sin manos, en su tamaño).
+        guard ProcessInfo.processInfo.isiOSAppOnMac || Self.simulator else { return }
         let request = tmp.appendingPathComponent("mac-check-request")
         guard let text = try? String(contentsOf: request, encoding: .utf8) else { return }
         try? FileManager.default.removeItem(at: request)
@@ -214,6 +222,7 @@ extension View {
             switch words.first {
             case "perf": await perf(label: words.dropFirst().first ?? "medida")
             case "tour": await tour()
+            case "fichas": await fichas()   // la ficha ancha en seis tamaños (la receta `WideStage`)
             // `size full` o `size 1440 900`: deja la ventana de ese tamaño (para medir desde fuera con `sample`).
             case "size": resize(words.count > 2 ? CGSize(width: Double(words[1]) ?? 1440, height: Double(words[2]) ?? 900) : screenSize)
             case "free": free()
@@ -241,6 +250,11 @@ extension View {
                 env.ui.goBack = true
                 await wait(3)
             case "wait": await wait(Double(words.dropFirst().first ?? "5") ?? 5)
+            case "load": await load(label: words.dropFirst().first ?? "carga")
+            case "ajustes": env.ui.openSettings = true
+            case "pelicula": env.pendingTitle = TitleRoute(kind: "movie", metaID: "tt1160419", title: "", poster: nil)
+            case "back": env.ui.goBack = true
+            case "tab": env.ui.openTab = Int(words.dropFirst().first ?? "0") ?? 0   // `tab 3`: abre esa pestaña (para medir desde fuera)
             default: break
             }
         }
@@ -251,14 +265,14 @@ extension View {
 
     /// La ventana fija a ese tamaño (en la Mac, mínimo = máximo); `free` la deja libre otra vez.
     static func resize(_ size: CGSize) {
-        guard let limits = AppWindows.scene?.sizeRestrictions else { return }
+        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
         limits.minimumSize = CGSize(width: min(size.width, WindowMetrics.minimum.width), height: min(size.height, WindowMetrics.minimum.height))
         limits.maximumSize = size
         limits.minimumSize = size
     }
 
     static func free() {
-        guard let limits = AppWindows.scene?.sizeRestrictions else { return }
+        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
         limits.minimumSize = WindowMetrics.minimum
         limits.maximumSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
     }
@@ -364,7 +378,84 @@ extension View {
         free()
     }
 
+    /// La carga de cada pantalla (la primera vez que se abre, como al arrancar): `hitch`, el cuadro más largo al entrar (ms:
+    /// lo que se siente trabado); `settled`, cuándo dejó de cambiar (la última imagen que llegó o el último cuadro atrasado, ms).
+    /// Córrelo justo al arrancar, antes de `tour`, o las pantallas ya estarán en caché.
+    static func load(label: String) async {
+        var lines: [String] = []
+        let out = tmp.appendingPathComponent("mac-load-\(label).txt")
+        func measure(_ name: String, _ open: () -> Void, back: Bool) async {
+            await quiet()   // que no se cuele lo que dejó pendiente la pantalla anterior
+            let ping = MainPing(); ping.start()
+            ImageWait.reset()
+            let t0 = CACurrentMediaTime()
+            open()
+            await wait(1.5)
+            let hitch = ping.worst
+            await wait(6.5)
+            ping.stop()
+            let busy = ping.lastBlock > 0 ? ping.lastBlock - t0 : 0
+            let settled = max(ImageWait.lastArrival > 0 ? ImageWait.lastArrival - t0 : 0, busy, 0)
+            let line = "\(name) hitch \(Int(hitch)) blocked \(Int(ping.total)) settled \(Int(settled * 1000)) images \(ImageWait.arrived)"
+            print("MAC-LOAD " + line); lines.append(line)
+            try? Data((lines.joined(separator: "\n") + "\n").utf8).write(to: out)
+            if back { env.ui.goBack = true; await wait(2) }
+            if back == false { env.ui.openTab = 0; await wait(2) }   // cada pestaña se abre desde Inicio
+        }
+        // Sin App Nap: con la ventana tapada macOS la duerme y el hilo de la pantalla atiende tarde (medía trabas de 1–2 s falsas).
+        let awake = ProcessInfo.processInfo.beginActivity(options: [.userInitiated, .latencyCritical], reason: "medir la carga")
+        defer { ProcessInfo.processInfo.endActivity(awake) }
+        resize(CGSize(width: 1440, height: 900))
+        await wait(2)
+        await measure("explorar", { env.ui.openTab = 1 }, back: false)
+        await measure("buscar", { env.ui.openTab = 2 }, back: false)
+        await measure("biblioteca", { env.ui.openTab = 3 }, back: false)
+        await measure("ficha-pelicula", { env.pendingTitle = TitleRoute(kind: "movie", metaID: "tt1160419", title: "", poster: nil) }, back: true)
+        await measure("ficha-serie", { env.pendingTitle = TitleRoute(kind: "series", metaID: "tt0386676", title: "", poster: nil) }, back: true)
+        await measure("ajustes", { env.ui.openSettings = true }, back: true)
+        free()
+    }
+
+    /// Espera a que la pantalla esté quieta: 1.5 s seguidos sin un cuadro atrasado (a lo más 10 s).
+    private static func quiet() async {
+        let start = CACurrentMediaTime()
+        while CACurrentMediaTime() - start < 10 {
+            let ping = MainPing(); ping.start()
+            await wait(1.5)
+            ping.stop()
+            if ping.worst < 40 { return }
+        }
+    }
+
     /// Una captura de cada pantalla en cinco tamaños, de la ventana chica al ultrawide completo.
+    /// La ficha (película y serie) en seis tamaños, de angosta y alta a ultrawide: fotos en `mac-fichas/`.
+    static func fichas() async {
+        let folder = tmp.appendingPathComponent("mac-fichas")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let full = screenSize, before = window?.bounds.size ?? full
+        let sizes: [CGSize] = !ProcessInfo.processInfo.isiOSAppOnMac ? [window?.bounds.size ?? full] : [
+            CGSize(width: 760, height: 1000), CGSize(width: 1100, height: 760), CGSize(width: 1440, height: 900),
+            CGSize(width: 1920, height: 1080), CGSize(width: full.width * 0.75, height: full.height), full,
+        ]
+        for size in sizes {
+            resize(size)
+            await wait(2)
+            for (kind, id) in [("movie", "tt1160419"), ("series", "tt0386676")] {
+                env.pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
+                await wait(6)
+                if let window {
+                    let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+                    try? image.pngData()?.write(to: folder.appendingPathComponent("\(Int(window.bounds.width))x\(Int(window.bounds.height))-\(kind).png"))
+                }
+                env.ui.goBack = true
+                await wait(2.5)
+            }
+        }
+        resize(before)
+        await wait(1)
+        free()
+    }
+
     static func tour() async {
         let folder = tmp.appendingPathComponent("mac-tour")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -375,7 +466,8 @@ extension View {
             print("MAC-TOUR shot \(name) \(Int(window.bounds.width))x\(Int(window.bounds.height))")
         }
         let full = screenSize
-        let sizes: [(String, CGSize)] = [
+        // En el iPad, su tamaño de siempre (la ventana no se cambia desde aquí).
+        let sizes: [(String, CGSize)] = !ProcessInfo.processInfo.isiOSAppOnMac ? [("ipad", window?.bounds.size ?? full)] : [
             ("1-chica", CGSize(width: 560, height: 720)),
             ("2-mediana", CGSize(width: 960, height: 680)),
             ("3-grande", CGSize(width: 1440, height: 900)),
@@ -423,12 +515,52 @@ extension View {
     }
 }
 
+/// Cuánto se traba el hilo de la pantalla, aunque la ventana esté tapada (ahí la Mac no dibuja y no hay cuadros que contar):
+/// desde otro hilo le pide algo cada 8 ms y mide cuánto tarda en atenderlo. `worst`: la traba más larga (ms); `total`: lo que
+/// sumaron las trabas de más de 50 ms; `lastBlock`: cuándo fue la última de más de 50 ms.
+final class MainPing: @unchecked Sendable {
+    private let lock = NSLock()
+    private var running = true
+    private var _worst = 0.0, _total = 0.0, _last: CFTimeInterval = 0
+    var worst: Double { lock.withLock { _worst } }
+    var total: Double { lock.withLock { _total } }
+    var lastBlock: CFTimeInterval { lock.withLock { _last } }
+
+    func start() {
+        Thread.detachNewThread { [self] in
+            while lock.withLock({ running }) {
+                let t = CACurrentMediaTime()
+                DispatchQueue.main.sync {}
+                let ms = (CACurrentMediaTime() - t) * 1000
+                lock.withLock {
+                    _worst = max(_worst, ms)
+                    if ms > 50 { _total += ms; _last = CACurrentMediaTime() }
+                }
+                Thread.sleep(forTimeInterval: 0.008)
+            }
+        }
+    }
+
+    func stop() { lock.withLock { running = false } }
+}
+
+/// Cuántas imágenes de la red faltan y cuándo llegó la última (para `MacSelfCheck.load`).
+@MainActor enum ImageWait {
+    static var pending = 0, arrived = 0
+    static var lastArrival: CFTimeInterval = 0
+    static func reset() { arrived = 0; lastArrival = 0 }
+    static func begin() { pending += 1 }
+    static func end(_ got: Bool) { pending = max(0, pending - 1); if got { arrived += 1; lastArrival = CACurrentMediaTime() } }
+}
+
 /// Cuenta los cuadros de la pantalla: el más largo y cuánto se atrasaron (más de cuadro y medio). `step` mueve algo en cada
 /// cuadro (de 0 a 1 en 6 s), como un dedo que desplaza.
 @MainActor final class FrameMeter: NSObject {
-    struct Result { let worst: Double; let lostPerSecond: Double }
+    struct Result { let worst: Double; let lostPerSecond: Double; var frames = 0 }
+    /// Cuándo fue el último cuadro atrasado (`CACurrentMediaTime`), o 0.
+    private(set) var lastLongFrame: CFTimeInterval = 0
     private var link: CADisplayLink?, first: CFTimeInterval = 0, last: CFTimeInterval = 0
-    private var worst: CFTimeInterval = 0, lost: CFTimeInterval = 0
+    private var worst: CFTimeInterval = 0, lost: CFTimeInterval = 0, frames = 0
     private var step: ((Double) -> Void)?
 
     func start(step: ((Double) -> Void)? = nil) {
@@ -444,15 +576,17 @@ extension View {
             let gap = link.timestamp - last
             worst = max(worst, gap)
             lost += max(0, gap - link.duration * 1.5)
+            if gap > link.duration * 2.5 { lastLongFrame = CACurrentMediaTime() }
         }
         last = link.timestamp
+        frames += 1
         step?(min(1, (link.timestamp - first) / 6))
     }
 
     func stop() -> Result {
         link?.invalidate(); link = nil
         let span = max(0.001, last - first)
-        return Result(worst: worst * 1000, lostPerSecond: lost * 1000 / span)
+        return Result(worst: worst * 1000, lostPerSecond: lost * 1000 / span, frames: frames)
     }
 }
 #endif

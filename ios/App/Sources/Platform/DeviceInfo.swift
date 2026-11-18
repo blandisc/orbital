@@ -1,22 +1,32 @@
 import Foundation
 import Network
+import os
 import OrbitalCore
 import UIKit
 import SwiftUI
 
 /// Espacio libre para lo que importa (descargas), según iOS.
 enum DiskSpace {
+    /// Se pregunta al disco a lo más cada `fresh` segundos: cuesta 10–25 ms en la Mac y Descargas lo pedía en cada repintada
+    /// (al abrir Biblioteca y en cada avance de una descarga), en el hilo de la pantalla (17 nov 2026).
     static func freeBytes() -> Int64 {
+        let now = Date()
+        if let last = cache.withLock({ $0 }), now.timeIntervalSince(last.at) < fresh { return last.bytes }
         let url = URL(fileURLWithPath: NSHomeDirectory())
         let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-        return values?.volumeAvailableCapacityForImportantUsage ?? 0
+        let bytes = values?.volumeAvailableCapacityForImportantUsage ?? 0
+        cache.withLock { $0 = (now, bytes) }
+        return bytes
     }
+    private static let fresh: TimeInterval = 5
+    private static let cache = OSAllocatedUnfairLock<(at: Date, bytes: Int64)?>(initialState: nil)
 
-    /// La capacidad del iPhone (para la barra de espacio de Descargas).
-    static func totalBytes() -> Int64 {
+    /// La capacidad del iPhone (para la barra de espacio de Descargas): no cambia, se pregunta una vez.
+    static func totalBytes() -> Int64 { total }
+    private static let total: Int64 = {
         let values = try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: [.volumeTotalCapacityKey])
         return Int64(values?.volumeTotalCapacity ?? 0)
-    }
+    }()
 }
 
 /// ¿Wi‑Fi o datos móviles? Para avisar antes de usar fuentes grandes y para «descargar solo con Wi‑Fi».

@@ -220,10 +220,15 @@ struct BecauseCard<Related: View>: View {
     private var index: Int { seeds.firstIndex { $0.id == selected } ?? 0 }
     private var current: BecauseSeed? { seeds.indices.contains(index) ? seeds[index] : seeds.first }
 
-    var body: some View { bodyContent.pointerHover(.lift).macCardWidth() }
+    var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            deckHeader
+        // En ventana ancha el mazo a la izquierda y las relacionadas a su lado, hasta la orilla, como los renglones de arriba;
+        // apiladas, en el ultrawide quedaba una tarjeta enorme con el mazo solo y las flechas al otro lado (Fernando, 17 nov 2026).
+        let side = WindowMetrics.column.width >= DS.Collections.becauseSideFrom
+        let layout = side ? AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s5))
+                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s3))
+        layout {
+            deckHeader.frame(width: side ? DS.Collections.becauseHeaderWidth : nil)
             // Siempre del mismo alto: mientras llegan, unos pósters vacíos en su lugar (la tarjeta no brinca ni parece trabada).
             Group {
                 switch state {

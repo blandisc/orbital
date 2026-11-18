@@ -25,6 +25,10 @@ struct PosterView: View {
     /// Otra imagen si la primera no carga (la ficha y «Seguir viendo»: el fondo, y si metahub no lo tiene, el póster), en vez del
     /// nombre sobre el degradado.
     var fallback: String? = nil
+    /// Solo de adorno (el muro de Explorar, la tira de «Decide por mí»): la imagen recortada y nada más, sin borde, sin el
+    /// marco del puntero, sin buscar al sujeto ni nombre para VoiceOver. Son cientos a la vez y cada pieza de más se pagaba
+    /// al abrir la pantalla (Explorar trababa ~0.5 s; 17 nov 2026).
+    var decorative = false
     @State private var primaryFailed = false
 
     private var shownURL: String? { primaryFailed ? fallback : url }
@@ -34,7 +38,8 @@ struct PosterView: View {
     }
 
     @ViewBuilder private var content: some View {
-        if whole { wholeArt.accessibilityLabel(Text(title)) }
+        if decorative, Self.lightDecor { decorativeArt }
+        else if whole { wholeArt.accessibilityLabel(Text(title)) }
         else if bleed { art.clipped().accessibilityLabel(Text(title)) }
         else {
             art
@@ -80,6 +85,29 @@ struct PosterView: View {
                 FocusedFill(image: image, source: source, key: key, box: box.size)
             }
         }
+    }
+
+    /// En las pruebas de la Mac, `off decor` pinta los de adorno completos, para comparar.
+    private static var lightDecor: Bool {
+        #if DEBUG
+        if MacSelfCheck.off.contains("decor") { return false }
+        #endif
+        return true
+    }
+
+    /// Sin caja gris mientras llega: de adorno, un hueco vacío se veía roto (la tira de «Decide por mí» con cajas sin póster);
+    /// la imagen entra con su fundido cuando llega.
+    private var decorativeArt: some View {
+        Color.clear.aspectRatio(aspect ?? DS.Poster.aspect, contentMode: .fit)
+            .overlay {
+                if let url, let u = URL(string: url) {
+                    RemoteImage(url: u, maxPoints: maxPoints) { phase in
+                        if case .success(let image) = phase { image.resizable().scaledToFill() }
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder private var wholeArt: some View {

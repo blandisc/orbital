@@ -398,8 +398,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let segmentedMax: CGFloat = 480
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6
-        /// Una sinopsis más larga que esto (caracteres) se corta con «más».
-        static let synopsisFold = 160
         /// Cuántas tarjetas de «En tendencia» se piden de antemano (fondo y logo).
         static let heroPrefetch = 3
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).

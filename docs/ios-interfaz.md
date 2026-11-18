@@ -1047,7 +1047,11 @@ Fernando: «muchos problemas de performance en la Mac… un monitor ultrawide y 
   la Mac va a 2 cuadros por segundo (`DS.Sky.calmFrame`).
 - **Ultrawide:** la portada de Inicio no se topa a lo ancho en la Mac (56 % del alto); cuando la caja es mucho más ancha que
   la imagen, el arte va a la derecha y se funde a la izquierda sobre su copia desenfocada (`PosterView`, `.whole`). Las
-  tarjetas a lo ancho («Decide por mí», «Porque viste…») crecen hasta `DS.Mac.cardWide` (`macCardWidth()`).
+  tarjetas a lo ancho («Decide por mí», «Porque viste…») llenan la fila como las demás (con tope, unas seguían y otras
+  no); «Porque viste…» pone su encabezado al lado desde 1300 pt.
+- **Abrir pantallas rápido:** los estantes de Explorar son perezosos (`ShelfStack`), el muro y la tira de Explorar usan
+  pósters de adorno (`PosterView(decorative:)`) y se arman columna por columna, y el destino de Ajustes va borrado de tipo
+  (`AnyView`): en el iPad Explorar abría en ~0.8 s en vez de ~1.1 s y Ajustes en ~1.1 s en vez de ~1.4 s.
 - **La ventana más chica de la Mac es 560 pt**; abajo de 760 la barra lleva solo el planeta, sin «orbital».
 
 **Cómo medir (solo Debug, sin manos):** escribe en
@@ -1058,7 +1062,34 @@ entera): CPU en reposo (10 s), cuadros perdidos y peor cuadro al desplazar Inici
 cuadro al cambiar el tamaño y memoria. `tour` deja capturas de cada pantalla en cinco tamaños en `mac-tour/`. No midas
 mientras corre `sample`: detiene la app y ensucia el desplazamiento.
 
+`load <nombre>` mide cuánto se traba la pantalla al abrir cada una (Explorar, Buscar, Biblioteca, fichas, Ajustes) con
+`MainPing` (sirve aunque la ventana esté tapada) y `fichas` deja la ficha en seis tamaños, de alta a ultrawide, en
+`mac-fichas/`; en el simulador del iPad se piden igual (el contenedor de la app en el simulador).
+
 `DesignRulesTests+MacLayout.testMacPerformanceAndWideWindows` lo vigila.
+
+### La receta de la ficha ancha (17 nov 2026)
+
+Fernando: «replantea con una receta el cómo se debe de armar… que la imagen que está atrás de manera inteligente se
+centre». La ficha del iPad y la Mac se arma así (`WideStage`, en OrbitalModels, con sus pruebas):
+
+1. **Escenario.** Arte y columna viven en un escenario centrado de 2.4:1 como mucho (`DS.TitleAction.stageAspect`). En una
+   ventana más ancha (el ultrawide) queda al centro y a los lados sigue el mismo arte, difuminado y oscuro
+   (`StageSides`); las orillas del escenario se funden en él (`StageEdges`). Nada se clava a la izquierda ni flota en un
+   hueco negro.
+2. **Margen.** La columna («Ver», acciones, sinopsis) y las filas de abajo empiezan en la orilla del escenario más el 5 %
+   de su ancho (mínimo 40 pt, el de la TV). Las filas salen por la orilla de la ventana.
+3. **Vertical.** Si la ventana es más alta que ancha (iPad parado), la columna va al centro con el texto centrado, sin el
+   velo de la izquierda, y el arte se centra en el sujeto (`FocalPoint`).
+
+No se arregla la ficha moviendo márgenes sueltos: se cambia la receta y sus números.
+
+### «más» solo si el texto se corta (17 nov 2026)
+
+Fernando: «un texto corto… que si le picas más, no sale más, que no aparezca… que sea inteligente». Ningún «más» se decide
+por número de letras: todo texto plegable usa `FoldingText`, que mide el texto completo contra el que se ve y solo pone
+«más» si de verdad se corta (la sinopsis en iPhone, iPad y Mac; la biografía de una persona ya medía así). La TV corta la
+sinopsis a tres renglones sin «más».
 
 ## 4b. Bilingüe
 

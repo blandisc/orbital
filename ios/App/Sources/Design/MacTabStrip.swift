@@ -191,14 +191,6 @@ extension View {
         }
     }
 
-    /// En la Mac, una tarjeta a lo ancho crece hasta `DS.Mac.cardWide` y se queda a la izquierda, con la orilla de la página:
-    /// en el ultrawide se estiraba a todo lo ancho y dejaba de verse como tarjeta. En iPhone y iPad, nada.
-    @ViewBuilder func macCardWidth() -> some View {
-        if ThisDevice.isMac {
-            frame(maxWidth: DS.Mac.cardWide, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
-        } else { self }
-    }
-
     /// En la Mac la barra de pestañas del sistema no se ve (las pestañas van en el renglón del logo, `MacTabStrip`).
     @ViewBuilder func macHidesTabBar() -> some View {
         if ThisDevice.isMac { toolbarVisibility(.hidden, for: .tabBar) } else { self }

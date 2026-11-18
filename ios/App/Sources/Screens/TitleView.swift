@@ -26,8 +26,6 @@ struct TitleView: View {
     @State var tint = ArtTint()
     @State var sourcesFor: SourcesTarget?
     @State var rewatch: EpisodeRow?   // EV1: el visto que tocaste («Ya lo viste»)
-    /// La sinopsis completa (tocar «más»).
-    @State var fullSynopsis = false
     /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
     @State var replacing: Replacement?
 
@@ -211,21 +209,29 @@ struct TitleView: View {
     private func wideLayout(_ model: TitleModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo
-                ZStack(alignment: .bottomLeading) {
+                // La receta (`WideStage`): un escenario centrado de 2.4:1 como mucho; a los lados, el mismo arte difuminado.
+                let stage = wideStage
+                let name = titleName(model.title, id: model.metaID, kind: model.kind)
+                ZStack(alignment: stage.portrait ? .bottom : .bottomLeading) {
+                    if stage.hasSides { StageSides(url: model.background ?? model.poster) }
                     // Al bajar, el arte se recoge como en el iPhone.
-                    BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind), collapses: true,
-                             fallback: model.poster, fadesTop: false) { EmptyView() }
-                        .overlay { ArtVeil(kind: .leading, strength: .deep) }
-                        .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, until: DS.TitleAction.wideVeilSolid, strength: .deep) }
-                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                        TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero)
-                            .frame(maxWidth: DS.TitleAction.wideLogoWidth, alignment: .leading)
-                        facts(model, leading: true)
+                    BleedArt(url: model.background ?? model.poster, title: name, collapses: true, fallback: model.poster, fadesTop: false) { EmptyView() }
+                        .frame(width: stage.width)
+                        .mask(StageEdges(on: stage.hasSides))
+                        .frame(maxWidth: .infinity)
+                        .overlay { if !stage.portrait { ArtVeil(kind: .leading, strength: .deep) } }
+                        .overlay { ArtVeil(kind: .bottom, at: stage.portrait ? DS.TitleAction.wideVeilFrom * 0.8 : DS.TitleAction.wideVeilFrom,
+                                           until: DS.TitleAction.wideVeilSolid, strength: .deep) }
+                    VStack(alignment: stage.portrait ? .center : .leading, spacing: DS.Layout.betweenSubsections) {
+                        TitleLogo(url: model.logo, title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
+                            .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: stage.portrait ? .center : .leading)
+                        facts(model, leading: !stage.portrait)
                         actions(model)
-                        synopsis(model)
+                        synopsis(model, centered: stage.portrait)
                     }
-                    .frame(maxWidth: typeSize.isAccessibilitySize ? DS.TitleAction.readableWidth : DS.TitleAction.wideColumn, alignment: .leading)   // letra grande: más ancho, no cuatro botones apretados
+                    .frame(maxWidth: typeSize.isAccessibilitySize ? DS.TitleAction.readableWidth : DS.TitleAction.wideColumn * stage.grow, alignment: stage.portrait ? .center : .leading)   // letra grande: más ancho, no cuatro botones apretados
                     .padding(.horizontal, side).padding(.bottom, DS.Layout.betweenSections)
+                    .frame(maxWidth: .infinity, alignment: stage.portrait ? .center : .leading)
                 }
                 // El arte sube detrás del reloj y de la barra, como en la TV.
                 .frame(height: viewport.height * DS.TitleAction.wideHeroShare + topInset)
@@ -350,6 +356,12 @@ struct TitleView: View {
 
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
+    /// La receta de la ficha ancha para esta ventana (`WideStage`).
+    var wideStage: WideStage {
+        WideStage(window: viewport, heroHeight: viewport.height * DS.TitleAction.wideHeroShare + topInset, stageAspect: DS.TitleAction.stageAspect,
+                  portraitBelow: DS.TitleAction.portraitBelow, marginShare: DS.TitleAction.stageMarginShare, minMargin: DS.TitleAction.wideSide,
+                  maxMargin: DS.TitleAction.stageMarginMax, growFrom: DS.TitleAction.stageGrowFrom, growMax: DS.TitleAction.stageGrowMax)
+    }
     var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
     /// En la TV y Compartir: botones de ícono en la barra de arriba (con su nombre para VoiceOver). El corazón ya no va aquí

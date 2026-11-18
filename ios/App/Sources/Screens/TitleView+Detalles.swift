@@ -4,21 +4,17 @@ import OrbitalModels
 
 /// La ficha: sinopsis, créditos, detalles y lo de TMDB (reparto, tráileres, parecidas). Aparte de TitleView para que ninguno pase de su tope.
 extension TitleView {
-    /// La sinopsis en tres renglones y «más» para leerla completa.
-    @ViewBuilder func synopsis(_ model: TitleModel) -> some View {
+    /// La sinopsis en tres renglones y, si se corta, «más» para leerla completa.
+    @ViewBuilder func synopsis(_ model: TitleModel, centered: Bool = false) -> some View {
         if model.overview.isEmpty, model.isLoading {
             // Esqueleto: el lugar de la sinopsis mientras llega (antes la ficha se veía vacía la primera vez).
             Text(verbatim: String(repeating: "placeholder ", count: 24)).recipe(.secondary).lineLimit(DS.TitleAction.synopsisLines)
                 .redacted(reason: .placeholder).accessibilityHidden(true)
         } else if !model.overview.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
-                if model.overview.count > DS.Size.synopsisFold {
-                    Button(fullSynopsis ? "menos" : "más") { withAnimation(DS.Motion.base(reduceMotion)) { fullSynopsis.toggle() } }
-                        .font(DS.TextRecipe.label.font).foregroundStyle(artInk).buttonStyle(.plain)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // «más» solo si de verdad se corta (`FoldingText`), no por número de letras.
+            FoldingText(text: model.overview, lines: DS.TitleAction.synopsisLines, tint: artInk, alignment: centered ? .center : .leading,
+                        identifier: "title-synopsis-more")
+            .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         }
     }
 
@@ -131,8 +127,9 @@ extension TitleView {
         }
     }
 
-    /// El margen de los lados: el del iPhone, o el de la TV en el iPad y la Mac (FE2-B). Las filas salen por la orilla.
-    var side: CGFloat { sizeClass == .regular ? DS.TitleAction.wideSide : DS.Space.gutter }
+    /// El margen de los lados: el del iPhone, o en el iPad y la Mac el de la receta (`WideStage`): la columna de «Ver» y lo de
+    /// abajo empiezan en la orilla del escenario centrado más su margen. Las filas salen por la orilla.
+    var side: CGFloat { sizeClass == .regular ? wideStage.leading : DS.Space.gutter }
 
     /// El trabajo de alguien del equipo, en español (TMDB lo manda en inglés); un personaje se queda tal cual.
     func crewRole(_ role: String) -> String {

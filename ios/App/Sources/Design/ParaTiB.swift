@@ -29,6 +29,17 @@ struct MosaicCover: View {
     /// `CoverOpening`.
     @State private var opening: CGFloat
     @State private var walking: Task<Void, Never>?
+    /// Cuántas columnas del muro ya están armadas. La primera vez entran una por una (`coverColumnStep`): armarlas todas
+    /// juntas (unos 200 pósters, cada columna con su motor) trababa medio segundo el cambio a Explorar (17 nov 2026). Las
+    /// siguientes veces, todas desde el primer cuadro.
+    @State private var built = MosaicCover.firstBuilt
+    @MainActor private static var builtColumns = 0
+    @MainActor private static var firstBuilt: Int {
+        #if DEBUG
+        if MacSelfCheck.off.contains("steps") { return 99 }   // para comparar: todas de una vez
+        #endif
+        return builtColumns
+    }
     @AppStorage(MosaicCover.hintKey) private var hintSeen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.perfTag) private var perfTag
@@ -74,6 +85,7 @@ struct MosaicCover: View {
         // 31 oct 2026: revolverlo otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
         .onChange(of: posters) { order = memory.order(for: posters, size: DS.ParaTiB.coverPosters) }
         .task(id: isDoor && settled) { await returnOrHint() }
+        .task(id: columns) { await buildColumns() }
         .onDisappear { walking?.cancel() }
     }
 
@@ -162,17 +174,29 @@ struct MosaicCover: View {
         return HStack(spacing: DS.Space.s2) {
             ForEach(0..<columns, id: \.self) { c in
                 let posters = column(c)
+                if c >= built { Color.clear.frame(width: columnWidth, height: DS.ParaTiB.coverWallHeight) } else {
                 CoreDrift(key: posters, content: AnyView(strip(posters).environment(\.perfTag, c == 0 ? perfTag : nil)),
                           contentHeight: loop * 2, loop: loop,
                           speed: DS.ParaTiB.coverPace[c % DS.ParaTiB.coverPace.count], phase: Double(c) * DS.ParaTiB.coverPhaseStep,
                           rising: DS.ParaTiB.coverAlternates && c % 2 == 1,
                           enabled: !still, running: onScreen)
                     .frame(width: columnWidth, height: DS.ParaTiB.coverWallHeight)
+                    .transition(.opacity)
+                }
             }
         }
         .frame(width: CGFloat(columns) * columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Arma las columnas que faltan, una por paso, para que ninguna vuelta de la pantalla cargue con todas.
+    private func buildColumns() async {
+        while built < columns, !Task.isCancelled {
+            withAnimation(DS.Motion.fade) { built += 1 }
+            MosaicCover.builtColumns = max(MosaicCover.builtColumns, built)
+            try? await Task.sleep(for: DS.ParaTiB.coverColumnStep)
+        }
     }
 
     /// Cuántas columnas lleva el muro en esta ventana: ocho, o más en ventana ancha, pero nunca más de `coverMaxColumns`; lo
@@ -205,7 +229,7 @@ struct MosaicCover: View {
     private func strip(_ posters: [String]) -> some View {
         VStack(spacing: DS.Space.s2) {
             ForEach(0..<(posters.count * 2), id: \.self) { i in
-                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic * widen).frame(width: columnWidth)
+                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic * widen, decorative: true).frame(width: columnWidth)
             }
         }
         .frame(width: columnWidth, alignment: .top)
@@ -357,7 +381,6 @@ struct DecideDoor: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .macCardWidth()
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityIdentifier(id)
     }
@@ -380,7 +403,7 @@ struct DecideStrip: View {
     private func row(_ shown: [String]) -> some View {
         HStack(spacing: DS.Space.s2) {
             ForEach(Array(shown.enumerated()), id: \.offset) { i, url in
-                PosterView(url: url, title: "")
+                PosterView(url: url, title: "", decorative: true)
                     .frame(width: DS.ParaTiB.stripPoster)
                     .opacity(DS.ParaTiB.stripFadeFrom + (1 - DS.ParaTiB.stripFadeFrom) * Double(i + 1) / Double(shown.count))
             }

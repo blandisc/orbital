@@ -24,6 +24,16 @@ Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
    unir `Text` con `+` (obsoleto en iOS 26); se escribe `Text("\(a)\(b)")`. Prueba: `NoTextConcatenationTests`.
    *Por qué:* el 16 nov había 18 escondidas (la CI compila en silencio y una compilación a medias no las muestra).
 
+7. **Un barrido de tamaños y un revisor que no hizo el cambio.** Todo cambio de acomodo se fotografía en todos los
+   tamaños, no solo en el que se estaba viendo. En la Mac, `fichas` y `tour` (seis tamaños, de alta a ultrawide). En el
+   iPad, vertical y horizontal. En el iPhone, SE y 17 Pro. Luego un agente que no escribió el código revisa esas fotos con
+   esta lista: ¿algo clavado a una orilla o descentrado?, ¿caras tapadas o cortadas?, ¿orillas duras o costuras?,
+   ¿filas que no alinean con lo de arriba?, ¿texto o botones que sobran (un «más» que no abre nada)?, ¿algo cortado o
+   diminuto?, ¿se ve igual de cuidado que la pantalla de al lado? Se corrige lo que encuentre antes de enseñarle nada a
+   Fernando.
+   *Por qué:* el 17 nov Fernando encontró la ficha clavada a la izquierda, un primer arreglo «descentrado feo» y un «más»
+   que no abría nada. Todo estaba en capturas que ya se habían tomado, pero en un solo tamaño y sin nadie que las juzgara.
+
 Lo que se corrige y puede repetirse se vuelve regla del repo con su prueba (regla 16 de la casa); las reglas de diseño
 viven en `docs/ios-interfaz.md`. Para quien dirige agentes: todo en primer plano con tiempo límite y, a lo más, tres
 agentes con simulador a la vez.

@@ -71,9 +71,6 @@ extension DS {
         static let centeredTabsFrom: CGFloat = 980
         /// Más angosta que esto, la barra de arriba lleva solo el planeta, sin «orbital» (`AppMark`).
         static let markOnlyBelow: CGFloat = 760
-        /// Lo más ancho que crece una tarjeta a lo ancho («Decide por mí», «Porque viste…»): en el ultrawide se estiraban a
-        /// 3440 pt, con la flecha en la otra orilla y media tarjeta vacía (17 nov 2026). `macCardWidth()`.
-        static let cardWide: CGFloat = 1600
         /// RB2: qué parte del alto de la ventana ocupa un aviso vacío (`DSEmptyState`) en la Mac: queda al centro de lo visible.
         static let emptyShare: CGFloat = 0.72
         /// RN2: el puntito de Biblioteca (algo bajando) en la cápsula de pestañas.

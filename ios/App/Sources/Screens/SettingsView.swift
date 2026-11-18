@@ -250,7 +250,13 @@ struct SettingsView: View {
     }
 
     /// La página de cada renglón de la lista: la misma en iPhone y iPad (empujada) y en la Mac (a la derecha, MA1).
-    @ViewBuilder func destination(_ page: SettingsPage, _ model: SettingsModel) -> some View {
+    /// Borrada a `AnyView`: con su tipo de verdad (las 15 páginas en un `switch`) cada uno de los ~13 renglones lo cargaba y
+    /// la primera vez que abrías Ajustes Swift armaba ese tipo gigante (~0.25 s trabado en el iPad; 17 nov 2026).
+    func destination(_ page: SettingsPage, _ model: SettingsModel) -> AnyView {   // ds-exception: borrar el tipo es el arreglo
+        AnyView(pageContent(page, model))
+    }
+
+    @ViewBuilder private func pageContent(_ page: SettingsPage, _ model: SettingsModel) -> some View {
         switch page {
         case .languages: YourLanguagesView(settings: settings)
         case .subtitles: self.page("Subtítulos") { subtitles(model) }

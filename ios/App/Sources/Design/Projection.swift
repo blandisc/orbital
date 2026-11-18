@@ -493,3 +493,42 @@ extension View {
     /// Receta: lista o formulario a un ancho de lectura en ventana ancha (ver `ReadableListWidth`).
     func readableListWidth() -> some View { modifier(ReadableListWidth()) }
 }
+
+/// Un texto en unos renglones con «más» para leerlo completo, que solo sale si de verdad se corta: mide el texto completo
+/// (invisible) contra el que se ve. Antes la ficha decidía por número de letras y salía «más» bajo sinopsis cortas que ya se
+/// leían enteras; al picarlo no salía nada nuevo (Fernando, 17 nov 2026: «que sea inteligente»). Regla: ningún «más» por
+/// conteo de letras; todo texto plegable usa esta pieza.
+struct FoldingText: View {
+    let text: String
+    let lines: Int
+    var recipe: DS.TextRecipe = .secondary
+    var color: Color = DS.text
+    var tint: Color = DS.accent
+    var alignment: HorizontalAlignment = .leading
+    var identifier = "fold-more"
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var open = false
+    @State private var full: CGFloat = 0
+    @State private var shown: CGFloat = 0
+
+    /// Medio punto de holgura: el redondeo del texto no cuenta como corte.
+    private var cut: Bool { full > shown + 1 }
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: DS.Space.s1) {
+            Text(verbatim: text).recipe(recipe, color: color).lineLimit(open ? nil : lines)
+                .multilineTextAlignment(alignment == .center ? .center : .leading)
+                .background(alignment: .topLeading) {
+                    Text(verbatim: text).recipe(recipe).fixedSize(horizontal: false, vertical: true).hidden()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { full = $0 }
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !open { shown = $0 } }
+            if cut || open {
+                Button(open ? "menos" : "más") { withAnimation(DS.Motion.base(reduceMotion)) { open.toggle() } }
+                    .font(DS.TextRecipe.label.font).foregroundStyle(tint).buttonStyle(.plain)
+                    .accessibilityIdentifier(identifier)
+            }
+        }
+        .onChange(of: text) { open = false }
+    }
+}

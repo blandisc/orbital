@@ -52,6 +52,9 @@ struct RemoteImage<Content: View>: View {
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
+        #if DEBUG
+        ImageWait.begin(); defer { ImageWait.end(loaded != nil) }
+        #endif
         // Un fondo o un póster: primero su versión ligera (llega en una fracción) y encima la buena cuando esté.
         // (También si la buena ya está en el disco: decodificar 1920 px tarda; la ligera sale casi al instante.)
         if let preview = Artwork.preview(url.absoluteString), pixels > CGFloat(preview.pixels), let quickURL = URL(string: preview.url) {

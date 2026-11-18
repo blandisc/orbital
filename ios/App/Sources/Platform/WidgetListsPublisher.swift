@@ -12,7 +12,8 @@ enum WidgetListsPublisher {
 
     static func publish(_ lists: [WidgetLists.List]) {
         running?.cancel()
-        running = Task(priority: .utility) {
+        // Fuera del hilo de la pantalla: revisa archivos, lee y guarda JSON (se notaba al abrir Explorar, 17 nov 2026).
+        running = Task.detached(priority: .utility) {
             // Que Explorar termine de pintar primero (sus pósters van por la misma fila).
             try? await Task.sleep(for: .seconds(DesignTokens.Widget.publishDelay * 2))
             await write(lists)
@@ -39,7 +40,7 @@ enum WidgetListsPublisher {
     }
 
     /// Guarda las listas y sus pósters (bajando los que falten), lista por lista.
-    private static func write(_ lists: [WidgetLists.List]) async {
+    nonisolated private static func write(_ lists: [WidgetLists.List]) async {
         guard !Task.isCancelled, let directory = WidgetStore.listsDirectory else { return }
         WidgetStore.discardOutdatedImages(in: directory, version: WidgetStore.listImagesVersion)   // cambió el tamaño: se vuelven a bajar
         var model = WidgetLists(lists: lists)
@@ -76,7 +77,7 @@ enum WidgetListsPublisher {
     }
 
     /// Guarda las listas (si cambiaron) y le pide al widget que se vuelva a dibujar.
-    private static func save(_ model: WidgetLists) {
+    nonisolated private static func save(_ model: WidgetLists) {
         guard WidgetStore.loadLists() != model, WidgetStore.saveLists(model) else { return }
         WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.listsKind)
     }

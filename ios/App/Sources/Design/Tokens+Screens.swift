@@ -79,6 +79,14 @@ extension DS {
         static var wideReading: CGFloat { Mac.sized(readableWidth) }
         /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
         static let wideSide = DS.Space.s10
+        /// La receta de la ficha ancha (iPad, Mac; Fernando, 17 nov 2026: «replantea con una receta»), ver `WideStage`.
+        static let stageAspect: CGFloat = 2.4, portraitBelow: CGFloat = 1.15, stageMarginShare: CGFloat = 0.05, stageEdgeFade: CGFloat = 0.12
+        /// Los lados del escenario (`StageSides`): difuminados y oscurecidos a la mitad; con el velo de siempre (~90 %) se
+        /// veían como barras negras con un corte (revisión del 17 nov 2026).
+        static let stageSideBlur: CGFloat = 50, stageSideDim: Double = 0.45
+        /// El margen tope de la columna y cuánto crecen columna y logo con un escenario grande (desde `stageGrowFrom`, hasta
+        /// `stageGrowMax`): en 2580 pt la columna era una cuarta parte de la pantalla, con el logo casi ilegible.
+        static let stageMarginMax: CGFloat = 160, stageGrowFrom: CGFloat = 1440, stageGrowMax: CGFloat = 1.5
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70
@@ -399,6 +407,8 @@ extension DS {
         static let stackPoster: CGFloat = 40
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let relatedPoster: CGFloat = 92
+        /// Desde este ancho de columna, el mazo y las relacionadas lado a lado (`BecauseCard`), con el mazo en este ancho.
+        static let becauseSideFrom: CGFloat = 1300, becauseHeaderWidth: CGFloat = 440
         /// «Porque viste»: cuántos pósters vacíos ocupan el lugar de las relacionadas mientras llegan.
         static let relatedPlaceholders = 4
         /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.

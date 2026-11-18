@@ -150,6 +150,9 @@ struct TitleLogo: View {
     var dark = false
     /// Centrado (la ficha): el logo y, si no hay, el nombre, al centro.
     var centered = false
+    /// Cuánto crece con el escenario de la ficha ancha (`WideStage.grow`): en una pantalla grande un logo apaisado (Dune)
+    /// quedaba diminuto.
+    var grow: CGFloat = 1
     /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
     @State private var measuredDark = false
     /// El logo sin su margen transparente (metahub los trae con ~25 % vacío arriba y abajo: el rótulo se veía flotando).
@@ -180,7 +183,7 @@ struct TitleLogo: View {
         .accessibilityLabel(Text(title))
     }
 
-    private var height: CGFloat { size == .hero ? DS.Size.logoHero : DS.Size.logo }
+    private var height: CGFloat { (size == .hero ? DS.Size.logoHero : DS.Size.logo) * grow }
 
     /// El alto que de verdad ocupa el logo recortado a lo ancho de siempre (sin pasar del tope).
     private var fittedHeight: CGFloat {
@@ -190,7 +193,7 @@ struct TitleLogo: View {
 
     /// Lo más ancho del logo; en la portada de la Mac crece como su alto (17 nov 2026: un logo apaisado, como el de «The Odyssey»,
     /// topaba con el ancho y se quedaba chico).
-    private var maxWidth: CGFloat { DS.Size.cardMax * (size == .hero && ThisDevice.isMac ? DS.Mac.heroScale : 1) }
+    private var maxWidth: CGFloat { DS.Size.cardMax * (size == .hero && ThisDevice.isMac ? DS.Mac.heroScale : 1) * grow }
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
@@ -278,3 +281,40 @@ struct RowTile: View {
 // Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.dsPrimaryButton()` (vidrio con letra oscura); secundario: `.dsGlassButton()`;
 // sobre fondos lisos, `.borderedProminent` / `.bordered`. No hay estilos de botón propios (`DesignTests` lo vigila).
 
+
+/// A los lados del escenario de la ficha ancha (`WideStage`, el ultrawide): el mismo arte, difuminado y oscurecido, de orilla a
+/// orilla. El escenario se funde en él (`StageEdges`): no hay un cuadro al centro ni un hueco negro a la izquierda.
+struct StageSides: View {
+    let url: String?
+
+    var body: some View {
+        Color.clear
+            .overlay {
+                if let url, let u = URL(string: url) {
+                    RemoteImage(url: u, maxPoints: DS.Image.card) { phase in
+                        if case .success(let image) = phase { image.resizable().scaledToFill() }
+                    }
+                }
+            }
+            .blur(radius: DS.TitleAction.stageSideBlur, opaque: true)
+            .overlay(DS.backdropDeep.opacity(DS.TitleAction.stageSideDim))   // el negro del velo, más ligero que `DS.scrim`
+            .clipped()
+            .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: DS.Backdrop.artFadeStart),
+                                         .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Las orillas del escenario se desvanecen hacia sus lados difuminados (`StageSides`); sin lados, el arte va completo.
+struct StageEdges: View {
+    let on: Bool
+
+    var body: some View {
+        if on {
+            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: DS.TitleAction.stageEdgeFade),
+                                   .init(color: .black, location: 1 - DS.TitleAction.stageEdgeFade), .init(color: .clear, location: 1)],
+                           startPoint: .leading, endPoint: .trailing)
+        } else { Color.black }
+    }
+}

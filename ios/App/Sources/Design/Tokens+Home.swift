@@ -82,6 +82,8 @@ extension DS {
         static let coverRows = 13, coverWallHeight: CGFloat = 1900
         /// Tope de columnas del muro: en ventana más ancha, columnas más anchas en vez de más (rendimiento en la Mac, 17 nov 2026).
         static let coverMaxColumns = 9
+        /// Cada cuánto entra otra columna del muro la primera vez (`MosaicCover`): una por paso, sin trabar el cambio de pestaña.
+        static let coverColumnStep: Duration = .milliseconds(45)
         /// En ventana ancha (iPad acostado o grande, Mac) el muro suma columnas del mismo ancho hasta cubrir la ventana (con
         /// las ocho de siempre quedaba una cuña en blanco a la izquierda). Hasta el ancho del iPad de pie, las ocho de siempre.
         static func coverColumns(forWidth width: CGFloat) -> Int {
@@ -105,7 +107,13 @@ extension DS {
         static let matchFan = 3
         /// En la Mac, la puerta de «Decide por mí» lleva a la derecha una tira de más carteles que se desvanece hacia el texto
         /// (a lo ancho, la tarjeta quedaba vacía: Fernando, 16 nov 2026, «hay que pulir el decide por mí»).
-        static let stripPoster: CGFloat = 78, stripCount = 8, stripFadeFrom: Double = 0.15
+        /// La tira crece con la ventana: llena lo que sobra hasta la orilla, como los renglones de al lado (en el ultrawide, con
+        /// ocho la tarjeta quedaba media vacía; Fernando, 17 nov 2026: «hay unas que siguen y otras que no»). `DecideStrip` enseña
+        /// solo las que caben.
+        static let stripPoster: CGFloat = 78, stripFadeFrom: Double = 0.15
+        static var stripCount: Int { min(stripMax, max(8, Int(WindowMetrics.column.width * stripShare / (stripPoster + DS.Space.s2)))) }
+        /// Hasta la mitad del ancho y 16 carteles: con 36 en el ultrawide muchos se veían vacíos mientras llegaban.
+        static let stripShare: CGFloat = 0.5, stripMax = 16
         /// Cuánto la tiñe el color de acento desde el abanico (Fernando, 17 nov 2026: «hazlo más vistoso»; el turquesa es voz).
         static let doorGlow: Double = 0.3
         /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.

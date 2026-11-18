@@ -94,9 +94,24 @@ extension DesignRulesTests {
         // Ultrawide: la portada de Inicio sin tope de ancho en la Mac y el arte a la derecha, fundido (no un cuadro al centro).
         XCTAssertTrue(try code("Tokens+Home.swift").contains("isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)"), "Inicio: en la Mac la portada no se topa a lo ancho")
         XCTAssertTrue(try code("Posters.swift").contains("ZStack(alignment: bleed ? .trailing : .center)"), "arte de portada en ventana muy ancha: a la derecha, fundido")
-        // Las tarjetas a lo ancho no se estiran sin fin.
-        XCTAssertTrue(try code("ParaTiB.swift").contains(".macCardWidth()"), "«Decide por mí» con ancho máximo en la Mac")
-        XCTAssertTrue(try code("Collections.swift").contains(".macCardWidth()"), "«Porque viste…» con ancho máximo en la Mac")
+        // Las tarjetas a lo ancho llenan la fila como las demás (con tope unas seguían y otras no; Fernando, 17 nov 2026):
+        // «Porque viste…» pone el encabezado al lado en ventanas anchas y «Decide por mí» llena su tira.
+        XCTAssertFalse(try code("ParaTiB.swift").contains(".macCardWidth()"), "«Decide por mí» a todo lo ancho, como las otras filas")
+        XCTAssertTrue(try code("Collections.swift").contains("becauseSideFrom"), "«Porque viste…»: encabezado al lado en ventana ancha")
+        // Abrir pantallas rápido: estantes perezosos, pósters de adorno ligeros y Ajustes sin tipos gigantes.
+        XCTAssertTrue(try code("ListsView.swift").contains("ShelfStack(lazy:"), "Explorar arma sus estantes al llegar a ellos")
+        XCTAssertTrue(try code("ParaTiB.swift").contains("decorative: true"), "el muro y la tira de Explorar con pósters de adorno")
+        XCTAssertTrue(try code("SettingsView.swift").contains("-> AnyView"), "Ajustes: el destino borrado de tipo (abría lento)")
+        // La ficha ancha (iPad, Mac): el margen crece con la ventana; con 40 pt fijos «Ver» quedaba clavado a la izquierda.
+        XCTAssertTrue(try code("TitleView+Detalles.swift").contains("wideStage.leading"), "ficha ancha: el margen sale de la receta `WideStage`")
+        XCTAssertTrue(try code("TitleView.swift").contains("StageSides(") && code("TitleView.swift").contains("StageEdges("), "ficha ancha: escenario centrado con arte a los lados")
+        // «más» solo si el texto de verdad se corta: nada de contar letras.
+        XCTAssertTrue(try code("TitleView+Detalles.swift").contains("FoldingText("), "la sinopsis usa `FoldingText`")
+        for file in files where file.lines.joined().contains("\"más\"") || file.lines.joined().contains("\"Más\"") {
+            let text = file.lines.joined(separator: "\n")
+            XCTAssertFalse(text.range(of: #"\.count > DS\.[A-Za-z.]*Fold"#, options: .regularExpression) != nil, "\(file.name): «más» por número de letras; usa `FoldingText`")
+        }
+        XCTAssertFalse(try code("TitleView+Detalles.swift").contains("? DS.TitleAction.wideSide :"), "ficha ancha: sin el margen fijo de 40 pt")
         // La ventana más chica de la Mac: 560 (a 420 la barra de arriba se salía).
         XCTAssertTrue(try code("WindowMetrics.swift").contains("isiOSAppOnMac ? 560 : 375"), "la ventana mínima de la Mac, 560")
     }

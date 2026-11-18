@@ -144,10 +144,11 @@ struct DSEmptyState<Actions: View>: View {
 
 /// RB2 (Fernando, 16 nov 2026): en la Mac, con la ventana grande, arriba y chico parecía que la pantalla no había cargado. Ahí
 /// el aviso ocupa casi todo el alto de lo que lo contiene (`DS.Mac.emptyShare` de lo visible del desplazamiento, o de la
-/// hoja), no de la ventana entera: en una hoja chica no se sale. iPhone y iPad, arriba.
+/// hoja), no de la ventana entera: en una hoja chica no se sale. También el iPad con espacio (17 nov 2026: en el de 13" el
+/// aviso de Biblioteca quedaba arriba y el resto vacío); el iPhone, arriba.
 private struct MacEmptyHeight: ViewModifier {
     func body(content: Content) -> some View {
-        if ThisDevice.isMac {
+        if WindowMetrics.roomy {
             content.containerRelativeFrame(.vertical) { length, _ in length * DS.Mac.emptyShare }   // ds-exception: el alto (no el ancho) de lo visible, para centrar el aviso
         } else {
             content

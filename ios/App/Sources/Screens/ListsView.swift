@@ -124,6 +124,14 @@ struct ListsView: View {
         #endif
     }
 
+    /// Las filas de «Lo que se ve hoy», perezosas (en las pruebas de la Mac, `off lazy` las arma todas para comparar).
+    private static var lazyShelves: Bool {
+        #if DEBUG
+        if MacSelfCheck.off.contains("lazy") { return false }
+        #endif
+        return true
+    }
+
     private func scroller(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             // Perezoso (Fernando, 1 nov 2026: «Explorar cambia lento»): al volver a la pestaña solo se acomoda lo que se ve;
@@ -164,7 +172,9 @@ struct ListsView: View {
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
                     if walls.isEmpty, generalShelves.isEmpty, model.showsFirstSkeleton { HeroSkeleton() }   // desde el primer cuadro, mientras llega
-                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    // Perezosa también por dentro (17 nov 2026): con `VStack` se armaban de golpe todas las filas y sus ~170 pósters
+                    // al entrar la primera vez (665 ms trabado); ahora solo las que se ven.
+                    ShelfStack(lazy: Self.lazyShelves, spacing: DS.Layout.betweenSubsections) {
                     ForEach(Array(generalShelves.enumerated()), id: \.element.id) { i, plan in
                         shelf(plan).entrance("shelf:" + plan.id, order: i).id(plan.id).perfTag("paraTi.shelf")   // entran escalonados
                         // «Lo más popular hoy», una franja más (BX, Fernando, 9 nov 2026): después de la segunda, no arriba.
@@ -542,5 +552,16 @@ struct ListsView: View {
                      message: Text("Mi lista, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.")) {
             NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
         }
+    }
+}
+
+/// Una columna de filas: perezosa (solo arma lo que se ve) o, para comparar en las pruebas, toda de una vez.
+struct ShelfStack<Content: View>: View {
+    let lazy: Bool
+    let spacing: CGFloat
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        if lazy { LazyVStack(alignment: .leading, spacing: spacing, content: content) }
+        else { VStack(alignment: .leading, spacing: spacing, content: content) }
     }
 }
