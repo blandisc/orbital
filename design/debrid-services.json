@@ -1,0 +1,64 @@
+{
+  "_": "Tu nube: Real-Debrid, TorBox o AllDebrid (Fernando, 18 nov 2026: «Me gustaría que sí lo construyéramos para que pueda funcionar con TorBox, AllDebrid y Real-Debrid. Solamente esos tres», fases 1 y 2). Lo que la TV y el iPhone hacen igual con cualquiera de las tres. La TV lo lee en orbital/library/debrid.py (y torbox.py, alldebrid.py); tests/test_debrid_services.py lo cuida. Lo que no dice aquí sigue como en addons-contract.json (que habla de Real-Debrid: con otra nube, se lee con su nombre).",
+  "version": 1,
+  "services": {
+    "realdebrid": {"name": "Real-Debrid", "tag": "RD", "site": "real-debrid.com", "key_url": "https://real-debrid.com/apitoken", "renew_url": "https://real-debrid.com/premium", "torrentio_param": "realdebrid", "comet_service": "realdebrid", "errors": "realdebrid-errors.json", "key_store": "realdebrid_token"},
+    "torbox": {"name": "TorBox", "tag": "TB", "site": "torbox.app", "key_url": "https://torbox.app/settings", "renew_url": "https://torbox.app/pricing", "torrentio_param": "torbox", "comet_service": "torbox", "errors": "torbox-errors.json", "key_store": "torbox_token"},
+    "alldebrid": {"name": "AllDebrid", "tag": "AD", "site": "alldebrid.com", "key_url": "https://alldebrid.com/apikeys/", "renew_url": "https://alldebrid.com/offer/", "torrentio_param": "alldebrid", "comet_service": "alldebrid", "errors": "alldebrid-errors.json", "key_store": "alldebrid_token"}
+  },
+  "default": "realdebrid",
+  "choice": {
+    "_": "Una sola nube activa a la vez (Ajustes › Cuentas › Tu nube). La clave de cada una se guarda aparte (cifrada: DPAPI en la TV, el llavero en el iPhone): cambiarse y volver no pide la clave otra vez. Sin elegir nunca, es Real-Debrid (lo de antes).",
+    "tv_setting": "debrid_service (realdebrid | torbox | alldebrid)",
+    "key_shape": "16 a 128 de [A-Za-z0-9-]: Real-Debrid y AllDebrid, letras y números; TorBox, un UUID con guiones",
+    "from_torrentio": "Un Torrentio traído de tu Stremio puede traer «realdebrid=», «torbox=» o «alldebrid=» (punto 1 del 18 nov: antes la TV y el iPhone tiraban las de TorBox y AllDebrid). Esa clave queda para su nube; si todavía no tenías nube con clave, esa queda como la tuya. Premiumize y las demás se conservan tal cual en la dirección, sin que Orbital las use."
+  },
+  "addons": {
+    "torrentio": "La dirección termina en «|<torrentio_param>=<clave>/manifest.json». Sin clave, la de siempre sin nube (lo que existe en internet).",
+    "comet": "{\"cachedOnly\": true, \"debridServices\": [{\"apiKey\": <clave>, \"service\": <comet_service>}]} en base64, como hoy.",
+    "marks": "Ya está en tu nube: «[RD+]», «[TB+]» o «[AD+]» en el nombre (Comet: ⚡). Hay que pedirla: «[RD download]», «[TB download]», «[AD download]». Tu nube no deja: «[RD error]», «[TB error]», «[AD error]» o los videos de aviso de Torrentio. La huella de una dirección: /resolve/<torrentio_param>/<clave>/<huella>/…"
+  },
+  "client": {
+    "_": "Cada cliente habla con su API y contesta en la forma de Real-Debrid: así la libreta de pedidos, sus estados y sus pruebas son una sola. Un torrent: {id, hash, status, progress (0-100), seeders, files: [{id: fileIdx + 1, path, bytes, selected}]} con `status` en el vocabulario de Real-Debrid (rd_status_map de addons-contract.json).",
+    "account": "{id, username, premium, expires (segundos o null)}. AllDebrid no da número de cuenta: su nombre de usuario hace de id.",
+    "pick_file": "El archivo de un episodio ya bajado: primero el que dice «S01E03» o «1x03» en su nombre (TorBox y AllDebrid no siempre numeran como el torrent); si no, el de fileIdx + 1; si no, el video más grande.",
+    "realdebrid": {
+      "api": "https://api.real-debrid.com/rest/1.0, Authorization: Bearer <clave>",
+      "uses": "GET /user · POST /torrents/addMagnet + /torrents/selectFiles (solo deja elegir una vez: waiting_files_selection) · GET /torrents y /torrents/info/{id} · GET /torrents/activeCount · DELETE /torrents/delete/{id} · POST /unrestrict/link",
+      "counts_active": true
+    },
+    "torbox": {
+      "api": "https://api.torbox.app/v1/api, Authorization: Bearer <clave>. Responde {success, error, detail, data}; `error` es el código de torbox-errors.json",
+      "uses": "GET /user/me (plan > 0 = Premium; premium_expires_at) · POST /torrents/createtorrent (multipart: magnet; baja el torrent entero, no se eligen archivos) · GET /torrents/mylist?bypass_cache=true (&id=) · GET /torrents/requestdl?token&torrent_id&file_id · POST /torrents/controltorrent {torrent_id, operation: delete}",
+      "status_map": "download_present (o download_finished con cached/completed/uploading/seeding) = downloaded · metaDL, checkingResumeData, queued, paused = queued · algo con «error» o «fail» = error · lo demás (downloading, stalled…) = downloading; progress viene de 0 a 1",
+      "counts_active": false,
+      "_": "No dice cuántas deja tu plan: «Muchas descargas activas» (ACTIVE_LIMIT) se vuelve a intentar una vez en el siguiente vistazo, sin preguntar cuántas hay."
+    },
+    "alldebrid": {
+      "api": "https://api.alldebrid.com, Authorization: Bearer <clave>. Responde {status: success, data} o {status: error, error: {code, message}} (con HTTP 200); `code` es el de alldebrid-errors.json",
+      "uses": "GET /v4/user (isPremium, premiumUntil) · POST /v4/magnet/upload magnets[]=<huella> (un error por magnet dentro de data.magnets[]) · POST /v4.1/magnet/status (id=, status=active) · POST /v4/magnet/files id[]= (árbol: n nombre, e carpeta, s tamaño, l enlace) · POST /v4/link/unlock link= (y /v4/link/delayed si trae delayed) · POST /v4/magnet/delete id=",
+      "status_map": "statusCode 4 = downloaded · 0 = queued · 1 = downloading · 2 y 3 = uploading (cuenta como bajando) · 7 y 15 (nadie lo comparte) = dead · 5 a 14 = error",
+      "counts_active": true,
+      "_": "Deja 30 a la vez (MAGNET_TOO_MANY_ACTIVE): active_count cuenta los de status=active contra 30."
+    }
+  },
+  "requests": {
+    "service": "Cada entrada de la libreta lleva «service» (realdebrid | torbox | alldebrid). Sin «service» es de Real-Debrid (lo de antes del 18 nov); otro valor no se anota (422 en el POST). Al juntar dos entradas, el «service» que ya tenía se queda.",
+    "mine": "Un pedido es tuyo (se sigue, se cancela, se ve al instante) solo si es de tu nube activa y de su cuenta. Lo de otra nube (lo pediste antes de cambiarte) se ve en «Tus pedidos» con el nombre de esa nube y «Abrir la ficha», y se cancela desde esa.",
+    "refused": "Lo que una nube no dejó bajar no cuenta para otra: con TorBox, lo que Real-Debrid rechazó se vuelve a ofrecer (para eso te cambias).",
+    "listing": "GET /api/realdebrid/requests suma «service»: la nube de la TV (además de «account», su cuenta). version sigue en 1: lo nuevo es un campo más."
+  },
+  "routes": {
+    "GET /api/realdebrid": "suma «service» y «name» (el de la nube de la TV). El nombre de la ruta no cambia.",
+    "PUT /api/realdebrid": "{token, service?}: con «service», la clave de esa nube, y esa queda como la de la TV; sin él, Real-Debrid (el iPhone de antes). 422 si no es una de las tres o la clave no tiene forma.",
+    "POST /api/realdebrid/key": "{token, service?} en el puerto local (pegarla en la TV): igual que el PUT.",
+    "POST /api/debrid/service": "{service} en el puerto local: Ajustes › Cuentas › Tu nube. Responde como GET /api/realdebrid (linked false si esa nube no tiene clave todavía: la TV abre «Conectar <nube>»).",
+    "POST /api/remote-input": "purpose realdebrid | torbox | alldebrid: el formulario del celular para la clave de esa nube («Conectar TorBox», «Ábrela en torbox.app/settings…»); al confirmar se guarda en esa nube."
+  },
+  "words": {
+    "_": "Los textos de design/vocabulario.json que dicen «Real-Debrid» se escriben así y se dicen con el nombre de la tuya («TorBox no lo dejó bajar», «Vuelve a conectar AllDebrid»); «real-debrid.com» con su página. «La nube» sigue siendo la palabra de todos los días. «No se renueva solo» es solo de Real-Debrid: con las otras, «Revisa tu plan».",
+    "onboarding": "Sin nube (la bienvenida «Películas y series › 1 · Tu nube», Ajustes › Cuentas y el Resumen): una sola hoja «Tu nube» que dice para qué es y que sirve cualquiera de las tres. «Ya tengo cuenta»: Real-Debrid, TorBox, AllDebrid, cada una con «Conectar con tu clave · <dónde se saca>». «Todavía no tengo»: «Ver <nube>» con su página de planes (signup: la TV la enseña con un QR para el celular; el iPhone la abre). Nunca «Real-Debrid» a secas antes de que elijas.",
+    "signup_urls": {"realdebrid": "https://real-debrid.com/premium", "torbox": "https://torbox.app/pricing", "alldebrid": "https://alldebrid.com/offer/"},
+    "picker": "«Tu nube»: las tres en este orden, cada una con «La que usas», «Clave guardada» o «Sin clave», y «¿Qué es esto?» (cuatro puntos: las tres hacen lo mismo; cada una deja bajar cosas distintas; cada una se paga en su página; lo que pediste se queda en su nube). Sin recomendar una."
+  }
+}

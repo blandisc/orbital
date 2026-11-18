@@ -894,7 +894,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (ask.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000);
     } catch (err) {
       if (mine !== token) return;
-      showCloud({ why: "error", message: err.message || "Real-Debrid no pudo con ese pedido" });
+      showCloud({ why: "error", message: err.message || "La nube no pudo con ese pedido" });
     }
   }
 

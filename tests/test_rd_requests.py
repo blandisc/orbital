@@ -63,7 +63,7 @@ class FakeRD:
         return {**found, "links": ["https://rd/l1", "https://rd/l2"],
                 "files": [{"id": 1, "selected": 1, "bytes": 9}, {"id": 2, "selected": 1, "bytes": 5}]}
 
-    def link(self, info, file_idx=None):
+    def link(self, info, file_idx=None, season=None, episode=None):
         return (f"https://download.real-debrid.com/{file_idx}.mkv", "Nocturno.S01E01.1080p.Dual-Lat.mkv")
 
     def active_count(self):

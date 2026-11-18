@@ -1,0 +1,45 @@
+{
+  "_": "Lo mismo que realdebrid-errors.json, para TorBox (Fernando, 18 nov 2026: Orbital con Real-Debrid, TorBox o AllDebrid). La TV la lee en orbital/library/torbox.py y el iPhone en su traductor de TorBox. TorBox contesta {\"success\": false, \"error\": \"<CÓDIGO>\", \"detail\"}; los códigos son los de su API v1 (api.torbox.app/docs). Primero manda el código; sin él (o con uno que no está aquí), el HTTP.",
+  "version": 1,
+  "codes": {
+    "NO_AUTH": {"cause": "invalid_session"},
+    "BAD_TOKEN": {"cause": "invalid_session"},
+    "AUTH_ERROR": {"cause": "invalid_session"},
+    "OAUTH_VERIFICATION_ERROR": {"cause": "invalid_session"},
+    "PLAN_RESTRICTED_FEATURE": {"cause": "no_premium"},
+    "ITEM_NOT_FOUND": {"cause": "gone"},
+    "ACTIVE_LIMIT": {"cause": "too_many", "_": "Descargas a la vez de tu plan: se vuelve a pedir cuando haya lugar."},
+    "MONTHLY_LIMIT": {"cause": "too_many"},
+    "COOLDOWN_LIMIT": {"cause": "slow_down"},
+    "DOWNLOAD_TOO_LARGE": {"cause": "refused"},
+    "TOO_MUCH_DATA": {"cause": "refused"},
+    "BOZO_TORRENT": {"cause": "refused"},
+    "LINK_OFFLINE": {"cause": "refused"},
+    "NO_SERVERS_AVAILABLE_ERROR": {"cause": "slow_down"},
+    "DOWNLOAD_SERVER_ERROR": {"cause": "slow_down"},
+    "DATABASE_ERROR": {"cause": "slow_down"},
+    "VENDOR_DISABLED": {"cause": "slow_down"},
+    "DUPLICATE_ITEM": {"cause": "other"},
+    "INVALID_OPTION": {"cause": "other"},
+    "MISSING_REQUIRED_OPTION": {"cause": "other"},
+    "UNKNOWN_ERROR": {"cause": "other"},
+    "ENDPOINT_NOT_FOUND": {"cause": "other"}
+  },
+  "http": {
+    "401": "invalid_session",
+    "402": "no_premium",
+    "403": "no_premium",
+    "404": "gone",
+    "429": "slow_down",
+    "503": "slow_down"
+  },
+  "cases": [
+    {"http": 401, "code": "BAD_TOKEN", "cause": "invalid_session"},
+    {"http": 200, "code": "ACTIVE_LIMIT", "cause": "too_many"},
+    {"http": 200, "code": "DOWNLOAD_TOO_LARGE", "cause": "refused"},
+    {"http": 404, "code": "ITEM_NOT_FOUND", "cause": "gone"},
+    {"http": 429, "code": null, "cause": "slow_down"},
+    {"http": 400, "code": "DUPLICATE_ITEM", "cause": "other"},
+    {"http": null, "code": null, "cause": "other"}
+  ]
+}

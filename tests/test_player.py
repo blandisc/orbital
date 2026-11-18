@@ -710,7 +710,7 @@ def test_the_player_stick_has_hysteresis_like_the_interface():
 
 def test_sources_panel_explains_instant():
     panel = player_ui.more_panel(sources=[{"id": 1, "label": "Español · 1080p · Al instante", "current": True}])
-    assert "Al instante: Real-Debrid" in player_ui.panel_ass(panel)
+    assert "Al instante: tu nube" in player_ui.panel_ass(panel)
     assert player_ui.quit_hold_ass(.5) and player_ui.quit_hold_ass(float("nan"))
 
 
@@ -839,7 +839,7 @@ def test_info_line_keeps_the_region_capitalized():
 
 
 def test_source_counter_sits_in_the_header_not_on_the_note():
-    """«7 de 12» va en el encabezado de la columna: abajo se encimaba con «Al instante: Real-Debrid…»."""
+    """«7 de 12» va en el encabezado de la columna: abajo se encimaba con «Al instante: tu nube…»."""
     import re
 
     sources = [{"label": f"{i}p", "hint": "Torrentio", "id": f"s{i}", "current": i == 0} for i in range(12)]
@@ -848,7 +848,7 @@ def test_source_counter_sits_in_the_header_not_on_the_note():
     panel.columns[panel.col].index = 6
     ass = player_ui.panel_ass(panel)
     assert re.search(r"\\an9\\pos\(\d+,562\)[^}]*}7 de 12", ass)
-    assert "Al instante: Real-Debrid" in ass
+    assert "Al instante: tu nube" in ass
 
 
 def test_one_volume_the_players_buttons_move_the_computers():

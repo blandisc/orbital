@@ -173,7 +173,7 @@ class _UpNext(_Lifecycle):
             except LookupError as exc:
                 self.toast(str(exc), 6)
                 return
-            self.toast(f"Pedido a Real-Debrid · {info.get('label') or 'el siguiente episodio'} · Te aviso cuando esté", 5)
+            self.toast(f"Pedido a la nube · {info.get('label') or 'el siguiente episodio'} · Te aviso cuando esté", 5)
 
         threading.Thread(target=run, daemon=True, name="rd-request").start()
 

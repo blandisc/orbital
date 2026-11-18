@@ -193,13 +193,13 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
     while legend_below and legend_width(legend_below) > note_room:  # 4:3 con la letra más grande: lo de menos uso, fuera
         legend_below.pop()
     if panel.column.key == "source":  # la enfocada en palabras y qué quiere decir «Al instante», donde se elige
-        note = "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. Las demás primero se descargan y pueden tardar."
+        note = "Al instante: tu nube ya la tiene guardada y arranca en segundos. Las demás primero se descargan y pueden tardar."
         if panel.column.grid and panel.column.chosen:
             row, cell = panel.column.options[panel.column.index], panel.column.chosen
             said = " · ".join(p for p in (row["label"], cell["label"], cell["doubt"], cell["hint"], cell["size"],
                                           ADDON_MARKS.get(cell.get("addon") or "", ("",))[0],
                                           "la que ves" if cell.get("current") else "") if p)
-            note = said if legend_below else f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
+            note = said if legend_below else f"{said}      Al instante: tu nube ya la tiene y arranca en segundos"
         room = note_room - (legend_width(legend_below) + 40 if legend_below else 0)
         note = fit(note, 20, room) if room >= 160 else ""  # sin lugar (4:3, letra grande), la dice solo la casilla enfocada
         if note:

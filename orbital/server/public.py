@@ -24,7 +24,7 @@ from ..api.play import humane_error  # noqa: F401 - se importa desde aquí
 from ..api.ui import SETTINGS  # noqa: F401
 from ..config import Config
 from ..foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
-from ..library import trakt
+from ..library import debrid, trakt
 from .base import FailedTokens, invalid_request, log, token_ok
 from .phone import (
     KEY_REQUIRED,
@@ -230,10 +230,11 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         remote = main_app.state.remote_input
         values = body.get("values") if isinstance(body, dict) else None
         extra = None
-        if remote.purpose(code) == "realdebrid":  # CA2-A: la clave se prueba aquí, nunca en la interfaz
+        purpose = remote.purpose(code)
+        if purpose in debrid.SERVICES:  # CA2-A: la clave se prueba aquí, nunca en la interfaz
             token = values.get("token") if isinstance(values, dict) else None
             try:
-                account = await run_in_threadpool(main_app.state.catalog.watch.check_rd_token, str(token or ""))
+                account = await run_in_threadpool(main_app.state.catalog.watch.check_rd_token, str(token or ""), purpose)
             except ValueError as exc:
                 return JSONResponse({"detail": remote.fail(code, str(exc))}, status_code=400)
             except ConnectionError as exc:
@@ -418,23 +419,28 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         out = addons.run_debrid_status(watch)
         if full:
             out["token"] = watch.rd_token()
-            watch.events.publish({"type": "toast", "message": f"«{device['name']}» tomó la clave de Real-Debrid",
+            watch.events.publish({"type": "toast", "message": f"«{device['name']}» tomó la clave de {watch.debrid_name}",
                                   "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
 
     @public.put("/api/realdebrid")
     async def companion_debrid_put(request: Request) -> JSONResponse:
-        """«Pasar a la TV»: la clave fija de tu Real-Debrid, probada antes de guardarla (contrato, secrets)."""
+        """«Pasar a la TV»: la clave fija de tu nube, probada antes de guardarla (contrato, secrets). Con «service»
+        (realdebrid, torbox o alldebrid) esa nube queda como la de la TV; sin él, Real-Debrid (el iPhone de antes)."""
         device = with_key(request, "rd_put")
         try:
             body = await request.json()
         except ValueError:
             body = {}
         token = body.get("token") if isinstance(body, dict) else None
-        if not isinstance(token, str) or not 20 <= len(token.strip()) <= 128:
-            raise HTTPException(422, "Esa no parece una clave de Real-Debrid")
+        service = body.get("service", "realdebrid") if isinstance(body, dict) else "realdebrid"
+        if service not in debrid.SERVICES:
+            raise HTTPException(422, "Esa nube no la conozco")
+        if not isinstance(token, str) or not debrid.looks_like_key(token.strip()):
+            raise HTTPException(422, f"Esa no parece una clave de {debrid.name(service)}")
         try:
-            out = await run_in_threadpool(main_app.state.catalog.watch.set_rd_token, token.strip(), device["name"])
+            out = await run_in_threadpool(main_app.state.catalog.watch.set_rd_token, token.strip(), device["name"],
+                                          "iphone", service)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         except ConnectionError as exc:

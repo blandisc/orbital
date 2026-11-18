@@ -340,12 +340,17 @@ def build(tmp: Path):
 def demo_debrid(catalog) -> None:
     """Real-Debrid sin internet (corte S2): una cuenta Premium que vence en 18 días y «Tus pedidos» con uno de cada estado,
     del demo y de un iPhone. `ORBITAL_DEMO_RD=expired|no_premium|bad_key` enseña esa causa en su lugar
-    y `ORBITAL_DEMO_RD_DAYS` cuántos días le quedan."""
+    y `ORBITAL_DEMO_RD_DAYS` cuántos días le quedan. `ORBITAL_DEMO_CLOUD=torbox|alldebrid` (18 nov): tu nube es esa (con
+    la clave de Real-Debrid también guardada, para ver «Tu nube» con «Clave guardada»)."""
     from orbital import rd_requests
 
     watch, now = catalog.watch, time.time()
     problem = os.environ.get("ORBITAL_DEMO_RD") or None
     watch.credentials.set("realdebrid_token", "DEMODEMO3F2A")  # el Torrentio de Orbital se arma con ella (corte S3)
+    cloud = os.environ.get("ORBITAL_DEMO_CLOUD") or "realdebrid"
+    if cloud not in ("realdebrid", "none"):
+        watch.credentials.set(f"{cloud}_token", "DEMODEMO3F2A")
+        watch.state.set_setting("debrid_service", cloud)
     watch.rd_token = lambda: "DEMODEMO3F2A"
     watch.rd.token = watch.rd_token
     watch.rd.watch = lambda: None  # nada le pregunta a Real-Debrid
@@ -366,9 +371,16 @@ def demo_debrid(catalog) -> None:
     days = int(os.environ.get("ORBITAL_DEMO_RD_DAYS") or 18)
     expires = now - 2 * 86400 if problem == "expired" else now + days * 86400 - 3600
     watch._rd_status = (now + 10**9, "DEMODEMO3F2A", {
-        "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": expires,
+        "linked": True, "service": watch.debrid_service, "name": watch.debrid_name, "source": "torrentio", "user": "fernando",
+        "premium": problem is None, "expires": expires,
         "days": None if problem == "expired" else days, "problem": problem, "ends_with": "3F2A"})
     watch.debrid_status = lambda fresh=False: watch._rd_status[2]  # «Revisar» la cuenta no sale a internet
+    if cloud == "none":  # `ORBITAL_DEMO_CLOUD=none`: la bienvenida sin nube (elegir cualquiera de las tres)
+        watch.credentials.set("realdebrid_token", None)
+        watch.rd_token = lambda: None
+        watch.rd.token = watch.rd_token
+        watch._rd_status = (0.0, None, {"linked": False, "service": "realdebrid", "name": "Real-Debrid"})
+        return
     rows = [("Shōgun · T1 E2", "tt2788316:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
             ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]
@@ -381,7 +393,8 @@ def demo_debrid(catalog) -> None:
         title, video, state, pct, by = row[:5]
         h = row[5] if len(row) > 5 else f"{i + 1:x}" * 40
         catalog.state.set_pref(rd_requests.STATE_ID, h, {
-            "hash": h, "account": "7", "rd_id": f"DEMO{i}", "title": title, "kind": "series" if ":" in video else "movie",
+            # Con otra nube, Oppenheimer sigue siendo de Real-Debrid: lo que pediste antes de cambiarte.
+            "hash": h, "service": "realdebrid" if title == "Oppenheimer" else cloud, "account": "7", "rd_id": f"DEMO{i}", "title": title, "kind": "series" if ":" in video else "movie",
             "meta_id": video.split(":")[0], "video_ids": [video], "files": {}, "by": by, "since": now - i * 3600, "updated": now,
             "percent": pct, "progress_at": now - (1800 if state == "downloading" else 0), "state": state, "notified": True,
             "nudged": True})

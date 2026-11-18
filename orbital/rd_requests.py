@@ -1,8 +1,9 @@
-"""Pedidos a Real-Debrid: lo que todavía no tiene se le pide, se sigue cuánto lleva y, ya listo, es una versión más que
-arranca al instante (Fernando, 2 nov 2026, propuesta RD: «Pedirlo y avisarme»).
+"""Pedidos a tu nube (Real-Debrid, TorBox o AllDebrid): lo que todavía no tiene se le pide, se sigue cuánto lleva y, ya
+listo, es una versión más que arranca al instante (Fernando, 2 nov 2026, propuesta RD: «Pedirlo y avisarme»; 18 nov: las
+tres nubes). Cada cliente contesta en la forma de Real-Debrid (library/debrid.py), así la libreta es una sola.
 
 La libreta es la misma en la TV y en el iPhone (design/addons-contract.json, «requests»; corte S2 de «La TV sin Stremio»):
-una entrada por torrent, con su huella como clave, los videos que trae, quién lo pidió, de qué cuenta de Real-Debrid es y
+una entrada por torrent, con su huella como clave, los videos que trae, quién lo pidió, de qué nube y de qué cuenta es y
 uno de seis estados (más la lápida «gone»). La TV la guarda en el estado (sobrevive a un reinicio) y el iPhone la lee y le
 manda la suya por GET/POST /api/realdebrid/requests. Mientras haya alguno en camino, un hilo le pregunta a Real-Debrid
 cada POLL segundos por todos a la vez y avisa: «rd-request» (para la ficha) y, si lo pidió la TV, «Ya está …».
@@ -18,7 +19,7 @@ import zlib
 from collections.abc import Callable
 from dataclasses import replace
 
-from .library import addons, realdebrid, streams
+from .library import addons, debrid, streams
 from .net import NET_FAILURES
 
 log = logging.getLogger(__name__)
@@ -39,18 +40,27 @@ STATES = (QUEUED, DOWNLOADING, NO_PEERS, REFUSED, TOO_MANY, READY, GONE)
 ACTIVE = {QUEUED, DOWNLOADING, NO_PEERS}
 # Al juntar dos entradas gana el estado de más arriba (too_many se reintenta más tarde: cualquiera le gana).
 PRECEDENCE = {GONE: 6, READY: 5, REFUSED: 4, NO_PEERS: 3, DOWNLOADING: 2, QUEUED: 1, TOO_MANY: 0}
-# Lo que se ve, en las palabras de design/vocabulario.json.
+# Lo que se ve, en las palabras de design/vocabulario.json (`words(nube)`: con el nombre de la tuya).
 WORDS = {QUEUED: "En cola", NO_PEERS: "Sin gente que lo comparta", REFUSED: "Real-Debrid no lo dejó bajar",
          TOO_MANY: "Muchas descargas activas", READY: "Listo"}
+
+
+def words(service: str | None) -> dict[str, str]:
+    return {**WORDS, REFUSED: f"{debrid.name(service)} no lo dejó bajar"}
 DETAILS = {QUEUED: "La nube lo recibió y espera turno", NO_PEERS: "Puede tardar días · Prueba otra versión",
            REFUSED: "Prueba otra versión", TOO_MANY: "Lo vuelvo a pedir cuando se libere un lugar", READY: "Ya arranca al instante"}
 
 # Dónde, cómo y por qué de un pedido (Fernando, 3 nov: «¿descargando dónde?»; el mismo texto del iPhone, adaptado: la TV
 # siempre avisa en pantalla). Va en la ficha mientras baja, en la hoja del pedido y antes del primer pedido.
 CLOUD = "La nube es tu Real-Debrid: lo baja por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso."
+
+
+def cloud(service: str | None) -> str:
+    """CLOUD con el nombre de tu nube."""
+    return CLOUD.replace("tu Real-Debrid", f"tu {debrid.name(service)}")
 HASH = re.compile(r"^[0-9a-f]{40}$")
 LOCAL_ONLY = ("notified", "nudged")  # nunca viajan: avisa solo el aparato que lo pidió
-TEXT_LIMITS = {"title": 120, "by": 60, "meta_id": 100, "language": 20, "release": 200, "rd_status": 40, "account": 40,
+TEXT_LIMITS = {"title": 120, "by": 60, "meta_id": 100, "language": 20, "release": 200, "rd_status": 40, "account": 120,
                "rd_id": 40}
 
 
@@ -65,12 +75,17 @@ def rd_state(rd_status: str, progress: int, seeders: int | None) -> str:
     return QUEUED
 
 
+def service_of(req: dict) -> str:
+    """De qué nube es un pedido: lo que dice su «service» o, si no dice (los de antes del 18 nov), Real-Debrid."""
+    return debrid.valid(req.get("service"))
+
+
 def label(req: dict) -> str:
     """Cómo se dice un pedido en una línea: «Bajando en la nube · 42 %», «En cola»…"""
     state = req.get("state")
     if state == DOWNLOADING:
         return f"Bajando en la nube · {int(req.get('percent') or 0)} %"
-    return WORDS.get(str(state), "En cola")
+    return words(service_of(req)).get(str(state), "En cola")
 
 
 def clean(raw: object) -> dict | None:
@@ -83,6 +98,11 @@ def clean(raw: object) -> dict | None:
     out: dict = {"hash": h}
     if isinstance(raw.get("account"), int) and not isinstance(raw.get("account"), bool):  # el id de Real-Debrid es un número
         raw = {**raw, "account": str(raw["account"])}
+    service = raw.get("service")
+    if service is not None:  # sin «service» es de Real-Debrid (lo de antes); otra que no se conoce no se anota
+        if service not in debrid.SERVICES:
+            return None
+        out["service"] = service
     for key, limit in TEXT_LIMITS.items():
         value = raw.get(key)
         if value is None:
@@ -133,7 +153,7 @@ def merge(old: dict, new: dict) -> dict:
     else:
         out = {**old}
         for key in ("rd_id", "title", "by", "since", "meta_id", "kind", "season", "episode", "language", "release",
-                    "account"):
+                    "account", "service"):
             if not out.get(key) and new.get(key):
                 out[key] = new[key]
         out["all_files"] = bool(old.get("all_files") or new.get("all_files"))
@@ -151,55 +171,72 @@ def merge(old: dict, new: dict) -> dict:
 
 
 class RdRequests:
-    def __init__(self, finder: streams.StreamFinder, state, publish, rd_factory=realdebrid.RealDebrid,
-                 token: Callable[[], str | None] | None = None) -> None:
+    def __init__(self, finder: streams.StreamFinder, state, publish, rd_factory=None,
+                 token: Callable[[], str | None] | None = None, service: Callable[[], str] = lambda: debrid.DEFAULT) -> None:
         self.finder = finder
         self.state = state
         self.publish = publish
-        self.rd_factory = rd_factory
+        self.service = service  # tu nube (Ajustes › Cuentas): de ella salen la clave, los pedidos y lo que se dice
+        # El cliente de tu nube con una clave (las pruebas ponen uno falso).
+        self.rd_factory = rd_factory or (lambda token: debrid.client(self.service(), token))
         self.token = token or self._torrentio_token  # el corte S2 le da la clave propia de la consola
         self._lock = threading.RLock()
         self._polling = False
-        self._account: tuple[float, str | None, str | None] = (0.0, None, None)  # (cuándo, token, id de usuario)
+        self._account: tuple[float, str | None, str | None] = (0.0, None, None)  # (cuándo, nube+token, id de usuario)
         self._links: dict[tuple[str, str], tuple[float, str, str]] = {}  # el enlace listo vive solo en memoria
         self._ready_checked = 0.0  # cuándo se vio por última vez si lo terminado sigue en Real-Debrid
 
     # --- de dónde sale la clave y qué torrents hay ---------------------------------------------------------------
+    @property
+    def name(self) -> str:
+        return debrid.name(self.service())
+
     def _debrid_addon(self) -> addons.Addon | None:
         try:
-            return next((a for a in self.finder.addons() if realdebrid.token_in(a.base)), None)
+            return next((a for a in self.finder.addons() if debrid.key_in(a.base)), None)
         except Exception as exc:  # noqa: BLE001 — sin lista de complementos (Stremio sin conectar, sin red): no hay Torrentio
-            log.info("Sin tu Torrentio para Real-Debrid: %s", exc)
+            log.info("Sin tu Torrentio para tu nube: %s", exc)
             return None
 
-    def _torrentio_token(self) -> str | None:
+    def _torrentio_key(self) -> tuple[str, str] | None:
+        """(nube, clave) que trae tu Torrentio, sea de la nube que sea."""
         addon = self._debrid_addon()
-        return realdebrid.token_in(addon.base) if addon else None
+        return debrid.key_in(addon.base) if addon else None
 
-    def client(self) -> realdebrid.RealDebrid | None:
+    def _torrentio_token(self) -> str | None:
+        """La clave de tu nube que trae tu Torrentio (la de otra nube no cuenta)."""
+        found = self._torrentio_key()
+        return found[1] if found and found[0] == self.service() else None
+
+    def client(self):
         token = self.token()
         return self.rd_factory(token) if token else None
 
     def account(self) -> str | None:
-        """El id de usuario de tu Real-Debrid (nunca la clave): de qué cuenta es cada pedido. None si no se sabe."""
+        """El id de usuario de tu nube (nunca la clave): de qué cuenta es cada pedido. None si no se sabe. AllDebrid no
+        da número: su nombre de usuario hace de id."""
         token = self.token()
+        stamp = f"{self.service()}:{token}" if token else None
         when, cached_token, user = self._account
-        if token and token == cached_token and time.time() - when < ACCOUNT_TTL:
+        if stamp and stamp == cached_token and time.time() - when < ACCOUNT_TTL:
             return user
         rd = self.rd_factory(token) if token else None
         user = None
         if rd is not None:
             try:
-                got = rd.user().get("id")
+                got = debrid.account(rd).get("id")
                 user = str(got) if got is not None else None
-            except (realdebrid.RealDebridError, AttributeError) as exc:
-                log.info("No pude saber de qué cuenta de Real-Debrid es la clave: %s", exc)
-                return cached_token == token and self._account[2] or None
-        self._account = (time.time(), token, user)
+            except (debrid.DebridError, AttributeError) as exc:
+                log.info("No pude saber de qué cuenta de %s es la clave: %s", self.name, exc)
+                return cached_token == stamp and self._account[2] or None
+        self._account = (time.time(), stamp, user)
         return user
 
     def _mine(self, req: dict, account: str | None) -> bool:
-        """Es de tu cuenta de Real-Debrid: la TV lo puede seguir, cancelar y ver. Sin `account` cuenta como de la misma."""
+        """Es de tu nube y de tu cuenta: la TV lo puede seguir, cancelar y ver. Uno de otra nube (lo pediste antes de
+        cambiarla) se ve, pero no se toca. Sin `account` cuenta como de la misma cuenta."""
+        if service_of(req) != debrid.valid(self.service()):
+            return False
         return not req.get("account") or not account or req["account"] == account
 
     def candidates(self, kind: str, video_id: str, prefs: streams.Preferences) -> list[streams.Source]:
@@ -208,7 +245,7 @@ class RdRequests:
         addon = self._debrid_addon()
         if addon is None:
             return []
-        base = realdebrid.without_debrid(addon.base)
+        base = debrid.without_debrid(addon.base)
         try:
             data = addons.fetch_json(f"{base}/stream/{kind}/{video_id}.json", self.finder.timeout)
         except NET_FAILURES as exc:
@@ -260,6 +297,7 @@ class RdRequests:
         out = {k: req.get(k) for k in ("state", "percent", "language", "by")}
         out["message"] = label(req)
         out["detail"] = DETAILS.get(str(req.get("state")), "")
+        out["service"] = service_of(req)
         if req.get("state") == TOO_MANY and req.get("retried"):  # N3-A: ya se volvió a pedir una vez; ahora es a mano
             out["detail"] = "Cancela otra descarga o pídelo otra vez más tarde"
         out["mine"] = self._mine(req, self._account[2])
@@ -277,12 +315,12 @@ class RdRequests:
             self._ready_checked = time.time()
             self.watch()  # un vistazo basta: si lo borraste allá, a la siguiente ya no sale
         entries = sorted(self._entries(), key=lambda r: r.get("since") or 0, reverse=True)
-        return {"version": 1, "account": account,
+        return {"version": 1, "account": account, "service": debrid.valid(self.service()),
                 "requests": [{k: v for k, v in r.items() if k not in LOCAL_ONLY} for r in entries]}
 
     def receive(self, raw: object) -> dict:
         """POST /api/realdebrid/requests: un pedido (o lo que cambió de él) que manda otro aparato. Se junta por huella y
-        nunca se le pide nada a Real-Debrid. ValueError si no tiene la forma."""
+        nunca se le pide nada a tu nube. ValueError si no tiene la forma."""
         entry = clean(raw)
         if entry is None:
             raise ValueError("Ese pedido no tiene la forma acordada")
@@ -325,27 +363,28 @@ class RdRequests:
     # --- pedir ---------------------------------------------------------------------------------------------------
     def request(self, kind: str, video_id: str, title: str, prefs: streams.Preferences, meta_id: str = "",
                 season: int | None = None, episode: int | None = None, want: str | None = None) -> dict:
-        """Pide a Real-Debrid la mejor versión que existe de ese video, o justo la de huella `want` (la que elegiste en
-        «Versión», T8-A). Lanza RealDebridError (en palabras) si no se pudo."""
+        """Pide a tu nube la mejor versión que existe de ese video, o justo la de huella `want` (la que elegiste en
+        «Versión», T8-A). Lanza DebridError (en palabras) si no se pudo."""
         current = self.status(video_id)
         if current and current["state"] in (*ACTIVE, READY) and current.get("mine"):
             return current
         rd = self.client()
+        name = self.name
         if rd is None:
-            raise realdebrid.RealDebridError("Conecta Real-Debrid en tu Torrentio para pedirle lo que no tiene")
+            raise debrid.error(self.service(), f"Conecta {name} para pedirle lo que no tiene")
         picks = self.candidates(kind, video_id, prefs)
         if not picks:
-            raise realdebrid.RealDebridError("Nadie lo tiene todavía en internet · vuelve a buscar más tarde")
-        refused = {k for k, v in self._all().items() if v.get("state") == REFUSED}
+            raise debrid.error(self.service(), "Nadie lo tiene todavía en internet · vuelve a buscar más tarde")
+        refused = self.refused()
         if want:  # la que elegiste en «Versión»
             picks = [p for p in picks if p.stream["infoHash"].lower() == want.lower()]
             if not picks:
-                raise realdebrid.RealDebridError("Esa versión ya no aparece · elige otra en «Versión»")
+                raise debrid.error(self.service(), "Esa versión ya no aparece · elige otra en «Versión»")
             if want.lower() in refused:
-                raise realdebrid.RealDebridError("Real-Debrid no dejó bajar esa versión · elige otra")
+                raise debrid.error(self.service(), f"{name} no dejó bajar esa versión · elige otra")
         pick = next((p for p in picks if p.stream["infoHash"].lower() not in refused), None)  # «Prueba otra versión»
         if pick is None:
-            raise realdebrid.RealDebridError("Real-Debrid no lo dejó bajar · no queda otra versión que pedir")
+            raise debrid.error(self.service(), f"{name} no lo dejó bajar · no queda otra versión que pedir")
         info_hash = pick.stream["infoHash"].lower()
         file_idx = pick.stream.get("fileIdx") if isinstance(pick.stream.get("fileIdx"), int) else None
         account = self.account()
@@ -361,7 +400,8 @@ class RdRequests:
                                   "files": files, "updated": now})
             self._publish(video_id)
             return self.status(video_id) or {}
-        entry = {"hash": info_hash, "account": account, "rd_id": None, "title": title[:120], "kind": kind,
+        entry = {"hash": info_hash, "service": debrid.valid(self.service()), "account": account, "rd_id": None,
+                 "title": title[:120], "kind": kind,
                  "meta_id": meta_id or video_id.split(":")[0], "video_ids": [video_id],
                  "files": {video_id: file_idx} if file_idx is not None else {}, "season": season, "episode": episode,
                  "language": " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in pick.languages[:2])[:20],
@@ -370,24 +410,26 @@ class RdRequests:
                  "notified": False, "nudged": False}
         try:
             entry["rd_id"] = rd.add(info_hash, file_idx, pack=kind == "series")
-        except realdebrid.RealDebridError as exc:
+        except debrid.DebridError as exc:
             if not (exc.too_many or exc.refused):  # de tu cuenta o de la red: no queda anotado
                 raise
             entry["state"] = TOO_MANY if exc.too_many else REFUSED
-        self._put(info_hash, merge(known, entry) if known else entry)
-        log.info("Pedido a Real-Debrid: %s (%s)", title, pick.release or info_hash)
+        self._put(info_hash, merge(known, entry) if known and service_of(known) == entry["service"] else entry)
+        log.info("Pedido a %s: %s (%s)", name, title, pick.release or info_hash)
         self._publish(video_id)
         self.watch()
         return self.status(video_id) or {}
 
     def cancel(self, info_hash: str) -> None:
-        """«Cancelar pedido»: se quita de tu Real-Debrid y queda la lápida para que el otro aparato no lo reanote."""
+        """«Cancelar pedido»: se quita de tu nube y queda la lápida para que el otro aparato no lo reanote."""
         req = self._all().get(info_hash)
         if not req or not self._mine(req, self.account()):
-            raise realdebrid.RealDebridError("Ese pedido es de otra cuenta de Real-Debrid")
+            other = debrid.name(service_of(req or {}))
+            raise debrid.error(self.service(), f"Ese pedido es de otra cuenta de {other}" if req and service_of(req) == self.service()
+                                     else f"Ese pedido es de {other}: cámbiala en Ajustes › Cuentas para cancelarlo")
         rd = self.client()
         if rd is None:
-            raise realdebrid.RealDebridError("Vuelve a conectar Real-Debrid")
+            raise debrid.error(self.service(), f"Vuelve a conectar {self.name}")
         if req.get("rd_id"):
             rd.delete(req["rd_id"])
         self._put(info_hash, {**req, "state": GONE, "updated": time.time()})
@@ -408,8 +450,10 @@ class RdRequests:
         return None
 
     def refused(self) -> set[str]:
-        """Las huellas que Real-Debrid no dejó bajar: «Versión» lo dice y nunca son la recomendada (FQ2-A, 3 nov)."""
-        return {k for k, v in self._all().items() if HASH.match(k) and v.get("state") == REFUSED}
+        """Las huellas que tu nube no dejó bajar: «Versión» lo dice y nunca son la recomendada (FQ2-A, 3 nov). Lo que
+        rechazó otra nube no cuenta: puede que la tuya sí lo deje (Fernando, 18 nov: para eso es TorBox)."""
+        service = debrid.valid(self.service())
+        return {k for k, v in self._all().items() if HASH.match(k) and v.get("state") == REFUSED and service_of(v) == service}
 
     def ready_packs(self, meta_id: str) -> set[str]:
         """Las huellas de los paquetes de temporada de esa serie que pediste con todos sus videos (`all_files`) y ya
@@ -430,9 +474,13 @@ class RdRequests:
             url, name = cached[1], cached[2]
         else:
             rd = self.client()
+            parts = video_id.split(":")
+            season, episode = (int(parts[1]), int(parts[2])) if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit() \
+                else (None, None)
             try:
-                got = rd.link(rd.info(req["rd_id"]), (req.get("files") or {}).get(video_id)) if rd and req.get("rd_id") else None
-            except realdebrid.RealDebridError as exc:
+                got = rd.link(rd.info(req["rd_id"]), (req.get("files") or {}).get(video_id), season, episode) \
+                    if rd and req.get("rd_id") else None
+            except debrid.DebridError as exc:
                 log.info("No pude sacar el enlace del pedido %s: %s", video_id, exc)
                 got = None
             if not got:
@@ -442,7 +490,8 @@ class RdRequests:
         # Con su huella (es esa versión: «Ver ahora» y la ficha la reconocen) y el idioma original del título (una
         # mexicana de YTS suena en latino, no «Inglés (se supone)»). Escenario 03 de los comunes con el iPhone.
         idx = (req.get("files") or {}).get(video_id)
-        stream = {"name": "[RD+] Real-Debrid\nTu pedido", "title": name or req.get("title") or "", "url": url,
+        service = service_of(req)
+        stream = {"name": f"[{debrid.TAGS[service]}+] {debrid.name(service)}\nTu pedido", "title": name or req.get("title") or "", "url": url,
                   "infoHash": req["hash"], **({"fileIdx": idx} if isinstance(idx, int) else {}),
                   "behaviorHints": {"filename": name}}
         try:
@@ -450,7 +499,7 @@ class RdRequests:
         except Exception:  # noqa: BLE001 - sin TMDB, igual arranca
             facts = {}
         original = facts.get("original") if isinstance(facts, dict) and isinstance(facts.get("original"), str) else None
-        return streams.parse(stream, "Real-Debrid", "realdebrid://pedido", zlib.crc32(video_id.encode()) % 2**31, original)
+        return streams.parse(stream, debrid.name(service), f"{service}://pedido", zlib.crc32(video_id.encode()) % 2**31, original)
 
     # --- el seguimiento ------------------------------------------------------------------------------------------
     def start(self) -> None:
@@ -472,12 +521,12 @@ class RdRequests:
             while self.tick():
                 time.sleep(POLL)
         except Exception:  # noqa: BLE001 — que un pedido raro nunca deje los demás sin seguir en silencio
-            log.exception("El seguimiento de pedidos a Real-Debrid se detuvo")
+            log.exception("El seguimiento de pedidos a tu nube se detuvo")
         finally:
             with self._lock:
                 self._polling = False
 
-    def _migrate(self, rd: realdebrid.RealDebrid, torrents: list[dict]) -> None:
+    def _migrate(self, rd, torrents: list[dict]) -> None:
         """Las entradas de antes del corte S2 (por video): su huella sale de Real-Debrid. Si ya no está allá, se olvidan."""
         for video_id, old in self._all().items():
             if HASH.match(video_id):
@@ -486,7 +535,7 @@ class RdRequests:
             if info is None and old.get("rd_id"):
                 try:
                     info = rd.info(old["rd_id"])
-                except realdebrid.RealDebridError as exc:
+                except debrid.DebridError as exc:
                     if not exc.gone:
                         continue
             h = str((info or {}).get("hash") or "").lower()
@@ -508,14 +557,15 @@ class RdRequests:
         """Un vistazo a todos los pedidos de tu cuenta que siguen en camino, con una sola consulta. True si queda alguno."""
         rd = self.client()
         if rd is None:
-            return False  # sin clave: la ficha dice «Vuelve a conectar Real-Debrid»; se retoma al conectar
+            return False  # sin clave: la ficha dice «Vuelve a conectar …»; se retoma al conectar
         account = self.account()
         try:
             torrents = rd.torrents(100)
-        except realdebrid.RealDebridError as exc:
-            log.info("No pude ver tus pedidos en Real-Debrid: %s", exc)
+        except debrid.DebridError as exc:
+            log.info("No pude ver tus pedidos en %s: %s", self.name, exc)
             return not exc.bad_key
-        self._migrate(rd, torrents)
+        if self.service() == "realdebrid":  # lo de antes del corte S2 solo pudo ser de Real-Debrid
+            self._migrate(rd, torrents)
         pending = self._retry_too_many(rd, account)
         for req in self._entries():
             if req.get("state") not in (*ACTIVE, READY) or not self._mine(req, account):
@@ -526,15 +576,15 @@ class RdRequests:
                 if match is None and req.get("rd_id"):
                     try:
                         rd.info(req["rd_id"])
-                    except realdebrid.RealDebridError as exc:
+                    except debrid.DebridError as exc:
                         if exc.gone:
                             self._update(req["hash"], {"state": GONE})
                 continue
             if match is None and req.get("rd_id"):  # más viejo que los 100 de la lista
                 try:
                     match = rd.info(req["rd_id"])
-                except realdebrid.RealDebridError as exc:
-                    if exc.gone:  # lo borraste en real-debrid.com o lo canceló el otro aparato
+                except debrid.DebridError as exc:
+                    if exc.gone:  # lo borraste en la página de tu nube o lo canceló el otro aparato
                         self._update(req["hash"], {"state": GONE})
                     else:
                         pending = True
@@ -549,29 +599,31 @@ class RdRequests:
 
     def _retry_too_many(self, rd, account: str | None) -> bool:
         """N3-A (Fernando, 4 nov): «Muchas descargas activas» se vuelve a pedir solo, una vez, en el siguiente vistazo en que
-        Real-Debrid tenga lugar. True mientras quede alguno esperando su lugar (el seguimiento no se detiene)."""
+        tu nube tenga lugar. Una nube que no dice cuántas deja (TorBox) se vuelve a intentar sin preguntar. True mientras
+        quede alguno esperando su lugar (el seguimiento no se detiene)."""
         waiting = [r for r in self._entries() if r.get("state") == TOO_MANY and not r.get("retried")
                    and r.get("by") == DEVICE and self._mine(r, account)]
         if not waiting:
             return False
-        try:
-            room = rd.active_count()
-        except realdebrid.RealDebridError as exc:
-            log.info("No pude ver cuántas descargas tienes activas: %s", exc)
-            return True
-        if not room or room[0] >= room[1]:
-            return True  # sigue lleno: se vuelve a ver en el siguiente vistazo
+        if getattr(rd, "counts_active", True):
+            try:
+                room = rd.active_count()
+            except debrid.DebridError as exc:
+                log.info("No pude ver cuántas descargas tienes activas: %s", exc)
+                return True
+            if not room or room[0] >= room[1]:
+                return True  # sigue lleno: se vuelve a ver en el siguiente vistazo
         req = waiting[0]  # uno por vistazo: el lugar libre puede ser solo uno
         files = req.get("files") or {}
         try:
             rd_id = rd.add(req["hash"], next(iter(files.values())) if len(files) == 1 else None, pack=req.get("kind") == "series")
-        except realdebrid.RealDebridError as exc:
+        except debrid.DebridError as exc:
             log.info("Volví a pedir %s y no se pudo: %s", req.get("title"), exc)
             self._update(req["hash"], {"retried": True, **({"state": REFUSED} if exc.refused else {})})
             return len(waiting) > 1
         self._update(req["hash"], {"retried": True, "rd_id": rd_id, "state": QUEUED, "progress_at": time.time()})
         self.publish({"type": "toast", "ok": True, "message": f"Volví a pedir {req.get('title') or 'tu pedido'}",
-                      "detail": "Ya se liberó un lugar en tu Real-Debrid"})
+                      "detail": "Ya se liberó un lugar en tu Real-Debrid".replace("Real-Debrid", self.name)})
         return True
 
     def _update(self, info_hash: str, change: dict) -> dict:
@@ -583,15 +635,19 @@ class RdRequests:
             self._publish(video_id)
         return req
 
-    def _apply(self, rd: realdebrid.RealDebrid, req: dict, torrent: dict) -> None:
+    def _apply(self, rd, req: dict, torrent: dict) -> None:
         status = str(torrent.get("status") or "")
         percent = int(torrent.get("progress") or 0)
         seeders = torrent.get("seeders") if isinstance(torrent.get("seeders"), int) else None
-        if status == "waiting_files_selection" and torrent.get("id"):
+        if status == "waiting_files_selection" and torrent.get("id"):  # Real-Debrid: elegir archivos (las demás no piden)
             try:
                 files = req.get("files") or {}
-                rd.select(torrent["id"], next(iter(files.values())) if len(files) == 1 else None, pack=req.get("kind") == "series")
-            except realdebrid.RealDebridError as exc:
+                one = next(iter(files.values())) if len(files) == 1 else None
+                if hasattr(rd, "prepare"):
+                    rd.prepare(torrent, one, pack=req.get("kind") == "series")
+                else:
+                    rd.select(torrent["id"], one, pack=req.get("kind") == "series")
+            except debrid.DebridError as exc:
                 log.info("No pude elegir los archivos del pedido %s: %s", req.get("title"), exc)
         state = rd_state(status, percent, seeders)
         now = time.time()
@@ -605,7 +661,7 @@ class RdRequests:
                     now - (req.get("progress_at") or now) >= STALL_AFTER:
                 self._update(req["hash"], {"nudged": True})
                 self.publish({"type": "toast", "ok": False, "message": f"{req.get('title') or 'Tu pedido'}: sigue sin bajar",
-                              "detail": "¿Probar otra versión? · Tus pedidos, en Ajustes › Cuentas › Real-Debrid"})
+                              "detail": f"¿Probar otra versión? · Tus pedidos, en Ajustes › Cuentas › {self.name}"})
             return
         fresh = self._update(req["hash"], change)
         if state == READY:
@@ -614,10 +670,10 @@ class RdRequests:
             if not fresh.get("notified") and fresh.get("by") == DEVICE:  # avisa solo quien lo pidió
                 self._update(req["hash"], {"notified": True})
                 self.publish({"type": "toast", "ok": True, "message": f"Ya está {fresh.get('title') or 'tu pedido'}",
-                              "detail": "Real-Debrid lo terminó de bajar · ábrelo para verlo"})
+                              "detail": f"{self.name} lo terminó de bajar · ábrelo para verlo"})
         elif state == REFUSED and fresh.get("by") == DEVICE and not fresh.get("notified"):
             self._update(req["hash"], {"notified": True})
-            self.publish({"type": "toast", "ok": False, "message": f"Real-Debrid no lo dejó bajar: {fresh.get('title') or 'tu pedido'}",
+            self.publish({"type": "toast", "ok": False, "message": f"{self.name} no lo dejó bajar: {fresh.get('title') or 'tu pedido'}",
                           "detail": "Prueba otra versión"})
 
     def _publish(self, video_id: str) -> None:

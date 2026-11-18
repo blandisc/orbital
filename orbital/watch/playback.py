@@ -543,7 +543,7 @@ class _Playback(_Progress):
             try:  # RD-6: unos minutos antes del final, Real-Debrid ya lo está bajando
                 requested = self.request_debrid("series", meta["meta_id"], next_id, title).get("state") in ("downloading", "ready")
             except LookupError as exc:
-                log.info("No pedí el siguiente episodio a Real-Debrid: %s", exc)
+                log.info("No pedí el siguiente episodio a tu nube: %s", exc)
         label, name = self._episode_label(info, next_id)
         still = next((e["thumbnail"] for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == next_id), None)
         return {"label": label, "title": name, "still": still if remote_art.allowed(still or "") else None,

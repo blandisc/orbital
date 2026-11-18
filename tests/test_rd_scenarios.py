@@ -95,7 +95,7 @@ class FakeRD:
     def info(self, rd_id):
         return self.by_id.get(rd_id) or {"id": rd_id, "status": "queued", "progress": 0}  # lo recién pedido
 
-    def link(self, info, file_idx=None):
+    def link(self, info, file_idx=None, season=None, episode=None):
         links = info.get("links") or []
         if not links:
             return None

@@ -28,7 +28,7 @@ def brought():
 def keyed():
     """Una lista con el llavero de la consola: la clave de Real-Debrid que traía tu Torrentio se queda ahí."""
     keys = {}
-    return AddonList(Store(), key=lambda: keys.get("rd"), on_key=lambda k: keys.__setitem__("rd", k)), keys
+    return AddonList(Store(), key=lambda: keys.get("rd"), on_key=lambda k, service="realdebrid": keys.__setitem__("rd", k)), keys
 
 
 def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():

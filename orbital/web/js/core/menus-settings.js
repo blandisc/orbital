@@ -3,7 +3,7 @@
  * Parte de core/menus.js (que los vuelve a exportar todos): menús como datos, puros y probables.
  */
 import { lastPlayed, sentenceAgo } from "./format.js";
-import { addonRows, addonsMeta, debridRow } from "./menus-cloud.js";
+import { addonRows, addonsMeta, debridRow, inCloud } from "./menus-cloud.js";
 import { langName, LANGUAGES_LEAD, languagesLine } from "./menus-languages.js";
 import { sinceVoice } from "./menus-voice.js";
 
@@ -162,13 +162,13 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
   }
   const rd = settings.realdebrid;
   if (rd && !rd.linked) {
-    missing.push({ icon: "cloudDownload", label: "Real-Debrid sin conectar", hint: "Sin Real-Debrid los videos no arrancan al instante", value: "Conectar", warn: true,
-      command: { type: "rd-connect" } });
+    missing.push({ icon: "cloudDownload", label: "Tu nube sin conectar", hint: "Sin ella los videos no arrancan al instante · Real-Debrid, TorBox o AllDebrid",
+      value: "Conectar", warn: true, command: { type: "rd-account" } });
   } else if (rd?.problem && rd.problem !== "offline") {
     missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver" });
   } else if (rd?.days != null && rd.days <= 7) {
-    missing.push({ icon: "bolt", label: rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`,
-      hint: "Renovar en real-debrid.com, desde tu celular", value: "Ver", warn: true, command: { type: "rd-account" } });
+    missing.push(inCloud({ icon: "bolt", label: rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`,
+      hint: "Renovar en real-debrid.com, desde tu celular", value: "Ver", warn: true, command: { type: "rd-account" } }, rd.service));
   }
   const addons = settings.addons?.entries;
   if (addons && !addons.some((e) => e.on && e.template !== "opensubtitles")) {
@@ -256,7 +256,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
     ] };
     case "accounts": return { title: "Cuentas", lead: "Lo que Orbital usa de afuera.", options: accountRows(settings) };
     case "addons": return { title: "Complementos", lead: "De dónde salen las versiones y los subtítulos. Se preguntan en este orden.",
-      options: addonRows(settings.addons) };
+      options: addonRows(settings.addons, Date.now(), settings.realdebrid?.service) };
     case "system": return { title: "Sistema", lead: "Lo técnico, fuera del camino de todos los días.", options: [
       { icon: "check", label: "Tu consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
       { icon: "refresh", label: "Actualizar Orbital", hint: "Buscar una versión nueva", command: { type: "update-check" } },

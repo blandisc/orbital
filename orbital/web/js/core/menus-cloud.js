@@ -5,6 +5,37 @@
 import { sentenceAgo } from "./format.js";
 import { languagesLine } from "./menus-languages.js";
 
+// --- Tu nube (Fernando, 18 nov 2026: «que pueda funcionar con TorBox, AllDebrid y Real-Debrid. Solamente esos tres») ----
+// Los textos se escriben con Real-Debrid (los de design/vocabulario.json) y se dicen con el nombre y la página de la tuya.
+export const CLOUDS = {
+  realdebrid: { name: "Real-Debrid", site: "real-debrid.com", key: "real-debrid.com/apitoken" },
+  torbox: { name: "TorBox", site: "torbox.app", key: "torbox.app/settings" },
+  alldebrid: { name: "AllDebrid", site: "alldebrid.com", key: "alldebrid.com/apikeys" },
+};
+export const cloudOf = (service) => (CLOUDS[service] ? service : "realdebrid");
+export const cloudName = (service) => CLOUDS[cloudOf(service)].name;
+
+/** Un texto con tu nube en vez de Real-Debrid (su nombre, su página y dónde se saca la clave). */
+export function cloudSay(text, service) {
+  if (typeof text !== "string" || cloudOf(service) === "realdebrid") return text;
+  const c = CLOUDS[cloudOf(service)];
+  return text.replaceAll("real-debrid.com/apitoken", c.key).replaceAll("real-debrid.com", c.site).replaceAll("Real-Debrid", c.name);
+}
+
+const SAID = ["title", "subtitle", "label", "hint", "value", "message", "detail", "lead", "missing", "meterLabel", "description"];
+/** Un menú (o renglón, o aviso) entero dicho con tu nube: sus textos y los de sus opciones. */
+export function inCloud(thing, service) {
+  if (!thing || typeof thing !== "object" || cloudOf(service) === "realdebrid") return thing;
+  if (Array.isArray(thing)) return thing.map((x) => inCloud(x, service));
+  const out = { ...thing };
+  for (const key of SAID) if (typeof out[key] === "string") out[key] = cloudSay(out[key], service);
+  if (Array.isArray(out.options)) out.options = out.options.map((o) => inCloud(o, service));
+  if (Array.isArray(out.fields)) out.fields = out.fields.map((f) => ({ ...f, label: cloudSay(f.label, service) }));
+  if (Array.isArray(out.steps)) out.steps = out.steps.map((s) => ({ ...s, label: cloudSay(s.label, service) }));
+  if (out.extra && typeof out.extra === "object") out.extra = inCloud(out.extra, service);
+  return out;
+}
+
 /** Stremio conectado: desconectar pide confirmar (y "Cancelar" va primero). */
 // --- Real-Debrid («La TV sin Stremio», corte S2) --------------------------------------------------------------------
 // Las palabras son las de design/vocabulario.json (las mismas que el iPhone).
@@ -65,9 +96,11 @@ export function cloudRow(requests = [], { now = Date.now(), hiddenAt = 0 } = {})
     state_icon: REQUEST_ICONS[req.state] || "cloudDownload", state_label: req.state === "ready" ? "Al instante · la pediste" : requestLabel(req),
     state_big: true, // T9: el ícono de su estado al doble (se lee a 3 m); enfocada, el pie lo dice con palabras
     extra: { kind: req.kind || "movie", meta_id: req.meta_id, video_id: req.video_ids?.[0] || req.meta_id, eyebrow: CLOUD_ROW,
-      description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
+      description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : cloudSay(DEBRID_CLOUD, req.service) },
   }));
-  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "realdebrid", group: "downloads", items }];
+  // El sello dice de qué nube viene (la del pedido más reciente: la que usas casi siempre).
+  const newest = [...live].sort((a, b) => (b.since || 0) - (a.since || 0))[0];
+  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: cloudOf(newest?.service), group: "downloads", items }];
 }
 
 /** «Ocultar esta fila» (Fernando, 4 nov): `hiddenAt` es cuándo la ocultaste (segundos). Vuelve sola en cuanto pides algo
@@ -92,10 +125,17 @@ const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX
 
 /** El renglón de Real-Debrid en Cuentas: cuántos días te quedan o, si algo falla, cuál de las tres causas. */
 export function debridRow(rd) {
+  // Sin cuenta todavía no es «Real-Debrid»: es tu nube, la que tengas de las tres (18 nov, Fernando).
+  if (!rd?.linked) return { icon: "cloudDownload", label: "Tu nube", value: "Conectar", warn: true,
+    hint: "Real-Debrid, TorBox o AllDebrid · para que los videos arranquen al instante", command: { type: "rd-account" } };
+  return inCloud(debridRowWords(rd), rd?.service);
+}
+
+function debridRowWords(rd) {
   const base = { icon: "cloudDownload", label: "Real-Debrid", command: { type: "rd-account" } }; // PT5: la nube
   // UX-1: sin cuenta, directo a pegar la clave (aquí o desde cualquier celular con el QR).
   if (!rd?.linked) return { ...base, value: "Conectar", warn: true, hint: "Para que los videos arranquen al instante · con tu clave",
-    command: { type: "rd-connect" } };
+    command: { type: "rd-account" } }; // abre «Tu nube»: primero eliges cuál
   const problem = DEBRID_PROBLEMS[rd.problem];
   if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint,
     command: rd.problem === "bad_key" ? problem.command : base.command };
@@ -111,6 +151,12 @@ export function debridRow(rd) {
  *  vencida), una sola vez por cada fecha. `seen`: el último que salió («<vence>:<etapa>», ajuste rd_expiry_notice). Si
  *  llegas tarde (te quedan 2 días), sale el de 3 y no el de 14. null si no toca ninguno. */
 export function debridExpiryNotice(rd, seen = "") {
+  const notice = debridExpiryWords(rd, seen);
+  if (notice && cloudOf(rd?.service) !== "realdebrid") notice.detail = notice.detail.replace("No se renueva solo · ", "Revisa tu plan · ");
+  return inCloud(notice, rd?.service);
+}
+
+function debridExpiryWords(rd, seen = "") {
   if (!rd?.linked) return null;
   const expired = rd.problem === "expired";
   const stage = expired || (rd.days != null && rd.days <= 0) ? 0 : rd.days == null ? null : rd.days <= 3 ? 3 : rd.days <= 14 ? 14 : null;
@@ -127,14 +173,76 @@ export function debridExpiryNotice(rd, seen = "") {
 
 /** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
 export function debridAccountMenu(rd, { rowHiddenAt = 0 } = {}) {
+  if (!rd?.linked) return debridChooseMenu(rd); // sin cuenta: primero cuál de las tres (o dónde sacar una)
+  return inCloud(debridAccountWords(rd, { rowHiddenAt }), rd?.service);
+}
+
+/** Sin nube todavía (la bienvenida y Ajustes › Cuentas, 18 nov): conectar la que ya tienes, cualquiera de las tres, o
+ *  ver dónde sacar una. Orbital no recomienda ni cobra: las tres sirven igual. */
+export function debridChooseMenu(rd) {
+  const pending = (rd?.requests || []).length > 0;
+  return {
+    title: "Tu nube",
+    subtitle: "Para que los videos arranquen al instante, Orbital usa un servicio de pago que guarda películas y series: tu nube. Sirve cualquiera de estos tres.",
+    options: [
+      { heading: true, label: "Ya tengo cuenta" },
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "key", label: c.name, hint: `Conectar con tu clave · ${c.key}`,
+        command: { type: "rd-service", service } })),
+      { heading: true, label: "Todavía no tengo" },
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "phone", label: `Ver ${c.name}`, hint: `${c.site} · ábrelo en tu celular con un código QR`,
+        command: { type: "debrid-signup", service } })),
+      { icon: "phone", label: "Mándala desde tu iPhone", hint: "Si ya la tienes ahí: Ajustes › Cuentas › Tu nube › Pasar a la TV", command: { type: "stay" } },
+      pending && { icon: "cloudDownload", label: "Tus pedidos", hint: "Lo que pediste antes", command: { type: "rd-requests" } },
+      explainRow("clouds"),
+    ].filter(Boolean),
+  };
+}
+
+/** «Todavía no tengo» una nube: el QR de su página de planes para abrirla en el celular, y conectarla al volver. */
+export function debridSignupMenu(service) {
+  const s = cloudOf(service);
+  const c = CLOUDS[s];
+  return {
+    title: c.name,
+    subtitle: `Escanéalo con tu celular para abrir ${c.site}. Cuando tengas tu cuenta, regresa aquí y conéctala con tu clave (${c.key}).`,
+    qr: `/api/debrid/qr.svg?service=${s}`, qrLabel: `Código QR de ${c.site}`,
+    options: [
+      { icon: "key", label: "Ya la tengo: conectar", hint: "Pegar tu clave aquí o desde cualquier celular", command: { type: "rd-service", service: s } },
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+    ],
+  };
+}
+
+/** «Tu nube» (18 nov): cuál de las tres usa Orbital. La clave de cada una se queda guardada: volver es un toque. */
+export function debridServiceMenu(rd) {
+  const current = cloudOf(rd?.service);
+  const saved = Object.fromEntries((rd?.services || []).map((s) => [s.service, s.linked]));
+  return {
+    title: "Tu nube",
+    subtitle: "Es la que hace que los videos arranquen al instante. Orbital funciona con estas tres; tú pagas la que elijas en su página.",
+    options: [
+      ...Object.entries(CLOUDS).map(([service, c]) => ({ icon: "cloud", label: c.name,
+        value: service === current ? "La que usas" : saved[service] ? "Clave guardada" : "Sin clave", ok: service === current,
+        hint: service === current ? c.site : saved[service] ? `${c.site} · cámbiate sin volver a pegarla` : `${c.site} · necesitas su clave`,
+        command: service === current ? { type: "back" } : { type: "rd-service", service } })),
+      explainRow("clouds"),
+    ],
+  };
+}
+
+function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
   const requests = rd?.requests || [];
   const rowHidden = cloudRowHidden(requests, rowHiddenAt);
   const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
   const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
+  const which = { icon: "cloud", label: "Tu nube", value: "Real-Debrid", hint: "Cámbiala por otra de las tres",
+    command: { type: "rd-services" } };
   if (!rd?.linked) {
     return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
-      { icon: "bolt", label: "Conectar con tu clave", hint: "Pégala aquí o desde cualquier celular, con un código QR", command: { type: "rd-connect" } },
+      { icon: "bolt", label: "Conectar con tu clave", hint: "Pégala aquí o desde cualquier celular, con un código QR",
+        command: { type: "rd-connect", service: cloudOf(rd?.service) } },
       { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "stay" } },
+      which,
     ] };
   }
   const problem = DEBRID_PROBLEMS[rd.problem];
@@ -154,7 +262,9 @@ export function debridAccountMenu(rd, { rowHiddenAt = 0 } = {}) {
       !problem && rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
-      { icon: "refresh", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone", command: { type: "rd-connect" } },
+      { icon: "refresh", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone",
+        command: { type: "rd-connect", service: cloudOf(rd?.service) } },
+      which,
       explainRow("realdebrid"), // PT13: los cuatro puntos del iPhone
     ].filter(Boolean),
   };
@@ -170,6 +280,12 @@ export const DEBRID_FORM = {
   missing: "Pega tu clave de Real-Debrid.",
   fields: [{ name: "token", label: "Tu clave · real-debrid.com/apitoken", secret: true }],
 };
+
+/** El de tu nube: el mismo formulario, con su nombre y su página (y el código del celular para esa nube). */
+export function debridForm(service) {
+  const s = cloudOf(service);
+  return { ...inCloud(DEBRID_FORM, s), id: s, remote: s };
+}
 
 /** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «Cancelar» va primero. */
 export function debridRemoteMenu(event) {
@@ -207,6 +323,13 @@ const EXPLAINERS = {
     ["card", "trend", "Cuesta y vence", "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence."],
     ["key", "trophy", "Tu clave", "Conecta Orbital con tu cuenta. Vive guardada en esta TV y nunca se muestra completa."],
   ],
+  // 18 nov: las tres nubes, sin recomendar una (cada quien paga la suya); lo que cambia de una a otra.
+  clouds: [
+    ["cloud", "series", "Las tres hacen lo mismo", "Guardan películas y series en sus servidores: lo que ya tienen arranca al instante y lo que no, se lo pides y lo bajan."],
+    ["swap", "trend", "Cada una deja bajar cosas distintas", "Si tu nube no deja bajar una versión, otra a veces sí. Cambiar es un toque: la clave de cada una se queda guardada."],
+    ["card", "calendar", "Cada una se paga en su página", "real-debrid.com, torbox.app o alldebrid.com. Orbital no cobra ni elige por ti."],
+    ["key", "trophy", "Lo que pediste se queda en su nube", "Si te cambias, lo que pediste a la otra sigue en «Tus pedidos», pero solo se ve y se cancela desde esa."],
+  ],
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
@@ -220,7 +343,11 @@ const EXPLAIN_STEPS = [{ icon: "hand", tint: "library", label: "Tú lo pides" },
 
 /** RX3-A · «Así funciona», una sola vez: la primera vez que sale una versión «↓ Por pedir» (en «Versión»). Los tres pasos,
  *  que no ocupa espacio y «Entendido» (DebridFlowIntro del iPhone). Cerrarla con B también cuenta como vista. */
-export function debridFlowMenu() {
+export function debridFlowMenu(service) {
+  return inCloud(debridFlowWords(), service);
+}
+
+function debridFlowWords() {
   return {
     title: "Así funciona",
     subtitle: "La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti.",
@@ -232,7 +359,16 @@ export function debridFlowMenu() {
   };
 }
 
-export function explainerMenu(topic) {
+export function explainerMenu(topic, service) {
+  const menu = explainerWords(topic);
+  if (topic === "realdebrid" && cloudOf(service) !== "realdebrid") { // «no se renueva solo» es de Real-Debrid
+    menu.options = menu.options.map((o) => (o.label === "Cuesta y vence"
+      ? { ...o, hint: "Se paga en real-debrid.com. Te avisamos 14 días antes, 3 días antes y el día que vence." } : o));
+  }
+  return inCloud(menu, service);
+}
+
+function explainerWords(topic) {
   return {
     title: "¿Qué es esto?",
     steps: ["requests", "realdebrid"].includes(topic) ? EXPLAIN_STEPS : undefined, // los tres pasos arriba, como el iPhone
@@ -246,13 +382,17 @@ const explainRow = (topic) => ({ icon: "info", label: "¿Qué es esto?", command
 
 /** Confirmar antes de cancelar (como el iPhone, también desde la ficha): «Seguir esperando» primero. */
 export function debridCancelMenu(command) {
+  return inCloud(debridCancelWords(command), command.service);
+}
+
+function debridCancelWords(command) {
   if (command.done) { // TV-4: ya terminó: no es «cancelar», es borrarlo de tu cuenta
     return {
       title: "¿Quitarlo de tu Real-Debrid?",
       subtitle: `${command.title || "El archivo"} se borra de tu cuenta. Para verlo otra vez habría que pedirlo de nuevo.`,
       options: [
         { icon: "close", label: "Cancelar", command: { type: "back" } },
-        { icon: "trash", label: "Quitar", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true } },
+        { icon: "trash", label: "Quitar", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true, ...(command.service ? { service: command.service } : {}) } },
       ],
     };
   }
@@ -261,13 +401,24 @@ export function debridCancelMenu(command) {
     subtitle: `${command.title || "Tu pedido"} se quita de tu Real-Debrid.`,
     options: [
       { icon: "close", label: "Seguir esperando", command: { type: "close" } },
-      { icon: "xCircle", label: "Cancelar pedido", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title } },
+      { icon: "xCircle", label: "Cancelar pedido", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, ...(command.service ? { service: command.service } : {}) } },
     ],
   };
 }
 
 /** «Tus pedidos» (R13 del iPhone): cada uno con su estado en palabras e ícono (no solo color) y quién lo pidió. */
-export function debridRequestsMenu(requests = []) {
+export function debridRequestsMenu(requests = [], service) {
+  const menu = inCloud(debridRequestsWords(requests), service);
+  // Cada pedido con el nombre de su propia nube (lo de antes de cambiarte sigue siendo de la otra).
+  menu.options = menu.options.map((o) => {
+    const req = o.command?.type === "rd-request-menu" && requests.find((r) => r.hash === o.command.hash);
+    return req && cloudOf(req.service) !== cloudOf(service) ? { ...o, hint: `${cloudSay(requestLabel(req), req.service)} · ${requestedBy(req)} · ${cloudName(req.service)}` } : o;
+  });
+  return menu;
+}
+
+
+function debridRequestsWords(requests = []) {
   const shown = requests.filter((r) => r.state !== "gone");
   // El estado va en la línea de abajo (con quién lo pidió): a la derecha apretaba el título en dos o tres renglones.
   const row = (r) => ({ icon: REQUEST_ICONS[r.state] || "cloudDownload", label: r.title || "Tu pedido",
@@ -289,7 +440,20 @@ export function debridRequestsMenu(requests = []) {
 }
 
 /** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
-export function debridRequestMenu(req, { account = null, now = Date.now(), instead = null, row = false } = {}) {
+export function debridRequestMenu(req, { account = null, now = Date.now(), instead = null, row = false, service } = {}) {
+  // Uno de otra nube (lo pediste antes de cambiarte): se ve y se abre su ficha, pero se cancela desde esa nube.
+  if (service && cloudOf(req.service) !== cloudOf(service)) {
+    const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
+    return { title: req.title || "Tu pedido",
+      subtitle: `${cloudSay(requestLabel(req), req.service)} · ${requestedBy(req, now)} · en tu ${cloudName(req.service)}`,
+      options: [ref ? { icon: "info", label: "Abrir la ficha", command: { type: "title-ref", ref } } : null,
+        { icon: "cloud", label: `Es de ${cloudName(req.service)}`, hint: "Para cancelarlo, vuelve a esa nube en Ajustes › Cuentas › Tu nube",
+          command: { type: "rd-services" } }].filter(Boolean) };
+  }
+  return inCloud(debridRequestWords(req, { account, now, instead, row }), req.service);
+}
+
+function debridRequestWords(req, { account = null, now = Date.now(), instead = null, row = false } = {}) {
   const theirs = req.account && account && req.account !== account;
   const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
   const video = req.video_ids?.[0] || req.meta_id;
@@ -325,8 +489,8 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
       // Fernando, 4 nov: desde la fila, ocultarla entera (vuelve sola al pedir algo o desde Ajustes).
       row && { icon: "hide", label: "Ocultar esta fila", hint: "Vuelve sola al pedir algo, o en Ajustes", command: { type: "rd-row", hide: true } },
       req.state !== "ready" && req.state !== "refused"
-        ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
-        : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },
+        ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, ...(req.service ? { service: req.service } : {}) } }
+        : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true, ...(req.service ? { service: req.service } : {}) } },
       explainRow("requests"), // PT9: como el iPhone
       !going && { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
@@ -394,7 +558,11 @@ export function addonsMeta(status) {
 
 /** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital y los que agregaste tú («Agregado por
  * ti»). A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
-export function addonRows(status, now = Date.now()) {
+export function addonRows(status, now = Date.now(), service) {
+  return inCloud(addonRowsWords(status, now), service);
+}
+
+function addonRowsWords(status, now = Date.now()) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   // PT16 (Fernando, 4 nov), como el iPhone: cada uno dice lo que aporta y cómo contesta («Contesta en 0,3 s»); solo se
   // marca «Apagado» (lo prendido es lo normal y no lleva etiqueta). Cómo está configurado Torrentio, al abrirlo.
@@ -498,7 +666,11 @@ const isRecommended = (o = {}) => JSON.stringify([o.language || [], o.qualityfil
   === JSON.stringify([TORRENTIO_RECOMMENDED.language, TORRENTIO_RECOMMENDED.qualityfilter, "quality", undefined, undefined, [], []]);
 
 /** Ajustes › Complementos › Torrentio (SS-6, T1 del iPhone): cada cambio se guarda al hacerlo, con «Deshacer». */
-export function torrentioMenu(entry, languages = []) {
+export function torrentioMenu(entry, languages = [], service) {
+  return inCloud(torrentioWords(entry, languages, service), service);
+}
+
+function torrentioWords(entry, languages = [], service) {
   const o = entry?.options || {};
   const only = (o.debridoptions || []).includes("nodownloadlinks");
   const set = (patch) => ({ type: "torrentio-set", options: { ...o, ...patch }, reopen: "main" });
@@ -507,7 +679,8 @@ export function torrentioMenu(entry, languages = []) {
     title: "Configurar",
     subtitle: "Aquí decides qué versiones te enseña y en qué orden. Lo de fábrica ya viene bien; cada cambio se guarda al hacerlo.",
     options: [
-      entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true, command: { type: "rd-connect" } },
+      entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true,
+        command: { type: "rd-connect", service: cloudOf(service) } },
       // N4-A: Torrentio no tiene lista propia; usa Ajustes › Ver › Tus idiomas.
       // PT17 (Fernando, 4 nov): tus idiomas, no el camino (como el iPhone); A los cambia.
       { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: languagesLine(languages) || "Ajustes › Ver › Tus idiomas",
