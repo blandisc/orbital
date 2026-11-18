@@ -1,0 +1,140 @@
+<title>Guía: qué tan clara es</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Una columna de decisiones; cada una con sus dos teléfonos lado a lado (A como está, B propuesta). Oscuro a propósito: así se ve la guía. */
+:root {
+  --bg: #0d0c14; --panel: #17161f; --line: #2a2836; --text: #f4f2ec; --muted: #a29fb3;
+  --fresh: #5fd6c4; --warn: #f0b35a; --phone: #1c1a28;
+  --sans: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+main { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-size: 28px; line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+.verdict { display: inline-flex; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 600; }
+.verdict b { color: var(--warn); }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; }
+.head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.code { font-weight: 700; color: var(--fresh); letter-spacing: .04em; font-size: 14px; }
+h2 { font-size: 18px; margin: 0; }
+.why { color: var(--muted); margin: 0; max-width: 70ch; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .pair { grid-template-columns: 1fr; } }
+.opt { display: grid; gap: 8px; min-width: 0; }
+.opt .label { font-weight: 600; font-size: 14px; }
+.opt.rec .label::after { content: "  · recomendada"; color: var(--fresh); font-weight: 600; }
+.phone { background: var(--phone); border: 1px solid var(--line); border-radius: 22px; padding: 16px 14px; display: grid; gap: 8px; min-height: 150px; align-content: start; }
+.opt.rec .phone { border-color: var(--fresh); }
+.t { font-weight: 700; font-size: 16px; }
+.s { color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 8px; align-items: center; background: #24222f; border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+.tile { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-size: 10px; font-weight: 700; flex: none; }
+.rd { background: rgba(95,214,196,.18); color: var(--fresh); } .tb { background: rgba(110,150,240,.18); color: #8fb0ff; } .ad { background: rgba(240,170,80,.18); color: var(--warn); }
+.btn { border-radius: 999px; padding: 8px; text-align: center; font-size: 13px; font-weight: 600; }
+.btn.p { background: var(--text); color: #111; } .btn.g { background: #2b2938; color: var(--text); }
+.pros { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.direct { display: grid; gap: 6px; }
+.direct li { color: var(--muted); }
+.dictate { background: var(--panel); border: 1px dashed var(--fresh); border-radius: 12px; padding: 14px; font-weight: 600; }
+:focus-visible { outline: 2px solid var(--fresh); outline-offset: 2px; }
+</style>
+
+<main>
+  <header>
+    <h1>¿Se entiende la guía de Orbital?</h1>
+    <p class="lede">Un agente recorrió la guía de principio a fin como alguien que nunca ha oído de Real-Debrid ni de Trakt (en el iPhone, 18 nov). Los dos defectos que más confundían ya están arreglados: mantener presionada una tarjeta ya no la marca, y la luna del arco ya no regresa al principio al conectar. Lo de abajo cambia textos o botones que tú elegiste, por eso te lo pregunto.</p>
+    <p><span class="verdict">Veredicto: <b>se entiende con dudas</b></span></p>
+  </header>
+
+  <section>
+    <div class="head"><span class="code">G1</span><h2>Los dos botones de «Ve todo al instante»</h2></div>
+    <p class="why">«Conectar tu nube» suena a que ya tienes una, y «Cuando quiera ver algo» no se lee como «después».</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><span class="t">Ve todo al instante, aquí</span><span class="s">Es un servicio de pago que guarda películas y series: tu nube…</span><span class="btn p">Conectar tu nube</span><span class="btn g">Cuando quiera ver algo</span></div>
+        <ul class="pros"><li>Lo que decidiste en D1; nada cambia.</li></ul></div>
+      <div class="opt rec"><span class="label">B · más claro</span>
+        <div class="phone"><span class="t">Ve todo al instante, aquí</span><span class="s">Para ver aquí necesitas una nube: un servicio de pago que guarda películas y series.</span><span class="btn p">Elegir tu nube</span><span class="btn g">Ahora no, después</span></div>
+        <ul class="pros"><li>Sirve tengas o no tengas nube; «después» no deja dudas.</li><li>Pierde el tono de «cuando quiera».</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">G2</span><h2>Si dices «después», qué dice el final</h2></div>
+    <p class="why">Hoy llegas a «Tu Orbital ya está lista» y en Inicio hay botones «Ver» que todavía no funcionan.</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><span class="t">Tu Orbital ya está lista.</span><span class="s">Te armé Inicio con lo que te gusta.</span><span class="btn p">Continuar</span></div>
+        <ul class="pros"><li>Final limpio, sin pendientes.</li></ul></div>
+      <div class="opt rec"><span class="label">B · con un renglón</span>
+        <div class="phone"><span class="t">Tu Orbital ya está lista.</span><span class="s">Ya puedes explorar. Para ver películas, conecta tu nube en Ajustes › Cuentas cuando quieras.</span><span class="btn p">Continuar</span></div>
+        <ul class="pros"><li>Nadie se topa con un «Ver» que no responde sin saber por qué.</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">G3</span><h2>Las direcciones web en la hoja «Tu nube»</h2></div>
+    <p class="why">Debajo de cada nube sale «real-debrid.com/apitoken», «torbox.app/settings»… y asustan antes de elegir.</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><div class="row"><span class="tile rd">RD</span><span>Real-Debrid<br><span class="s">Conectar con tu clave · real-debrid.com/apitoken</span></span></div><div class="row"><span class="tile tb">TB</span><span>TorBox<br><span class="s">Conectar con tu clave · torbox.app/settings</span></span></div></div>
+        <ul class="pros"><li>Ya sabes de dónde sale la clave antes de entrar.</li></ul></div>
+      <div class="opt rec"><span class="label">B · sin dirección</span>
+        <div class="phone"><div class="row"><span class="tile rd">RD</span><span>Real-Debrid<br><span class="s">Conectar con tu clave</span></span></div><div class="row"><span class="tile tb">TB</span><span>TorBox<br><span class="s">Conectar con tu clave</span></span></div></div>
+        <ul class="pros"><li>Más limpia; la dirección sigue adentro, en la página de cada nube.</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">G4</span><h2>«Elige 3 o más» en «¿Qué te gusta?»</h2></div>
+    <p class="why">Deja seguir con cero, el texto desaparece al elegir el primero, y al final dice «con lo que te gusta» aunque no elegiste nada.</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><span class="t">¿Qué te gusta?</span><span class="s">(desaparece al elegir el primero)</span><span class="btn p">Continuar</span></div>
+        <ul class="pros"><li>Nada obligatorio (tu regla de la guía v2).</li></ul></div>
+      <div class="opt rec"><span class="label">B · con contador</span>
+        <div class="phone"><span class="t">¿Qué te gusta?</span><span class="s">Elige 3 o más · te faltan 2</span><span class="btn p">Continuar</span><span class="s">Con cero, el final no promete «lo que te gusta».</span></div>
+        <ul class="pros"><li>Sigue sin ser obligatorio, pero dice cuánto falta y no promete de más.</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">G5</span><h2>El botón grande en el paso de Trakt</h2></div>
+    <p class="why">Hoy el botón blanco grande es «Ahora no», así que la página invita a saltársela.</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><span class="t">Sigue donde te quedaste</span><span class="btn g">Copiar y abrir Trakt</span><span class="btn p">Ahora no</span></div>
+        <ul class="pros"><li>Igual que las demás páginas: el de abajo siempre deja seguir.</li></ul></div>
+      <div class="opt rec"><span class="label">B · Trakt primero</span>
+        <div class="phone"><span class="t">Sigue donde te quedaste</span><span class="btn p">Copiar y abrir Trakt</span><span class="btn g">Ahora no</span></div>
+        <ul class="pros"><li>Quien marcó que tiene Trakt ve primero cómo conectarlo.</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">G6</span><h2>Qué dice «Tu nube» al mantenerla presionada</h2></div>
+    <p class="why">Hoy son tres nombres raros sin decir qué son.</p>
+    <div class="pair">
+      <div class="opt"><span class="label">A · como está</span>
+        <div class="phone"><span class="t">Tu nube</span><span class="s">Real-Debrid, TorBox o AllDebrid: para ver aquí mismo, al instante.</span></div></div>
+      <div class="opt rec"><span class="label">B · qué es, primero</span>
+        <div class="phone"><span class="t">Tu nube</span><span class="s">Un servicio de pago, como una suscripción, que guarda películas y series para que empiecen al instante. Sirve Real-Debrid, TorBox o AllDebrid.</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="code">F</span><h2>Defectos que arreglo directo si me dices que sí</h2></div>
+    <ul class="direct">
+      <li>La liga «Sacar tu clave en real- / debrid.com/apitoken» se parte a media palabra.</li>
+      <li>Una rayita suelta arriba de esa liga, solo del lado derecho.</li>
+      <li>En el dibujo de Trakt se cortan textos («i…», «iP»).</li>
+      <li>La tarjeta de muestra del final ocupa solo la mitad de ancho.</li>
+      <li>«Empezar» no responde los primeros 4 segundos (parece trabada).</li>
+    </ul>
+  </section>
+
+  <p class="dictate">Para contestar, dicta los códigos. Mi recomendación: «G1-B, G2-B, G3-B, G4-B, G5-B, G6-B y F». Lo que elijas se aplica igual en la TV donde exista esa pantalla.</p>
+</main>
