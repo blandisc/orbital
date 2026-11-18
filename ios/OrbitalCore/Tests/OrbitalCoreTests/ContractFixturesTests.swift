@@ -259,7 +259,7 @@ final class ContractFixturesTests: XCTestCase {
         XCTAssertEqual(account, OrbitalTVDebrid(user: "fer", premium: true, expires: Date(timeIntervalSince1970: 1_700_000_000), tail: "3F2A"))
         let tv = try FixtureTV("realdebrid_requests")
         let pull = await OrbitalRemoteDebridRequestSync(remote: { Self.remote(tv) }).pull()
-        XCTAssertEqual(pull, DebridRequestPull(version: 1, account: nil, requests: []))
+        XCTAssertEqual(pull, DebridRequestPull(version: 1, account: "7", requests: []))   // DN1: la TV dice de qué cuenta y de qué nube son
     }
 
     func testSharedAddonList() async throws {
