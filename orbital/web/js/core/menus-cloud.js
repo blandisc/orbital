@@ -195,7 +195,7 @@ function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
   const rowHidden = cloudRowHidden(requests, rowHiddenAt);
   const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
   const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
-  const which = { icon: "cloud", label: "Tu nube", value: "Real-Debrid", hint: "Real-Debrid, TorBox o AllDebrid · Cambiar",
+  const which = { icon: "cloud", label: "Tu nube", value: "Real-Debrid", hint: "Cámbiala por otra de las tres",
     command: { type: "rd-services" } };
   if (!rd?.linked) {
     return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
