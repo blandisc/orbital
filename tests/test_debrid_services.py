@@ -294,3 +294,17 @@ def test_la_ficha_dice_el_nombre_de_tu_nube(library, monkeypatch):
     summary = w.debrid_summary()
     assert [s["service"] for s in summary["services"]] == ["realdebrid", "torbox", "alldebrid"]
     assert [s["linked"] for s in summary["services"]] == [False, True, False]
+
+
+def test_el_contrato_de_las_tres_nubes_es_el_que_usa_la_tv():
+    """design/debrid-services.json es lo que lee el iPhone: tiene que decir lo mismo que la TV."""
+    from orbital.shared import design_file
+    data = json.loads(design_file("debrid-services.json").read_text(encoding="utf-8"))
+    assert tuple(data["services"]) == debrid.SERVICES and data["default"] == debrid.DEFAULT
+    for service, s in data["services"].items():
+        assert s["name"] == debrid.NAMES[service] and s["tag"] == debrid.TAGS[service] and s["site"] == debrid.SITES[service]
+        assert s["key_url"] == debrid.KEY_URLS[service] and s["key_store"] == debrid.KEYS[service]
+        assert s["torrentio_param"] in torrentio.DEBRID_PARAMS and debrid.ERRORS_FILES[service].name == s["errors"]
+        assert debrid.ERRORS_FILES[service].is_file()
+    assert data["client"]["torbox"]["counts_active"] is torbox.TorBox.counts_active
+    assert data["client"]["alldebrid"]["counts_active"] is alldebrid.AllDebrid.counts_active

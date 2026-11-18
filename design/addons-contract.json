@@ -39,7 +39,7 @@
     "POST /api/devices/upgrade": "CX8-A: un iPhone con el token del túnel (v1) pide su llave sin volver a escanear: {name, platform} → 202 {id}. Entra con el token aunque ya haya aparatos (fuera de K1-13). La TV pregunta en pantalla «¿Darle llave a …?» (No va primero); espera 3 min. GET /api/devices/upgrade/{id} con el token: 202 esperando, 200 {device_id, key, tv_name, tv_id} una sola vez, 403 si la TV dijo que no, 404 si ya no está. Vale para iPhone y iPad (no Mac). Un aparato que ya tiene su llave: 409 «Este aparato ya tiene su propia conexión.». La TV pregunta «¿Darle su propia conexión a <nombre>?» (UX-37: al usuario nunca se le dice «llave»)"
   },
   "secrets": {
-    "_": "Lo que lleva una clave: la de Real-Debrid y las direcciones de Stremio con clave. Fernando: nada de claves en claro, ni en disco ni en el camino.",
+    "_": "Lo que lleva una clave: la de tu nube (Real-Debrid, TorBox o AllDebrid: design/debrid-services.json) y las direcciones de Stremio con clave. Fernando: nada de claves en claro, ni en disco ni en el camino.",
     "who": "la llave de aparato, o (TEC-8) un código vivo de /escribir con propósito realdebrid. El token de Alexa nunca; el puerto local de la TV solo para lo que se pega en la misma TV (POST /api/realdebrid/key)",
     "transport": "solo por el puerto público, que escucha en 127.0.0.1 detrás de Tailscale Serve o Funnel (TLS); la TV rechaza una petición con clave que no venga de loopback",
     "routes": [
@@ -90,6 +90,7 @@
     "_": "La libreta de pedidos a Real-Debrid, una sola forma en los dos lados (corte S2 de la TV, acuerdo S2 del iPhone; 3 nov 2026, tras la revisión adversarial de la TV: RQ-1 a RQ-12). Una entrada por torrent, con su huella como clave. La TV es el almacén; cada aparato le pregunta a Real-Debrid solo por lo de su propia cuenta. No lleva claves ni enlaces de Real-Debrid.",
     "entry": {
       "hash": "la huella del torrent, 40 caracteres hexadecimales en minúsculas: la clave del pedido",
+      "service": "de qué nube es: realdebrid | torbox | alldebrid (18 nov 2026; design/debrid-services.json › requests). Sin «service» = Real-Debrid",
       "account": "el id de usuario de Real-Debrid (GET /user), nunca la clave. Sin `account` = de la misma cuenta (compatibilidad con lo de antes)",
       "rd_id": "su id en esa cuenta, o null (Torrentio lo pidió al abrirlo y todavía no se encuentra: se busca por huella en GET /torrents)",
       "title": "≤ 120 caracteres",

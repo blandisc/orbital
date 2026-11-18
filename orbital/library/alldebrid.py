@@ -190,8 +190,8 @@ def _body(exc: urllib.error.HTTPError) -> dict:
 
 
 def _error(status: int | None, body: dict) -> AllDebridError:
-    err = body.get("error") if isinstance(body.get("error"), dict) else {}
-    code = err.get("code") if isinstance(err.get("code"), str) else None
+    err = body.get("error")
+    code = err.get("code") if isinstance(err, dict) and isinstance(err.get("code"), str) else None
     probe = AllDebridError("", status, code)
     said = words("alldebrid")
     return AllDebridError(said.get(probe.cause, said["other"]), status, code)
