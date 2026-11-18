@@ -64,7 +64,7 @@ struct BrowseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 // MS1: en la Mac, el campo grande al centro (la barra del sistema solo dejaba una rayita).
-                if ThisDevice.isMac { MacSearchField(text: $query, focused: $typing).padding(.horizontal, DS.Space.gutter) }
+                if TopRow.tabsInLogoRow { MacSearchField(text: $query, focused: $typing).padding(.horizontal, DS.Space.gutter) }
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
             // Al poner el primer filtro (o quitar el último) los mosaicos de la puerta crecen o se encogen: lo de abajo (el Top 10,
@@ -120,12 +120,12 @@ struct BrowseView: View {
         // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
         // (título y campo) y vuelve al subir, con lo escrito.
         // En la Mac, nunca: ahí el renglón de arriba lo dibuja la pantalla (`macOwnTopRow`), con las pestañas.
-        .toolbarVisibility(ThisDevice.isMac ? .hidden : (barHidden && searching ? .hidden : .visible), for: .navigationBar)
+        .toolbarVisibility(TopRow.tabsInLogoRow ? .hidden : (barHidden && searching ? .hidden : .visible), for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
-        .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Buscar")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationTitle(TopRow.tabsInLogoRow ? Text(verbatim: "") : Text("Buscar")).toolbarTitleDisplayMode(TopRow.tabsInLogoRow ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // La Mac: el logo, las pestañas y tu perfil en un renglón propio, como Inicio (en la barra del sistema la cápsula de las
         // pestañas se perdía al entrar a Buscar y al regresar de una ficha, 17 nov 2026).
         .macOwnTopRow { ProfileButton() }
@@ -135,7 +135,7 @@ struct BrowseView: View {
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
             ui.focusSearch = false
-            if ThisDevice.isMac { typing = true } else { searching = true }
+            if TopRow.tabsInLogoRow { typing = true } else { searching = true }
         }
         // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
         // resultados, el teclado se va para verlos.
@@ -358,7 +358,7 @@ struct PopularGridView: View {
 private extension View {
     /// El campo de búsqueda del sistema, siempre a la vista; en la Mac no (MS1): ahí va `MacSearchField`, grande y al centro.
     @ViewBuilder func systemSearch(_ query: Binding<String>, isPresented: Binding<Bool>, focused: FocusState<Bool>.Binding) -> some View {
-        if ThisDevice.isMac {
+        if TopRow.tabsInLogoRow {
             self
         } else {
             searchable(text: query, isPresented: isPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))

@@ -11,12 +11,18 @@ struct ReleaseTimeline: View {
     let airings: [Airing]
     let onOpen: (TitleRoute) -> Void
     let onCalendar: () -> Void
+    /// En el panel del tablero (MI2), sin margen propio: el panel ya trae el suyo.
+    var inset: CGFloat?
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
     /// Con letra grande la tarjeta crece con su texto (revisión 2: «Severa…», «8:00 p…» cortados), hasta `maxGrowth`.
     @ScaledMetric(relativeTo: .footnote) private var scaledWidth = DS.HomeTimeline.width
     @ScaledMetric(relativeTo: .caption) private var scaledLabelRow = DS.HomeTimeline.labelRow
-    private var cardWidth: CGFloat { min(scaledWidth, DS.HomeTimeline.width * DS.HomeTimeline.maxGrowth) }
+    /// C5: con espacio y en su fila (no en el panel del tablero), del ancho de un póster de las tiras.
+    private var cardWidth: CGFloat {
+        let base = min(scaledWidth, DS.HomeTimeline.width * DS.HomeTimeline.maxGrowth)
+        return WindowMetrics.roomy && inset == nil ? max(base, DS.Poster.railWidth) : base
+    }
 
     var body: some View {
         // Cada minuto: lo que sale hoy a las 21:00 pasa a «Nuevo» a esa hora, y a medianoche «Hoy» se vuelve «Ayer».
@@ -38,7 +44,7 @@ struct ReleaseTimeline: View {
                     .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
                     .accessibilityIdentifier("release-calendar")
             }
-            .padding(.horizontal, DS.Space.gutter)
+            .padding(.horizontal, inset ?? DS.Space.gutter)
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {
@@ -51,8 +57,9 @@ struct ReleaseTimeline: View {
                     .scrollTargetLayout()
                 }
                 .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
-                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .contentMargins(.horizontal, inset ?? DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
+                .pagingArrows()   // C4: ‹ › con el puntero
                 .onAppear {
                     let anchor = UnitPoint(x: DS.HomeTimeline.todayAnchor, y: UnitPoint.center.y)
                     // La primera vez que se ve en esta sesión, la línea se desliza sola hasta HOY y la marca late una vez (te

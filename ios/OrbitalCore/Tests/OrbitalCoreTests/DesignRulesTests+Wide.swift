@@ -66,8 +66,8 @@ extension DesignRulesTests {
         // Solo el logo de Inicio dice dónde está: dos que lo dijeran se pelean y la app se traba redibujando.
         XCTAssertTrue(try code("MacTabStrip.swift").contains("AppMark(small: true, reportsFrame: false)"), "El logo de la barra de la Mac no reporta su lugar")
         // Con el título del sistema, las pestañas de la barra se iban a «More»; en la barra la Mac reporta letra de accesibilidad.
-        for (screen, title) in [("DownloadsView.swift", "Biblioteca"), ("BrowseView.swift", "Buscar")] {
-            XCTAssertTrue(try code(screen).contains(".navigationTitle(ThisDevice.isMac ? Text(verbatim: \"\") : Text(\"\(title)\"))"), "\(screen): sin título en la Mac")
+        for (screen, title, mac) in [("DownloadsView.swift", "Biblioteca", "ThisDevice.isMac"), ("BrowseView.swift", "Buscar", "TopRow.tabsInLogoRow")] {
+            XCTAssertTrue(try code(screen).contains(".navigationTitle(\(mac) ? Text(verbatim: \"\") : Text(\"\(title)\"))"), "\(screen): sin título en la Mac")
         }
         XCTAssertTrue(try code("Filters.swift").contains("tabs(titles: ThisDevice.isMac ||"), "En la Mac las pestañas llevan nombre")
         // La barra le ofrece poco ancho a lo de la izquierda: sin su tamaño propio, los nombres se recortaban hasta desaparecer.
@@ -159,7 +159,7 @@ extension DesignRulesTests {
         // Cuarta pasada (16 nov, MB1 · MA1 · MS1 · MC1): la Mac con su propio acomodo.
         XCTAssertTrue(try code("DownloadsView.swift").contains("MacSidebar(options:"), "Biblioteca en la Mac: sus partes en una columna a la izquierda")
         XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
-        XCTAssertTrue(try code("BrowseView.swift").contains("if ThisDevice.isMac { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac: el campo grande")
+        XCTAssertTrue(try code("BrowseView.swift").contains("if TopRow.tabsInLogoRow { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac (y el iPad con espacio, C1): el campo grande")
         XCTAssertTrue(try code("Filtro.swift").contains("count: mac ? FilterPage.main.count :"), "Buscar en la Mac: los seis mosaicos en una fila")
         // Con 76 pt de alto en una ventana de Mac eran franjas de formulario (Fernando, 16 nov 2026): mosaicos grandes y campo alto.
         XCTAssertTrue(try code("Filtro.swift").contains("minHeight: big ? DS.Mac.doorTileHeight"), "Los mosaicos de Buscar en la Mac son grandes")

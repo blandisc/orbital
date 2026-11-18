@@ -125,6 +125,7 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
         .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
+        .pagingArrows()   // C4: ‹ › con el puntero
         .edgeBump()
     }
 }

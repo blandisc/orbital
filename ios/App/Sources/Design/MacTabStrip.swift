@@ -29,7 +29,9 @@ struct MacTabStrip: View {
     @Environment(\.macTabs) private var tabs
 
     /// La ventana alcanza para la cápsula al centro sin encimarse con el logo, «Buscar» y lo de la derecha.
-    static var centered: Bool { WindowMetrics.column.width >= DS.Mac.centeredTabsFrom }
+    /// En el iPad (C1) la letra no crece como en la Mac, pero «Buscar» y la cápsula son más anchos que el umbral de la Mac: a
+    /// 1032 pt (iPad de pie) se encimaban; ahí la cápsula va junto al logo.
+    static var centered: Bool { WindowMetrics.column.width >= (ThisDevice.isMac ? DS.Mac.centeredTabsFrom : DS.HomeBoard.padCenteredTabsFrom) }
 
     var body: some View {
         if let tabs {
@@ -133,7 +135,7 @@ extension View {
     /// sistema se esconde solo aquí, en la pantalla de arriba: las de adentro (la ficha) traen la suya, con «‹». En iPhone y
     /// iPad, nada.
     @ViewBuilder func macOwnTopRow(@ViewBuilder trailing: () -> some View) -> some View {
-        if ThisDevice.isMac {
+        if TopRow.tabsInLogoRow {   // C1: también el iPad con espacio
             toolbarVisibility(.hidden, for: .navigationBar)
                 .macTopShade()
                 .safeAreaBar(edge: .top) { MacTopRow(trailing: trailing()) }
@@ -173,7 +175,8 @@ struct MacTopRow<Trailing: View>: View {
 /// dibuja `MacTabStrip` en el renglón del logo); la barra lateral en la Mac salía vacía y tapaba el contenido (16 nov 2026).
 struct TabStyle: ViewModifier {
     func body(content: Content) -> some View {
-        if ThisDevice.isMac { content.tabViewStyle(.tabBarOnly) } else { content.tabViewStyle(.sidebarAdaptable) }
+        // C1: el iPad con espacio, como la Mac (escondida, la barra adaptable del iPad seguía tomando los toques de la franja de arriba).
+        if TopRow.tabsInLogoRow { content.tabViewStyle(.tabBarOnly) } else { content.tabViewStyle(.sidebarAdaptable) }
     }
 }
 
@@ -192,8 +195,9 @@ extension View {
     }
 
     /// En la Mac la barra de pestañas del sistema no se ve (las pestañas van en el renglón del logo, `MacTabStrip`).
-    @ViewBuilder func macHidesTabBar() -> some View {
-        if ThisDevice.isMac { toolbarVisibility(.hidden, for: .tabBar) } else { self }
+    /// C1: también en el iPad con espacio (`TopRow`), con sus pestañas en el renglón del logo.
+    func macHidesTabBar() -> some View {
+        toolbarVisibility(TopRow.tabsInLogoRow ? .hidden : .automatic, for: .tabBar)
     }
 
     /// La escala de la Mac, una sola vez para toda la app (en `RootView`): lo que no trae su propia letra arranca con el cuerpo

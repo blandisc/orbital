@@ -79,3 +79,31 @@ extension DS {
         static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
     }
 }
+
+// La orilla y las columnas de una ventana con espacio (Mac, iPad grande o acostado): aquí y no en Tokens.swift (su tope de
+// líneas); la extensión de widgets compila los dos.
+extension DS.Space {
+    /// C2 (Fernando, 18 nov 2026: Inicio replanteado): en ventana con espacio (Mac, iPad grande o acostado) el margen de los
+    /// lados crece con la ventana como la orilla de la ficha ancha (el 5 %, de 40 a 160 pt): con un número fijo todo arrancaba
+    /// pegado a la izquierda y la derecha quedaba vacía. En el iPhone y el iPad angosto, 16 (`gutter`).
+    static var wideGutter: CGFloat {
+        #if WIDGET_EXTENSION
+        return s4
+        #else
+        return min(wideGutterMax, max(s10, (WindowMetrics.column.width * wideGutterShare).rounded()))
+        #endif
+    }
+    static let wideGutterShare: CGFloat = 0.05, wideGutterMax: CGFloat = 160
+}
+
+extension DS.Poster {
+    /// C5: con espacio, las tiras cuentan columnas (de 5 a 10 pósters, de 3 a 6 tarjetas anchas) y llenan el renglón hasta la orilla.
+    static let railColumns = 5...10, stillColumns = 3...6
+    /// El ancho para que quepan las que tocan (cerca de `target`) más un pedazo de la siguiente (`peek`), entre las dos orillas.
+    static func filling(target: CGFloat, columns: ClosedRange<Int>) -> CGFloat {
+        let room = WindowMetrics.column.width - 2 * DS.Space.gutter - peek
+        let fit = Int(((room + DS.Space.s3) / (target + DS.Space.s3)).rounded())
+        let count = min(columns.upperBound, max(columns.lowerBound, fit))
+        return ((room - CGFloat(count) * DS.Space.s3) / CGFloat(count)).rounded(.down)
+    }
+}

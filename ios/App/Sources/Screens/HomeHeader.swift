@@ -91,8 +91,8 @@ struct HomeHeader: View {
         // inmediato en los botones de arriba a la derecha», Fernando, 13 nov 2026). Cerrado se ve igual que antes.
         return HStack(spacing: 0) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
-            if ThisDevice.isMac {
-                // La Mac (RN2): «Buscar» junto al logo y las pestañas al centro (abajo, en `overlay`); en una ventana angosta las
+            if TopRow.tabsInLogoRow {
+                // La Mac (RN2) y el iPad con espacio (C1): «Buscar» junto al logo y las pestañas al centro (abajo, en `overlay`); en una ventana angosta las
                 // dos van aquí, solo con íconos. «Todo ▾» pasa a la derecha, junto a tu foto.
                 MacSearchChip(compact: !MacTabStrip.centered).padding(.leading, DS.Space.s6)
                 if !MacTabStrip.centered { MacTabStrip(compact: true).padding(.leading, DS.Space.s2) }
@@ -120,7 +120,7 @@ struct HomeHeader: View {
             }
         }
         // RN2: en la Mac las pestañas en su cápsula, al centro del renglón (como la tele).
-        .overlay { if ThisDevice.isMac && MacTabStrip.centered { MacTabStrip() } }
+        .overlay { if TopRow.tabsInLogoRow && MacTabStrip.centered { MacTabStrip() } }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
         // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad

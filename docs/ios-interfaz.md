@@ -1108,6 +1108,24 @@ por número de letras: todo texto plegable usa `FoldingText`, que mide el texto 
 «más» si de verdad se corta (la sinopsis en iPhone, iPad y Mac; la biografía de una persona ya medía así). La TV corta la
 sinopsis a tres renglones sin «más».
 
+### Pantalla ancha: la orilla crece y las filas tienen flechas (18 nov 2026)
+
+Inicio replanteado para Mac e iPad (MI2 · II1 · C1–C6, `docs/producto/inicio-ancho-2026-11-18/`). Reglas para toda la app:
+
+- **La orilla crece con la ventana (C2).** Con espacio (`WindowMetrics.roomy`) `DS.Space.gutter` es el 5 % de la columna, de 40 a
+  160 pt (`DS.Space.wideGutter`), como la orilla de la ficha ancha; en el iPhone y el iPad angosto, 16. Nunca un margen fijo nuevo.
+- **Las tiras cuentan columnas (C5).** Con espacio, pósters y tarjetas anchas llenan el renglón (`DS.Poster.filling`: de 5 a 10
+  pósters, de 3 a 6 tarjetas anchas) con un pedazo de la siguiente asomando. «Lo nuevo de lo tuyo» toma el ancho de un póster.
+- **Toda fila horizontal lleva ‹ › con el puntero (C4).** `.pagingArrows()` en su `ScrollView`: salen al pasar el mouse o el
+  trackpad y avanzan casi una pantalla; con el dedo no salen. `DesignRulesTests+WideHome` lo cuida.
+- **Una sola barra arriba en el iPad con espacio (C1).** Como la Mac: el logo, «Buscar», las pestañas y tu foto en el renglón de
+  la pantalla (`TopRow.tabsInLogoRow`, `macOwnTopRow`); la barra de pestañas del sistema se esconde. Angosto, la de siempre.
+- **Inicio: tablero o cine (MI2 · II1).** Ventana acostada y ancha (1100 pt en el iPad, 1200 en la Mac; `HomeBoard.isOn`):
+  la portada como tarjeta en dos tercios y a la derecha lo tuyo («Seguir viendo» en renglones, «Lo nuevo de lo tuyo» y «Decide
+  por mí», `HomeBoardPanel`). De pie, angosta o con letra de accesibilidad: la portada de orilla a orilla de siempre. El control
+  abierto a la derecha angosta la columna y puede volver el cine.
+- **«Decide por mí» es tarjeta con espacio (C6).** Al final de «Seguir viendo» (cine) o en el panel (tablero), sin la tira.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

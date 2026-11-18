@@ -413,7 +413,7 @@ struct MainTabs: View {
     /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
     private func wired(_ selection: Binding<Int>) -> some View {
         shell(selection)
-        .environment(\.macTabs, ThisDevice.isMac ? MacTabs(current: tab, select: { selection.wrappedValue = $0 },
+        .environment(\.macTabs, TopRow.tabsInLogoRow ? MacTabs(current: tab, select: { selection.wrappedValue = $0 },
                                                           libraryBadge: env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending,
                                                           focusSearch: { [env] in env.ui.focusSearch = true }) : nil)
         .environment(\.posterQuick, ThisDevice.isMac ? .app(env) : nil)

@@ -164,8 +164,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let s4 = CGFloat(DesignTokens.Space.s4), s5 = CGFloat(DesignTokens.Space.s5), s6 = CGFloat(DesignTokens.Space.s6)
         static let s8 = CGFloat(DesignTokens.Space.s8), s10 = CGFloat(DesignTokens.Space.s10), s14 = CGFloat(DesignTokens.Space.s14)
         /// Margen lateral de las pantallas. En la Mac, el de una app de escritorio (17 nov 2026, Fernando: Inicio con el arte y
-        /// las tiras pegados a la orilla de la ventana): con 16 pt, al 77 % salía de 12 px.
-        static let gutter = ProcessInfo.processInfo.isiOSAppOnMac ? s10 : s4
+        /// las tiras pegados a la orilla de la ventana): con 16 pt, al 77 % salía de 12 px. C2: con espacio, `wideGutter`.
+        static var gutter: CGFloat { WindowMetrics.roomy ? wideGutter : s4 }
         /// De la orilla de arriba de una hoja (con su asa) al primer título, en toda hoja que arma su propio encabezado
         /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital». Con 24 el
         /// título quedaba pegado al asa (Fernando, 4 nov 2026, la 1774, la hoja de un pedido: «muy poco espacio arriba»): 32.
@@ -540,7 +540,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let stillAspect = DesignTokens.Aspect.still
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
-        static var railWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? (ProcessInfo.processInfo.isiOSAppOnMac ? Mac.railWidth : railWidthWide) : railWidthCompact }   // sin el panel de la derecha
+        static var railWidth: CGFloat {   // con espacio, C5 (`filling`); si no, sin el panel de la derecha
+            let wide = ProcessInfo.processInfo.isiOSAppOnMac ? Mac.railWidth : railWidthWide
+            return WindowMetrics.roomy ? filling(target: wide, columns: railColumns) : WindowMetrics.column.width >= gridWideWidth ? wide : railWidthCompact
+        }
         static let railWidthCompact: CGFloat = 112, railWidthWide: CGFloat = 148
         static let gridMinimum: CGFloat = 100
         /// `DSPosterGrid`: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de accesibilidad) y
@@ -569,7 +572,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
         static let peek: CGFloat = 28
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
-        static var stillWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
+        static var stillWidth: CGFloat {   // con espacio, C5 (`filling`)
+            WindowMetrics.roomy ? filling(target: stillWidthWide, columns: stillColumns) : WindowMetrics.column.width >= gridWideWidth ? stillWidthWide : stillWidthCompact
+        }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).

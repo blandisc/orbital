@@ -53,6 +53,7 @@ struct HomeChannels: View {
                 .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
+                .pagingArrows()   // C4: ‹ › con el puntero
             }
         }
         .onScrollVisibilityChange(threshold: DS.HomeChannels.visibleShare) { onScreen = $0 }

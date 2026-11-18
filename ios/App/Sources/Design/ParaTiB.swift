@@ -328,6 +328,8 @@ struct DecideDoor: View {
     var id = "paraTi-decide"
     /// Más carteles para la tira de la derecha (solo en la Mac, `DS.ParaTiB.stripCount`).
     var more: [String] = []
+    /// Su margen a los lados: 0 cuando va como tarjeta dentro de una fila o del panel del tablero (C6).
+    var inset: CGFloat?
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -381,7 +383,7 @@ struct DecideDoor: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, DS.Space.gutter)
+        .padding(.horizontal, inset ?? DS.Space.gutter)
         .accessibilityIdentifier(id)
     }
 }
