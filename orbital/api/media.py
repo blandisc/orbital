@@ -316,9 +316,11 @@ def router(d: Deps) -> APIRouter:
             info = {}
         # La que pondría «Ver» (con «Continuar», la de antes) y cómo va a sonar: la ficha lo dice bajo el botón.
         chosen = catalog.watch.choose_source(kind, video or id, prefs, catalog.watch.resume_choice(id, video or id))
+        note = watch.version_note(chosen, prefs) if chosen else None
+        if chosen and note and catalog.watch.wanted_blocked(kind, video or id, prefs, found):  # existe, pero Real-Debrid no deja
+            note = watch.version_note(chosen, prefs, blocked=True)
         recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles),
-                       "lang": watch.version_lang(chosen, prefs), "dub": chosen.dub,
-                       "note": watch.version_note(chosen, prefs)} if chosen else None
+                       "lang": watch.version_lang(chosen, prefs), "dub": chosen.dub, "note": note} if chosen else None
         downloads = catalog.watch.downloads
         if recommended and downloads is not None and downloads.file_for(video or id):
             recommended.update(line="Tu descarga · sin internet", lang="")  # «Ver» la pone del disco

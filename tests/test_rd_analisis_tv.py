@@ -232,3 +232,25 @@ def test_escenario_36_solo_lo_que_ya_esta_igual_hay_que_pedirlas(library, monkey
     assert w.askable("movie", "tt15239678", prefs, [ya, pedir]) == []
     monkeypatch.setattr(w.rd, "client", lambda: None)
     assert w.askable("movie", "tt15239678", prefs, [ya]) == []
+
+
+def test_la_latina_existe_pero_real_debrid_no_la_dejo_bajar(library, monkeypatch):
+    """Fernando, 18 nov (Los Simpson T37 E3): la única latina la rechazó Real-Debrid y, con tu clave, Torrentio ya ni la
+    lista. La ficha no dice «No hay en latino» (parecía que Orbital no la encontraba): dice que existe y por qué no va."""
+    w = library.watch
+    latino = streams.Preferences(audio="es", spanish="es-419")
+    eng = source(0, "The.Simpsons.S37E03.1080p.WEB.h264-EDITH")
+    lat = source(1, "The.Simpsons.S37.1080p.WEB-DL.H.264.LAT.ENG-LATPOW", name="Torrentio\n1080p", infoHash="a" * 40)
+    monkeypatch.setattr(w.rd, "client", lambda: object())
+    monkeypatch.setattr(w.rd, "candidates", lambda kind, video_id, prefs: [lat])  # solo sale sin la clave
+    monkeypatch.setattr(w.rd, "refused", lambda: {"a" * 40})
+    assert w.wanted_blocked("series", "tt0096697:37:3", latino, [eng])
+    assert watch.version_note(eng, latino, blocked=True) == "Hay latino, pero Real-Debrid no lo dejó bajar: va en inglés"
+    cast = source(2, "The.Simpsons.S37E03.1080p.Castellano")
+    assert watch.version_note(cast, latino, blocked=True) == "Hay latino, pero Real-Debrid no lo dejó bajar: va en castellano"
+    other = source(3, "The.Simpsons.S37E03.720p.Latino", name="[RD download] Torrentio\n720p", infoHash="b" * 40)
+    assert not w.wanted_blocked("series", "tt0096697:37:3", latino, [eng, other])  # hay otra latina: se puede pedir
+    monkeypatch.setattr(w.rd, "refused", lambda: set())
+    assert not w.wanted_blocked("series", "tt0096697:37:3", latino, [eng])  # nadie la rechazó: la nota de siempre
+    monkeypatch.setattr(w.rd, "refused", lambda: {"c" * 40})
+    assert not w.wanted_blocked("series", "tt0096697:37:3", latino, [eng])  # lo rechazado es otra cosa

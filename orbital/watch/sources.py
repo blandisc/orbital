@@ -249,6 +249,23 @@ class _Sources(_Accounts):
             return None
         return {"label": f"Pedir a la nube en {streams.LANG_NAMES.get(want, want).lower()}", "hash": pick.info_hash}
 
+    def wanted_blocked(self, kind: str, video_id: str, prefs: streams.Preferences, found: list[streams.Source]) -> bool:
+        """La versión en tu idioma existe, pero Real-Debrid no la dejó bajar y no hay otra en tu idioma (Fernando, 18 nov:
+        Los Simpson T37 E3; con tu clave, Torrentio ni la lista). La ficha lo dice en vez de «No hay en latino». Se busca
+        también en lo que existe sin Real-Debrid (lo mismo que usa «Pedir a la nube»)."""
+        refused = self.rd.refused()
+        if not refused:
+            return False
+        variant = prefs.spanish if prefs.audio == "es" and prefs.spanish in streams.SPANISH_VARIANTS else ""
+
+        def mine(s: streams.Source) -> bool:
+            return variant in s.audio_langs if variant else prefs.audio in s.languages
+
+        if any(mine(s) and s.info_hash not in refused for s in found):
+            return False  # hay otra en tu idioma: la nota de siempre (o ninguna)
+        pool = [*found, *(self.rd.candidates(kind, video_id, prefs) if self.rd.client() is not None else [])]
+        return any(mine(s) and s.info_hash in refused for s in pool)
+
     def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "", want: str | None = None) -> dict:
         """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1); con `want`, justo esa versión (la huella que trae
         «Versión», T8-A). Lanza LookupError con el motivo en palabras."""

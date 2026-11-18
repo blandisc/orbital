@@ -52,16 +52,18 @@ def version_lang(source: streams.Source, prefs: streams.Preferences) -> str:
 WANTED_NAMES = {"es-419": "latino", "es-ES": "castellano"}
 
 
-def version_note(source: streams.Source, prefs: streams.Preferences) -> str | None:
+def version_note(source: streams.Source, prefs: streams.Preferences, blocked: bool = False) -> str | None:
     """Si lo que va a sonar se sale de lo que pediste para ese título: «Solo en castellano: no hay latino», «No hay en
-    inglés: va en español». None si es lo pedido (lo normal no se anuncia)."""
+    inglés: va en español». None si es lo pedido (lo normal no se anuncia). `blocked`: la de tu idioma existe pero
+    Real-Debrid no la dejó bajar (`wanted_blocked`); se dice así para que no parezca que Orbital no la encontró."""
     lang = (source.languages or [""])[0]
     have = source.dub if lang == "es" and source.dub else streams.LANG_NAMES.get(lang, lang).lower()
     if prefs.audio not in source.languages:
         want = WANTED_NAMES.get(prefs.spanish) if prefs.audio == "es" and prefs.spanish else streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
-        return f"No hay en {want}: va en {have}"
+        return f"Hay {want}, pero Real-Debrid no lo dejó bajar: va en {have}" if blocked else f"No hay en {want}: va en {have}"
     if prefs.audio == "es" and prefs.spanish in WANTED_NAMES and source.dub and streams.DUB_CODES.get(source.dub) != prefs.spanish:
-        return f"Solo en {source.dub}: no hay {WANTED_NAMES[prefs.spanish]}"
+        want = WANTED_NAMES[prefs.spanish]
+        return f"Hay {want}, pero Real-Debrid no lo dejó bajar: va en {source.dub}" if blocked else f"Solo en {source.dub}: no hay {want}"
     return None
 
 
