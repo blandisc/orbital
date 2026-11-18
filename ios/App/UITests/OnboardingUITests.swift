@@ -28,7 +28,11 @@ class GuideUITestCase: XCTestCase {
 
     func launch(_ args: [String]) {
         app.terminate()
+        // `MAC_LOOK=1`: el acomodo de la Mac (`-demo-mac-look`) y acostado, como se ve la ventana en la Mac.
+        let mac = ProcessInfo.processInfo.environment["MAC_LOOK"] != nil
         app.launchArguments = ["-demo", "-demo-mute", "-demo-no-idle"] + args + (shots != nil ? ["-demo-appearance", "dark"] : [])
+            + (mac ? ["-demo-mac-look"] : [])
+        if mac { XCUIDevice.shared.orientation = .landscapeLeft }
         app.launch()
     }
 
@@ -102,6 +106,39 @@ class GuideUITestCase: XCTestCase {
 
 final class OnboardingUITests: GuideUITestCase {
     func testCompleteTheGuideWithEveryKeyProblem() { walkTheGuide(capture: false) }
+
+    /// Para revisar la guía (crítica del 18 nov 2026): con `SHOTS`, una captura de cada pantalla y cada variante en el aparato
+    /// donde corra (iPhone, iPad, Mac). Sin `SHOTS` solo recorre: dos pasadas, con gustos y nube/Trakt/TV, y sin gustos con la TV.
+    func testCaptureTheGuideForReview() {
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4); shot("01-bienvenida")
+        next(); wait("¿Qué te gusta?"); sleep(2); shot("02-gustos-vacio")
+        let screen = app.windows.firstMatch.frame
+        let posters = app.buttons.matching(NSPredicate(format: "identifier == '' AND label != ''")).allElementsBoundByIndex
+            .filter { $0.isHittable && $0.frame.minY > screen.height * 0.3 && $0.frame.height > 80 }
+        for poster in posters.prefix(3) { poster.tap() }
+        sleep(2); shot("03-gustos-listo")
+        app.swipeUp(); sleep(2); shot("04-gustos-abajo")
+        next(); wait("¿Qué ya tienes?"); sleep(1); shot("05-tienes")
+        app.buttons["have-tv"].press(forDuration: 1.2); sleep(1); shot("06-tienes-explica")
+        app.buttons["have-trakt"].tap(); app.buttons["have-tv"].tap(); sleep(1); shot("07-tienes-marcado")
+        next(); wait("Ve todo al instante, aquí"); sleep(2); shot("08-nube")
+        next(); wait("Ya tengo cuenta"); sleep(2); shot("09-nube-hoja")
+        app.buttons["cloud-connect-realdebrid"].tap(); sleep(2); shot("10-nube-realdebrid")
+        app.buttons["cloud-sheet-done"].tap(); sleep(2)
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Sigue donde te quedaste"); sleep(2); shot("11-aparatos")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Tu Orbital ya está lista."); sleep(2); shot("13-final")
+        next(); sleep(5); shot("14-llegada-inicio")
+
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
+        next(); wait("¿Qué te gusta?")
+        next(); wait("¿Qué ya tienes?")
+        app.buttons["have-debrid"].tap(); app.buttons["have-tv"].tap()
+        next(); wait("Ve todo al instante, aquí"); sleep(2); shot("16-nube-ya-tengo")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("control de tu TV"); sleep(2); shot("17-tv-sola")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Tu Orbital ya está lista."); sleep(2); shot("18-final-sin-gustos")
+    }
 
     /// Sin marcar nada y «Cuando quiera ver algo»: de «¿Qué ya tienes?» a «Listo» sin conectar nada (Q1, D1).
     func testLaterSkipsStraightToTheEnd() {
