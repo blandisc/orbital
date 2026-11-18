@@ -218,6 +218,9 @@ h1 { font: 700 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
 .tile .mk { position: absolute; right: 3px; bottom: 3px; font-style: normal; font-size: 10px; background: rgba(0,0,0,.6); color: var(--fresh); border-radius: 6px; padding: 1px 4px; }
 @keyframes tilein { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .tile { animation: none; opacity: 1; } }
+.rowdecide { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.dice { display: inline-flex; gap: 5px; align-items: center; background: rgba(95,214,196,.13); color: var(--fresh); border: 0; border-radius: 999px; padding: 6px 10px; font: 600 12px var(--sans); cursor: pointer; }
+.dice svg { width: 14px; height: 14px; }
 </style>
 
 <div class="wrap">
@@ -303,14 +306,15 @@ function plan() {
   if (edition === "ultra" && !S.fromPhone) p.push("tvfirst");
   if (S.fromPhone) { p.push("home"); return p; }
   if (S.fromTV) { if (S.fromTV && S.tvNoCloud) p.push("cloud"); p.push("win", "tour", "home"); return p; }
-  p.push("trakt", "win");
+  p.push("trakt");
+  if (S.trakt && !S.traktNew) p.push("win");
   if (!watches()) p.push("platforms");
   else { p.push("cloud"); if (S.cloud) p.push("how"); }
   p.push("tour", "home");
   return p;
 }
 // Los puntitos no cambian de número al conectar la nube (G15): cuentan el camino más largo de esa versión.
-function dotPlan() { const keep = S.cloud; if (watches() && !S.fromTV && !S.fromPhone) S.cloud = S.cloud || "x"; const p = plan(); S.cloud = keep; return p; }
+function dotPlan() { const keep = [S.cloud, S.trakt, S.traktNew]; if (watches() && !S.fromTV && !S.fromPhone) S.cloud = S.cloud || "x"; S.trakt = true; S.traktNew = false; const p = plan(); [S.cloud, S.trakt, S.traktNew] = keep; return p; }
 function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; S.toast = null; render(); }
 function next() { if (S.fromHome && S.step === "cloud" && S.cloud && !S.fromTV) return go("how"); if (S.fromHome) { S.fromHome = false; return go("home"); } const p = plan(); go(p[p.indexOf(S.step) + 1]); }
 function back() {
@@ -323,18 +327,18 @@ function findTV() { if (S.sheet !== "tvcode" || S.tvSearch) return; if (fails &&
 function saveTitle(k) { if (!S.saved.includes(k)) S.saved.push(k); }
 function approveTrakt() { if (S.step !== "trakt" || !S.traktWait) return; S.traktWait = false;
   if (S.fromHome && !(fails && !S.failed.trakt)) { S.fromHome = false; S.trakt = true; S.traktSub = null; S.toast = null; return go("home"); }
-  if (fails && !S.failed.trakt) { S.failed.trakt = 1; return render(); } S.trakt = true; S.traktSub = null; go("win"); }
+  if (fails && !S.failed.trakt) { S.failed.trakt = 1; return render(); } S.trakt = true; S.traktSub = null; next(); }
 
 const NOTES = {
   welcome: ["Tu pedido (18 nov) · K2-B · U1-B", "¿Qué es Orbital? Y tu idioma", "Arriba, Español o English, ya marcado con el del iPhone: toda la bienvenida cambia al tocarlo. Abajo, «Títulos y sinopsis en otro idioma» abre una vista previa para quien los quiere distintos. Plus suma «y míralo todo aquí»; Ultra, «y mándalo a tu TV».", ["La app queda en español o inglés; las fichas pueden ir también en portugués.", "El resto del prototipo sigue en español.", "Separar app y fichas es trabajo nuevo en la app."]],
   fromphone: ["G20", "¿Ya usas Orbital en tu iPhone?", "Solo en iPad y Mac: si ya la usas en el iPhone, se trae todo con tu cuenta de Apple y vas directo a Inicio. Si no tienes iPhone, la guía completa se hace aquí.", ["En iPad y Mac no existe Ultra: nunca se conectan a la TV.", "Trabajo nuevo en la app."]],
   tvfirst: ["U7 · U6", "¿Ya usas Orbital en la TV?", "Solo en Ultra y justo al principio: Orbital encuentra la TV sola en tu red (con código de respaldo) y se trae tu Trakt, tu servicio de nube y tus idiomas. Si la TV no tenía algo, lo pide después. Con «Simular fallas», la TV no aparece a la primera y no trae servicio de nube.", ["Quien no tiene la TV sigue el camino de Plus y no se le vuelve a preguntar.", "Trabajo nuevo en la app y en la TV."]],
   trakt: ["K1-B · G4 · G13 · G14", "Trakt, muy recomendado", "Tres beneficios con ícono y «Orbital no publica nada por ti». Tras «Copiar y abrir Trakt» espera y sigue solo; si tarda, «Revisar ahora». Si regresas ya conectado, dice «✓ Trakt conectado».", ["«Crear una» explica cómo y te deja volver al mismo punto."]],
-  win: ["K4-B · G6 · G7 · G11", "Tu primer logro", "Con historial en Trakt: un mosaico con todo lo tuyo (vistos, tu lista, calificaciones), sin elegir nada. Sin Trakt o con cuenta nueva: un «Decide por mí» de verdad, con «Otras tres» que sí cambia.", ["Los porqués enseñan de dónde salen las sugerencias."]],
+  win: ["K4-B · DP-A", "Trajimos lo tuyo", "Solo para quien trae historial de Trakt: un mosaico con todo lo suyo (vistos, su lista, calificaciones), sin elegir nada. Sin Trakt o con cuenta nueva no hay este paso (DP-A, 18 nov): «Decide por mí» se enseña con un aviso en Inicio.", ["Los porqués enseñan de dónde salen las sugerencias."]],
   platforms: ["A1-B · A6", "¿Qué plataformas tienes?", "Solo en la de la tienda. Con esto «Dónde verla» dice «Incluida en tu plan» con la tuya y la fila «En tus plataformas» es verdad. «Otra…» para la que no está.", ["Se puede saltar.", "Trabajo nuevo en la app."]],
   cloud: ["P1 · P2-B · P12 · P13 · P18", "Para ver aquí: un servicio de nube", "Un dibujo de tres pasos y tres botones: «Ya tengo uno», «Aún no tengo», «Ahora no». Conectar se ve completo: código en Real-Debrid, clave con «¿Dónde está mi clave?» y «Pegar» en los otros. «Aún no tengo» sugiere el que se conecta con código. Con «Simular fallas» arriba, la clave falla una vez.", ["Siempre «tu servicio de nube», en masculino.", "«Aún no tengo» deja volver con «Ya lo contraté, conectar»."]],
   how: ["P5-B · P15 · P19", "¿En qué idioma quieres oír películas y series?", "Arriba, «En [idioma]»: tú eliges el doblaje (latino, castellano, inglés…), no viene fijo. Abajo, «En su idioma, con subtítulos». Los subtítulos en un renglón que se abre. «Más de un idioma» para quien quiere un orden.", ["Solo si conectaste tu servicio de nube; si no, se pregunta al conectarlo.", "En la app se ordena arrastrando."]],
-  tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. En la de la tienda, «Dónde verla» en lugar de versiones; en Plus sin nube, «Decide por mí» (o «Tus series, al día» si ya decidiste en el paso del logro). No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
+  tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. En la de la tienda, «Dónde verla» en lugar de versiones; en Plus sin nube, «Tus series, al día». No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
   playing: ["P20", "Tu primera película", "El momento «ajá» de Plus y Ultra: al terminar el recorrido, «Ver algo ahora» arranca una película lista al instante en tu idioma.", ["Solo si ya conectaste tu servicio de nube."]],
   home: ["G9 · P17 · U9", "Inicio", "Arriba, lo que guardaste. Una sola tarjeta pendiente a la vez. Con servicio de nube: «Listas al instante ⚡». Con TV: «En la TV · conectada».", ["«En tus plataformas» solo si dijiste cuáles tienes."]]
 };
@@ -531,7 +535,7 @@ const V = {
       tvsend: [ICON.tv, "Mándala a la TV", `Tu ${here()} es el control`]
     };
     const canWatch = watches() && S.cloud;
-    const first = canWatch ? "versions" : !watches() ? "where" : S.decidedInWin ? "follow" : "decide";
+    const first = canWatch ? "versions" : !watches() ? "where" : "follow";
     const ids = [first, "seen", "lists"];
     if (edition === "ultra" && S.tv && canWatch) ids.push("tvsend");
     const done = ids.every(id => S.tasks[id]);
@@ -564,7 +568,8 @@ const V = {
       ${S.trakt && !S.traktNew ? `${S.watched ? "" : `<div class="row-title"><small>Donde te quedaste</small>Seguir viendo</div>`}<div class="nudge"><span class="ico">▶</span><span class="grow">Shōgun<span class="sub" style="display:block;color:var(--muted)">T1 E7 · el siguiente episodio</span></span><button data-a="noop">${watches() && S.cloud ? "Ver" : "Marcar visto"}</button></div>` : ""}
       ${saved.length ? `<div class="row-title"><small>Lo que guardaste</small>Mi lista</div><div class="shelf">${saved.map(k => poster(k)).join("")}</div>` : ""}
       ${card}${ready}
-      <div class="row-title"><small>${S.trakt && !S.traktNew ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</div>
+      <div class="row-title rowdecide"><span><small>${S.trakt && !S.traktNew ? "Porque viste Shōgun" : saved.length ? `Porque guardaste ${POSTERS[saved[0]][0]}` : "Lo popular de ahora"}</small>Para esta noche</span><button class="dice" data-a="dismiss" data-v="decidetip">${ICON.dice} Decide por mí</button></div>
+      ${S.dismissed.includes("decidetip") ? "" : `<div class="tip"><b>¿No sabes qué ver?</b>Toca «Decide por mí»: tres opciones para esta noche, cada una con su porqué.<br><button data-a="dismiss" data-v="decidetip">Entendido</button></div>`}
       <div class="shelf">${["br2049", "dune", "arrival", "matrix", "origin"].map(k => poster(k)).join("")}</div>
       <div class="row-title"><small>${mine ? "En tus plataformas" : "Lo que se estrena"}</small>Nuevo esta semana</div>
       <div class="shelf">${["severance", "bear", "shogun", "chern", "interstellar"].map(k => poster(k)).join("")}</div></div>`;
@@ -668,7 +673,7 @@ document.addEventListener("click", e => {
   else if (a === "copy") { S.toast = "copied"; render(); }
   else if (a === "traktok") { S.traktWait = true; render(); setTimeout(approveTrakt, 4000); }
   else if (a === "traktcheck") approveTrakt();
-  else if (a === "notrakt") { S.trakt = false; S.traktSub = null; if (S.fromHome) { S.fromHome = false; return go("home"); } go("win"); }
+  else if (a === "notrakt") { S.trakt = false; S.traktSub = null; if (S.fromHome) { S.fromHome = false; return go("home"); } next(); }
   else if (a === "save") { S.saved.includes(v) ? S.saved.splice(S.saved.indexOf(v), 1) : saveTitle(v); if (!S.trakt || S.traktNew) S.decidedInWin = S.saved.length > 0; render(); }
   else if (a === "shuffle") { S.shuffled = !S.shuffled; render(); }
   else if (a === "plat") { S.platforms.includes(v) ? S.platforms.splice(S.platforms.indexOf(v), 1) : S.platforms.push(v); render(); }
