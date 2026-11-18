@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulir la bienvenida</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1b22;--muted:#5d5b66;--line:#e3e1da;--accent:#127a6c;
+  --sky:#0b0a14;--sky2:#171430;--raised:#211f2e;--pt:#f3f1ea;--pm:#a29fb3;--pf:#6f6c82;--fresh:#5fd6c4;--moon:#5fd6c4;--ink:#111017}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4}}
+:root[data-theme="dark"]{--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,-apple-system,system-ui,sans-serif}
+main{max-width:1060px;margin:0 auto;padding:28px 16px 60px}h1{font:700 28px/1.15 "Space Grotesk",Inter,sans-serif;margin:0 0 8px}
+h2{font:700 20px "Space Grotesk",Inter,sans-serif;margin:34px 0 4px}p{margin:0 0 10px}.m{color:var(--muted)}
+.code{display:inline-block;font:700 13px ui-monospace,monospace;color:var(--accent);border:1.5px solid var(--accent);border-radius:7px;padding:1px 7px;margin-right:6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:14px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:10px;align-content:start}.opt.rec{border:2px solid var(--accent)}
+.opt h3{margin:0;font-size:15.5px}.tag{font-size:12px;font-weight:700;color:var(--accent)}
+.opt ul{margin:0;padding-left:18px;font-size:13.5px}.opt li{margin:2px 0}
+.keep{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:14px}
+/* teléfono */
+.phone{width:250px;height:500px;margin:0 auto;border-radius:36px;border:8px solid #24222f;background:radial-gradient(120% 70% at 50% 0%,var(--sky2),var(--sky) 70%);position:relative;overflow:hidden;color:var(--pt);display:flex;flex-direction:column;padding:30px 16px 18px;gap:10px}
+.bar{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--pm);min-height:22px}
+.globe{display:inline-flex;gap:5px;align-items:center;color:var(--pt);font-weight:600}
+.globe svg{width:14px;height:14px}
+.seg{display:flex;background:#16151f;border-radius:999px;padding:2px;width:150px;margin:0 auto}.seg span{flex:1;text-align:center;font-size:10.5px;padding:4px;border-radius:999px;color:var(--pm)}.seg .on{background:var(--pt);color:var(--ink);font-weight:600}
+.scene{position:relative;height:190px;flex:none}
+.ring{position:absolute;left:50%;top:50%;width:200px;height:70px;margin:-35px 0 0 -100px;border:1.5px solid rgba(95,214,196,.35);border-radius:50%;transform:rotate(-14deg)}
+.planet{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a3560,#15132a)}
+.moonDot{position:absolute;left:calc(50% + 78px);top:calc(50% - 30px);width:10px;height:10px;border-radius:50%;background:var(--moon);box-shadow:0 0 12px rgba(95,214,196,.6)}
+.p{position:absolute;width:30px;height:45px;border-radius:5px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.h{font:700 21px/1.15 "Space Grotesk",Inter,sans-serif;text-align:center;margin:0}
+.lead{font-size:12.5px;color:var(--pm);text-align:center;margin:0}
+.rows{display:grid;gap:7px}.rows div{display:flex;gap:9px;align-items:center;font-size:12.5px}.rows i{width:24px;height:24px;border-radius:7px;background:rgba(95,214,196,.13);color:var(--fresh);display:grid;place-items:center;font-style:normal;font-size:12px;flex:none}
+.rows b{color:var(--fresh);font-weight:600}
+.cta{margin-top:auto;background:var(--pt);color:var(--ink);border-radius:999px;padding:10px;text-align:center;font-weight:700;font-size:13px}
+.under{font-size:10.5px;color:var(--pm);text-align:center}
+.under u{color:var(--fresh);text-decoration:none}
+</style></head><body><main>
+<h1>Pulir la bienvenida</h1>
+<p class="m">18 nov 2026. Es la primera pantalla de la pulida. La escena de la marca se queda como está en la app desde el 3 nov (A1: el planeta atrapa los pósters y llega la luna turquesa). Faltan dos decisiones: dónde va el idioma y cómo se cuenta qué es Orbital.</p>
+
+<h2><span class="code">BV-L</span>Dónde va el idioma</h2>
+<p class="m">Tiene que verse a la primera para quien no habla español, sin quitarle protagonismo a la marca.</p>
+<div class="opts">
+<div class="opt rec"><h3><span class="code">BV-L1</span>Globo arriba, con el nombre del idioma <span class="tag">RECOMENDADA</span></h3>
+<div class="phone"><div class="bar"><span class="globe"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15"/></svg>Español ▾</span><span>Saltar ⏭</span></div>
+<div class="scene" id="s1"></div><p class="h">Todo lo que quieres ver, en un solo lugar.</p><p class="lead">Encuentra qué ver, sigue tus series y míralo aquí mismo.</p><div class="cta">Empezar</div></div>
+<ul><li>Gana: el globo se reconoce en cualquier idioma y no es una cápsula de texto.</li><li>Gana: la escena y el texto quedan limpios, como hoy.</li><li>Pierde: es más chico; se abre con un toque (Español / English).</li></ul></div>
+<div class="opt"><h3><span class="code">BV-L2</span>Selector arriba de la escena (como el prototipo)</h3>
+<div class="phone"><div class="bar"><span></span><span>Saltar ⏭</span></div><div class="seg"><span class="on">Español</span><span>English</span></div>
+<div class="scene" id="s2"></div><p class="h">Todo lo que quieres ver, en un solo lugar.</p><p class="lead">Encuentra qué ver, sigue tus series y míralo aquí mismo.</p><div class="cta">Empezar</div></div>
+<ul><li>Gana: las dos opciones a la vista, un toque.</li><li>Pierde: compite con la marca y es una cápsula de texto.</li></ul></div>
+<div class="opt"><h3><span class="code">BV-L3</span>Bajo «Empezar», en una línea</h3>
+<div class="phone"><div class="bar"><span></span><span>Saltar ⏭</span></div>
+<div class="scene" id="s3"></div><p class="h">Todo lo que quieres ver, en un solo lugar.</p><p class="lead">Encuentra qué ver, sigue tus series y míralo aquí mismo.</p><div class="cta">Empezar</div><div class="under">Español · <u>Change language</u></div></div>
+<ul><li>Gana: lo más discreto.</li><li>Pierde: «Change language» en inglés a la vista; se pierde fácil.</li></ul></div>
+</div>
+<div class="keep">En cualquiera, «Títulos y sinopsis en otro idioma» sale dentro del mismo menú del idioma, no en la pantalla.</div>
+
+<h2><span class="code">BV-T</span>Cómo se cuenta qué es Orbital</h2>
+<p class="m">Tu pedido del inicio: explicar qué es en una sola pantalla con visuales ricos. Hoy la app tiene un titular y una línea.</p>
+<div class="opts">
+<div class="opt"><h3><span class="code">BV-T1</span>Titular y una línea (como hoy en la app)</h3>
+<div class="phone"><div class="bar"><span class="globe">🌐 Español ▾</span><span>Saltar ⏭</span></div>
+<div class="scene" id="s4"></div><p class="h">Todo lo que quieres ver, en un solo lugar.</p><p class="lead">Encuentra qué ver, sigue tus series y míralo aquí mismo.</p><div class="cta">Empezar</div></div>
+<ul><li>Gana: lo más limpio; texto grande y centrado (tu pedido del 17 nov).</li><li>Pierde: no dice las cosas que hace; la última frase cambia por versión.</li></ul></div>
+<div class="opt rec"><h3><span class="code">BV-T2</span>Titular y renglones con ícono que entran al ritmo de la órbita <span class="tag">RECOMENDADA</span></h3>
+<div class="phone"><div class="bar"><span class="globe">🌐 Español ▾</span><span>Saltar ⏭</span></div>
+<div class="scene" id="s5" style="height:150px"></div><p class="h" style="font-size:19px">Todo lo que quieres ver, en un solo lugar.</p>
+<div class="rows"><div><i>✦</i><span><b>Descubre</b> lo mejor para esta noche</span></div><div><i>＋</i><span><b>Guarda</b> tus listas y lo que viste</span></div><div><i>≈</i><span><b>Encuentra</b> lo parecido a lo que te encantó</span></div><div><i>▶</i><span><b>Míralo</b> aquí mismo</span></div></div><div class="cta">Empezar</div></div>
+<ul><li>Gana: en cinco segundos sabes las cuatro cosas que hace; cada renglón entra cuando un póster pasa frente al planeta.</li><li>Gana: el último renglón cambia por versión (Orbital: «Te dice dónde verla»; Ultra: «Mándalo a tu TV»).</li><li>Pierde: más texto que hoy; la escena se encoge un poco.</li></ul></div>
+</div>
+
+<h2>Se queda igual</h2>
+<div class="keep">La escena A1 y la vitrina (B1) que se enseña sola a los 12 segundos · «Saltar» arriba a la derecha · «Empezar» centrado · con «Reducir movimiento», todo quieto y ya armado.</div>
+
+<p style="margin-top:22px"><b>Para dictar:</b> una de cada grupo, por ejemplo «BV-L1, BV-T2». Recomiendo <b>BV-L1 y BV-T2</b>.</p>
+</main>
+<script>
+const C=["linear-gradient(170deg,#d39a55,#4a2c16)","linear-gradient(170deg,#e9ece9,#46644f)","linear-gradient(170deg,#6b7a8f,#1f2633)","linear-gradient(170deg,#3f69a8,#162236)","linear-gradient(170deg,#e0703a,#3b1d1a)","linear-gradient(170deg,#8b2d2d,#1b0f10)","linear-gradient(170deg,#c9ccd2,#3a3f48)"];
+const POS=[[18,48],[62,22],[150,14],[196,52],[176,110],[100,128],[30,110]];
+document.querySelectorAll(".scene").forEach(el=>{let h='<div class="ring"></div>';POS.forEach(([x,y],i)=>{h+=`<div class="p" style="left:${x}px;top:${y*el.offsetHeight/190}px;background:${C[i]};opacity:${i%3===1?.55:1}"></div>`});h+='<div class="planet"></div><div class="moonDot"></div>';el.innerHTML=h;});
+</script>
+</body></html>
