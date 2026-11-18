@@ -305,7 +305,7 @@ function plan() {
 // Los puntitos no cambian de número al conectar la nube (G15): cuentan el camino más largo de esa versión.
 function dotPlan() { const keep = S.cloud; if (watches() && !S.fromTV && !S.fromPhone) S.cloud = S.cloud || "x"; const p = plan(); S.cloud = keep; return p; }
 function go(step) { S.hist.push(S.step); S.step = step; S.sheet = null; S.tour = null; S.toast = null; render(); }
-function next() { if (S.fromHome && S.step === "cloud" && S.cloud) return go("how"); if (S.fromHome) { S.fromHome = false; return go("home"); } const p = plan(); go(p[p.indexOf(S.step) + 1]); }
+function next() { if (S.fromHome && S.step === "cloud" && S.cloud && !S.fromTV) return go("how"); if (S.fromHome) { S.fromHome = false; return go("home"); } const p = plan(); go(p[p.indexOf(S.step) + 1]); }
 function back() {
   if (S.sheet) { S.sheet = null; return render(); }
   if (S.tour) { S.tour = null; return render(); }
@@ -327,7 +327,7 @@ const NOTES = {
   platforms: ["A1-B · A6", "¿Qué plataformas tienes?", "Solo en la de la tienda. Con esto «Dónde verla» dice «Incluida en tu plan» con la tuya y la fila «En tus plataformas» es verdad. «Otra…» para la que no está.", ["Se puede saltar.", "Trabajo nuevo en la app."]],
   cloud: ["P1 · P2-B · P12 · P13 · P18", "Para ver aquí: un servicio de nube", "Un dibujo de tres pasos y tres botones: «Ya tengo uno», «Aún no tengo», «Ahora no». Conectar se ve completo: código en Real-Debrid, clave con «¿Dónde está mi clave?» y «Pegar» en los otros. «Aún no tengo» sugiere el que se conecta con código. Con «Simular fallas» arriba, la clave falla una vez.", ["Siempre «tu servicio de nube», en masculino.", "«Aún no tengo» deja volver con «Ya lo contraté, conectar»."]],
   how: ["P5-B · P15 · P19", "¿En qué idioma quieres oír películas y series?", "Arriba, «En [idioma]»: tú eliges el doblaje (latino, castellano, inglés…), no viene fijo. Abajo, «En su idioma, con subtítulos». Los subtítulos en un renglón que se abre. «Más de un idioma» para quien quiere un orden.", ["Solo si conectaste tu servicio de nube; si no, se pregunta al conectarlo.", "En la app se ordena arrastrando."]],
-  tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. Sin nube o en la de la tienda, «Dónde verla» en lugar de versiones. No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
+  tour: ["P7-B · P11 · P14 · G12 · A4 · U8", "Prueba lo principal", "Tres toques reales. Plus con nube: cambiar de versión desde la bandera de «Ver», calificar lo que ya viste y guardar. En la de la tienda, «Dónde verla» en lugar de versiones; en Plus sin nube, «Decide por mí» (o «Tus series, al día» si ya decidiste en el paso del logro). No repite lo que ya hiciste en el paso 4. Ultra con TV: mándala y pausa desde el iPhone.", ["Buscar, filtros y tus series se enseñan la primera vez que entras."]],
   playing: ["P20", "Tu primera película", "El momento «ajá» de Plus y Ultra: al terminar el recorrido, «Ver algo ahora» arranca una película lista al instante en tu idioma.", ["Solo si ya conectaste tu servicio de nube."]],
   home: ["G9 · P17 · U9", "Inicio", "Arriba, lo que guardaste. Una sola tarjeta pendiente a la vez. Con servicio de nube: «Listas al instante ⚡». Con TV: «En la TV · conectada».", ["«En tus plataformas» solo si dijiste cuáles tienes."]]
 };
@@ -671,7 +671,7 @@ document.addEventListener("click", e => {
   else if (a === "order") { S.showOrder = !S.showOrder; render(); }
   else if (a === "subsopen") { S.subsOpen = !S.subsOpen; render(); }
   else if (a === "subs") { S.subs = v; S.subsOpen = false; render(); }
-  else if (a === "tvok") { S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = fails ? null : "Real-Debrid"; S.tvNoCloud = fails; S.sheet = null; render(); }
+  else if (a === "tvok") { S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = S.cloud || (fails ? null : "Real-Debrid"); S.tvNoCloud = !S.cloud; S.sheet = null; render(); }
   else if (a === "notv") { S.noTV = true; next(); }
   else if (a === "up" || a === "down") { const i = +v, j = a === "up" ? i - 1 : i + 1; [S.langs[i], S.langs[j]] = [S.langs[j], S.langs[i]]; render(); }
   else if (a === "drop") { S.langs.splice(+v, 1); render(); }
@@ -683,7 +683,7 @@ document.addEventListener("click", e => {
   else if (a === "tourpick") { saveTitle(v); S.tasks.decide = true; S.tour = null; S.toast = `✓ ${POSTERS[v][0]} quedó en Mi lista`; render(); }
   else if (a === "taskdone") { S.tasks[v] = true; S.tour = null; S.sheet = null; S.toast = { lists: "✓ Interestelar quedó en Mi lista", tvsend: `✓ Pausaste la TV desde tu ${here()}`, follow: "✓ Sigues Shōgun donde te quedaste", where: "✓ Te llevamos directo a la plataforma", whennotify: "✓ Te avisamos cuando llegue a las tuyas" }[v] || null; if (v === "whennotify") S.tasks.where = true; if (v === "lists") saveTitle("interstellar"); render(); }
   else if (a === "playnow") { S.watched = true; go("playing"); }
-  else if (a === "pincheck") { if (fails && !S.failed.pin) { S.failed.pin = 1; S.pin = false; return render(); } S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = fails ? null : "Real-Debrid"; S.tvNoCloud = fails; S.sheet = null; render(); }
+  else if (a === "pincheck") { if (fails && !S.failed.pin) { S.failed.pin = 1; S.pin = false; return render(); } S.tv = true; S.fromTV = S.step !== "home"; S.trakt = true; S.cloud = S.cloud || (fails ? null : "Real-Debrid"); S.tvNoCloud = !S.cloud; S.sheet = null; render(); }
   else if (a === "nudge") { S.fromHome = true; if (v === "trakt") { S.traktSub = null; go("trakt"); } else if (v === "cloud") go("cloud"); else { S.fromHome = false; S.sheet = "tvcode"; S.tvSearch = null; render(); setTimeout(findTV, 1500); } }
   else if (a === "platsdone") { S.sheet = null; S.whenAsk = true; render(); }
   else if (a === "whenask") { S.whenAsk = true; render(); }
