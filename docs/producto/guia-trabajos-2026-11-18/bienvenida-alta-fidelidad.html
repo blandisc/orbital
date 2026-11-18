@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bienvenida en alta fidelidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600&display=swap">
+<style>
+:root{--bg:#f4f3ef;--card:#fff;--text:#1c1b22;--muted:#5d5b66;--line:#e2e0d9;--accent:#127a6c;--chip:#ecebe5;
+  --pt:#f3f1ea;--pm:#b3b0c3;--pf:#6f6c82;--fresh:#5fd6c4;--ink:#111017}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4;--chip:#26242f}}
+:root[data-theme="dark"]{--bg:#111016;--card:#1b1a22;--text:#eeedf2;--muted:#a3a0ad;--line:#2d2b36;--accent:#5fd6c4;--chip:#26242f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{max-width:1100px;margin:0 auto;padding:28px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:40px;align-items:start}
+@media (max-width:860px){.page{grid-template-columns:minmax(0,1fr);gap:20px}.stage{order:-1}}
+h1{font:600 27px/1.15 Sora,Inter,sans-serif;margin:0 0 8px;letter-spacing:-.01em}
+h2{font:600 17px/1.3 Sora,Inter,sans-serif;margin:30px 0 8px}
+p{margin:0 0 10px}.m{color:var(--muted)}
+.code{display:inline-block;font:700 12.5px ui-monospace,monospace;color:var(--accent);border:1.5px solid var(--accent);border-radius:7px;padding:0 6px;margin-right:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.ctl{display:grid;gap:12px}
+.ctl .r{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ctl .lb{font-size:13px;color:var(--muted);min-width:82px}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px}
+.seg button,.btn{font:500 13.5px Inter,sans-serif;border:0;background:none;color:var(--text);padding:6px 11px;border-radius:8px;cursor:pointer;min-height:32px}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.btn{background:var(--chip)}.btn:active{transform:scale(.97)}
+.scrub{display:grid;gap:4px}
+.scrub input{width:100%;accent-color:var(--accent)}
+.marks{position:relative;height:40px;font-size:11.5px;color:var(--muted)}
+.marks button{position:absolute;transform:translateX(-50%);border:0;background:none;color:inherit;font:inherit;padding:2px 3px;cursor:pointer;white-space:nowrap}
+.marks button:hover{color:var(--accent)}
+.tnow{font:500 12.5px ui-monospace,monospace;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12.5px}
+.tw{overflow-x:auto}
+ul{margin:4px 0 0;padding-left:18px}li{margin:3px 0}
+.stage{position:sticky;top:20px;display:flex;justify-content:center}
+@media (max-width:860px){.stage{position:static}}
+.fit{position:relative}
+/* ===== el iPhone ===== */
+.device{position:absolute;left:0;top:0;width:422px;height:894px;transform:scale(var(--s,1));transform-origin:0 0;border-radius:64px;background:#1d1c24;padding:10px;
+  box-shadow:0 0 0 1.5px #3a3844 inset,0 30px 70px rgba(0,0,0,.35),0 8px 20px rgba(0,0,0,.25)}
+.screen{position:relative;width:402px;height:874px;border-radius:54px;overflow:hidden;color:var(--pt);
+  background:radial-gradient(120% 55% at 50% 24%,#1b1835 0%,#0e0d1a 55%,#0a0911 100%);font-family:Inter,-apple-system,sans-serif;user-select:none;-webkit-user-select:none;
+  display:flex;flex-direction:column;cursor:default}
+.stars{position:absolute;inset:0;pointer-events:none}
+.status{height:54px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:6px 34px 0 46px;font:600 17px Inter,sans-serif;position:relative;z-index:20}
+.island{position:absolute;left:50%;top:11px;width:125px;height:37px;margin-left:-62.5px;background:#000;border-radius:20px}
+.sicons{display:flex;gap:6px;align-items:center}
+.bar{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:relative;z-index:20}
+.pill{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 10px;border:0;background:none;color:var(--pt);font:500 15px Inter,sans-serif;cursor:pointer;border-radius:22px}
+.pill svg{flex:none}
+.pill.skip{color:var(--pm)}
+.pill:active{background:rgba(255,255,255,.06)}
+.scene{position:relative;height:312px;flex:none;z-index:1}
+.scene > *{position:absolute;left:0;top:0}
+.layer{width:402px;height:312px;pointer-events:none}
+.poster{width:44px;height:66px;border-radius:7px;overflow:hidden;box-shadow:0 10px 22px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);will-change:transform,opacity}
+.poster::after{content:"";position:absolute;inset:0;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.poster svg{display:block}
+.moon{width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#a9f0e5,#5fd6c4 55%,#3fb3a2);box-shadow:0 0 10px rgba(95,214,196,.55);will-change:transform}
+.copy{position:relative;z-index:2;padding:0 28px}
+.title{font:600 28px/1.18 Sora,Inter,sans-serif;letter-spacing:-.015em;text-align:center;margin:2px auto 0;max-width:330px;text-wrap:balance;will-change:transform,opacity}
+.rows{width:100%;max-width:330px;margin:26px auto 0;display:grid;gap:10px}
+.row{display:flex;align-items:center;gap:14px;height:40px;will-change:transform,opacity}
+.tile{width:38px;height:38px;flex:none;border-radius:11px;background:rgba(95,214,196,.12);color:var(--fresh);display:grid;place-items:center}
+.row .t{font-size:16px;white-space:nowrap;line-height:1.3;color:var(--pm)}
+.row .t b{color:var(--pt);font-weight:600}
+.spacer{flex:1}
+.cta{margin:0 20px 42px;height:56px;border-radius:28px;background:var(--pt);color:var(--ink);border:0;font:600 17px Inter,sans-serif;cursor:pointer;position:relative;z-index:2;transition:transform .12s ease-out}
+.cta:active{transform:scale(.97)}
+.home{position:absolute;left:50%;bottom:8px;width:140px;height:5px;margin-left:-70px;border-radius:3px;background:var(--pt);opacity:.9;z-index:20}
+.i18n{transition:opacity .14s ease-out}
+.i18n.out{opacity:0}
+/* menú del idioma */
+.menu{position:absolute;left:16px;top:100px;width:276px;background:rgba(38,36,50,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:16px;padding:6px;z-index:30;
+  box-shadow:0 18px 40px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.12);transform-origin:16px 0;opacity:0;transform:scale(.94);pointer-events:none;transition:opacity .16s ease-out,transform .2s cubic-bezier(.2,.9,.3,1)}
+.menu.open{opacity:1;transform:none;pointer-events:auto}
+.mi{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:0 12px;border:0;background:none;color:var(--pt);font:400 16px Inter,sans-serif;border-radius:10px;cursor:pointer;text-align:left}
+.mi:active{background:rgba(255,255,255,.07)}
+.mi .ck{color:var(--fresh);opacity:0}.mi[aria-checked="true"] .ck{opacity:1}
+.sep{height:.5px;background:rgba(255,255,255,.14);margin:6px 8px}
+.sw{width:44px;height:26px;border-radius:13px;background:#4a4858;position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s cubic-bezier(.3,1.3,.5,1)}
+.sw.on{background:var(--fresh)}.sw.on::after{transform:translateX(18px)}
+.sub{font-size:13px;color:var(--pm);padding:0 12px 8px;line-height:1.35}
+.tl{display:none;flex-wrap:wrap;gap:6px;padding:2px 10px 10px}
+.tl.show{display:flex}
+.tl button{border:0;border-radius:9px;background:rgba(255,255,255,.08);color:var(--pt);font:500 14px Inter,sans-serif;padding:7px 10px;cursor:pointer;min-height:34px}
+.tl button[aria-pressed="true"]{background:rgba(95,214,196,.2);color:var(--fresh)}
+.toast{position:absolute;left:20px;right:20px;bottom:110px;z-index:25;background:rgba(38,36,50,.95);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--pt);text-align:center;opacity:0;transform:translateY(8px);transition:opacity .2s ease-out,transform .25s ease-out;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+</style></head><body>
+<div class="page">
+<div class="notes">
+  <h1>La bienvenida, en alta fidelidad</h1>
+  <p class="m">18 nov 2026 · <span class="code">BV-L1</span> globo con el idioma y <span class="code">BV-T2</span> titular con cuatro renglones, sobre la escena de la marca (A1). Es el iPhone 17 Pro a tamaño real. Tócalo: el globo abre el idioma, «Saltar» y «Empezar» responden, y si tocas antes de tiempo el texto termina de llegar.</p>
+
+  <div class="card ctl">
+    <div class="r"><span class="lb">Versión</span><div class="seg" id="ed"><button data-e="orbital">Orbital</button><button data-e="plus" aria-pressed="true">Plus</button><button data-e="ultra">Ultra</button></div></div>
+    <div class="r"><span class="lb">Velocidad</span><div class="seg" id="sp"><button data-s="1" aria-pressed="true">Normal</button><button data-s="0.5">½</button><button data-s="0.25">¼</button><button data-s="0.1">Cuadro a cuadro</button></div></div>
+    <div class="r"><span class="lb"></span><button class="btn" id="replay">↺ Repetir</button><button class="btn" id="pp">❚❚ Pausa</button><button class="btn" id="rm" aria-pressed="false">Reducir movimiento: no</button></div>
+    <div class="scrub">
+      <input type="range" id="slider" min="0" max="4.6" step="0.01" value="0" aria-label="Momento de la animación">
+      <div class="marks" id="marks"></div>
+      <span class="tnow" id="tnow">0.00 s</span>
+    </div>
+  </div>
+
+  <h2>Cómo está coreografiada</h2>
+  <p class="m">Una sola escena manda: los pósters y el planeta. Todo lo demás la acompaña y llega cuando la escena ya se asentó. Los tiempos son los de la app (DS.Welcome), salvo los renglones, que son nuevos.</p>
+  <div class="tw"><table>
+    <tr><th>Qué</th><th>Papel</th><th>Empieza</th><th>Dura</th><th>Cómo se mueve</th></tr>
+    <tr><td>Planeta</td><td>Principal</td><td>0 s</td><td>0.4 s</td><td>Aparece y crece un poco, sin rebote</td></tr>
+    <tr><td>7 pósters</td><td>Principal</td><td>0.30 → 0.63 s</td><td>≈1.1 s</td><td>Caen girando y entran a la órbita de lado, como atrapados; cada espera es más corta que la anterior</td></tr>
+    <tr><td>Globo y «Saltar»</td><td>Adorno</td><td>0.8 s</td><td>0.4 s</td><td>Solo aparecen; ya se pueden tocar</td></tr>
+    <tr><td>Anillo</td><td>Apoyo</td><td>1.6 s</td><td>0.6 s</td><td>Se dibuja alrededor del planeta</td></tr>
+    <tr><td>Luna turquesa</td><td>Apoyo</td><td>2.4 s</td><td>≈1 s</td><td>Brota con el resorte de la marca (el mismo de la TV)</td></tr>
+    <tr><td>Titular</td><td>Apoyo</td><td>2.6 s</td><td>0.6 s</td><td>Aparece y sube 16 pt</td></tr>
+    <tr><td>Cuatro renglones</td><td>Apoyo</td><td>2.78 · 2.90 · 3.00 · 3.08 s</td><td>0.5 s</td><td>Aparecen y suben 12 pt; el ícono se asienta con un rebote pequeño</td></tr>
+    <tr><td>«Empezar»</td><td>Apoyo</td><td>3.2 s</td><td>0.5 s</td><td>Aparece y sube 10 pt</td></tr>
+  </table></div>
+
+  <h2>Lo que no se mueve</h2>
+  <ul>
+    <li><b>Las estrellas del fondo:</b> quietas; si se movieran competirían con los pósters.</li>
+    <li><b>El globo y «Saltar»:</b> solo aparecen, no viajan. Salen antes que el texto para que quien no habla español pueda cambiar el idioma desde el primer segundo.</li>
+    <li><b>El texto, una vez llegado:</b> no flota ni late. Solo la órbita sigue girando, despacio (una vuelta cada 40 s).</li>
+    <li><b>Con «Reducir movimiento»:</b> la escena sale ya armada y quieta.</li>
+  </ul>
+
+  <h2>Dónde fijarse</h2>
+  <ul>
+    <li><b>De 0.9 a 1.4 s, en «¼»:</b> los pósters no llegan en línea recta. Entran de lado, en el sentido de la órbita, y se pasan un poquito antes de asentarse. Ese «atrapado» es lo que la hace sentir hecha a mano.</li>
+    <li><b>De 2.7 a 3.3 s:</b> los renglones tienen que leerse como una ola, no como una fila que espera turno.</li>
+    <li><b>La profundidad:</b> los pósters de atrás pasan detrás del planeta y del anillo, más chicos y más tenues; los de adelante, por encima.</li>
+  </ul>
+
+  <h2>Qué no está aquí</h2>
+  <p class="m">La vitrina que se enseña sola a los 12 segundos (B1) se queda igual que en la app, así que no la repetí. Los pósters son ilustraciones mías; en la app son las portadas reales de TMDB.</p>
+</div>
+
+<div class="stage"><div class="fit" id="fit"><div class="device"><div class="screen" id="screen">
+  <svg class="stars" id="stars" width="402" height="874" aria-hidden="true" style="-webkit-mask-image:linear-gradient(#000 0,#000 40%,transparent 56%,transparent 92%,rgba(0,0,0,.6) 100%);mask-image:linear-gradient(#000 0,#000 40%,transparent 56%,transparent 92%,rgba(0,0,0,.6) 100%)"></svg>
+  <div class="status"><span>9:41</span><div class="island"></div>
+    <span class="sicons" aria-hidden="true">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="#f3f1ea"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#f3f1ea" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 4.2a9.5 9.5 0 0113 0"/><path d="M4 7a6 6 0 018 0"/><circle cx="8" cy="10" r="1" fill="#f3f1ea" stroke="none"/></svg>
+      <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.8" stroke="#f3f1ea" opacity=".45"/><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="#f3f1ea"/><path d="M25 4.5v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2z" fill="#f3f1ea" opacity=".45"/></svg>
+    </span></div>
+  <div class="bar">
+    <button class="pill" id="globe" aria-haspopup="menu" aria-expanded="false">
+      <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.6"/><path d="M2.4 10h15.2M10 2.4c2.3 2.4 2.3 12.8 0 15.2M10 2.4c-2.3 2.4-2.3 12.8 0 15.2"/></svg>
+      <span class="i18n" data-k="lang">Español</span>
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity=".7"><path d="M3 4.5l3 3 3-3"/></svg>
+    </button>
+    <button class="pill skip" id="skip"><span class="i18n" data-k="skip">Saltar</span>
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.2v9.6c0 .5.6.8 1 .5l6.2-4.8c.3-.3.3-.7 0-1L4 2.7c-.4-.3-1 0-1 .5z"/><rect x="11.4" y="3" width="1.8" height="10" rx=".9"/></svg>
+    </button>
+  </div>
+  <div class="scene" id="scene">
+    <svg class="layer" id="ringBack" viewBox="0 0 402 312" style="z-index:2"></svg>
+    <svg class="layer" id="planet" viewBox="0 0 402 312" style="z-index:3"></svg>
+    <svg class="layer" id="ringFront" viewBox="0 0 402 312" style="z-index:4"></svg>
+    <div class="moon" id="moon"></div>
+  </div>
+  <div class="copy">
+    <p class="title" id="title"><span class="i18n" data-k="title">Todo lo que quieres ver, en un solo lugar.</span></p>
+    <div class="rows" id="rows"></div>
+  </div>
+  <div class="spacer"></div>
+  <button class="cta" id="cta"><span class="i18n" data-k="cta">Empezar</span></button>
+  <div class="toast" id="toast"></div>
+  <div class="home"></div>
+  <div class="menu" id="menu" role="menu">
+    <button class="mi" role="menuitemradio" data-l="es" aria-checked="true"><span>Español</span><svg class="ck" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></button>
+    <button class="mi" role="menuitemradio" data-l="en" aria-checked="false"><span>English</span><svg class="ck" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></button>
+    <div class="sep"></div>
+    <button class="mi" id="tlsw" role="menuitemcheckbox" aria-checked="false"><span class="i18n" data-k="other">Títulos en otro idioma</span><span class="sw" id="sw"></span></button>
+    <div class="sub i18n" data-k="otherSub">Por ejemplo, la app en español y los nombres y sinopsis en inglés.</div>
+    <div class="tl" id="tl"></div>
+  </div>
+</div></div></div></div>
+</div>
+
+<script>
+// ---------- textos ----------
+const TX={
+ es:{lang:"Español",skip:"Saltar",cta:"Empezar",title:"Todo lo que quieres ver, en un solo lugar.",other:"Títulos en otro idioma",otherSub:"Por ejemplo, la app en español y los nombres y sinopsis en inglés.",
+   rows:[["Descubre","lo mejor para esta noche"],["Guarda","tus listas y lo que viste"],["Encuentra","parecidas a tus favoritas"]],
+   last:{orbital:["Te dice","dónde verla"],plus:["Míralo","aquí mismo"],ultra:["Míralo","aquí o en tu TV"]},
+   toast:"Aquí sigue «Conecta Trakt».",skipToast:"«Saltar» lleva directo a Inicio.",langs:{en:"Inglés",pt:"Portugués",fr:"Francés",es:"Español"}},
+ en:{lang:"English",skip:"Skip",cta:"Get started",title:"Everything you want to watch, in one place.",other:"Titles in another language",otherSub:"For example, the app in English and names and synopses in Spanish.",
+   rows:[["Discover","the best for tonight"],["Save","your lists and what you watched"],["Find","more like your favorites"]],
+   last:{orbital:["See","where to watch it"],plus:["Watch","right here"],ultra:["Watch","here or on your TV"]},
+   toast:"Next up: “Connect Trakt”.",skipToast:"“Skip” goes straight to Home.",langs:{en:"English",pt:"Portuguese",fr:"French",es:"Spanish"}}
+};
+const ICON={
+ spark:'<path d="M12 3.5l1.7 4.9 4.8 1.7-4.8 1.7L12 16.7l-1.7-4.9-4.8-1.7 4.8-1.7z"/><path d="M18.5 15l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/>',
+ save:'<path d="M7 3.8h10a1 1 0 011 1v15.4l-6-4-6 4V4.8a1 1 0 011-1z"/><path d="M12 7.6v5.2M9.4 10.2h5.2"/>',
+ like:'<rect x="3.5" y="7" width="10.5" height="13" rx="2.2"/><path d="M9.5 5.2V5.4a1.8 1.8 0 011.8-1.9h7.4a1.8 1.8 0 011.8 1.8v10a1.8 1.8 0 01-1.8 1.8H17"/>',
+ play:'<circle cx="12" cy="12" r="8.6"/><path d="M10.2 8.6l5.2 3.4-5.2 3.4z" fill="currentColor"/>',
+ tv:'<rect x="3" y="4.5" width="18" height="12.5" rx="2.2"/><path d="M8.5 20.5h7"/><path d="M10.5 8.4l4.2 2.4-4.2 2.4z" fill="currentColor"/>',
+ pin:'<path d="M12 20.8s-6.2-5.5-6.2-10.8a6.2 6.2 0 0112.4 0c0 5.3-6.2 10.8-6.2 10.8z"/><circle cx="12" cy="10" r="2.3"/>'
+};
+const svgI=k=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+let lang="es", edition="plus", tlOn=false, tlLang="en";
+const lastIcon=()=>({orbital:"pin",plus:"play",ultra:"tv"})[edition];
+
+const rowsEl=document.getElementById("rows");
+function buildRows(){
+  const T=TX[lang], data=[...T.rows,T.last[edition]], icons=["spark","save","like",lastIcon()];
+  rowsEl.innerHTML=data.map((r,i)=>`<div class="row"><span class="tile">${svgI(icons[i])}</span><span class="t i18n"><b>${r[0]}</b> ${r[1]}</span></div>`).join("");
+}
+buildRows();
+function crossfade(els,apply){els.forEach(e=>e.classList.add("out"));setTimeout(()=>{apply();requestAnimationFrame(()=>document.querySelectorAll(".i18n.out").forEach(e=>e.classList.remove("out")))},140)}
+function setLang(l){
+  if(l===lang)return;
+  crossfade([...document.querySelectorAll(".i18n")],()=>{
+    lang=l;const T=TX[l];
+    document.querySelectorAll("[data-k]").forEach(e=>{e.textContent=T[e.dataset.k]});
+    const tiles=[...rowsEl.querySelectorAll(".t")], data=[...T.rows,T.last[edition]];
+    tiles.forEach((t,i)=>t.innerHTML=`<b>${data[i][0]}</b> ${data[i][1]}`);
+    document.querySelectorAll(".mi[data-l]").forEach(b=>b.setAttribute("aria-checked",b.dataset.l===l));
+    if(tlLang===l)tlLang=l==="es"?"en":"es";
+    buildTL();
+  });
+}
+function setEdition(e){
+  const last=rowsEl.children[3];
+  crossfade([last.querySelector(".t"),last.querySelector(".tile")],()=>{
+    edition=e;const r=TX[lang].last[e];
+    last.querySelector(".t").innerHTML=`<b>${r[0]}</b> ${r[1]}`;
+    last.querySelector(".tile").innerHTML=svgI(lastIcon());
+    last.querySelector(".tile").classList.add("i18n");
+  });
+}
+
+// ---------- menú del idioma ----------
+const menu=document.getElementById("menu"),globe=document.getElementById("globe");
+function openMenu(o){menu.classList.toggle("open",o);globe.setAttribute("aria-expanded",o)}
+globe.onclick=e=>{e.stopPropagation();openMenu(!menu.classList.contains("open"))};
+menu.onclick=e=>e.stopPropagation();
+menu.querySelectorAll(".mi[data-l]").forEach(b=>b.onclick=()=>{setLang(b.dataset.l);setTimeout(()=>openMenu(false),220)});
+function buildTL(){
+  const opts=["es","en","pt","fr"].filter(x=>x!==lang);
+  document.getElementById("tl").innerHTML=opts.map(x=>`<button data-tl="${x}" aria-pressed="${x===tlLang}">${TX[lang].langs[x]}</button>`).join("");
+  document.querySelectorAll("[data-tl]").forEach(b=>b.onclick=()=>{tlLang=b.dataset.tl;buildTL()});
+}
+buildTL();
+document.getElementById("tlsw").onclick=()=>{tlOn=!tlOn;document.getElementById("sw").classList.toggle("on",tlOn);document.getElementById("tlsw").setAttribute("aria-checked",tlOn);document.getElementById("tl").classList.toggle("show",tlOn)};
+
+// ---------- toast ----------
+const toast=document.getElementById("toast");let toastT;
+function say(s){toast.textContent=s;toast.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toast.classList.remove("show"),1800)}
+document.getElementById("cta").onclick=e=>{e.stopPropagation();say(TX[lang].toast)};
+document.getElementById("skip").onclick=e=>{e.stopPropagation();say(TX[lang].skipToast)};
+
+// ---------- estrellas (quietas) ----------
+(function(){let s=7;const r=()=>(s=(s*16807)%2147483647)/2147483647;let h="";
+ for(let i=0;i<80;i++){const x=r()*402,y=r()*874,rad=.35+r()*.8,o=.15+r()*.5;h+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad.toFixed(2)}" fill="#fff" opacity="${o.toFixed(2)}"/>`}
+ document.getElementById("stars").innerHTML=h})();
+
+// ---------- escena ----------
+const TAU=Math.PI*2, TILT=-18*Math.PI/180, CX=201, CY=158, A=150, B=52, PR=58, RX=96, RY=29;
+const cT=Math.cos(TILT), sT=Math.sin(TILT);
+const rot=(x,y)=>[CX+x*cT-y*sT, CY+x*sT+y*cT];
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const easeOut=x=>1-Math.pow(1-clamp(x),3);
+const easeInOut=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const lerp=(a,b,t)=>a+(b-a)*t;
+// el resorte de SwiftUI: respuesta (s) y rebote (0 = sin rebote)
+function spring(t,resp,bounce){if(t<=0)return 0;const w=TAU/resp,z=1-bounce;
+  if(z>=1)return 1-Math.exp(-w*t)*(1+w*t);
+  const wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(wd*t)+(z*w/wd)*Math.sin(wd*t))}
+
+// planeta y anillo (la marca: contorno, un solo anillo, hueco donde el anillo pasa por delante)
+const NS='http://www.w3.org/2000/svg';
+document.getElementById("planet").innerHTML=`<defs>
+ <radialGradient id="pg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#2c2852"/><stop offset=".55" stop-color="#17152f"/><stop offset="1" stop-color="#0c0b18"/></radialGradient>
+ <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3f1ea"/><stop offset="1" stop-color="#f3f1ea" stop-opacity=".55"/></linearGradient></defs>
+ <g id="pgrp"><circle cx="${CX}" cy="${CY}" r="${PR}" fill="url(#pg)"/><circle cx="${CX}" cy="${CY}" r="${PR}" fill="none" stroke="url(#rim)" stroke-width="3"/></g>`;
+const ringG=`translate(${CX} ${CY}) rotate(-18)`;
+document.getElementById("ringBack").innerHTML=`<g transform="${ringG}"><ellipse id="rb" rx="${RX}" ry="${RY}" fill="none" stroke="#f3f1ea" stroke-width="3" pathLength="1" stroke-dasharray="1 1"/></g>`;
+document.getElementById("ringFront").innerHTML=`<defs><clipPath id="half"><rect x="-200" y="0" width="400" height="120"/></clipPath><clipPath id="disc"><circle r="${PR+1.5}"/></clipPath></defs>
+ <g transform="${ringG}" clip-path="url(#half)">
+  <g clip-path="url(#disc)"><ellipse id="rg" rx="${RX}" ry="${RY}" fill="none" stroke="#14122a" stroke-width="10" pathLength="1" stroke-dasharray="1 1"/></g>
+  <ellipse id="rf" rx="${RX}" ry="${RY}" fill="none" stroke="#f3f1ea" stroke-width="3" pathLength="1" stroke-dasharray="1 1"/></g>`;
+const rb=document.getElementById("rb"),rf=document.getElementById("rf"),rg=document.getElementById("rg"),pgrp=document.getElementById("pgrp");
+
+// pósters (ilustraciones propias)
+const ART=[
+ // Duna
+ `<defs><linearGradient id="a0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4b86c"/><stop offset="1" stop-color="#9a4719"/></linearGradient></defs><rect width="44" height="66" fill="url(#a0)"/><circle cx="29" cy="17" r="7" fill="#ffe6bb" opacity=".92"/><path d="M0 43 Q13 35 25 41 T44 37 V66 H0z" fill="#73320f"/><path d="M0 52 Q19 45 44 54 V66 H0z" fill="#3f1a09"/><rect x="21" y="36.5" width="1.3" height="4.2" rx=".6" fill="#2b1206"/>`,
+ // Severance
+ `<defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f3ef"/><stop offset="1" stop-color="#b3c6b8"/></linearGradient></defs><rect width="44" height="66" fill="url(#a1)"/><path d="M0 66 L16 41 H28 L44 66z" fill="#cdd9cf"/><path d="M0 0 L16 25 M44 0 L28 25 M0 66 L16 41 M44 66 L28 41" stroke="#2f4a3c" stroke-width=".7"/><rect x="16" y="25" width="12" height="16" fill="#e4ece6" stroke="#2f4a3c" stroke-width=".7"/><rect x="21" y="30" width="2" height="7" rx="1" fill="#1d2d24"/>`,
+ // La llegada
+ `<defs><linearGradient id="a2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5b0bc"/><stop offset="1" stop-color="#2a313b"/></linearGradient></defs><rect width="44" height="66" fill="url(#a2)"/><ellipse cx="22" cy="40" rx="30" ry="9" fill="#fff" opacity=".18"/><path d="M22 12 C31 21 31 43 22 53 C13 43 13 21 22 12z" fill="#151a21"/><path d="M0 56 Q22 50 44 56 V66 H0z" fill="#1d232b"/>`,
+ // El oso
+ `<defs><linearGradient id="a3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a6db3"/><stop offset="1" stop-color="#0f1d33"/></linearGradient></defs><rect width="44" height="66" fill="url(#a3)"/><path d="M0 9h44M0 18h44M0 27h44M11 0v34M22 0v34M33 0v34" stroke="#fff" stroke-opacity=".14" stroke-width=".7"/><rect y="34" width="44" height="32" fill="#0c1628"/><circle cx="22" cy="44" r="7.5" fill="#c98a4b"/><circle cx="22" cy="44" r="5" fill="#8c5428"/><rect x="29" y="43" width="10" height="2" rx="1" fill="#c98a4b"/>`,
+ // Blade Runner 2049
+ `<defs><linearGradient id="a4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6a254"/><stop offset=".7" stop-color="#b24e22"/><stop offset="1" stop-color="#3a160f"/></linearGradient></defs><rect width="44" height="66" fill="url(#a4)"/><circle cx="22" cy="24" r="13" fill="#ffd29a" opacity=".35"/><path d="M20.4 38h3.2l1 3 1.4 13h-2.4l-1.6-9-1.6 9H18l1.4-13z" fill="#2a0f09"/><circle cx="22" cy="36" r="1.9" fill="#2a0f09"/><rect y="54" width="44" height="12" fill="#2a0f09" opacity=".75"/>`,
+ // Shōgun
+ `<rect width="44" height="66" fill="#1a0e0f"/><circle cx="22" cy="25" r="14" fill="#c23a2f"/><path d="M4 33 C14 29 26 37 41 30 C34 36 18 38 6 37z" fill="#0b0607"/><path d="M8 52h28" stroke="#c9a45c" stroke-width=".8"/><path d="M14 56h16" stroke="#c9a45c" stroke-width=".5" opacity=".7"/>`,
+ // Interestelar
+ `<defs><radialGradient id="a6" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#3a3f4a"/><stop offset="1" stop-color="#0e1015"/></radialGradient></defs><rect width="44" height="66" fill="url(#a6)"/><circle cx="22" cy="25" r="12" fill="none" stroke="#f6e3bf" stroke-width="1.4" opacity=".85"/><ellipse cx="22" cy="25" rx="18" ry="4" fill="none" stroke="#f2cf92" stroke-width="2"/><circle cx="22" cy="25" r="9" fill="#000"/><path d="M4 25h36" stroke="#f2cf92" stroke-width=".6" opacity=".5"/><rect x="21.3" y="50" width="1.4" height="5" rx=".7" fill="#d9dce2"/><path d="M0 57 Q22 53 44 57 V66 H0z" fill="#22262d"/>`
+];
+const scene=document.getElementById("scene");
+// ángulo de cada uno en la órbita (casi parejos, a propósito no exactos) y su orden de caída
+const TH0=[0.35,1.22,2.08,2.97,3.86,4.71,5.55].map(x=>x+0.2);
+const DELAY=[0.30,0.38,0.45,0.51,0.56,0.60,0.63];   // cada espera más corta: se lee como ola
+const FALL_ORDER=[1,2,3,4,5,6,0];                    // empieza por el de adelante-izquierda y da la vuelta
+const P=ART.map((a,i)=>{const d=document.createElement("div");d.className="poster";d.innerHTML=`<svg width="44" height="66" viewBox="0 0 44 66">${a}</svg>`;scene.appendChild(d);return d});
+const moon=document.getElementById("moon");
+const title=document.getElementById("title"),cta=document.getElementById("cta"),bar=document.querySelector(".bar");
+
+const ORBIT_PERIOD=40, MOON_PERIOD=24, END=4.6;
+let skipAt=null;
+function item(t,start,rise){
+  let o=easeOut((t-start)/0.45), y=rise*(1-spring(t-start,0.6,0));
+  if(skipAt!==null&&t>=skipAt){const k=easeOut((t-skipAt)/0.22);o=Math.max(o,k);y=Math.min(y,rise*(1-k))}
+  return [o,y];
+}
+function render(t,still){
+  const to=still?0:t;           // tiempo de la órbita
+  if(still)t=END;
+  // planeta
+  const pp=spring(t,0.5,0), po=easeOut(t/0.4);
+  pgrp.setAttribute("opacity",po.toFixed(3));
+  pgrp.setAttribute("transform",`translate(${CX} ${CY}) scale(${(0.9+0.1*pp).toFixed(4)}) translate(${-CX} ${-CY})`);
+  // anillo: se dibuja
+  const rp=easeInOut((t-1.6)/0.6), off=(1-rp).toFixed(4);
+  [rb,rf,rg].forEach(e=>e.setAttribute("stroke-dashoffset",off));
+  // pósters
+  FALL_ORDER.forEach((pi,k)=>{
+    const th=TH0[pi]+TAU*to/ORBIT_PERIOD;
+    const ex=A*Math.cos(th), ey=B*Math.sin(th);
+    const [Ex,Ey]=rot(ex,ey);
+    const sn=Math.sin(th), d=smooth(-0.45,0.45,sn);
+    const dScale=lerp(0.7,1,d), dOp=lerp(0.4,1,d);
+    // tangente: llegan de lado, en el sentido de la órbita
+    let tx=-A*Math.sin(th), ty=B*Math.cos(th); const l=Math.hypot(tx,ty); tx/=l; ty/=l;
+    const [Tx,Ty]=[tx*cT-ty*sT, tx*sT+ty*cT];
+    const Sx=Ex-Tx*70+(k%2?14:-14), Sy=Ey-420;
+    const Cx=Ex-Tx*110, Cy=Ey-Ty*110-40;
+    const p=spring(t-DELAY[k],0.9,0.12);
+    let x,y;
+    if(p<=1){const u=1-p;x=u*u*Sx+2*u*p*Cx+p*p*Ex;y=u*u*Sy+2*u*p*Cy+p*p*Ey}
+    else{const e=p-1;x=Ex+(Ex-Cx)*2*e;y=Ey+(Ey-Cy)*2*e}  // se pasa un poquito y regresa
+    const twist=(k%2?1:-1)*8*(1-clamp(p));
+    const sc=lerp(1.06,dScale,clamp(p));
+    const op=Math.min(clamp((t-DELAY[k])/0.12),lerp(1,dOp,clamp(p)));
+    const el=P[pi];
+    el.style.transform=`translate3d(${(x-22).toFixed(2)}px,${(y-33).toFixed(2)}px,0) rotate(${twist.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+    el.style.opacity=op.toFixed(3);
+    el.style.zIndex=sn>0?6+Math.round(d*10):1;
+  });
+  // luna
+  const ph=-0.9+TAU*to/MOON_PERIOD, mx=RX*1.18*Math.cos(ph), my=RY*1.18*Math.sin(ph);
+  const [Mx,My]=rot(mx,my), ms=spring(t-2.4,0.55,0.45), md=smooth(-0.4,0.4,Math.sin(ph));
+  moon.style.transform=`translate3d(${Mx.toFixed(2)}px,${My.toFixed(2)}px,0) scale(${(Math.max(0,ms)*lerp(0.8,1,md)).toFixed(4)})`;
+  moon.style.opacity=(t<2.4?0:lerp(0.55,1,md)).toFixed(3);
+  moon.style.zIndex=Math.sin(ph)>0?20:2;
+  // barra de arriba (adorno: solo aparece)
+  bar.style.opacity=easeOut((t-0.8)/0.4).toFixed(3);
+  // texto
+  let [o,y]=item(t,2.6,16); title.style.opacity=o.toFixed(3); title.style.transform=`translate3d(0,${y.toFixed(2)}px,0)`;
+  [2.78,2.90,3.00,3.08].forEach((s,i)=>{const r=rowsEl.children[i];if(!r)return;const [ro,ry]=item(t,s,12);
+    r.style.opacity=ro.toFixed(3);r.style.transform=`translate3d(0,${ry.toFixed(2)}px,0)`;
+    let ts=lerp(0.82,1,spring(t-s-0.04,0.5,0.3)); if(skipAt!==null&&t>=skipAt)ts=Math.max(ts,lerp(0.82,1,easeOut((t-skipAt)/0.22)));
+    r.firstElementChild.style.transform=`scale(${ts.toFixed(4)})`});
+  [o,y]=item(t,3.2,10); cta.style.opacity=o.toFixed(3); cta.style.translate=`0 ${y.toFixed(2)}px`;
+  cta.style.pointerEvents=o>0.05?"auto":"none";
+}
+
+// ---------- reloj ----------
+let t=0, playing=true, speed=1, last=performance.now();
+let reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const slider=document.getElementById("slider"),tnow=document.getElementById("tnow"),pp=document.getElementById("pp"),rmB=document.getElementById("rm");
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(playing)t+=dt*speed;
+  render(t,reduced);slider.value=Math.min(t,END);tnow.textContent=(reduced?"quieto":t.toFixed(2)+" s");requestAnimationFrame(frame)}
+function replay(){t=0;skipAt=null;playing=true;pp.textContent="❚❚ Pausa"}
+document.getElementById("replay").onclick=replay;
+pp.onclick=()=>{playing=!playing;pp.textContent=playing?"❚❚ Pausa":"▶ Seguir"};
+slider.oninput=()=>{t=+slider.value;playing=false;pp.textContent="▶ Seguir";if(skipAt!==null&&t<skipAt)skipAt=null};
+rmB.onclick=()=>{reduced=!reduced;rmB.textContent="Reducir movimiento: "+(reduced?"sí":"no");rmB.setAttribute("aria-pressed",reduced);if(!reduced)replay()};
+if(reduced){rmB.textContent="Reducir movimiento: sí"}
+document.querySelectorAll("#sp button").forEach(b=>b.onclick=()=>{speed=+b.dataset.s;document.querySelectorAll("#sp button").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+document.querySelectorAll("#ed button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#ed button").forEach(x=>x.setAttribute("aria-pressed",x===b));setEdition(b.dataset.e)});
+const MARKS=[[0.3,"caen"],[1.6,"anillo"],[2.4,"luna"],[2.78,"renglones"],[3.2,"Empezar"]];
+document.getElementById("marks").innerHTML=MARKS.map(([s,n],i)=>`<button data-t="${s}" style="left:${(s/END*100).toFixed(1)}%;top:${i%2?18:0}px">${n}</button>`).join("");
+document.querySelectorAll("#marks button").forEach(b=>b.onclick=()=>{t=+b.dataset.t;playing=false;pp.textContent="▶ Seguir";skipAt=null});
+// tocar la pantalla antes de tiempo: el texto termina de llegar (la órbita sigue)
+document.getElementById("screen").addEventListener("click",()=>{openMenu(false);if(t<3.6&&skipAt===null&&!reduced)skipAt=t});
+
+// ---------- tamaño ----------
+const fitEl=document.getElementById("fit"),stage=document.querySelector(".stage");
+function fit(){const wide=innerWidth>860;const aw=Math.min(stage.clientWidth||innerWidth-32,innerWidth-32);
+  const ah=wide?innerHeight-40:Infinity;const s=Math.min(1,aw/422,ah/894);
+  fitEl.style.setProperty("--s",s);fitEl.style.width=422*s+"px";fitEl.style.height=894*s+"px"}
+addEventListener("resize",fit);fit();
+requestAnimationFrame(frame);
+</script>
+</body></html>
