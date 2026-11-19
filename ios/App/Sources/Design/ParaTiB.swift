@@ -5,14 +5,11 @@ import OrbitalModels
 // puerta de «Decide por mí».
 
 /// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo. MO1 (Fernando, 13 nov 2026: «lo saquemos de
-/// la barra de menú… y lo pongamos de manera creativa abajo»): la portada es la puerta del mosaico. Lleva su chapa
-/// («Pasea por tus 96», `MosaicDoorBadge`), toda se toca (se hunde un poco, `DS.Motion.press`) y al abrirse el muro se
-/// endereza y crece antes de que entre el mosaico; al volver hace el camino inverso. La primera vez se endereza sola un
-/// momento y regresa (nunca con «Reducir movimiento»). Jalar la orilla de arriba más allá de «actualizar» también la abre
-/// (`orbitalRefreshable(beyond:)`). Sin piezas en el mosaico (`count` 0) no promete nada: sin chapa y no se toca.
-/// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
-/// cortaba en seco); el espacio de la página no cambia. Cada vez que llegan otros pósters salen en otro orden, y el muro
-/// se desliza despacio sobre su diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
+/// la barra de menú… y lo pongamos de manera creativa abajo»): es la puerta del mosaico, con su chapa (`MosaicDoorBadge`); se
+/// hunde al tocarla (`DS.Motion.press`), se endereza y crece al abrir y hace el camino inverso al volver. La primera vez se
+/// endereza sola un momento (nunca con «Reducir movimiento»); jalar más allá de «actualizar» también la abre. Sin piezas
+/// (`count` 0) no se toca. Sube detrás de la barra, se apaga en las orillas, cambia de orden con pósters nuevos y se
+/// desliza despacio en diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
 struct MosaicCover: View {
     let posters: [String]
     /// El muro de la última vez (de qué pósters salió y su orden), en `ParaTiModel`: sobrevive a que la pantalla se vuelva
@@ -476,12 +473,10 @@ struct ListRow: View {
     }
 }
 
-/// Una columna del muro que baja sola, hecha por Core Animation: SwiftUI la pinta una vez y el servidor de render la desliza,
-/// sin volver a pintarla ni despertar a la app en cada cuadro. La tira mide dos vueltas (`contentHeight`) y baja una vuelta
-/// (`loop`) a `speed` puntos por segundo; al llegar empieza otra vez, sin que se note. `phase` (0 a 1) la arranca a medio
-/// camino para que las columnas no vayan parejas. `running` en falso la pausa donde va; `enabled` en falso la deja quieta.
-/// El contenido solo se vuelve a armar si cambian sus pósters (`key`): antes se rearmaba con cada cambio de la pantalla y
-/// entrar a Explorar se trababa.
+/// Una columna del muro que baja sola con Core Animation: SwiftUI la pinta una vez y el servidor de render la desliza sin
+/// despertar a la app. La tira mide dos vueltas (`contentHeight`) y baja una (`loop`) a `speed` puntos por segundo, sin que se
+/// note el reinicio; `phase` (0 a 1) la desfasa, `running` en falso la pausa y `enabled` en falso la deja quieta. Solo se
+/// vuelve a armar si cambian sus pósters (`key`): antes se rearmaba con cada cambio y entrar a Explorar se trababa.
 private struct CoreDrift: UIViewRepresentable {
     let key: [String]
     let content: AnyView
@@ -534,12 +529,10 @@ private final class DriftView: UIView {
         host.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: contentHeight)
     }
 
-    /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
-    /// El controlador del muro se cuelga del de la pantalla (como pide UIKit): así recibe el tamaño de letra, la apariencia y
-    /// los cambios de la ventana por la vía normal (auditoría del 31 oct 2026, B8).
-    /// Se cuelga una vez y se queda colgado mientras el muro exista: antes se descolgaba al salir de la ventana y se volvía a
-    /// colgar al volver, y cada cambio de pestaña acomodaba otra vez las ocho columnas (~200 pósters) en el hilo principal
-    /// (Fernando, 1 nov 2026: «Explorar cambia lento»). Se descuelga al irse el muro (`deinit`).
+    /// Al volver a la ventana la animación sigue ahí; si iOS la quitó, se vuelve a poner. El controlador del muro se cuelga del
+    /// de la pantalla (como pide UIKit: tamaño de letra, apariencia y cambios de ventana; auditoría del 31 oct, B8) una sola vez
+    /// y se descuelga al irse el muro (`deinit`): antes cada cambio de pestaña acomodaba otra vez ~200 pósters en el hilo
+    /// principal (Fernando, 1 nov 2026: «Explorar cambia lento»).
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil, let parent = owningController, host.parent !== parent {

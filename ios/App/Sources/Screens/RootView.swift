@@ -42,9 +42,8 @@ struct RootView: View {
         #else
         let wanted = true
         #endif
-        // Solo la primera vez: SwiftUI vuelve a armar la raíz cuando cambia algo de la app (al emparejar tu Orbital con el QR,
-        // el idioma…). Antes cada vez volvía a marcar `ui.splashing` y el logotipo de Inicio se quedaba escondido para
-        // siempre (la entrada ya no corría para quitarlo).
+        // Solo la primera vez: SwiftUI vuelve a armar la raíz cuando cambia algo (el QR, el idioma…) y antes volvía a marcar
+        // `ui.splashing`, y el logotipo de Inicio se quedaba escondido para siempre.
         let splash = wanted && !Self.launched
         Self.launched = true
         _splashing = State(wrappedValue: splash)
@@ -80,8 +79,7 @@ struct RootView: View {
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }))
     }
 
-    /// Lo que se abre a pantalla completa: el reproductor, la guía y las historias (una pieza por cubierta: la CI los revisa
-    /// por separado).
+    /// Lo que se abre a pantalla completa: el reproductor, la guía y las historias (una pieza por cubierta).
     private func withCovers<V: View>(_ content: V) -> some View {
         withStories(withGuide(withPlayer(content)))
     }
@@ -99,10 +97,11 @@ struct RootView: View {
 
     /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
     private func withGuide<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(isPresented: showingGuide, onDismiss: { ui.practiceGuide = false; Demo.practice = false }) {
+        content.fullScreenCover(isPresented: showingGuide, onDismiss: endGuide) {
             OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env)
         }
     }
+    private func endGuide() { ui.practiceGuide = false; Demo.practice = false }
 
     /// Una historia de «Aprende Orbital» (G3): desde Ajustes o «Ver la historia» de un aviso.
     private func withStories<V: View>(_ content: V) -> some View {
