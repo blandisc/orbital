@@ -45852,6 +45852,366 @@
           }
         }
       }
+    },
+    "Así funciona: eliges algo, tu servicio de nube lo tiene y lo ves aquí al instante": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How it works: you pick something, your cloud service has it and you watch it here instantly"
+          }
+        }
+      }
+    },
+    "Tú eliges": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You pick"
+          }
+        }
+      }
+    },
+    "Tu servicio la tiene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your service has it"
+          }
+        }
+      }
+    },
+    "%@ Aquí, al instante": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Here, instantly"
+          }
+        }
+      }
+    },
+    "%@ Listas al instante": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Ready instantly"
+          }
+        }
+      }
+    },
+    "Para ver aquí, conecta un servicio de nube": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch here, connect a cloud service"
+          }
+        }
+      }
+    },
+    "Es aparte de Orbital: guarda las películas y las tiene listas para ti.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It’s separate from Orbital: it keeps movies ready for you."
+          }
+        }
+      }
+    },
+    "¿Cómo funciona?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How does it work?"
+          }
+        }
+      }
+    },
+    "Se paga en su página.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You pay on its site."
+          }
+        }
+      }
+    },
+    "Orbital no cobra nada.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital charges nothing."
+          }
+        }
+      }
+    },
+    "Una cuenta por persona.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One account per person."
+          }
+        }
+      }
+    },
+    "Ya tengo uno": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I have one"
+          }
+        }
+      }
+    },
+    "Aún no tengo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don’t have one yet"
+          }
+        }
+      }
+    },
+    "Listo: %@ conectado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: %@ connected"
+          }
+        }
+      }
+    },
+    "Ya puedes ver aquí. Lo que tu servicio ya tiene arranca al instante.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can watch here now. What your service already has starts instantly."
+          }
+        }
+      }
+    },
+    "Aún no tienes uno": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don’t have one yet"
+          }
+        }
+      }
+    },
+    "Hay tres y hacen lo mismo. Se contrata en su página y puedes cambiar después.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are three and they do the same thing. You sign up on its site and can switch later."
+          }
+        }
+      }
+    },
+    "Te lo sugerimos: se conecta con un código, sin copiar claves": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our pick: it connects with a code, no keys to copy"
+          }
+        }
+      }
+    },
+    "Se conecta con tu clave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connects with your key"
+          }
+        }
+      }
+    },
+    "Ya lo contraté, conectar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I signed up, connect"
+          }
+        }
+      }
+    },
+    "Seguir sin él por ahora": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue without it for now"
+          }
+        }
+      }
+    },
+    "Te lo recordamos en Inicio. Mientras, Orbital ya te sirve para descubrir y guardar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We’ll remind you on Home. Meanwhile, Orbital already helps you discover and save."
+          }
+        }
+      }
+    },
+    "Tu iPhone y tu TV, conectados": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone and your TV, connected"
+          }
+        }
+      }
+    },
+    "Tu iPhone y tu TV con Orbital": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone and your TV with Orbital"
+          }
+        }
+      }
+    },
+    "Sí, conectar mi TV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, connect my TV"
+          }
+        }
+      }
+    },
+    "No tengo la TV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don’t have the TV"
+          }
+        }
+      }
+    },
+    "¿Ya usas Orbital en la TV?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already using Orbital on your TV?"
+          }
+        }
+      }
+    },
+    "Conéctala con el código que sale en la TV. Tu iPhone se vuelve su control y, si la TV ya tiene tu servicio de nube, lo usas aquí también.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect it with the code shown on the TV. Your iPhone becomes its remote and, if the TV already has your cloud service, you can use it here too."
+          }
+        }
+      }
+    },
+    "¿La tienes, pero no ahora? La conectas cuando quieras desde Ajustes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Have it, but not now? Connect it any time from Settings."
+          }
+        }
+      }
+    },
+    "Listo, trajimos lo de tu TV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done, we brought over your TV’s setup"
+          }
+        }
+      }
+    },
+    "Tu servicio de nube: ya puedes ver aquí": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud service: you can watch here now"
+          }
+        }
+      }
+    },
+    "Servicio de nube": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud service"
+          }
+        }
+      }
+    },
+    "Tu TV no tenía uno: lo conectas en un momento": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV didn’t have one: you’ll connect it in a moment"
+          }
+        }
+      }
+    },
+    "Tu Trakt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt"
+          }
+        }
+      }
+    },
+    "Lo conectas en el siguiente paso; cada aparato conecta el suyo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’ll connect it next; each device connects its own"
+          }
+        }
+      }
+    },
+    "Y tu iPhone ya es el control de tu TV.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And your iPhone is now your TV’s remote."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

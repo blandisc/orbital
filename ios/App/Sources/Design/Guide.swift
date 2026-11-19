@@ -62,6 +62,9 @@ struct GuidePage<Content: View>: View {
     var primary: Text = Text("Continuar")
     var primaryEnabled = true
     var secondary: Text?
+    /// Un segundo camino entre el principal y «Ahora no» (tu nube: «Aún no tengo»); «Ahora no» pasa a ser un enlace.
+    var alternate: Text?
+    var alternateAction: (() -> Void)?
     let next: () -> Void
     var skip: (() -> Void)?
     /// «Saltar» arriba a la derecha: termina la guía desde cualquier paso (nada es obligatorio).
@@ -103,9 +106,19 @@ struct GuidePage<Content: View>: View {
                 Button(action: next) { primary.frame(maxWidth: .infinity) }
                     .dsPrimaryButton().dsControlSize(.large).disabled(!primaryEnabled)
                     .accessibilityIdentifier("guide-next")
+                if let alternate, let alternateAction {
+                    Button(action: alternateAction) { alternate.frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
+                        .accessibilityIdentifier("guide-alt")
+                }
                 if let skip, let secondary {
-                    Button(action: skip) { secondary.frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
-                        .accessibilityIdentifier("guide-skip")
+                    if alternate != nil {
+                        Button(action: skip) { secondary.recipe(.label, color: DS.textMuted).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("guide-skip")
+                    } else {
+                        Button(action: skip) { secondary.frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
+                            .accessibilityIdentifier("guide-skip")
+                    }
                 }
             }
             .frame(maxWidth: DS.Welcome.buttonWidth)

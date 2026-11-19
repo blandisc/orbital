@@ -4,7 +4,8 @@ import OrbitalModels
 
 /// ¿Qué plataformas tienes? (A1-B · A6; Fernando, 18 nov 2026; prototipo `screens/platforms.js`). Solo en la de la tienda,
 /// que no reproduce. Arriba, una ficha de ejemplo dice lo que dirá «Dónde verla»: con una tuya, «Incluida en tu plan». Al
-/// marcar una, su logo brota en el hueco de la ficha y el renglón cambia (el viejo sube y se va, el nuevo llega de abajo).
+/// marcar una, su logo salta en arco de la casilla al hueco de la ficha (resorte 0.5 · 0.18) y, al llegar, el renglón cambia
+/// (el viejo se va, el nuevo llega de abajo; Fernando, 18 nov 2026: «que vuele en el arco como en el prototipo»).
 /// El botón dice «Ahora no» sin nada y «Continuar» con algo, sin moverse. Se guarda solo en Orbital (`Taste.platforms`).
 struct OnboardingPlatforms: View {
     let step: (current: Int, total: Int)
@@ -13,8 +14,15 @@ struct OnboardingPlatforms: View {
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var start = Date()
-    /// La última que marcaste: la que enseña la ficha.
+    /// La que enseña la ficha: la última que marcaste, en cuanto su logo aterriza.
     @State private var last: String?
+    /// El logo que va volando de su casilla al hueco de la ficha.
+    @State private var flight: Flight?
+    @State private var logoFrames: [String: CGRect] = [:]
+    @State private var slotFrame: CGRect = .zero
+
+    struct Flight: Equatable { let brand: String; let logo: String?; let from: CGRect; let to: CGRect; let start: Date }
+    static let land = 0.5
     @State private var picked = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.titleName) private var titleName
@@ -30,7 +38,9 @@ struct OnboardingPlatforms: View {
             TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
                 let t = reduceMotion ? Self.end + 1 : ctx.date.timeIntervalSince(start)
                 content(model, t)
+                    .overlay(alignment: .topLeading) { if let flight { flyer(flight, ctx.date) } }
             }
+            .coordinateSpace(.named(Self.space))
         }
         .dsFeedback(.selection, trigger: picked)
         .onAppear { start = Date() }
@@ -42,7 +52,6 @@ struct OnboardingPlatforms: View {
     @ViewBuilder private func content(_ model: OnboardingModel, _ t: Double) -> some View {
         let M = GuideTraktScene.Motion.self
         let shown = model.platforms.first { $0.brand == last && model.chosenPlatforms.contains($0.brand) }
-            ?? model.platforms.last { model.chosenPlatforms.contains($0.brand) }
         let prev = M.item(t, 0, 12)
         VStack(alignment: .leading, spacing: DS.Space.s5) {
             preview(model.candidates.first, shown: shown, dash: max(0, M.spring(t - 0.62, 0.55, 0.45)))
@@ -60,13 +69,8 @@ struct OnboardingPlatforms: View {
                 ForEach(Array(model.platforms.enumerated()), id: \.element.brand) { i, platform in
                     let count = max(model.platforms.count - 1, 1)
                     let enter = M.item(t, 0.22 + 0.22 * sqrt(Double(i) / Double(count)), 10)
-                    tile(platform.name, logo: platform.logo, on: model.chosenPlatforms.contains(platform.brand)) {
-                        let wasOn = model.chosenPlatforms.contains(platform.brand)
-                        withAnimation(DS.Motion.spring(reduceMotion)) {
-                            model.togglePlatform(platform.brand)
-                            last = wasOn ? nil : platform.brand
-                        }
-                        picked += 1
+                    tile(platform.brand, platform.name, logo: platform.logo, on: model.chosenPlatforms.contains(platform.brand)) {
+                        toggle(model, platform)
                     }
                     .opacity(enter.opacity).offset(y: enter.rise)
                 }
@@ -102,6 +106,7 @@ struct OnboardingPlatforms: View {
                         }
                     }
                     .frame(width: DS.Guide.slot, height: DS.Guide.slot)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { slotFrame = $0 }
                     VStack(alignment: .leading, spacing: 0) {
                         if let shown {
                             let platform = shown.name
@@ -124,13 +129,15 @@ struct OnboardingPlatforms: View {
     }
 
     /// Una plataforma: su logo y su nombre; marcada, su palomita brota.
-    private func tile(_ name: String, logo: String?, on: Bool, toggle: @escaping () -> Void) -> some View {
+    private func tile(_ brand: String, _ name: String, logo: String?, on: Bool, toggle: @escaping () -> Void) -> some View {
         Button(action: toggle) {
             HStack(spacing: DS.Space.s2) {
                 Group {
                     if logo != nil { DSPlatformLogo(url: logo) } else { Image(systemName: "tv") }
                 }
                 .frame(width: DS.Guide.slot, height: DS.Guide.slot)
+                .opacity(flight?.brand == brand ? 0 : 1)   // mientras vuela, la casilla no lo repite
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { logoFrames[brand] = $0 }
                 Text(verbatim: name).recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(0.7)
                 Spacer(minLength: 0)
                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
@@ -145,5 +152,51 @@ struct OnboardingPlatforms: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(verbatim: name))
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private static let space = "platforms"
+
+    /// Marcar: la palomita brota y el logo sale volando; el renglón de la ficha cambia cuando aterriza. Desmarcar: la ficha
+    /// enseña otra de las tuyas (o vuelve a «¿Ya la pagas?»).
+    private func toggle(_ model: OnboardingModel, _ platform: (brand: String, name: String, logo: String?)) {
+        let on = !model.chosenPlatforms.contains(platform.brand)
+        picked += 1
+        withAnimation(DS.Motion.spring(reduceMotion)) { model.togglePlatform(platform.brand) }
+        guard on else {
+            if last == platform.brand {
+                withAnimation(DS.Motion.spring(reduceMotion)) { last = model.platforms.last { model.chosenPlatforms.contains($0.brand) }?.brand }
+            }
+            return
+        }
+        guard !reduceMotion, let from = logoFrames[platform.brand], slotFrame != .zero else {
+            withAnimation(DS.Motion.spring(reduceMotion)) { last = platform.brand }
+            return
+        }
+        let trip = Flight(brand: platform.brand, logo: platform.logo, from: from, to: slotFrame, start: Date())
+        flight = trip
+        Task {
+            try? await Task.sleep(for: .seconds(Self.land))
+            guard flight == trip else { return }
+            flight = nil
+            if model.chosenPlatforms.contains(trip.brand) { withAnimation(DS.Motion.spring(reduceMotion)) { last = trip.brand } }
+        }
+    }
+
+    /// El logo en el aire: avanza con un resorte que se pasa un pelo, sube en arco (46 pt en lo alto), se ladea y crece un poco a
+    /// media altura (como `fly` en `screens/platforms.js`).
+    private func flyer(_ f: Flight, _ now: Date) -> some View {
+        let M = GuideTraktScene.Motion.self
+        let p = M.spring(now.timeIntervalSince(f.start), 0.5, 0.18), c = min(max(p, 0), 1), arc = sin(.pi * c)
+        let x = f.from.midX + (f.to.midX - f.from.midX) * p, y = f.from.midY + (f.to.midY - f.from.midY) * p - 46 * arc
+        return Group {
+            if f.logo != nil { DSPlatformLogo(url: f.logo) } else { Image(systemName: "tv") }
+        }
+        .frame(width: DS.Guide.slot, height: DS.Guide.slot)
+        .shadow(DS.Elevation.high)
+        .rotationEffect(.degrees(-10 * arc))
+        .scaleEffect(1 + 0.14 * arc)
+        .position(x: x, y: y)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

@@ -2,29 +2,99 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// 6 · Tu TV (solo donde hay TV y solo si dijiste que la tienes): conectarla ahora o después, en Ajustes › Tu Orbital.
+/// U7 · U6 · «¿Ya usas Orbital en la TV?» (Fernando, 18 nov 2026; prototipo `screens/tvfirst.js`). Solo Ultra en el iPhone,
+/// justo después de la bienvenida. «Sí, conectar mi TV» abre el código de la TV (Ajustes › Conectar un aparato); al conectar,
+/// la pantalla cambia en su lugar a «Listo, trajimos lo de tu TV»: tu servicio de nube (si la TV lo tenía) y que Trakt se
+/// conecta en el paso siguiente, porque cada aparato conecta el suyo. «No tengo la TV» sigue sin ella.
+/// Pendiente: que la busque sola en tu red de casa (los anillos del prototipo); hoy ni la TV ni el iPhone se anuncian.
 struct OnboardingTV: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
     let next: () -> Void
     let skip: () -> Void
+    @State private var guide: ModelObserver<OnboardingModel>
+    @State private var debrid: ModelObserver<DebridModel>
     @State private var connecting = false
+    @State private var start = Date()
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
+        _guide = State(wrappedValue: ModelObserver(guide)); _debrid = State(wrappedValue: ModelObserver(guide.debrid))
+        self.step = step; self.back = back; self.next = next; self.skip = skip
+    }
 
     var body: some View {
-        GuidePage(title: Text("Tu iPhone, control de tu TV"), message: Text("Mándale lo que veas y sigue aquí lo que suena allá."),
-                  step: step, primary: env.services.orbital.isConfigured ? Text("Continuar") : Text("Conectar tu TV"),
-                  secondary: Text("Después"),
-                  next: { if env.services.orbital.isConfigured { next() } else { connecting = true } },
+        let connected = env.services.orbital.isConfigured
+        GuidePage(title: nil, step: step,
+                  primary: connected ? Text("Continuar") : Text("Sí, conectar mi TV"),
+                  secondary: connected ? nil : Text("No tengo la TV"),
+                  next: { if connected { next() } else { connecting = true } },
                   skip: next, skipGuide: skip, back: back) {
-            VStack(spacing: DS.Space.s4) {
-                StorySceneView(scene: .sendToTV, tint: DS.ListTint.series)   // G6: el póster vuela a la TV
-                    .frame(height: DS.GuideScene.sceneHeight).accessibilityHidden(true)
-                // IOS-18: en el iPad con la invitación de tu iPhone, su tarjeta aquí mismo (CX4-A).
-                if env.services.pendingInvite != nil { IPadInviteCard { connecting = true } }
+            TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
+                let t = reduceMotion ? GuideTVScene.askEnd + 1 : ctx.date.timeIntervalSince(start)
+                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                    GuideTVScene(connected: connected, start: start)
+                    if connected { done(t) } else { ask(t) }
+                    // IOS-18: en el iPad con la invitación de tu iPhone, su tarjeta aquí mismo (CX4-A).
+                    if !connected, env.services.pendingInvite != nil { IPadInviteCard { connecting = true } }
+                }
             }
         }
-        .sheet(isPresented: $connecting, onDismiss: { if env.services.orbital.isConfigured { next() } }) { OrbitalSetupView() }
+        .dsFeedback(.success, trigger: connected)
+        .sheet(isPresented: $connecting, onDismiss: {
+            if env.services.orbital.isConfigured { start = Date(); Task { await debrid.model.load() } }
+        }) { OrbitalSetupView() }
+        .onAppear { start = Date() }
+    }
+
+    @ViewBuilder private func ask(_ t: Double) -> some View {
+        let M = GuideTraktScene.Motion.self, title = M.item(t, 0.12, 14), lead = M.item(t, 0.2, 10), fine = M.item(t, 0.32, 8)
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text("¿Ya usas Orbital en la TV?").recipe(.display, color: DS.text).fixedSize(horizontal: false, vertical: true)
+                .opacity(title.opacity).offset(y: title.rise)
+            Text("Conéctala con el código que sale en la TV. Tu iPhone se vuelve su control y, si la TV ya tiene tu servicio de nube, lo usas aquí también.")
+                .font(DS.Welcome.lead).foregroundStyle(DS.textMuted).fixedSize(horizontal: false, vertical: true)
+                .opacity(lead.opacity).offset(y: lead.rise)
+        }
+        Text("¿La tienes, pero no ahora? La conectas cuando quieras desde Ajustes.")
+            .recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            .opacity(fine.opacity).offset(y: fine.rise)
+    }
+
+    @ViewBuilder private func done(_ t: Double) -> some View {
+        let M = GuideTraktScene.Motion.self, cloud = debrid.model
+        let rows = [M.item(t, 0.1, 10), M.item(t, 0.24, 10)], title = M.item(t, 0, 12), fine = M.item(t, 0.4, 8)
+        Text("Listo, trajimos lo de tu TV").recipe(.display, color: DS.text).fixedSize(horizontal: false, vertical: true)
+            .opacity(title.opacity).offset(y: title.rise)
+        VStack(spacing: DS.Space.s2) {
+            if cloud.ready {
+                row("icloud.fill", Text(verbatim: cloud.service.name), Text("Tu servicio de nube: ya puedes ver aquí"), done: true)
+                    .opacity(rows[0].opacity).offset(y: rows[0].rise)
+            } else {
+                row("icloud", Text("Servicio de nube"), Text("Tu TV no tenía uno: lo conectas en un momento"), done: false)
+                    .opacity(rows[0].opacity).offset(y: rows[0].rise)
+            }
+            row("person.crop.circle", Text("Tu Trakt"), Text("Lo conectas en el siguiente paso; cada aparato conecta el suyo"), done: false)
+                .opacity(rows[1].opacity).offset(y: rows[1].rise)
+        }
+        Text("Y tu iPhone ya es el control de tu TV.").recipe(.caption, color: DS.textMuted)
+            .opacity(fine.opacity).offset(y: fine.rise)
+    }
+
+    private func row(_ symbol: String, _ title: Text, _ detail: Text, done: Bool) -> some View {
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                title.recipe(.label, color: DS.text)
+                detail.recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: DS.Space.s2)
+            Image(systemName: done ? "checkmark" : "circle.dashed").font(DS.styled(.body).weight(.semibold))
+                .foregroundStyle(done ? DS.success : DS.textMuted).accessibilityHidden(true)
+        }
+        .padding(DS.Space.s3).dsCard()
+        .accessibilityElement(children: .combine)
     }
 }
 

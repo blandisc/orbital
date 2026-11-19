@@ -3,10 +3,11 @@ import UIKit
 import OrbitalModels
 import OrbitalAddons
 
-/// 4 · Ver aquí mismo (D1; G4 de la revisión): una escena viva en lugar de dos pantallas de lectura. La ficha, el dedo toca
-/// «Ver» y arranca; abajo, una sola línea: es un servicio de pago y sirve cualquiera de las tres. DN1 (18 nov 2026): un solo
-/// botón, «Conectar tu nube», abre la hoja «Tu nube» (la misma de Ajustes › Cuentas): «Ya tengo cuenta» o «Todavía no
-/// tengo». Nunca dice «Real-Debrid» solo antes de elegir. Pagar no detiene la guía: «Cuando quiera ver algo».
+/// Tu servicio de nube (P1 · P2-B · P12 · P13 · P18; Fernando, 18 nov 2026; prototipo `screens/cloud.js`). Solo Plus y Ultra.
+/// Arriba, la escena de tres pasos (`GuideCloudScene`); abajo, que es aparte de Orbital, que se paga en su página y que es
+/// una cuenta por persona. Tres caminos: «Ya tengo uno» (la hoja «Tu nube» de Ajustes › Cuentas: elegir y conectar), «Aún no
+/// tengo» (las tres, con Real-Debrid sugerido porque se conecta con un código, y «Ya lo contraté, conectar») y «Ahora no».
+/// Al conectar, la pantalla cambia en su lugar a «Listo: <nube> conectado» con «Listas al instante».
 struct OnboardingSeeHere: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
@@ -15,6 +16,14 @@ struct OnboardingSeeHere: View {
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var debrid: ModelObserver<DebridModel>
     @State private var choosing = false
+    @State private var none = false
+    /// «Ya lo contraté, conectar»: la hoja «Tu nube» se abre cuando se cierra la de «Aún no tienes uno».
+    @State private var chooseAfter = false
+    @State private var explaining = false
+    @State private var start = Date()
+    @State private var readyStart = Date()
+    @Environment(\.titleName) private var titleName
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); _debrid = State(wrappedValue: ModelObserver(guide.debrid))
@@ -23,36 +32,134 @@ struct OnboardingSeeHere: View {
 
     var body: some View {
         let model = debrid.model
-        GuidePage(title: Text("Ve todo al instante, aquí"),
-                  step: step,
-                  primary: model.ready ? Text("Seguir") : Text("Elegir tu nube"),   // G1-B (18 nov 2026)
-                  secondary: model.ready ? nil : Text("Ahora no, después"),
+        let posters = guide.model.candidates.prefix(4).map { (url: $0.poster, title: titleName($0.title, id: $0.imdb, kind: $0.kind)) }
+        GuidePage(title: nil, step: step,
+                  primary: model.ready ? Text("Continuar") : Text("Ya tengo uno"),
+                  secondary: model.ready ? Text("Cambiar") : Text("Ahora no"),
+                  alternate: model.ready ? nil : Text("Aún no tengo"), alternateAction: { none = true },
                   next: { if model.ready { next() } else { choosing = true } },
-                  skip: next, skipGuide: skip, back: back) {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
-                StorySceneView(scene: .titlePlay, tint: DS.ListTint.flame)
-                    .frame(height: DS.GuideScene.sceneHeight)
-                    .overlay(alignment: .topTrailing) {
-                        if model.ready {
-                            Image(systemName: "checkmark.icloud.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.fresh)
-                                .padding(DS.Space.s3).transition(.scale.combined(with: .opacity))
-                        }
-                    }
-                    .accessibilityElement()
-                    .accessibilityLabel(Text("Así funciona: tocas «Ver», la nube lo tiene y lo ves"))
-                Text("Para ver aquí necesitas una nube: un servicio de pago que guarda películas y series. Sirve Real-Debrid, TorBox o AllDebrid.")
-                    .recipe(.secondary, color: DS.textMuted)
-                if model.ready, let status = model.status {
-                    GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success,
-                               title: Text(verbatim: "\(model.service.name) · \(status.username)"), detail: DebridWords.text(status))
-                }
-                DebridSharedOffer(debrid: model, carded: true)
+                  skip: { if model.ready { choosing = true } else { next() } }, skipGuide: skip, back: back) {
+            if model.ready {
+                ready(model, posters: Array(posters))
+            } else {
+                ask(Array(posters))
             }
         }
         .dsFeedback(.success, trigger: model.ready)
         .sheet(isPresented: $choosing) { DebridCloudSheet(debrid: model) }
-        .onChange(of: model.ready) { _, ready in if ready { choosing = false } }
+        .sheet(isPresented: $none, onDismiss: { if chooseAfter { chooseAfter = false; choosing = true } }) {
+            CloudNoneSheet(connect: { chooseAfter = true; none = false }, later: { none = false; next() })
+        }
+        .sheet(isPresented: $explaining) { DebridCloudsExplainer() }
+        .onChange(of: model.ready) { _, ready in if ready { choosing = false; readyStart = Date() } }
+        .onAppear { start = Date() }
+        .task { await guide.model.loadCandidates() }
         .task { await model.checkShared() }
+    }
+
+    @ViewBuilder private func ask(_ posters: [(url: String?, title: String)]) -> some View {
+        let model = debrid.model
+        TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
+            let t = reduceMotion ? GuideCloudScene.end + 1 : ctx.date.timeIntervalSince(start), M = GuideTraktScene.Motion.self
+            let title = M.item(t, 0.12, 14), lead = M.item(t, 0.2, 10), f0 = M.item(t, 0.26, 8), f1 = M.item(t, 0.31, 8)
+            VStack(alignment: .leading, spacing: DS.Space.s4) {
+                GuideCloudScene(posters: posters, start: start)
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    Text("Para ver aquí, conecta un servicio de nube").recipe(.display, color: DS.text)
+                        .fixedSize(horizontal: false, vertical: true).opacity(title.opacity).offset(y: title.rise)
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text("Es aparte de Orbital: guarda las películas y las tiene listas para ti.")
+                            .font(DS.Welcome.lead).foregroundStyle(DS.textMuted).fixedSize(horizontal: false, vertical: true)
+                        Button("¿Cómo funciona?") { explaining = true }.font(DS.Welcome.lead).foregroundStyle(DS.accent)
+                            .accessibilityIdentifier("cloud-how")
+                    }
+                    .opacity(lead.opacity).offset(y: lead.rise)
+                }
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    fact("creditcard", Text("Se paga en su página."), Text("Orbital no cobra nada.")).opacity(f0.opacity).offset(y: f0.rise)
+                    fact("person", Text("Una cuenta por persona."), Text("Si dos la usan a la vez, se corta.")).opacity(f1.opacity).offset(y: f1.rise)
+                }
+                DebridSharedOffer(debrid: model, carded: true)
+            }
+        }
+    }
+
+    private func fact(_ symbol: String, _ bold: Text, _ rest: Text) -> some View {
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
+            (bold.foregroundStyle(DS.text).bold() + Text(verbatim: " ") + rest.foregroundStyle(DS.textMuted))
+                .font(DS.TextRecipe.secondary.font).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private func ready(_ model: DebridModel, posters: [(url: String?, title: String)]) -> some View {
+        let name = model.service.name
+        TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
+            let t = reduceMotion ? GuideCloudReady.end + 1 : ctx.date.timeIntervalSince(readyStart), M = GuideTraktScene.Motion.self
+            let title = M.item(t, 0.12, 12), lead = M.item(t, 0.2, 8)
+            VStack(spacing: DS.Space.s5) {
+                GuideCloudReady.badge(t).padding(.top, DS.Space.s8)
+                VStack(spacing: DS.Space.s2) {
+                    Text("Listo: \(name) conectado").recipe(.display, color: DS.text).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true).opacity(title.opacity).offset(y: title.rise)
+                    Group {
+                        if let status = model.status {
+                            Text(verbatim: status.username).foregroundStyle(DS.text) + Text(verbatim: " · ") + DebridWords.short(status)
+                        }
+                    }
+                    .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
+                    Text("Ya puedes ver aquí. Lo que tu servicio ya tiene arranca al instante.")
+                        .font(DS.Welcome.lead).foregroundStyle(DS.textMuted).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true).opacity(lead.opacity).offset(y: lead.rise)
+                }
+                GuideCloudReady.row(posters, t)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// «Aún no tienes uno»: las tres, con Real-Debrid sugerido (se conecta con un código, sin copiar claves); cada una abre su
+/// página para contratarla. «Ya lo contraté, conectar» vuelve a la hoja «Tu nube»; «Seguir sin él por ahora» sigue la guía.
+struct CloudNoneSheet: View {
+    let connect: () -> Void
+    let later: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            DSSheetHeader(title: Text("Aún no tienes uno"))
+            Text("Hay tres y hacen lo mismo. Se contrata en su página y puedes cambiar después.")
+                .recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: DS.Space.s2) {
+                ForEach(DebridService.allCases) { cloud in
+                    Link(destination: cloud.signupURL) {
+                        HStack(spacing: DS.Space.s3) {
+                            DSCloudMark(cloud: cloud)
+                            TorrentioRowLabel(title: Text(verbatim: cloud.name),   // no-es-título: el nombre de la nube
+                                              detail: cloud == .realDebrid ? Text("Te lo sugerimos: se conecta con un código, sin copiar claves")
+                                                                           : Text("Se conecta con tu clave"))
+                            Spacer(minLength: DS.Space.s2)
+                            Image(systemName: "arrow.up.right").foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                        }
+                        .padding(DS.Space.s3).contentShape(Rectangle())
+                        .dsCard(fill: cloud == .realDebrid ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("cloud-none-\(cloud.rawValue)")
+                }
+            }
+            VStack(spacing: DS.Space.s2) {
+                Button(action: connect) { Text("Ya lo contraté, conectar").frame(maxWidth: .infinity) }
+                    .dsPrimaryButton().dsControlSize(.large).accessibilityIdentifier("cloud-none-connect")
+                Button(action: later) { Text("Seguir sin él por ahora").frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
+                    .buttonStyle(.plain).foregroundStyle(DS.textMuted).accessibilityIdentifier("cloud-none-later")
+                Text("Te lo recordamos en Inicio. Mientras, Orbital ya te sirve para descubrir y guardar.")
+                    .recipe(.caption, color: DS.textMuted).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            }
+        }
+        .padding(DS.Space.s6)
+        .fittedSheet()
     }
 }
 

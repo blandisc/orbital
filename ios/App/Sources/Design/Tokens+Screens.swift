@@ -338,6 +338,7 @@ extension DS {
         /// altura de cada casilla (54 pt: más que el mínimo para tocar).
         static let platformPoster = CGSize(width: 44, height: 66)
         static let slot: CGFloat = 28, slotDash: [CGFloat] = [3, 3.4], platformTile: CGFloat = 54
+        static let readyPoster = CGSize(width: 62, height: 93)
         /// TK-L2: tu foto (la inicial en el anillo de la marca), su palomita y la rayita entre los tres números.
         static let avatar: CGFloat = 104, avatarBadge: CGFloat = 32, countDivider: CGFloat = 36
         /// La foto crece con un resorte pequeño; la palomita, con el de la marca; los números cuentan a la vez.

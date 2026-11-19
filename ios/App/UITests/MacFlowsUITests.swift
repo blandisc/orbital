@@ -173,7 +173,7 @@ final class MacFlowsUITests: XCTestCase {
         wait("Todo lo que quieres ver, en un solo lugar.", 25); sleep(3)
         shot("guia-1-bienvenida")
         button("guide-next").tap(); wait("Sigue donde te quedaste")   // v3: Trakt, luego tu nube
-        button("guide-skip").tap(); wait("Ve todo al instante, aquí")
+        button("guide-skip").tap(); wait("Para ver aquí, conecta un servicio de nube")
         shot("guia-4-debrid")
         button("guide-skip").tap()
         wait("Tu Orbital ya está lista.")

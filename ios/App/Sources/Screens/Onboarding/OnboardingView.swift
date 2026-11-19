@@ -62,7 +62,7 @@ struct OnboardingView: View {
             OnboardingTrakt(guide: model, step: position, back: back, next: { explained.insert(.trakt); go(from: step) }, skip: finish)
         case .win: OnboardingWin(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .platforms: OnboardingPlatforms(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
-        case .tv: OnboardingTV(step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .tv: OnboardingTV(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .subtitles: OnboardingSubtitles(step: position, back: back, next: { go(from: step) }, skip: finish)
         case .done: OnboardingDone(guide: model, finish: finish)
         }
