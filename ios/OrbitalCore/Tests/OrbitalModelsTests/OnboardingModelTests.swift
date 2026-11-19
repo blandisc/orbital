@@ -18,6 +18,18 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertFalse(OnboardingModel.shouldShow(trakt.services), "quien ya usaba la app (Trakt conectado) no la ve")
     }
 
+    /// TK-L2 (18 nov 2026): Trakt te reconoce con tres números: lo visto, lo de Mi lista y las series con algo visto. Lo que
+    /// ocultaste no cuenta, y una cuenta nueva sale vacía (la pantalla no enseña ceros).
+    func testTraktCountsWatchedListedAndShowsYouFollow() {
+        var show = LibraryEntry(metaID: "tt1", kind: "series", name: "Shōgun"); show.seen = ["tt1:1:1", "tt1:1:2"]
+        var movie = LibraryEntry(metaID: "tt2", kind: "movie", name: "Duna"); movie.seen = ["tt2"]; movie.inList = true
+        var listed = LibraryEntry(metaID: "tt3", kind: "series", name: "Severance"); listed.inList = true
+        var hidden = LibraryEntry(metaID: "tt4", kind: "series", name: "Oculta"); hidden.seen = ["tt4:1:1"]; hidden.hiddenAt = 1
+        let got = OnboardingModel.count([show, movie, listed, hidden])
+        XCTAssertEqual(got, .init(watched: 3, listed: 2, shows: 1))
+        XCTAssertTrue(OnboardingModel.count([]).isEmpty)
+    }
+
     /// C1 y Q1: lo que no tienes no se marca. Real-Debrid se explica siempre que no esté conectado; Trakt y la TV, solo si
     /// los marcas; con los dos, una sola pantalla de «tus aparatos» (Q3). Nada detiene la guía.
     func testTheAnswersShapeThePlanAndNothingBlocks() throws {

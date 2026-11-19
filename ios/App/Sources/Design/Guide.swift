@@ -55,7 +55,8 @@ struct OrbitArcShape: Shape {
 /// Una página de la guía: título, una frase, lo propio de la página y, abajo y siempre a la mano, el botón para seguir (con
 /// «Ahora no» si el paso se puede saltar).
 struct GuidePage<Content: View>: View {
-    let title: Text
+    /// Sin título, la página lo pone en su contenido (Trakt conectado: la foto va arriba del «Listo»).
+    let title: Text?
     var message: Text?
     var step: (current: Int, total: Int)?
     var primary: Text = Text("Continuar")
@@ -82,9 +83,11 @@ struct GuidePage<Content: View>: View {
                         if let skipGuide { GuideSkip(action: skipGuide) }
                     }
                 }
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    title.font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
-                    if let message { message.font(DS.Welcome.lead).foregroundStyle(DS.textMuted) }
+                if let title {
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        title.font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
+                        if let message { message.font(DS.Welcome.lead).foregroundStyle(DS.textMuted) }
+                    }
                 }
                 content
             }

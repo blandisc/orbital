@@ -28,8 +28,14 @@ public final class OnboardingModel: ObservableModel {
     public let addons: AddonsModel
     /// El enlace de Trakt con código (el mismo de Ajustes).
     public let settings: SettingsModel
-    /// Lo que se trajo de Trakt al conectarlo: «Trajimos 214 vistos y 38 en tu lista».
-    public private(set) var brought: (watched: Int, listed: Int)? { didSet { changed() } }
+    /// Lo que se trajo de Trakt al conectarlo (TK-L2, 18 nov 2026): vistas, en Mi lista y series que sigues. Todo en cero es
+    /// una cuenta nueva: la pantalla no enseña ceros.
+    public private(set) var brought: Brought? { didSet { changed() } }
+    public struct Brought: Equatable, Sendable {
+        public let watched: Int, listed: Int, shows: Int
+        public init(watched: Int, listed: Int, shows: Int) { self.watched = watched; self.listed = listed; self.shows = shows }
+        public var isEmpty: Bool { watched == 0 && listed == 0 && shows == 0 }
+    }
     public private(set) var answers: [Piece: Answer] = [:] { didSet { changed() } }
     /// Los pósters para elegir lo que te gusta (lo popular de ahora).
     public private(set) var candidates: [Suggestion] = [] { didSet { changed() } }
@@ -180,11 +186,23 @@ public final class OnboardingModel: ObservableModel {
     public func traktLinked() async {
         await services.syncLibrary(force: true)
         let all = services.library.all
-        brought = (all.reduce(0) { $0 + $1.seen.count }, all.filter(\.inList).count)
+        brought = Self.count(all)
+    }
+
+    /// Lo que cuenta la pantalla de Trakt: lo visto (cada película y cada episodio), lo de Mi lista y las series con algo visto.
+    public static func count(_ all: [LibraryEntry]) -> Brought {
+        let shown = all.filter { $0.hiddenAt == nil }
+        return Brought(watched: shown.reduce(0) { $0 + $1.seen.count }, listed: shown.filter(\.inList).count,
+                       shows: shown.filter { $0.kind == "series" && !$0.seen.isEmpty }.count)
     }
 
     /// El nombre de la cuenta de Trakt conectada.
-    public var traktName: String? { if case .linked(let name) = settings.trakt { return name }; return nil }
+    /// El nombre de tu cuenta de Trakt; `nil` si Trakt no lo dio (vacío o solo espacios), para no decir «Listo,» a secas.
+    public var traktName: String? {
+        guard case .linked(let name) = settings.trakt else { return nil }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 
     // MARK: fin
 

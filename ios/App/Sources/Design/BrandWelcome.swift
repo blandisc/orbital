@@ -111,3 +111,47 @@ struct OrbitCatch: View {
             .offset(x: point.x, y: point.y)
     }
 }
+
+/// Un renglón de la bienvenida (BV-T2): un ícono turquesa, el verbo en negritas y lo demás. El último cambia por versión:
+/// en la de la tienda, «Te dice dónde verla»; en Plus, «Míralo aquí mismo»; en Ultra, «Míralo aquí o en tu TV».
+struct WelcomeRow: Equatable {
+    let symbol: String
+    let text: LocalizedStringKey
+    static let count = 4
+
+    static func rows(_ caps: Capabilities) -> [WelcomeRow] {
+        let last: WelcomeRow = caps.console ? WelcomeRow(symbol: "tv", text: "**Míralo** aquí o en tu TV")
+            : caps.instantStreams ? WelcomeRow(symbol: "play.circle", text: "**Míralo** aquí mismo")
+            : WelcomeRow(symbol: "mappin.and.ellipse", text: "**Te dice** dónde verla")
+        return [WelcomeRow(symbol: "sparkles", text: "**Descubre** lo mejor para esta noche"),
+                WelcomeRow(symbol: "bookmark", text: "**Guarda** tus listas y lo que viste"),
+                WelcomeRow(symbol: "heart", text: "**Encuentra** parecidas a tus favoritas"),
+                last]
+    }
+
+    static func == (a: WelcomeRow, b: WelcomeRow) -> Bool { a.symbol == b.symbol }
+}
+
+/// El renglón entra subiendo; su ícono crece un poco después, con un resorte pequeño (el adorno llega con el texto).
+struct WelcomeRowView: View {
+    let row: WelcomeRow
+    let shown: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: row.symbol)
+                .font(DS.styled(.body).weight(.semibold))
+                .foregroundStyle(DS.brandMoon)
+                .frame(width: DS.Welcome.rowIcon, height: DS.Welcome.rowIcon)
+                .background(DS.brandMoon.opacity(0.14), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .scaleEffect(shown || reduceMotion ? 1 : DS.Welcome.rowIconFrom)
+                .animation(reduceMotion ? nil : DS.Welcome.rowIconPop.delay(0.04), value: shown)
+            Text(row.text).font(DS.Welcome.lead).foregroundStyle(DS.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .opacity(shown ? 1 : 0)
+        .offset(y: shown ? 0 : DS.Welcome.rowRise)
+        .accessibilityElement(children: .combine)
+    }
+}

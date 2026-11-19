@@ -43,6 +43,8 @@ struct OnboardingView: View {
             await subs.refresh()
             guide.model.offersSubtitles = subs.available && !subs.connected
             if let resume = guide.model.resumeStep { step = resume }
+            // `-demo-open guide-<paso>` (por ejemplo `guide-trakt`): la guía abre en ese paso, para probarlo y capturarlo.
+            if Demo.isOn, let open = Demo.open, open.hasPrefix("guide-"), let start = Step(rawValue: String(open.dropFirst(6))) { step = start }
         }
         .onChange(of: step) { _, now in guide.model.reached(now) }
     }

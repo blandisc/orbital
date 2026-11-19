@@ -332,6 +332,11 @@ extension DS {
     /// Ajustes: los renglones con su ícono de color.
     /// La guía de la primera vez: el grueso de las rayitas de los pasos, el ícono de cada pieza y el número de cada paso.
     enum Guide {
+        /// TK-L2: tu foto (la inicial en el anillo de la marca), su palomita y la rayita entre los tres números.
+        static let avatar: CGFloat = 104, avatarBadge: CGFloat = 32, countDivider: CGFloat = 36
+        /// La foto crece con un resorte pequeño; la palomita, con el de la marca; los números cuentan a la vez.
+        static let avatarIn: Animation = .spring(duration: 0.5, bounce: 0.25), badgePop: Animation = .spring(duration: 0.55, bounce: 0.45)
+        static let countUp: Animation = .easeOut(duration: 0.6)
         static let pieceIcon: CGFloat = 40
         static let stepNumber: CGFloat = 28
         /// El código de Trakt: separación entre letras (se lee de lejos, desde la TV).

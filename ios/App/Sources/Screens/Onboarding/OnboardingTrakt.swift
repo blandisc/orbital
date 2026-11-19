@@ -1,9 +1,12 @@
 import SwiftUI
+import OrbitalCore
 import OrbitalModels
 
-/// 5 · Trakt (opcional; G5 de la revisión): la escena del avance que viaja del iPhone al iPad, y el código grande para
-/// trakt.tv/activate. Al aprobar, lo que se trajo sube con sus números. Si también tienes la TV, va aquí mismo (Q3: una sola
-/// pantalla de «tus aparatos»). «Ahora no» siempre a la mano.
+/// 5 · Trakt (Fernando, 18 nov 2026: TK-V2, TK-C3, TK-L2; prototipo en `docs/producto/guia-trabajos-2026-11-18/onboarding/`).
+/// Arriba, tu serie viaja de un aparato al otro (`GuideTraktScene`). «Conectar Trakt» abre el código para trakt.tv/activate
+/// (entrar sin salir de la app, TK-C3, queda para cuando se compruebe que Trakt lo permite; el código es su respaldo).
+/// Al aprobar, te reconoce: tu inicial, «Listo, <nombre>» y lo que se trajo (vistas, en Mi lista, series que sigues); una
+/// cuenta nueva no enseña ceros. «Ahora no» siempre a la mano. Si también tienes la TV, va aquí mismo (Q3).
 struct OnboardingTrakt: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
@@ -12,8 +15,10 @@ struct OnboardingTrakt: View {
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var settings: ModelObserver<SettingsModel>
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var connectingTV = false
-    @Environment(\.openURL) private var openURL
+    @State private var showsCode = false
+    @State private var shown = false
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); _settings = State(wrappedValue: ModelObserver(guide.settings))
@@ -23,54 +28,102 @@ struct OnboardingTrakt: View {
     var body: some View {
         let model = guide.model
         let linked = settings.model.traktLinked
-        // G5-B (Fernando, 18 nov 2026): con el código a la vista, el botón grande es «Copiar y abrir Trakt»; «Ahora no» abajo.
+        GuidePage(title: nil, step: step,
+                  primary: linked ? Text("Continuar") : Text("Conectar Trakt"),
+                  secondary: linked ? nil : Text("Ahora no"),
+                  next: { if linked { next() } else { showsCode = true } },
+                  skip: next, skipGuide: skip, back: back) {
+            if linked { done(model) } else { ask(model) }
+        }
+        .sheet(isPresented: $showsCode) { TraktCodeSheet(settings: settings.model) }
+        .sheet(isPresented: $connectingTV) { OrbitalSetupView() }
+        .onChange(of: linked) { _, now in
+            if now { showsCode = false; Task { await model.traktLinked() } }
+        }
+        .task { if linked, model.brought == nil { await model.traktLinked() } }
+    }
+
+    // MARK: antes de conectar
+
+    @ViewBuilder private func ask(_ model: OnboardingModel) -> some View {
+        let caps = env.services.capabilities
+        let receiver: GuideTraktScene.Receiver = UIDevice.current.userInterfaceIdiom == .pad ? .mac : caps.console ? .tv : .iPad
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            GuideTraktScene(receiver: receiver, watches: caps.instantStreams)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                (caps.instantStreams ? Text("Sigue donde te quedaste, en cualquier aparato") : Text("Tus series y tus listas, en todos tus aparatos"))
+                    .recipe(.display, color: DS.text).fixedSize(horizontal: false, vertical: true)
+                Text("Trakt guarda lo que ves y tus listas, y Orbital te recomienda según eso. Es gratis.")
+                    .font(DS.Welcome.lead).foregroundStyle(DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            }
+            .opacity(shown ? 1 : 0).offset(y: shown ? 0 : DS.Welcome.rise)
+            if case .failed(let message) = settings.model.trakt {
+                DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
+            }
+            if case .off = settings.model.trakt {
+                DSNotice(text: "Esta copia de la app no trae la aplicación de Trakt: conéctalo después en Ajustes.", tone: .warn)
+            }
+            Text(UIDevice.current.userInterfaceIdiom == .pad
+                 ? "Sin Trakt, lo tuyo queda en este iPad. Lo conectas cuando quieras desde Inicio o Ajustes."
+                 : "Sin Trakt, lo tuyo queda en este iPhone. Lo conectas cuando quieras desde Inicio o Ajustes.")
+                .recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+                .opacity(shown ? 1 : 0)
+            if model.traktWithTV { tvRow }
+        }
+        .task { withAnimation(DS.Motion.enter(reduceMotion)?.delay(0.12)) { shown = true } }
+    }
+
+    private var tvRow: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text("Y tu TV").recipe(.cardTitle, color: DS.text)
+            Button(env.services.orbital.isConfigured ? "Conectada" : "Conectar tu TV", systemImage: "tv.and.mediabox") { connectingTV = true }
+                .dsGlassButton().disabled(env.services.orbital.isConfigured)
+        }
+    }
+
+    // MARK: ya conectado: te reconoce (TK-L2)
+
+    @ViewBuilder private func done(_ model: OnboardingModel) -> some View {
+        TraktRecognized(name: model.traktName, brought: model.brought)
+        if model.traktWithTV { tvRow }
+    }
+}
+
+/// TK-C3, respaldo: el código para trakt.tv/activate en una hoja, con «Copiar y abrir Trakt». Se cierra sola al aprobar.
+struct TraktCodeSheet: View {
+    @State private var settings: ModelObserver<SettingsModel>
+    @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
+
+    init(settings: SettingsModel) { _settings = State(wrappedValue: ModelObserver(settings)) }
+
+    var body: some View {
         let open: (code: String, url: URL)? = {
             if case .linking(let code, let url) = settings.model.trakt, let url = URL(string: url) { return (code, url) }
             return nil
         }()
-        GuidePage(title: Text("Sigue donde te quedaste"),
-                  message: Text("Trakt guarda lo que ves en todos tus aparatos. Es gratis."),
-                  step: step, primary: linked ? Text("Seguir") : open != nil ? Text("Copiar y abrir Trakt") : Text("Ahora no"),
-                  secondary: !linked && open != nil ? Text("Ahora no") : nil,
-                  next: { if !linked, let open { DeviceCodeCard.copyAndOpen(open.code, open.url, openURL) } else { next() } },
-                  skip: next, skipGuide: skip, back: back) {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
-                StorySceneView(scene: .handoff, tint: DS.ListTint.calendar)
-                    .frame(height: DS.GuideScene.sceneHeight * DS.Explainer.restScale)
-                    .accessibilityHidden(true)
-                switch settings.model.trakt {
-                case .linking(let code, let url):
-                    DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url), showsOpen: false)
-                case .linked(let name):
-                    GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
-                    if let brought = model.brought {
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                            Text(verbatim: "\(brought.watched)").recipe(.display, color: DS.text).contentTransition(.numericText())
-                            Text("vistos").recipe(.body, color: DS.textMuted)
-                            Text(verbatim: "\(brought.listed)").recipe(.display, color: DS.text).contentTransition(.numericText())
-                            Text("en tu lista").recipe(.body, color: DS.textMuted)
-                        }
-                    } else { DSInlineProgress(text: Text("Trayendo lo tuyo…")) }
-                case .failed(let message):
-                    DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
-                    Button("Reintentar") { Task { await settings.model.linkTrakt() } }.dsGlassButton()
-                case .unlinked:
-                    DSLoadingState()
-                case .off:
-                    DSNotice(text: "Esta copia de la app no trae la aplicación de Trakt: conéctalo después en Ajustes.", tone: .warn)
+        VStack(spacing: DS.Space.s5) {
+            Text("Conecta con un código").recipe(.title, color: DS.text)
+            switch settings.model.trakt {
+            case .linking(let code, let url):
+                DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url), showsOpen: false)
+            case .failed(let message):
+                DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
+                Button("Reintentar") { Task { await settings.model.linkTrakt() } }.dsGlassButton()
+            default:
+                DSLoadingState()
+            }
+            VStack(spacing: DS.Space.s2) {
+                Button { if let open { DeviceCodeCard.copyAndOpen(open.code, open.url, openURL) } } label: {
+                    Text("Copiar y abrir Trakt").frame(maxWidth: .infinity)
                 }
-                // Q3: con la TV también, en esta misma pantalla.
-                if model.traktWithTV {
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        Text("Y tu TV").recipe(.cardTitle, color: DS.text)
-                        Button(env.services.orbital.isConfigured ? "Conectada" : "Conectar tu TV", systemImage: "tv.and.mediabox") { connectingTV = true }
-                            .dsGlassButton().disabled(env.services.orbital.isConfigured)
-                    }
-                }
+                .dsPrimaryButton().dsControlSize(.large).disabled(open == nil)
+                .accessibilityIdentifier("trakt-code-open")
+                Button { dismiss() } label: { Text("Cancelar").frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
             }
         }
-        .sheet(isPresented: $connectingTV) { OrbitalSetupView() }
-        .task { if case .unlinked = settings.model.trakt { await settings.model.linkTrakt() } }
-        .onChange(of: linked) { _, now in if now { Task { await model.traktLinked() } } }
+        .padding(DS.Space.s6)
+        .fittedSheet()
+        .task { if case .unlinked = settings.model.trakt { await settings.model.linkTrakt() } else if case .failed = settings.model.trakt { await settings.model.linkTrakt() } }
     }
 }

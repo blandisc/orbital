@@ -45532,6 +45532,226 @@
           }
         }
       }
+    },
+    "**Descubre** lo mejor para esta noche": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Discover** the best for tonight"
+          }
+        }
+      }
+    },
+    "**Guarda** tus listas y lo que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Save** your lists and what you watched"
+          }
+        }
+      }
+    },
+    "**Encuentra** parecidas a tus favoritas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Find** more like your favorites"
+          }
+        }
+      }
+    },
+    "**Míralo** aquí mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Watch** right here"
+          }
+        }
+      }
+    },
+    "**Míralo** aquí o en tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Watch** here or on your TV"
+          }
+        }
+      }
+    },
+    "**Te dice** dónde verla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**See** where to watch it"
+          }
+        }
+      }
+    },
+    "Sigue donde te quedaste, en cualquier aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick up where you left off, on any device"
+          }
+        }
+      }
+    },
+    "Tus series y tus listas, en todos tus aparatos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your shows and lists, on all your devices"
+          }
+        }
+      }
+    },
+    "Trakt guarda lo que ves y tus listas, y Orbital te recomienda según eso. Es gratis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt keeps what you watch and your lists, and Orbital recommends from that. It’s free."
+          }
+        }
+      }
+    },
+    "Sin Trakt, lo tuyo queda en este iPad. Lo conectas cuando quieras desde Inicio o Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Trakt, your stuff stays on this iPad. Connect it anytime from Home or Settings."
+          }
+        }
+      }
+    },
+    "Sin Trakt, lo tuyo queda en este iPhone. Lo conectas cuando quieras desde Inicio o Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Trakt, your stuff stays on this iPhone. Connect it anytime from Home or Settings."
+          }
+        }
+      }
+    },
+    "Tu Trakt está listo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt is ready"
+          }
+        }
+      }
+    },
+    "Listo, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re all set, %@"
+          }
+        }
+      }
+    },
+    "Lo que veas se guarda aquí, en todos tus aparatos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch is saved here, on all your devices."
+          }
+        }
+      }
+    },
+    "Tu Trakt ya está conectado.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt is connected."
+          }
+        }
+      }
+    },
+    "en Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in My List"
+          }
+        }
+      }
+    },
+    "series que sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "shows you follow"
+          }
+        }
+      }
+    },
+    "Conecta con un código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect with a code"
+          }
+        }
+      }
+    },
+    "T1 E7 · quedan 18 min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S1 E7 · 18 min left"
+          }
+        }
+      }
+    },
+    "T1 E7 · vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S1 E7 · watched"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

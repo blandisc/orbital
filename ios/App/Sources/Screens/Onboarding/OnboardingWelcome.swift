@@ -11,6 +11,10 @@ struct OnboardingWelcome: View {
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var appeared = false
     @State private var showsButton = false
+    @State private var showsTop = false
+    /// Cuántos de los cuatro renglones ya entraron (BV-T2).
+    @State private var rows = 0
+    @Environment(AppEnvironment.self) private var env
     @State private var moon = 0
     @State private var attract = false
     @State private var touched = 0
@@ -25,7 +29,9 @@ struct OnboardingWelcome: View {
     var body: some View {
         let model = guide.model
         VStack(spacing: DS.Space.s5) {
-            HStack { Spacer(); GuideSkip(action: skip) }
+            // BV-L1 (Fernando, 18 nov 2026): el idioma en un globo arriba a la izquierda; «Saltar» a la derecha.
+            HStack { WelcomeLanguageMenu(settings: model.settings); Spacer(); GuideSkip(action: skip) }
+                .opacity(showsTop ? 1 : 0)
             Spacer(minLength: DS.Space.s4)
             // En un iPhone chico (SE) la escena se encoge para que el texto y «Empezar» quepan.
             GeometryReader { geo in
@@ -41,17 +47,21 @@ struct OnboardingWelcome: View {
             .frame(maxHeight: DS.Welcome.sceneHeight * DS.Welcome.wideScale)
             .layoutPriority(1)   // la marca toma su alto antes que los espacios (si no, se quedaba chica en el iPad y la Mac)
             Spacer(minLength: DS.Space.s4)
-            // Al centro, bajo la marca, y más grande (Fernando, 17 nov 2026: «el texto más grande, los botones centrados»).
-            VStack(alignment: .center, spacing: DS.Space.s3) {
+            // BV-T2 (Fernando, 18 nov 2026): el titular y cuatro renglones con ícono que entran al ritmo de la órbita.
+            VStack(alignment: .center, spacing: DS.Space.s4) {
                 Text("Todo lo que quieres ver, en un solo lugar.").recipe(.display, color: DS.text)
+                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Encuentra qué ver, sigue tus series y míralo aquí mismo.").font(DS.Welcome.lead).foregroundStyle(DS.textMuted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : DS.Welcome.rise)
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    ForEach(Array(WelcomeRow.rows(env.services.capabilities).enumerated()), id: \.offset) { i, row in
+                        WelcomeRowView(row: row, shown: rows > i)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
-            .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : DS.Welcome.rise)
             Button(action: next) { Text("Empezar").frame(maxWidth: .infinity) }
                 .dsPrimaryButton().dsControlSize(.large)
                 .frame(maxWidth: DS.Welcome.buttonWidth)
@@ -66,15 +76,24 @@ struct OnboardingWelcome: View {
         .simultaneousGesture(TapGesture().onEnded {
             touched += 1; attract = false
             // F (18 nov 2026): un toque antes de que salga «Empezar» no se pierde: el texto y el botón salen ya (parecía trabada).
-            if !showsButton { withAnimation(DS.Motion.base(reduceMotion)) { appeared = true; showsButton = true } }
+            if !showsButton { withAnimation(DS.Motion.base(reduceMotion)) { appeared = true; showsTop = true; rows = WelcomeRow.count; showsButton = true } }
         })
         .dsFeedback(.impact(flexibility: .soft), trigger: moon)
         .task { await model.loadCandidates() }
         .task {
-            if reduceMotion { appeared = true; showsButton = true; return }
-            try? await Task.sleep(for: .seconds(DS.Welcome.phraseAt))
+            if reduceMotion { appeared = true; showsTop = true; rows = WelcomeRow.count; showsButton = true; return }
+            try? await Task.sleep(for: .seconds(DS.Welcome.topAt))
+            withAnimation(DS.Motion.fade) { showsTop = true }
+            try? await Task.sleep(for: .seconds(DS.Welcome.phraseAt - DS.Welcome.topAt))
             withAnimation(DS.Motion.enter(reduceMotion)) { appeared = true }
-            try? await Task.sleep(for: .seconds(DS.Welcome.buttonAt - DS.Welcome.phraseAt))
+            // Los renglones, en una ola que se acorta (cada uno llega un poco más pegado al anterior).
+            var at = DS.Welcome.phraseAt
+            for (i, start) in DS.Welcome.rowsAt.enumerated() {
+                try? await Task.sleep(for: .seconds(start - at)); at = start
+                guard rows <= i else { continue }
+                withAnimation(DS.Motion.enter(reduceMotion)) { rows = i + 1 }
+            }
+            try? await Task.sleep(for: .seconds(max(0, DS.Welcome.buttonAt - at)))
             withAnimation(DS.Motion.base(reduceMotion)) { showsButton = true }
         }
         // B1: la vitrina, a los 12 s sin tocar (cada toque vuelve a contar).
@@ -142,5 +161,32 @@ struct AttractFilm: View {
                 withAnimation(DS.Motion.fade) { scene = i }
             }
         }
+    }
+}
+
+/// BV-L1: el globo con el nombre del idioma. Un toque abre el menú (Español / English); cambia toda la app al momento.
+struct WelcomeLanguageMenu: View {
+    @State private var settings: ModelObserver<SettingsModel>
+
+    init(settings: SettingsModel) { _settings = State(wrappedValue: ModelObserver(settings)) }
+
+    var body: some View {
+        let model = settings.model
+        let language = model.settings.uiLanguage
+        Menu {
+            Picker(selection: Binding(get: { language }, set: { v in model.update { $0.uiLanguage = v } })) {
+                Text(verbatim: "Español").tag("es")
+                Text(verbatim: "English").tag("en")
+            } label: { Text("Idioma de la app") }
+        } label: {
+            HStack(spacing: DS.Space.s1) {
+                Image(systemName: "globe")
+                Text(verbatim: language == "en" ? "English" : "Español")
+                Image(systemName: "chevron.down").font(DS.styled(.caption).weight(.semibold))
+            }
+            .foregroundStyle(DS.textMuted)
+        }
+        .accessibilityIdentifier("guide-language")
+        .accessibilityLabel(Text("Idioma de la app"))
     }
 }

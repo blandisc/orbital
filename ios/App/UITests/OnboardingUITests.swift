@@ -93,8 +93,9 @@ class GuideUITestCase: XCTestCase {
         enter(Self.shortToken); wait("incompleta")
         enter(Self.freeToken); wait("Tu cuenta es gratuita")
         enter(Self.goodToken); wait("Real-Debrid · fernando", 15); c("06-clave-buena")   // conectada: la hoja se cierra sola
-        next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")
-        wait("Conectado como fernando", 20); c("08-trakt-conectado")
+        next(); wait("Sigue donde te quedaste"); c("07-trakt")
+        next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")   // TK-C3: «Conectar Trakt» abre el código
+        wait("Listo, fernando", 20); c("08-trakt-conectado")
         next()
         XCTAssertFalse(app.staticTexts["Tu iPhone, control de tu TV"].exists, "sin TV no hay paso de la TV")
         wait("Tu Orbital ya está lista."); c("09-listo")

@@ -19,6 +19,12 @@ extension DS {
         /// Los tiempos de la coreografía, en segundos desde que aparece (A1).
         static let planetIn = 0.4, fallStart = 0.3, fallStep = 0.09, fallDuration = 1.2
         static let ringAt = 1.6, moonAt = 2.4, phraseAt = 2.6, buttonAt = 3.2
+        /// BV-L1 y BV-T2 (Fernando, 18 nov 2026): el globo y «Saltar» aparecen con la marca; los cuatro renglones entran en una
+        /// ola que se acorta tras el titular, y cada ícono crece desde `rowIconFrom` con un resorte pequeño.
+        static let topAt = 0.8, rowsAt = [2.78, 2.90, 3.00, 3.08]
+        static let rowIconFrom: CGFloat = 0.82, rowRise: CGFloat = 12
+        static let rowIcon: CGFloat = 38
+        static let rowIconPop: Animation = .spring(duration: 0.5, bounce: 0.3)
         /// En reposo: una vuelta de la órbita cada 40 s y de la luna cada 24 s.
         static let orbitPeriod = 40.0, moonPeriod = 24.0
         /// Cuadros por segundo: 60 mientras entra, 30 en reposo (como el cielo).
