@@ -163,7 +163,7 @@ struct ListsView: View {
                             if model.hasKindSplit {
                                 DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol) {
                                     DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                               set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
+                                                               set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), chapter: true)
                                 }
                             } else {
                                 DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol)

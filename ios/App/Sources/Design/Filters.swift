@@ -39,13 +39,15 @@ struct DSKindFilter: View {
     /// En el renglón de controles de una lista (R1): un poco más compacta, para que con el nombre de lo elegido (KT1) quepa
     /// junto a ⊜, ＋ y elegir varios.
     var dense = false
+    /// EX-A: en el renglón de un capítulo (`DSChapterHead`), más chica que el rótulo y al final de su línea.
+    var chapter = false
 
     var body: some View {
         if menu {
             KindPill(kind: $kind, open: open ?? .constant(false), options: options)
         } else {
             // KT2 (Fernando, 13 nov 2026): el nombre de lo elegido va adentro de la pastilla, a la izquierda de los íconos.
-            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense)
+            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true, dense: dense, chapter: chapter)
                 .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
         }
     }
@@ -279,9 +281,12 @@ struct KindPill: View {
     /// I8 · fuera de Inicio la pastilla está siempre abierta: tocar un ícono lo elige y nada se recoge.
     var alwaysOpen = false
     var dense = false
+    var chapter = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var mark
-    private var cell: CGFloat { open ? (dense ? DS.KindPill.dense : DS.KindPill.open) : DS.KindPill.closed }
+    private var cell: CGFloat {
+        open ? (chapter ? DS.KindPill.chapter : dense ? DS.KindPill.dense : DS.KindPill.open) : DS.KindPill.closed
+    }
     /// El cierre que espera a que el círculo llegue: otro toque lo cancela (nunca se cierra encima de lo que acabas de hacer).
     @State private var folding: Task<Void, Never>?
     /// Recién elegido: las otras dos se van y en su lugar se lee el nombre de lo que elegiste, un momento, antes de recogerse
@@ -300,14 +305,17 @@ struct KindPill: View {
                 Button { choose(option.0) } label: {
                     HStack(spacing: 0) {
                         Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(KindGlyph.variant)   // el mismo dibujo abierta y cerrada
-                            .font(DS.TextRecipe.section.font)
+                            .font(chapter ? DS.TextRecipe.cardTitle.font : DS.TextRecipe.section.font)   // EX-A: cabe holgado en su círculo de 32
                             .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
                             // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                             .frame(width: cell, height: cell)
                     }
                     .foregroundStyle(on && open ? DS.bg : DS.text)
                     .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido
-                    .contentShape(Capsule())
+                    // EX-A: 36 a la vista y 44 al dedo (crece arriba y abajo sin mover nada).
+                    .padding(.vertical, chapter ? DS.KindPill.chapterReach : 0)
+                    .contentShape(chapter ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+                    .padding(.vertical, chapter ? -DS.KindPill.chapterReach : 0)
                 }
                 .buttonStyle(KindPillPress())
                 .help(Text(option.1))
@@ -320,16 +328,19 @@ struct KindPill: View {
         // Un solo círculo blanco que viaja al elegido (antes eran dos que se cruzaban apagándose: a medio camino se veía gris).
         // Con «Reducir movimiento» no viaja: se apaga en uno y se enciende en el otro.
         .background {
-            if open {
-                Capsule().fill(DS.text)   // el círculo de lo elegido (el nombre va aparte, a su izquierda: KT2)
-                    .padding(DS.KindPill.markInset)   // el círculo cabe holgado en su lugar: nunca toca la orilla de la pastilla
-                    .matchedGeometryEffect(id: kind, in: mark, isSource: false)
-                    .id(reduceMotion ? kind : "")
-                    .transition(.opacity.animation(DS.Motion.fadeQuick))
+            // Recortado aquí y no toda la pastilla: así el toque de EX-A puede crecer más allá de la orilla.
+            Color.clear.overlay {
+                if open {
+                    Capsule().fill(DS.text)   // el círculo de lo elegido (el nombre va aparte, a su izquierda: KT2)
+                        .padding(DS.KindPill.markInset)   // el círculo cabe holgado en su lugar: nunca toca la orilla de la pastilla
+                        .matchedGeometryEffect(id: kind, in: mark, isSource: false)
+                        .id(reduceMotion ? kind : "")
+                        .transition(.opacity.animation(DS.Motion.fadeQuick))
+                }
             }
+            .clipShape(Capsule())   // ni a medio viaje ni con el resorte: el círculo no se sale de la pastilla
         }
         .padding(DS.Space.s1 / 2)
-        .clipShape(Capsule())   // ni a medio viaje ni con el resorte: el círculo no se sale de la pastilla
         // Los círculos son de tamaño fijo: el ícono crece hasta xxxLarge y no más (con letra de accesibilidad se salía del
         // círculo); el nombre lo dice VoiceOver y la vista grande al mantener el dedo.
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)

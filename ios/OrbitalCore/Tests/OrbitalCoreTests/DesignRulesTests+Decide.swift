@@ -224,4 +224,25 @@ extension DesignRulesTests {
         XCTAssertTrue(season.contains(#".lineLimit(name.contains(" ") ? 2 : 1)"#), "un nombre de una palabra no se parte con guion")
         XCTAssertTrue(season.contains("Eyebrow(text: when, reason: true).minimumScaleFactor"), "«La temporada · ahora» no se corta")
     }
+
+    /// El control de un capítulo no le gana a su rótulo (EX-A, Fernando, 19 nov 2026). «Lo que se ve hoy» de Explorar lleva su
+    /// línea fina hasta el control, como Plataformas y Estudios; el control mide 36 con su borde (antes 46: el ojo se iba a él y
+    /// el rótulo empezaba 49 pt bajo «Decide por mí») y se asoma sobre el aire sin empujarlo; al dedo sigue midiendo 44.
+    func testChapterControlDoesNotOutweighItsLabel() throws {
+        let files = try sources()
+        let head = try file("Collections.swift", in: files)
+        XCTAssertTrue(head.contains("accessory.padding(.vertical, -DS.KindPill.chapterBleed)"), "el control no empuja el aire del rótulo")
+        XCTAssertTrue(head.contains("Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)\n                        accessory"),
+                      "con control, la línea fina sigue hasta él")
+        let lists = try file("ListsView.swift", in: files)
+        XCTAssertTrue(lists.contains("chapter: true)"), "el selector de «Lo que se ve hoy» va en su tamaño de capítulo")
+        let pill = try file("Filters.swift", in: files)
+        XCTAssertTrue(pill.contains("chapter ? DS.KindPill.chapter"), "la pastilla usa su tamaño de capítulo")
+        XCTAssertTrue(pill.contains("chapter ? DS.KindPill.chapterReach"), "al dedo crece hasta 44")
+        let tokens = try file("Tokens+Learn.swift", in: files)
+        let cell = Double(try XCTUnwrap(tokens.firstMatch(of: /static var chapter: CGFloat \{ Mac\.sized\((\d+)\) \}/)).1)!
+        let reach = Double(try XCTUnwrap(tokens.firstMatch(of: /chapterReach: CGFloat = (\d+)/)).1)!
+        XCTAssertEqual(cell + 4, 36, "36 con su borde, como los demás botones redondos")
+        XCTAssertGreaterThanOrEqual(cell + 2 * reach, 44, "cada ícono mide 44 al dedo")
+    }
 }

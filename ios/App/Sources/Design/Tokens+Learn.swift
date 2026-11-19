@@ -124,6 +124,11 @@ extension DS {
         static var open: CGFloat { Mac.sized(42) }
         /// En el renglón de controles de una lista (R1): cabe con el nombre de lo elegido (KT1).
         static var dense: CGFloat { Mac.sized(38) }
+        /// EX-A (Fernando, 19 nov 2026): en el renglón de un capítulo («Lo que se ve hoy» de Explorar) mide 36 con su borde,
+        /// como los demás botones redondos, y no le gana al rótulo. Al dedo cada ícono crece `chapterReach` arriba y abajo
+        /// (44, `DS.Size.touchTarget`); en el renglón se asoma `chapterBleed` sobre el aire, que se mide al rótulo.
+        static var chapter: CGFloat { Mac.sized(32) }
+        static let chapterReach: CGFloat = 6, chapterBleed: CGFloat = 9
         /// Lo que llega nace de este tamaño junto a lo que ves (nunca de la nada: antes 0.4, un brinco); al apretar un ícono se
         /// hunde a `pressed` (tantito: es respuesta al dedo, no un golpe).
         static let enterScale: CGFloat = 0.8, pressed: CGFloat = 0.92   // ds-exception: escalas

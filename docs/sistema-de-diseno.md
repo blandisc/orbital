@@ -482,6 +482,14 @@ grande), se achica (`doorTitleScale`, `titleShrink`) antes de partirse o cortars
 «La tempo…». Con letra de accesibilidad el texto baja bajo el abanico y puede partirse. Antes, el texto partido hacía crecer la
 tarjeta por encima de su lugar y le comía 10 pt de aire a la fila de arriba. Prueba: `testDoorsSayTheirNameWhole`.
 
+### El control de un capítulo no le gana a su rótulo (EX-A, 19 nov 2026, iPhone)
+
+Fernando eligió EX-A para «Lo que se ve hoy» de Explorar. Un capítulo con control (`DSChapterHead` con `accessory`) se ve
+como sus hermanas: ícono, rótulo y **la línea fina hasta el control**. El control va al final de la línea, mide 36 con su
+borde (`DS.KindPill.chapter`, antes 46) y se asoma `chapterBleed` sobre el aire sin empujarlo: los 32 entre secciones se
+miden al rótulo, no al control. Al dedo cada ícono sigue midiendo 44 (`chapterReach`). Antes el control le ganaba al rótulo
+y este empezaba 49 pt bajo «Decide por mí». Prueba: `testChapterControlDoesNotOutweighItsLabel`.
+
 ### Nube = Real-Debrid; descargar = a este aparato (RX, 3 nov 2026, iPhone; la TV lo iguala)
 
 Fernando, 3 nov («RX1A… RX2A… RX4A», y RX3-A alineado con la guía de bienvenida; canvas

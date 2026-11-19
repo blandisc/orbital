@@ -77,8 +77,8 @@ enum AwardNames {
 /// mayúsculas con su línea fina hasta la orilla («GÉNEROS ———») y debajo un título que dice algo («Del terror a la
 /// comedia»). Sin colores ni íconos: el aire y la línea separan. Pone su propio margen a los lados.
 /// X1 (Fernando, 13 nov 2026: el selector de Explorar «está ahí como volando»): el control de la sección (`accessory`, el
-/// selector de tipo de «Lo que se ve hoy») va en el renglón del rótulo, a la derecha y centrado con él, en lugar de la línea
-/// fina. Si no cabe (SE, letra grande), baja entero a su propio renglón bajo el rótulo con su línea; nunca cortado.
+/// selector de tipo de «Lo que se ve hoy») va en el renglón del rótulo, a la derecha y centrado con él, al final de su línea
+/// fina (EX-A, 19 nov 2026). Si no cabe (SE, letra grande), baja entero a su propio renglón bajo el rótulo con su línea; nunca cortado.
 struct DSChapterHead<Accessory: View>: View {
     let label: Text
     /// El ícono de la sección (el mismo del índice de arriba), en el azul de Orbital, a la izquierda del rótulo.
@@ -97,11 +97,15 @@ struct DSChapterHead<Accessory: View>: View {
                 DSChapterLabel(label: label, symbol: symbol)
             } else {
                 ViewThatFits(in: .horizontal) {
+                    // EX-A (Fernando, 19 nov 2026): con su línea hasta el control, como sus hermanas. El control se centra en el
+                    // renglón y se asoma `chapterBleed` arriba y abajo: el aire de arriba se mide al rótulo (32) y el de abajo
+                    // al control (el relleno de abajo se lo devuelve).
                     HStack(alignment: .center, spacing: DS.Space.s3) {
                         DSChapterLabel(label: label, symbol: symbol, line: false).fixedSize().accessibilityElement(children: .combine)
-                        Spacer(minLength: 0)
-                        accessory
+                        Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
+                        accessory.padding(.vertical, -DS.KindPill.chapterBleed)
                     }
+                    .padding(.bottom, DS.KindPill.chapterBleed)
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                         DSChapterLabel(label: label, symbol: symbol).accessibilityElement(children: .combine)
                         accessory
