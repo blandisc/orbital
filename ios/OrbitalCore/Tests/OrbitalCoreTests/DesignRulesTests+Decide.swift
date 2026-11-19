@@ -202,4 +202,26 @@ extension DesignRulesTests {
             XCTAssertEqual(hits, 0, "\(name): el nombre de un título va con titleName, como el que se ve")
         }
     }
+
+    /// Una puerta dice su nombre entero (regla de las puertas, Fernando, 18 nov 2026: DM-A). Junto al abanico, el nombre de
+    /// «Decide por mí» y su línea van en un renglón (antes «Decide / por mí» y la tarjeta crecía hasta encimarse 10 pt sobre
+    /// «Seguir viendo»), y el de «La temporada» no se parte con guion («Navi-dad») ni se corta («La tempo…»). En el 17 Pro
+    /// (402 pt) al texto de «Decide por mí» le quedan al menos los 216 pt que miden el dado y el nombre.
+    func testDoorsSayTheirNameWhole() throws {
+        let files = try sources()
+        let door = try file("ParaTiB.swift", in: files)
+        XCTAssertTrue(door.contains("PosterFan(posters: posters, width: DS.ParaTiB.doorPoster, shift: DS.ParaTiB.doorShift)"))
+        XCTAssertGreaterThanOrEqual(door.components(separatedBy: ".lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)").count - 1, 3,
+                                    "el nombre (con y sin pósters) y «Tres que caben · Una por una» en un renglón")
+        XCTAssertTrue(door.contains(".padding(DS.Space.s4)   // DM-A"), "la puerta con 16 de aire, no 20")
+        let tokens = try file("Tokens+Home.swift", in: files)
+        let poster = try XCTUnwrap(tokens.firstMatch(of: /doorPoster: CGFloat = (\d+)/)).1
+        let shift = try XCTUnwrap(tokens.firstMatch(of: /doorShift: CGFloat = (\d+)/)).1
+        let fan = Double(poster)! + 2 * Double(shift)!
+        // 402 de pantalla − 2 × 16 de margen − 2 × 16 de aire − el abanico − 16 entre el abanico y el texto.
+        XCTAssertGreaterThanOrEqual(402 - 32 - 32 - fan - 16, 216, "en el 17 Pro el dado y «Decide por mí» caben en un renglón")
+        let season = try file("Collections.swift", in: files)
+        XCTAssertTrue(season.contains(#".lineLimit(name.contains(" ") ? 2 : 1)"#), "un nombre de una palabra no se parte con guion")
+        XCTAssertTrue(season.contains("Eyebrow(text: when, reason: true).minimumScaleFactor"), "«La temporada · ahora» no se corta")
+    }
 }

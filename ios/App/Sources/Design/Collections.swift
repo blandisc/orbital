@@ -462,16 +462,19 @@ struct SeasonFeature: View {
     let tint: Color
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s5) {
+        // Regla de las puertas (18 nov 2026, la de «Decide por mí»): el nombre no se parte ni se corta. El abanico va junto
+        // (`doorPoster`) y el aire es de 16, para dejarle al texto lo que necesita.
+        HStack(alignment: .center, spacing: DS.Space.s4) {
             Image("Collections/" + slug).resizable().scaledToFit()
                 .frame(width: DS.ParaTiB.seasonIcon, height: DS.ParaTiB.seasonIcon)
                 .glow(tint, .strong)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Eyebrow(text: when, reason: true)
+                Eyebrow(text: when, reason: true).minimumScaleFactor(DS.Size.statScale)   // antes «La tempo…»
                 // Toda la tarjeta abre la colección, sin cápsula «Ver la colección» (H3) y sin flecha: la temporada de ahora es la
                 // portada de la sección, no una fila (Fernando, 2 nov 2026).
-                Text(verbatim: name).recipe(.display).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
+                // Un nombre de una palabra va en un renglón y se achica (antes «Navi-dad», partido con guion); de varias, hasta dos.
+                Text(verbatim: name).recipe(.display).lineLimit(name.contains(" ") ? 2 : 1).minimumScaleFactor(DS.Size.titleShrink)
                 Text(verbatim: blurb).recipe(.secondary, color: DS.textMuted).lineLimit(2)
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -480,9 +483,9 @@ struct SeasonFeature: View {
             if posters.count > DS.ParaTiB.matchFan, WindowMetrics.roomy {
                 DecideStrip(posters: Array(posters.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.seasonStrip)))
             }
-            if !posters.isEmpty { PosterFan(posters: posters, width: DS.ParaTiB.seasonPoster) }
+            if !posters.isEmpty { PosterFan(posters: posters, width: DS.ParaTiB.doorPoster, shift: DS.ParaTiB.doorShift) }
         }
-        .padding(DS.Space.s5)
+        .padding(DS.Space.s4)
         .frame(minHeight: DS.ParaTiB.seasonHeight)
         .background {
             Color.clear.dsCard(.card)

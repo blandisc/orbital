@@ -473,6 +473,15 @@ Fernando probó la compilación 1729 en su iPhone. Lo que se rompía y es patró
 | Lo que es de la TV no se queda en el iPhone: Local Files de Stremio (`127.0.0.1`) nunca se trae ni «se queda en este iPhone»; se ve como «Archivos de la TV · Solo en la TV». Nunca la descripción en inglés de un complemento: `AddonWhat` o nada | `AddonShare.livesOnTV` · `AddonList.dropTVOnly` | `testLocalFilesNeverLivesOnThisIPhone` |
 | Lo que ya no lleva a nada no se ofrece: sin «Avanzado › Conectar a mano» ni su botón en el lector de códigos (TEC-35: con la llave por aparato, el token solo abre Alexa) | `QRScanner` manda a la cámara del iPhone | — |
 
+### Una puerta dice su nombre entero (DM-A, 18 nov 2026, iPhone)
+
+Fernando: «ajuste fino, pero ponle más grande el icono del dado». Una puerta (tarjeta con abanico de pósters y texto:
+«Decide por mí», «La temporada») dice su nombre y su línea **en un renglón**: el abanico va junto (`DS.ParaTiB.doorPoster`
+88, `doorShift` 8) y el aire es de 16 (`DS.Space.s4`), para dejarle al texto lo que necesita. Si aun así no cabe (el SE, letra
+grande), se achica (`doorTitleScale`, `titleShrink`) antes de partirse o cortarse; nunca «Decide / por mí», «Navi-dad» ni
+«La tempo…». Con letra de accesibilidad el texto baja bajo el abanico y puede partirse. Antes, el texto partido hacía crecer la
+tarjeta por encima de su lugar y le comía 10 pt de aire a la fila de arriba. Prueba: `testDoorsSayTheirNameWhole`.
+
 ### Nube = Real-Debrid; descargar = a este aparato (RX, 3 nov 2026, iPhone; la TV lo iguala)
 
 Fernando, 3 nov («RX1A… RX2A… RX4A», y RX3-A alineado con la guía de bienvenida; canvas

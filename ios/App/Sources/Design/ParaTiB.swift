@@ -332,6 +332,8 @@ struct DecideDoor: View {
     var inset: CGFloat?
     let onOpen: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Un renglón junto al abanico; con letra de accesibilidad el texto va debajo, a todo lo ancho, y puede partirse.
+    private var oneLine: Int? { typeSize.isAccessibilitySize ? nil : 1 }
 
     var body: some View {
         // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado no cabía y ensanchaba toda la página de
@@ -344,7 +346,7 @@ struct DecideDoor: View {
                     Image(systemName: DS.Symbol.decide).font(DS.TextRecipe.title.font).foregroundStyle(DS.accent)
                         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 } else {
-                    PosterFan(posters: posters, width: DS.ParaTiB.deckPoster)
+                    PosterFan(posters: posters, width: DS.ParaTiB.doorPoster, shift: DS.ParaTiB.doorShift)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     // En el SE, junto al abanico, se cortaba («…no sabes qu…»): se achica un poco en vez de cortarse.
@@ -352,16 +354,20 @@ struct DecideDoor: View {
                     // El dado una sola vez: junto al nombre si hay pósters; si no, ya es el ícono de la izquierda.
                     // Más grande y con su color (Fernando, 17 nov 2026: «Decide por mí, hazlo más vistoso en ambos, un poquito
                     // más grande»): el nombre en tamaño de título y el dado en turquesa.
-                    if posters.isEmpty { Text("Decide por mí").recipe(.title) }
+                    // DM-A (Fernando, 18 nov 2026: «ajuste fino, pero ponle más grande el icono del dado»): el nombre en un
+                    // renglón; si no cabe (el SE), se achica tantito en vez de partirse en «Decide / por mí».
+                    if posters.isEmpty { Text("Decide por mí").recipe(.title).lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale) }
                     else {
                         HStack(spacing: DS.Space.s2) {
                             Image(systemName: DS.Symbol.decide).foregroundStyle(DS.brandMoon).accessibilityHidden(true)
                             Text("Decide por mí").recipe(.title)
                         }
                         .font(DS.TextRecipe.title.font)
+                        .lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)
                     }
                     (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("Tres que caben · Una por una"))
                         .recipe(.secondary, color: DS.textMuted)
+                        .lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
@@ -373,7 +379,7 @@ struct DecideDoor: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DS.Space.s5)
+            .padding(DS.Space.s4)   // DM-A: 16, el mismo aire que el margen de la pantalla (antes 20: le quitaba ancho al nombre)
             .background {
                 // Un brillo del color de acento desde el abanico, como el color de «La temporada»: la puerta se ve como puerta.
                 Color.clear.dsCard(.card)
@@ -418,6 +424,8 @@ struct DecideStrip: View {
 struct PosterFan: View {
     let posters: [String]
     let width: CGFloat
+    /// Cuánto asoma cada póster de atrás (la puerta de «Decide por mí» lo lleva más junto: DM-A).
+    var shift: CGFloat = DS.ParaTiB.deckShift
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -426,11 +434,11 @@ struct PosterFan: View {
                 PosterView(url: url, title: "")
                     .frame(width: width)
                     .rotationEffect(.degrees(Double(i) * DS.ParaTiB.deckTurn))
-                    .offset(x: CGFloat(i) * DS.ParaTiB.deckShift)
+                    .offset(x: CGFloat(i) * shift)
                     .opacity(i == 0 ? 1 : DS.ParaTiB.deckBehind)
             }
         }
-        .frame(width: width + DS.ParaTiB.deckShift * CGFloat(DS.ParaTiB.matchFan - 1), alignment: .leading)
+        .frame(width: width + shift * CGFloat(DS.ParaTiB.matchFan - 1), alignment: .leading)
         .accessibilityHidden(true)
     }
 }

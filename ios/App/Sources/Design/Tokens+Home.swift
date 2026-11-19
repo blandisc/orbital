@@ -102,7 +102,11 @@ extension DS {
         /// 2 nov 2026): un cuarto menos (antes de 8 a 9.5).
         static let coverPace: [Double] = [6, 6.75, 6.4, 7.1, 6, 6.75, 6.4, 7.1], coverPhaseStep = 0.37, coverVisibleFrom: Double = 0.1
         static let coverAlternates = true
-        static let deckPoster: CGFloat = 104, deckShift: CGFloat = 14, deckTurn: Double = 5, deckBehind: Double = 0.6
+        static let deckShift: CGFloat = 14, deckTurn: Double = 5, deckBehind: Double = 0.6
+        /// La puerta de «Decide por mí» (DM-A, Fernando, 18 nov 2026): el abanico más chico y junto (88 + 2 × 8 = 104 de ancho)
+        /// para que el dado con «Decide por mí» y «Tres que caben · Una por una» quepan en un renglón en el 17 Pro (antes 132 de abanico y
+        /// 182 de texto: los dos se partían). Si aun así no cabe (SE, letra grande), se achica hasta `doorTitleScale`.
+        static let doorPoster: CGFloat = 88, doorShift: CGFloat = 8, doorTitleScale: CGFloat = 0.85
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3
         /// En la Mac, la puerta de «Decide por mí» lleva a la derecha una tira de más carteles que se desvanece hacia el texto
@@ -116,8 +120,9 @@ extension DS {
         static let stripShare: CGFloat = 0.5, stripMax = 16
         /// Cuánto la tiñe el color de acento desde el abanico (Fernando, 17 nov 2026: «hazlo más vistoso»; el turquesa es voz).
         static let doorGlow: Double = 0.3
-        /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.
-        static let seasonPoster: CGFloat = 96, seasonGlow: Double = 0.42, rowShift: CGFloat = 14
+        /// «La temporada»: cuánto la tiñe su color (sus pósters son los de la puerta, `doorPoster`). Un renglón de «Tuyo»:
+        /// cuánto asoma cada póster.
+        static let seasonGlow: Double = 0.42, rowShift: CGFloat = 14
         /// Su ícono, su altura mínima, su anillo del color y cuántos más asoman en la tira de la Mac (17 nov 2026).
         static let seasonIcon: CGFloat = 72, seasonHeight: CGFloat = 168, seasonRing: Double = 0.5, seasonStrip = 7
         /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba
