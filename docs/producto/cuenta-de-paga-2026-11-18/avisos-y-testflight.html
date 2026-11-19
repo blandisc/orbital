@@ -1,0 +1,139 @@
+<title>Avisos y TestFlight de Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Una columna de lectura; cada decisión pone sus opciones lado a lado en tarjetas de pantalla bloqueada. */
+:root{
+  --bg:#f4f7f8; --surface:#ffffff; --fg:#14201f; --muted:#5a6b6a; --line:#d6e0e0;
+  --accent:#0f8f86; --accent-soft:#dff3f1; --lock:#1b2a33; --lock-fg:#f2f6f7; --lock-muted:#a9bcc2; --rec:#b35c00;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1517; --surface:#162024; --fg:#e6eeee; --muted:#93a6a6; --line:#26363a;
+  --accent:#3cc9bc; --accent-soft:#163533; --lock:#0a1013; --lock-fg:#eef4f5; --lock-muted:#8ea3a9; --rec:#f0a453; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1517; --surface:#162024; --fg:#e6eeee; --muted:#93a6a6; --line:#26363a;
+  --accent:#3cc9bc; --accent-soft:#163533; --lock:#0a1013; --lock-fg:#eef4f5; --lock-muted:#8ea3a9; --rec:#f0a453; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:2rem} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:0;max-width:65ch} .muted{color:var(--muted)}
+section{display:grid;gap:16px}
+.note{background:var(--accent-soft);border-radius:12px;padding:14px 16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.code{font:700 .95rem var(--display);color:var(--accent)}
+.badge{font-size:.78rem;font-weight:600;color:var(--rec);letter-spacing:.02em}
+.lock{background:var(--lock);color:var(--lock-fg);border-radius:18px;padding:12px;display:grid;gap:8px}
+.lock .time{font:600 1.6rem var(--display);text-align:center;color:var(--lock-fg)}
+.bubble{background:rgba(255,255,255,.10);border-radius:12px;padding:8px 10px;display:grid;gap:2px;font-size:.82rem}
+.bubble b{font-size:.84rem} .bubble small{color:var(--lock-muted)}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+ul{margin:0;padding-left:1.2em;display:grid;gap:4px} li{max-width:62ch}
+ol.steps{margin:0;padding-left:1.4em;display:grid;gap:10px} ol.steps li{max-width:64ch}
+.pill{display:inline-block;font:600 .8rem var(--body);border:1px solid var(--line);border-radius:6px;padding:1px 6px;background:var(--surface)}
+.dictar{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;font-weight:600}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:10px">
+  <h1>Avisos y TestFlight de Orbital</h1>
+  <p class="muted">18 nov 2026 · con la cuenta de desarrollador de paga ya activa (los permisos de Orbital vencen el 19 nov 2027).</p>
+</header>
+
+<section>
+  <h2>Antes, una corrección</h2>
+  <p class="note">Te dije que el 2 era R11-A, pero mezclé dos cosas. R11-A es la actividad en vivo de un <b>pedido a Real-Debrid</b> que se está bajando. Lo que se reproduce en la tele es otra actividad en vivo, <b>«Viendo en la TV»</b>, que ya existe en la app pero solo se actualiza mientras la app está abierta. Por eso en AC te pregunto cuál de las dos quieres, o si van las dos.</p>
+</section>
+
+<section>
+  <h2>AV · ¿Qué avisos manda la TV?</h2>
+  <p>La Orbital de la tele está siempre prendida, así que ella manda el aviso y te llega aunque la app esté cerrada. Si la tele está apagada, no sale nada y quedan los avisos de hoy de respaldo.</p>
+  <div class="opts">
+    <div class="opt">
+      <span class="code">AV-A · Solo Real-Debrid</span>
+      <div class="lock"><div class="time">21:40</div>
+        <div class="bubble"><b>Orbital · Ya está T1 E2</b><span>Shōgun</span><small>Ver ahora · Ver en la TV</small></div>
+        <div class="bubble"><b>Orbital · Tu Real-Debrid vence en 3 días</b><small>Renovar</small></div></div>
+      <ul><li>Lo que ya estaba acordado: listo, rechazado, atorado 24 h, reintentado y vencimiento a 14, 3 y 0 días.</li>
+      <li>Gana: es lo más chico y ya está diseñado.</li><li>Pierde: llegan pocos, solo cuando pides algo.</li></ul>
+    </div>
+    <div class="opt rec">
+      <span class="code">AV-B · Real-Debrid y episodios nuevos</span><span class="badge">RECOMIENDO</span>
+      <div class="lock"><div class="time">08:15</div>
+        <div class="bubble"><b>Orbital · Nuevo: T2 E5 de The Bear</b><span>Ya salió · está en Real-Debrid</span><small>Ver ahora · Ver en la TV</small></div>
+        <div class="bubble"><b>Orbital · Ya está T1 E2</b><span>Shōgun</span></div></div>
+      <ul><li>Todo lo de AV-A, más un aviso cuando sale un episodio de una serie que sigues. Sale de la misma lista que «Lo nuevo de lo tuyo».</li>
+      <li>Gana: el aviso que más vas a usar en el día a día.</li><li>Pierde: más trabajo en la TV, y un día de muchos estrenos se junta en un solo aviso.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>AC · ¿Qué actividad en vivo?</h2>
+  <div class="opts">
+    <div class="opt">
+      <span class="code">AC-A · El pedido a Real-Debrid</span>
+      <div class="lock"><div class="time">21:12</div>
+        <div class="bubble"><b>Bajando T1 E2 · 42 %</b><div class="bar"><i style="width:42%"></i></div><small>A este paso, faltan unos minutos.</small></div></div>
+      <ul><li>R11-A tal cual: la barra avanza sola hasta «Ya está».</li><li>Gana: ya está diseñado.</li><li>Pierde: solo sale cuando algo no estaba listo.</li></ul>
+    </div>
+    <div class="opt">
+      <span class="code">AC-B · «Viendo en la TV»</span>
+      <div class="lock"><div class="time">22:03</div>
+        <div class="bubble"><b>Viendo en la TV · Shōgun</b><span>T1 · E4 · termina a las 22:51</span><div class="bar"><i style="width:35%"></i></div><small>⏸ · −30 · +30</small></div></div>
+      <ul><li>Aparece sola cuando prendes algo en la tele, aunque no hayas abierto la app, y sigue las pausas y el cambio de episodio.</li>
+      <li>Gana: la ves cada noche.</li><li>Pierde: no cubre los pedidos.</li></ul>
+    </div>
+    <div class="opt rec">
+      <span class="code">AC-C · Las dos</span><span class="badge">RECOMIENDO</span>
+      <div class="lock"><div class="time">22:03</div>
+        <div class="bubble"><b>Viendo en la TV · Shōgun</b><div class="bar"><i style="width:35%"></i></div></div>
+        <div class="bubble"><b>Bajando T1 E5 · 80 %</b><div class="bar"><i style="width:80%"></i></div></div></div>
+      <ul><li>Usan la misma pieza de la TV, así que la segunda sale barata.</li><li>Orden: primero «Viendo en la TV», luego el pedido.</li><li>Pierde: un par de días más.</li></ul>
+    </div>
+  </div>
+  <p class="dictar">Para dictar: «AV-B y AC-C», o la combinación que quieras.</p>
+</section>
+
+<section>
+  <h2>Lo que solo tú puedes hacer: la llave de avisos</h2>
+  <p>Para mandar avisos, la TV necesita una llave de Apple. Crear esa llave te toca a ti; yo no la creo ni la veo. Te conviene hacerlo en la Mac o en la Lenovo, porque se descarga un archivo.</p>
+  <ol class="steps">
+    <li>Entra a <span class="pill">developer.apple.com/account</span> → <b>Certificates, IDs &amp; Profiles</b> → <b>Keys</b> → <b>+</b>.</li>
+    <li>Ponle de nombre «Orbital avisos», marca <b>Apple Push Notifications service (APNs)</b>, después <b>Continue</b> y <b>Register</b>.</li>
+    <li>Descarga el archivo <span class="pill">AuthKey_XXXX.p8</span>. <b>Apple solo te deja bajarlo una vez</b>: guárdalo en Bitwarden.</li>
+    <li>Anota el <b>Key ID</b> (10 letras y números). El Team ID ya lo sé: <span class="pill">B7KRCF776Z</span>.</li>
+    <li>No me lo mandes por el chat. Cuando esté lista la pantalla <b>Ajustes › Cuentas › Avisos al iPhone</b> en la TV, ahí lo pegas, y la TV lo guarda cifrado.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>TestFlight: cómo lo usas</h2>
+  <p>TestFlight es la app de Apple que instala Orbital por internet, sin cable ni Mac. Cada versión dura 90 días, y la nueva entra encima sin borrar tus datos.</p>
+  <h3>Una sola vez (tú, 5 minutos, se puede desde el iPhone)</h3>
+  <ol class="steps">
+    <li>Abre <span class="pill">appstoreconnect.apple.com</span> en Safari y entra con tu Apple ID de desarrollador.</li>
+    <li><b>Apps</b> → <b>+</b> → <b>Nueva app</b>. Plataforma iOS. Nombre: «Orbital Ultra» (si está ocupado, «Orbital Ultra Fer»: el nombre tiene que ser único en toda la tienda, pero nadie lo ve). Idioma principal: español (México). ID del paquete: <span class="pill">mx.iracheta.orbital</span>. SKU: «orbital-ultra». Acceso: completo.</li>
+    <li>Instala <b>TestFlight</b> desde la App Store en tu iPhone (y en el iPad si lo quieres ahí).</li>
+    <li>Me avisas.</li>
+  </ol>
+  <h3>Lo que hago yo</h3>
+  <ol class="steps">
+    <li>Subo la compilación desde la Mac. Apple tarda de 10 a 30 minutos en procesarla.</li>
+    <li>En TestFlight creo el grupo interno «Yo» contigo adentro. A los grupos internos Apple no los revisa.</li>
+    <li>Te llega un correo, abres TestFlight en el iPhone y tocas <b>Instalar</b>. Se queda encima de la que tienes y no pierdes nada.</li>
+    <li>Dejo un comando para subir una versión nueva cuando haga falta, y te aviso antes de que venza una.</li>
+  </ol>
+  <h3>Lo que conviene saber</h3>
+  <ul>
+    <li>Hoy Ultra, Plus y Orbital usan el mismo ID de paquete. Para darle Plus a otras personas habrá que separarla como otra app con su propio ID. Lo dejo para cuando lo pidas.</li>
+    <li>Darla a otros: hasta 100 personas «internas» si las agregas a tu equipo en App Store Connect, sin revisión de Apple. A gente «externa» Apple sí la revisa, y una app que reproduce torrents puede no pasar.</li>
+    <li>Los avisos de la tele van en las dos: lo que instalo por cable usa los servidores de prueba de Apple y TestFlight los de verdad. La TV ya distingue cada caso.</li>
+    <li>Después de instalar, abre Orbital una vez para que Siri aprenda los atajos.</li>
+  </ul>
+</section>
+</div>
