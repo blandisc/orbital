@@ -69,7 +69,7 @@ Ultra = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en
     distancia sin ver su teléfono.
 
 **E · Repartirla.**
-17. Cuenta de desarrollador de Apple (99 USD al año), si no la hay ya: sin ella no hay TestFlight y las apps de Xcode duran 7
+17. Cuenta de desarrollador de Apple (99 USD al año) — **pagada el 18 nov 2026**, equipo `B7KRCF776Z`: sin ella no hay TestFlight y las apps de Xcode duran 7
     días.
 18. TestFlight interno: cada persona entra a tu equipo de App Store Connect (correo de invitación) e instala TestFlight;
     hasta 100 personas. Cada versión dura 90 días: un script que suba una nueva cada mes. El TestFlight externo (liga

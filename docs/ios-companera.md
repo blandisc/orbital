@@ -1,6 +1,6 @@
 # Orbital para iPhone: plan de la app compañera
 
-> Nota (10 nov 2026): Fernando decidió el 4 nov **no pagar** la cuenta de desarrollador. La app se instala por cable con el Apple ID gratuito y vence cada 7 días (hay que reinstalarla; sin notificaciones push). Donde este plan supone cuenta de pago, TestFlight o perfil de un año, vale esta nota.
+> Nota (18 nov 2026): Fernando **pagó** la cuenta de desarrollador (Apple Developer Program, individual). El equipo sigue siendo `B7KRCF776Z`, así que `project.yml` no cambia; los perfiles de Orbital, los widgets y las pruebas ya duran un año (pedidos el 18 nov, vencen el 19 nov 2027). Ya se puede usar TestFlight, avisos remotos (push) e iCloud. La nota del 10 nov (no pagar, 7 días) quedó atrás.
 
 App de iOS para uso personal que reproduce películas y series con los mismos complementos de Stremio,
 la misma cuenta y las mismas preferencias que Orbital. Este documento es solo investigación y plan;
@@ -36,8 +36,8 @@ todavía no hay código de la app.
 - **Descargas**: `URLSession` en segundo plano con el enlace directo de Real-Debrid, guardando la URL
   «resolver» del complemento para pedir un enlace nuevo si el viejo caduca; subtítulos y ficha junto
   al video; el avance offline se encola y se sube al volver la red.
-- **Instalación**: por cable con un Apple ID gratuito; la app caduca a los 7 días y se reinstala (decisión del 4 nov
-  2026: no se paga la cuenta de desarrollador). Un perfil de un año o TestFlight interno exigirían cuenta de pago.
+- **Instalación**: por cable con la cuenta de desarrollador de paga (desde el 18 nov 2026); el perfil dura un año.
+  TestFlight interno ya es posible. (Del 4 al 18 nov se usó el Apple ID gratuito, que vencía cada 7 días.)
 - **Primera versión mínima** (§12, etapa 1): entrar con Stremio, «Seguir viendo», buscar, ficha con
   episodios, lista de fuentes ordenada como en Orbital, reproducir con MPVKit con audio y subtítulos
   en tu idioma, y guardar el avance en Stremio. Sin descargas ni Trakt todavía.
@@ -328,8 +328,8 @@ externo)**. Con enlaces http directos de Real-Debrid funciona como «abrir URL»
 
 | Vía | Duración | Límites |
 |---|---|---|
-| **Apple ID gratuito + Xcode (la opción elegida)** | 7 días, luego reinstalar | Pocas apps instaladas a la vez con ese perfil, sin algunas capacidades **(verificar si afecta a descargas en segundo plano y PiP)** |
-| Programa de desarrolladores de pago (99 USD/año) + Xcode | El perfil de desarrollo dura un año | Se reinstala al renovar. Era la opción recomendada; **descartada el 4 nov 2026** |
+| Apple ID gratuito + Xcode (se usó hasta el 18 nov 2026) | 7 días, luego reinstalar | Pocas apps instaladas a la vez con ese perfil, sin algunas capacidades **(verificar si afecta a descargas en segundo plano y PiP)** |
+| **Programa de desarrolladores de pago (99 USD/año) + Xcode (la opción elegida)** | El perfil de desarrollo dura un año | Se reinstala al renovar. Descartada el 4 nov, **pagada el 18 nov 2026** |
 | TestFlight (pruebas internas) con la misma cuenta | Cada build caduca a los 90 días | Las pruebas internas no pasan por revisión de Apple **(verificar)**; cómodo para instalar sin cable |
 | AltStore / SideStore | Refresco cada 7 días con Apple ID gratuito | Útil sin cuenta de pago; más mantenimiento |
 | Tiendas alternativas (UE) | — | Solo en la UE y con notarización; no aplica |
