@@ -1,9 +1,8 @@
 import SwiftUI
 import OrbitalModels
 
-/// La guía de la primera vez, versión 2 (`docs/producto/guia-aprende/propuesta.md`; Fernando, 3 nov 2026): bienvenida (el
-/// planeta atrapa siete pósters), lo que te gusta, «¿Qué ya tienes?» y, según lo que contestes, Real-Debrid, Trakt y la TV;
-/// luego «Listo». Nada es obligatorio y «Saltar» siempre está arriba. Un paso empuja al siguiente con una sola transición
+/// La guía de la primera vez, versión 3 (Fernando, 18 nov 2026; el camino en `OnboardingModel.plan`): bienvenida, tu TV,
+/// Trakt, «Trajimos lo tuyo», tu nube o tus plataformas, más subtítulos y «Listo». Nada es obligatorio y «Saltar» siempre está arriba. Un paso empuja al siguiente con una sola transición
 /// (lo que sale se encoge y se desvanece, lo que entra sube); la luna avanza por el arco de arriba. Si cierras la app a
 /// medias, al volver (antes de 24 h) sigues donde ibas.
 struct OnboardingView: View {
@@ -57,12 +56,12 @@ struct OnboardingView: View {
         let back: (() -> Void)? = history.isEmpty ? nil : { goBack() }
         switch step {
         case .welcome: OnboardingWelcome(guide: model, next: { go(from: step) }, skip: finish)
-        case .likes: OnboardingLikes(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
-        case .have: OnboardingHave(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .debrid:
             OnboardingSeeHere(guide: model, step: position, back: back, next: { explained.insert(.debrid); go(from: step) }, skip: finish)
         case .trakt:
             OnboardingTrakt(guide: model, step: position, back: back, next: { explained.insert(.trakt); go(from: step) }, skip: finish)
+        case .win: OnboardingWin(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .platforms: OnboardingPlatforms(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .tv: OnboardingTV(step: position, back: back, next: { go(from: step) }, skip: finish)
         case .subtitles: OnboardingSubtitles(step: position, back: back, next: { go(from: step) }, skip: finish)
         case .done: OnboardingDone(guide: model, finish: finish)

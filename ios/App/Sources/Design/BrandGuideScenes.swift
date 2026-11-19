@@ -4,57 +4,6 @@ import OrbitalCore
 // Las escenas de la guía de bienvenida (revisión del director, Fernando, 4 nov 2026: «dale que sí con tus recomendaciones»;
 // docs/producto/guia-aprende/guia-revision.html). Una sola cosa viva por pantalla y la luna como hilo que cruza de una a otra.
 
-/// G2 · Tu órbita: un planeta chico con su anillo; lo que eliges entra en órbita como una miniatura que llega volando. Con tres,
-/// el anillo se cierra y llega la luna (`onClosed`, para el toque en la mano). Con «Reducir movimiento», todo en su lugar.
-struct GuideOrbit: View {
-    @Environment(\.titleName) var titleName
-    let picked: [Suggestion]
-    var needed = 3
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private var closed: Bool { picked.count >= needed }
-
-    var body: some View {
-        ZStack {
-            // El anillo se va cerrando con cada elegido.
-            Ellipse().trim(from: 0, to: min(1, Double(picked.count) / Double(needed)))
-                .stroke(closed ? DS.text : DS.textMuted, style: StrokeStyle(lineWidth: DS.Stroke.selected, lineCap: .round))
-                .frame(width: DS.GuideScene.orbitWidth, height: DS.GuideScene.orbitHeight)
-                .rotationEffect(.degrees(DS.Welcome.tilt))
-            Ellipse().stroke(DS.fill, lineWidth: DS.Stroke.regular)
-                .frame(width: DS.GuideScene.orbitWidth, height: DS.GuideScene.orbitHeight)
-                .rotationEffect(.degrees(DS.Welcome.tilt))
-            MarkPlanet().frame(width: DS.GuideScene.planet, height: DS.GuideScene.planet).foregroundStyle(DS.text)
-            ForEach(Array(picked.prefix(DS.Welcome.posters).enumerated()), id: \.element.imdb) { i, item in
-                PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), maxPoints: DS.GuideScene.mini)
-                    .frame(height: DS.GuideScene.mini)
-                    .offset(slot(i))
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .offset(y: DS.Welcome.fallFrom / 2).combined(with: .scale(scale: DS.Scene.lifted * DS.Scene.lifted)).combined(with: .opacity),
-                                                                      removal: .offset(y: -DS.Welcome.fallFrom / 3).combined(with: .opacity)))
-            }
-            Circle().fill(DS.brandMoon).frame(width: DS.Welcome.moon, height: DS.Welcome.moon)
-                .offset(x: DS.GuideScene.orbitWidth / 2, y: -DS.GuideScene.orbitHeight / 2)
-                .scaleEffect(closed ? 1 : 0)
-        }
-        .frame(height: DS.GuideScene.orbitHeight + DS.GuideScene.mini * 1.4)
-        .animation(DS.Motion.spring(reduceMotion), value: picked.map(\.imdb))
-        .animation(DS.Motion.pop(reduceMotion), value: closed)
-        .accessibilityElement()
-        .accessibilityLabel(Text("\(String(picked.count)) en tu órbita"))
-    }
-
-    /// El lugar de cada miniatura en la elipse inclinada (como el anillo de la marca).
-    private func slot(_ i: Int) -> CGSize {
-        let angle = Double.pi * (0.9 + 1.3 * Double(i) / Double(max(DS.Welcome.posters - 1, 1)))
-        let a = DS.GuideScene.orbitWidth / 2, b = DS.GuideScene.orbitHeight / 2
-        // Con tipos dichos: el Swift de la CI no sabía qué `cos` usar (Double o CGFloat).
-        let t: Double = DS.Welcome.tilt * .pi / 180
-        let x: CGFloat = a * CGFloat(Foundation.cos(angle)), y: CGFloat = b * CGFloat(Foundation.sin(angle))
-        let ct = CGFloat(Foundation.cos(t)), st = CGFloat(Foundation.sin(t))
-        return CGSize(width: x * ct - y * st, height: x * st + y * ct)
-    }
-}
-
 /// G7 · Tu Inicio en miniatura: lo que elegiste baja a sus filas («Porque te gustó…», «Nuevo en tus plataformas»), una pieza
 /// tras otra. Al final, `grow` lo hace crecer a pantalla completa (se vuelve el Inicio de verdad).
 struct GuideMiniHome: View {
@@ -63,7 +12,7 @@ struct GuideMiniHome: View {
     let more: [Suggestion]
     let logos: [String]
     var grow = false
-    /// Si elegiste algo en «¿Qué te gusta?»: si no, la primera fila no dice «Porque te gustó…» (G4-B, 18 nov 2026).
+    /// Si la primera fila puede decir «Porque te gustó…» (G4-B, 18 nov 2026); sin gustos elegidos, no.
     var chose = true
     @State private var landed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -141,42 +90,4 @@ struct GuideMoonFlight: View {
     }
 
     struct Flight { var x = 0.5, y = 0.92, shown = 0.0 }
-}
-
-/// G3 · Lo que tienes, como objetos de línea: una nube (Real-Debrid), dos aparatos unidos por un hilo (Trakt) y una TV. Encendido,
-/// la nube se llena, el hilo se dibuja de punta a punta y la pantalla de la TV prende.
-struct GuideHaveObject: View {
-    enum Kind { case cloud, thread, tv }
-    let kind: Kind
-    let on: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        ZStack {
-            switch kind {
-            case .cloud:
-                Image(systemName: on ? "cloud.fill" : "cloud").font(.system(size: DS.GuideScene.object, weight: .light))   // ds-exception: un dibujo, no texto
-                    .foregroundStyle(on ? DS.fresh : DS.text)
-                    .contentTransition(.symbolEffect(.replace))
-            case .thread:
-                HStack(spacing: 0) {
-                    Image(systemName: "iphone").font(.system(size: DS.GuideScene.object / 2, weight: .light))   // ds-exception: un dibujo, no texto
-                    Capsule().fill(DS.fill).frame(height: DS.Stroke.selected).overlay(alignment: .leading) {
-                        GeometryReader { geo in Capsule().fill(DS.fresh).frame(width: on ? geo.size.width : 0) }
-                    }
-                    .frame(width: DS.GuideScene.object / 2)
-                    Image(systemName: "ipad").font(.system(size: DS.GuideScene.object / 2, weight: .light))   // ds-exception: un dibujo, no texto
-                }
-                .foregroundStyle(DS.text)
-            case .tv:
-                Image(systemName: on ? "tv.and.mediabox.fill" : "tv.and.mediabox").font(.system(size: DS.GuideScene.object, weight: .light))   // ds-exception: un dibujo, no texto
-                    .foregroundStyle(on ? DS.fresh : DS.text)
-                    .contentTransition(.symbolEffect(.replace))
-            }
-        }
-        .frame(height: DS.GuideScene.object * 1.2)
-        .scaleEffect(on ? DS.Scene.lifted : 1)
-        .animation(DS.Motion.pop(reduceMotion), value: on)
-        .accessibilityHidden(true)
-    }
 }

@@ -75,30 +75,38 @@ class GuideUITestCase: XCTestCase {
         field.typeText(token + "\n")
     }
 
-    /// La guía completa (versión 2: nada obligatorio). Con `capture`, una captura de cada pantalla con el prefijo de su número.
+    /// De la bienvenida a tu nube (v3, 18 nov 2026): la TV y Trakt se dejan para después.
+    func toTheCloud() {
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
+        next(); wait("Tu iPhone, control de tu TV")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Sigue donde te quedaste")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Ve todo al instante, aquí")
+    }
+
+    /// La guía completa (versión 3: el camino sale de la versión, nada obligatorio). Con `capture`, una captura de cada
+    /// pantalla con el prefijo de su número.
     func walkTheGuide(capture: Bool) {
         let c: (String) -> Void = { name in if capture { self.shot(name) } }
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
         wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4); c("01-bienvenida")
-        next(); wait("¿Qué te gusta?"); c("02-gustos")
-        next(); wait("¿Qué ya tienes?"); c("03-que-tienes")
-        app.buttons["have-debrid"].tap(); app.buttons["have-trakt"].tap()
+        next(); wait("Tu iPhone, control de tu TV"); c("02-tv")
+        app.buttons["guide-skip"].firstMatch.tap(); wait("Sigue donde te quedaste"); c("03-trakt")
+        next(); wait("Esperando a que lo apruebes"); c("04-trakt-codigo")   // TK-C3: «Conectar Trakt» abre el código
+        wait("Listo, fernando", 20); c("05-trakt-conectado")
+        next(); wait("Trajimos lo tuyo"); c("06-lo-tuyo")   // K4-B: Trakt trajo algo
         next(); wait("Ve todo al instante, aquí")
-        XCTAssertTrue(app.buttons["guide-skip"].exists, "«Cuando quiera ver algo» siempre deja seguir")
-        // DN1: «Conectar tu nube» abre la hoja «Tu nube»: primero cuál de las tres, nunca Real-Debrid solo.
-        next(); wait("Ya tengo cuenta"); c("04-tu-nube")
+        XCTAssertTrue(app.buttons["guide-skip"].exists, "«Ahora no, después» siempre deja seguir")
+        // DN1: «Elegir tu nube» abre la hoja «Tu nube»: primero cuál de las tres, nunca Real-Debrid solo.
+        next(); wait("Ya tengo cuenta"); c("07-tu-nube")
         XCTAssertTrue(app.buttons["cloud-connect-torbox"].exists && app.buttons["cloud-connect-alldebrid"].exists, "las tres nubes")
-        app.buttons["cloud-connect-realdebrid"].tap(); c("04-clave-a-mano")
-        enter(Self.badToken); wait("no reconoce"); c("05-clave-no-reconocida")
+        app.buttons["cloud-connect-realdebrid"].tap(); c("07-clave-a-mano")
+        enter(Self.badToken); wait("no reconoce"); c("08-clave-no-reconocida")
         enter(Self.shortToken); wait("incompleta")
         enter(Self.freeToken); wait("Tu cuenta es gratuita")
-        enter(Self.goodToken); wait("Real-Debrid · fernando", 15); c("06-clave-buena")   // conectada: la hoja se cierra sola
-        next(); wait("Sigue donde te quedaste"); c("07-trakt")
-        next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")   // TK-C3: «Conectar Trakt» abre el código
-        wait("Listo, fernando", 20); c("08-trakt-conectado")
+        enter(Self.goodToken); wait("Real-Debrid · fernando", 15); c("09-clave-buena")   // conectada: la hoja se cierra sola
         next()
-        XCTAssertFalse(app.staticTexts["Tu iPhone, control de tu TV"].exists, "sin TV no hay paso de la TV")
-        wait("Tu Orbital ya está lista."); c("09-listo")
+        wait("Tu Orbital ya está lista."); c("10-listo")
         next()
         XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 10) || app.buttons["Inicio"].waitForExistence(timeout: 5),
                       "al terminar, la app")
@@ -108,47 +116,13 @@ class GuideUITestCase: XCTestCase {
 final class OnboardingUITests: GuideUITestCase {
     func testCompleteTheGuideWithEveryKeyProblem() { walkTheGuide(capture: false) }
 
-    /// Para revisar la guía (crítica del 18 nov 2026): con `SHOTS`, una captura de cada pantalla y cada variante en el aparato
-    /// donde corra (iPhone, iPad, Mac). Sin `SHOTS` solo recorre: dos pasadas, con gustos y nube/Trakt/TV, y sin gustos con la TV.
-    func testCaptureTheGuideForReview() {
-        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
-        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4); shot("01-bienvenida")
-        next(); wait("¿Qué te gusta?"); sleep(2); shot("02-gustos-vacio")
-        let screen = app.windows.firstMatch.frame
-        let posters = app.buttons.matching(NSPredicate(format: "identifier == '' AND label != ''")).allElementsBoundByIndex
-            .filter { $0.isHittable && $0.frame.minY > screen.height * 0.3 && $0.frame.height > 80 }
-        for poster in posters.prefix(3) { poster.tap() }
-        sleep(2); shot("03-gustos-listo")
-        app.swipeUp(); sleep(2); shot("04-gustos-abajo")
-        next(); wait("¿Qué ya tienes?"); sleep(1); shot("05-tienes")
-        app.buttons["have-tv"].press(forDuration: 1.2); sleep(1); shot("06-tienes-explica")
-        app.buttons["have-trakt"].tap(); app.buttons["have-tv"].tap(); sleep(1); shot("07-tienes-marcado")
-        next(); wait("Ve todo al instante, aquí"); sleep(2); shot("08-nube")
-        next(); wait("Ya tengo cuenta"); sleep(2); shot("09-nube-hoja")
-        app.buttons["cloud-connect-realdebrid"].tap(); sleep(2); shot("10-nube-realdebrid")
-        app.buttons["cloud-sheet-done"].tap(); sleep(2)
-        app.buttons["guide-skip"].firstMatch.tap(); wait("Sigue donde te quedaste"); sleep(2); shot("11-aparatos")
-        app.buttons["guide-skip"].firstMatch.tap(); wait("Tu Orbital ya está lista."); sleep(2); shot("13-final")
-        next(); sleep(5); shot("14-llegada-inicio")
+    /// Para revisar la guía: con `SHOTS`, una captura de cada pantalla en el aparato donde corra (iPhone, iPad, Mac).
+    func testCaptureTheGuideForReview() { walkTheGuide(capture: true) }
 
-        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
-        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
-        next(); wait("¿Qué te gusta?")
-        next(); wait("¿Qué ya tienes?")
-        app.buttons["have-debrid"].tap(); app.buttons["have-tv"].tap()
-        next(); wait("Ve todo al instante, aquí"); sleep(2); shot("16-nube-ya-tengo")
-        app.buttons["guide-skip"].firstMatch.tap(); wait("control de tu TV"); sleep(2); shot("17-tv-sola")
-        app.buttons["guide-skip"].firstMatch.tap(); wait("Tu Orbital ya está lista."); sleep(2); shot("18-final-sin-gustos")
-    }
-
-    /// Sin marcar nada y «Cuando quiera ver algo»: de «¿Qué ya tienes?» a «Listo» sin conectar nada (Q1, D1).
+    /// «Después» en cada paso: de la bienvenida a «Listo» sin conectar nada (nada es obligatorio).
     func testLaterSkipsStraightToTheEnd() {
-        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
-        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
-        next(); wait("¿Qué te gusta?")
-        next(); wait("¿Qué ya tienes?")
-        next(); wait("Ve todo al instante, aquí")
-        app.buttons["guide-skip"].tap()
+        toTheCloud()
+        app.buttons["guide-skip"].firstMatch.tap()
         wait("Tu Orbital ya está lista.")
     }
 
@@ -173,11 +147,7 @@ final class OnboardingUITests: GuideUITestCase {
 
     /// RC1 · Real-Debrid con código (en la hoja «Tu nube», DN1): sin copiar ni pegar, el código grande y, al aprobarlo, conectado solo.
     func testRealDebridConnectsWithACode() {
-        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
-        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
-        next(); wait("¿Qué te gusta?")
-        next(); wait("¿Qué ya tienes?")
-        next(); wait("Ve todo al instante, aquí")
+        toTheCloud()
         next()   // «Conectar tu nube» (DN1): la hoja «Tu nube», Real-Debrid y «Conectar con un código»
         app.buttons["cloud-connect-realdebrid"].firstMatch.waitForExistence(timeout: 10)
         app.buttons["cloud-connect-realdebrid"].firstMatch.tap()

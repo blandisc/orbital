@@ -1,28 +1,24 @@
 import Foundation
 import OrbitalCore
 
-/// La guía de la primera vez, versión 2 (`docs/producto/guia-aprende/propuesta.md`; Fernando, 3 nov 2026: «A1 · B1 · C1 · D1 ·
-/// E1 · F3 · G3 · H1»). Nada es obligatorio: bienvenida, lo que te gusta (gustos, no vistos), «¿Qué ya tienes?» y, según lo
-/// que contestes, Real-Debrid, Trakt y la TV; luego «Listo». Pagar Real-Debrid no la detiene: «Cuando quiera ver algo» la
-/// termina y la hoja de conectar sale la primera vez que tocas «Ver». Si cierras la app a medias, antes de 24 h sigue donde
-/// ibas. Se reabre desde Ajustes › Aprende Orbital.
+/// La guía de la primera vez, versión 3 (Fernando, 18 nov 2026: «Me gusta, empieza a construir»; prototipo en
+/// `docs/producto/guia-trabajos-2026-11-18/onboarding/`). El camino sale de la versión y de lo que ya pasó, sin preguntar
+/// qué tienes: bienvenida, tu TV (solo donde hay TV), Trakt, «Trajimos lo tuyo» (solo si Trakt trajo algo), tu nube (Plus y
+/// Ultra) o tus plataformas (la de la tienda), más subtítulos y «Listo». Nada es obligatorio. Si cierras la app a medias,
+/// antes de 24 h sigue donde ibas. Se reabre desde Ajustes › Aprende Orbital.
 @MainActor
 public final class OnboardingModel: ObservableModel {
     public enum Step: String, CaseIterable, Hashable, Sendable {
-        case welcome, likes, have, debrid, trakt, tv, subtitles, done
+        case welcome, tv, trakt, win, debrid, platforms, subtitles, done
         var order: Int { Self.allCases.firstIndex(of: self) ?? 0 }
     }
 
-    /// Lo que contestas en «¿Qué ya tienes?» de cada pieza.
-    public enum Answer: String, Equatable, Sendable { case has, explain, later }
-
-    /// Una pieza de «¿Qué ya tienes?».
+    /// Lo que la guía explica (cuenta como visto en «Aprende» al terminar).
     public enum Piece: String, CaseIterable, Sendable { case debrid, trakt, tv }
 
     static let seenKey = "onboarding-seen"
     static let progressKey = "onboarding-progress"
     static let resumeWindow: TimeInterval = 24 * 3600
-    public static let minimumLikes = 3
 
     public let debrid: DebridModel
     public let addons: AddonsModel
@@ -36,7 +32,6 @@ public final class OnboardingModel: ObservableModel {
         public init(watched: Int, listed: Int, shows: Int) { self.watched = watched; self.listed = listed; self.shows = shows }
         public var isEmpty: Bool { watched == 0 && listed == 0 && shows == 0 }
     }
-    public private(set) var answers: [Piece: Answer] = [:] { didSet { changed() } }
     /// Los pósters para elegir lo que te gusta (lo popular de ahora).
     public private(set) var candidates: [Suggestion] = [] { didSet { changed() } }
     public private(set) var liked: [String] = [] { didSet { changed() } }
@@ -51,7 +46,6 @@ public final class OnboardingModel: ObservableModel {
         liked = Taste.likes(services.kv).map(\.imdb)
         chosenPlatforms = Set(Taste.platforms(services.kv))
         super.init()
-        for piece in Piece.allCases where isConnected(piece) { answers[piece] = .has }
     }
 
     /// ¿Se enseña la guía al abrir? La primera vez. Quien ya usaba la app (Real-Debrid o Trakt conectados) no la ve.
@@ -67,7 +61,6 @@ public final class OnboardingModel: ObservableModel {
     public var offersDebrid: Bool { services.capabilities.instantStreams }
     /// ¿Hay cómo conectar Trakt en esta compilación?
     public var offersTrakt: Bool { if case .off = settings.trakt { return false }; return true }
-    public var pieces: [Piece] { Piece.allCases.filter { $0 != .tv || offersTV }.filter { $0 != .debrid || offersDebrid }.filter { $0 != .trakt || offersTrakt } }
 
     /// ¿Se ofrece conectar OpenSubtitles? Con la clave de la app y sin tu cuenta todavía (se lee al abrir la guía).
     public var offersSubtitles = false { didSet { if oldValue != offersSubtitles { changed() } } }
@@ -83,27 +76,30 @@ public final class OnboardingModel: ObservableModel {
         }
     }
 
-    public func answer(_ piece: Piece, _ value: Answer) { answers[piece] = value }
-
-    /// Un toque en su objeto: lo tienes o no (Q1).
-    public func toggle(_ piece: Piece) { answers[piece] = answers[piece] == .has ? nil : .has }
-
-    /// ¿La pantalla de Trakt lleva también la de la TV? (Q3: con los dos, una sola de «tus aparatos».)
-    public var traktWithTV: Bool { offersTV && !isConnected(.tv) && answers[.tv] == .has }
-
-    /// Los pasos de tu guía con lo que marcaste (revisión del director, Q1: lo que no tienes, no se marca). «Ver aquí mismo» sale
-    /// siempre que Real-Debrid no esté conectado (ahí se explica); Trakt y la TV, solo si marcaste que los tienes. Con los dos,
-    /// van juntos en una sola pantalla de «tus aparatos» (Q3).
+    /// Los pasos de tu guía (v3): lo ya conectado antes de llegar no se explica; donde ya estuviste, sigue aunque ahí lo
+    /// conectes. «Trajimos lo tuyo» solo si Trakt trajo algo. Con nube (Plus y Ultra) se explica tu nube; sin ella (la de la
+    /// tienda), tus plataformas.
     public var plan: [Step] {
-        var out: [Step] = [.welcome, .likes, .have]
-        if offersDebrid, visited.contains(.debrid) || (!isConnected(.debrid) && answers[.debrid] != .later) { out.append(.debrid) }
-        let trakt = offersTrakt && (visited.contains(.trakt) || (!isConnected(.trakt) && answers[.trakt] == .has))
-        let tv = offersTV && (visited.contains(.tv) || (!isConnected(.tv) && answers[.tv] == .has))
-        if trakt { out.append(.trakt) }
-        if tv && !trakt { out.append(.tv) }
+        var out: [Step] = [.welcome]
+        if offersTV, visited.contains(.tv) || !isConnected(.tv) { out.append(.tv) }
+        if offersTrakt, visited.contains(.trakt) || !isConnected(.trakt) { out.append(.trakt) }
+        if visited.contains(.win) || brought.map({ !$0.isEmpty }) == true { out.append(.win) }
+        if offersDebrid {
+            if visited.contains(.debrid) || !isConnected(.debrid) { out.append(.debrid) }
+        } else {
+            out.append(.platforms)
+        }
         // Más subtítulos (OpenSubtitles): solo si esta versión trae la clave de la app y aún no está tu cuenta.
         if offersSubtitles { out.append(.subtitles) }
         out.append(.done)
+        return out
+    }
+
+    /// Los pasos que cuentan los puntos del arco: el camino más largo (con «Trajimos lo tuyo» donde va Trakt), para que el
+    /// número no cambie a medio camino cuando Trakt trae algo.
+    var dotPlan: [Step] {
+        var out = plan
+        if out.contains(.trakt), !out.contains(.win), let i = out.firstIndex(of: .trakt) { out.insert(.win, at: i + 1) }
         return out
     }
 
@@ -116,11 +112,11 @@ public final class OnboardingModel: ObservableModel {
 
     /// En qué paso vas y cuántos son (la luna en el arco).
     public func position(_ step: Step) -> (current: Int, total: Int) {
-        let plan = plan
+        let plan = dotPlan
         return (plan.firstIndex(of: step) ?? 0, plan.count)
     }
 
-    /// Nada detiene la guía: Real-Debrid y Trakt tienen «Cuando quiera» y «Ahora no».
+    /// Nada detiene la guía: cada paso tiene «Ahora no».
     public func canContinue(_ step: Step) -> Bool { true }
 
     // MARK: retomar
@@ -145,7 +141,7 @@ public final class OnboardingModel: ObservableModel {
         services.kv.data(seenKey) == nil && services.kv.data(progressKey) != nil && OnboardingModel(services).resumeStep == nil
     }
 
-    // MARK: lo que te gusta (H1)
+    // MARK: los pósters de la bienvenida y tus plataformas
 
     /// Lo popular de ahora, películas y series alternadas; sin red, el último mosaico guardado.
     public func loadCandidates() async {
@@ -160,14 +156,6 @@ public final class OnboardingModel: ObservableModel {
         }
         if mixed.isEmpty { mixed = await forYou.cachedMosaic().filter { !$0.poster.isEmpty } }
         candidates = Array(mixed.prefix(18))
-    }
-
-    public func toggleLike(_ item: Suggestion) {
-        if let i = liked.firstIndex(of: item.imdb) { liked.remove(at: i) } else { liked.append(item.imdb) }
-        let known = Dictionary(candidates.map { ($0.imdb, $0) }, uniquingKeysWith: { a, _ in a })
-        let kept = Taste.likes(services.kv).filter { liked.contains($0.imdb) && known[$0.imdb] == nil }
-        let new = liked.compactMap { known[$0] }.map { Taste.Like(kind: $0.kind, imdb: $0.imdb, title: $0.title, year: $0.year) }
-        Taste.setLikes(kept + new, services.kv)
     }
 
     public func loadPlatforms() async {
@@ -187,6 +175,40 @@ public final class OnboardingModel: ObservableModel {
         await services.syncLibrary(force: true)
         let all = services.library.all
         brought = Self.count(all)
+    }
+
+    // MARK: Trajimos lo tuyo (K4-B)
+
+    /// Un póster del mosaico de «Trajimos lo tuyo»: lo más reciente de tu historial y tu lista.
+    public struct WinTile: Equatable, Sendable, Identifiable {
+        public let id: String, kind: String, title: String, poster: String?, listed: Bool
+    }
+    /// La sugerencia de ejemplo con su porqué («Porque viste Severance»): sale de lo que Trakt trajo.
+    public struct Tonight: Equatable, Sendable {
+        public let seed: String, seedID: String, seedKind: String, pick: Suggestion
+    }
+    public private(set) var winTiles: [WinTile] = [] { didSet { changed() } }
+    public private(set) var tonight: Tonight? { didSet { changed() } }
+    public static let winTileCount = 18
+
+    /// Arma «Trajimos lo tuyo»: el mosaico con lo tuyo (con póster, lo más reciente primero) y una sugerencia con su porqué.
+    /// La semilla queda en el mosaico para iluminarla.
+    public func loadWin() async {
+        if winTiles.isEmpty { winTiles = Self.tiles(services.library.all) }
+        guard tonight == nil, let found = await services.forYou.becauseYouWatched(), let pick = found.items.first else { return }
+        tonight = Tonight(seed: found.seed.title, seedID: found.seed.imdb, seedKind: found.seed.kind, pick: pick)
+        if !winTiles.contains(where: { $0.id == found.seed.imdb }),
+           let entry = services.library.all.first(where: { $0.metaID == found.seed.imdb && $0.poster != nil }) {
+            winTiles = Array(([WinTile(id: entry.metaID, kind: entry.kind, title: entry.name, poster: entry.poster, listed: entry.inList)] + winTiles).prefix(Self.winTileCount))
+        }
+    }
+
+    /// Lo tuyo para el mosaico: lo que no ocultaste, con póster, visto o en tu lista, lo más reciente primero.
+    public static func tiles(_ all: [LibraryEntry]) -> [WinTile] {
+        all.filter { $0.hiddenAt == nil && $0.poster?.isEmpty == false && (!$0.seen.isEmpty || $0.inList) }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .prefix(winTileCount)
+            .map { WinTile(id: $0.metaID, kind: $0.kind, title: $0.name, poster: $0.poster, listed: $0.inList) }
     }
 
     /// Lo que cuenta la pantalla de Trakt: lo visto (cada película y cada episodio), lo de Mi lista y las series con algo visto.

@@ -148,7 +148,7 @@ final class MacFlowsUITests: XCTestCase {
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
         wait("Todo lo que quieres ver, en un solo lugar.", 25); sleep(3)
         button("guide-next").tap()
-        wait("¿Qué te gusta?")
+        wait("Sigue donde te quedaste")   // v3: en la Mac no hay paso de la TV
         button("guide-skip-all").tap()
         XCTAssertTrue(app.descendants(matching: .any)["mac-tabs"].firstMatch.waitForExistence(timeout: 15), "«Saltar» no llevó a la app")
         shot("guia-saltada")
@@ -172,9 +172,8 @@ final class MacFlowsUITests: XCTestCase {
     private func walkGuideFromWelcome() {
         wait("Todo lo que quieres ver, en un solo lugar.", 25); sleep(3)
         shot("guia-1-bienvenida")
-        button("guide-next").tap(); wait("¿Qué te gusta?")
-        button("guide-next").tap(); wait("¿Qué ya tienes?")
-        button("guide-next").tap(); wait("Ve todo al instante, aquí")
+        button("guide-next").tap(); wait("Sigue donde te quedaste")   // v3: Trakt, luego tu nube
+        button("guide-skip").tap(); wait("Ve todo al instante, aquí")
         shot("guia-4-debrid")
         button("guide-skip").tap()
         wait("Tu Orbital ya está lista.")

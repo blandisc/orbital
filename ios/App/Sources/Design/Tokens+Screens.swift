@@ -332,6 +332,12 @@ extension DS {
     /// Ajustes: los renglones con su ícono de color.
     /// La guía de la primera vez: el grueso de las rayitas de los pasos, el ícono de cada pieza y el número de cada paso.
     enum Guide {
+        /// El póster de la sugerencia de «Trajimos lo tuyo».
+        static let whyPoster = CGSize(width: 40, height: 60)
+        /// «¿Qué plataformas tienes?»: el póster de la ficha de ejemplo, el hueco del logo (y su contorno punteado) y la
+        /// altura de cada casilla (54 pt: más que el mínimo para tocar).
+        static let platformPoster = CGSize(width: 44, height: 66)
+        static let slot: CGFloat = 28, slotDash: [CGFloat] = [3, 3.4], platformTile: CGFloat = 54
         /// TK-L2: tu foto (la inicial en el anillo de la marca), su palomita y la rayita entre los tres números.
         static let avatar: CGFloat = 104, avatarBadge: CGFloat = 32, countDivider: CGFloat = 36
         /// La foto crece con un resorte pequeño; la palomita, con el de la marca; los números cuentan a la vez.

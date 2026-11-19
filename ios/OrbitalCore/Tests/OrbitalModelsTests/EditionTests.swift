@@ -51,9 +51,8 @@ final class EditionTests: XCTestCase {
         XCTAssertFalse(services.orbital.isConfigured)
         XCTAssertFalse(TVNowModel(services).isConfigured, "sin control ni «En la TV»")
         let guide = OnboardingModel(services)
-        XCTAssertEqual(guide.pieces, [.trakt].filter { _ in guide.offersTrakt }, "«¿Qué ya tienes?» sin Real-Debrid ni la TV")
-        guide.answer(.debrid, .has); guide.answer(.tv, .has)
-        XCTAssertFalse(guide.plan.contains(.debrid)); XCTAssertFalse(guide.plan.contains(.tv))
+        XCTAssertFalse(guide.plan.contains(.debrid), "la guía sin tu nube"); XCTAssertFalse(guide.plan.contains(.tv), "ni la TV")
+        XCTAssertTrue(guide.plan.contains(.platforms), "en su lugar, tus plataformas")
         let stories = LearnModel(services).stories.map(\.id)
         XCTAssertFalse(stories.contains(LearnContent.instant.id), "Aprende sin «Ver al instante»")
         XCTAssertFalse(stories.contains(LearnContent.tv.id), "Aprende sin «Tu TV»")
@@ -65,7 +64,7 @@ final class EditionTests: XCTestCase {
         XCTAssertTrue(services.showsCloudDownloads)
         XCTAssertFalse(services.orbitalOn)
         XCTAssertTrue(TitleModel(services, kind: "movie", metaID: "tt0816692").offersInstant)
-        XCTAssertFalse(OnboardingModel(services).pieces.contains(.tv))
+        XCTAssertFalse(OnboardingModel(services).offersTV)
     }
 
     func testUltraKeepsEverything() throws {
@@ -77,7 +76,7 @@ final class EditionTests: XCTestCase {
         XCTAssertTrue(services.orbitalOn)
         XCTAssertTrue(services.orbital.isConfigured)
         let guide = OnboardingModel(services)
-        XCTAssertTrue(guide.pieces.contains(.debrid)); XCTAssertTrue(guide.pieces.contains(.tv))
+        XCTAssertTrue(guide.offersDebrid); XCTAssertTrue(guide.offersTV)
         let stories = LearnModel(services).stories.map(\.id)
         XCTAssertTrue(stories.contains(LearnContent.instant.id)); XCTAssertTrue(stories.contains(LearnContent.tv.id))
     }

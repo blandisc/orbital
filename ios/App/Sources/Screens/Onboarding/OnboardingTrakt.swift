@@ -6,7 +6,7 @@ import OrbitalModels
 /// Arriba, tu serie viaja de un aparato al otro (`GuideTraktScene`). «Conectar Trakt» abre el código para trakt.tv/activate
 /// (entrar sin salir de la app, TK-C3, queda para cuando se compruebe que Trakt lo permite; el código es su respaldo).
 /// Al aprobar, te reconoce: tu inicial, «Listo, <nombre>» y lo que se trajo (vistas, en Mi lista, series que sigues); una
-/// cuenta nueva no enseña ceros. «Ahora no» siempre a la mano. Si también tienes la TV, va aquí mismo (Q3).
+/// cuenta nueva no enseña ceros. «Ahora no» siempre a la mano.
 struct OnboardingTrakt: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
@@ -16,7 +16,6 @@ struct OnboardingTrakt: View {
     @State private var settings: ModelObserver<SettingsModel>
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var connectingTV = false
     @State private var showsCode = false
     @State private var shown = false
 
@@ -36,7 +35,6 @@ struct OnboardingTrakt: View {
             if linked { done(model) } else { ask(model) }
         }
         .sheet(isPresented: $showsCode) { TraktCodeSheet(settings: settings.model) }
-        .sheet(isPresented: $connectingTV) { OrbitalSetupView() }
         .onChange(of: linked) { _, now in
             if now { showsCode = false; Task { await model.traktLinked() } }
         }
@@ -68,24 +66,14 @@ struct OnboardingTrakt: View {
                  : "Sin Trakt, lo tuyo queda en este iPhone. Lo conectas cuando quieras desde Inicio o Ajustes.")
                 .recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
                 .opacity(shown ? 1 : 0)
-            if model.traktWithTV { tvRow }
         }
         .task { withAnimation(DS.Motion.enter(reduceMotion)?.delay(0.12)) { shown = true } }
-    }
-
-    private var tvRow: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text("Y tu TV").recipe(.cardTitle, color: DS.text)
-            Button(env.services.orbital.isConfigured ? "Conectada" : "Conectar tu TV", systemImage: "tv.and.mediabox") { connectingTV = true }
-                .dsGlassButton().disabled(env.services.orbital.isConfigured)
-        }
     }
 
     // MARK: ya conectado: te reconoce (TK-L2)
 
     @ViewBuilder private func done(_ model: OnboardingModel) -> some View {
         TraktRecognized(name: model.traktName, brought: model.brought)
-        if model.traktWithTV { tvRow }
     }
 }
 

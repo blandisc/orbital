@@ -59,11 +59,6 @@ extension DS {
         static let bend: CGFloat = 0.7   // ds-exception: cuánto se curva el arco (proporción de su alto)
     }
 
-    /// Lo que te gusta (H1): la cuadrícula de pósters y las plataformas.
-    enum Likes {
-        static let columns = 3
-    }
-
     /// Las historias de «Aprende Orbital» (G3). La barra, el toque para regresar y mantener para pausar son los del Wrapped
     /// (`DS.Watching`).
     enum Story {
@@ -193,10 +188,6 @@ extension DS {
         /// La luna que viaja de pantalla en pantalla, y dónde queda el arco de avance (fracción del ancho).
         static let flight = 0.45, fadeOut = 0.25
         static let arcStart = 0.08, arcSpan = 0.62   // ds-exception: el arco de arriba en fracción del ancho
-        /// Los pósters de G2 entran cayendo, uno tras otro (vienen de la órbita de la bienvenida).
-        static let dropStep = 0.04
-        /// Los objetos de «¿Qué ya tienes?» (G3).
-        static let object: CGFloat = 52
         /// La escena viva de «Ver aquí mismo» (G4).
         static let sceneHeight: CGFloat = 220
         /// Al elegir, el póster se voltea.

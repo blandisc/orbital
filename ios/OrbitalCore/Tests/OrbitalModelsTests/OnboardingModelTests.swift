@@ -30,22 +30,41 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertTrue(OnboardingModel.count([]).isEmpty)
     }
 
-    /// C1 y Q1: lo que no tienes no se marca. Real-Debrid se explica siempre que no esté conectado; Trakt y la TV, solo si
-    /// los marcas; con los dos, una sola pantalla de «tus aparatos» (Q3). Nada detiene la guía.
-    func testTheAnswersShapeThePlanAndNothingBlocks() throws {
-        let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
+    /// v3 (18 nov 2026): el camino sale de la versión, sin preguntar qué tienes. En Ultra, la TV va antes de Trakt; con
+    /// nube se explica tu nube; en la de la tienda, tus plataformas. Nada detiene la guía.
+    func testTheRouteFollowsTheEdition() throws {
+        let ultra = OnboardingModel(try ServicesRig(signedIn: false, traktClientID: "CID").services)
+        XCTAssertEqual(ultra.plan, [.welcome, .tv, .trakt, .debrid, .done])
+        XCTAssertTrue(OnboardingModel.Step.allCases.allSatisfy(ultra.canContinue), "ningún paso es obligatorio")
+        XCTAssertEqual(ultra.next(after: .trakt), .debrid)
+        XCTAssertNil(ultra.next(after: .done))
+        let plus = OnboardingModel(try ServicesRig(signedIn: false, traktClientID: "CID", edition: .plus).services)
+        XCTAssertEqual(plus.plan, [.welcome, .trakt, .debrid, .done], "Plus no tiene TV")
+        let store = OnboardingModel(try ServicesRig(signedIn: false, traktClientID: "CID", edition: .orbital).services)
+        XCTAssertEqual(store.plan, [.welcome, .trakt, .platforms, .done], "la de la tienda no reproduce: tus plataformas")
+        let mac = OnboardingModel(try ServicesRig(signedIn: false, traktClientID: "CID", allowsOrbital: false).services)
+        XCTAssertFalse(mac.plan.contains(.tv), "la Mac no habla con la TV")
+    }
+
+    /// «Trajimos lo tuyo» (K4-B) sale solo si Trakt trajo algo; los puntos del arco ya lo contaban, así que no cambian.
+    func testWhatTraktBroughtGetsItsStep() throws {
+        let rig = try ServicesRig(signedIn: false, traktClientID: "CID", edition: .plus)
         let guide = OnboardingModel(rig.services)
-        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .done], "sin marcar nada: solo se explica Real-Debrid")
-        XCTAssertTrue(OnboardingModel.Step.allCases.allSatisfy(guide.canContinue), "ningún paso es obligatorio")
-        guide.toggle(.tv)
-        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .tv, .done])
-        guide.toggle(.trakt)
-        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .trakt, .done], "Trakt y la TV juntos")
-        XCTAssertTrue(guide.traktWithTV)
-        guide.toggle(.trakt)
-        XCTAssertEqual(guide.next(after: .debrid), .tv)
-        XCTAssertEqual(guide.next(after: .tv), .done)
-        XCTAssertNil(guide.next(after: .done))
+        XCTAssertEqual(guide.position(.debrid).total, 5, "bienvenida, Trakt, lo tuyo, nube y listo")
+        XCTAssertFalse(guide.plan.contains(.win), "sin Trakt no hay nada que enseñar")
+        XCTAssertEqual(guide.position(.debrid).current, 3)
+    }
+
+    /// El mosaico de «Trajimos lo tuyo»: lo tuyo con póster, lo más reciente primero; lo oculto y lo que no viste ni guardaste, no.
+    func testTheWinMosaicIsYourRecentStuff() {
+        func entry(_ id: String, at: Double, seen: Bool = true, listed: Bool = false, poster: String? = "p", hidden: Bool = false) -> LibraryEntry {
+            var e = LibraryEntry(metaID: id, kind: "movie", name: id); e.poster = poster; e.updatedAt = at
+            if seen { e.seen = [id] }; e.inList = listed; if hidden { e.hiddenAt = 1 }; return e
+        }
+        let tiles = OnboardingModel.tiles([entry("old", at: 1), entry("new", at: 3, listed: true), entry("hidden", at: 4, hidden: true),
+                                           entry("noposter", at: 5, poster: nil), entry("nothing", at: 6, seen: false)])
+        XCTAssertEqual(tiles.map(\.id), ["new", "old"])
+        XCTAssertEqual(tiles.first?.listed, true, "lo de tu lista lleva su marcador")
     }
 
     /// Conectar tu nube (o Trakt) en su propio paso no reacomoda la guía: el paso sigue y la luna no regresa al principio
@@ -53,33 +72,23 @@ final class OnboardingModelTests: XCTestCase {
     func testConnectingOnItsStepKeepsThePlace() async throws {
         let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
         let guide = OnboardingModel(rig.services)
-        guide.toggle(.trakt)
         guide.reached(.debrid)
         let before = guide.position(.debrid)
-        XCTAssertEqual(before.current, 3)
         await rig.services.debrid.save(token: token, status: DebridStatus(service: "Real-Debrid", username: "fer", isPremium: true,
                                                                             expires: nil, checkedAt: Date(), userID: "1"), share: false)
         XCTAssertTrue(guide.isConnected(.debrid))
         XCTAssertEqual(guide.position(.debrid).current, before.current, "el paso donde estás no se mueve al conectar")
-        XCTAssertEqual(guide.next(after: .debrid), .trakt)
+        XCTAssertEqual(guide.next(after: .debrid), .done)
         let fresh = OnboardingModel(rig.services)
         XCTAssertFalse(fresh.plan.contains(.debrid), "si ya estaba conectada antes de llegar, no se explica")
-    }
-
-    func testTheTVStepOnlyWhereThereIsTV() throws {
-        let rig = try ServicesRig(signedIn: false, traktClientID: "CID", allowsOrbital: false)
-        let guide = OnboardingModel(rig.services)
-        guide.answer(.tv, .has)
-        XCTAssertFalse(guide.plan.contains(.tv), "la Mac no habla con la TV")
-        XCTAssertFalse(guide.pieces.contains(.tv))
     }
 
     /// Si cierras la app a medias: antes de 24 h sigues donde ibas; después, Inicio lo dice sin obligar.
     func testResumesWithinADayAndThenOnlySuggests() throws {
         let rig = try ServicesRig(signedIn: false)
         let guide = OnboardingModel(rig.services)
-        guide.reached(.have)
-        XCTAssertEqual(OnboardingModel(rig.services).resumeStep, .have)
+        guide.reached(.trakt)
+        XCTAssertEqual(OnboardingModel(rig.services).resumeStep, .trakt)
         XCTAssertFalse(OnboardingModel.unfinished(rig.services))
         rig.clock.now = rig.clock.now.addingTimeInterval(25 * 3600)
         XCTAssertNil(OnboardingModel(rig.services).resumeStep)
@@ -88,24 +97,15 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertFalse(OnboardingModel.unfinished(rig.services))
     }
 
-    /// H1: son gustos (semillas de «Porque viste»), no vistos; las plataformas filtran «Nuevo en tus plataformas».
-    func testLikesAreTasteNotHistory() async throws {
+    /// Tus plataformas (A1-B) solo se guardan en Orbital y filtran «Nuevo en tus plataformas»; nada se marca visto.
+    func testPlatformsAreSavedAndNothingIsMarkedWatched() throws {
         let rig = try ServicesRig(signedIn: false)
         let guide = OnboardingModel(rig.services)
-        let item = Suggestion(kind: "movie", imdb: "tt0816692", title: "Interestelar", year: 2014, runtime: nil, overview: "", poster: "p", wide: "", reason: .trending)
-        await guide.loadCandidates()
-        guide.toggleLike(item)
-        XCTAssertTrue(Taste.likes(rig.kv).isEmpty, "solo cuenta lo que se ofreció en la cuadrícula")
-        XCTAssertTrue(rig.services.library.all.isEmpty, "nada se marca visto")
         guide.togglePlatform("netflix")
         XCTAssertEqual(Taste.platforms(rig.kv), ["netflix"])
         guide.togglePlatform("netflix")
         XCTAssertTrue(Taste.platforms(rig.kv).isEmpty)
-        let seeds = await rig.services.forYou.recentSeeds()
-        XCTAssertTrue(seeds.isEmpty)
-        Taste.setLikes([.init(kind: "movie", imdb: "tt0816692", title: "Interestelar", year: 2014)], rig.kv)
-        let liked = await rig.services.forYou.recentSeeds()
-        XCTAssertEqual(liked.map(\.imdb), ["tt0816692"], "sin historial, tus gustos son las semillas")
+        XCTAssertTrue(rig.services.library.all.isEmpty, "nada se marca visto")
     }
 
     /// Lo que se explicó en la guía cuenta como visto (también la tarjeta «Así funciona» de la sesión de Real-Debrid).

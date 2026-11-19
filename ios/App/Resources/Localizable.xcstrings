@@ -45752,6 +45752,106 @@
           }
         }
       }
+    },
+    "Trajimos lo tuyo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We brought your stuff"
+          }
+        }
+      }
+    },
+    "Lo que viste y tu lista ya están en Orbital.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watched and your list are already in Orbital."
+          }
+        }
+      }
+    },
+    "Para esta noche": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For tonight"
+          }
+        }
+      }
+    },
+    "Cada sugerencia te dice de dónde sale.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every suggestion tells you where it comes from."
+          }
+        }
+      }
+    },
+    "¿Qué plataformas tienes?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which services do you have?"
+          }
+        }
+      }
+    },
+    "Así te decimos qué puedes ver sin pagar más, y lo nuevo en lo tuyo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So we can tell you what you can watch at no extra cost, and what’s new on yours."
+          }
+        }
+      }
+    },
+    "Incluida en tu plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Included in your plan"
+          }
+        }
+      }
+    },
+    "¿Ya la pagas?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already paying for it?"
+          }
+        }
+      }
+    },
+    "Elige tus plataformas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick your services"
+          }
+        }
+      }
+    },
+    "Solo se guarda en Orbital. Lo cambias en Ajustes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only saved in Orbital. Change it in Settings."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
