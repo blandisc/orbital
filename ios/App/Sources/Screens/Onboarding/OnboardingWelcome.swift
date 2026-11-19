@@ -30,7 +30,13 @@ struct OnboardingWelcome: View {
         let model = guide.model
         VStack(spacing: DS.Space.s5) {
             // BV-L1 (Fernando, 18 nov 2026): el idioma en un globo arriba a la izquierda; «Saltar» a la derecha.
+            // El nombre arriba del planeta, al centro de esta fila (Fernando, 18 nov 2026): aquí no le quita alto a la escena.
+            // Va solo la palabra (el planeta de abajo hace de marca); la luna cae cuando la fila entra.
             HStack { WelcomeLanguageMenu(settings: model.settings); Spacer(); GuideSkip(action: skip) }
+                .overlay {
+                    OrbitalWordmark(size: DS.Welcome.wordmark, showsMark: false).fixedSize().hidden()
+                        .overlay { if showsTop { OrbitalWordmark(size: DS.Welcome.wordmark, animated: true, showsMark: false).foregroundStyle(DS.text).fixedSize().transition(.opacity) } }
+                }
                 .opacity(showsTop ? 1 : 0)
             Spacer(minLength: DS.Space.s4)
             // En un iPhone chico (SE) la escena se encoge para que el texto y «Empezar» quepan.
