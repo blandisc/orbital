@@ -85,7 +85,7 @@ struct LessonLanguageOrder: View {
                 .overlay(Circle().strokeBorder(DS.paper.opacity(DS.Lesson.fingerRim), lineWidth: DS.Stroke.regular))
                 .sceneBox(DS.Lesson.finger, DS.Lesson.finger)
                 .scenePut(M.clamp((t - 0.4) / 0.2) * (1 - M.smooth(1.75, 1.95, t)) * DS.Lesson.fingerOpacity,
-                          348 - DS.Lesson.finger / 2, 125 - DS.Lesson.finger / 2 - 60 * k, 1 - DS.Lesson.fingerPress * press)
+                          CGFloat(348) - DS.Lesson.finger / 2, CGFloat(125) - DS.Lesson.finger / 2 - CGFloat(60 * k), 1 - DS.Lesson.fingerPress * CGFloat(press))
         }
     }
 }
