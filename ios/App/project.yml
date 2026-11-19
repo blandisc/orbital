@@ -144,6 +144,29 @@ targets:
           if [ "${ORBITAL_EDITION}" = "orbital" ]; then
             /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity:NSAllowsArbitraryLoads" "${TARGET_BUILD_DIR}/${INFOPLIST_PATH}" || true
           fi
+      - name: "Ficha (Info.plist) de los frameworks que llegan sin ella"
+        basedOnDependencyAnalysis: false
+        script: |
+          # Los 9 frameworks del motor de video (AetherLib*, de FFmpegBuild) vienen sin Info.plist. Para instalar en el iPhone
+          # no importa, pero al firmar para TestFlight Apple los rechaza (18 nov 2026). Se les escribe una ficha mínima y se
+          # vuelven a firmar; la firma de la app, que va después, los sella. subir-testflight.sh revisa que ninguno quede sin ella.
+          FW_DIR="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+          [ -d "$FW_DIR" ] || exit 0
+          for fw in "$FW_DIR"/*.framework; do
+            [ -f "$fw/Info.plist" ] && continue
+            name=$(basename "$fw" .framework)
+            [ -f "$fw/$name" ] || continue
+            p="$fw/Info.plist"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.aetherengine.$name" \
+              -c "Add :CFBundleExecutable string $name" -c "Add :CFBundleName string $name" \
+              -c "Add :CFBundlePackageType string FMWK" -c "Add :CFBundleInfoDictionaryVersion string 6.0" \
+              -c "Add :CFBundleShortVersionString string 1.0" -c "Add :CFBundleVersion string 1" \
+              -c "Add :MinimumOSVersion string 16.0" -c "Add :CFBundleSupportedPlatforms array" \
+              -c "Add :CFBundleSupportedPlatforms:0 string $([ "${PLATFORM_NAME}" = iphonesimulator ] && echo iPhoneSimulator || echo iPhoneOS)" "$p"
+            if [ "${CODE_SIGNING_ALLOWED}" = "YES" ]; then
+              codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --timestamp=none "$fw"
+            fi
+          done
     scheme:
       testTargets: [OrbitalUITests]
 

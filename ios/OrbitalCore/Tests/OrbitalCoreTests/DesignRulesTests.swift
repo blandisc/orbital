@@ -75,6 +75,16 @@ final class DesignRulesTests: XCTestCase {
     /// (Fernando, 9 nov 2026: «en algunos subtítulos aparece roto el ícono… verifica que en ningún lado esté roto»). Un texto
     /// simple con banderas, o una bandera en el título de una hoja (que no dibuja imágenes), sale como un cuadro roto: ahí va
     /// `LanguageFlags.plain`.
+    /// Una imagen de la red empieza a bajar aunque quien la pinta no muestre nada mientras carga: la carga cuelga de un ancla
+    /// propia de `RemoteImage`, no de su contenido (que puede ser vacío y entonces SwiftUI no lo monta). El 19 nov 2026 el muro
+    /// de Explorar se quedó en las sombras de los pósters por eso.
+    func testRemoteImageLoadsEvenWhenItsContentIsEmpty() throws {
+        let file = try XCTUnwrap(try sources(["Design"]).first { $0.name == "RemoteImage.swift" })
+        let tasks = file.lines.filter { $0.contains(".task(id: url)") }
+        XCTAssertFalse(tasks.isEmpty, "RemoteImage ya no carga con .task(id: url)")
+        XCTAssertTrue(tasks.allSatisfy { !$0.contains("content(") }, "la carga de RemoteImage no puede colgar del contenido")
+    }
+
     func testTheSpanishFlagIsNeverDrawnAsABrokenBox() throws {
         let files = try sources()
         let plainFlags = hits(#"Text\(verbatim: *LanguageFlags\.(flag|flagged|flagOnly)\("#, in: files)

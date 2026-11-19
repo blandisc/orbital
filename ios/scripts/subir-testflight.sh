@@ -28,9 +28,14 @@ xcodegen >/dev/null
 if ! xcodebuild archive -project Orbital.xcodeproj -scheme Orbital -configuration Release -destination generic/platform=iOS \
      -archivePath "$WORK/Orbital.xcarchive" -derivedDataPath "$DERIVED" -allowProvisioningUpdates \
      CURRENT_PROJECT_VERSION="$BUILD" ORBITAL_EDITION="$EDITION" > "$WORK/archive.log" 2>&1; then
-  grep -E "error:|ARCHIVE FAILED" "$WORK/archive.log" | sort -u | head -n 40
+  grep -E -A3 "error:|ARCHIVE FAILED" "$WORK/archive.log" | head -n 40
   echo "No compiló." >&2; exit 1
 fi
+
+# Apple rechaza al firmar cualquier framework sin Info.plist (18 nov): el paso de project.yml se las pone; aquí se revisa.
+for fw in "$WORK/Orbital.xcarchive/Products/Applications/Orbital.app/Frameworks/"*.framework; do
+  [[ -f "$fw/Info.plist" ]] || { echo "Falta Info.plist en $(basename "$fw"): revisa el paso «Ficha (Info.plist)» de project.yml" >&2; exit 1; }
+done
 
 cat > "$WORK/export.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

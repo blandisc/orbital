@@ -32,7 +32,13 @@ struct RemoteImage<Content: View>: View {
     }
 
     var body: some View {
-        content(phase, shown).task(id: url) { await load() }
+        // La carga cuelga de un ancla que siempre existe, no del contenido: si quien llama no pinta nada mientras carga
+        // (`if case .success…` sin `else`), el contenido es vacío, SwiftUI no lo monta y su `.task` nunca corría. Así el muro
+        // de Explorar se quedaba en las sombras de los pósters (19 nov 2026). `RemoteImageTests` lo vigila.
+        ZStack {
+            content(phase, shown)
+            Color.clear.frame(width: 0, height: 0).accessibilityHidden(true).task(id: url) { await load() }
+        }
     }
 
     private var shown: UIImage? {

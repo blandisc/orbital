@@ -340,6 +340,8 @@ Un solo sistema de diseño con dos implementaciones espejo: cada pieza lleva el 
 
 Vocabulario único en `OrbitalCore/Vocabulary.swift` (`runtimeText`, `timeLeft`, `factLine`, `factVariants`, `titleFacts`, `greeting`): `runtimeText` y `timeLeft` se comparan con `orbital/foryou.py` y `orbital/watch.py` (`scripts/ios_golden.py` → `tests/fixtures/ios/vocabulary.json`). Inicio saluda como `core/home.js`; la ficha pone Mi lista y En la TV como íconos en la barra, Descargar y Fuentes bajo el botón principal, y pide la sinopsis en español a `/api/foryou/details` si la consola está conectada.
 
+**Imágenes que siempre bajan** (19 nov 2026): `RemoteImage` cuelga su carga de un ancla propia, nunca del contenido que pinta quien la usa (si ese contenido es vacío mientras carga, SwiftUI no lo monta y la imagen no baja nunca). Lo vigila `DesignRulesTests.testRemoteImageLoadsEvenWhenItsContentIsEmpty`.
+
 ## Excepciones al sistema de diseño
 
 `DesignTests` revisa que las pantallas no escriban colores, medidas, opacidades ni esperas a mano. Una línea se exime con `ds-exception: motivo`:
