@@ -45,70 +45,38 @@ ol.steps{margin:0;padding-left:1.4em;display:grid;gap:10px} ol.steps li{max-widt
 </header>
 
 <section>
-  <h2>Antes, una corrección</h2>
-  <p class="note">Te dije que el 2 era R11-A, pero mezclé dos cosas. R11-A es la actividad en vivo de un <b>pedido a Real-Debrid</b> que se está bajando. Lo que se reproduce en la tele es otra actividad en vivo, <b>«Viendo en la TV»</b>, que ya existe en la app pero solo se actualiza mientras la app está abierta. Por eso en AC te pregunto cuál de las dos quieres, o si van las dos.</p>
-</section>
-
-<section>
-  <h2>AV · ¿Qué avisos manda la TV?</h2>
-  <p>La Orbital de la tele está siempre prendida, así que ella manda el aviso y te llega aunque la app esté cerrada. Si la tele está apagada, no sale nada y quedan los avisos de hoy de respaldo.</p>
+  <h2>El iPhone sin depender de la tele</h2>
+  <p class="note">Para mandar un aviso con la app cerrada, alguien de fuera tiene que mandárselo al iPhone por medio de Apple. En el Canvas anterior ese «alguien» era la tele. Si el iPhone es independiente de la tele, quedan dos caminos. «Viendo en la TV» se queda como está hoy: es de la tele por definición.</p>
   <div class="opts">
     <div class="opt">
-      <span class="code">AV-A · Solo Real-Debrid</span>
-      <div class="lock"><div class="time">21:40</div>
-        <div class="bubble"><b>Orbital · Ya está T1 E2</b><span>Shōgun</span><small>Ver ahora · Ver en la TV</small></div>
-        <div class="bubble"><b>Orbital · Tu Real-Debrid vence en 3 días</b><small>Renovar</small></div></div>
-      <ul><li>Lo que ya estaba acordado: listo, rechazado, atorado 24 h, reintentado y vencimiento a 14, 3 y 0 días.</li>
-      <li>Gana: es lo más chico y ya está diseñado.</li><li>Pierde: llegan pocos, solo cuando pides algo.</li></ul>
+      <span class="code">IN-A · Como hoy, sin nadie de fuera</span>
+      <div class="lock"><div class="time">13:20</div>
+        <div class="bubble"><b>Orbital · Nuevo: T2 E5 de The Bear</b><span>Salió a las 08:00</span><small>llegó horas después</small></div></div>
+      <ul><li>El iPhone revisa estrenos y pedidos cuando iOS lo despierta, que puede ser cada pocas horas y a su criterio, o cuando abres la app. Así funciona ya.</li>
+      <li>Gana: nada que mantener, y tus claves no salen del iPhone.</li>
+      <li>Pierde: los avisos llegan tarde, y la barra del pedido en la pantalla bloqueada no avanza sola.</li></ul>
     </div>
     <div class="opt rec">
-      <span class="code">AV-B · Real-Debrid y episodios nuevos</span><span class="badge">RECOMIENDO</span>
-      <div class="lock"><div class="time">08:15</div>
-        <div class="bubble"><b>Orbital · Nuevo: T2 E5 de The Bear</b><span>Ya salió · está en Real-Debrid</span><small>Ver ahora · Ver en la TV</small></div>
-        <div class="bubble"><b>Orbital · Ya está T1 E2</b><span>Shōgun</span></div></div>
-      <ul><li>Todo lo de AV-A, más un aviso cuando sale un episodio de una serie que sigues. Sale de la misma lista que «Lo nuevo de lo tuyo».</li>
-      <li>Gana: el aviso que más vas a usar en el día a día.</li><li>Pierde: más trabajo en la TV, y un día de muchos estrenos se junta en un solo aviso.</li></ul>
+      <span class="code">IN-B · Un vigilante pequeño en internet</span><span class="badge">RECOMIENDO</span>
+      <div class="lock"><div class="time">08:02</div>
+        <div class="bubble"><b>Orbital · Nuevo: T2 E5 de The Bear</b><span>Ya salió · está en Real-Debrid</span><small>Ver ahora</small></div>
+        <div class="bubble"><b>Bajando T1 E2 · 42 %</b><div class="bar"><i style="width:42%"></i></div></div></div>
+      <ul><li>Un programa chiquito en internet (Cloudflare, gratis) revisa Trakt y Real-Debrid cada pocos minutos y te avisa al instante: episodio nuevo, «Ya está», vencimiento de Real-Debrid. También mueve la barra del pedido.</li>
+      <li>Gana: los avisos y la actividad en vivo que querías, sin la tele.</li>
+      <li>Pierde: tu clave de Real-Debrid y tu acceso a Trakt también viven ahí (cifrados), y es una pieza más que cuidar. Si se cae, regresa a IN-A solo.</li></ul>
     </div>
   </div>
+  <p class="dictar">Para dictar: «IN-A» o «IN-B».</p>
 </section>
 
 <section>
-  <h2>AC · ¿Qué actividad en vivo?</h2>
-  <div class="opts">
-    <div class="opt">
-      <span class="code">AC-A · El pedido a Real-Debrid</span>
-      <div class="lock"><div class="time">21:12</div>
-        <div class="bubble"><b>Bajando T1 E2 · 42 %</b><div class="bar"><i style="width:42%"></i></div><small>A este paso, faltan unos minutos.</small></div></div>
-      <ul><li>R11-A tal cual: la barra avanza sola hasta «Ya está».</li><li>Gana: ya está diseñado.</li><li>Pierde: solo sale cuando algo no estaba listo.</li></ul>
-    </div>
-    <div class="opt">
-      <span class="code">AC-B · «Viendo en la TV»</span>
-      <div class="lock"><div class="time">22:03</div>
-        <div class="bubble"><b>Viendo en la TV · Shōgun</b><span>T1 · E4 · termina a las 22:51</span><div class="bar"><i style="width:35%"></i></div><small>⏸ · −30 · +30</small></div></div>
-      <ul><li>Aparece sola cuando prendes algo en la tele, aunque no hayas abierto la app, y sigue las pausas y el cambio de episodio.</li>
-      <li>Gana: la ves cada noche.</li><li>Pierde: no cubre los pedidos.</li></ul>
-    </div>
-    <div class="opt rec">
-      <span class="code">AC-C · Las dos</span><span class="badge">RECOMIENDO</span>
-      <div class="lock"><div class="time">22:03</div>
-        <div class="bubble"><b>Viendo en la TV · Shōgun</b><div class="bar"><i style="width:35%"></i></div></div>
-        <div class="bubble"><b>Bajando T1 E5 · 80 %</b><div class="bar"><i style="width:80%"></i></div></div></div>
-      <ul><li>Usan la misma pieza de la TV, así que la segunda sale barata.</li><li>Orden: primero «Viendo en la TV», luego el pedido.</li><li>Pierde: un par de días más.</li></ul>
-    </div>
-  </div>
-  <p class="dictar">Para dictar: «AV-B y AC-C», o la combinación que quieras.</p>
+  <h2>La llave de avisos (solo con IN-B)</h2>
+  <p>Ese programa necesita una llave de Apple para mandar avisos. Crearla te toca a ti en la Mac: <span class="pill">developer.apple.com/account</span> → <b>Keys</b> → <b>+</b>, con el nombre «Orbital avisos» y la casilla <b>Apple Push Notifications service (APNs)</b>. Descarga el archivo <span class="pill">.p8</span> (Apple solo te deja bajarlo una vez), guárdalo en Bitwarden y anota el <b>Key ID</b>. No me lo mandes por el chat: lo cargas tú en el programa cuando esté listo.</p>
 </section>
 
 <section>
-  <h2>Lo que solo tú puedes hacer: la llave de avisos</h2>
-  <p>Para mandar avisos, la TV necesita una llave de Apple. Crear esa llave te toca a ti; yo no la creo ni la veo. Te conviene hacerlo en la Mac o en la Lenovo, porque se descarga un archivo.</p>
-  <ol class="steps">
-    <li>Entra a <span class="pill">developer.apple.com/account</span> → <b>Certificates, IDs &amp; Profiles</b> → <b>Keys</b> → <b>+</b>.</li>
-    <li>Ponle de nombre «Orbital avisos», marca <b>Apple Push Notifications service (APNs)</b>, después <b>Continue</b> y <b>Register</b>.</li>
-    <li>Descarga el archivo <span class="pill">AuthKey_XXXX.p8</span>. <b>Apple solo te deja bajarlo una vez</b>: guárdalo en Bitwarden.</li>
-    <li>Anota el <b>Key ID</b> (10 letras y números). El Team ID ya lo sé: <span class="pill">B7KRCF776Z</span>.</li>
-    <li>No me lo mandes por el chat. Cuando esté lista la pantalla <b>Ajustes › Cuentas › Avisos al iPhone</b> en la TV, ahí lo pegas, y la TV lo guarda cifrado.</li>
-  </ol>
+  <h2>TestFlight: un detalle antes de empezar</h2>
+  <p class="note">El Chrome de la Mac entró a App Store Connect con el equipo <b>«Servicios Corporativos Arca…»</b>, no con tu cuenta personal. Ahí no acepté los términos ni creé nada: Orbital tiene que ir en tu equipo personal (<span class="pill">B7KRCF776Z</span>). Arriba a la derecha, en tu nombre, se cambia de equipo. Si no aparece el tuyo, el Apple ID de ese Chrome es otro y hay que entrar con el tuyo.</p>
 </section>
 
 <section>
@@ -132,8 +100,7 @@ ol.steps{margin:0;padding-left:1.4em;display:grid;gap:10px} ol.steps li{max-widt
   <ul>
     <li>Hoy Ultra, Plus y Orbital usan el mismo ID de paquete. Para darle Plus a otras personas habrá que separarla como otra app con su propio ID. Lo dejo para cuando lo pidas.</li>
     <li>Darla a otros: hasta 100 personas «internas» si las agregas a tu equipo en App Store Connect, sin revisión de Apple. A gente «externa» Apple sí la revisa, y una app que reproduce torrents puede no pasar.</li>
-    <li>Los avisos de la tele van en las dos: lo que instalo por cable usa los servidores de prueba de Apple y TestFlight los de verdad. La TV ya distingue cada caso.</li>
-    <li>Después de instalar, abre Orbital una vez para que Siri aprenda los atajos.</li>
+        <li>Después de instalar, abre Orbital una vez para que Siri aprenda los atajos.</li>
   </ul>
 </section>
 </div>
