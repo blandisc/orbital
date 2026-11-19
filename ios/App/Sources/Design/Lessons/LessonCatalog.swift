@@ -46,7 +46,7 @@ enum LessonCatalog {
             .init(scene: .cloudWhat, title: "Tu nube guarda copias",
                   line: "Real-Debrid es un servicio de pago que guarda películas y series en internet. Orbital no las tiene: las busca ahí por ti."),   // edición: la lección solo sale con instantStreams; se dice con tu nube (Text(_:cloud:))
             .init(scene: .cloudAsk, title: "Si dice «Por pedir»",
-                  line: "Tu nube todavía no la tiene. Tócala y Real-Debrid la baja por ti en unos minutos; te avisamos cuando esté."),   // edición: la lección solo sale con instantStreams; se dice con tu nube (Text(_:cloud:))
+                  line: "Tu nube todavía no la tiene. Tócala y la nube la baja por ti en unos minutos; te avisamos cuando esté."),   // edición: la lección solo sale con instantStreams; se dice con tu nube (Text(_:cloud:))
             .init(scene: .cloudPrice, title: "Se paga aparte, sin sorpresas",
                   line: "Se paga en la página de Real-Debrid y no se renueva sola. Unos días antes de que se acabe, te avisamos."),   // edición: la lección solo sale con instantStreams; se dice con tu nube (Text(_:cloud:))
             .init(scene: .cloudOne, title: "Una cuenta, una persona",

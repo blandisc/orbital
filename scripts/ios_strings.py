@@ -154,7 +154,7 @@ TRANSLATIONS = {
     'Tu nube': 'Your cloud',
     'Tu nube (Real-Debrid)': 'Your cloud (Real-Debrid)',
     'Tu nube guarda copias': 'Your cloud keeps copies',
-    'Tu nube todavía no la tiene. Tócala y Real-Debrid la baja por ti en unos minutos; te avisamos cuando esté.': "Your cloud doesn't have it yet. Tap it and Real-Debrid gets it for you in a few minutes; we let you know when it's ready.",
+    'Tu nube todavía no la tiene. Tócala y la nube la baja por ti en unos minutos; te avisamos cuando esté.': "Your cloud doesn't have it yet. Tap it and the cloud gets it for you in a few minutes; we let you know when it's ready.",
     'Tu orden de idiomas, otra versión, audio y subtítulos': 'Your language order, another version, audio and subtitles',
     'Tus idiomas, en tu orden': 'Your languages, in your order',
     'Tú decides el orden': 'You decide the order',
