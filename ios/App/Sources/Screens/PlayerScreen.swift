@@ -514,7 +514,7 @@ struct PlayerScreen: View {
                 holder.engine.setZoom(zoom)
             }
         }
-        .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
+        .task(id: pendingSeek) { if pendingSeek != nil, (try? await Task.sleep(nanoseconds: DS.Timing.seekPatience)) != nil { pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !padlock.locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
     }

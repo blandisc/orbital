@@ -113,7 +113,7 @@ struct DebridFlowStrip: View {
         .task(id: reduceMotion) {
             guard !reduceMotion else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(for: DS.Explainer.step)
+                guard (try? await Task.sleep(for: DS.Explainer.step)) != nil else { break }
                 withAnimation(DS.Motion.spring(reduceMotion)) { step = (step + 1) % steps.count }
             }
         }

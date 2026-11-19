@@ -4,7 +4,7 @@ import OrbitalModels
 /// Los avisos sobre la pantalla (F3, Fernando, 3 nov 2026), la primera vez que entras a algo propio de Orbital. Dos formas:
 /// con foco (el velo oscurece todo menos el botón señalado, un anillo se dibuja una vez y no late, y la burbuja sube junto
 /// a él) para «Ver» en la ficha y la búsqueda avanzada; y el aviso chico, sin oscurecer, abajo, sobre la barra de pestañas. Cada uno
-/// dice qué hace, lleva «Ver la historia» (la de esa función en «Aprende») y se cierra con «Entendido»; «Saltar avisos» los
+/// dice qué hace, lleva «Ver la lección» (la de esa función en «Aprende», si tiene) y se cierra con «Entendido»; «Saltar avisos» los
 /// apaga todos. VoiceOver lo anuncia y se cierra con el gesto de escape. Recibe sus datos: no lee el estado de la app.
 struct CoachContent: Equatable {
     let id: String
@@ -46,7 +46,7 @@ extension View {
     func coachAnchor(_ id: String) -> some View { modifier(CoachAnchor(id: id)) }
 
     /// Pone encima de la pantalla el aviso `coach` (nil: ninguno).
-    func coachHost(_ coach: CoachContent?, story: @escaping () -> Void, done: @escaping () -> Void, skipAll: @escaping () -> Void) -> some View {
+    func coachHost(_ coach: CoachContent?, story: (() -> Void)?, done: @escaping () -> Void, skipAll: @escaping () -> Void) -> some View {
         environment(\.coachShowing, coach?.id).overlayPreferenceValue(CoachAnchorKey.self) { anchors in
             if let coach {
                 GeometryReader { geo in
@@ -64,7 +64,7 @@ struct CoachOverlay: View {
     let size: CGSize
     /// El velo llega bajo la hora y las barras (`ignoresSafeArea`): su hueco se corre esto para caer sobre el botón.
     var insets = EdgeInsets()
-    let story: () -> Void
+    let story: (() -> Void)?
     let done: () -> Void
     let skipAll: () -> Void
     @State private var shown = false
@@ -126,8 +126,10 @@ struct CoachOverlay: View {
             Text(coach.title).recipe(.cardTitle, color: DS.text).fixedSize(horizontal: false, vertical: true)
             Text(coach.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s3) {
-                Button("Ver la historia", action: story).buttonStyle(.borderless).foregroundStyle(DS.eyebrow)
-                    .accessibilityIdentifier("coach-story")
+                if let story {
+                    Button("Ver la lección", action: story).buttonStyle(.borderless).foregroundStyle(DS.eyebrow)
+                        .accessibilityIdentifier("coach-story")
+                }
                 Spacer(minLength: 0)
                 Button("Entendido", action: done).dsPrimaryButton(size: .small)
                     .accessibilityIdentifier("coach-done")

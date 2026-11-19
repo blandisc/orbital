@@ -52,7 +52,7 @@ struct TallArtPicker<Content: View>: View {
             }
             .task(id: asking) {
                 guard asking != nil else { return }
-                try? await Task.sleep(for: DS.Image.tallWait)
+                guard (try? await Task.sleep(for: DS.Image.tallWait)) != nil else { return }
                 if decision == nil { decision = .wide }   // TMDB tarda: va el fondo, y ya no se cambia
             }
     }

@@ -103,24 +103,13 @@ struct RootView: View {
     }
     private func endGuide() { ui.practiceGuide = false; Demo.practice = false }
 
-    /// Una historia de «Aprende Orbital» (G3): desde Ajustes o «Ver la historia» de un aviso.
+    /// Una lección de Aprende (AF1-B): desde Ajustes, «Ver la lección» de un aviso o un «?».
     private func withStories<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(item: openStory) { (route: StoryRoute) in storyDeck(route).environment(env) }
+        content.fullScreenCover(item: openLesson) { (route: LessonRoute) in LessonScreen(route: route) { ui.openLesson = nil }.environment(env) }
     }
 
     private var showingGuide: Binding<Bool> { Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 }) }
-    private var openStory: Binding<StoryRoute?> { Binding(get: { ui.openStory.map(StoryRoute.init) }, set: { ui.openStory = $0?.id }) }
-
-    /// Una historia de «Aprende Orbital».
-    private func storyDeck(_ route: StoryRoute) -> some View {
-        StoryDeck(stories: LearnModel(env.services).deck, start: route.id,
-                  onSeen: { LearnModel(env.services).markSeen($0.id) },
-                  onAction: { destination in
-                      ui.openStory = nil
-                      Task { try? await Task.sleep(for: DS.Motion.tabSettle); env.open(destination) }
-                  },
-                  close: { ui.openStory = nil })
-    }
+    private var openLesson: Binding<LessonRoute?> { Binding(get: { ui.openLesson }, set: { ui.openLesson = $0 }) }
 
     /// El toque al empezar, cambiar la fecha y «¿Terminaste de verlo?».
     private func withPrompts(_ content: some View) -> some View {
@@ -166,8 +155,8 @@ struct RootView: View {
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
             if Demo.isOn { Demo.showNotice(env) }
             if Demo.isOn { ui.showingGuide = Demo.firstRun } else if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
-            // `-demo-story <id>`: una historia de «Aprende» abierta (capturas de sus escenas).
-            if Demo.isOn, let story = Demo.value(after: "-demo-story") { ui.openStory = story }
+            // `-demo-lesson <id>[:<pantalla>]`: una lección de Aprende abierta (capturas de sus escenas).
+            if Demo.isOn, let lesson = Demo.value(after: "-demo-lesson") { ui.openLesson = Demo.lessonRoute(lesson) }
             #else
             if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
             #endif

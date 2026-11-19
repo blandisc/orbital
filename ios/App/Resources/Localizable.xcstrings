@@ -30474,7 +30474,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "English subtitles"
+            "value": "Subtitles in English"
           }
         }
       }
@@ -46229,6 +46229,1967 @@
           "stringUnit": {
             "state": "translated",
             "value": "The on-screen tips come back one at a time, and the Learn stories show as unseen again."
+          }
+        }
+      }
+    },
+    "Ahora muévete con las flechas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now move with the arrows"
+          }
+        }
+      }
+    },
+    "Ahora suena en inglés": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now it plays in English"
+          }
+        }
+      }
+    },
+    "Ahora suena en latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now it plays in Latin American Spanish"
+          }
+        }
+      }
+    },
+    "Audio y subtítulos, sin salir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio and subtitles, without leaving"
+          }
+        }
+      }
+    },
+    "Busca primero en tu idioma favorito y en la mejor calidad. Si no hay, sigue con el que pusiste después.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It looks first in your favorite language and the best quality. If there isn't one, it moves on to the next one you set."
+          }
+        }
+      }
+    },
+    "Castellano ya está en tu nube (de práctica)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castilian Spanish is now in your cloud (practice)"
+          }
+        }
+      }
+    },
+    "Castellano ya está en tu nube: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castilian Spanish is now in your cloud: %@"
+          }
+        }
+      }
+    },
+    "Castellano · 1080p": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castilian Spanish · 1080p"
+          }
+        }
+      }
+    },
+    "Conectar mi TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect my TV"
+          }
+        }
+      }
+    },
+    "Conectar mi nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect my cloud"
+          }
+        }
+      }
+    },
+    "Cuatro filtros se prenden y la lista baja de 2400 a 31 títulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Four filters turn on and the list drops from 2400 to 31 titles"
+          }
+        }
+      }
+    },
+    "Decide por mí abre tres en abanico, cada una con su porqué": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide for me fans out three, each with its reason"
+          }
+        }
+      }
+    },
+    "Decide por mí, de práctica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide for me, for practice"
+          }
+        }
+      }
+    },
+    "Decide por mí, una por una y los filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide for me, one by one and filters"
+          }
+        }
+      }
+    },
+    "Deja que decida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let it decide"
+          }
+        }
+      }
+    },
+    "Desde cualquier película o serie, un toque: empieza en la sala justo donde ibas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From any movie or show, one tap: it starts in the living room right where you left off."
+          }
+        }
+      }
+    },
+    "Desde unos 3 € por 15 días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From about €3 for 15 days"
+          }
+        }
+      }
+    },
+    "Deslizas en el iPhone y el foco se mueve en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You swipe on the iPhone and the focus moves on the TV"
+          }
+        }
+      }
+    },
+    "Dos iPhones con la misma cuenta: el segundo se corta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two iPhones on the same account: the second one cuts out"
+          }
+        }
+      }
+    },
+    "Dura menos de una hora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under an hour long"
+          }
+        }
+      }
+    },
+    "Dónde ibas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you left off"
+          }
+        }
+      }
+    },
+    "El aviso de que sale hoy un episodio y la semana del calendario": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The alert that an episode comes out today, and the calendar week"
+          }
+        }
+      }
+    },
+    "El iPhone se pausa en el minuto 34 y el iPad sigue ahí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The iPhone pauses at minute 34 and the iPad picks up there"
+          }
+        }
+      }
+    },
+    "El mosaico de sugerencias; una se levanta con su porqué": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The suggestion mosaic; one lifts up with its reason"
+          }
+        }
+      }
+    },
+    "El panel de audio y subtítulos de práctica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The practice audio and subtitles panel"
+          }
+        }
+      }
+    },
+    "Empieza en el iPhone y termina en el iPad o en la Mac, justo donde ibas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start on the iPhone and finish on the iPad or the Mac, right where you left off."
+          }
+        }
+      }
+    },
+    "En Ajustes › Tus idiomas, mantén presionado uno y súbelo. Desde ahí, todo empieza así.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Settings › Your languages, touch and hold one and move it up. From then on, everything starts that way."
+          }
+        }
+      }
+    },
+    "En Buscar: comedias de los 90, en Netflix, con más de 7. Cada filtro achica la lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Search: 90s comedies, on Netflix, rated over 7. Each filter shrinks the list."
+          }
+        }
+      }
+    },
+    "En Tus idiomas, Inglés sube al primer lugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Your languages, English moves up to first place"
+          }
+        }
+      }
+    },
+    "En Versión, la de Castellano dice «Por pedir»; al tocarla se pide y llega un aviso de que ya está": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Version, the Castilian Spanish one says “Request”; tapping it requests it and an alert says it's ready"
+          }
+        }
+      }
+    },
+    "En el video, el globo abre el panel de audio y subtítulos y se elige Español": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the video, the globe opens the audio and subtitles panel and Spanish is chosen"
+          }
+        }
+      }
+    },
+    "Es gratis y guarda lo que viste, tu lista y dónde ibas. Orbital lo usa para todo lo demás.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's free and keeps what you watched, your list and where you left off. Orbital uses it for everything else."
+          }
+        }
+      }
+    },
+    "Está en tu Netflix": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's on your Netflix"
+          }
+        }
+      }
+    },
+    "Inglés · 4K": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English · 4K"
+          }
+        }
+      }
+    },
+    "La bandera junto a «Ver» abre la hoja de versiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The flag next to “Watch” opens the versions sheet"
+          }
+        }
+      }
+    },
+    "La hoja de Versión de práctica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The practice Version sheet"
+          }
+        }
+      }
+    },
+    "Latino · 1080p": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latin American Spanish · 1080p"
+          }
+        }
+      }
+    },
+    "Latino · 1080p ·": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latin American Spanish · 1080p ·"
+          }
+        }
+      }
+    },
+    "Le pides en voz alta el siguiente episodio y la TV lo pone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You ask out loud for the next episode and the TV plays it"
+          }
+        }
+      }
+    },
+    "Lecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lessons"
+          }
+        }
+      }
+    },
+    "Lo que veas fuera de Orbital, márcalo visto. Tu calificación mejora lo que te proponemos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as watched what you see outside Orbital. Your rating improves what we suggest."
+          }
+        }
+      }
+    },
+    "Lo tuyo, al día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your stuff, up to date"
+          }
+        }
+      }
+    },
+    "Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las lecciones de Aprende vuelven a decir que no las has visto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The on-screen tips show up again, one at a time, and the Learn lessons go back to unwatched."
+          }
+        }
+      }
+    },
+    "Los episodios de práctica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The practice episodes"
+          }
+        }
+      }
+    },
+    "Los planes de la nube y el aviso de que te quedan tres días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud plans and the alert that you have three days left"
+          }
+        }
+      }
+    },
+    "Marca un episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark an episode"
+          }
+        }
+      }
+    },
+    "Marca y califica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark and rate"
+          }
+        }
+      }
+    },
+    "Marcar visto el episodio %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark episode %lld as watched"
+          }
+        }
+      }
+    },
+    "Mientras juegas, el iPhone enseña la guía, tus notas y el temporizador": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you play, the iPhone shows the guide, your notes and the timer"
+          }
+        }
+      }
+    },
+    "Mientras ves, toca la pantalla y luego el globo: cambias el audio o pones subtítulos al momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "While watching, tap the screen and then the globe: you change the audio or turn on subtitles right away."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "While watching, tap the screen and then the globe: you change the audio or turn on subtitles right away."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "While watching, click the screen and then the globe: you change the audio or turn on subtitles right away."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "While watching, tap the screen and then the globe: you change the audio or turn on subtitles right away."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mientras ves, toca la pantalla y luego el globo: cambias el audio o pones subtítulos al momento."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mientras ves, toca la pantalla y luego el globo: cambias el audio o pones subtítulos al momento."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mientras ves, haz clic en la pantalla y luego el globo: cambias el audio o pones subtítulos al momento."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mientras ves, toca la pantalla y luego el globo: cambias el audio o pones subtítulos al momento."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Muévete por los menús, pausa y sube el volumen sin buscar el mando.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move through menus, pause and turn up the volume without looking for the remote."
+          }
+        }
+      }
+    },
+    "Mándala a la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it to the TV"
+          }
+        }
+      }
+    },
+    "Mándalo a la tele, el control y la voz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it to the TV, the remote and your voice"
+          }
+        }
+      }
+    },
+    "Orbital aprende de lo que viste y de tu lista. Cada sugerencia dice por qué te la propone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital learns from what you watched and your list. Every suggestion says why it's there."
+          }
+        }
+      }
+    },
+    "Orbital busca el video en tu nube y lo pone en segundos. No se descarga nada a tu iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital finds the video in your cloud and plays it in seconds. Nothing downloads to your iPhone."
+          }
+        }
+      }
+    },
+    "Orbital · Sale hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital · Out today"
+          }
+        }
+      }
+    },
+    "Ordenar mis idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order my languages"
+          }
+        }
+      }
+    },
+    "Otra persona con tu cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone else on your account"
+          }
+        }
+      }
+    },
+    "Para hoy: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For today: %@"
+          }
+        }
+      }
+    },
+    "Pedir la versión en castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request the Castilian Spanish version"
+          }
+        }
+      }
+    },
+    "Pidiendo a tu nube…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking your cloud…"
+          }
+        }
+      }
+    },
+    "Ponle subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on subtitles"
+          }
+        }
+      }
+    },
+    "Precios aproximados de real-debrid.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approximate prices from real-debrid.com"
+          }
+        }
+      }
+    },
+    "Pruébalo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it"
+          }
+        }
+      }
+    },
+    "Pruébalo, de práctica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it, for practice"
+          }
+        }
+      }
+    },
+    "Pídele una a tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask your cloud for one"
+          }
+        }
+      }
+    },
+    "Qué es, qué es «Por pedir» y cuánto cuesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it is, what “Request” means and what it costs"
+          }
+        }
+      }
+    },
+    "Real-Debrid es un servicio que guarda películas y series. Orbital no las tiene: busca en tu nube por ti.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is a service that stores movies and shows. Orbital doesn't have them: it searches your cloud for you."
+          }
+        }
+      }
+    },
+    "Se cortó: tu cuenta se está usando en otro aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It cut out: your account is being used on another device"
+          }
+        }
+      }
+    },
+    "Se marca visto el episodio 3 y se califica con estrellas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episode 3 is marked as watched and rated with stars"
+          }
+        }
+      }
+    },
+    "Se paga en la página de Real-Debrid y no se renueva sola. Unos días antes de que se acabe, te avisamos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You pay on Real-Debrid's site and it doesn't renew on its own. A few days before it runs out, we let you know."
+          }
+        }
+      }
+    },
+    "Se paga en su página": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You pay on its site"
+          }
+        }
+      }
+    },
+    "Seguir la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow the show"
+          }
+        }
+      }
+    },
+    "Si abres un juego en la consola, el iPhone te enseña su guía, tus notas y un temporizador.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you open a game on the console, the iPhone shows its guide, your notes and a timer."
+          }
+        }
+      }
+    },
+    "Si alguien más la usa al mismo tiempo, el video se corta. Si la compartes, te la pueden cerrar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If someone else uses it at the same time, the video cuts out. If you share it, it can be closed."
+          }
+        }
+      }
+    },
+    "Si dice «Por pedir»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it says “Request”"
+          }
+        }
+      }
+    },
+    "Si quieres ir rápido: desliza a la derecha para guardarla, a la izquierda para pasar y hacia arriba si es para hoy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you want to go fast: swipe right to save it, left to pass and up if it's for today."
+          }
+        }
+      }
+    },
+    "Sigue en el minuto %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picks up at minute %@"
+          }
+        }
+      }
+    },
+    "Sigue una serie y te avisamos el día del estreno. Todo lo que sale está en el calendario de Inicio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow a show and we let you know on release day. Everything coming out is in the Home calendar."
+          }
+        }
+      }
+    },
+    "Te avisamos el día del estreno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We let you know on release day"
+          }
+        }
+      }
+    },
+    "Te proponemos, tú eliges": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We suggest, you choose"
+          }
+        }
+      }
+    },
+    "Te quedan 3 días de Real-Debrid · Renovar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 days of Real-Debrid left · Renew"
+          }
+        }
+      }
+    },
+    "Toca el círculo del episodio 3 y luego sigue la serie. Es de práctica.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the circle for episode 3 and then follow the show. It's for practice."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the circle for episode 3 and then follow the show. It's for practice."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the circle for episode 3 and then follow the show. It's for practice."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the circle for episode 3 and then follow the show. It's for practice."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el círculo del episodio 3 y luego sigue la serie. Es de práctica."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el círculo del episodio 3 y luego sigue la serie. Es de práctica."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en el círculo del episodio 3 y luego sigue la serie. Es de práctica."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el círculo del episodio 3 y luego sigue la serie. Es de práctica."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the flag next to “Watch”: you choose another language or quality without searching for the movie again."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the flag next to “Watch”: you choose another language or quality without searching for the movie again."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the flag next to “Watch”: you choose another language or quality without searching for the movie again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the flag next to “Watch”: you choose another language or quality without searching for the movie again."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca «Decide por mí» y luego una de las tres. Es de práctica.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Decide for me” and then one of the three. It's for practice."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Decide for me” and then one of the three. It's for practice."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click “Decide for me” and then one of the three. It's for practice."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Decide for me” and then one of the three. It's for practice."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Decide por mí» y luego una de las tres. Es de práctica."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Decide por mí» y luego una de las tres. Es de práctica."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en «Decide por mí» y luego una de las tres. Es de práctica."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Decide por mí» y luego una de las tres. Es de práctica."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca «Español» en Subtítulos o cambia el audio. Es de práctica.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Spanish” under Subtitles or change the audio. It's for practice."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Spanish” under Subtitles or change the audio. It's for practice."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click “Spanish” under Subtitles or change the audio. It's for practice."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Spanish” under Subtitles or change the audio. It's for practice."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Español» en Subtítulos o cambia el audio. Es de práctica."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Español» en Subtítulos o cambia el audio. Es de práctica."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en «Español» en Subtítulos o cambia el audio. Es de práctica."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Español» en Subtítulos o cambia el audio. Es de práctica."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca «Por pedir» en la fila de Castellano. Es de práctica: nada se pide de verdad.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Request” in the Castilian Spanish row. It's for practice: nothing is really requested."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Request” in the Castilian Spanish row. It's for practice: nothing is really requested."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click “Request” in the Castilian Spanish row. It's for practice: nothing is really requested."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Request” in the Castilian Spanish row. It's for practice: nothing is really requested."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Por pedir» en la fila de Castellano. Es de práctica: nada se pide de verdad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Por pedir» en la fila de Castellano. Es de práctica: nada se pide de verdad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en «Por pedir» en la fila de Castellano. Es de práctica: nada se pide de verdad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Por pedir» en la fila de Castellano. Es de práctica: nada se pide de verdad."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca «Ver en la TV» y luego muévete con las flechas. Es una TV de práctica.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch on TV” and then move with the arrows. It's a practice TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch on TV” and then move with the arrows. It's a practice TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click “Watch on TV” and then move with the arrows. It's a practice TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch on TV” and then move with the arrows. It's a practice TV."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver en la TV» y luego muévete con las flechas. Es una TV de práctica."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver en la TV» y luego muévete con las flechas. Es una TV de práctica."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en «Ver en la TV» y luego muévete con las flechas. Es una TV de práctica."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver en la TV» y luego muévete con las flechas. Es una TV de práctica."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca «Ver» y empieza": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch” and it starts"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch” and it starts"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click “Watch” and it starts"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap “Watch” and it starts"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver» y empieza"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver» y empieza"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en «Ver» y empieza"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca «Ver» y empieza"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tocas «Ver» en la ficha y la película empieza al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You tap “Watch” on the title page and the movie starts instantly"
+          }
+        }
+      }
+    },
+    "Trakt guarda lo que viste, tu lista y dónde ibas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt keeps what you watched, your list and where you left off"
+          }
+        }
+      }
+    },
+    "Trakt, lo que viste, tus estrenos y en otro aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt, what you watched, your releases and on another device"
+          }
+        }
+      }
+    },
+    "Tres que caben en tu noche: por lo que te gusta, por lo que dura y por dónde la tienes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three that fit your night: by what you like, how long it runs and where you have it."
+          }
+        }
+      }
+    },
+    "Tu iPhone y tu nube; una película baja de la nube a tu pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone and your cloud; a movie comes down from the cloud to your screen"
+          }
+        }
+      }
+    },
+    "Tu lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your list"
+          }
+        }
+      }
+    },
+    "Tu lista de idiomas; «Ver» elige el primero, Latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your language list; “Watch” picks the first one, Latin American Spanish"
+          }
+        }
+      }
+    },
+    "Tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud"
+          }
+        }
+      }
+    },
+    "Tu nube (Real-Debrid)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud (Real-Debrid)"
+          }
+        }
+      }
+    },
+    "Tu nube guarda copias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud keeps copies"
+          }
+        }
+      }
+    },
+    "Tu nube todavía no la tiene. Tócala y Real-Debrid la baja por ti en unos minutos; te avisamos cuando esté.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud doesn't have it yet. Tap it and Real-Debrid gets it for you in a few minutes; we let you know when it's ready."
+          }
+        }
+      }
+    },
+    "Tu orden de idiomas, otra versión, audio y subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your language order, another version, audio and subtitles"
+          }
+        }
+      }
+    },
+    "Tus idiomas, en tu orden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your languages, in your order"
+          }
+        }
+      }
+    },
+    "Tú decides el orden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You decide the order"
+          }
+        }
+      }
+    },
+    "Una TV de práctica para mandar una película y moverte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A practice TV to send a movie and move around"
+          }
+        }
+      }
+    },
+    "Una por una: una se guarda a la derecha y otra se pasa a la izquierda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One by one: one is saved to the right and another passed to the left"
+          }
+        }
+      }
+    },
+    "Unos dos minutos cada una. Avanzas tú y al final lo pruebas, sin tocar tus cuentas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About two minutes each. You go at your pace and try it at the end, without touching your accounts."
+          }
+        }
+      }
+    },
+    "Ver en la TV: la película pasa del iPhone a la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch on TV: the movie moves from the iPhone to the TV"
+          }
+        }
+      }
+    },
+    "Ver la lección": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the lesson"
+          }
+        }
+      }
+    },
+    "Versión · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version · %@"
+          }
+        }
+      }
+    },
+    "para descansar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "to rest"
+          }
+        }
+      }
+    },
+    "para probar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "to try"
+          }
+        }
+      }
+    },
+    "¿Quieres otra versión?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Want another version?"
+          }
+        }
+      }
+    },
+    "¿Qué veo hoy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should I watch tonight?"
+          }
+        }
+      }
+    },
+    "¿Qué es «Por pedir»?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What does “Request” mean?"
+          }
+        }
+      }
+    },
+    "¿Cómo cambio el idioma?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do I change the language?"
+          }
+        }
+      }
+    },
+    "Real-Debrid es un servicio de pago que guarda películas y series en internet. Orbital no las tiene: las busca ahí por ti.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is a paid service that keeps movies and shows online. Orbital doesn't have them: it finds them there for you."
+          }
+        }
+      }
+    },
+    "Se paga aparte, sin sorpresas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid separately, no surprises"
+          }
+        }
+      }
+    },
+    "Tu primo, con tu cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cousin, on your account"
+          }
+        }
+      }
+    },
+    "Precios aproximados de real-debrid.com, en pesos mexicanos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approximate prices from real-debrid.com, in Mexican pesos"
+          }
+        }
+      }
+    },
+    "Se cortó: tu cuenta está en otro aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It cut out: your account is on another device"
+          }
+        }
+      }
+    },
+    "Busca primero en tu idioma favorito y en la mejor calidad. Si no está, prueba con el siguiente de tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It looks first in your favorite language and the best quality. If it isn't there, it tries the next one on your list."
+          }
+        }
+      }
+    },
+    "En Ajustes › Tus idiomas, mantén presionado uno y súbelo. El de arriba es el que «Ver» busca primero.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Settings › Your languages, touch and hold one and move it up. The top one is what “Watch” looks for first."
+          }
+        }
+      }
+    },
+    "Toca «Español» en Subtítulos. Es de práctica.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “Spanish” under Subtitles. It's for practice."
+          }
+        }
+      }
+    },
+    "Subtítulos en español": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles in Spanish"
+          }
+        }
+      }
+    },
+    "En Tus idiomas, Idioma original sube al primer lugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Your languages, Original language moves up to first place"
+          }
+        }
+      }
+    },
+    "En Buscar: comedias, de los 90, en Netflix. Cada filtro achica la lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Search: comedies, from the 90s, on Netflix. Each filter shrinks the list."
+          }
+        }
+      }
+    },
+    "Tres filtros se prenden y la lista baja de 2400 a 3 títulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three filters turn on and the list drops from 2400 to 3 titles"
+          }
+        }
+      }
+    },
+    "Capítulos de media hora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Half-hour episodes"
+          }
+        }
+      }
+    },
+    "Sigue en el mismo minuto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick up at the same minute"
+          }
+        }
+      }
+    },
+    "«Oye Siri, siguiente episodio en Orbital». Las frases están en Ajustes › Voz y Siri.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Hey Siri, next episode in Orbital.” The phrases are in Settings › Voice & Siri."
+          }
+        }
+      }
+    },
+    "«Siguiente episodio en Orbital»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Next episode in Orbital”"
+          }
+        }
+      }
+    },
+    "Temporizador": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        }
+      }
+    },
+    "Te aviso al terminar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll let you know when it's over"
+          }
+        }
+      }
+    },
+    "Listo: te avisamos el día que salga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: we'll let you know the day it comes out"
+          }
+        }
+      }
+    },
+    "%@ · Nuevo episodio, ya disponible": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · New episode, out now"
+          }
+        }
+      }
+    },
+    "%@ · T4 E1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · S4 E1"
+          }
+        }
+      }
+    },
+    "Notas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        }
+      }
+    },
+    "%@ · T4 E2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · S4 E2"
+          }
+        }
+      }
+    },
+    "%@ · T2 E3 · minuto 34": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · S2 E3 · minute 34"
           }
         }
       }

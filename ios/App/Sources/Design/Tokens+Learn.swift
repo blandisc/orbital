@@ -62,18 +62,10 @@ extension DS {
     /// Las historias de «Aprende Orbital» (G3). La barra, el toque para regresar y mantener para pausar son los del Wrapped
     /// (`DS.Watching`).
     enum Story {
-        /// Cada tarjeta dura lo suyo (`LearnStory.Card.seconds`); la última con botón, esto más para alcanzar a tocarlo. Avanza
-        /// en `ticks` pasos.
-        static let lastExtra: Duration = .seconds(2)
-        /// «Tu turno»: cuánto espera tu gesto antes de que lo haga el dedo fantasma, y la pausa para celebrarlo.
-        static let turnWait: Duration = .seconds(6), turnPraise: Duration = .milliseconds(700)
+        /// Avanza en `ticks` pasos.
         static let ticks = 60
-        /// El ícono de la historia arriba y la mano fantasma.
-        static let hand: CGFloat = 44
         /// El cubo entre historias: cuánto gira una cara al irse entera y qué tan honda se ve.
         static let cubeAngle: Double = 90, cubePerspective: CGFloat = 0.6   // ds-exception: grados y profundidad del cubo (como Instagram)
-        /// Bajar más que esto la cierra.
-        static let closeDrag: CGFloat = 120
     }
 
     /// Los avisos sobre la pantalla (F3).
@@ -176,8 +168,6 @@ extension DS {
         static let pressed: CGFloat = 0.94, lifted: CGFloat = 1.06   // ds-exception: escala del toque (física de la escena)
         /// Los renglones de texto fingido (las líneas grises de una ficha).
         static let line: CGFloat = 6
-        /// El texto llega después del gesto: el título aparece a esta fracción de la tarjeta.
-        static let textAt = 0.35
     }
 }
 

@@ -37,7 +37,7 @@ struct RemoteImage<Content: View>: View {
         // de Explorar se quedaba en las sombras de los pósters (19 nov 2026). `RemoteImageTests` lo vigila.
         ZStack {
             content(phase, shown)
-            Color.clear.frame(width: 0, height: 0).accessibilityHidden(true).task(id: url) { await load() }
+            Color.clear.frame(width: 0, height: 0).accessibilityHidden(true).task(id: url) { await load() }   // ds-exception: el ancla invisible de la carga (sin tamaño)
         }
     }
 

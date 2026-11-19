@@ -17,5 +17,14 @@ extension AppEnvironment {
     }
 }
 
-/// La historia abierta (para `fullScreenCover(item:)`).
-struct StoryRoute: Identifiable { let id: String }
+extension AppEnvironment {
+    /// Ya tienes lo que ofrece el botón final de la lección (tu nube, Trakt, tu TV): entonces la lección cierra con «Listo».
+    func hasWhatLessonOffers(_ lesson: String) -> Bool {
+        switch lesson {
+        case "nube": services.debrid.hasToken
+        case "tuyo": services.trakt?.linked == true
+        case "tv": services.orbital.isConfigured
+        default: false
+        }
+    }
+}

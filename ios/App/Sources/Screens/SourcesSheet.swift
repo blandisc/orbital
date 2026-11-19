@@ -163,6 +163,8 @@ struct SourcesSheet: View {
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)   // el ícono al ras del margen, el toque sigue de 44
                     .accessibilityLabel(Text("Qué significa cada etiqueta"))
                     .accessibilityIdentifier("sources-info")
+                // «Por pedir» es donde más se atora la gente (AF2-B): la lección de tu nube, en la pantalla que lo explica.
+                LessonHelpButton(lesson: "nube", step: 2, label: "¿Qué es «Por pedir»?")
             }
             .padding(.horizontal, DS.Space.s4)
             ScrollView {

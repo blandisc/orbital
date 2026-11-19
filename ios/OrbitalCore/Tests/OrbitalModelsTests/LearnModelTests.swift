@@ -69,6 +69,25 @@ final class LearnModelTests: XCTestCase {
         XCTAssertTrue(LearnModel(try ServicesRig().services).stories.contains { $0.id == "tv" })
     }
 
+    /// Las lecciones de Aprende (AF4-B, 19 nov 2026): las cinco en su orden; la de la TV solo con la consola.
+    func testTheLessonsAndWhereEachOldStoryLands() throws {
+        XCTAssertEqual(LearnModel(try ServicesRig().services).lessons, ["nube", "idioma", "hoy", "tuyo", "tv"])
+        XCTAssertFalse(LearnModel(try ServicesRig(allowsOrbital: false).services).lessons.contains("tv"))
+        XCTAssertEqual(LearnModel.lesson(forStory: "instant")?.id, "nube")
+        XCTAssertEqual(LearnModel.lesson(forStory: "language")?.id, "idioma")
+        XCTAssertEqual(LearnModel.lesson(forStory: "discover")?.id, "hoy")
+        XCTAssertEqual(LearnModel.lesson(forStory: "thread")?.id, "tuyo")
+        XCTAssertNil(LearnModel.lesson(forStory: "watch"), "los gestos del reproductor se enseñan con su aviso")
+    }
+
+    func testResetAlsoForgetsTheLessons() throws {
+        let learn = LearnModel(try ServicesRig().services)
+        learn.markSeen("lesson.hoy")
+        XCTAssertTrue(learn.seen("lesson.hoy"))
+        learn.reset()
+        XCTAssertFalse(learn.seen("lesson.hoy"))
+    }
+
     func testEveryStoryHasThreeToFiveCards() {
         for story in LearnContent.all {
             XCTAssertTrue((4...6).contains(story.cards.count), story.id)

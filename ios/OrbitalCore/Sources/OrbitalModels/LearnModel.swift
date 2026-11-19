@@ -36,6 +36,30 @@ public final class LearnModel: ObservableModel {
             .map { $0.id == LearnContent.instant.id ? LearnContent.instant(services.debrid.service) : $0 }   // con tu nube
     }
 
+    // MARK: lecciones (Aprende, a fondo: AF1-B · AF4-B, 19 nov 2026)
+
+    /// Las cinco lecciones, en orden de lo que más atora: tu nube (solo con nube), tu idioma, qué ver, lo tuyo y tu TV (solo
+    /// donde hay consola). El contenido y las escenas viven en la app (`LessonCatalog`); aquí, cuáles hay y si las viste.
+    public static let lessonIDs = ["nube", "idioma", "hoy", "tuyo", "tv"]
+
+    public var lessons: [String] {
+        let can = services.capabilities
+        return Self.lessonIDs.filter { ($0 != "tv" || can.console) && ($0 != "nube" || can.instantStreams) }
+    }
+
+    /// La lección (y en qué pantalla) que contesta lo que abría una historia vieja: el botón de un aviso, la ficha sin nube.
+    /// Los gestos del reproductor y las descargas ya no tienen lección (AF4-B: se enseñan con su aviso).
+    public static func lesson(forStory story: String) -> (id: String, step: Int)? {
+        switch story {
+        case "instant", Self.debridFlowKey: ("nube", 0)
+        case "language": ("idioma", 0)
+        case "discover": ("hoy", 0)
+        case "thread": ("tuyo", 0)
+        case "tv": ("tv", 0)
+        default: nil
+        }
+    }
+
     public func seen(_ id: String) -> Bool { services.kv.data("learn.seen.\(id)") != nil }
 
     public func markSeen(_ id: String) {
@@ -114,6 +138,7 @@ public final class LearnModel: ObservableModel {
     /// Ajustes › Aprende › «Volver a ver los avisos»: los avisos y los círculos, desde cero.
     public func reset() {
         for story in LearnContent.all { services.kv.set("learn.seen.\(story.id)", data: nil) }
+        for lesson in Self.lessonIDs { services.kv.set("learn.seen.lesson.\(lesson)", data: nil) }
         for id in CoachID.allCases { services.kv.set("learn.seen.coach.\(id.rawValue)", data: nil) }
         services.kv.set(Self.coachOffKey, data: nil)
         services.kv.set(Self.ringsSinceKey, data: nil)

@@ -13,7 +13,7 @@ extension TitleView {
             // Qué decir lo decide el modelo (`playFallback`), con la tabla común con la TV y lo que trae esta versión (D1-B).
             switch model.playFallback(online: env.isOnline) {
             case .cause(let cause): tell(cause, model)
-            case .story(let id): env.ui.openStory = id
+            case .story(let id): env.ui.openLesson(forStory: id)
             case .noInternet:
                 env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }
             }

@@ -70,6 +70,7 @@ extension PlayerScreen {
             openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .version } } : nil,
             done: close, language: ui,
             tabs: landscape ? AnyView(dockTabs) : nil,
+            help: AnyView(LessonHelpButton(lesson: "idioma", step: 3, label: "¿Cómo cambio el idioma?")),
             onNeed: { need in
                 guard !landscape, !dockPinned, dockState.dockPage == .media, dockState.dockNeed != need else { return }
                 withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockNeed = need }

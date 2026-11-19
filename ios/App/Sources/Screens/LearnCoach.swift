@@ -17,7 +17,7 @@ struct LearnCoach: ViewModifier {
     func body(content: Content) -> some View {
         content
             .coachHost(showing ? CoachContent(id: id.rawValue, title: title, detail: detail, spotlight: id.spotlight, scene: id.scene) : nil,
-                       story: { showing = false; env.ui.openStory = id.story },
+                       story: LearnModel.lesson(forStory: id.story) == nil ? nil : { showing = false; env.ui.openLesson(forStory: id.story) },
                        done: { showing = false },
                        skipAll: { LearnModel(env.services).skipAllCoach(); showing = false })
             .task(id: active) {

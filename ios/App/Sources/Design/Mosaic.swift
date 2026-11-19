@@ -121,13 +121,13 @@ struct Mosaic: View {
             #if DEBUG
             if Demo.noIdle { return }
             #endif
-            try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
+            guard (try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)) != nil else { return }
             // Mientras sigue la inercia o el dedo está encima, no es «quieto».
             if !Task.isCancelled, !inertia.isRunning, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
         }
         .task(id: aliveToken) {
             guard runtime.mode == .focus, !reduceMotion, let id = runtime.focus else { return }
-            try? await Task.sleep(nanoseconds: DS.Timing.mosaicAlive)
+            guard (try? await Task.sleep(nanoseconds: DS.Timing.mosaicAlive)) != nil else { return }
             if !Task.isCancelled, runtime.mode == .focus, runtime.focus == id { runtime.aliveTileID = runtime.current.map { "\($0.imdb)" } }
         }
         .task(id: runtime.mode) {
@@ -135,7 +135,7 @@ struct Mosaic: View {
             guard runtime.mode == .ambient, !reduceMotion else { return }
             var last = Date()
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: DS.Timing.mosaicDrift)
+                guard (try? await Task.sleep(nanoseconds: DS.Timing.mosaicDrift)) != nil else { break }
                 let now = Date(); let dt = now.timeIntervalSince(last); last = now
                 withAnimation(.linear(duration: DS.Mosaic.driftTick)) { runtime.driftTick(dt, speeds: driftSpeeds) }
             }

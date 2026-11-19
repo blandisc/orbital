@@ -189,7 +189,7 @@ struct ConfirmIconButton: View {
         .dsFeedback(.selection, trigger: asking)
         .task(id: asking) {
             guard asking else { return }
-            try? await Task.sleep(nanoseconds: DS.Timing.confirm)
+            guard (try? await Task.sleep(nanoseconds: DS.Timing.confirm)) != nil else { return }
             withAnimation(DS.Motion.base(reduceMotion)) { asking = false }
         }
     }

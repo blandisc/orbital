@@ -69,7 +69,7 @@ struct SceneLoop<Content: View>: View {
                 guard !reduceMotion, !waiting else { return }
                 step = 0
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: beat)
+                    guard (try? await Task.sleep(for: beat)) != nil else { break }
                     withAnimation(DS.Motion.spring(reduceMotion)) { step = (step + 1) % steps }
                 }
             }
@@ -445,4 +445,15 @@ struct SceneCloudRequest: View {
             }
         }
     }
+}
+
+/// «Tu turno» (Fernando, 4 nov 2026: «tienes mi OK para probarlo de tu turno»): la tarjeta espera tu gesto sobre la
+/// miniatura; la escena lo acepta y avisa con `done()`. Mientras espera, la escena se queda en su primer cuadro y sin dedo.
+struct StoryTurn {
+    var waiting: Bool
+    var done: () -> Void
+}
+
+extension EnvironmentValues {
+    @Entry var storyTurn: StoryTurn?
 }

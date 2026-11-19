@@ -179,7 +179,7 @@ struct MatchDeck: View {
         // Capturas a medio arrastre: la de arriba se queda inclinada hacia «Guardar» con su sello y el botón encendido.
         .task(id: width) {
             guard Demo.isOn, Demo.has("-demo-deck-pull"), width > 0, let s = cards.first else { return }
-            try? await Task.sleep(for: .seconds(1))   // ds-exception: guion de capturas, solo en DEBUG (Demo)
+            guard (try? await Task.sleep(for: .seconds(1))) != nil else { return }   // ds-exception: guion de capturas, solo en DEBUG (Demo)
             dragID = s.imdb; drag = CGSize(width: width * DS.Match.threshold * 0.85, height: 0)   // ds-exception: Demo, a medio camino del umbral
             let p = progress(drag); pull?.set(p.toward, p.amount)
         }

@@ -1156,6 +1156,21 @@ Las miniaturas de la guía son angostas: un nombre junto a un ícono no cabe y s
 texto puede no caber, va dentro de `ViewThatFits` con una versión sin texto (solo el ícono, y el nombre para VoiceOver); nunca
 se trunca. `DesignRulesTests.testSceneDeviceNeverCutsItsName` vigila `SceneDevice`.
 
+### Esperas que se cancelan (19 nov 2026)
+
+En un `.task(id:)`, cuando cambia el `id` SwiftUI cancela la tarea vieja, pero `try? await Task.sleep` se traga la
+cancelación y lo de abajo corre igual, tarde, sobre lo nuevo. Pasó en la primera pantalla de una lección (la escena se
+congelaba antes de aparecer) y estaba igual en «¿Seguro?», el póster que se rinde, el salto pendiente del reproductor y el
+mosaico. Se escribe `guard (try? await Task.sleep(…)) != nil else { return }` (o `break` en un ciclo).
+`DesignRulesTests.testTaskIDWaitsStopWhenCancelled` lo vigila.
+
+### Escenas de lección: escala y giro antes del lugar (19 nov 2026)
+
+En una escena de Aprende, una pieza puesta con `sceneAt` crece o gira con `.scaleEffect`/`.rotationEffect` **antes** de
+`sceneAt`; después, crece alrededor de la esquina del lienzo y se sale de su lugar (los tres pósters de «Junta filtros» se
+salían de la cuadrícula). `scenePut` con escala o giro, solo en piezas que vuelan con `dx`/`dy`.
+`DesignRulesTests.testScaledScenePiecesScaleBeforeTheirPlace` lo vigila.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

@@ -56,6 +56,7 @@ final class EditionTests: XCTestCase {
         let stories = LearnModel(services).stories.map(\.id)
         XCTAssertFalse(stories.contains(LearnContent.instant.id), "Aprende sin «Ver al instante»")
         XCTAssertFalse(stories.contains(LearnContent.tv.id), "Aprende sin «Tu TV»")
+        XCTAssertEqual(LearnModel(services).lessons, ["idioma", "hoy", "tuyo"], "las lecciones sin tu nube ni la TV")
     }
 
     func testPlusKeepsRealDebridButNotTheConsole() throws {
@@ -79,5 +80,6 @@ final class EditionTests: XCTestCase {
         XCTAssertTrue(guide.offersDebrid); XCTAssertTrue(guide.offersTV)
         let stories = LearnModel(services).stories.map(\.id)
         XCTAssertTrue(stories.contains(LearnContent.instant.id)); XCTAssertTrue(stories.contains(LearnContent.tv.id))
+        XCTAssertEqual(LearnModel(services).lessons, LearnModel.lessonIDs, "en Ultra, las cinco lecciones")
     }
 }

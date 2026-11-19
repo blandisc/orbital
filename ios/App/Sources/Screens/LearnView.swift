@@ -1,9 +1,9 @@
 import SwiftUI
 import OrbitalModels
 
-/// Ajustes › Aprende (G3): todas las historias por tema (el punto de «nuevo» en las que no has visto), ver la guía otra vez,
-/// «Volver a ver los avisos» (los avisos sobre la pantalla, desde cero) y, con tu TV, lo que se puede
-/// hacer con ella. Una sola entrada en Ajustes (revisión del 11 nov: antes eran cuatro casi iguales).
+/// Ajustes › Aprende: las cinco lecciones a fondo (AF4-B, 19 nov 2026; el punto de «nuevo» en las que no has visto), ver la
+/// guía otra vez, «Volver a ver los avisos» (los avisos sobre la pantalla, desde cero) y, con tu TV, lo que se puede hacer con
+/// ella. Una sola entrada en Ajustes (revisión del 11 nov: antes eran cuatro casi iguales).
 struct LearnView: View {
     /// «Qué puedes hacer con la TV» (el recorrido de la TV), solo con tu Orbital prendida en Ajustes.
     let tvTutorial: (() -> Void)?
@@ -16,35 +16,18 @@ struct LearnView: View {
         _learn = State(wrappedValue: ModelObserver(LearnModel(AppEnvironment.shared.services)))
     }
 
-    private static let groups: [(title: LocalizedStringKey, ids: [String])] = [
-        ("Para empezar", ["instant", "language"]),
-        ("Cada día", ["discover", "watch", "thread"]),
-        ("Con tu TV", ["tv"]),
-    ]
-
     var body: some View {
         let model = learn.model
-        let byID = Dictionary(model.stories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         List {
-            ForEach(Self.groups, id: \.ids) { group in
-                Section {
-                    ForEach(group.ids.compactMap { byID[$0] }) { story in
-                        Button { env.ui.openStory = story.id } label: {
-                            LabeledContent {
-                                if !model.seen(story.id) {
-                                    Circle().fill(DS.fresh).frame(width: DS.Space.s2, height: DS.Space.s2).accessibilityLabel(Text("Sin ver"))
-                                }
-                            } label: {
-                                Label { Text(LocalizedStringKey(story.title)).recipe(.body, color: DS.text) } icon: {
-                                    DSIconTile(symbol: story.symbol, tint: DS.ListTint.named(story.tint), side: DS.SettingsLook.rowIcon)
-                                }
-                            }
-                        }
-                        .accessibilityIdentifier("learn-\(story.id)")
-                    }
-                } header: { Text(group.title) }   // no-es-título: un tema de la guía
-                .listRowBackground(DS.surface)
+            Section {
+                ForEach(model.lessons.compactMap(LessonCatalog.lesson)) { lesson in
+                    Button { env.ui.openLesson = LessonRoute(id: lesson.id) } label: { LessonRowLabel(lesson: lesson, seen: model.seen("lesson.\(lesson.id)")) }
+                        .accessibilityIdentifier("learn-\(lesson.id)")
+                }
+            } header: { Text("Lecciones") } footer: {   // no-es-título: el grupo de las lecciones
+                Text("Unos dos minutos cada una. Avanzas tú y al final lo pruebas, sin tocar tus cuentas.")
             }
+            .listRowBackground(DS.surface)
             if let tvTutorial {
                 Section {
                     Button(action: tvTutorial) {
@@ -75,6 +58,32 @@ struct LearnView: View {
     }
 }
 
+/// Una lección en la lista de Aprende: su ícono en su color, su nombre, de qué trata y, a la derecha, el punto de «nuevo» si
+/// no la has visto o la palomita si ya.
+struct LessonRowLabel: View {
+    let lesson: Lesson
+    let seen: Bool
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            DSIconTile(symbol: lesson.symbol, tint: DS.ListTint.named(lesson.tint), side: DS.Lesson.rowIcon)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(LocalizedStringKey(lesson.title)).recipe(.body, color: DS.text)   // no-es-título: el nombre de la lección
+                Text(LocalizedStringKey(lesson.blurb)).recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: DS.Space.s2)
+            if seen {
+                Image(systemName: "checkmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityLabel(Text("Vista"))
+            } else {
+                Circle().fill(DS.fresh).frame(width: DS.Space.s2, height: DS.Space.s2).accessibilityLabel(Text("Sin ver"))
+            }
+        }
+        .padding(.vertical, DS.Space.s1)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// «¿Volver a ver los avisos?» como tarjeta de Orbital, no el aviso del sistema (Fernando, 18 nov 2026: «que sea una
 /// tarjeta la que salga, no el aviso nativo»).
 struct ResetTipsCard: View {
@@ -87,7 +96,7 @@ struct ResetTipsCard: View {
                 DSIconTile(symbol: "arrow.counterclockwise", tint: DS.ListTint.addon)
                 DSSheetHeader(title: Text("¿Volver a ver los avisos?"))
             }
-            Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las historias de Aprende vuelven a decir que no las has visto.")
+            Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las lecciones de Aprende vuelven a decir que no las has visto.")
                 .recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             VStack(spacing: DS.Space.s2) {
                 Button(action: reset) { Text("Volver a verlos").frame(maxWidth: .infinity) }

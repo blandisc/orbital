@@ -221,22 +221,21 @@ final class DesignTests: XCTestCase {
         for case let file as URL in files where file.pathExtension == "swift" {
             let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n")
             for (index, line) in lines.enumerated() where line.contains(".accessibilityIdentifier(") && !line.contains("ds-exception:") {
-                // Sube por la cadena de modificadores hasta lo que los recibe.
-                var head = index
-                var chain = [line]
-                while head > 0, lines[head].trimmingCharacters(in: .whitespaces).hasPrefix(".") || head == index {
-                    head -= 1; chain.append(lines[head])
-                }
-                if chain.contains(where: { $0.contains(".accessibilityElement(") }) { continue }
-                guard lines[head].trimmingCharacters(in: .whitespaces).hasSuffix("}") else { continue }
-                // La apertura de ese bloque: si es un contenedor, sus hijos perderían su id.
-                var depth = 0, opener = head
+                // Sube por la cadena de modificadores hasta lo que los recibe, saltando los cierres y argumentos de cada
+                // modificador (`.task { … }`, `.gesture(…)`): 19 nov 2026, la lección se escondía detrás de su `.task`.
+                guard line.trimmingCharacters(in: .whitespaces).hasPrefix("."), !line.contains(".accessibilityElement(") else { continue }
+                var balance = 0, opener = index - 1, contained = false
                 while opener >= 0 {
-                    depth += lines[opener].filter { $0 == "}" }.count - lines[opener].filter { $0 == "{" }.count
-                    if depth <= 0 { break }
+                    let l = lines[opener]
+                    balance += l.filter { $0 == "}" || $0 == ")" }.count - l.filter { $0 == "{" || $0 == "(" }.count
+                    let trimmed = l.trimmingCharacters(in: .whitespaces)
+                    if balance <= 0 {
+                        if !trimmed.hasPrefix(".") { break }
+                        if trimmed.hasPrefix(".accessibilityElement(") { contained = true }
+                    }
                     opener -= 1
                 }
-                guard opener >= 0 else { continue }
+                guard opener >= 0, !contained else { continue }
                 let start = lines[opener].trimmingCharacters(in: .whitespaces)
                 if start.range(of: containers, options: .regularExpression) != nil {
                     problems.append("\(file.lastPathComponent):\(index + 1): \(start.prefix(40))… lleva id sin .accessibilityElement(children: .contain)")

@@ -56,6 +56,8 @@ struct SubtitleDock: View {
     var language = "es"
     /// En horizontal: las pestañas «Audio y subtítulos · Versión» en el lugar del título.
     var tabs: AnyView?
+    /// El «?» de la lección de idiomas (AF2-B), junto a «Listo».
+    var help: AnyView?
     /// Lo que mide entero (título, lista y aire): en vertical el video se acomoda arriba de él.
     var onNeed: (CGFloat) -> Void = { _ in }
 
@@ -91,6 +93,7 @@ struct SubtitleDock: View {
         HStack(spacing: DS.Space.s2) {
             if let tabs { tabs } else { Text("Audio y subtítulos").recipe(.cardTitle).accessibilityAddTraits(.isHeader) }
             Spacer(minLength: DS.Space.s2)
+            if let help { help }
             Button(action: done) { Text("Listo").font(DS.TextRecipe.label.font) }
                 .dsPrimaryButton(size: .small)
                 .accessibilityIdentifier("subtitle-dock-done")

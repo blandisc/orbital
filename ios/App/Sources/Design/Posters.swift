@@ -201,7 +201,7 @@ private struct FocusedFill: View {
         }
         .task(id: needed ? key : nil) {
             guard needed, point == nil else { return }
-            try? await Task.sleep(for: DS.Image.focusWait)
+            guard (try? await Task.sleep(for: DS.Image.focusWait)) != nil else { return }
             gaveUp = true   // si tarda, al centro (y si lo encuentra después, se corre)
         }
     }

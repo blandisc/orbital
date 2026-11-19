@@ -1,6 +1,6 @@
 import XCTest
 
-/// Los avisos sobre la pantalla (F3): salen una vez a quien ya hizo la guía, «Ver la historia» abre la suya, «Entendido» y
+/// Los avisos sobre la pantalla (F3): salen una vez a quien ya hizo la guía, «Ver la lección» abre la suya, «Entendido» y
 /// «Saltar avisos» los cierran, y solo sale uno cada vez que abres la app.
 final class CoachMarkUITests: XCTestCase {
     var app: XCUIApplication!
@@ -23,7 +23,7 @@ final class CoachMarkUITests: XCTestCase {
         launch(["-demo-tab", "2"])
         XCTAssertTrue(coach("advanced-search").waitForExistence(timeout: 20), "Buscar: el aviso con foco de la búsqueda avanzada")
         app.buttons["coach-story"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["story-deck"].firstMatch.waitForExistence(timeout: 10), "«Ver la historia» la abre")
+        XCTAssertTrue(app.descendants(matching: .any)["lesson-hoy"].firstMatch.waitForExistence(timeout: 10), "«Ver la lección» abre «¿Qué veo hoy?»")
         XCTAssertFalse(coach("advanced-search").exists)
     }
 

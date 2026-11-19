@@ -114,6 +114,12 @@ enum Demo {
         if scrobble { ScrobbleLog(kv: kv).recordSent(title: "The Office T2 · E5", action: .pause, at: Date().addingTimeInterval(-180)) }
     }
 
+    /// `-demo-lesson cloud:3` → la lección «nube» en su cuarta pantalla (los ids son los de `LessonCatalog`).
+    static func lessonRoute(_ text: String) -> LessonRoute {
+        let parts = text.split(separator: ":").map(String.init)
+        return LessonRoute(id: parts[0], step: parts.count > 1 ? Int(parts[1]) ?? 0 : 0)
+    }
+
     static func value(after flag: String) -> String? {
         let args = arguments
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }

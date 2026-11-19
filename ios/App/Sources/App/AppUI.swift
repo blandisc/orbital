@@ -60,8 +60,8 @@ final class AppUI {
     var showingGuide = false
     /// La guía de práctica (Aprende › «Ver la guía otra vez»): la misma guía, sin tocar tus cuentas ni tus ajustes.
     var practiceGuide = false
-    /// Una historia de «Aprende Orbital» a pantalla completa (su id), desde Ajustes o un aviso.
-    var openStory: String?
+    /// Una lección de Aprende a pantalla completa (y en qué pantalla empieza), desde Ajustes, un aviso o un «?».
+    var openLesson: LessonRoute?
     /// Abrir la búsqueda avanzada (el botón final de su historia).
     var openAdvancedFilter = false
     /// «Atrás» de la barra de menús (⌘[): regresa una pantalla en la pestaña que ves.
@@ -80,4 +80,18 @@ struct RedateRequest: Identifiable, Equatable {
     var videoID: String
     var at: Date
     var id: String { "\(videoID)@\(at.timeIntervalSince1970)" }
+}
+
+/// La lección abierta (para `fullScreenCover(item:)`): cuál y en qué pantalla empieza.
+struct LessonRoute: Identifiable, Equatable {
+    let id: String
+    var step = 0
+}
+
+extension AppUI {
+    /// Lo que abría una historia vieja (un aviso, la ficha sin nube) abre su lección; si ya no tiene (los gestos), nada.
+    func openLesson(forStory story: String) {
+        guard let found = LearnModel.lesson(forStory: story) else { return }
+        openLesson = LessonRoute(id: found.id, step: found.step)
+    }
 }
