@@ -37,10 +37,6 @@ function fact(item) {
   return h("span", { class: "foryou-mosaic__fact" }, h("span", { class: "foryou-mosaic__fact-kind" }, `${kind} · `), detail);
 }
 
-/** Un juego de consola (no Steam): su caja trae la franja de la consola y la clasificación. En el mosaico va su arte
- *  sin texto, con su logo encima (unslop, 2 nov 2026); la caja se queda para Juegos. */
-const sceneArt = (item) => item?.kind === "game" && item.item?.system && item.item.system !== "steam" && item.hero && item.logo;
-
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
  *
@@ -144,14 +140,15 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
         if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
       });
     };
-    const scene = sceneArt(item);
+    // Un juego de consola también va con su caja (Fernando, 18 nov 2026: su fondo recortado a lo alto no se reconocía);
+    // el fondo con su logo sale al enfocarlo, a lo ancho.
     const poster = art(h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", alt: "", decoding: "async" }),
-      scene ? sized(item.hero, WIDE_PX) : sized(item.image || item.hero || "", POSTER_PX)); // recortado a lo alto: pide más ancho
+      sized(item.image || item.hero || "", POSTER_PX));
     // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
     // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
     // Sin fondo ancho, lo ancho es su póster: va entero sobre su copia desenfocada (ArtFit), no recortado a una franja.
     let wide = null;
-    swap(poster, scene ? sized(item.image, POSTER_PX) : sized(item.image_fallback || item.hero, POSTER_PX));
+    swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
     // En la columna enfocada, un juego de Steam sin foco enseña su cápsula (lleva el juego y su nombre); el «hero» es un
     // fondo pensado para el logo encima, así que solo sale en la pieza enfocada, con el logo.
     const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", alt: "", decoding: "async" });
@@ -175,7 +172,6 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
         // Un solo renglón de texto (la insignia es flex: con pedazos sueltos se perdía el espacio, «enNetflix»).
         item.why && whyBadge(item.why), logo,
         fact(item)));
-    if (scene) node.classList.add("foryou-mosaic__tile--scene");
     // Sin ninguna imagen, la pieza se llena del color de su plataforma o su consola (no un cuadro negro): el de su cápsula
     // («N.º 1 en HBO Max»), si no el de su consola, si no el de las películas y series.
     const brand = brandParts(item.why).find((p) => p.brand)?.brand;

@@ -648,9 +648,9 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
   de su consola o plataforma (`.card--no-art` con `--fill`, la pieza `--bare` de Explorar con `--tile-fill`), nunca un cuadro
   gris; en una pieza angosta nada se corta: la versión corta del porqué («N.º 1»), el dato sin el tipo («2015») y el nombre
   en la receta `eyebrow`, hasta cuatro renglones, con guiones suaves por sílaba (`format.js · softHyphens`); la sombra de lo
-  enfocado es `--focus-lift` (corta y con su filo); el pie dice qué hace el botón («Enter Explorar», no «Elegir»); un juego
-  de consola en Explorar va con su arte sin texto y su logo (la caja con la franja de la consola y la clasificación se queda
-  para Juegos).
+  enfocado es `--focus-lift` (corta y con su filo); el pie dice qué hace el botón («Enter Explorar», no «Elegir»). Un juego
+  de consola en Explorar va con su caja, como todo lo demás; su fondo con el logo sale al enfocarlo (Fernando, 18 nov 2026:
+  el fondo recortado a lo alto no se reconocía; antes, del 2 nov, iba el fondo con su logo).
 - **Una cuadrícula que se recorre** (`browse.js · keepInView`: Juegos, listas, TV en vivo) sube la fila enfocada hasta arriba; nunca
   deja la de antes a medias y desvanecida, que se veía como un hueco (TV-4, 2 nov 2026).
 - **El porqué va arriba del título en todas las pantallas** (Fernando, 2 nov 2026, opción B): se consideró bajarlo a la línea de

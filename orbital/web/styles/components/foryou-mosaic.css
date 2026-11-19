@@ -73,12 +73,6 @@
 .foryou-mosaic__tile--bare {
   background: radial-gradient(130% 90% at 25% 15%, color-mix(in oklab, var(--tile-fill) 55%, var(--color-backdrop-deep)), color-mix(in oklab, var(--tile-fill) 16%, var(--color-backdrop-deep)) 75%);
 }
-/* Un juego de consola lleva su arte sin texto recortado a lo alto y, siempre, su logo (sceneArt): sin foco, solo el logo. */
-.foryou-mosaic__tile--scene .foryou-mosaic__art--poster { object-position: center 22%; }
-.foryou-mosaic__tile--scene .foryou-mosaic__info { opacity: 1; transform: none; }
-.foryou-mosaic__tile--scene:not(.is-focused.foryou-mosaic__tile) :is(.badge, .foryou-mosaic__fact) { display: none; }
-.foryou-mosaic__tile--scene:not(.is-focused.foryou-mosaic__tile) .foryou-mosaic__logo { max-height: 3.2rem; }
-.foryou-mosaic__tile--scene:not(.is-focused.foryou-mosaic__tile)::after { opacity: 1; }
 .foryou-mosaic__logo { max-width: min(100%, 16rem); max-height: 4.4rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .foryou-mosaic__logo--dark { filter: var(--filter-logo-light); }
 .foryou-mosaic__name {
