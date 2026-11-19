@@ -154,7 +154,7 @@
   },
   "push": {
     "status": "parked",
-    "reason": "Requiere el Apple Developer Program de pago; Fernando, 4 nov 2026 (PU1-B): «No lo vamos a pagar… hay que apagar esa funcionalidad». Siguen R14-B y R11-B. Nada de esto está construido en ninguna app; si un día se retoma, antes se aplican los 11 cambios de la revisión del iPhone.",
+    "reason": "18 nov 2026: la cuenta de paga ya está activa, pero Fernando eligió IN-A («Vamos a quedarnos con hoy»): el iPhone es independiente de la TV, así que la TV no manda avisos ni actividades por APNs. Siguen R14-B y R11-B. Antes (4 nov, PU1-B) se había apartado por no pagar.",
     "_": "R14-A y R11-A (sin construir): la TV avisaría al iPhone al instante por APNs y lleva al día la actividad en vivo de un pedido. Acordado entre las sesiones de la TV y del iPhone tras la revisión adversarial de la TV (12 puntos); la del iPhone puede cambiar algo antes de construir. Si la TV está apagada no sale nada: el vistazo del iPhone (R10, R14-B) sigue de respaldo.",
     "register": {
       "_": "POST /api/companion/push-token y DELETE con el mismo cuerpo. Solo con llave de aparato (od1): el device_id sale de la llave, nunca del cuerpo. El iPhone registra en cada arranque y en cada cambio de token (upsert, idempotente).",
