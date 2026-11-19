@@ -2,7 +2,6 @@ import Foundation
 import OrbitalCore
 import OrbitalModels
 
-#if DEBUG
 /// Trakt de mentira para el modo demostración: watchlist, listas, scrobble y el calendario de estrenos.
 extension DemoHTTPClient {
     /// El calendario de Trakt de mentira: tres series que salen hoy, mañana y en tres días.
@@ -230,4 +229,3 @@ extension DemoHTTPClient {
         return nil
     }
 }
-#endif

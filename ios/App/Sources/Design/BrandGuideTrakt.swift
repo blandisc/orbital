@@ -125,27 +125,27 @@ struct GuideDevice: View {
         let outer: CGFloat = kind == .phone ? 18 : kind == .tablet ? 13 : kind == .tv ? 7 : 8
         let inset: CGFloat = kind == .phone ? 5 : 6
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: outer, style: .continuous).fill(DS.surface).strokeBorder(DS.textMuted.opacity(0.45), lineWidth: 2)
+            RoundedRectangle(cornerRadius: outer, style: .continuous).fill(DS.surface).strokeBorder(DS.textMuted.opacity(0.45), lineWidth: 2)   // ds-exception: dibujo de la escena de la guía
             RoundedRectangle(cornerRadius: max(outer - inset, 3), style: .continuous)
                 .fill(LinearGradient(colors: [DS.surfaceRaised, DS.surface], startPoint: .top, endPoint: .bottom))
                 .overlay(RoundedRectangle(cornerRadius: max(outer - inset, 3), style: .continuous).fill(DS.brandMoon.opacity(glow)))
                 .padding(inset)
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(0..<(kind == .phone ? 5 : 3), id: \.self) { i in
-                    Capsule().fill(DS.text.opacity(0.09)).frame(width: (rect.width - 32) * (i % 2 == 1 ? 0.62 : 0.85), height: 4)
+                    Capsule().fill(DS.text.opacity(0.09)).frame(width: (rect.width - 32) * (i % 2 == 1 ? 0.62 : 0.85), height: 4)   // ds-exception: dibujo de la escena de la guía
                 }
             }
             .padding(.top, kind == .phone ? 30 : 18).padding(.leading, 16)
             if kind == .phone {
-                Capsule().fill(.black).frame(width: 26, height: 7).frame(maxWidth: .infinity).padding(.top, 9)
+                Capsule().fill(.black).frame(width: 26, height: 7).frame(maxWidth: .infinity).padding(.top, 9)   // ds-exception: dibujo de la escena de la guía
             }
         }
         .frame(width: rect.width, height: rect.height)
         .overlay(alignment: .bottom) {
             if kind == .tv {
-                Capsule().fill(DS.textMuted.opacity(0.45)).frame(width: 60, height: 4).offset(y: 17)
+                Capsule().fill(DS.textMuted.opacity(0.45)).frame(width: 60, height: 4).offset(y: 17)   // ds-exception: dibujo de la escena de la guía
             } else if kind == .mac {
-                Capsule().fill(DS.textMuted.opacity(0.45)).frame(width: rect.width + 32, height: 8).offset(y: 9)
+                Capsule().fill(DS.textMuted.opacity(0.45)).frame(width: rect.width + 32, height: 8).offset(y: 9)   // ds-exception: dibujo de la escena de la guía
             }
         }
         .position(x: rect.midX, y: rect.midY)
@@ -162,25 +162,25 @@ struct GuideShowCard: View {
         HStack(spacing: 9) {
             RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(LinearGradient(colors: [DS.ListTint.calendar, DS.surface], startPoint: .top, endPoint: .bottom))
-                .overlay(Circle().fill(DS.danger.opacity(0.8)).frame(width: 14).offset(y: -4))
-                .frame(width: 28, height: 42)
+                .overlay(Circle().fill(DS.danger.opacity(0.8)).frame(width: 14).offset(y: -4))   // ds-exception: dibujo de la escena de la guía
+                .frame(width: 28, height: 42)   // ds-exception: dibujo de la escena de la guía
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: "Shōgun").font(DS.styled(.subheadline).weight(.semibold)).foregroundStyle(DS.text)
                 if watches {
-                    Text("T1 E7 · quedan 18 min").font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(0.7)
-                    Capsule().fill(DS.text.opacity(0.14)).frame(height: 3)
+                    Text("T1 E7 · quedan 18 min").font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                    Capsule().fill(DS.text.opacity(0.14)).frame(height: 3)   // ds-exception: dibujo de la escena de la guía
                         .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(DS.brandMoon).frame(width: g.size.width * 0.62) } }
                         .padding(.top, 4)
                 } else {
-                    (Text(Image(systemName: "checkmark")).foregroundStyle(DS.brandMoon) + Text(verbatim: " ") + Text("T1 E7 · vista"))
-                        .font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(0.7)
+                    Text("\(Text(Image(systemName: "checkmark")).foregroundStyle(DS.brandMoon)) \(Text("T1 E7 · vista"))")
+                        .font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 }
             }
         }
         .padding(EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 10))
-        .frame(width: 168, height: 54, alignment: .leading)
+        .frame(width: 168, height: 54, alignment: .leading)   // ds-exception: dibujo de la escena de la guía
         .background(DS.surfaceRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.35 + lift * 0.25), radius: 5 + lift * 13, y: 4 + lift * 16)
+        .shadow(color: .black.opacity(0.35 + lift * 0.25), radius: 5 + lift * 13, y: 4 + lift * 16)   // ds-exception: dibujo de la escena de la guía
     }
 }
 
@@ -202,7 +202,7 @@ struct TraktRecognized: View {
             ZStack(alignment: .bottomTrailing) {
                 Circle()
                     .fill(AngularGradient(colors: [DS.brandMoon, DS.ListTint.library, DS.ListTint.calendar, DS.brandMoon], center: .center, angle: .degrees(210)))
-                    .overlay(Circle().fill(DS.surfaceRaised).padding(3))
+                    .overlay(Circle().fill(DS.surfaceRaised).padding(3))   // ds-exception: dibujo de la escena de la guía
                     .overlay(Text(verbatim: String((name ?? "T").prefix(1)).uppercased()).font(DS.styled(.largeTitle).weight(.semibold)).foregroundStyle(DS.text))
                     .frame(width: DS.Guide.avatar, height: DS.Guide.avatar)
                 Image(systemName: "checkmark").font(DS.styled(.subheadline).weight(.heavy)).foregroundStyle(DS.onPrimary)
@@ -237,11 +237,11 @@ struct TraktRecognized: View {
         .task {
             if reduceMotion { avatar = true; badge = true; text = true; counted = true; return }
             withAnimation(DS.Guide.avatarIn) { avatar = true }
-            try? await Task.sleep(for: .seconds(0.12))
+            try? await Task.sleep(for: DS.Guide.textAfterAvatar)
             withAnimation(DS.Motion.enter(reduceMotion)) { text = true }
-            try? await Task.sleep(for: .seconds(0.16))
+            try? await Task.sleep(for: DS.Guide.badgeAfterText)
             withAnimation(DS.Guide.badgePop) { badge = true }
-            try? await Task.sleep(for: .seconds(0.04))
+            try? await Task.sleep(for: DS.Guide.countAfterBadge)
             withAnimation(DS.Guide.countUp) { counted = true }
         }
     }
@@ -255,7 +255,7 @@ struct TraktRecognized: View {
             } else {
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.fill).frame(width: 44, height: 30)   // ds-exception: espacio del número mientras llega
             }
-            label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(0.8)
+            label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)

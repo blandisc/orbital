@@ -1,6 +1,6 @@
 # Antes de decir «listo» en la app de Apple
 
-Lista corta, nacida de errores reales (13 nov 2026). Es ligera a propósito: seis comprobaciones, no un trámite.
+Lista corta, nacida de errores reales (13 nov 2026). Es ligera a propósito: ocho comprobaciones, no un trámite.
 Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
 
 1. **Se mide, no se ve a ojo.** Márgenes, alineación y espacios se comprueban con números: los marcos de los elementos
@@ -33,6 +33,11 @@ Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
    Fernando.
    *Por qué:* el 17 nov Fernando encontró la ficha clavada a la izquierda, un primer arreglo «descentrado feo» y un «más»
    que no abría nada. Todo estaba en capturas que ya se habían tomado, pero en un solo tamaño y sin nadie que las juzgara.
+
+8. **Antes de subir, todas las pruebas del paquete.** Se corre `swift test` entero en `ios/OrbitalCore`, no solo la suite
+   del cambio: las guardias de diseño (valores a mano, hojas sin `dsSheetContent`, `Text` con `+`, `UIDevice` en pantallas,
+   tope de 600 renglones por archivo) viven en suites distintas y la CI las corre todas.
+   *Por qué:* el 18 nov la guía nueva subió con solo `DesignRulesTests` y la CI quedó en rojo cuatro veces seguidas.
 
 Lo que se corrige y puede repetirse se vuelve regla del repo con su prueba (regla 16 de la casa); las reglas de diseño
 viven en `docs/ios-interfaz.md`. Para quien dirige agentes: todo en primer plano con tiempo límite y, a lo más, tres

@@ -16,10 +16,17 @@ struct OnboardingView: View {
     @State private var explained: Set<OnboardingModel.Piece> = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let done: () -> Void
+    /// La guía de práctica (Aprende › «Ver la guía otra vez»; Fernando, 18 nov 2026: «que sea dummy, que no registres
+    /// cosas»): la misma guía sobre unos `Services` aparte (`AppComposition.practiceServices`), con la Trakt, la nube y la TV
+    /// de mentira. Arriba lo dice; al cerrarla se olvida todo.
+    let practice: Bool
 
-    init(done: @escaping () -> Void) {
-        _guide = State(wrappedValue: ModelObserver(OnboardingModel(AppEnvironment.shared.services)))
-        self.done = done
+    init(practice: Bool = false, done: @escaping () -> Void) {
+        let env = AppEnvironment.shared
+        let model = OnboardingModel(practice ? AppComposition.practiceServices(env.transport) : env.services)
+        model.practice = practice
+        _guide = State(wrappedValue: ModelObserver(model))
+        self.practice = practice; self.done = done
     }
 
     var body: some View {
@@ -35,9 +42,17 @@ struct OnboardingView: View {
             let p = guide.model.position(step)
             GuideMoonFlight(trigger: flights, to: DS.GuideScene.arcStart + DS.GuideScene.arcSpan * Double(p.current) / Double(max(p.total - 1, 1)))
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if practice {
+                Label("Práctica: nada de esto se guarda ni se conecta", systemImage: "graduationcap")
+                    .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
+                    .frame(maxWidth: .infinity).accessibilityIdentifier("guide-practice")
+            }
+        }
         .tint(DS.accent)
         .interactiveDismissDisabled()
         .task {
+            if practice { return }   // práctica: sin subtítulos (es tu cuenta de verdad) y siempre desde el principio
             let subs = AppEnvironment.shared.openSubtitles
             await subs.refresh()
             guide.model.offersSubtitles = subs.available && !subs.connected
@@ -81,6 +96,7 @@ struct OnboardingView: View {
     }
 
     private func finish() {
+        if practice { Demo.practice = false; return done() }
         guide.model.finish(explained: explained)
         done()
     }

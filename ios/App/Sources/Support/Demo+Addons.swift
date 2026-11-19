@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 import OrbitalAddons
@@ -87,9 +86,7 @@ extension Demo {
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
     }
 }
-#endif
 
-#if DEBUG
 import SwiftUI
 
 /// La página de Ajustes que abre `-demo-settings-page` (Fase 3).
@@ -105,4 +102,3 @@ struct DemoSettingsPage: View {
         }
     }
 }
-#endif

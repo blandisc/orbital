@@ -138,7 +138,7 @@ extension DesignRulesTests {
             let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
             return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
         }
-        let screens = try code("Tokens+Screens.swift"), home = try code("Tokens+Home.swift")
+        let screens = try code("Tokens+Screens.swift") + code("Tokens+Guide.swift"), home = try code("Tokens+Home.swift")
         XCTAssertTrue(home.contains("static var scale: CGFloat {") && home.contains("static var maxWidth: CGFloat { baseWidth * scale }"),
                       "Plataformas, Premios y Estudios crecen hasta llenar el renglón en la Mac")
         XCTAssertTrue(screens.contains("static var emblem: CGFloat { 70 * PlatformFan.scale }"), "El emblema crece con su tarjeta")

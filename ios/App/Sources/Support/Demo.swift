@@ -4,9 +4,8 @@ import OrbitalCore
 import OrbitalModels
 import OrbitalAddons
 
-#if DEBUG
 
-/// Modo demostración (solo en Debug, con el argumento `-demo`): una cuenta de Stremio falsa con biblioteca y un complemento
+/// Modo demostración (en Debug con el argumento `-demo`; en la versión del iPhone, solo la guía de práctica de Aprende): una cuenta de Stremio falsa con biblioteca y un complemento
 /// que da videos de prueba públicos. Cinemeta y los pósteres son los de verdad. Nada se guarda en el Keychain ni en disco:
 /// sirve para recorrer la app en el simulador sin tu cuenta.
 enum Demo {
@@ -30,7 +29,10 @@ enum Demo {
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
     /// `-demo-first-run`: la guía de la primera vez (sin Real-Debrid ni Trakt conectados).
-    static var firstRun: Bool { has("-demo-first-run") }
+    static var firstRun: Bool { has("-demo-first-run") || practice }
+    /// La guía de práctica (Ajustes › Aprende › «Ver la guía otra vez», Fernando, 18 nov 2026): la guía tal cual, con el
+    /// Trakt, la nube y la TV de mentira de la demo, en unos `Services` aparte. Nada toca tus cuentas ni tus ajustes.
+    nonisolated(unsafe) static var practice = false
     /// `-demo-coach`: como si ya hubieras hecho la guía, para que salgan los avisos sobre la pantalla (F3).
     static var coach: Bool { has("-demo-coach") }
     static var noTV: Bool { has("-demo-no-tv") }
@@ -401,4 +403,3 @@ struct DemoScroll: ViewModifier {
     }
 }
 
-#endif

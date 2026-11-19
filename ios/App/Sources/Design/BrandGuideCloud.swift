@@ -16,6 +16,9 @@ struct GuideCloudScene: View {
     private static let s0 = CGPoint(x: 86, y: 101), c1 = CGPoint(x: 140, y: 14), k = CGPoint(x: 201, y: 112)
     private static let c2 = CGPoint(x: 272, y: 26), pl = CGPoint(x: 332, y: 120)
     private static let mini = CGSize(width: 28, height: 42)
+    /// Medidas del dibujo (las del prototipo): la palomita del póster, la isla y el marco del elegido en el iPhone, el toque.
+    private static let check: CGFloat = 20, island = CGSize(width: 24, height: 6), picked = CGSize(width: 32, height: 46)
+    private static let touch: CGFloat = 44, touchOpacity = 0.5, bezel: CGFloat = 5, shade = 0.35
 
     var body: some View {
         GeometryReader { geo in
@@ -80,12 +83,12 @@ struct GuideCloudScene: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     Image(systemName: "checkmark").font(DS.styled(.caption2).weight(.heavy)).foregroundStyle(DS.onPrimary)
-                        .frame(width: 20, height: 20).background(DS.success, in: Circle())
+                        .frame(width: Self.check, height: Self.check).background(DS.success, in: Circle())
                         .overlay(Circle().stroke(DS.bg, lineWidth: 2.5))
                         .offset(x: 8, y: -8)
                         .scaleEffect(max(0, M.spring(t - 1.42, 0.55, 0.45)) * (1 - smooth(1.9, 2.05, t)))
                 }
-                .shadow(color: DS.scrimStrong.opacity(0.35 + lift * 0.25), radius: 4 + lift * 10, y: 3 + lift * 12)
+                .shadow(color: DS.scrimStrong.opacity(Self.shade + lift * 0.25), radius: 4 + lift * 10, y: 3 + lift * 12)
                 .scaleEffect(flyScale).rotationEffect(.degrees(flyTilt))
                 .position(pos)
                 .opacity(t < 0.6 ? 0 : 1 - smooth(0.72, 1, u2))
@@ -104,20 +107,20 @@ struct GuideCloudScene: View {
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 16, style: .continuous).fill(DS.surface)
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(DS.ink500, lineWidth: 2))
-            RoundedRectangle(cornerRadius: 11, style: .continuous).fill(DS.bg).padding(5)
-            Capsule().fill(DS.scrimStrong).frame(width: 24, height: 6).offset(x: 30, y: 9)
+            RoundedRectangle(cornerRadius: 11, style: .continuous).fill(DS.bg).padding(Self.bezel)
+            Capsule().fill(DS.scrimStrong).frame(width: Self.island.width, height: Self.island.height).offset(x: 30, y: 9)
             ForEach(0..<4, id: \.self) { i in
                 poster(i).frame(width: Self.mini.width, height: Self.mini.height)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                     .offset(x: spots[i].x, y: spots[i].y)
             }
             RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(DS.fresh, lineWidth: 2)
-                .frame(width: 32, height: 46).offset(x: 42, y: 18).opacity(M.easeOut((t - 0.6) / 0.2))
-            Circle().fill(DS.text.opacity(0.5)).frame(width: 44, height: 44)
+                .frame(width: Self.picked.width, height: Self.picked.height).offset(x: 42, y: 18).opacity(M.easeOut((t - 0.6) / 0.2))
+            Circle().fill(DS.text.opacity(Self.touchOpacity)).frame(width: Self.touch, height: Self.touch)
                 .scaleEffect(0.35 + (1.4 - 0.35) * M.easeOut(tap)).opacity(t < 0.55 ? 0 : 0.55 * (1 - tap))
                 .offset(x: 58 - 22, y: 41 - 22)
         }
-        .frame(width: 84, height: 124, alignment: .topLeading)
+        .frame(width: 84, height: 124, alignment: .topLeading)   // ds-exception: dibujo de la escena de la guía
     }
 
     private func cloud(_ t: Double) -> some View {
@@ -127,7 +130,7 @@ struct GuideCloudScene: View {
             Image(systemName: "cloud").resizable().scaledToFit().foregroundStyle(DS.ink500)
             Image(systemName: "cloud.fill").resizable().scaledToFit().foregroundStyle(DS.fresh).opacity(glow)
         }
-        .frame(width: 120, height: 99)
+        .frame(width: 120, height: 99)   // ds-exception: dibujo de la escena de la guía
     }
 
     private func screen(_ t: Double) -> some View {
@@ -140,32 +143,32 @@ struct GuideCloudScene: View {
                 .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(DS.ink500, lineWidth: 2))
             ZStack(alignment: .bottomLeading) {
                 inner.fill(DS.bg)
-                Image(systemName: "play.fill").foregroundStyle(DS.text).opacity(0.22 * (1 - M.easeOut((t - 2.2) / 0.2)))
+                Image(systemName: "play.fill").foregroundStyle(DS.text).opacity(0.22 * (1 - M.easeOut((t - 2.2) / 0.2)))   // ds-exception: dibujo de la escena de la guía
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 PosterView(url: posters.indices.contains(1) ? posters[1].url : nil, title: posters.indices.contains(1) ? posters[1].title : "",
                            aspect: nil, bleed: true, maxPoints: DS.Image.mosaic)
-                    .frame(width: 86, height: 46).clipped()
+                    .frame(width: 86, height: 46).clipped()   // ds-exception: dibujo de la escena de la guía
                     .scaleEffect(0.6 + 0.4 * arrive).opacity(M.easeOut((t - 2.26) / 0.2))
-                Capsule().fill(DS.text.opacity(0.22)).frame(height: 2.5)
+                Capsule().fill(DS.text.opacity(0.22)).frame(height: 2.5)   // ds-exception: dibujo de la escena de la guía
                     .overlay(alignment: .leading) {
                         GeometryReader { g in Capsule().fill(DS.fresh).frame(width: g.size.width * 0.22 * M.easeOut((t - 2.5) / 0.7)) }
                     }
                     .padding(.horizontal, 6).padding(.bottom, 5)
                 inner.fill(DS.fresh).opacity(glow)
             }
-            .frame(width: 86, height: 46).clipShape(inner).offset(x: 5, y: 5)
+            .frame(width: 86, height: 46).clipShape(inner).offset(x: 5, y: 5)   // ds-exception: dibujo de la escena de la guía
             Image(systemName: "bolt.fill").font(DS.styled(.caption).weight(.bold)).foregroundStyle(DS.onPrimary)
-                .frame(width: 26, height: 26).background(DS.fresh, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 3))
+                .frame(width: 26, height: 26).background(DS.fresh, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 3))   // ds-exception: dibujo de la escena de la guía
                 .scaleEffect(max(0, M.spring(t - 2.42, 0.55, 0.45)))
                 .offset(x: 96 - 15, y: -11)
         }
-        .frame(width: 96, height: 56, alignment: .topLeading)
+        .frame(width: 96, height: 56, alignment: .topLeading)   // ds-exception: dibujo de la escena de la guía
     }
 
     private func label(_ text: Text, x: CGFloat, t: Double, delay: Double) -> some View {
         let item = GuideTraktScene.Motion.item(t, delay, 6)
         return text.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).multilineTextAlignment(.center)
-            .frame(width: 118).position(x: x, y: 198 + 18 + item.rise).opacity(item.opacity)
+            .frame(width: 118).position(x: x, y: 198 + 18 + item.rise).opacity(item.opacity)   // ds-exception: dibujo de la escena de la guía
     }
 }
 
@@ -178,10 +181,10 @@ enum GuideCloudReady {
         let M = GuideTraktScene.Motion.self
         let a = M.spring(t, 0.5, 0.25)
         return ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: 28, style: .continuous).fill(DS.surfaceRaised).frame(width: 96, height: 96)
+            RoundedRectangle(cornerRadius: 28, style: .continuous).fill(DS.surfaceRaised).frame(width: 96, height: 96)   // ds-exception: dibujo de la escena de la guía
                 .overlay(Image(systemName: "cloud.fill").font(DS.styled(.largeTitle)).foregroundStyle(DS.text))
             Image(systemName: "checkmark").font(DS.styled(.subheadline).weight(.heavy)).foregroundStyle(DS.onPrimary)
-                .frame(width: 32, height: 32).background(DS.success, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 3))
+                .frame(width: 32, height: 32).background(DS.success, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 3))   // ds-exception: dibujo de la escena de la guía
                 .offset(x: 6, y: 4).scaleEffect(max(0, M.spring(t - 0.28, 0.55, 0.45)))
         }
         .scaleEffect(0.72 + 0.28 * a).opacity(M.easeOut(t / 0.25))
@@ -202,7 +205,7 @@ enum GuideCloudReady {
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .overlay(alignment: .topTrailing) {
                             Image(systemName: "bolt.fill").font(DS.styled(.caption2).weight(.bold)).foregroundStyle(DS.onPrimary)
-                                .frame(width: 22, height: 22).background(DS.fresh, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 2.5))
+                                .frame(width: 22, height: 22).background(DS.fresh, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 2.5))   // ds-exception: dibujo de la escena de la guía
                                 .offset(x: 7, y: -7).scaleEffect(max(0, M.spring(t - 0.62 - 0.08 * Double(i), 0.55, 0.45)))
                         }
                         .opacity(p.opacity).offset(y: p.rise)

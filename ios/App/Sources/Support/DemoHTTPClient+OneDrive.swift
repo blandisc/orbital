@@ -2,7 +2,6 @@ import Foundation
 import OrbitalCore
 import OrbitalModels
 
-#if DEBUG
 extension DemoHTTPClient {
     /// Microsoft y OneDrive de mentira: un código que se acepta al primer intento y una carpeta con dos títulos.
     static func oneDriveDemo(_ url: URL) -> HTTPResponse {
@@ -37,4 +36,3 @@ extension DemoHTTPClient {
     }
 }
 
-#endif

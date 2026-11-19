@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 import OrbitalAddons
@@ -83,4 +82,3 @@ enum DemoCX {
         return nil
     }
 }
-#endif

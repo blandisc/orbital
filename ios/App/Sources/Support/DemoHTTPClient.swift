@@ -3,7 +3,6 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-#if DEBUG
 
 /// La red fingida del modo demostración: Cinemeta, complementos, Trakt, TMDB y tu Orbital contestan desde aquí (solo Debug).
 
@@ -551,4 +550,3 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     }
 }
 
-#endif

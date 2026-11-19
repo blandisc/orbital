@@ -59,4 +59,19 @@ enum AppComposition {
         // problemas se apaga con `services.audioProbe.turnOff()`.
         return services
     }
+
+    /// La guía de práctica (Aprende › «Ver la guía otra vez»): unos `Services` aparte con la red de la demo (Trakt se
+    /// «aprueba» solo, la nube acepta claves de mentira) y todo en memoria. Lo que hagas ahí no llega a tus cuentas, tu TV,
+    /// tus ajustes ni tu biblioteca, y se olvida al cerrarla. La misma versión (Ultra, Plus u Orbital) que la app.
+    static func practiceServices(_ transport: BackgroundDownloadTransport) -> Services {
+        Demo.practice = true
+        let kv = InMemoryKeyValueStore()
+        SettingsStore(kv).update { $0.traktClientID = "demo"; $0.uiLanguage = AppEnvironment.shared.services.settings.value.uiLanguage }
+        let services = Services(http: DemoHTTPClient(), secrets: InMemorySecrets(), kv: kv, pending: InMemoryPendingStore(),
+                                downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("practica"),
+                                savedDownloads: [], freeSpace: { DiskSpace.freeBytes() },
+                                deviceName: ThisDevice.name, platform: ThisDevice.platform, capabilities: ThisDevice.capabilities)
+        services.isOnline = { true }
+        return services
+    }
 }

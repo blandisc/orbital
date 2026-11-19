@@ -63,6 +63,17 @@ public final class OnboardingModel: ObservableModel {
     public var offersTrakt: Bool { if case .off = settings.trakt { return false }; return true }
 
     /// ¿Se ofrece conectar OpenSubtitles? Con la clave de la app y sin tu cuenta todavía (se lee al abrir la guía).
+    /// La guía de práctica (Aprende › «Ver la guía otra vez»): corre sobre unos `Services` aparte y lo que conecta es de mentira.
+    public var practice = false
+    /// La versión y el aparato de estos `Services` (la TV de la guía pregunta aquí, no a la app).
+    public var orbitalConfigured: Bool { services.orbital.isConfigured }
+    /// Práctica: «conecta» la TV de mentira en estos `Services` (nada sale a tu TV de verdad).
+    public func connectPracticeTV() {
+        guard practice else { return }
+        services.settings.update { $0.orbitalAddress = "tv.practica.invalid"; $0.orbitalEnabled = true }
+        services.secrets.set(SecretKey.orbitalToken, "practica")
+        changed()
+    }
     public var offersSubtitles = false { didSet { if oldValue != offersSubtitles { changed() } } }
     /// Los pasos donde ya estuviste: siguen en el plan aunque ahí mismo conectes la pieza (si no, la luna del arco regresaba
     /// al principio al conectar tu nube o Trakt; 18 nov 2026). Regla en `docs/ios-interfaz.md` § «La guía no se reacomoda».

@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 import OrbitalModels
@@ -67,4 +66,3 @@ enum DemoLatinoNube {
         return nil
     }
 }
-#endif

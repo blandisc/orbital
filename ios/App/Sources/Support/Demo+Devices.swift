@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 
@@ -77,4 +76,3 @@ enum DemoDevices {
         return nil
     }
 }
-#endif

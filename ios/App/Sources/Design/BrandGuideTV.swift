@@ -48,7 +48,7 @@ struct GuideTVScene: View {
         let echo = connected ? min(max((t - 0.4) / 0.7, 0), 1) : 0
         ZStack(alignment: .topLeading) {
             if !connected {
-                Circle().stroke(DS.fresh, lineWidth: 1.5).frame(width: 2 * 150 * ring, height: 2 * 150 * ring)
+                Circle().stroke(DS.fresh, lineWidth: 1.5).frame(width: 2 * 150 * ring, height: 2 * 150 * ring)   // ds-exception: dibujo de la escena de la guía
                     .position(Self.rings).opacity(t < 0.75 ? 0 : 0.7 * (1 - ring))
             }
             arcPath.trim(from: 0, to: reveal).stroke(DS.fresh, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, dash: [3, 5]))
@@ -68,14 +68,14 @@ struct GuideTVScene: View {
             ZStack {
                 screen.fill(DS.bg)
                 OrbitalMark(size: 52).foregroundStyle(DS.text).scaleEffect(pop)
-                screen.fill(DS.scrimStrong).opacity(0.42 * (1 - lit) * (1 - 0.6 * blink))
-                screen.fill(DS.fresh).opacity(0.12 * blink)
-                Circle().stroke(DS.fresh, lineWidth: 1.5).frame(width: 2 * 70 * echo, height: 2 * 70 * echo)
+                screen.fill(DS.scrimStrong).opacity(0.42 * (1 - lit) * (1 - 0.6 * blink))   // ds-exception: dibujo de la escena de la guía
+                screen.fill(DS.fresh).opacity(0.12 * blink)   // ds-exception: dibujo de la escena de la guía
+                Circle().stroke(DS.fresh, lineWidth: 1.5).frame(width: 2 * 70 * echo, height: 2 * 70 * echo)   // ds-exception: dibujo de la escena de la guía
                     .opacity(echo > 0 ? 0.6 * (1 - echo) : 0)
             }
             .frame(width: tv.width - 10, height: tv.height - 10).clipShape(screen).offset(x: 5, y: 5)
-            Rectangle().fill(DS.ink500).frame(width: 12, height: 14).offset(x: tv.width / 2 - 6, y: tv.height)
-            Capsule().fill(DS.ink500).frame(width: 60, height: 4).offset(x: tv.width / 2 - 30, y: tv.height + 13)
+            Rectangle().fill(DS.ink500).frame(width: 12, height: 14).offset(x: tv.width / 2 - 6, y: tv.height)   // ds-exception: dibujo de la escena de la guía
+            Capsule().fill(DS.ink500).frame(width: 60, height: 4).offset(x: tv.width / 2 - 30, y: tv.height + 13)   // ds-exception: dibujo de la escena de la guía
         }
         .offset(x: tv.minX, y: tv.minY)
     }
@@ -85,11 +85,11 @@ struct GuideTVScene: View {
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 18, style: .continuous).fill(DS.surface)
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DS.ink500, lineWidth: 2))
-            RoundedRectangle(cornerRadius: 13, style: .continuous).fill(DS.bg).padding(5)
-            Capsule().fill(DS.scrimStrong).frame(width: 26, height: 7).offset(x: ph.width / 2 - 13, y: 9)
+            RoundedRectangle(cornerRadius: 13, style: .continuous).fill(DS.bg).padding(5)   // ds-exception: dibujo de la escena de la guía
+            Capsule().fill(DS.scrimStrong).frame(width: 26, height: 7).offset(x: ph.width / 2 - 13, y: 9)   // ds-exception: dibujo de la escena de la guía
             VStack(alignment: .leading, spacing: 7) {
-                Capsule().fill(DS.text.opacity(0.09)).frame(width: (ph.width - 28) * 0.85, height: 4)
-                Capsule().fill(DS.text.opacity(0.09)).frame(width: (ph.width - 28) * 0.62, height: 4)
+                Capsule().fill(DS.text.opacity(0.09)).frame(width: (ph.width - 28) * 0.85, height: 4)   // ds-exception: dibujo de la escena de la guía
+                Capsule().fill(DS.text.opacity(0.09)).frame(width: (ph.width - 28) * 0.62, height: 4)   // ds-exception: dibujo de la escena de la guía
             }
             .offset(x: 14, y: 30)
         }

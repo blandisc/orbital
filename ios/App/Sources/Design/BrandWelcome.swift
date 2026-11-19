@@ -144,7 +144,7 @@ struct WelcomeRowView: View {
                 .font(DS.styled(.body).weight(.semibold))
                 .foregroundStyle(DS.brandMoon)
                 .frame(width: DS.Welcome.rowIcon, height: DS.Welcome.rowIcon)
-                .background(DS.brandMoon.opacity(0.14), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .background(DS.brandMoon.opacity(0.14), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))   // ds-exception: dibujo de la escena de la guía
                 .scaleEffect(shown || reduceMotion ? 1 : DS.Welcome.rowIconFrom)
                 .animation(reduceMotion ? nil : DS.Welcome.rowIconPop.delay(0.04), value: shown)
             Text(row.text).font(DS.Welcome.lead).foregroundStyle(DS.textMuted)

@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalAddons
 import OrbitalCore
@@ -77,4 +76,3 @@ enum DemoViento {
         services.debridRequests.reloadForDemo()
     }
 }
-#endif

@@ -147,6 +147,16 @@ final class OnboardingUITests: GuideUITestCase {
         for _ in 0..<4 where !(guide.exists && guide.isHittable) { app.swipeUp() }
         guide.tap()
         wait("Todo lo que quieres ver, en un solo lugar.")
+        // Fernando, 18 nov 2026: desde Aprende es la guía de práctica, «que no registres cosas»: lo dice arriba.
+        XCTAssertTrue(app.descendants(matching: .any)["guide-practice"].firstMatch.waitForExistence(timeout: 5), "dice que es de práctica")
+        sleep(4)
+        // La TV de práctica: «Sí, conectar mi TV» conecta de mentira (sin cámara ni código) y sigue.
+        next(); wait("¿Ya usas Orbital en la TV?")
+        next(); wait("Listo, trajimos lo de tu TV", 10)
+        // Trakt de práctica: el código de mentira se aprueba solo; tu cuenta de verdad no se toca.
+        next(); wait("Sigue donde te quedaste")
+        next(); wait("Esperando a que lo apruebes")
+        wait("Listo, fernando", 20)
     }
 
     /// RC1 · Real-Debrid con código (en la hoja «Tu nube», DN1): sin copiar ni pegar, el código grande y, al aprobarlo, conectado solo.

@@ -55,7 +55,7 @@ struct LearnView: View {
                 .listRowBackground(DS.surface)
             }
             Section {
-                Button { env.ui.showingGuide = true } label: {
+                Button { env.ui.practiceGuide = true; env.ui.showingGuide = true } label: {
                     SettingsRow(title: "Ver la guía otra vez", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
                 }
                 .accessibilityIdentifier("settings-guide")
@@ -69,10 +69,35 @@ struct LearnView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Aprende").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmReset, titleVisibility: .visible) {   // ds-exception: confirmación de borrar lo visto de los avisos (sí o no)
-            Button("Volver a verlos") { model.reset() }
-            Button("Cancelar", role: .cancel) {}
-        } message: { Text("Las historias vuelven a decir que no las has visto.") }
+        .sheet(isPresented: $confirmReset) {
+            ResetTipsCard(reset: { model.reset(); confirmReset = false }, cancel: { confirmReset = false })
+        }
+    }
+}
+
+/// «¿Volver a ver los avisos?» como tarjeta de Orbital, no el aviso del sistema (Fernando, 18 nov 2026: «que sea una
+/// tarjeta la que salga, no el aviso nativo»).
+struct ResetTipsCard: View {
+    let reset: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            HStack(spacing: DS.Space.s3) {
+                DSIconTile(symbol: "arrow.counterclockwise", tint: DS.ListTint.addon)
+                DSSheetHeader(title: Text("¿Volver a ver los avisos?"))
+            }
+            Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las historias de Aprende vuelven a decir que no las has visto.")
+                .recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: DS.Space.s2) {
+                Button(action: reset) { Text("Volver a verlos").frame(maxWidth: .infinity) }
+                    .dsPrimaryButton().dsControlSize(.large).accessibilityIdentifier("learn-reset-confirm")
+                Button(action: cancel) { Text("Cancelar").frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
+                    .buttonStyle(.plain).foregroundStyle(DS.textMuted).accessibilityIdentifier("learn-reset-cancel")
+            }
+        }
+        .dsSheetContent()
+        .fittedSheet()
     }
 }
 

@@ -1,7 +1,6 @@
 import Foundation
 import OrbitalCore
 
-#if DEBUG   // solo la demo: DemoHTTPClient no existe en la versión del iPhone
 
 /// Tu historial de Trakt de mentira (`-demo-trakt`, gestor ola 3, O3-B): cada vez que viste algo, con su id para borrarla;
 /// Dune vista dos veces el mismo día (la tele y el iPhone a la vez: una «repetida»), las notas (con `-demo-vip`, en Trakt) y
@@ -104,4 +103,3 @@ extension DemoHTTPClient {
         }
     }
 }
-#endif

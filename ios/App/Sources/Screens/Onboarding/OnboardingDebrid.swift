@@ -87,7 +87,7 @@ struct OnboardingSeeHere: View {
     private func fact(_ symbol: String, _ bold: Text, _ rest: Text) -> some View {
         HStack(spacing: DS.Space.s3) {
             Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
-            (bold.foregroundStyle(DS.text).bold() + Text(verbatim: " ") + rest.foregroundStyle(DS.textMuted))
+            Text("\(bold.foregroundStyle(DS.text).bold()) \(rest.foregroundStyle(DS.textMuted))")
                 .font(DS.TextRecipe.secondary.font).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
@@ -105,7 +105,7 @@ struct OnboardingSeeHere: View {
                         .fixedSize(horizontal: false, vertical: true).opacity(title.opacity).offset(y: title.rise)
                     Group {
                         if let status = model.status {
-                            Text(verbatim: status.username).foregroundStyle(DS.text) + Text(verbatim: " · ") + DebridWords.short(status)
+                            Text("\(Text(verbatim: status.username).foregroundStyle(DS.text)) · \(DebridWords.short(status))")
                         }
                     }
                     .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
@@ -158,7 +158,7 @@ struct CloudNoneSheet: View {
                     .recipe(.caption, color: DS.textMuted).multilineTextAlignment(.center).frame(maxWidth: .infinity)
             }
         }
-        .padding(DS.Space.s6)
+        .dsSheetContent()
         .fittedSheet()
     }
 }

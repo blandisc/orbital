@@ -18,6 +18,10 @@ struct WinMosaic: View {
     static let tile = CGSize(width: 54, height: 81), gap: CGFloat = 9
     static let end = 1.7, highlight = 0.95
     static let height: CGFloat = 284
+    /// El marcador de tu lista: un círculo de 20 pt con el fondo casi opaco, a 4 pt de la orilla.
+    static let badge: CGFloat = 20, badgeBacking = 0.84, badgeInset: CGFloat = 4
+    /// La sombra crece mientras el póster va en el aire; el anillo de la semilla brilla un poco.
+    static let shade = 0.32, ringGlow = 0.35
 
     /// Los 18 lugares: la semilla en el centro (8) y lo demás alrededor; si hay menos de 18, se repiten.
     private var placed: [OnboardingModel.WinTile?] {
@@ -89,11 +93,11 @@ struct WinMosaic: View {
             }
             if item?.listed == true {
                 Image(systemName: "bookmark.fill").font(DS.styled(.caption2).weight(.bold)).foregroundStyle(DS.brandMoon)
-                    .frame(width: 20, height: 20).background(DS.bg.opacity(0.84), in: Circle())
-                    .padding(4).scaleEffect(badge)
+                    .frame(width: Self.badge, height: Self.badge).background(DS.bg.opacity(Self.badgeBacking), in: Circle())
+                    .padding(Self.badgeInset).scaleEffect(badge)
             }
         }
-        .shadow(color: .black.opacity(0.32 + lift * 0.24), radius: 4 + lift * 13, y: 3 + lift * 18)
-        .overlay(shape.inset(by: -4).stroke(DS.brandMoon, lineWidth: 2).shadow(color: DS.brandMoon.opacity(0.35), radius: 9).opacity(ring))
+        .shadow(color: DS.scrimStrong.opacity(Self.shade + lift * 0.24), radius: 4 + lift * 13, y: 3 + lift * 18)
+        .overlay(shape.inset(by: -4).stroke(DS.brandMoon, lineWidth: 2).shadow(color: DS.brandMoon.opacity(Self.ringGlow), radius: 9).opacity(ring))
     }
 }

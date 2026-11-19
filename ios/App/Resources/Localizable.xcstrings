@@ -46212,6 +46212,26 @@
           }
         }
       }
+    },
+    "Práctica: nada de esto se guarda ni se conecta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice: nothing here is saved or connected"
+          }
+        }
+      }
+    },
+    "Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las historias de Aprende vuelven a decir que no las has visto.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The on-screen tips come back one at a time, and the Learn stories show as unseen again."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

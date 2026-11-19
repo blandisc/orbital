@@ -138,7 +138,7 @@ struct OnboardingPlatforms: View {
                 .frame(width: DS.Guide.slot, height: DS.Guide.slot)
                 .opacity(flight?.brand == brand ? 0 : 1)   // mientras vuela, la casilla no lo repite
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { logoFrames[brand] = $0 }
-                Text(verbatim: name).recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(0.7)
+                Text(verbatim: name).recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 Spacer(minLength: 0)
                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
                     .symbolRenderingMode(.palette).foregroundStyle(on ? DS.onPrimary : DS.textMuted, DS.brandMoon)

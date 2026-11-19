@@ -1,7 +1,6 @@
 import Foundation
 import OrbitalCore
 
-#if DEBUG
 extension DemoHTTPClient {
     /// `-demo-heavy` (N5-A): como «Dune: Parte dos» del escenario 05: la inglesa al instante es un REMUX 4K de 64 GB que aquí
     /// no se ve bien; gana la castellana y la ficha dice por qué. nil sin la bandera.
@@ -25,4 +24,3 @@ extension DemoHTTPClient {
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(out)]).serialized())
     }
 }
-#endif

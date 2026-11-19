@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 import OrbitalAddons
@@ -75,4 +74,3 @@ final class DemoTVAddons: @unchecked Sendable {
         }
     }
 }
-#endif

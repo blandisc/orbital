@@ -99,7 +99,9 @@ struct RootView: View {
 
     /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
     private func withGuide<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(isPresented: showingGuide) { OnboardingView { ui.showingGuide = false }.environment(env) }
+        content.fullScreenCover(isPresented: showingGuide, onDismiss: { ui.practiceGuide = false; Demo.practice = false }) {
+            OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env)
+        }
     }
 
     /// Una historia de «Aprende Orbital» (G3): desde Ajustes o «Ver la historia» de un aviso.

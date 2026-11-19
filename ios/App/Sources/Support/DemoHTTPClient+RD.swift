@@ -1,7 +1,6 @@
 import Foundation
 import OrbitalCore
 
-#if DEBUG   // solo la demo: DemoHTTPClient no existe en la versión del iPhone
 
 extension DemoHTTPClient {
     /// `-demo-rd-request …`: Real-Debrid todavía no tiene tu versión (latino, «por bajar») y otra en inglés sí arranca; con
@@ -24,4 +23,3 @@ extension DemoHTTPClient {
     }
 }
 
-#endif

@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 
@@ -21,4 +20,3 @@ extension Demo {
         pending.update { $0.discards = [list, rating, expired] }
     }
 }
-#endif

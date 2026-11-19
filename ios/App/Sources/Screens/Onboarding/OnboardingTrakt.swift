@@ -45,7 +45,7 @@ struct OnboardingTrakt: View {
 
     @ViewBuilder private func ask(_ model: OnboardingModel) -> some View {
         let caps = env.services.capabilities
-        let receiver: GuideTraktScene.Receiver = UIDevice.current.userInterfaceIdiom == .pad ? .mac : caps.console ? .tv : .iPad
+        let receiver: GuideTraktScene.Receiver = ThisDevice.platform != "iphone" ? .mac : caps.console ? .tv : .iPad
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             GuideTraktScene(receiver: receiver, watches: caps.instantStreams)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -61,7 +61,7 @@ struct OnboardingTrakt: View {
             if case .off = settings.model.trakt {
                 DSNotice(text: "Esta copia de la app no trae la aplicación de Trakt: conéctalo después en Ajustes.", tone: .warn)
             }
-            Text(UIDevice.current.userInterfaceIdiom == .pad
+            Text(ThisDevice.platform != "iphone"
                  ? "Sin Trakt, lo tuyo queda en este iPad. Lo conectas cuando quieras desde Inicio o Ajustes."
                  : "Sin Trakt, lo tuyo queda en este iPhone. Lo conectas cuando quieras desde Inicio o Ajustes.")
                 .recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
@@ -91,7 +91,7 @@ struct TraktCodeSheet: View {
             return nil
         }()
         VStack(spacing: DS.Space.s5) {
-            Text("Conecta con un código").recipe(.title, color: DS.text)
+            DSSheetHeader(title: Text("Conecta con un código"))
             switch settings.model.trakt {
             case .linking(let code, let url):
                 DeviceCodeCard(service: "Trakt", code: code, url: URL(string: url), showsOpen: false)
@@ -110,7 +110,7 @@ struct TraktCodeSheet: View {
                 Button { dismiss() } label: { Text("Cancelar").frame(maxWidth: .infinity) }.dsGlassButton().dsControlSize(.large)
             }
         }
-        .padding(DS.Space.s6)
+        .dsSheetContent()
         .fittedSheet()
         .task { if case .unlinked = settings.model.trakt { await settings.model.linkTrakt() } else if case .failed = settings.model.trakt { await settings.model.linkTrakt() } }
     }

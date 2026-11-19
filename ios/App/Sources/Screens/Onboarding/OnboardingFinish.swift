@@ -25,11 +25,13 @@ struct OnboardingTV: View {
     }
 
     var body: some View {
-        let connected = env.services.orbital.isConfigured
+        let connected = guide.model.orbitalConfigured
         GuidePage(title: nil, step: step,
                   primary: connected ? Text("Continuar") : Text("Sí, conectar mi TV"),
                   secondary: connected ? nil : Text("No tengo la TV"),
-                  next: { if connected { next() } else { connecting = true } },
+                  next: {
+                      if connected { next() } else if guide.model.practice { guide.model.connectPracticeTV(); start = Date() } else { connecting = true }
+                  },
                   skip: next, skipGuide: skip, back: back) {
             TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
                 let t = reduceMotion ? GuideTVScene.askEnd + 1 : ctx.date.timeIntervalSince(start)
@@ -43,7 +45,7 @@ struct OnboardingTV: View {
         }
         .dsFeedback(.success, trigger: connected)
         .sheet(isPresented: $connecting, onDismiss: {
-            if env.services.orbital.isConfigured { start = Date(); Task { await debrid.model.load() } }
+            if guide.model.orbitalConfigured { start = Date(); Task { await debrid.model.load() } }
         }) { OrbitalSetupView() }
         .onAppear { start = Date() }
     }

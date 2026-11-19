@@ -85,7 +85,7 @@ struct OnboardingWin: View {
                 Image(systemName: symbol).foregroundStyle(DS.brandMoon)
             }
             .font(DS.styled(.title2).weight(.semibold)).foregroundStyle(DS.text)
-            label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(0.8)
+            label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
         }
         .frame(maxWidth: .infinity)
     }

@@ -64,7 +64,10 @@ final class CoachMarkUITests: XCTestCase {
         let reset = app.buttons["learn-reset"]
         for _ in 0..<6 where !(reset.exists && reset.isHittable) { app.swipeUp() }
         reset.tap()
-        app.buttons["Volver a verlos"].firstMatch.tap()
+        // Una tarjeta de Orbital, no el aviso del sistema (Fernando, 18 nov 2026).
+        let confirm = app.buttons["learn-reset-confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "la tarjeta «¿Volver a ver los avisos?»")
+        confirm.tap()
         app.navigationBars.buttons.firstMatch.tap()
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(coach("downloads").waitForExistence(timeout: 15), "de vuelta en Biblioteca, su aviso")
