@@ -98,7 +98,7 @@ struct SettingsView: View {
             SettingsLink(.downloads) { destination(.downloads, model) } label: {
                 SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
             }
-        } header: { Text("Preferencias") }
+        } header: { Text("En este aparato") }   // AJ-A: el grupo dice qué hay adentro (lo que vale solo aquí), no «Preferencias»
         .listRowBackground(DS.surface)
     }
 
@@ -134,7 +134,7 @@ struct SettingsView: View {
             // «Aprende»: una sola entrada con las historias, la guía otra vez, los avisos desde cero y lo que se puede hacer con
             // la TV (revisión del 11 nov: eran cuatro renglones casi iguales, dos con el mismo destello).
             SettingsLink(.learn) { destination(.learn, model) } label: {
-                SettingsRow(title: "Aprende", symbol: "sparkles", tint: DS.ListTint.spark)
+                SettingsRow(title: "Aprende", symbol: DS.Symbol.learn, tint: DS.ListTint.spark, value: Text("\(LessonCatalog.all.count) lecciones"))
             }
             .accessibilityIdentifier("settings-learn")
         }
@@ -238,7 +238,7 @@ struct SettingsView: View {
                 }
                 .task { await env.services.checkTV() }   // IOS-2: «Conectada» solo si la TV contestó
                 SettingsLink(.voice) { destination(.voice, model) } label: {
-                    SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
+                    SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark, value: Text("Qué puedes decir"))
                 }
             }
         } header: { Text("Orbital en la TV") } footer: {
@@ -286,14 +286,18 @@ struct SettingsView: View {
             .readableListWidth()
     }
 
-    /// «Trakt · Real-Debrid · Orbital»: solo lo que conectaste, bajo tu avatar (Stremio, el respaldo, solo en Cuentas).
+    /// «Conectado a Orbital · falta Trakt»: lo que conectaste bajo tu avatar y, si algo falta, cuál (AJ-A, 20 nov 2026: decir
+    /// qué falta, no solo lo que está). Stremio, el respaldo, solo en Cuentas.
     private func connections(_ model: SettingsModel) -> Text {
-        var parts: [String] = []
-        if case .linked = model.trakt { parts.append("Trakt") }
-        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append(debrid.model.service.name) }   // edición: solo con `settingsEntries.realDebrid`
+        var parts: [String] = [], missing: [String] = []
+        if case .linked = model.trakt { parts.append("Trakt") } else { missing.append("Trakt") }
+        if env.services.settingsEntries.realDebrid {   // edición: solo con `settingsEntries.realDebrid`
+            if debrid.model.hasToken { parts.append(debrid.model.service.name) } else { missing.append(debrid.model.service.name) }
+        }
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
-        return Text("Conectado: \(parts.joined(separator: " · "))")
+        let names = parts.joined(separator: ", ")
+        return missing.isEmpty ? Text("Conectado a \(names)") : Text("Conectado a \(names) · falta \(missing.joined(separator: ", "))")
     }
 
     /// IOS-17: un estado, no un verbo: «3 prendidos» o «Sin configurar».

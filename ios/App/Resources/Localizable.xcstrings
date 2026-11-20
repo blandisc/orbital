@@ -13713,6 +13713,72 @@
         }
       }
     },
+    "Conectado a %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to %@"
+          }
+        }
+      }
+    },
+    "Conectado a %@ · falta %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to %@ · %@ missing"
+          }
+        }
+      }
+    },
+    "%lld lecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lessons"
+          }
+        }
+      }
+    },
+    "Qué puedes decir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can say"
+          }
+        }
+      }
+    },
+    "original": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "original"
+          }
+        }
+      }
+    },
+    "En este aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this device"
+          }
+        }
+      }
+    },
     "Conectando con tu Orbital…": {
       "extractionState": "manual",
       "localizations": {

@@ -1060,7 +1060,7 @@ let kindFocus = null;
 const MEDIA_TOOLS = [
   // NQ-2 (Fernando, 16 nov 2026): «Decide por mí» donde más se duda, con su nombre a la vista (es una puerta, no una herramienta).
   // PS-2 (16 nov): todos con su nombre a la vista, como las pestañas (antes solo el ícono, que se estiraba al enfocarlo).
-  { id: "decide", icon: "spark", label: "Decide por mí", command: { type: "decide" } },
+  { id: "decide", icon: "dice", label: "Decide por mí", command: { type: "decide" } },
   { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
   { id: "collections", icon: "stack", label: "Colecciones", command: { type: "collections" } }, // PS-3: pilas, no el trofeo
   { id: "filter", icon: "sliders", label: "Filtro avanzado", command: { type: "filter" } },
@@ -1586,7 +1586,7 @@ function listSortMenu(s) {
   if (!s.kindTabs) {
     options.push(...MEDIA_FILTERS.map(([k, label]) => ({ icon: "trailer", label, value: check(st.kind === k), command: { type: "list-kind", value: k } })));
   }
-  if (s.genres().length) options.push({ icon: "spark", label: "Género", value: st.genreLabel || "Todos", command: { type: "list-genre-menu" } });
+  if (s.genres().length) options.push({ icon: "tag", label: "Género", value: st.genreLabel || "Todos", command: { type: "list-genre-menu" } });
   // Calificación y década, como el iPhone (ListFilterMenu): en toda lista y colección.
   options.push({ icon: "star", label: "Calificación", value: st.minRating != null ? ratingName(st.minRating) : "Cualquiera", command: { type: "list-rating-menu" } });
   if (s.decades().length > 1) options.push({ icon: "calendar", label: "Década", value: st.decade != null ? decadeName(st.decade) : "Todas", command: { type: "list-decade-menu" } });

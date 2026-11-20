@@ -200,14 +200,16 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     /// Recetas de texto de Proyección: cada pantalla usa estas, no tamaños sueltos. SF Pro con Dynamic Type; los datos
     /// (tiempos, temporadas, tamaños) con cifras tabulares (todas del mismo ancho), como `tabular-nums` en la TV.
+    /// Negrita solo en el título más grande de la pantalla (`display`) y en placas y cifras (`badge`, `stat`); los demás títulos
+    /// en seminegrita (D2-B, 20 nov 2026: `boldOnly` en design/tokens.json, lo vigila design-parity.test.mjs).
     /// La escala de la app, una por papel (no se escriben tamaños sueltos):
     /// | Papel        | Receta       | Tamaño (Dynamic Type)  | Dónde                                              |
     /// |--------------|--------------|------------------------|----------------------------------------------------|
     /// | Pantalla     | (barra nativa) / `display` | largeTitle, negrita | «Para ti», «Buscar»; las cifras héroe         |
-    /// | Título de hoja | `title`    | title, negrita         | `DSSheetHeader`                                    |
-    /// | Sección      | `groupLabel` | footnote, negrita      | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
-    /// | Subsección   | `section`    | title2, negrita        | `DSSectionHead` de una fila o estante, con su porqué |
-    /// | Subsección de descubrir | `sectionQuiet` | title3, negrita | en Inicio, las filas que no son tuyas (Sugerencias, Por lo que viste, Top 10): `DSSectionHead(quiet:)` |
+    /// | Título de hoja | `title`    | title, seminegrita     | `DSSheetHeader`                                    |
+    /// | Sección      | `groupLabel` | footnote, seminegrita  | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
+    /// | Subsección   | `section`    | title2, seminegrita    | `DSSectionHead` de una fila o estante, con su porqué |
+    /// | Subsección de descubrir | `sectionQuiet` | title3, seminegrita | en Inicio, las filas que no son tuyas (Sugerencias, Por lo que viste, Top 10): `DSSectionHead(quiet:)` |
     /// | Porqué       | `eyebrow`    | footnote, seminegrita, turquesa | solo arriba de una subsección o de una portada |
     /// | Pieza        | `cardTitle`  | headline               | el nombre en una tarjeta o renglón                 |
     /// | Cuerpo       | `body`       | body                   | lo que explica                                     |
@@ -218,7 +220,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// | Rótulo       | `label`      | footnote, seminegrita  | botones chicos, datos que resaltan                 |
     /// | Rótulo grande| `labelLarge` | subheadline, seminegrita | el valor de un control, un nombre en un renglón  |
     /// | Placa        | `badge`      | caption, negrita       | «4K», «Nuevo», cifras en una placa                 |
-    /// | Grupo        | `groupLabel` | footnote, negrita      | el rótulo de un grupo (`DSGroupLabel`, en letra normal) |
+    /// | Grupo        | `groupLabel` | footnote, seminegrita  | el rótulo de un grupo (`DSGroupLabel`, en letra normal) |
     /// | Cifra        | `stat`       | largeTitle, gruesa, tabular | las cifras grandes de Lo que ves, el mazo     |
     enum TextRecipe {
         case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
@@ -232,8 +234,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         var font: Font {
             switch self {
             case .display: DS.styled(.largeTitle).weight(.bold)
-            case .title: DS.styled(.title).weight(.bold)
-            case .section: DS.styled(.title2).weight(.bold)
+            case .title: DS.styled(.title).weight(.semibold)
+            case .section: DS.styled(.title2).weight(.semibold)
             case .cardTitle: DS.styled(.headline)
             case .body: DS.styled(.body)
             case .secondary: DS.styled(.subheadline)
@@ -244,8 +246,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
             case .label: DS.styled(.footnote).weight(.semibold)
             case .labelLarge: DS.styled(.subheadline).weight(.semibold)
             case .badge: DS.styled(.caption).weight(.bold)
-            case .groupLabel: DS.styled(.footnote).weight(.bold)   // en letra normal desde el 2 nov 2026 (E3)
-            case .sectionQuiet: DS.styled(.title3).weight(.bold)
+            case .groupLabel: DS.styled(.footnote).weight(.semibold)   // en letra normal desde el 2 nov 2026 (E3)
+            case .sectionQuiet: DS.styled(.title3).weight(.semibold)
             case .stat: DS.styled(.largeTitle).weight(.heavy).monospacedDigit()
             }
         }

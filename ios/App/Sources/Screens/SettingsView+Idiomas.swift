@@ -17,8 +17,9 @@ extension SettingsView {
                 SettingsRow(title: "Subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: subtitlesValue(s))
             }
             .accessibilityIdentifier("settings-subtitles")
+            // Con ícono, como los otros tres del grupo (AJ-A: era el único sin él y su texto empezaba más a la izquierda).
             DSToggleRow("Buscar subtítulos en internet", detail: "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.",
-                        isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
+                        symbol: "text.magnifyingglass", tint: DS.ListTint.list, isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
                 .accessibilityIdentifier("settings-internet-subtitles")
             SettingsLink(.lettering) { destination(.lettering, model) } label: {
                 SettingsRow(title: "Letra de los subtítulos", symbol: "textformat.size", tint: DS.ListTint.spark, value: sizeName(s.subtitleSize))

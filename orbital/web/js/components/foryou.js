@@ -27,7 +27,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
   // D5-A: «Decide por mí» (con «Una por una», el mazo) es la entrada de Explorar. Con el mando, el teclado o el mouse está en
   // el pie (X, que también se pica); con el dedo no hay pie, así que va este botón.
-  const decide = onDecide && Button({ icon: "spark", label: "Decide por mí", onPress: () => onDecide() });
+  const decide = onDecide && Button({ icon: "dice", label: "Decide por mí", onPress: () => onDecide() });
   decide?.classList.add("foryou__decide");
   const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Explorar" }, h("div", { class: "foryou__stage" }, mosaic.el), notice, decide);
 

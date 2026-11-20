@@ -39,6 +39,8 @@ extension DS {
         /// PT10: cancelar un pedido en camino (⊗) y quitar de tu Real-Debrid lo que ya terminó (basura).
         static let cancelRequest = DebridRequestWords.Icon.cancel
         static let removeRequest = DebridRequestWords.Icon.remove
+        /// Aprende (Ajustes, la portada de Aprende): el birrete. Antes era el destello, que es de Explorar (AJ-A, 20 nov 2026).
+        static let learn = "graduationcap"
         /// La versión recomendada (el destello): solo eso. La leyenda de «Versión» lo explica la primera vez.
         static let recommended = "sparkles"
         /// Lista al instante (ya está en la nube): el rayo, solo eso.

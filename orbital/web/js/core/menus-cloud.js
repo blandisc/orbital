@@ -318,7 +318,7 @@ const EXPLAINERS = {
   torrentio: [
     ["search", "library", "Torrentio es un buscador", "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."],
     ["cloud", "series", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, se la pides y la baja por ti («por pedir»): suele tardar de minutos a horas; si poca gente lo comparte, hasta días."],
-    ["settings", "spark", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
+    ["settings", "sliders", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
   ],
   // PT13 (Fernando, 4 nov): «¿Qué es Real-Debrid?», los cuatro puntos del iPhone.
   realdebrid: [ // los textos exactos del iPhone (Explainer.swift, tema realDebrid)
@@ -524,7 +524,7 @@ export function stremioAccountMenu(settings = {}) {
       trakt
         ? { icon: "download", label: "Pasar a Trakt y desconectar", hint: "A tu lista «Mi lista Stremio» · se desconecta solo si llegó todo",
           command: { type: "stremio-to-trakt" } }
-        : { icon: "spark", label: "Pasar a Trakt y desconectar", hint: "Primero conecta Trakt: ahí va tu lista", warn: true,
+        : { icon: "link", label: "Pasar a Trakt y desconectar", hint: "Primero conecta Trakt: ahí va tu lista", warn: true,
           command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
       { icon: "exit", label: "Desconectar sin pasarla", danger: true, hint: "Dejarás de ver tu Mi lista y tu Seguir viendo de Stremio",
         command: { type: "stremio-logout-ask", backup: false } },

@@ -56,13 +56,18 @@ en la mano, 1280×800: alto ≤ 900 px) el texto sube un paso más con `--text-r
 |---|---|---|---|---|
 | `hero` | `--text-display` 3,7 rem | 80 | negrita | El título del héroe de Películas y series sin logo |
 | `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título de un destacado sin logo (Inicio, Juegos), el de una pantalla (la categoría de Ajustes) |
-| `title` | `--text-2xl` 2,4 rem | 52 | negrita | Un título largo que baja un paso, una pregunta grande |
-| `heading` | `--text-xl` 1,6 rem | 35 | negrita | El encabezado de una zona o de una hoja |
-| `section` | `--text-lg` 1,4 rem | 30 | negrita | El título de una fila («A continuación», «Tus 13 juegos») |
+| `title` | `--text-2xl` 2,4 rem | 52 | seminegrita | Un título largo que baja un paso, una pregunta grande |
+| `heading` | `--text-xl` 1,6 rem | 35 | seminegrita | El encabezado de una zona o de una hoja |
+| `section` | `--text-lg` 1,4 rem | 30 | seminegrita | El título de una fila («A continuación», «Tus 13 juegos») |
 | `card-title` · `body` | `--text-md` 1,25 rem | 27 | medium · regular | El nombre en una opción o renglón · el cuerpo |
 | `secondary` · `eyebrow` | `--text-sm` 1,2 rem | 26 | regular · medium | Datos bajo un título · el porqué |
 | `footnote` · `data` | `--text-xs` 1,11 rem | 24 | regular | Notas · números (tabulares) |
 | `caption` | `--text-2xs` 0,97 rem | 21 | medium | El nombre bajo lo enfocado, rótulos chicos, glifos |
+
+**Jerarquía de grosor (D2-B, 20 nov 2026).** La negrita es solo para el título más grande de la pantalla (`hero`, `display`) y
+para placas y cifras (`badge`, `stat`); `title`, `heading`, `section` y `group-label` van en seminegrita, en la TV y en el
+iPhone. Cada pantalla tiene un solo ancla fuerte. La lista vive en `design/tokens.json › boldOnly` y
+`tests/web/design-parity.test.mjs` falla si otra receta lleva negrita en cualquiera de los dos lados.
 
 Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--text-*` (prueba).
 
@@ -365,6 +370,16 @@ avanzado» es `sliders`, nunca la lupa (la lupa es Buscar); el iPhone es un solo
 o, si no hay cápsula, su botón; el pie no la repite. El pie dice lo mismo que el botón enfocado («Vista», «En Mi lista»).
 En la lista de episodios, el que sigue lleva ▶ sobre su imagen (sin cápsula «Sigue»). La clasificación se lee
 «Clasificación B», nunca una letra suelta que parece el botón B.
+
+**Lo que se corrigió en Ajustes › Resumen (TV, 20 nov 2026; regla dura 16):**
+- Un ícono, un significado: el destello (`spark`) es solo Explorar (su pestaña, su pantalla y sus listas) y la versión
+  recomendada (decisión anterior, igual en el iPhone; si se cambia, en los dos). Trakt es la cadena `link`, «Decide por mí»
+  el dado `dice` (como el iPhone), un género la etiqueta `tag`, el canal «Orbital 24/7» el reloj y la clave de MDBList el
+  trofeo. En el iPhone, «Aprende» es el birrete (`DS.Symbol.learn`, `testSparklesOnlyMeansDiscover`). Prueba: `tests/web/icon-meaning.test.mjs`.
+- La ayuda al pie nunca repite el renglón: dice qué abre o para qué sirve («Abre lo último que llegó por voz y de dónde
+  vino»); si no tiene nada nuevo que decir, se calla (`menus-settings.js · footerHelp`). Prueba: `tests/web/settings-summary.test.mjs`.
+- Un botón dice verbo y cosa («Conectar Trakt», «Conectar tu nube», «Ver complementos»), nunca «Conectar» o «Ver» solos, y
+  el pie dice lo mismo que el botón (`action` del renglón). Prueba: `tests/web/settings-summary.test.mjs`.
 
 **Una sola escala de clasificación por idioma (12 nov 2026, Fernando).** En español, la mexicana; en cualquier otro idioma,
 la de EE. UU.; nunca se muestra el dato crudo de otro país. Sin la de su escala se convierte la otra (R → B15, TV-MA → C).

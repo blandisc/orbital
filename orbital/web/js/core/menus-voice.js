@@ -84,7 +84,7 @@ export function voiceGroupMenu(group) {
   };
 }
 
-const VOICE_SOURCE_NAMES = { alexa: "Alexa", iphone: "iPhone o Siri", local: "Esta consola" };
+export const VOICE_SOURCE_NAMES = { alexa: "Alexa", iphone: "iPhone o Siri", local: "Esta consola" };
 
 /** La respuesta en un renglón: hasta `max` caracteres, cortada en una palabra con «…». */
 export function oneLine(text, max = 56) {

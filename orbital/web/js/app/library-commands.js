@@ -52,8 +52,8 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
       const s = ui.listScreen.sorter;
       const current = s.settings.genre;
       return openMenu({ title: "Género", options: [
-        { icon: "spark", label: "Todos", value: current ? "" : "✓", command: { type: "list-genre", value: null } },
-        ...s.genres().map((g) => ({ icon: "spark", label: genreNames([g])[0], value: g === current ? "✓" : "",
+        { icon: "tag", label: "Todos", value: current ? "" : "✓", command: { type: "list-genre", value: null } },
+        ...s.genres().map((g) => ({ icon: "tag", label: genreNames([g])[0], value: g === current ? "✓" : "",
           command: { type: "list-genre", value: g, label: genreNames([g])[0] } }))] }, nested(context));
     },
     "list-genre": async (command, context) => {

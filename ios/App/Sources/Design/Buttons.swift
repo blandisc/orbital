@@ -214,16 +214,22 @@ struct DSToggleRow: View {
     let title: LocalizedStringKey
     var detail: LocalizedStringKey?
     var symbol: String?
+    /// El color del ícono, como `SettingsRow`: en un grupo con renglones de ícono, el interruptor lleva el suyo y queda alineado.
+    var tint: Color?
     @Binding var isOn: Bool
 
-    init(_ title: LocalizedStringKey, detail: LocalizedStringKey? = nil, symbol: String? = nil, isOn: Binding<Bool>) {
-        self.title = title; self.detail = detail; self.symbol = symbol; _isOn = isOn
+    init(_ title: LocalizedStringKey, detail: LocalizedStringKey? = nil, symbol: String? = nil, tint: Color? = nil, isOn: Binding<Bool>) {
+        self.title = title; self.detail = detail; self.symbol = symbol; self.tint = tint; _isOn = isOn
     }
 
     var body: some View {
         Toggle(isOn: $isOn) {
             if let symbol {
-                Label { text } icon: { Image(systemName: symbol) }
+                Label { text } icon: {
+                    if let tint {
+                        Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
+                    } else { Image(systemName: symbol) }
+                }
             } else { text }
         }
     }

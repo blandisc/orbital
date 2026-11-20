@@ -50,7 +50,7 @@ export function DecideDoorHero(door, { glyphs = {}, onAction }) {
     h("h2", { class: "feature-hero__title" }, "Decide por mí"),
     h("span", { class: "feature-hero__detail" }, list ? `${doorLine()}: ${list}` : doorLine()),
     h("span", { class: "button-row feature-hero__actions" },
-      Button({ label: "Decide por mí", glyph: glyphs.select, variant: "primary", icon: "spark", onPress: () => onAction?.("select") })));
+      Button({ label: "Decide por mí", glyph: glyphs.select, variant: "primary", icon: "dice", onPress: () => onAction?.("select") })));
 }
 
 /** La línea de la puerta sigue la hora: de noche, algo corto antes de dormir. */
@@ -61,7 +61,7 @@ export function doorLine(now = new Date()) {
 
 /** AD-2: el encabezado de las dos pestañas: «✦ Decide por mí», las pestañas con lo que hace cada una y el reloj (la pantalla
  * dice a qué hora termina cada cosa). `tick()` pone la hora al día. FA-1: el Filtro avanzado lo usa con su nombre y su ícono. */
-export function DecideHead(modes, { title = "Decide por mí", icon = "spark" } = {}) {
+export function DecideHead(modes, { title = "Decide por mí", icon = "dice" } = {}) {
   const time = h("span", { class: "decide-head__clock" }, clock());
   const el = h("header", { class: "decide-head" },
     h("span", { class: "decide-head__title" }, svg(ICONS[icon]), title), modes, time);

@@ -17,7 +17,7 @@ import { Pill } from "./ui.js";
  */
 export const FILTERS = [
   { id: "kind", label: "Qué tipo", icon: "movie", hue: "orbital", options: [["movie", "Películas"], ["series", "Series"]] },
-  { id: "genre", label: "Género", icon: "spark", hue: "coral", options: [["", "Todos"], ["accion", "Acción"], ["aventura", "Aventura"],
+  { id: "genre", label: "Género", icon: "tag", hue: "coral", options: [["", "Todos"], ["accion", "Acción"], ["aventura", "Aventura"],
     ["animacion", "Animación"], ["comedia", "Comedia"], ["crimen", "Crimen"], ["documental", "Documental"], ["drama", "Drama"],
     ["familia", "Familia"], ["fantasia", "Fantasía"], ["terror", "Terror"], ["misterio", "Misterio"], ["romance", "Romance"],
     ["ciencia-ficcion", "Ciencia ficción"], ["suspenso", "Suspenso"]] },

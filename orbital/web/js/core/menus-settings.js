@@ -5,7 +5,7 @@
 import { lastPlayed, sentenceAgo } from "./format.js";
 import { addonRows, addonsMeta, debridRow, inCloud } from "./menus-cloud.js";
 import { langName, LANGUAGES_LEAD, languagesLine } from "./menus-languages.js";
-import { sinceVoice } from "./menus-voice.js";
+import { sinceVoice, VOICE_SOURCE_NAMES } from "./menus-voice.js";
 
 // --- Ajustes ------------------------------------------------------------------------------
 // Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
@@ -120,11 +120,11 @@ function settingRow(key, settings, category) {
 function accountRows(settings) {
   return [
     debridRow(settings.realdebrid),
-    settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
+    settings.trakt?.configured ? { icon: "link", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
       ok: !!settings.trakt.linked,
       command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
       hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
-      : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
+      : settings.trakt && { icon: "link", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
@@ -149,45 +149,52 @@ function lastVoice(voice) {
 export const hasPhone = (settings = {}) => (settings.paired_devices || []).length > 0
   || (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
 
-/** Lo que falta (Resumen): solo lo que de verdad cambia algo; cada uno dice por qué en una línea y A lo arregla. */
+/** Lo que falta (Resumen): solo lo que de verdad cambia algo; cada uno dice por qué en una línea y A lo arregla. El botón
+ *  dice verbo y cosa («Conectar Trakt», no «Conectar»), y el pie dice lo mismo que el botón (`action`). `help`, al pie,
+ *  dice qué abre: nunca repite el renglón (20 nov 2026). */
 export function settingsMissing(settings, { voice = null, now = Date.now() } = {}) {
   settings ??= {};
   const missing = [];
   const last = lastVoice(voice);
   const phones = hasPhone(settings);
   if (voice && (settings.alexa || phones) && (!last || now / 1000 - last > 2 * DAY)) {
-    missing.push({ icon: "assistant", label: last ? `La voz no ha llegado en ${Math.round((now / 1000 - last) / DAY)} días` : "La voz nunca ha llegado",
-      hint: "Ni Alexa ni el iPhone han mandado nada: la falla está antes de la consola", value: "Ver qué ha oído", warn: true,
-      command: { type: "voice-log" } });
+    missing.push({ icon: "assistant", label: last ? `La voz no ha llegado en ${Math.round((now / 1000 - last) / DAY)} días` : "La voz no llega a la consola",
+      hint: "Ni Alexa ni el iPhone han mandado nada todavía.", value: "Ver qué ha oído", warn: true,
+      help: "Abre lo último que llegó por voz y de dónde vino.", command: { type: "voice-log" } });
   }
   const rd = settings.realdebrid;
   if (rd && !rd.linked) {
     missing.push({ icon: "cloudDownload", label: "Tu nube sin conectar", hint: "Sin ella los videos no arrancan al instante · Real-Debrid, TorBox o AllDebrid",
-      value: "Conectar", warn: true, command: { type: "rd-account" } });
+      value: "Conectar tu nube", warn: true, help: "Abre Tu nube: eliges la tuya y la conectas con su clave.", command: { type: "rd-account" } });
   } else if (rd?.problem && rd.problem !== "offline") {
-    missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver" });
+    missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver tu nube", help: "Abre Tu nube: qué pasa con tu cuenta y cómo se arregla." });
   } else if (rd?.days != null && rd.days <= 7) {
     missing.push(inCloud({ icon: "bolt", label: rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`,
-      hint: "Renovar en real-debrid.com, desde tu celular", value: "Ver", warn: true, command: { type: "rd-account" } }, rd.service));
+      hint: "Renovar en real-debrid.com, desde tu celular", value: "Ver tu nube", warn: true,
+      help: "Abre Tu nube: tu plan y el día exacto en que vence.", command: { type: "rd-account" } }, rd.service));
   }
   const addons = settings.addons?.entries;
   if (addons && !addons.some((e) => e.on && e.template !== "opensubtitles")) {
-    missing.push({ icon: "addon", label: "No tienes complementos prendidos", hint: "Sin ellos no hay versiones de nada", value: "Ver", warn: true,
-      command: { type: "settings", page: "addons" } });
+    missing.push({ icon: "addon", label: "No tienes complementos prendidos", hint: "Sin ellos no hay versiones de nada", value: "Ver complementos", warn: true,
+      help: "Abre Complementos para prender los que vienen con Orbital.", command: { type: "settings", page: "addons" } });
   } else if (addons?.some((e) => e.template === "torrentio" && e.on && e.health?.state === "down")) {
-    missing.push({ icon: "addon", label: "Torrentio no contesta", hint: "Mientras, se salta · Ajustes › Complementos", value: "Ver", warn: true,
-      command: { type: "settings", page: "addons" } });
+    missing.push({ icon: "addon", label: "Torrentio no contesta", hint: "Mientras, se salta · Ajustes › Complementos", value: "Ver complementos", warn: true,
+      help: "Abre Complementos: cómo le va a cada uno y en qué orden se preguntan.", command: { type: "settings", page: "addons" } });
   }
   if (settings.trakt?.configured && !settings.trakt.linked) {
-    missing.push({ icon: "spark", label: "Trakt sin conectar", hint: "Para tus listas, lo que viste y «Porque viste»", value: "Conectar", warn: true,
-      command: { type: "trakt-link" } });
+    missing.push({ icon: "link", label: "Trakt sin conectar", hint: "Para tus listas, lo que viste y «Porque viste»", value: "Conectar Trakt", warn: true,
+      help: "Abre el código para conectar Trakt desde tu celular.", command: { type: "trakt-link" } });
   }
   if (!phones && !rd?.linked) { // AU2-A: con Real-Debrid ya se usa sin iPhone; se sigue ofreciendo en Cuentas
-    missing.push({ icon: "phone", label: "Sin iPhone", hint: "Es el mejor micrófono y el control a distancia", value: "Conectar", warn: true,
-      command: { type: "phone-link" } });
+    missing.push({ icon: "phone", label: "Sin iPhone", hint: "Es el mejor micrófono y el control a distancia", value: "Conectar iPhone", warn: true,
+      help: "Abre el código QR para conectar tu iPhone o iPad.", command: { type: "phone-link" } });
   }
-  return missing;
+  return missing.map((m) => ({ ...m, action: m.value }));
 }
+
+/** La ayuda al pie de Ajustes para un renglón: su `help`, si dice algo que el renglón no dice ya (ni su nombre ni su línea
+ *  de abajo). Antes, sin `help` el pie repetía la línea de abajo palabra por palabra. */
+export const footerHelp = (o) => (o?.help && o.help !== o.hint && o.help !== o.label ? o.help : "");
 
 /** Las categorías de Ajustes, en el riel (pantalla `settings`). */
 export const SETTINGS_CATEGORIES = [
@@ -269,29 +276,57 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   }
 }
 
-/** Resumen: lo que falta primero; lo que ya está bien, en verde. */
+/** Resumen: lo que falta primero; lo que ya está bien, en verde. Cada renglón de «Ya está bien» lleva su segunda línea (que
+ *  la lista se lea pareja) y su `help` dice qué abre. */
 function summary(settings, voice, now) {
   const missing = settingsMissing(settings, { voice, now });
   const last = lastVoice(voice);
   const rd = settings.realdebrid;
   const sources = (settings.addons?.entries || []).filter((e) => e.on && !e.needs_key && e.template !== "opensubtitles");
-  const paired = (settings.paired_devices || []).length;
+  const devices = settings.paired_devices || [];
+  const tv = settings.tv || {};
   const fine = [
-    rd?.linked && !rd.problem && !rd.loading && { ...debridRow(rd), ok: true },
+    rd?.linked && !rd.problem && !rd.loading && { ...debridRow(rd), ok: true, help: "Abre Tu nube: tu cuenta, tu plan y cuándo vence." },
     sources.length > 0 && { icon: "addon", label: "Complementos", value: `✓ ${sources.map((e) => e.name).join(", ")}`, ok: true,
-      command: { type: "settings", page: "addons" } },
-    paired > 0 && { icon: "phone", label: "Aparatos conectados", value: `✓ ${paired}`, ok: true, command: { type: "settings", page: "accounts" } },
-    settings.trakt?.linked && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true, command: { type: "trakt-account" } },
-    settings.tv?.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true, command: { type: "settings", page: "voice" } },
-    last && now / 1000 - last <= 2 * DAY && { icon: "assistant", label: "La voz", value: `✓ ${sinceVoice(last, now)}`, ok: true, command: { type: "voice-log" } },
+      hint: answeringHint(sources), help: "Abre Complementos: cuáles se preguntan y en qué orden.", command: { type: "settings", page: "addons" } },
+    devices.length > 0 && { icon: "phone", label: "Aparatos conectados", value: `✓ ${devices.length} ${devices.length === 1 ? "aparato" : "aparatos"}`, ok: true,
+      hint: devicesHint(devices), help: "Abre Cuentas: tus aparatos, quitar uno o conectar otro.", command: { type: "settings", page: "accounts" } },
+    settings.trakt?.linked && { icon: "link", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true,
+      hint: scrobbleHint(settings.trakt.scrobble, now), help: "Abre tu cuenta de Trakt: lo que le cuenta la consola y desconectarla.", command: { type: "trakt-account" } },
+    tv.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true,
+      hint: TV_INPUTS[tv.input] ? `Y cambia sola a ${TV_INPUTS[tv.input]}` : "Roku TV, en la misma red",
+      help: "Abre Tele y voz: cómo se prende la tele y dónde hablarle.", command: { type: "settings", page: "voice" } },
+    last && now / 1000 - last <= 2 * DAY && { icon: "assistant", label: "La voz", value: `✓ ${sinceVoice(last, now)}`, ok: true,
+      hint: voiceFromHint(voice, last), help: "Abre lo último que llegó por voz y de dónde vino.", command: { type: "voice-log" } },
   ].filter(Boolean);
-  return { title: "Resumen", lead: missing.length ? "Lo que falta, primero. Lo demás ya está bien." : "Todo está listo.", options: [
-    missing.length && { heading: true, label: "Lo que falta" }, ...missing,
+  const n = missing.length;
+  return { title: "Resumen", lead: n ? `${n === 1 ? "Falta 1 cosa" : `Faltan ${n} cosas`}. Lo demás ya está bien.` : "Todo está listo.", options: [
+    n && { heading: true, label: "Lo que falta" }, ...missing,
     fine.length && { heading: true, label: "Ya está bien" }, ...fine,
     // «Tu consola» (T6): lo que salía encima de Inicio la primera vez, siempre aquí.
     { heading: true, label: "Tu consola" },
-    { icon: "check", label: "Qué encontré", hint: "Tus juegos, Películas y series y lo que falta", command: { type: "setup" } },
+    { icon: "check", label: "Qué encontré", hint: "Tus juegos, Películas y series y lo que falta",
+      help: "Abre «Tu consola»: lo que encontré en esta consola, paso por paso.", command: { type: "setup" } },
   ].filter(Boolean) };
+}
+
+/** «1 de 1 contesta», «2 de 3 contestan»; sin saber todavía cómo les va, qué dan. */
+function answeringHint(sources) {
+  if (!sources.some((e) => e.health?.state)) return "Dan las versiones de lo que ves";
+  const answering = sources.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
+  return `${answering} de ${sources.length} ${sources.length === 1 ? "contesta" : "contestan"}`;
+}
+
+/** Los aparatos por su nombre («iPhone de Fer · iPad»); sin nombres, de qué tipo son. */
+function devicesHint(devices) {
+  const names = devices.map((d) => d.name || PLATFORM_NAMES[d.platform] || "iPhone");
+  return names.join(" · ");
+}
+
+/** De dónde llegó lo último que se dijo: «Lo último, desde Alexa». */
+function voiceFromHint(voice, last) {
+  const source = Object.entries(voice?.sources || {}).find(([, at]) => at === last)?.[0];
+  return VOICE_SOURCE_NAMES[source] ? `Lo último, desde ${VOICE_SOURCE_NAMES[source]}` : "Alexa, el iPhone y Siri";
 }
 
 const TV_INPUTS = { hdmi1: "HDMI 1", hdmi2: "HDMI 2", hdmi3: "HDMI 3", hdmi4: "HDMI 4" };
@@ -543,7 +578,7 @@ export const KEY_FORMS = {
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
   mdblist: {
-    service: "mdblist", label: "MDBList", icon: "spark", hint: "Aprobadas por la crítica (Rotten Tomatoes)",
+    service: "mdblist", label: "MDBList", icon: "trophy", hint: "Aprobadas por la crítica (Rotten Tomatoes)",
     title: "Clave de MDBList", submitLabel: "Guardar",
     lead: "En mdblist.com entra con tu cuenta de Trakt, ve a Preferences › API y copia la clave. Sin ella también sale, con las listas públicas.",
     fields: [{ name: "key", label: "Clave de MDBList", secret: true }],
@@ -567,7 +602,7 @@ export const KEY_FORMS = {
     fields: [{ name: "id", label: "Id. de aplicación (cliente)", secret: false }],
   },
   trakt: {
-    service: "trakt", label: "Clave de Trakt", icon: "spark", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
+    service: "trakt", label: "Clave de Trakt", icon: "link", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
     title: "Clave de Trakt", submitLabel: "Guardar",
     lead: "En developer.trakt.tv crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID. Las aplicaciones nuevas no tienen Client Secret: déjalo vacío.",
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],

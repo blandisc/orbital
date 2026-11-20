@@ -91,7 +91,7 @@ export function moviesSetupMenu(settings = {}) {
       { icon: "addon", label: "2 · Complementos", hint: on.length ? on.join(" y ") : "Los recomendados ya vienen armados",
         value: on.length ? `✓ ${on.length} ${on.length === 1 ? "prendido" : "prendidos"}` : "Prender",
         ok: on.length > 0, command: { type: "settings", page: "addons" } },
-      { icon: "spark", label: "3 · Trakt", hint: "Tu avance, lo visto y Mi lista", value: settings.trakt?.linked ? "✓ Conectada" : "Conectar",
+      { icon: "link", label: "3 · Trakt", hint: "Tu avance, lo visto y Mi lista", value: settings.trakt?.linked ? "✓ Conectada" : "Conectar",
         ok: !!settings.trakt?.linked, command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
       { icon: "phone", label: "Tu iPhone · opcional", hint: "Configuras ahí y la TV lo toma", value: phones ? "✓ Conectado" : "Conectar",
         ok: phones, command: { type: "phone-link" } },

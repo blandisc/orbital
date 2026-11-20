@@ -113,9 +113,13 @@ struct YourLanguagesView: View {
     }
 
     /// «Latino, Idioma original, Inglés…»: para el renglón de Ajustes.
+    /// «Latino y original», «Latino, original +2»: corto, para que quepa en el renglón de Ajustes en una línea (AJ-A, 20 nov
+    /// 2026: «Latino, Idioma original…» se partía en dos y se cortaba).
     static func summary(_ list: [String], _ ui: String) -> String {
-        let names = list.prefix(2).map { name($0, ui) }
-        return names.joined(separator: ", ") + (list.count > 2 ? "…" : "")
+        let names = list.prefix(2).map { $0 == "original" ? Strings.tr("original", language: ui) : name($0, ui) }
+        let and = ui == "en" ? " and " : " y "
+        if list.count > 2 { return names.joined(separator: ", ") + " +\(list.count - 2)" }
+        return names.joined(separator: and)
     }
 
     /// Sube o baja uno.

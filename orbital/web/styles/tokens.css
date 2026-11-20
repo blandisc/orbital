@@ -105,13 +105,13 @@
   --type-display-weight: var(--weight-bold);
   --type-display-tracking: -.03em;
   --type-title: var(--text-2xl);
-  --type-title-weight: var(--weight-bold);
+  --type-title-weight: var(--weight-semibold);
   --type-title-tracking: -.022em;
   --type-heading: var(--text-xl); /* un encabezado de zona (Inicio, hojas, el mosaico), entre section y title (solo la TV) */
-  --type-heading-weight: var(--weight-bold);
+  --type-heading-weight: var(--weight-semibold);
   --type-heading-tracking: -.018em;
   --type-section: var(--text-lg);
-  --type-section-weight: var(--weight-bold);
+  --type-section-weight: var(--weight-semibold);
   --type-section-tracking: -.012em;
   --type-card-title: var(--text-md);
   --type-card-title-weight: var(--weight-semibold);
@@ -138,8 +138,8 @@
   --type-badge: var(--text-2xs); /* una placa: «4K», «Nuevo», cifras en una placa */
   --type-badge-weight: var(--weight-bold);
   --type-badge-tracking: .02em;
-  --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en minúsculas y negrita; en la TV, un paso más grande: se lee de lejos */
-  --type-group-label-weight: var(--weight-bold);
+  --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en minúsculas y seminegrita (D2-B); en la TV, un paso más grande: se lee de lejos */
+  --type-group-label-weight: var(--weight-semibold);
   --type-group-label-tracking: var(--tracking-label);
   --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
   --type-stat-weight: var(--weight-heavy);

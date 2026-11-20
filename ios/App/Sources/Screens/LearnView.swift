@@ -118,7 +118,7 @@ struct HomeLearnTop: View {
     var body: some View {
         if OnboardingModel.unfinished(env.services) {
             HStack(spacing: DS.Space.s3) {
-                DSIconTile(symbol: "sparkles", tint: DS.ListTint.spark)
+                DSIconTile(symbol: DS.Symbol.learn, tint: DS.ListTint.spark)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Termina de preparar Orbital").recipe(.cardTitle, color: DS.text)
                     Text("Te faltan unos pasos de la guía.").recipe(.secondary, color: DS.textMuted)

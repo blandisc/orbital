@@ -19,6 +19,13 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Ajustes con los principios del sistema base (AJ-A, 20 nov 2026).
+    'Conectado a %@': 'Connected to %@',
+    'Conectado a %@ · falta %@': 'Connected to %@ · %@ missing',
+    '%lld lecciones': '%lld lessons',
+    'Qué puedes decir': 'What you can say',
+    'original': 'original',
+    'En este aparato': 'On this device',
     # Las lecciones de Aprende (AF1-B…AF4-B, 19 nov 2026).
     '%@ · T4 E2': '%@ · S4 E2',
     '%@ · T2 E3 · minuto 34': '%@ · S2 E3 · minute 34',
@@ -1156,7 +1163,7 @@ TRANSLATIONS = {
     "Otras apps": "Other apps", "%@ libres de %@": "%@ free of %@",
     "%lld episodio": "%lld episode", "%lld temporadas": "%lld seasons",
     # Repensado: Ajustes por páginas, un solo filtro en Para ti, Buscar integrado
-    "Cambiar avatar": "Change avatar", "Conectado": "Connected", "Conectado: %@": "Connected: %@", "Conectando…": "Connecting…",
+    "Cambiar avatar": "Change avatar", "Conectado": "Connected", "Conectando…": "Connecting…",
     "Conexiones": "Connections", "Cómo se acomodan las tarjetas de «Seguir viendo».": "How the Continue Watching cards are arranged.",
     "Cómo te dice la tarjeta lo que te queda por ver.": "How the card tells you how much is left.", "Idioma y subtítulos": "Language and subtitles",
     "Por género": "By genre", "Reproducción": "Playback", "Siempre": "Always", "Sin conectar": "Not connected", "Tu avatar": "Your avatar",

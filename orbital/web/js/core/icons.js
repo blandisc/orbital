@@ -101,6 +101,12 @@ export const ICONS = {
   // PT12: «Tú lo pides» (la mano del iPhone, hand.tap).
   hand: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V10a2 2 0 0 0-4 0M14 10V9a2 2 0 0 0-4 0v1M10 9.5V4a2 2 0 0 0-4 0v10M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>',
   spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 5.5c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z"/><circle cx="18.5" cy="5.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  // Un ícono, un significado (20 nov 2026): el destello es solo Explorar (y sus listas). Trakt es una cuenta enlazada (la
+  // cadena), «Decide por mí» es el dado (DS.Symbol.decide del iPhone), un género es su etiqueta y la versión recomendada,
+  // el pulgar arriba. tests/web/icon-meaning.test.mjs lo cuida.
+  link: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.25 4.25 0 0 0 6 0l3-3a4.25 4.25 0 0 0-6-6l-1.25 1.25"/><path d="M14 10a4.25 4.25 0 0 0-6 0l-3 3a4.25 4.25 0 0 0 6 6l1.25-1.25"/></svg>',
+  dice: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="8.75" cy="8.75" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.25" cy="15.25" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  tag: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 12.1V5.05a1.3 1.3 0 0 1 1.3-1.3h7.05l8.2 8.2a1.5 1.5 0 0 1 0 2.12l-6.48 6.48a1.5 1.5 0 0 1-2.12 0z"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
   heart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',

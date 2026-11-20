@@ -184,6 +184,27 @@ test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y gr
   }
 });
 
+test("negrita solo en el título más grande de la pantalla y en placas y cifras (D2-B)", () => {
+  const kebab = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+  const allowed = new Set(TOKENS.boldOnly.recipes);
+  const heavy = (w) => /^(bold|heavy|black)$/.test(w);
+  // design/tokens.json y la TV.
+  for (const group of [TOKENS.type, TOKENS.typeTvOnly]) {
+    for (const [recipe, spec] of entries(group)) if (heavy(spec.peso)) assert.ok(allowed.has(recipe), `${recipe} va en negrita: solo ${[...allowed]}`);
+  }
+  for (const [name, value] of Object.entries(tv)) {
+    const m = name.match(/^--type-([a-z-]+)-weight$/);
+    if (m && /--weight-(bold|heavy)/.test(value)) assert.ok([...allowed].map(kebab).includes(m[1]), `TV ${name} en negrita`);
+  }
+  // El iPhone: toda receta de DS.TextRecipe, también las que solo tiene él (sectionQuiet).
+  const recipes = SWIFT_DS.split("enum Marquee")[0];   // SWIFT_DS ya empieza en `enum TextRecipe`
+  assert.ok(recipes.includes("var font: Font"), "no encontré DS.TextRecipe");
+  for (const [, names, body] of recipes.matchAll(/case ([^:\n]+): ([^\n]+)/g)) {
+    const w = body.match(/\.weight\(\.(\w+)\)/)?.[1];
+    if (w && heavy(w)) for (const n of names.split(",").map((x) => x.trim().replace(/^\./, ""))) assert.ok(allowed.has(n), `iPhone .${n} en ${w}`);
+  }
+});
+
 test("el color de cada plataforma es el mismo en la TV y en el iPhone", () => {
   // Halo de su tarjeta y cifras de su Top 10 (design/tokens.json › platforms; `otra` = --platform-other).
   const swift = Object.fromEntries([...SWIFT_TOKENS.match(/enum Platform \{[\s\S]*?hex: \[String: String\] = \[([\s\S]*?)\]/)[1]

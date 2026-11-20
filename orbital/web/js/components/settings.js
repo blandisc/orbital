@@ -1,6 +1,6 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
-import { SETTINGS_CATEGORIES, settingsCategory, settingsMeta } from "../core/menus.js";
+import { footerHelp, SETTINGS_CATEGORIES, settingsCategory, settingsMeta } from "../core/menus.js";
 import { motion } from "../core/motion.js";
 import { Flag } from "./flag.js";
 import { createRail } from "./rail.js";
@@ -90,7 +90,9 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
 
   function paintHelp() {
     const o = focused();
-    helpText.textContent = o ? o.help || o.hint || "" : "Elige una categoría; lo que cambies se guarda al instante.";
+    // El pie dice algo nuevo (qué abre, para qué sirve), nunca lo que ya dice el renglón (20 nov 2026): sin `help` propio, o si
+    // repite el nombre o la línea de abajo, se calla.
+    helpText.textContent = o ? footerHelp(o) : "Elige una categoría; lo que cambies se guarda al instante.";
     help.hidden = !helpText.textContent;
   }
 
@@ -206,7 +208,8 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
     const o = focused();
     return [
       adjustable(o) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" },
-      o?.command && o.command.type !== "stay" && { glyph: g.select, label: o.command.type === "setting" ? "Siguiente" : "Abrir" },
+      // El pie dice lo mismo que el botón del renglón («Ver qué ha oído», «Conectar Trakt»), si lo tiene (`action`).
+      o?.command && o.command.type !== "stay" && { glyph: g.select, label: o.command.type === "setting" ? "Siguiente" : o.action || "Abrir" },
       { glyph: g.section, label: "Categoría", secondary: true },
       { glyph: g.back, label: "Categorías", end: true },
     ].filter(Boolean);
