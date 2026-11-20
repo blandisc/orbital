@@ -23,4 +23,17 @@ extension DesignRulesTests {
         XCTAssertNil(code.range(of: #"DispatchQueue\.main\.async \{[^}]*set\("#, options: .regularExpression),
                      "El volumen no se mueve en el mismo instante de montar la vista")
     }
+
+    /// Tu música manda (Fernando, 20 nov 2026: «cuando entras reproduciendo música… le sube el volumen y no te deja bajar»).
+    func testRemoteVolumeButtonsYieldToOtherAudio() throws {
+        let file = try XCTUnwrap(try sources(["Platform"]).first { $0.name == "HardwareVolumeButtons.swift" })
+        let code = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        XCTAssertTrue(code.contains("isOtherAudioPlaying"), "Con música de otra app los botones de volumen son del iPhone")
+        XCTAssertNotNil(code.range(of: #"func leaveTheEdge\(\) \{\s*guard [^\n]*otherAudioPlaying"#, options: .regularExpression),
+                        "Con música de otra app el volumen no se acerca al centro")
+        XCTAssertNotNil(code.range(of: #"\|\| Self\.otherAudioPlaying \{ base = value"#, options: .regularExpression),
+                        "Con música de otra app un botón no mueve la TV ni se regresa")
+        XCTAssertNotNil(code.range(of: #"func leaving\(\) \{[\s\S]{0,300}set\(original\)"#, options: .regularExpression),
+                        "Al salir de la app el volumen regresa al que tenías")
+    }
 }

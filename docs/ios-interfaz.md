@@ -363,6 +363,9 @@ volumen del iPhone a donde estaba. La regla:
   regresa.
 - `MPVolumeView` y `outputVolume` solo se usan en `Platform/` (los botones del control y el volumen del reproductor) y en el
   gesto del reproductor. `DesignRulesTests+Volume.swift` lo cuida. En la TV no aplica.
+- **Tu música manda** (20 nov 2026, Fernando: «cuando entras reproduciendo música… le sube el volumen y no te deja
+  bajar»): si suena audio de otra app (`isOtherAudioPlaying`), los botones de volumen son del iPhone, no del control, y la
+  app no acerca el volumen al centro. Al salir de la app, el volumen regresa al que tenías.
 
 ### Opciones que se eligen: renglones con palomita (S1, 11 nov 2026)
 

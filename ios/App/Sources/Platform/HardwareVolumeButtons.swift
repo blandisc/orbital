@@ -18,6 +18,11 @@ extension Notification.Name {
 /// la barra de volumen, como si hubiera cambiado el volumen»): la app solo mueve el volumen del iPhone con su tapa del aviso
 /// ya puesta en la ventana (nunca al montar ni al desmontar la vista), y al volver a la app el volumen que encuentre es el
 /// nuevo punto de partida: no cuenta como botón ni se regresa.
+///
+/// Regla «Tu música manda» (Fernando, 20 nov 2026: «cuando entras reproduciendo música… le sube el volumen y no te deja
+/// bajar»): si en el iPhone suena algo de otra app (música, un pódcast, en audífonos o no), los botones son del iPhone y la
+/// app nunca mueve su volumen. Y al salir de la app, el volumen regresa al que tenías: lo que se acercó al centro no se va
+/// contigo a la música.
 struct HardwareVolumeButtons: UIViewRepresentable {
     /// `true` al subir, `false` al bajar.
     let onPress: (Bool) -> Void
@@ -68,7 +73,7 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             // Salir y volver a la app con el control abierto: lo que haya pasado con el volumen afuera (los botones, unos
             // audífonos, otra app) no es un botón del control. Antes se tomaba por uno: movía la TV y regresaba el volumen.
             observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor in self?.away = true }
+                Task { @MainActor in self?.leaving() }
             })
             observers.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.cameBack() }
@@ -89,9 +94,21 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             }
         }
 
+        /// Suena algo de otra app: los botones de volumen son de eso, no del control.
+        private static var otherAudioPlaying: Bool { AVAudioSession.sharedInstance().isOtherAudioPlaying }
+
         private func leaveTheEdge() {
-            guard cover != nil, !away, !HardwareVolumeButtons.yieldsToPlayer else { return }
+            guard cover != nil, !away, !HardwareVolumeButtons.yieldsToPlayer, !Self.otherAudioPlaying else { return }
             if base < Self.edge || base > 1 - Self.edge { set(Self.middle); base = Self.middle }
+        }
+
+        /// Al salir de la app se regresa el volumen que tenías (con la tapa aún en la ventana): si se había acercado al
+        /// centro, tu música no se va a oír más fuerte afuera.
+        private func leaving() {
+            away = true
+            guard !HardwareVolumeButtons.yieldsToPlayer, let original, abs(original - base) > Self.noise else { return }
+            set(original)
+            base = original
         }
 
         private func cameBack() {
@@ -107,7 +124,8 @@ struct HardwareVolumeButtons: UIViewRepresentable {
         private func changed(_ value: Float) {
             if resetting { resetting = false; return }
             // El volumen es del video, o cambió con la app atrás: se toma como el nuevo punto de partida.
-            if HardwareVolumeButtons.yieldsToPlayer || away { base = value; original = value; return }
+            // Lo mismo si suena música de otra app: el botón es tuyo y el volumen se queda donde lo pusiste.
+            if HardwareVolumeButtons.yieldsToPlayer || away || Self.otherAudioPlaying { base = value; original = value; return }
             guard abs(value - base) > Self.noise else { return }
             onPress(value > base)
             set(base)
