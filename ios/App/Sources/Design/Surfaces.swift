@@ -57,7 +57,7 @@ struct DSSheetHeader<Trailing: View>: View {
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s3) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 title.recipe(.title).accessibilityAddTraits(.isHeader)
                 if let subtitle { subtitle.recipe(.secondary) }

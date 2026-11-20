@@ -204,7 +204,7 @@ struct PlayerScreen: View {
                         // Con los controles, ya van por encima de ellos; si además está la píldora, un poco más. Sin controles
                         // y con la píldora al pie, suben lo bastante para no taparla.
                         let aboveControls = controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6
-                        let abovePill = speedPillVisible ? (controlsVisible ? DS.Space.s10 : DS.Subtitle.liftWithSpeedPill) : 0
+                        let abovePill = speedPillVisible ? (controlsVisible ? DS.Space.s12 : DS.Subtitle.liftWithSpeedPill) : 0
                         holder.engine.subtitleOverlay(lifted: false, speedPill: false, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             .frame(width: geo.size.width, height: geo.size.width / DS.Poster.stillAspect)
                             .padding(.bottom, aboveControls + abovePill)

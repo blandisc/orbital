@@ -21,10 +21,10 @@ struct Shelf<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             header.padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     if loading { ShelfSkeleton() } else { content() }
                 }
                 .scrollTargetLayout()
@@ -68,7 +68,7 @@ struct HeroSkeleton: View {
             Rectangle().fill(DS.fill)
                 .aspectRatio(DS.HomeHero.current, contentMode: .fit)
                 .frame(maxWidth: .infinity)
-            HStack(spacing: DS.Space.s3) { ShelfSkeleton() }
+            HStack(spacing: DS.Space.s2) { ShelfSkeleton() }
                 .padding(.horizontal, DS.Space.gutter)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .clipped()
@@ -90,14 +90,14 @@ struct PopularTodayShelf: View {
     static let count = 10
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             NavigationLink(value: PopularRoute()) {
                 DSSectionHead(title: "Lo más popular hoy", chevron: true, meta: Text("Lo más visto hoy en Trakt"))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     ForEach(Array(items.prefix(Self.count).enumerated()), id: \.element.id) { index, item in
                         let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
                         TitleNavigationLink(route: route) {
@@ -142,13 +142,13 @@ struct RankedPosterCard: View {
     private var numberAndPoster: some View {
         // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
         // El «1» es angosto: el póster casi lo tapaba; con él, apenas se encima.
-        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : rank == 1 ? -DS.Space.s1 : -DS.Space.s5) {
+        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : rank == 1 ? -DS.Space.s1 : -DS.Space.s6) {
             // La cifra con su halo (Fernando, 1 nov 2026: el halo sí; la mancha negra de detrás era la sombra del zoom).
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
                 .glow(tint ?? .clear)
                 .tracking(DS.Size.rankTracking)
                 .lineLimit(1).fixedSize()
-                .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
+                .padding(.bottom, -DS.Space.s2)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
             Group {
                 if let zoom { PosterView(url: poster, title: title).frame(width: width).titleZoomSource(zoom) }

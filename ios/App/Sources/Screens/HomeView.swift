@@ -130,7 +130,7 @@ struct HomeView: View {
         // Ni `containerRelativeFrame` ni medir el ScrollView: con el control abierto los dos cuentan el panel (docs/ios-interfaz.md).
         .frame(width: WindowMetrics.column.width, alignment: .leading)
         .refreshOrbitHost()   // la luna de tirar para actualizar
-        .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
+        .padding(.top, DS.Space.s2)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
         // La barra de pestañas de abajo ya deja su espacio: más aquí era aire muerto al final. Con las pestañas arriba (C1, Mac
         // e iPad ancho) no hay barra abajo y la última fila se pegaba a la orilla.
         .padding(.bottom, TopRow.tabsInLogoRow ? DS.Layout.screenBottom : DS.Space.s2)
@@ -383,7 +383,7 @@ struct HomeView: View {
         .overlay(alignment: WindowMetrics.roomy ? .bottomLeading : .bottom) {
             PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
                 .padding(.leading, WindowMetrics.roomy ? DS.Space.gutter * (scheme == .dark || board ? 1 : 2) : 0)   // la orilla del texto (en claro, también la de la tarjeta)
-                .padding(.bottom, heroOverlap + DS.Space.s3)
+                .padding(.bottom, heroOverlap + DS.Space.s2)
                 .allowsHitTesting(false)   // tocar los puntos no abre la ficha
         }
         // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
@@ -400,14 +400,14 @@ struct HomeView: View {
     /// «Seguir viendo»: lo que dejaste a medias (o el siguiente episodio), en piezas anchas con su avance. Tocar una sigue
     /// donde ibas; mantenerla: la ficha, la TV o quitarla.
     private func continueRail(_ model: HomeModel, items: [HomeItem]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             NavigationLink(value: HomeListRoute(id: "continue")) {
                 DSSectionHead(title: Text("Seguir viendo"), count: items.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             .accessibilityIdentifier("home-all-continue")
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     ForEach(items) { item in
                         Button {
                             env.ui.playerSource = PlayerZoomID(metaID: item.metaID, slot: "continue")
@@ -460,10 +460,10 @@ struct HomeView: View {
         let items = spotlightItems(model)
         let current = min(heroSlot ?? 0, max(0, items.count - 1))
         let next = items.indices.filter { $0 != current }.sorted { ($0 - current + items.count) % items.count < ($1 - current + items.count) % items.count }
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Lo que sigue"), eyebrow: Text("En la portada")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     ForEach(next, id: \.self) { i in
                         Button {
                             withAnimation(DS.Motion.smooth(reduceMotion)) { heroSlot = i }
@@ -488,14 +488,14 @@ struct HomeView: View {
     /// con su forma: el destacado en carrusel, lo que sigues en panorámicas, lo pendiente en fichas y Mi lista en pósters).
     private func watchlist(_ model: HomeModel, items: [Suggestion]) -> some View {
         let language = env.services.appSettings.uiLanguage
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             NavigationLink(value: HomeListRoute(id: "watchlist")) {
                 DSSectionHead(title: Text("Mi lista"), count: items.count, chevron: true, eyebrow: Text("Lo que dejaste pendiente"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 // Dos renglones (uno si son pocas), del alto que pida la letra; en el renglón, las primeras.
-                LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s3), count: items.count < 3 ? 1 : 2), spacing: DS.Space.s3) {
+                LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s2), count: items.count < 3 ? 1 : 2), spacing: DS.Space.s2) {
                     ForEach(items.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
                         TitleNavigationLink(route: s.route) {
@@ -534,7 +534,7 @@ struct HomeView: View {
         let kept = model.continueWatching.filter { continueKind.isEmpty || $0.kind == continueKind }
         let shown = continueSort == .title ? kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending } : kept
         return ScrollView {
-            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s4) {
+            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s4) {
                 ForEach(shown) { item in
                     TitleNavigationLink(route: route(item)) {
                         StillCard(title: titleName(item.title, id: item.metaID, kind: item.kind), art: item.background ?? item.poster, data: continueData(item),

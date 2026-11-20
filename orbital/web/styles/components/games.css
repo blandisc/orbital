@@ -9,20 +9,20 @@
 }
 .games__consoles, .games__hero { min-height: 0; overflow: hidden; transition: opacity var(--duration-base) var(--ease-out); }
 /* El segundo piso: centrado bajo la barra, con aire para que la consola enfocada crezca sin cortarse. */
-.games__consoles { display: flex; justify-content: center; padding: var(--space-3) var(--space-4) var(--space-2); }
+.games__consoles { display: flex; justify-content: center; padding: var(--space-2) var(--space-4) var(--space-2); }
 
 /* El juego a pantalla: a la izquierda, sobre el velo del fondo; lo de la derecha es arte. */
 .games__hero {
-  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 50%);
-  padding: var(--space-3) 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-width: min(46rem, 50%);
+  padding: var(--space-2) 0;
 }
 /* El porqué y el logo (o el nombre) van juntos, abajo de una caja que mide siempre lo mismo (la del logo más alto): al pasar
    de un juego a otro, o mientras su logo llega y entretanto va el nombre (games.js · paintHero), los datos, los botones y la
    cuadrícula de abajo no brincan (Fernando, 14 nov: de Overcooked a Metroid, rápido, «los elementos desaparecen»). La letra
    es la receta del porqué para que 1lh sea su renglón. Al bajar (games--away) la caja no cuenta: sus piezas van en la retícula. */
 .games__head {
-  display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: var(--space-3);
-  min-height: calc(6.5rem + var(--space-3) + 1lh);
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: var(--space-2);
+  min-height: calc(6.5rem + var(--space-2) + 1lh);
   font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking);
 }
 .games--away .games__head { display: contents; }
@@ -55,8 +55,8 @@
 .games--away .games__main { grid-template-rows: 0fr auto minmax(0, 1fr); margin-top: calc(-1 * var(--status-room)); }
 .games--away .games__consoles { opacity: 0; }
 .games--away .games__hero {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-5); row-gap: var(--space-2); align-items: center;
-  max-width: none; padding: var(--space-4) 0 var(--space-3);
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-6); row-gap: var(--space-2); align-items: center;
+  max-width: none; padding: var(--space-4) 0 var(--space-2);
 }
 .games--away .games__reason { display: none; }
 .games--away :is(.games__logo, .games__title) { grid-row: 1 / span 2; }
@@ -65,6 +65,6 @@
 .games--away .games__actions { margin-top: 0; }
 /* Entre fila y fila, el aire de un nombre (Fernando, 2 nov: «el título del juego se lo come la fila de abajo»): con el de
    browse.css, el nombre de la enfocada quedaba a 1 px de las portadas de abajo. */
-.games .games__grid { row-gap: var(--space-14); }
+.games .games__grid { row-gap: var(--space-16); }
 /* Bajo la portada enfocada, solo su nombre: la consola ya la dice el selector de arriba (y su renglón se encimaba con la fila de abajo). */
 .games .card--name-on-focus .card__caption > span { display: none; }

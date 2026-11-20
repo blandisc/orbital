@@ -19,7 +19,7 @@ struct HomeBecause: View {
         let pool = model.seeds.filter(fits)
         Group {
             if let because = model.because, !pool.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
                     DSSectionHead(title: Text("Por lo que viste"), eyebrow: Text("Según el título que elijas"), quiet: true)
                         .padding(.horizontal, DS.Space.gutter)
                     card(because, pool: pool)

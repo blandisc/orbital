@@ -23,7 +23,7 @@ struct DebridRedeemSheet: View {
             .padding(DS.Space.s4)
             .dsCard(.card)
             .accessibilityElement(children: .combine)
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 IconBeside(symbol: "arrow.triangle.2.circlepath") {
                     Text("Real-Debrid cambia todos tus puntos por días de Premium.").recipe(.secondary, color: DS.text)   // solo Real-Debrid: canjear puntos
                         .fixedSize(horizontal: false, vertical: true)

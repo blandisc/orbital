@@ -135,7 +135,7 @@ extension DS {
         /// El círculo blanco es este tanto más chico que su lugar, por lado: cabe dentro de la pastilla con aire.
         static let markInset = DS.Space.s1 / 2
         /// El aire entre la orilla de la pastilla y el nombre de lo elegido (KT2).
-        static let nameInset = DS.Space.s3
+        static let nameInset = DS.Space.s2
         /// La pastilla abre, viaja y se recoge con las curvas de siempre (`DS.Motion.grow`/`fold`), a este paso: más pausada,
         /// para que se sienta suave (Fernando, 13 nov 2026).
         static let pace = 0.8   // ds-exception: velocidad relativa de una animación

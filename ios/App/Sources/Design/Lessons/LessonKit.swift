@@ -207,7 +207,7 @@ struct LessonChip<Inner: View>: View {
     var body: some View {
         HStack(spacing: DS.Space.s1) { inner }
             .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
             .background(DS.backdropDeep.opacity(DS.Lesson.chipFill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.hairline, lineWidth: DS.Stroke.hairline))
             .shadow(DS.Elevation.floating)
@@ -221,7 +221,7 @@ struct LessonNote: View {
     var symbol = "bell.fill"
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.fresh)
                 .sceneBox(DS.Lesson.noteIcon, DS.Lesson.noteIcon)
                 .background(DS.backdropDeep, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
@@ -232,10 +232,10 @@ struct LessonNote: View {
             .lineLimit(1)
             Spacer(minLength: 0)
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .shadow(DS.Elevation.floating)
-        .sceneBox(DS.Lesson.canvas.width - 2 * DS.Space.s5, DS.Lesson.noteHeight)
+        .sceneBox(DS.Lesson.canvas.width - 2 * DS.Space.s6, DS.Lesson.noteHeight)
     }
 }
 
@@ -266,7 +266,7 @@ struct LessonRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             leading
             VStack(alignment: .leading, spacing: DS.Lesson.tight) {
                 title.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)

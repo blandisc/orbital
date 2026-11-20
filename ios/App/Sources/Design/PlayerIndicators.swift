@@ -80,7 +80,7 @@ struct DSSeekBubble: View {
             Text(time).font(DS.TextRecipe.section.font).foregroundStyle(DS.text).monospacedDigit()
             Text(delta).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
-        .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .overlay(alignment: .top) {
             if let scare {

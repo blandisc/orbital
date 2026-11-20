@@ -204,7 +204,7 @@ struct DownloadVersionSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.good)
                 DSSheetHeader(title: Text("Ya la tienes"), subtitle: Text("Puedes guardar varias versiones del mismo título."))
             }
@@ -243,7 +243,7 @@ struct DownloadVersionSheet: View {
             v.detail.recipe(.footnote).lineLimit(2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
     }
 }

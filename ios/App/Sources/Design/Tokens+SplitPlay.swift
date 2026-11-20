@@ -9,7 +9,7 @@ extension DS {
         /// El grueso de la división entre los dos lados.
         static let divider = DS.Stroke.regular
         /// Cuánto se aparta la división de la orilla de arriba y de la de abajo (la misma).
-        static let dividerInset = DS.Space.s3
+        static let dividerInset = DS.Space.s2
         /// Qué tan marcada va la división: tenue, del color de la letra del botón.
         static let dividerOpacity = DS.Opacity.faint
     }

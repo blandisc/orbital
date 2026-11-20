@@ -130,7 +130,7 @@ struct ListMosaicView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Revolver"))
-                    .padding(DS.Space.s3)
+                    .padding(DS.Space.s2)
                 }
             } else {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {

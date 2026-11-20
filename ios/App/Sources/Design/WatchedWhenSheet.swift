@@ -41,8 +41,8 @@ struct WatchedWhenSheet: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-                HStack(spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+                HStack(spacing: DS.Space.s2) {
                     if let poster {
                         PosterView(url: poster, title: "", maxPoints: DS.Watched.poster)
                             .frame(width: DS.Watched.poster * DS.Poster.aspect, height: DS.Watched.poster)
@@ -85,7 +85,7 @@ struct WatchedWhenSheet: View {
                             .dsSolidPrimaryButton().dsControlSize(.large)
                             .accessibilityIdentifier("watched-when-done")
                         }
-                        .padding(DS.Space.s3)
+                        .padding(DS.Space.s2)
                         .dsCard()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }
@@ -122,7 +122,7 @@ struct WatchedOption: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
         Button(action: action) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.textMuted).frame(width: DS.Watched.icon)
                 VStack(alignment: .leading, spacing: 0) {
                     title.recipe(.cardTitle, color: DS.text)
@@ -131,7 +131,7 @@ struct WatchedOption: View {
                 Spacer(minLength: 0)
                 if open { Image(systemName: "chevron.up").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted) }
             }
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s2)   // con letra grande el nombre parte en dos y no toca la orilla (aire parejo)
             .frame(maxWidth: .infinity, minHeight: DS.Watched.row, alignment: .leading)
             .dsCard()

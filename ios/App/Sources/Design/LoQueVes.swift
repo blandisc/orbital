@@ -115,7 +115,7 @@ struct WatchingZoomMap: View {
         let minutes = WatchingHeat.minutes(plays, since: since, calendar: calendar)
         let byDay = Dictionary(grouping: plays.filter { $0.at >= since }) { calendar.startOfDay(for: $0.at) }
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 map(minutes)
                 DSHeatLegend(steps: [0, 1, 2, 3].map(fill))
             }
@@ -181,7 +181,7 @@ struct WatchingZoomMap: View {
             } else {
                 ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
                     TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: titleName(g.title, id: g.imdb, kind: g.kind)).frame(width: DS.YearMap.dayPoster)
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
                                 Text(verbatim: titleName(g.title, id: g.imdb, kind: g.kind)).recipe(.cardTitle).lineLimit(1)
@@ -196,7 +196,7 @@ struct WatchingZoomMap: View {
                 }
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("watching-day")
@@ -253,7 +253,7 @@ struct WatchingGenres: View {
         let rows = shown.map { Row(id: $0.name, label: Text(verbatim: name($0.name)), count: $0.count, rest: false) }
             + (rest > 0 ? [Row(id: "_rest", label: Text("Otros"), count: rest, rest: true)] : [])
         let most = max(rows.map(\.count).max() ?? 1, 1)
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             ForEach(Array(rows.enumerated()), id: \.element.id) { i, row in
                 let share = Double(row.count) / Double(total)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {

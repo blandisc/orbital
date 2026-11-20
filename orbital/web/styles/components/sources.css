@@ -22,10 +22,10 @@
 .sources__status--problem { color: var(--color-warning); }
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
-  display: flex; flex-direction: column; gap: var(--space-3); min-height: 0;
+  display: flex; flex-direction: column; gap: var(--space-2); min-height: 0;
   /* Abajo, aire para que la última fila se alcance entera bajo el fundido; entre la lista y «lo que trae» queda el hueco
      del panel (R3: sin él, el filo de la tarjeta que se funde tocaba ese renglón). */
-  overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-10); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
+  overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-12); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
 }
 /* Lo que sigue se funde, solo del lado donde hay más (sources.js · edges): antes la cuadrícula se cortaba en seco arriba y
    la última fila quedaba siempre velada. */
@@ -36,7 +36,7 @@
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
 }
 /* Elegir versión abierta: el aviso sale abajo, sobre el pie, y no tapa las tarjetas de arriba (revisión 2, punto 11). */
-body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5) + var(--safe-y) + 3rem + var(--space-4)); }
+body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6) + var(--safe-y) + 3rem + var(--space-4)); }
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
 .sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); max-width: 64rem; }
@@ -45,7 +45,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5)
 .source {
   position: relative; flex-shrink: 0; /* sin esto, la lista aplastaba las tarjetas en vez de desplazarse */
   display: grid; grid-template-columns: 4.8rem minmax(0, 1fr); align-items: center; column-gap: var(--space-4);
-  width: 100%; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+  width: 100%; padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
   border-radius: var(--radius-lg); text-align: left; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
@@ -73,20 +73,20 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5)
 
 /* «Elegir versión»: una fila por idioma (nombre a la izquierda; «Tu idioma», «Original», «Tal vez» debajo) y sus
    calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
-.versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-5); }
+.versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-6); }
 .versions__lang { display: grid; gap: var(--space-1); padding-inline: var(--space-2); min-width: 0; }
 .versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 .versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 /* T8-A: el grupo de las que hay que pedirlas, separado de las que arrancan ya. */
-.versions__ask { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); flex-shrink: 0;
-  margin-top: var(--space-3); padding: var(--space-3) var(--space-2) 0; border-top: 1px solid var(--color-hairline); }
+.versions__ask { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); flex-shrink: 0;
+  margin-top: var(--space-2); padding: var(--space-2) var(--space-2) 0; border-top: 1px solid var(--color-hairline); }
 .versions__ask-title { font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .versions__ask-hint { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 .version {
   position: relative; display: grid; align-content: center; gap: var(--space-1);
-  min-height: 5.2rem; padding: var(--space-3); border-radius: var(--radius-lg); text-align: left; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  min-height: 5.2rem; padding: var(--space-2); border-radius: var(--radius-lg); text-align: left; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .version:hover { background: var(--color-glass-hover); }
@@ -118,7 +118,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5)
 /* Mientras se busca (VersionsSkeleton del iPhone): las mismas filas y casillas, con renglones grises del alto de su letra en
    lugar del texto. Quietas (nada se anima mientras se espera) y sin foco ni clic: aún no hay qué elegir. */
 .version--skeleton { pointer-events: none; }
-.versions__skeleton { display: flex; flex-direction: column; gap: var(--space-3); }
+.versions__skeleton { display: flex; flex-direction: column; gap: var(--space-2); }
 .versions__skeleton-name { width: 8rem; height: var(--type-card-title); }
 .versions__skeleton-role { width: 5.5rem; height: var(--type-footnote); }
 .versions__skeleton-res { width: 4rem; height: var(--type-card-title); }
@@ -126,7 +126,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5)
 .versions__skeleton-facts { width: 8.5rem; max-width: 100%; height: var(--type-footnote); }
 
 /* Lo que trae la enfocada y cómo lo sabemos: una línea, para leer desde el sillón. */
-.sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-5) + var(--space-2)) var(--space-2); } /* bajo las calidades */
+.sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-6) + var(--space-2)) var(--space-2); } /* bajo las calidades */
 .sources__why:empty { display: none; }
 .sources__why-langs { font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .sources__why-more { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }

@@ -241,11 +241,11 @@ extension PlayerScreen {
                 Spacer()
             }
             // Bajo la barra de arriba con aire (antes quedaba pegado a ella).
-            .padding(.top, DS.Space.s14 + DS.Space.s4)
+            .padding(.top, DS.Space.s16 + DS.Space.s4)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
         if let subtitleToast = notices.subtitleToast, !padlock.lockNoticeVisible {
-            VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
+            VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s16)
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if framing.pinching, !padlock.lockNoticeVisible {
@@ -260,7 +260,7 @@ extension PlayerScreen {
                 }
                 Spacer()
             }
-            .padding(.top, DS.Space.s14)
+            .padding(.top, DS.Space.s16)
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         } else if let zoomToast = framing.zoomToast, !padlock.lockNoticeVisible {
             // Los avisos de texto, todos en el mismo lugar (arriba, como el de subtítulos); antes el del zoom en vertical salía al
@@ -269,7 +269,7 @@ extension PlayerScreen {
                 DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: Text(LocalizedStringKey(zoomToast.explanation)))
                 Spacer()
             }
-            .padding(.top, DS.Space.s14)
+            .padding(.top, DS.Space.s16)
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let flashSymbol = notices.flashSymbol, !controlsVisible {

@@ -66,7 +66,7 @@ struct SubtitleDock: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             header
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
             // Siempre en un ScrollView del alto de la lista (nunca más): si cabe no se mueve; si no (SE, horizontal, letra
@@ -84,7 +84,7 @@ struct SubtitleDock: View {
     }
 
     private var need: CGFloat {
-        listHeight > 0 && headerHeight > 0 ? headerHeight + DS.Space.s3 + listHeight + DS.Space.s4 * 2 : 0
+        listHeight > 0 && headerHeight > 0 ? headerHeight + DS.Space.s2 + listHeight + DS.Space.s4 * 2 : 0
     }
 
     // MARK: arriba

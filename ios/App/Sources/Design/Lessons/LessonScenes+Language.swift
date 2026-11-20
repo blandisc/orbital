@@ -13,7 +13,7 @@ struct LessonLanguageRow: View {
     var handle = false
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Text(verbatim: "\(place)").font(DS.TextRecipe.badge.font).monospacedDigit().foregroundStyle(DS.textMuted)
                 .sceneBox(DS.Lesson.placeDot, DS.Lesson.placeDot).background(DS.fillStrong, in: Circle())
             HStack(spacing: DS.Space.s1) {
@@ -180,7 +180,7 @@ struct LessonSubtitledVideo: View {
             if subs > 0 {
                 Text(verbatim: subs == 1 ? "—¿Lo ves? Ahí viene." : "—See it? Here it comes.")
                     .font(DS.TextRecipe.label.font).foregroundStyle(DS.subtitleText).shadow(DS.Elevation.low.color(DS.subtitleShadow))
-                    .sceneBox(370 - DS.Lesson.panel, DS.Space.s6).padding(.bottom, DS.Space.s5)
+                    .sceneBox(370 - DS.Lesson.panel, DS.Space.s6).padding(.bottom, DS.Space.s6)
                     .transition(.opacity.combined(with: .offset(y: DS.Space.s2)))
             }
         }

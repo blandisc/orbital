@@ -99,7 +99,7 @@ struct AdvancedFilterSheet: View {
             }
         }
         .tint(DS.orbitalBlue)
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2)
         .frame(minHeight: DS.Size.touchTarget)
         .dsCard()
         .accessibilityIdentifier("filter-hide-watched")
@@ -113,7 +113,7 @@ struct AdvancedFilterSheet: View {
 
     /// Los mosaicos de dos en dos; el abierto lleva su panel debajo de su renglón, con la flechita hacia él.
     private func grid(_ pages: [FilterPage], _ context: FilterContext, _ model: AdvancedFilterModel) -> some View {
-        VStack(spacing: DS.Space.s3) {
+        VStack(spacing: DS.Space.s2) {
             ForEach(Array(stride(from: 0, to: pages.count, by: 2)), id: \.self) { i in
                 let row = Array(pages[i..<min(i + 2, pages.count)])
                 HStack(spacing: DS.Space.s2) {
@@ -129,7 +129,7 @@ struct AdvancedFilterSheet: View {
                     }
                     .id(Self.panelID(o))   // otro filtro: otro panel (el de antes se va, el nuevo baja)
                     // Baja desde su mosaico: aparece y se asienta un poco hacia abajo; al cerrarse se apaga.
-                    .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: -DS.Space.s3)),
+                    .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: -DS.Space.s2)),
                                             removal: .opacity.animation(DS.Motion.base(reduceMotion))))
                 }
             }
@@ -173,7 +173,7 @@ struct AdvancedFilterSheet: View {
     }
 
     private func actions(_ model: AdvancedFilterModel) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             if !model.filter.isEmpty {
                 Button("Limpiar") { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
                     .dsGlassButton().buttonBorderShape(.capsule).dsControlSize(.large)

@@ -39,7 +39,7 @@ struct FilterResultsView: View {
                     Text("Con premios cuentan el formato, la época y lo que ya viste.").recipe(.caption, color: DS.textMuted)
                         .padding(.horizontal, DS.Space.gutter)
                 }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Filter.resultWidth), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Filter.resultWidth), spacing: DS.Space.s2)], spacing: DS.Space.s4) {
                     ForEach(model.results) { s in
                         Button { openTitle = s.route } label: { cell(s) }
                             .buttonStyle(.plain)

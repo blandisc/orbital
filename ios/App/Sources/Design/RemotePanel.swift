@@ -16,7 +16,7 @@ struct RemoteNowHeader: View {
     var continueHere: (() -> Void)?
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback)
                 .frame(width: DS.Poster.nowPlayingWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -60,7 +60,7 @@ struct RemoteSendRow: View {
     var sending = false
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             RowTile(title: title, thumb: art, detail: detail, progress: progress)
             Group {
                 if sending { ProgressView().dsControlSize(.small) }   // ds-exception: la ruedita ocupa el lugar del ícono mientras va a la tele
@@ -78,7 +78,7 @@ struct RemoteHintRow: View {
     let phrase: String
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: "mic").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .accessibilityHidden(true)

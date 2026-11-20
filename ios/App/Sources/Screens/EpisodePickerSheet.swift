@@ -56,7 +56,7 @@ struct EpisodePickerSheet: View {
         return Button {
             if let s = seasons.first(where: { $0.season == season }) { play(s, episode); dismiss() }
         } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PosterView(url: episode.thumbnail, title: episode.title, aspect: DS.Poster.stillAspect).frame(width: DS.Poster.railWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: "\(episode.episode) · \(episode.title)").recipe(.cardTitle).lineLimit(2)

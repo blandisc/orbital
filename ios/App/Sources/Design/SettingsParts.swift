@@ -72,7 +72,7 @@ struct CheckRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PanelIcon(symbol: symbol, color: color)
                 title.recipe(.labelLarge, color: DS.text).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // con letra grande no se corta
                 Spacer(minLength: DS.Space.s2)
@@ -81,7 +81,7 @@ struct CheckRow: View {
                     .foregroundStyle(checked ? DS.accent : DS.textFaint)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
             .frame(minHeight: DS.Size.touchTarget)   // todo el renglón se toca, nunca menos que un objetivo táctil
             .dsCard(.row, translucent: true)
             .contentShape(Rectangle())
@@ -102,7 +102,7 @@ struct SimpsonsSeasonsPicker: View {
 
     var body: some View {
         let chosen = Set(selected)
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 PanelChip(title: Text("Las clásicas (\(Int(classics.first ?? 0))–\(Int(classics.last ?? 0)))"), selected: chosen == Set(classics)) { change(classics) }
                 PanelChip(title: Text("Todas"), selected: Set(available).isSubset(of: chosen)) { change(available) }
@@ -214,7 +214,7 @@ struct SettingsPaneHeader: View {
     let back: (() -> Void)?
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             if let back {
                 Button(action: back) { Image(systemName: "chevron.left").font(DS.TextRecipe.labelLarge.font) }
                     .buttonStyle(.plain).foregroundStyle(DS.text)
@@ -253,7 +253,7 @@ struct SettingsLink<Destination: View, Label: View>: View {
             // El renglón abierto, marcado hasta las orillas de su grupo (el fondo de la sección gana a `listRowBackground`).
             Button { pane.open(page) } label: {
                 label().contentShape(Rectangle())
-                    .background { if on { DS.surfaceRaised.padding(.horizontal, -DS.Space.s5).padding(.vertical, -DS.Space.s3) } }
+                    .background { if on { DS.surfaceRaised.padding(.horizontal, -DS.Space.s6).padding(.vertical, -DS.Space.s2) } }
             }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])

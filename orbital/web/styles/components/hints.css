@@ -20,7 +20,7 @@
 .hints__press:hover { color: var(--color-text); }
 .hints__press:active { transform: scale(var(--press-scale)); }
 @media (max-width: 1000px) {
-  .hints { gap: var(--space-5); overflow: hidden; }
+  .hints { gap: var(--space-6); overflow: hidden; }
   .hints__item--secondary { display: none; }
 }
 [data-input="touch"] .hints { visibility: hidden; } /* con el dedo no hay pie de controles */

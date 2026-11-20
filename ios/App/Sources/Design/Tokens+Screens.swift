@@ -7,7 +7,7 @@ extension DS {
     /// Lo que va a la derecha del título de una sección («Ver todo ›», «Todo ⌄», «📅 Octubre», el switch Películas · Series):
     /// todo del mismo alto que el segmentado del sistema (32 pt a la vista) y con 44 pt para tocar, como pide Apple.
     enum HeaderControl {
-        static let height: CGFloat = 32, padding = DS.Space.s3, iconGap = DS.Space.s1
+        static let height: CGFloat = 32, padding = DS.Space.s2, iconGap = DS.Space.s1
     }
 
     /// El calendario de estrenos (Sale hoy › el mes): cada día pintado con el color del arte de lo que sale.
@@ -61,7 +61,7 @@ extension DS {
         /// Recogido el arte, en la barra va el logo de la serie o película (31 oct 2026): su alto (el ancho lo dan ‹ y los botones).
         static let barLogo: CGFloat = 24   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
         /// El aire entre el logo y los botones de la derecha (Fernando, 2 nov 2026, N1: «the office» quedaba a 3 pt de ellos).
-        static let barLogoGap = DS.Space.s3
+        static let barLogoGap = DS.Space.s2
         /// I11 · con letra grande los botones de la barra crecen (y el ‹ también): el lugar del logo crece con ellos, hasta
         /// esta proporción (los íconos de la barra dejan de crecer antes que la letra). Antes un logo ancho chocaba con la cápsula.
         static let barGrowth: CGFloat = 1.35
@@ -78,7 +78,7 @@ extension DS {
         /// Lo que se lee bajo el arte de la ficha ancha (créditos, reseñas): a un ancho de lectura, no de orilla a orilla.
         static var wideReading: CGFloat { Mac.sized(readableWidth) }
         /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
-        static let wideSide = DS.Space.s10
+        static let wideSide = DS.Space.s12
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70
@@ -152,7 +152,7 @@ extension DS {
         static let prefetch = 6
         static let hintFrom = 0.15, hintRamp = 3.0
         /// Las de atrás: cuánto más chicas (desde su orilla de abajo) y cuánto asoma cada una por abajo; el giro al arrastrar.
-        static let behindShrink: CGFloat = 0.05, behindPeek = DS.Space.s3, tiltDivisor = 22.0
+        static let behindShrink: CGFloat = 0.05, behindPeek = DS.Space.s2, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
         /// La carta mide lo que el póster y cede el alto que haga falta a sus datos y a los botones; en el iPad y la Mac no
         /// pasa de este ancho.
@@ -513,11 +513,11 @@ extension DS {
         static var isShortScreen: Bool { WindowMetrics.size.height < shortScreen }
         /// Aire entre los grupos del control: más junto en pantallas cortas (revisión 2 del 11 nov: en el SE «Escribir en la TV»
         /// quedaba cortado abajo).
-        static var groupGap: CGFloat { isShortScreen ? DS.Space.s3 : DS.Space.s4 }
-        static var blockGap: CGFloat { isShortScreen ? DS.Space.s3 : DS.Space.s5 }
+        static var groupGap: CGFloat { isShortScreen ? DS.Space.s2 : DS.Space.s4 }
+        static var blockGap: CGFloat { isShortScreen ? DS.Space.s2 : DS.Space.s6 }
         /// Lo que la hoja flotante de iOS 26 se come abajo (su margen y esquinas): sin esto, la hoja completa medía justo lo
         /// del contenido y «Escribir en la TV» quedaba cortado contra la orilla.
-        static let sheetAllowance: CGFloat = DS.Space.s5
+        static let sheetAllowance: CGFloat = DS.Space.s6
         /// El alto de una tecla y del pad según el teléfono.
         static var keyHeightFitted: CGFloat { isShortScreen ? keyHeightShort : keyHeight }
         /// Lo que mide el pad con su fila de teclas: el lugar mínimo que guardan los botones del reproductor (y los de en
@@ -565,7 +565,7 @@ extension DS {
         static let listColumns = 2
         static let listTileMin: CGFloat = 180
         static func listColumns(forWidth width: CGFloat) -> Int {
-            max(listColumns, Int((width - DS.Space.gutter * 2 + DS.Space.s3) / (listTileMin + DS.Space.s3)))
+            max(listColumns, Int((width - DS.Space.gutter * 2 + DS.Space.s2) / (listTileMin + DS.Space.s2)))
         }
         /// La portada de una lista, cuadrada (dos columnas sin que cada una ocupe media pantalla): cuatro pósters en 2 × 2, dos
         /// lado a lado o uno entero (nunca un hueco).

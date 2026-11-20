@@ -39,9 +39,11 @@ final class DesignTests: XCTestCase {
         func group(_ name: String) throws -> [String: JSON] { try XCTUnwrap(json[name]?.object, "falta «\(name)» en tokens.json") }
 
         let space = try group("space")
-        let spaces: [String: Double] = ["1": DesignTokens.Space.s1, "2": DesignTokens.Space.s2, "3": DesignTokens.Space.s3, "4": DesignTokens.Space.s4,
-                                        "5": DesignTokens.Space.s5, "6": DesignTokens.Space.s6, "8": DesignTokens.Space.s8, "10": DesignTokens.Space.s10, "14": DesignTokens.Space.s14]
+        // Siete pasos y nada más (D3-B, 20 nov 2026): tokens.json no tiene otros.
+        let spaces: [String: Double] = ["1": DesignTokens.Space.s1, "2": DesignTokens.Space.s2, "4": DesignTokens.Space.s4, "6": DesignTokens.Space.s6,
+                                        "8": DesignTokens.Space.s8, "12": DesignTokens.Space.s12, "16": DesignTokens.Space.s16]
         for (key, value) in spaces { XCTAssertEqual(num(space[key]), value, "Space.s\(key)") }
+        XCTAssertEqual(Set(space.keys.filter { $0 != "_" }), Set(spaces.keys), "la escala de espacios es de siete pasos (D3-B)")
 
         let radius = try group("radius")
         let radii: [String: Double] = ["xs": DesignTokens.Radius.xs, "sm": DesignTokens.Radius.sm, "md": DesignTokens.Radius.md,

@@ -15,7 +15,7 @@ struct VersionRequestGroup<Rows: View>: View {
                 DSGroupLabel(title: Text("Hay que pedirlas · tardan"))
                 Text("La nube las baja por ti: suele tardar de minutos a horas.").recipe(.footnote)
             }
-            .padding(.top, DS.Space.s3)
+            .padding(.top, DS.Space.s2)
             rows
         }
         .accessibilityElement(children: .contain)
@@ -35,7 +35,7 @@ struct VersionRequestRow: View {
     @Environment(\.locale) private var locale   // el idioma de la app («2,9 GB»)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     title.recipe(.cardTitle, color: DS.text)
@@ -53,7 +53,7 @@ struct VersionRequestRow: View {
                     .accessibilityIdentifier("version-request")
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
         .accessibilityElement(children: .contain)
     }
@@ -71,7 +71,7 @@ struct VersionYoursAside: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             IconBeside(symbol: DS.Symbol.cloud, color: DS.accent) {
                 Text("Hay \(language), pero hay que pedirlo a la nube").recipe(.labelLarge, color: DS.text).fixedSize(horizontal: false, vertical: true)
                 Text(verbatim: VersionText.facts(option, locale: locale)).recipe(.caption)
@@ -84,7 +84,7 @@ struct VersionYoursAside: View {
                     .accessibilityIdentifier("sources-yours-request")
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sources-yours-aside")
@@ -106,7 +106,7 @@ struct VersionYoursRefused: View {
             Text("Prueba otra versión").recipe(.caption)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("sources-yours-refused")

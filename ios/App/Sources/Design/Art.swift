@@ -75,7 +75,7 @@ struct BleedArt<Content: View>: View {
             }
             .background { if let zoom { Color.clear.playerZoomSource(zoom) } }   // ds-exception: el marco quieto del zoom, no se ve
             // El logo y la frase se van con el contenido y antes que el arte: no se quedan detrás de los datos.
-            content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, isCard ? DS.Space.s5 : DS.Space.s3)
+            content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, isCard ? DS.Space.s6 : DS.Space.s2)
                 .visualEffect { [on = collapses, still = quiet, card = isCard, raised] view, proxy in
                     let s = BleedCollapse.state(proxy, on: on, still: still, card: card, raised: raised)
                     return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
@@ -240,8 +240,8 @@ struct HeroCard<Actions: View>: View {
 
     var body: some View {
         BleedArt(url: background, title: title, minHeight: DS.Poster.heroHeight) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
                     TitleLogo(url: logo, title: title, size: .hero)
                     if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
@@ -264,7 +264,7 @@ struct RowTile: View {
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             ZStack(alignment: .bottom) {
                 PosterView(url: thumb, title: title, aspect: DS.Poster.stillAspect)
                 if let progress { DSProgress(fraction: progress) }

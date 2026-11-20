@@ -48,7 +48,7 @@ struct CheckLine: View {
     var mark = "checkmark"
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: 0) {
                 title.foregroundStyle(DS.text)
                 detail.recipe(.footnote, color: DS.textMuted)

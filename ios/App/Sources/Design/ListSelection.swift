@@ -58,7 +58,7 @@ extension View {
     func selectionDrag(_ selection: ListSelection) -> some View {
         coordinateSpace(.named(ListSelection.space))
             .simultaneousGesture(
-                DragGesture(minimumDistance: DS.Space.s3, coordinateSpace: .named(ListSelection.space))
+                DragGesture(minimumDistance: DS.Space.s2, coordinateSpace: .named(ListSelection.space))
                     .onChanged { v in if selection.editing { selection.dragChanged(start: v.startLocation, location: v.location, translation: v.translation) } }
                     .onEnded { _ in selection.dragEnded() },
                 isEnabled: selection.editing)
@@ -152,7 +152,7 @@ struct SelectionHeader: View {
 
     var body: some View {
         let count = selection.chosen.count, every = !all.isEmpty && Set(all).isSubset(of: selection.chosen)
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Text(count == 0 ? "Toca para elegir" : "\(count) elegidas de \(all.count)").recipe(.footnote, color: DS.textMuted)
                 .contentTransition(.numericText())
             Button { every ? selection.clear() : selection.set(Set(all)) } label: {
@@ -175,7 +175,7 @@ struct DSSelectionBar<Content: View>: View {
     var body: some View {
         HStack(alignment: .top, spacing: 0) { content }
             .padding(.vertical, DS.Space.s2)
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .glassEffect(.regular, in: Capsule())
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Space.s2)

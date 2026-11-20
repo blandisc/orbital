@@ -28,12 +28,12 @@ struct YearView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if let r = review {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         stat(Text(verbatim: "\(r.hours) h"), Text("vistas"))
                         stat(Text("\(r.longestStreak) días"), Text("racha más larga"))
                         stat(Text(verbatim: genreName(r.topGenre)), Text("tu género"))
                     }
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
                         // La cuenta bajo el título, no a su lado: a la derecha se cortaba («272 episodi…», revisión 2 del 11 nov).
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
                             DSSectionHead(title: Text("Día por día"), level: .section, symbol: "calendar")
@@ -49,10 +49,10 @@ struct YearView: View {
                     .padding(DS.Space.s4)
                     .dsCard(.card)
                     if !r.top.isEmpty {
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSSectionHead(title: "Lo que más viste", level: .section, symbol: "flame")
                             ScrollView(.horizontal, showsIndicators: false) {
-                                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                                     ForEach(r.top) { t in
                                         TitleLink(route: TitleRoute(kind: t.kind, metaID: t.imdb, title: t.title, poster: String(format: ForYou.metahubPoster, t.imdb)),
                                                   detail: t.kind == "movie" ? Text("Película") : Text("\(t.plays) episodios"))
@@ -85,7 +85,7 @@ struct YearView: View {
             label.recipe(.caption)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard()
     }
 
@@ -152,7 +152,7 @@ struct YearView: View {
                 } else {
                     ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
                         TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
-                            HStack(spacing: DS.Space.s3) {
+                            HStack(spacing: DS.Space.s2) {
                                 PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: titleName(g.title, id: g.imdb, kind: g.kind)).frame(width: DS.YearMap.dayPoster)
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                                     Text(verbatim: titleName(g.title, id: g.imdb, kind: g.kind)).recipe(.cardTitle).lineLimit(1)

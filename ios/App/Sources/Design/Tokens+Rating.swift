@@ -14,7 +14,7 @@ extension DS {
         /// las que solo se leen.
         static let starTouch: CGFloat = 24, gapTouch = DS.Space.s2
         /// Lo que el lugar táctil sale a los lados de las estrellas: arrastrar un poco más allá de la última sigue contando.
-        static let hitSide = DS.Space.s3
+        static let hitSide = DS.Space.s2
         /// La burbuja que dice cuánto llevas mientras arrastras («3½»), arriba del dedo para que no la tape.
         static let bubbleLift: CGFloat = 34
         /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).

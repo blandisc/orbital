@@ -155,10 +155,10 @@ struct WatchingView: View {
 
     @ViewBuilder private func content(_ s: WatchingStats, _ model: WatchingModel, _ language: String) -> some View {
         // Lo que más viste, como el Top 10 de la app: su número grande detrás del póster.
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Lo que más viste"), level: .section, symbol: "flame")
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                HStack(alignment: .bottom, spacing: DS.Space.s2) {
                     ForEach(Array(s.top.prefix(DS.Watching.topCount).enumerated()), id: \.element.imdb) { i, t in
                         Button { onOpenTitle(TitleRoute(kind: t.kind, metaID: t.imdb, title: t.title, poster: t.poster)) } label: {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -286,7 +286,7 @@ struct WatchingView: View {
 
     /// «Viste 3 en Letterboxd que no están en Trakt · Pasarlas»: solo con tu toque.
     private var passCard: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             LetterboxdMark()
             (notInTrakt.count == 1 ? Text("Viste 1 en Letterboxd que no está en Trakt") : Text("Viste \(notInTrakt.count) en Letterboxd que no están en Trakt"))
                 .recipe(.footnote).frame(maxWidth: .infinity, alignment: .leading)
@@ -339,7 +339,7 @@ struct WatchingRatedView: View {
                 ForEach((stars == 0 ? Array((1...5).reversed()) : [stars]), id: \.self) { star in
                     let group = items.filter { $0.stars == star }
                     if !group.isEmpty {
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSSectionHead(title: Text(verbatim: String(repeating: "★", count: star)), count: group.count, level: .section)
                             DSPosterGrid(items: group) { item, width in
                                 Button {

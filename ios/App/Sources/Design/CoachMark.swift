@@ -125,7 +125,7 @@ struct CoachOverlay: View {
             }
             Text(coach.title).recipe(.cardTitle, color: DS.text).fixedSize(horizontal: false, vertical: true)
             Text(coach.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 if let story {
                     Button("Ver la lección", action: story).buttonStyle(.borderless).foregroundStyle(DS.eyebrow)
                         .accessibilityIdentifier("coach-story")

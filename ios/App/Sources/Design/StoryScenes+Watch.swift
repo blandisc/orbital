@@ -30,7 +30,7 @@ struct SceneMosaic: View {
                     }
                 }
                 .padding(DS.Space.s2)
-                .offset(y: zoom ? 0 : -CGFloat(step) * DS.Space.s3)
+                .offset(y: zoom ? 0 : -CGFloat(step) * DS.Space.s2)
                 if zoom {
                     SceneFinger(pressed: step == 1 || step == 2, shown: step == 1 || step == 2)
                     if step == 3 || tapped >= 2 {
@@ -39,7 +39,7 @@ struct SceneMosaic: View {
                                 .overlay { Text(verbatim: sampleTitles[4]).recipe(.title, color: DS.paper) }
                             SceneButton(title: "Ver", symbol: "play.fill")
                         }
-                        .padding(DS.Space.s3).background(DS.bg)
+                        .padding(DS.Space.s2).background(DS.bg)
                         .transition(.scale(scale: DS.Motion.leaveScale).combined(with: .opacity))
                     }
                 }
@@ -73,7 +73,7 @@ struct SceneDeck: View {
 struct SceneDecide: View {
     var body: some View {
         SceneLoop(steps: 3) { step in
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s2) {
                     ForEach(0..<3, id: \.self) { i in
                         let k = step == 2 ? i + 4 : i
@@ -87,7 +87,7 @@ struct SceneDecide: View {
                 SceneButton(title: "Barajar", symbol: "shuffle", prominent: false, pressed: step == 1)
                     .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -99,7 +99,7 @@ struct SceneFilters: View {
 
     var body: some View {
         SceneLoop(steps: 5) { step in
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Buscar").recipe(.cardTitle, color: DS.text)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s2), GridItem(.flexible())], spacing: DS.Space.s2) {
                     ForEach(Array(tiles.enumerated()), id: \.offset) { i, tile in
@@ -113,7 +113,7 @@ struct SceneFilters: View {
                 Text("\(counts[step]) títulos").recipe(.cardTitle, color: DS.fresh).contentTransition(.numericText())
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -180,7 +180,7 @@ struct SceneDownload: View {
 
     var body: some View {
         SceneLoop(steps: 4) { step in
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Biblioteca").recipe(.cardTitle, color: DS.text)
                 SceneRow(title: next ? Text(verbatim: "T1 · E4") : Text(verbatim: "Dune")) {
                     if next || step >= 2 { Image(systemName: next && step >= 1 ? "checkmark.circle.fill" : "arrow.down.circle.fill").foregroundStyle(next && step >= 1 ? DS.success : DS.fresh) }
@@ -201,7 +201,7 @@ struct SceneDownload: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }

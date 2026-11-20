@@ -24,8 +24,8 @@ struct SavedListsContent: View {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if let header { header }
                 controls
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3, alignment: .top), count: columns),
-                          alignment: .leading, spacing: DS.Space.s5) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: columns),
+                          alignment: .leading, spacing: DS.Space.s6) {
                     NavigationLink(value: SavedListRoute(id: SavedModel.favorites)) {
                         SavedListTile(name: Text("Favoritos"), detail: detail(SavedModel.favorites, empty: Text("Desde «Guardar en…»")),
                                       posters: model.listPosters[SavedModel.favorites] ?? [], symbol: DS.Favorites.symbolFilled)

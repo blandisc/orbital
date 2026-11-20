@@ -53,7 +53,7 @@ struct OnboardingPlatforms: View {
         let M = GuideTraktScene.Motion.self
         let shown = model.platforms.first { $0.brand == last && model.chosenPlatforms.contains($0.brand) }
         let prev = M.item(t, 0, 12)
-        VStack(alignment: .leading, spacing: DS.Space.s5) {
+        VStack(alignment: .leading, spacing: DS.Space.s6) {
             preview(model.candidates.first, shown: shown, dash: max(0, M.spring(t - 0.62, 0.55, 0.45)))
                 .scaleEffect(0.96 + 0.04 * M.spring(t, 0.55, 0.45), anchor: .bottom)
                 .opacity(prev.opacity).offset(y: prev.rise)
@@ -90,7 +90,7 @@ struct OnboardingPlatforms: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 if let name { Text(verbatim: name).recipe(.cardTitle, color: DS.text).lineLimit(1) }
                 Text("Dónde verla").recipe(.caption, color: DS.textMuted)
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     ZStack {
                         RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                             .stroke(DS.textMuted, style: StrokeStyle(lineWidth: DS.Stroke.hairline, dash: DS.Guide.slotDash))
@@ -145,7 +145,7 @@ struct OnboardingPlatforms: View {
                     .font(DS.styled(.body))
                     .contentTransition(.symbolEffect(.replace))
             }
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .frame(minHeight: DS.Guide.platformTile)
             .dsCard(fill: on ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
         }

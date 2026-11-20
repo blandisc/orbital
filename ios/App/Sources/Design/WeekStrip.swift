@@ -102,7 +102,7 @@ struct DSHeatLegend: View {
                 .overlay { DSWeekStripToday() }
                 .frame(width: DS.WeekStrip.swatch, height: DS.WeekStrip.swatch)
             Text("Hoy").recipe(.caption, color: DS.textMuted)
-            Spacer(minLength: DS.Space.s3)
+            Spacer(minLength: DS.Space.s2)
             Text("Menos").recipe(.caption, color: DS.textMuted)
             ForEach(steps.indices, id: \.self) { i in
                 RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(steps[i])

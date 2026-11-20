@@ -28,7 +28,7 @@ struct OnboardingWelcome: View {
 
     var body: some View {
         let model = guide.model
-        VStack(spacing: DS.Space.s5) {
+        VStack(spacing: DS.Space.s6) {
             // BV-L1 (Fernando, 18 nov 2026): el idioma en un globo arriba a la izquierda; «Saltar» a la derecha.
             // El nombre arriba del planeta, al centro de esta fila (Fernando, 18 nov 2026): aquí no le quita alto a la escena.
             // Va solo la palabra (el planeta de abajo hace de marca); la luna cae cuando la fila entra.
@@ -60,7 +60,7 @@ struct OnboardingWelcome: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : DS.Welcome.rise)
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
                     ForEach(Array(WelcomeRow.rows(env.services.capabilities).enumerated()), id: \.offset) { i, row in
                         WelcomeRowView(row: row, shown: rows > i)
                     }
@@ -129,7 +129,7 @@ struct AttractFilm: View {
             switch scene % Self.scenes {
             case 0:
                 // Encuentra qué ver: tres pósters y la luna sobre el de en medio.
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     ForEach(Array(posters.prefix(3).enumerated()), id: \.offset) { i, item in
                         PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), maxPoints: DS.Welcome.posterHeight * 2)
                             .frame(height: DS.Welcome.posterHeight * 2)
@@ -141,7 +141,7 @@ struct AttractFilm: View {
                 }
             case 1:
                 // Su ficha: el póster grande, el título y «Ver».
-                VStack(spacing: DS.Space.s3) {
+                VStack(spacing: DS.Space.s2) {
                     PosterView(url: pick?.poster, title: pick.map { titleName($0.title, id: $0.imdb, kind: $0.kind) } ?? "", maxPoints: DS.Welcome.planet * 2)
                         .frame(height: DS.Welcome.planet * 1.6)
                     if let pick { Text(verbatim: titleName(pick.title, id: pick.imdb, kind: pick.kind)).recipe(.cardTitle, color: DS.text) }
@@ -150,7 +150,7 @@ struct AttractFilm: View {
                 DebridFlowStrip()
             default:
                 Label("Ver", systemImage: "play.fill").recipe(.cardTitle, color: DS.onPrimary)
-                    .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s3)
+                    .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
                     .background(DS.primary, in: Capsule())
                     .scaleEffect(DS.Explainer.restScale)
             }

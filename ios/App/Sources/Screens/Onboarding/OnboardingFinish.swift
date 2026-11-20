@@ -85,7 +85,7 @@ struct OnboardingTV: View {
     }
 
     private func row(_ symbol: String, _ title: Text, _ detail: Text, done: Bool) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 title.recipe(.label, color: DS.text)
@@ -95,7 +95,7 @@ struct OnboardingTV: View {
             Image(systemName: done ? "checkmark" : "circle.dashed").font(DS.styled(.body).weight(.semibold))
                 .foregroundStyle(done ? DS.success : DS.textMuted).accessibilityHidden(true)
         }
-        .padding(DS.Space.s3).dsCard()
+        .padding(DS.Space.s2).dsCard()
         .accessibilityElement(children: .combine)
     }
 }

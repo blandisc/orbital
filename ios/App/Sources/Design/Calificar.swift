@@ -156,7 +156,7 @@ struct RatingReminder: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             posterThumb
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(1)
@@ -183,7 +183,7 @@ struct RatingReminder: View {
             DSIconButton(symbol: "xmark", label: "No calificar esta", size: .small, action: onDismiss)
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
         // El vidrio de la barra de pestañas: el mismo material, interactivo como ella y con su mismo velo claro (sin él, sobre el
         // fondo oscuro se veía más gris que la barra y que «Viendo en la TV»).
         .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: Capsule())
@@ -215,7 +215,7 @@ struct RatingQueue: View {
 
     var body: some View {
         List(rows) { row in
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Text(verbatim: titleName(row.title, id: row.id)).recipe(.body).lineLimit(2)
                 Spacer(minLength: DS.Space.s2)
                 RatingStars(value: nil, size: DS.Rating.starTouch, gap: DS.Rating.gapTouch) { if let v = $0 { onRate(row.id, v) } }

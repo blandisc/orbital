@@ -107,7 +107,7 @@ struct ViewingsLine: View {
     var body: some View {
         let model = viewings.model
         return Button(action: open) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Image(systemName: "calendar").foregroundStyle(DS.textMuted)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     count(model).recipe(.secondary, color: DS.textMuted)
@@ -164,9 +164,9 @@ struct ViewingsSheet: View {
                     }
                     // Por posición: dos vistas pueden tener la misma hora (o id 0 en la cola) y cada botón debe ir a la suya.
                     ForEach(Array(model.viewings.enumerated()), id: \.offset) { _, v in
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             Button { editing = v } label: {
-                                HStack(spacing: DS.Space.s3) {
+                                HStack(spacing: DS.Space.s2) {
                                     Image(systemName: "calendar").foregroundStyle(DS.textMuted)
                                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                                         Text(verbatim: Self.stamp(v.at, language: language)).recipe(.body, color: DS.text)
@@ -245,7 +245,7 @@ struct ViewingDatePicker: View {
 
     /// A la medida del calendario, sin aire arriba ni abajo; se cierra jalándola (sin «Cancelar»).
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSheetHeader(title: title) {
                 Button("Guardar") { save(date); dismiss() }
                     .dsPrimaryButton()
@@ -275,7 +275,7 @@ struct NoteSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TextEditor(text: $text)
                     .focused($focused)
                     .scrollContentBackground(.hidden)

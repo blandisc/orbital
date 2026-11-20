@@ -65,7 +65,7 @@ struct LessonRowLabel: View {
     let seen: Bool
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             DSIconTile(symbol: lesson.symbol, tint: DS.ListTint.named(lesson.tint), side: DS.Lesson.rowIcon)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(LocalizedStringKey(lesson.title)).recipe(.body, color: DS.text)   // no-es-título: el nombre de la lección
@@ -92,7 +92,7 @@ struct ResetTipsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 DSIconTile(symbol: "arrow.counterclockwise", tint: DS.ListTint.addon)
                 DSSheetHeader(title: Text("¿Volver a ver los avisos?"))
             }
@@ -117,7 +117,7 @@ struct HomeLearnTop: View {
 
     var body: some View {
         if OnboardingModel.unfinished(env.services) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 DSIconTile(symbol: DS.Symbol.learn, tint: DS.ListTint.spark)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Termina de preparar Orbital").recipe(.cardTitle, color: DS.text)

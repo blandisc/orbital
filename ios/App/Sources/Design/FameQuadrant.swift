@@ -47,7 +47,7 @@ struct FameQuadrant: View {
                 detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .multilineTextAlignment(.center)
-            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.quadrantCell)
             .background(on ? DS.Filter.meadowFill : DS.surface)
             .opacity(dead ? DS.Opacity.dimmed : 1)

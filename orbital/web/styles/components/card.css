@@ -108,7 +108,7 @@
 @keyframes bump-right { 40% { translate: .45rem 0; } }
 .card__meta {
   position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: .15rem;
-  padding: var(--space-3);
+  padding: var(--space-2);
 }
 .card--has-art .card__meta { display: none; }
 /* Ancha (Destacados, «A continuación»): su nombre sobre el arte mientras no se vea su logo (P4: sin logo, nunca muda). */
@@ -171,7 +171,7 @@
    tapaba el «1»). */
 .card-grid .card-ranked .is-focused.card:not([data-edge="end"]) { transform-origin: left bottom; }
 .card__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; } /* auto: el ancho lo dan left y right */
-.card--has-progress:is(:not(.card--has-art), .card--wide, .card--named) .card__meta { padding-bottom: calc(var(--space-3) + var(--progress-height) + var(--space-1)); }
+.card--has-progress:is(:not(.card--has-art), .card--wide, .card--named) .card__meta { padding-bottom: calc(var(--space-2) + var(--progress-height) + var(--space-1)); }
 
 /* Abierto ahora: píldora arriba a la izquierda, con el punto vivo de la barra de estado. */
 .card__live {

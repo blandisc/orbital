@@ -134,7 +134,7 @@ struct SceneButton: View {
             Text(title)
         }
         .font(DS.TextRecipe.label.font).foregroundStyle(prominent ? DS.onPrimary : DS.text)
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
         .frame(maxWidth: .infinity)
         .background(prominent ? DS.primary : DS.fill, in: Capsule())
         .scaleEffect(pressed ? DS.Scene.pressed : 1)
@@ -185,7 +185,7 @@ struct SceneTitlePlay: View {
                     SceneButton(title: "Ver", symbol: "play.fill", pressed: step == 1)
                     SceneLines(count: 3)
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .opacity(step >= 2 ? 0 : 1)
                 ScenePlayerFrame(playing: step >= 2, progress: step == 3 ? DS.Explainer.restScale : 0)
                     .scaleEffect(step >= 2 ? 1 : DS.Motion.leaveScale)
@@ -216,7 +216,7 @@ struct ScenePlayerFrame: View {
                 }
             }
             .frame(height: DS.Scene.line / 2)
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -236,7 +236,7 @@ struct SceneVersionLight: View {
                     .frame(maxHeight: .infinity)
                     .overlay { if step == 2 { Capsule().fill(DS.fresh).frame(width: DS.Stroke.focus).transition(.move(edge: .top)) } }
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -245,7 +245,7 @@ struct SceneVersionLight: View {
 struct SceneStorageStill: View {
     var body: some View {
         SceneLoop(steps: 3) { step in
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 ScenePlayerFrame(playing: true, progress: Double(step + 1) / 4).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 Text("Espacio en tu iPhone").recipe(.footnote, color: DS.textMuted)
                 GeometryReader { geo in
@@ -254,7 +254,7 @@ struct SceneStorageStill: View {
                 .frame(height: DS.Scene.line)
                 Label("Igual", systemImage: "checkmark.circle.fill").recipe(.label, color: DS.success)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -274,8 +274,8 @@ struct ScenePayPlans: View {
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(DS.Space.s3)
-                SceneFinger(pressed: step == 1, shown: step == 1).offset(y: DS.Space.s10)
+                .padding(DS.Space.s2)
+                SceneFinger(pressed: step == 1, shown: step == 1).offset(y: DS.Space.s12)
                 if step >= 2 {
                     SceneNotice(symbol: "bell.badge.fill", text: Text("Te quedan 3 días · Renovar"))
                         .padding(DS.Space.s2).transition(.move(edge: .top).combined(with: .opacity))
@@ -312,7 +312,7 @@ struct SceneTwoPhones: View {
                     .overlay { if step >= 2 { Image(systemName: "exclamationmark.triangle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.warning).transition(.scale) } }
                     .saturation(step >= 2 ? 0 : 1)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -325,7 +325,7 @@ struct SceneTypedVersion: View {
 
     var body: some View {
         SceneLoop(steps: words.count + 4, beat: DS.Scene.beat / 6) { step in
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 Spacer(minLength: 0)
                 SceneButton(title: "Ver", symbol: "play.fill")
                 Text(verbatim: String(words.prefix(step))).recipe(.label, color: DS.textMuted)
@@ -374,7 +374,7 @@ struct SceneLanguages: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -394,21 +394,21 @@ struct SceneVersionsSheet: View {
                             Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font)
                         }
                         .font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
-                        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
                         .background(DS.primary, in: Capsule())
                         .scaleEffect(step == 1 ? DS.Scene.pressed : 1)
                         .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
                     }
                     SceneLines(count: 2)
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 if step >= 2 {
                     VStack(spacing: DS.Space.s2) {
                         SceneRow(title: Text(verbatim: "🇲🇽 Latino · 1080p")) { Text("Al instante").recipe(.footnote, color: DS.fresh) }
                         SceneRow(title: Text(verbatim: "🇯🇵 Japonés · 4K")) { Text("Al instante").recipe(.footnote, color: DS.fresh) }
                         SceneRow(title: Text(verbatim: "🇪🇸 Castellano · 720p")) { Text("Por pedir").recipe(.footnote, color: DS.textMuted) }
                     }
-                    .padding(DS.Space.s3)
+                    .padding(DS.Space.s2)
                     .dsCard(.card)
                     .transition(.move(edge: .bottom))
                 }
@@ -437,7 +437,7 @@ struct SceneCloudRequest: View {
                     .frame(height: DS.Scene.line / 2)
                     Spacer(minLength: 0)
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 if step >= 4 {
                     SceneNotice(symbol: "checkmark.icloud.fill", text: Text("Lista para ver"))
                         .padding(DS.Space.s2).transition(.move(edge: .top).combined(with: .opacity))

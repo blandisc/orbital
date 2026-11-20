@@ -7,8 +7,8 @@
 }
 /* Abierta, lo de atrás (la sección, la barra) se esconde: queda solo el arte del juego (main.js · openGamePage). */
 body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv) { visibility: hidden; }
-.game-page__top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-10); min-height: 0; }
-.game-page__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 56%); }
+.game-page__top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-12); min-height: 0; }
+.game-page__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-width: min(46rem, 56%); }
 .game-page__logo { max-width: min(28rem, 100%); max-height: 8rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .game-page__title {
   font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-tight);
@@ -38,9 +38,9 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
 .game-page__row { display: flex; flex-direction: column; gap: var(--layout-title-to-content); min-width: 0; }
 .game-page__row-title { font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 /* Arriba se queda el aire de lo que crece la enfocada (12 %): antes el margen negativo lo devolvía y la portada se montaba en «Más de…». */
-.game-page__viewport { overflow: hidden; padding: var(--space-5) var(--space-4) var(--caption-room); margin: 0 calc(-1 * var(--space-4)); }
+.game-page__viewport { overflow: hidden; padding: var(--space-6) var(--space-4) var(--caption-room); margin: 0 calc(-1 * var(--space-4)); }
 .game-page__track {
   --card-height: 9rem; --card-focus-scale: 1.12;
-  display: flex; align-items: flex-end; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out);
+  display: flex; align-items: flex-end; gap: var(--space-6); transition: transform var(--duration-slow) var(--ease-out);
 }
 .game-page__track .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }

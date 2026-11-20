@@ -30,7 +30,7 @@
 .collection__poster--missing { visibility: hidden; }
 
 .collection__foot {
-  position: absolute; inset: auto var(--space-3) var(--space-3) var(--space-3); z-index: var(--z-above);
+  position: absolute; inset: auto var(--space-2) var(--space-2) var(--space-2); z-index: var(--z-above);
   display: flex; flex-direction: column; align-items: center; gap: var(--space-1); text-align: center;
 }
 .collection__foot--start { align-items: flex-start; text-align: left; right: 38%; }
@@ -50,7 +50,7 @@
 }
 /* Un estudio: su nombre en cápsula al frente (como el iPhone). */
 .collection__capsule {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); background: var(--color-badge-bg);
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); box-shadow: var(--shadow-badge); white-space: nowrap;
 }
 /* Un premio: la estatuilla real recortada al frente, abajo a la derecha, con su halo. */
@@ -66,7 +66,7 @@
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); pointer-events: none; background: var(--gradient-art-base);
 }
 .collection__year {
-  position: absolute; inset: auto var(--space-3) var(--space-2) var(--space-3); z-index: var(--z-above);
+  position: absolute; inset: auto var(--space-2) var(--space-2) var(--space-2); z-index: var(--z-above);
   font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-none); letter-spacing: var(--tracking-rank);
   font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text-strong);
 }

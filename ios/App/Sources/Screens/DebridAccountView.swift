@@ -202,7 +202,7 @@ struct DebridAccountView: View {
     @ViewBuilder private func keySection(_ model: DebridModel, _ key: KeyState, playable: Bool = true) -> some View {
         let tail = model.keyTail ?? "····"
         Section {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 switch key {
                 case .confirmed: TorrentioRowLabel(title: Text("Conectada"), detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
                 case .checking, .saved:

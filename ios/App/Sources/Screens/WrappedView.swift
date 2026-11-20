@@ -103,7 +103,7 @@ struct WrappedView: View {
             DS.backdropDeep
             if let first = stats.top.first {
                 Color.clear.overlay {
-                    PosterView(url: first.poster, title: titleName(first.title, id: first.imdb, kind: first.kind), aspect: nil).scaledToFill().blur(radius: DS.Space.s14).opacity(DS.Watching.backdropOpacity)
+                    PosterView(url: first.poster, title: titleName(first.title, id: first.imdb, kind: first.kind), aspect: nil).scaledToFill().blur(radius: DS.Space.s16).opacity(DS.Watching.backdropOpacity)
                 }
                 .clipped()
             }
@@ -120,7 +120,7 @@ struct WrappedView: View {
     @ViewBuilder private func content(_ story: Story) -> some View {
         switch story {
         case .intro:
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Orbital").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
                 periodName.font(DS.TextRecipe.display.font)
                 Text("en películas y series").recipe(.title, color: DS.onArtSecondary)
@@ -129,7 +129,7 @@ struct WrappedView: View {
             big(Text(verbatim: "\(stats.hours)"), Text("horas frente a la pantalla"), Text("\(stats.movies) películas y \(stats.episodes) capítulos"))
         case .top:
             if let t = stats.top.first {
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Lo que más viste").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
                     PosterView(url: t.poster, title: titleName(t.title, id: t.imdb, kind: t.kind)).frame(width: DS.Watching.storyPoster)
                     Text(verbatim: titleName(t.title, id: t.imdb, kind: t.kind)).font(DS.TextRecipe.title.font)
@@ -148,7 +148,7 @@ struct WrappedView: View {
             }
         case .quiz: quiz
         case .outro:
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Eso fue").recipe(.title, color: DS.onArtSecondary)
                 periodName.font(DS.TextRecipe.display.font)
                 Text("Toca para cerrar").recipe(.footnote, color: DS.onArtSecondary)
@@ -163,7 +163,7 @@ struct WrappedView: View {
         return VStack(alignment: .leading, spacing: DS.Space.s4) {
             Text("Adivina").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
             Text("¿Qué viste más?").font(DS.TextRecipe.title.font)
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 ForEach(options, id: \.imdb) { t in
                     Button { if answer == nil { answer = t.imdb } } label: {
                         PosterView(url: t.poster, title: titleName(t.title, id: t.imdb, kind: t.kind))

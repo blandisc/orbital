@@ -100,7 +100,7 @@ struct MatchDeckScreen: View {
     private func savedBadge(_ savedCount: Int, _ savesToTrakt: Bool) -> some View {
         Label { Text(verbatim: "\(savedCount)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
             .recipe(.label, color: DS.text).tint(DS.brandMoon)
-            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+            .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Size.touchTarget)
             .background(DS.fill, in: Capsule())
             .contentTransition(.numericText())
             .accessibilityLabel(savesToTrakt ? Text("\(savedCount) guardadas en Tu match perfecto") : Text("\(savedCount) guardadas en Mi lista"))

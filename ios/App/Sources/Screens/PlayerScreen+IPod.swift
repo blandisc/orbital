@@ -8,7 +8,7 @@ extension PlayerScreen {
     // MARK: modo iPod
     /// Arriba: ✕, AirPlay y «⋯» (los de siempre).
     private var ipodTopBar: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
             Spacer()

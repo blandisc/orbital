@@ -54,7 +54,7 @@ struct PlayerLockNotice: View {
             }
         }
         .foregroundStyle(DS.text)
-        .padding(.horizontal, collapsed ? DS.Space.s2 : DS.Space.s3)
+        .padding(.horizontal, collapsed ? DS.Space.s2 : DS.Space.s2)
         .padding(.vertical, DS.Space.s2)
         .frame(width: collapsed ? DS.PlayerPanel.lockNoticeIcon : nil, height: collapsed ? DS.PlayerPanel.lockNoticeIcon : nil)
         .glassEffect(.regular, in: Capsule())
@@ -83,8 +83,8 @@ struct UpNextCard: View {
     @ViewBuilder private var bodyContent: some View {
         // Arriba la imagen y cuál es; abajo los dos botones lado a lado, del mismo ancho y a todo lo ancho (antes iban uno
         // bajo el otro junto a la imagen y dejaban un hueco debajo de ella).
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
                 if let thumb = card.thumbnail.flatMap(URL.init(string:)) {
                     RemoteImage(url: thumb, maxPoints: DS.PlayerPanel.upNextThumb) { phase in
                         if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fill }
@@ -195,7 +195,7 @@ struct PanelChip: View {
                 title.font(font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
             }
             .foregroundStyle(selected ? DS.bg : DS.text)   // elegida: en el color del texto, con letra del fondo (blanca en oscuro), como toda selección
-            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
             // Toma el alto que le da su renglón (`FlowChips`): una cápsula con bandera o ícono ya no mide distinto que sus vecinas.
             .frame(maxHeight: .infinity)
             .background(selected ? DS.text : DS.fill, in: Capsule())
@@ -310,7 +310,7 @@ struct Toast: View {
     var body: some View {
         // Una píldora (como los avisos de iOS): el ícono en su tono, lo que pasó y su dato, y a la derecha la salida en su cápsula
         // (sin «›»: la flecha es para ir a otra pantalla).
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol ?? Self.symbol(tone)).font(DS.TextRecipe.body.font.weight(.semibold)).foregroundStyle(color ?? Self.color(tone))
                 .scaleEffect(iconIn ? 1 : DS.Toast.iconStart)
             VStack(alignment: .leading, spacing: 0) {
@@ -349,7 +349,7 @@ struct Toast: View {
             }
         }
         // Más aire por dentro (antes el texto y «Cambiar» casi tocaban el borde).
-        .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s3).padding(.vertical, DS.Space.s3)
+        .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s2).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: Capsule())
         .overlay { if prominent { Capsule().strokeBorder(Self.color(tone).opacity(DS.Toast.toneStroke), lineWidth: DS.Toast.strokeWidth) } }
         // La cápsula sale del ícono: se descubre de izquierda a derecha y, al llegar, rebota un poco.
@@ -508,14 +508,14 @@ struct PlayerMenuRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(width: DS.Size.touchTarget / 2)
                 Text(title).recipe(.secondary, color: DS.text).lineLimit(1)
                 Spacer(minLength: DS.Space.s2)
                 if let detail { detail.recipe(.footnote).lineLimit(1) }
             }
             .foregroundStyle(DS.text)
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .frame(minHeight: DS.Size.touchTarget)
             .contentShape(Rectangle())
         }

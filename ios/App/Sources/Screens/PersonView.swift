@@ -48,7 +48,7 @@ struct PersonView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                VStack(alignment: .leading, spacing: DS.Space.s6) {
                     HStack(alignment: .top, spacing: DS.Space.s4) {
                         PersonPhoto(name: route.name, photo: person?.photo, size: DS.Rich.personPhoto)
                         VStack(alignment: .leading, spacing: DS.Space.s1) {

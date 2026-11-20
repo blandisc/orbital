@@ -93,7 +93,7 @@ struct ShelfLedge<Content: View>: View {
 
     var body: some View {
         content()
-            .padding(.bottom, DS.Space.s3)
+            .padding(.bottom, DS.Space.s2)
             .overlay(alignment: .bottom) {
                 LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: DS.Repisa.line, location: DS.Repisa.lineFade),
                                        .init(color: DS.Repisa.line, location: 1 - DS.Repisa.lineFade), .init(color: .clear, location: 1)],
@@ -191,7 +191,7 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
                 .background(DS.surfaceRaised, in: Circle())
             Text("Ver todas").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
         }
-        .frame(width: DS.Repisa.showcaseWidth, height: DS.Repisa.showcaseEmblem + DS.Space.s14)
+        .frame(width: DS.Repisa.showcaseWidth, height: DS.Repisa.showcaseEmblem + DS.Space.s16)
         .contentShape(Rectangle())
     }
 }
@@ -236,7 +236,7 @@ struct ShelfMoment: View {
                         .scaleEffect(step >= 2 ? 1 : DS.Repisa.momentLift)
                 }
                 Text(verbatim: title).recipe(.title).multilineTextAlignment(.center).lineLimit(2)
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     ShelfEmblem(id: emblem, height: DS.Repisa.momentEmblem)
                         .glow(step >= 3 ? DS.warning.opacity(DS.Repisa.momentGlow) : .clear, .strong)
                         .scaleEffect(step >= 3 ? 1 : DS.Repisa.momentEmblemStart)

@@ -114,7 +114,7 @@ struct DecideChoice: View {
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Space.s2)
-            .padding(.vertical, DS.Space.s3)
+            .padding(.vertical, DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile, maxHeight: .infinity)
             .background {
                 shape.fill(DS.fill)
@@ -164,7 +164,7 @@ struct DecideChoiceGrid<Item: Hashable, Cell: View>: View {
 /// Los carteles de «Tres que caben», un solo juego: cada uno mide un tercio del renglón aunque sean uno o dos, van centrados
 /// (F4, 13 nov 2026: antes dos dejaban un hueco a la derecha y uno, dos huecos) y sobre la misma base (pulido de DE2).
 struct DecideTrioLayout: Layout {
-    var spacing: CGFloat = DS.Space.s3
+    var spacing: CGFloat = DS.Space.s2
     /// Tres lugares, como `DecideModel.trio` (aquí fijo: el Layout no vive en el actor principal).
     private let slots: CGFloat = 3
 
@@ -210,7 +210,7 @@ struct DecideListRow: View {
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
         Button(action: toggle) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 ZStack(alignment: .leading) {
                     ForEach(Array(posters.prefix(2).enumerated().reversed()), id: \.offset) { index, poster in
                         PosterView(url: poster, title: "", maxPoints: DS.Decide.listPoster)

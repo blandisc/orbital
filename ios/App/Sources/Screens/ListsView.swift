@@ -276,7 +276,7 @@ struct ListsView: View {
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
                     // Colecciones (la repisa del canon), entre Premios y Años (Fernando, 31 oct 2026), con el mismo rótulo.
                     if collections.model.traktLinked {
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSChapterHead(label: Text("Colecciones"), symbol: "books.vertical")
                             CollectionsCardLoader().padding(.horizontal, DS.Space.gutter)
                         }
@@ -303,7 +303,7 @@ struct ListsView: View {
     // MARK: tus plataformas
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Plataformas"), symbol: CollectionSection.platforms.symbol)
             CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
@@ -367,7 +367,7 @@ struct ListsView: View {
         let order = Canon.awardOrder
         let all = collections.model.awards.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
         if !all.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSChapterHead(label: Text("Premios"), symbol: CollectionSection.awards.symbol)
                 CenteredCarousel(items: all, id: \.id, cardWidth: DS.PlatformFan.width) { award in
                     NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
@@ -380,7 +380,7 @@ struct ListsView: View {
 
     /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
     private var studiosSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Estudios"), symbol: CollectionSection.studios.symbol)
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
@@ -400,7 +400,7 @@ struct ListsView: View {
     private var seasonsSection: some View {
         let language = env.services.appSettings.uiLanguage
         let countdown = collections.model.seasonCountdown
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Temporadas"), symbol: CollectionSection.seasons.symbol)
             if let now = countdown.first {
                 NavigationLink(value: CollectionRoute(kind: .season, id: now.season.slug)) {
@@ -414,7 +414,7 @@ struct ListsView: View {
                 .task { await collections.model.loadSeason(now.season.slug) }
             }
             DSSectionHead(title: Text("Próximas temporadas")).padding(.horizontal, DS.Space.gutter)
-                .padding(.top, DS.Space.s3)
+                .padding(.top, DS.Space.s2)
             // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
             CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
                              cardWidth: DS.PlatformFan.width,
@@ -441,7 +441,7 @@ struct ListsView: View {
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».
     private func listRows(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)? = nil) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: label, symbol: symbol)
             VStack(spacing: DS.Space.s2) {
                 ForEach(cards) { c in
@@ -479,7 +479,7 @@ struct ListsView: View {
     /// Lo mejor del género: el Top 10 del año de cada género (TMDB, por nota), con su ícono y su nombre al pie.
     private var genresSection: some View {
         let language = env.services.appSettings.uiLanguage
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Géneros"), symbol: CollectionSection.genres.symbol)
             CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
                 let name = Strings.tr(genre.title, language: language)
@@ -499,7 +499,7 @@ struct ListsView: View {
 
     /// Por año: cada año con cuatro de sus películas (las premiadas, y si faltan, lo más popular).
     private var yearsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Años"), symbol: CollectionSection.years.symbol)
             CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {

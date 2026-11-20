@@ -262,8 +262,8 @@ struct FilterTile: View {
                 }
             }
             .multilineTextAlignment(.center)
-            .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
-            .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s3)
+            .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s2)
+            .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: big ? DS.Mac.doorTileHeight : compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
             .background {
                 ZStack {
@@ -278,7 +278,7 @@ struct FilterTile: View {
             .clipShape(shape)
             .dsSelectionRing(on || open, in: shape)
             .overlay(alignment: .topTrailing) {
-                if on { Circle().fill(page.hue).frame(width: DS.Filter.dot, height: DS.Filter.dot).padding(mini ? DS.Space.s2 : DS.Space.s3).accessibilityHidden(true) }
+                if on { Circle().fill(page.hue).frame(width: DS.Filter.dot, height: DS.Filter.dot).padding(mini ? DS.Space.s2 : DS.Space.s2).accessibilityHidden(true) }
             }
             .contentShape(shape)
         }
@@ -366,8 +366,8 @@ struct FilterPanel<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) { content() }
-            .padding(DS.Space.s3)
+        VStack(alignment: .leading, spacing: DS.Space.s2) { content() }
+            .padding(DS.Space.s2)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(DS.surfaceRaised, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))   // ds-exception: el panel y su flechita van en la superficie elevada (dsCard no tiene ese nivel)
             .overlay(alignment: .topLeading) {
@@ -397,12 +397,12 @@ struct FilterDoor: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             // La flechita va pegada al título («Búsqueda avanzada ›») y la X sola a la derecha, lejos de ella (Fernando, 31 oct
             // 2026: juntas parecían un mismo botón).
-            HStack(alignment: .center, spacing: DS.Space.s5) {
+            HStack(alignment: .center, spacing: DS.Space.s6) {
                 Button { open(nil) } label: {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         // Su propio ícono en un círculo turquesa: se distingue de un vistazo del campo de arriba, que busca por nombre.
                         Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.onPrimary)
                             .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
@@ -436,7 +436,7 @@ struct FilterDoor: View {
                 }
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         // Teñida de turquesa y con orilla: otra cosa que la búsqueda por nombre (Fernando, 31 oct 2026). Excepción decidida a
         // «el turquesa no decora» (2 nov 2026: «déjalo en la tarjeta de búsqueda avanzada»).
         .background(DS.Filter.doorFill, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
@@ -558,7 +558,7 @@ struct FilterChoice: View {
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
             }
             .padding(.horizontal, DS.Space.s2)
-            .padding(.vertical, DS.Space.s3)   // aire parejo arriba y abajo (el detalle ya no toca la orilla)
+            .padding(.vertical, DS.Space.s2)   // aire parejo arriba y abajo (el detalle ya no toca la orilla)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
             .dsCard(fill: selected ? DS.Filter.selectedFill : nil)
             .dsSelectionRing(selected, radius: DS.Radius.lg)
@@ -585,7 +585,7 @@ struct FilterLogoChoice<Logo: View>: View {
                 title.recipe(.badge, color: selected ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .padding(.horizontal, DS.Space.s2)
-            .padding(.vertical, DS.Space.s3)
+            .padding(.vertical, DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
             .dsCard(fill: selected ? DS.Filter.selectedFill : nil)
             .dsSelectionRing(selected, in: shape)

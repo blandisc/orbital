@@ -100,7 +100,7 @@ struct DSChapterHead<Accessory: View>: View {
                     // EX-A (Fernando, 19 nov 2026): con su línea hasta el control, como sus hermanas. El control se centra en el
                     // renglón y se asoma `chapterBleed` arriba y abajo: el aire de arriba se mide al rótulo (32) y el de abajo
                     // al control (el relleno de abajo se lo devuelve).
-                    HStack(alignment: .center, spacing: DS.Space.s3) {
+                    HStack(alignment: .center, spacing: DS.Space.s2) {
                         DSChapterLabel(label: label, symbol: symbol, line: false).fixedSize().accessibilityElement(children: .combine)
                         Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
                         accessory.padding(.vertical, -DS.KindPill.chapterBleed)
@@ -229,8 +229,8 @@ struct BecauseCard<Related: View>: View {
         // En ventana ancha el mazo a la izquierda y las relacionadas a su lado, hasta la orilla, como los renglones de arriba;
         // apiladas, en el ultrawide quedaba una tarjeta enorme con el mazo solo y las flechas al otro lado (Fernando, 17 nov 2026).
         let side = WindowMetrics.column.width >= DS.Collections.becauseSideFrom
-        let layout = side ? AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s5))
-                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s3))
+        let layout = side ? AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s6))
+                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
         layout {
             deckHeader.frame(width: side ? DS.Collections.becauseHeaderWidth : nil)
             // Siempre del mismo alto: mientras llegan, unos pósters vacíos en su lugar (la tarjeta no brinca ni parece trabada).
@@ -260,7 +260,7 @@ struct BecauseCard<Related: View>: View {
             .id(selected)   // otro título: las relacionadas entran desde el principio
             .transition(.opacity)
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .modifier(BecauseBackdrop(poster: artBackdrop ? current?.poster : nil))
         .animation(DS.Motion.snap(reduceMotion), value: selected)
         .dsFeedback(.selection, trigger: selected)
@@ -418,7 +418,7 @@ struct YearCard: View {
             Text(verbatim: String(year))
                 .font(DS.TextRecipe.stat.font).fontDesign(.rounded)
                 .foregroundStyle(DS.paper)
-                .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s1)
+                .padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s1)
         }
         .frame(width: DS.Collections.yearWidth, height: DS.Collections.yearHeight)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
@@ -438,7 +438,7 @@ struct SeasonTimelineStop: View {
             when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
             // En turquesa a propósito (Fernando, 2 nov 2026).
             Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
-                .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
+                .padding(.trailing, -DS.Space.s2)   // hasta la siguiente tarjeta
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(when)

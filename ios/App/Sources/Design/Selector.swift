@@ -83,7 +83,7 @@ struct DSSelector<ID: Hashable>: View {
             label(option, names: names, on: on)
                 .foregroundStyle(on ? DS.bg : DS.textMuted)
                 .padding(.vertical, size == .full ? DS.Space.s1 : DS.Space.s2)
-                .padding(.horizontal, DS.Space.s3)
+                .padding(.horizontal, DS.Space.s2)
                 .frame(maxWidth: equal ? .infinity : nil, minHeight: DS.Size.touchTarget)
                 .background {
                     if on { shape.fill(DS.text).matchedGeometryEffect(id: "mark", in: mark) }

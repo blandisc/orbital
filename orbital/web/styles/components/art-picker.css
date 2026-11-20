@@ -3,7 +3,7 @@
 /* minmax(0, 1fr): con muchas opciones la columna no crece hasta el ancho de las filas (la caja se salía de la pantalla). */
 .art-picker { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); place-items: center; }
 .art-picker__box {
-  display: flex; flex-direction: column; gap: var(--space-5); width: min(84rem, 100%); max-height: 100%;
+  display: flex; flex-direction: column; gap: var(--space-6); width: min(84rem, 100%); max-height: 100%;
   padding: var(--space-8); border-radius: var(--radius-lg);
   background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
@@ -14,7 +14,7 @@
 .art-picker__body { display: grid; gap: var(--layout-between-subsections); min-height: 0; overflow-y: auto; scrollbar-width: none; }
 .art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .art-picker__status--error { color: var(--color-danger); }
-.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
+.art-picker__label { margin: 0 0 var(--space-2); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 /* Una fila que se recorre de lado (sin barra): la enfocada siempre a la vista (scrollIntoView). */
 .art-picker__track { display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none; padding: var(--space-2); }
 .art-picker__tile {
@@ -23,7 +23,7 @@
 }
 .art-picker__tile--wide { aspect-ratio: 16 / 9; }
 .art-picker__image { width: 100%; height: 100%; object-fit: cover; }
-.art-picker__original { padding: var(--space-3); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); text-align: center; }
+.art-picker__original { padding: var(--space-2); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); text-align: center; }
 /* El que tiene ahora: el borde del acento y la etiqueta «Ahora». */
 .art-picker__tile--current { box-shadow: inset 0 0 0 3px var(--color-accent); }
 .art-picker__option { margin: 0; display: grid; gap: var(--space-2); justify-items: center; flex: none; }

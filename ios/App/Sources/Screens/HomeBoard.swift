@@ -48,8 +48,8 @@ struct HomeBoardPanel<Rows: View, News: View, Decide: View>: View {
     }
 
     private func column(_ limit: Int, news shows: Bool) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s5) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) { rows(limit) }
+        VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) { rows(limit) }
             if shows { news() }
             decide()
         }
@@ -65,7 +65,7 @@ struct BoardRow: View {
     var fallback: String?
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             ZStack(alignment: .bottom) {
                 PosterView(url: art, title: title, aspect: DS.Poster.stillAspect, fallback: fallback)
                 if let progress { DSProgress(fraction: progress).padding(.horizontal, DS.Space.s1).padding(.bottom, DS.Space.s1) }
@@ -133,7 +133,7 @@ extension DS {
         /// Desde este ancho de columna (y acostada): en la Mac, con su letra más grande, un poco más.
         static let from: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? 1200 : 1100
         static let panelShare: CGFloat = 0.34, panelMin: CGFloat = 340, panelMax: CGFloat = 520
-        static let gap = DS.Space.s5, heightShare: CGFloat = 0.6, heroAspectMin: CGFloat = 1.1
+        static let gap = DS.Space.s6, heightShare: CGFloat = 0.6, heroAspectMin: CGFloat = 1.1
         /// Cuántos de lo que tienes a medias caben en el panel («Ver todo» abre los demás) y el ancho de su imagen.
         static let rows = 3, thumb: CGFloat = 128
         /// Cuánto avanzan ‹ › (C4): casi una pantalla, para que lo último se siga viendo.

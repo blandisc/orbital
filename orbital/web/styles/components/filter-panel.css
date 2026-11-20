@@ -8,7 +8,7 @@
 }
 .filter > :not(.decide-backdrop) { position: relative; }
 .filter__spacer { margin-right: auto; }
-.filter__body { display: grid; grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); column-gap: var(--space-14); min-height: 0; }
+.filter__body { display: grid; grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); column-gap: var(--space-16); min-height: 0; }
 /* La izquierda: las preguntas y, debajo, «Ver N títulos» (Y) y «Borrar filtros» (X): ↓ desde la última llega al botón. */
 .filter__main { display: flex; flex-direction: column; gap: var(--space-4); min-height: 0; }
 
@@ -34,14 +34,14 @@
 .filter__row:not(.filter__row--open):hover { background: var(--color-glass); }
 /* Abierta: vidrio fuerte y una barrita de su color a la izquierda; sus píldoras debajo, a todo lo ancho. */
 .filter__row--open { background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-card); backdrop-filter: var(--filter-glass); }
-.filter__row--open::before { content: ""; position: absolute; left: 0; top: var(--space-3); bottom: var(--space-3); width: var(--tab-mark); border-radius: var(--tab-mark); background: var(--hue); }
+.filter__row--open::before { content: ""; position: absolute; left: 0; top: var(--space-2); bottom: var(--space-2); width: var(--tab-mark); border-radius: var(--tab-mark); background: var(--hue); }
 .filter__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--hue); }
 .filter__icon .icon { width: var(--icon-md); height: var(--icon-md); }
 .filter__label { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 .filter__value { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); white-space: nowrap; }
 /* Lo que cambiaste se lee en su color (lo que sigue en «cualquiera», en gris). */
 .filter__row--on .filter__value { color: var(--hue); font-weight: var(--type-body-weight); }
-.filter__options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); padding-top: var(--space-2); }
+.filter__options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-2); padding-top: var(--space-2); }
 .filter__options .pill { white-space: nowrap; }
 
 /* En vivo: cuántos (grande) y los primeros pósters; abajo, «Ver N títulos» (Y) y «Borrar filtros» (X). */

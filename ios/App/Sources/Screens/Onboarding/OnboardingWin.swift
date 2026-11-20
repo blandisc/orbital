@@ -34,7 +34,7 @@ struct OnboardingWin: View {
 
     @ViewBuilder private func copy(_ model: OnboardingModel, _ t: Double) -> some View {
         let M = GuideTraktScene.Motion.self
-        VStack(alignment: .leading, spacing: DS.Space.s5) {
+        VStack(alignment: .leading, spacing: DS.Space.s6) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Trajimos lo tuyo").recipe(.display, color: DS.text).enter(M.item(t, 0.06, 14))
                 Text("Lo que viste y tu lista ya están en Orbital.")
@@ -68,7 +68,7 @@ struct OnboardingWin: View {
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .dsCard()
                 .enter(M.item(t, 0.30, 10))
                 Text("Cada sugerencia te dice de dónde sale.").recipe(.caption, color: DS.textMuted)

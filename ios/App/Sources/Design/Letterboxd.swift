@@ -47,7 +47,7 @@ struct LetterboxdReviewRow: View {
     let watched: Text?
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+        HStack(alignment: .top, spacing: DS.Space.s2) {
             PosterView(url: entry.imdb.map { String(format: ForYou.metahubPoster, $0) }, title: titleName(entry.title, id: entry.imdb, kind: entry.kind)).frame(width: DS.Letterboxd.poster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("\(Text(verbatim: titleName(entry.title, id: entry.imdb, kind: entry.kind)).bold())\(Text(verbatim: entry.year.map { "  \($0)" } ?? "").foregroundStyle(DS.textMuted))")
@@ -111,13 +111,13 @@ struct LetterboxdPublicReviews: View {
     @State private var revealed: Set<String> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             // Como los demás encabezados de la ficha (dos niveles): el título y su porqué turquesa arriba (revisión del 11 nov:
             // era el único con el sello al lado y sin porqué).
             DSSectionHead(title: Text("Reseñas"), eyebrow: Text("Lo que dicen en Letterboxd"))
             // `Grid`, no `LazyVGrid`: así las tarjetas de un mismo renglón miden lo mismo (con columnas en la Mac).
             let shown = Array(reviews.prefix(DS.Letterboxd.publicShown)), per = max(columns, 1)
-            Grid(alignment: .topLeading, horizontalSpacing: DS.Space.s3, verticalSpacing: DS.Space.s3) {
+            Grid(alignment: .topLeading, horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
                 ForEach(Array(stride(from: 0, to: shown.count, by: per)), id: \.self) { first in
                     GridRow {
                         ForEach(shown[first..<min(first + per, shown.count)]) { review($0) }
@@ -149,7 +149,7 @@ struct LetterboxdPublicReviews: View {
                 Text(verbatim: r.text).recipe(.footnote, color: DS.textMuted).lineLimit(4)
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .dsCard(.row)
     }

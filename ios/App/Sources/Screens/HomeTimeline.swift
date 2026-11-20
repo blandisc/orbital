@@ -31,7 +31,7 @@ struct ReleaseTimeline: View {
 
     private func line(now: Date) -> some View {
         let nowIndex = HomeModel.nowIndex(in: airings, now: now)
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             // Con letra de accesibilidad el mes baja bajo el título (al lado no cabía y se salía de la pantalla).
             let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
@@ -47,7 +47,7 @@ struct ReleaseTimeline: View {
             .padding(.horizontal, inset ?? DS.Space.gutter)
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                         ForEach(Array(airings.enumerated()), id: \.element.id) { i, a in
                             if i == nowIndex { todayMark.id(Self.today) }
                             card(a, moment: a.moment(now: now))

@@ -61,7 +61,7 @@ struct VoiceGuideView: View {
     }
 
     private var now: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             nowHeader.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2)
             .accessibilityAddTraits(.isHeader)
             cardRow(nowPhrases) { PhraseCard(phrase: $0, style: .now, onSay: onSay) }
@@ -76,7 +76,7 @@ struct VoiceGuideView: View {
     }
 
     private var essentials: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Lo esencial"), level: .section)
             // De dos en dos; si quedan impares, la última va a lo ancho. Con letra muy grande, una por renglón.
             let items = essentialPhrases
@@ -94,7 +94,7 @@ struct VoiceGuideView: View {
     // MARK: Dónde hablarle
 
     private var whereToSpeak: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Dónde hablarle"), level: .section)
             let tiles = [
                 WhereTile(symbol: "mic.fill", tint: DS.ListTint.spark, title: Text("Aquí"), detail: Text("Toca el micrófono del control")),
@@ -108,7 +108,7 @@ struct VoiceGuideView: View {
     // MARK: Más frases
 
     private var moreRow: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: "text.bubble").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.iconColumn)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("Más frases, por tema").recipe(.cardTitle)
@@ -295,10 +295,10 @@ private struct VoiceTopic<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: title, level: .section)
             if let meta { meta.recipe(.footnote, color: DS.textMuted) }
-            VStack(alignment: .leading, spacing: DS.Space.s3) { content }
+            VStack(alignment: .leading, spacing: DS.Space.s2) { content }
                 .padding(DS.Space.s4).frame(maxWidth: .infinity, alignment: .leading)
                 .dsCard(.card)
         }
@@ -343,7 +343,7 @@ private struct PhraseCard: View {
                 Text(verbatim: phrase.note).recipe(.footnote).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
             }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .frame(minHeight: DS.Size.touchTarget)
         .dsCard(fill: style == .now ? DS.ListTint.calendar.opacity(DS.VoiceGuide.starterFill) : nil)
@@ -364,7 +364,7 @@ private struct WhereTile: View {
             title.recipe(.cardTitle)
             detail.recipe(.footnote).fixedSize(horizontal: false, vertical: true)
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .dsCard()
         .accessibilityElement(children: .combine)
@@ -378,7 +378,7 @@ private struct HowRow: View {
     let detail: Text
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s3) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.accent)
                 .frame(width: DS.Size.iconColumn)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -418,7 +418,7 @@ private struct PhraseRow: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text(verbatim: "«\(say)»").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
-                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
                 .background(DS.fill, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Space.s1,   // ds-exception: globo de lo que dices, con su pico
                                                                  bottomTrailingRadius: DS.Radius.lg, topTrailingRadius: DS.Radius.lg, style: .continuous))
             if !noteEmpty { note.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).padding(.leading, DS.Space.s1) }

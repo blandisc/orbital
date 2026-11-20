@@ -64,7 +64,7 @@ struct MacSearchChip: View {
             } label: {
                 Label("Buscar", systemImage: "magnifyingglass").recipe(.labelLarge, color: tabs.current == 2 ? DS.bg : DS.text)
                     .macTabLabel(compact: compact)
-                    .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
+                    .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
                     .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
                     .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
             }
@@ -98,7 +98,7 @@ private struct MacTabButton: View {
             Label { title } icon: { Image(systemName: symbol) }
                 .recipe(.labelLarge, color: on ? DS.bg : DS.textMuted)
                 .macTabLabel(compact: compact)
-                .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
+                .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
                 // La elegida, llena del color del texto con la letra del fondo: crema y oscura en modo oscuro (el foco de la tele), oscura
                 // y clara en modo claro (crema sobre la cápsula casi blanca no se distinguía).
                 .background { if on { Capsule().fill(DS.text) } }
@@ -159,7 +159,7 @@ struct MacTopRow<Trailing: View>: View {
             Spacer(minLength: DS.Space.s2)
             trailing
                 .buttonStyle(.plain).foregroundStyle(DS.text)
-                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
                 .glassEffect(.regular.interactive(), in: Capsule())
                 .macPillBase(Capsule())
         }
@@ -226,14 +226,14 @@ struct MacSidebar<ID: Hashable>: View {
             ForEach(options, id: \.id) { option in
                 let on = option.id == selection
                 Button { selection = option.id } label: {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         Image(systemName: option.symbol).font(DS.TextRecipe.cardTitle.font)
                             .foregroundStyle(on ? DS.text : DS.textMuted).frame(width: DS.SettingsLook.rowIcon)
                         option.title.bold(on).recipe(.cardTitle, color: on ? DS.text : DS.textMuted)
                         Spacer(minLength: 0)
                         if option.badge > 0 { Text(verbatim: "\(option.badge)").recipe(.badge, color: DS.textMuted).monospacedDigit() }
                     }
-                    .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s3)
+                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
                     .dsCard(fill: on ? DS.surfaceRaised : .clear)
                     .contentShape(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous))
                 }
@@ -243,7 +243,7 @@ struct MacSidebar<ID: Hashable>: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, DS.Space.s3).padding(.top, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2).padding(.top, DS.Space.s2)
         .frame(width: DS.Mac.sidebarWidth, alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
         .overlay(alignment: .trailing) { Rectangle().fill(DS.hairline).frame(width: DS.Stroke.hairline) }
@@ -257,7 +257,7 @@ struct MacSearchField: View {
     var focused: FocusState<Bool>.Binding
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: "magnifyingglass").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
             TextField("Películas y series", text: $text)
                 .textFieldStyle(.plain).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)

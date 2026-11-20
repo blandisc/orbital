@@ -106,6 +106,27 @@ test("espacios, radios y duraciones: los mismos números", () => {
   }
 });
 
+// D3-B (Fernando, 20 nov 2026): siete pasos y nada más. 12, 20, 40 y 56 se fueron (12→8, 20→24, 40→48, 56→64).
+const SPACE_STEPS = [4, 8, 16, 24, 32, 48, 64];
+
+test("la escala de espacios es de siete pasos (4·8·16·24·32·48·64) en la TV y en el iPhone (D3-B)", () => {
+  assert.deepEqual(entries(TOKENS.space).map(([, px]) => px), SPACE_STEPS, "design/tokens.json › space");
+  const tvSteps = Object.keys(tv).filter((k) => /^--space-\d+$/.test(k)).map((k) => rem(k));
+  assert.deepEqual(tvSteps, SPACE_STEPS, "tokens.css: solo --space-1, 2, 4, 6, 8, 12 y 16");
+  assert.deepEqual(Object.values(swiftEnum("Space")), SPACE_STEPS, "DesignTokens.Space: solo s1, s2, s4, s6, s8, s12 y s16");
+  const allowed = new Set(entries(TOKENS.space).map(([n]) => n));
+  const strays = [];
+  const text = (path) => readFileSync(path, "utf8");
+  for (const file of walk(join(ROOT, "orbital", "web"), [".css", ".js"])) {
+    for (const m of text(file).matchAll(/--space-(\d+)/g)) if (!allowed.has(m[1])) strays.push(`${file.slice(ROOT.length)}: --space-${m[1]}`);
+  }
+  for (const file of ["App", "OrbitalCore"].flatMap((d) => walk(join(ROOT, "ios", d), [".swift"])).filter((f) => !f.includes("/Build/"))) {
+    for (const m of text(file).matchAll(/\bSpace\.s(\d+)\b/g)) if (!allowed.has(m[1])) strays.push(`${file.slice(ROOT.length)}: Space.s${m[1]}`);
+  }
+  assert.deepEqual(strays, [], "un espacio fuera de los siete pasos (D3-B): usa el más cercano de la escala");
+  for (const [name, spec] of entries(TOKENS.layout)) assert.ok(SPACE_STEPS.includes(spec.value), `layout.${name} = ${spec.value}`);
+});
+
 test("los espacios de una pantalla valen lo mismo (DS.Layout), o la TV dice por qué no los usa", () => {
   const swiftDS = read("ios", "App", "Sources", "Design", "Tokens.swift");
   const layout = swiftDS.match(/enum Layout \{([\s\S]*?)\n    \}/)?.[1] ?? "";

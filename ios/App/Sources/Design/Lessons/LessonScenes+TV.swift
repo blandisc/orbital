@@ -125,7 +125,7 @@ struct LessonTVVoice: View {
             .sceneAt(tv.minX, tv.minY).scenePut(screen.o, 0, screen.y)
             Text(verbatim: String(said.prefix(shown)))
                 .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
                 .background(DS.surfaceRaised, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Radius.xs,   // ds-exception: la burbuja de lo que dices (su pico abajo a la izquierda)
                                                                          bottomTrailingRadius: DS.Radius.lg, topTrailingRadius: DS.Radius.lg))
                 .sceneWidth(230, alignment: .leading, fits: true)
@@ -236,7 +236,7 @@ struct LessonTVTry: View {
                 Circle().fill(DS.fillStrong).sceneBox(90, 90)
                     .overlay { if ready && !moved { LessonTryRing(round: true).padding(-DS.Space.s1) } }
                     .sceneAt(12, 78)
-                HStack(spacing: DS.Space.s5) {
+                HStack(spacing: DS.Space.s6) {
                     arrow("chevron.left", label: Text("Izquierda"), id: "left") { focus = max(0, focus - 1) }
                     arrow("chevron.right", label: Text("Derecha"), id: "right") { focus = min(3, focus + 1) }
                 }

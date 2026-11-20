@@ -41,7 +41,7 @@ PAD_BLUE = (74, 138, 232)  # --palette-pad-blue: el azul de los controles en Orb
 # En rem (la unidad de la interfaz). Los de la notificación son los de toast.css.
 RADIUS = 1.1  # --radius-xl (dos renglones)
 ICON = 2.2  # .toast__icon
-PAD_LEFT, PAD_RIGHT, GAP = .5, 1.5, .75  # --space-2 · --space-6 · --space-3
+PAD_LEFT, PAD_RIGHT, GAP = .5, 1.5, .5  # --space-2 · --space-6 · --space-2
 TOAST_MIN_W, TOAST_MAX_W, TOAST_H = 18, 34, 4.1
 TITLE_SIZE, DETAIL_SIZE = 1.07, .98  # --text-md · --text-sm
 SHADOW_Y, SHADOW_BLUR, SHADOW_ALPHA = 1.5, 4.0, .55  # --shadow-overlay: 0 1.5rem 4rem rgba(0,0,0,.55)
@@ -61,7 +61,7 @@ ICON_MS, GROW_DELAY_MS, GROW_MS, TEXT_DELAY_MS = 240, 160, 660, 320
 SPRING_RESPONSE, SPRING_BOUNCE = .45, .3  # el resorte de --ease-notice-grow: spring(duration: 0.45, bounce: 0.3)
 REVEAL_MS = max(GROW_DELAY_MS + GROW_MS, TEXT_DELAY_MS + ENTER_MS)
 FRAME_MS = 33  # la entrada se redibuja a 30 cuadros por segundo: menos de un segundo de trabajo y luego quieta
-ICON_FROM, TEXT_FROM = .4, .75  # el ícono nace al 40 %; el texto llega desde .75 rem a la izquierda (--space-3)
+ICON_FROM, TEXT_FROM = .4, .5  # el ícono nace al 40 %; el texto llega desde .5 rem a la izquierda (--space-2)
 SLIDE_IN, SLIDE_OUT = 1.5, 1.0  # rem: la acción de cerrar entra desde 1,5 rem a la derecha; todo se va 1 rem
 
 
@@ -443,7 +443,7 @@ class GameOverlay:
             surface.set_image(image)
             w, h = image.size
             safe = self.safe_area()
-            top = (1.25 + 3 + .25) * rem + safe * .006 * sh  # calc(--space-5 + --safe-y + 3rem + --space-1)
+            top = (1.5 + 3 + .25) * rem + safe * .006 * sh  # calc(--space-6 + --safe-y + 3rem + --space-1)
             right = max(rem, safe * .01 * sw)  # --page-gutter: max(--space-4, --safe-x)
             state["spot"] = (sx + sw - right - (w - margin), sy + top - margin)
             draw_now()

@@ -112,7 +112,7 @@ struct DecideFilters: View {
                              selected: on, enabled: on || n?.open == true) { m.setTime(on ? nil : t) }
                     .accessibilityIdentifier("decide-time-\(t.rawValue)")
             }
-            DSSectionHead(title: "Ánimo").padding(.top, DS.Space.s3)
+            DSSectionHead(title: "Ánimo").padding(.top, DS.Space.s2)
             DecideChoiceGrid(items: DecideModel.Mood.allCases, columns: pairs) { mood in
                 let on = m.mood == mood
                 let n = moods[mood]
@@ -151,7 +151,7 @@ struct DecideFilters: View {
                 .disabled(!usable).opacity(usable ? 1 : DS.Opacity.dimmed)
                 .accessibilityIdentifier("decide-source-\(source.rawValue)")
             }
-            DSSectionHead(title: "Letterboxd · solo películas").padding(.top, DS.Space.s3)
+            DSSectionHead(title: "Letterboxd · solo películas").padding(.top, DS.Space.s2)
             DecideChoiceGrid(items: boxd, columns: wide) { r in
                 let on = m.minLetterboxd == r
                 let n = letterboxd[r]
@@ -162,8 +162,8 @@ struct DecideFilters: View {
                 }
                 .accessibilityIdentifier("decide-letterboxd-\(Int(r * 10))")
             }
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { fame(m) }.padding(.top, DS.Space.s3)
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { awards(m) }.padding(.top, DS.Space.s3)
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { fame(m) }.padding(.top, DS.Space.s2)
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { awards(m) }.padding(.top, DS.Space.s2)
         }
     }
 
@@ -191,7 +191,7 @@ struct DecideFilters: View {
                 .accessibilityIdentifier("decide-genre-\(g)")
             }
             .onChange(of: m.genres) { m.resolveUnknown() }
-            DSSectionHead(title: "Época").padding(.top, DS.Space.s3)
+            DSSectionHead(title: "Época").padding(.top, DS.Space.s2)
             // En la misma cuadrícula de tres que los géneros: «2020s» y «90s» del mismo tamaño (F12).
             DecideChoiceGrid(items: DecideModel.decadeChoices, columns: wide) { d in
                 let on = m.decades.contains(d)
@@ -254,7 +254,7 @@ struct DecideFilters: View {
     @ViewBuilder private func lists(_ m: DecideModel) -> some View {
         let chosen = m.sources.filter { m.sourceIDs.contains($0.id) }
         Button(action: openLists) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(chosen.isEmpty ? Strings.tr("Todo lo sugerido", language: language)
                          : String(format: Strings.tr(chosen.count == 1 ? "%lld lista" : "%lld listas", language: language), chosen.count))
@@ -265,7 +265,7 @@ struct DecideFilters: View {
                 Text(verbatim: String(format: Strings.tr("de %lld", language: language), m.sources.count)).recipe(.caption)
                 Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
             .dsCard(.row, translucent: true)
             .contentShape(Rectangle())
         }

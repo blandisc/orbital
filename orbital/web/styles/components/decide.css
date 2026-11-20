@@ -19,19 +19,19 @@
 }
 .decide-backdrop__art--in { opacity: 1; }
 .decide-backdrop--soft .decide-backdrop__art {
-  top: calc(-1 * var(--space-10)); right: calc(-1 * var(--space-10)); width: calc(100% + 2 * var(--space-10)); height: calc(100% + 2 * var(--space-10));
+  top: calc(-1 * var(--space-12)); right: calc(-1 * var(--space-12)); width: calc(100% + 2 * var(--space-12)); height: calc(100% + 2 * var(--space-12));
   filter: blur(var(--blur-case)); -webkit-mask-image: none; mask-image: none;
 }
 .decide-backdrop--soft .decide-backdrop__art--in { opacity: var(--opacity-dim); }
 
 /* AD-2: arriba, «✦ Decide por mí», las pestañas con lo que hacen y, a la derecha, el reloj. */
-.decide-head { display: flex; align-items: center; gap: var(--space-10); }
-.decide-head__title { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
+.decide-head { display: flex; align-items: center; gap: var(--space-12); }
+.decide-head__title { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
 .decide-head__title .icon { width: var(--icon-md); height: var(--icon-md); }
 .decide__modes { display: flex; gap: var(--space-8); margin-right: auto; }
 .decide-head__clock { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text); }
 .decide-mode {
-  position: relative; display: grid; gap: var(--space-1); padding: 0 0 var(--space-3); border: 0; background: none; color: var(--color-text-muted);
+  position: relative; display: grid; gap: var(--space-1); padding: 0 0 var(--space-2); border: 0; background: none; color: var(--color-text-muted);
   text-align: left; cursor: pointer; font-family: var(--font-sans);
 }
 .decide-mode--on { color: var(--color-text); }
@@ -60,7 +60,7 @@
 /* AD-7 / AD-8: abajo, las tres como tarjetas anchas (como «A continuación») y «Filtros» al final. */
 .decide__strip { --card-height: 10.25rem; display: flex; min-width: 0; align-items: flex-end; gap: var(--card-gap); padding-bottom: var(--space-2); }
 .decide__filters {
-  display: grid; align-content: space-between; justify-items: start; padding: var(--space-5); text-align: left;
+  display: grid; align-content: space-between; justify-items: start; padding: var(--space-6); text-align: left;
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline); backdrop-filter: var(--filter-glass); color: var(--color-text);
 }
 .decide__filters-icon .icon { width: var(--icon-md); height: var(--icon-md); }
@@ -74,7 +74,7 @@
 /* AD-9: el panel «Filtros», desde la derecha; lo de atrás se apaga. A elige (✓), B lo cierra y se vuelve a elegir. */
 .decide__panel {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: var(--z-panel); width: min(48rem, 46%);
-  display: flex; flex-direction: column; gap: var(--space-6); padding: calc(var(--space-14) + var(--safe-y)) var(--space-10) var(--hints-room);
+  display: flex; flex-direction: column; gap: var(--space-6); padding: calc(var(--space-16) + var(--safe-y)) var(--space-12) var(--hints-room);
   background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   animation: fade-in var(--duration-base) var(--ease-out);
 }
@@ -82,14 +82,14 @@
 .decide--panel > :not(.decide__panel, .decide-backdrop) { opacity: var(--opacity-away); }
 .decide__panel-title { margin: 0; font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--type-title-tracking); }
 .decide__panel-lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.decide__question { display: grid; gap: var(--space-3); }
+.decide__question { display: grid; gap: var(--space-2); }
 .decide__label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .decide__question .browse__filters { flex-wrap: wrap; overflow: visible; }
 .decide__question .pill { white-space: nowrap; }
 
 /* NQ-1 (16 nov 2026): la puerta del Inicio, segunda de «A continuación». Mide lo que una tarjeta ancha (`card--wide`) y
    lleva el foco de siempre; adentro, el abanico de los tres pósters de hoy y la pregunta. */
-.decide-door { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); text-align: left; background: var(--color-surface-raised); }
+.decide-door { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); text-align: left; background: var(--color-surface-raised); }
 /* El abanico crece con la tarjeta (en el Inicio es ancha y baja; en la fila de Películas y series, del alto de un póster). */
 .decide-door__fan { position: relative; flex: none; height: 60%; aspect-ratio: .85; }
 .decide-door__poster {

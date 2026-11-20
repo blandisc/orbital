@@ -42,7 +42,7 @@ struct SubtitleRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Dónde empieza el texto (la raya entre renglones y la segunda fila arrancan ahí).
-    static let textInset = DS.Space.s3 + DS.PlayerPanel.rowLead + DS.Space.s3
+    static let textInset = DS.Space.s2 + DS.PlayerPanel.rowLead + DS.Space.s2
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -51,10 +51,10 @@ struct SubtitleRow: View {
                 if let trailing { trailing }
             }
             if let below {
-                below.padding(.leading, Self.textInset - DS.Space.s3).padding(.bottom, DS.Space.s2)   // arriba ya lleva el aire del renglón; abajo, el mismo s2
+                below.padding(.leading, Self.textInset - DS.Space.s2).padding(.bottom, DS.Space.s2)   // arriba ya lleva el aire del renglón; abajo, el mismo s2
             }
         }
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2)
         .accessibilityElement(children: .contain)
     }
 
@@ -68,7 +68,7 @@ struct SubtitleRow: View {
     }
 
     private var label: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             leadView
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 titleText.recipe(.labelLarge, color: dimmed ? DS.textFaint : DS.text)

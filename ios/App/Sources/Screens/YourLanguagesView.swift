@@ -51,7 +51,7 @@ struct YourLanguagesView: View {
         let canRemove = list.filter { $0 != "original" && $0 != code }.count > 0
         let move = { (step: Int) in save(model, Self.moved(list, code, by: step)) }
         let remove = { save(model, Self.normalized(list.filter { $0 != code })) }
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Text(verbatim: "\(index + 1)").font(DS.TextRecipe.footnote.font.monospacedDigit()).foregroundStyle(DS.textMuted)
                 .frame(width: DS.SettingsLook.rowIcon)
             VStack(alignment: .leading, spacing: 0) {

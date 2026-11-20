@@ -178,7 +178,7 @@ struct LessonTodaySwipe: View {
                         .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(tint, lineWidth: DS.Match.stampLine))
                         .rotationEffect(.degrees(stamp == 0 ? -DS.Match.stampTilt : stamp == 1 ? DS.Match.stampTilt : 0))
                         .scaleEffect(LessonMotion.lerp(DS.MatchLive.stampFrom, 1, amount))
-                        .padding(DS.Space.s3)
+                        .padding(DS.Space.s2)
                         .opacity(amount)
                 }
             }
@@ -233,7 +233,7 @@ struct LessonTodayFilter: View {
         let on = M.smooth(Self.at(i), Self.at(i) + 0.15, t), bump = max(0, 1 - abs(t - Self.at(i) - 0.08) / 0.15)
         return Label { Text(Self.filters[i].0) } icon: { Image(systemName: Self.filters[i].1) }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(on > 0.5 ? DS.fresh : DS.textMuted)
-            .padding(.horizontal, DS.Space.s3).frame(height: DS.Lesson.filterChip)
+            .padding(.horizontal, DS.Space.s2).frame(height: DS.Lesson.filterChip)
             .background(DS.fresh.opacity(DS.Opacity.selectedFill * on), in: Capsule())
             .background(DS.fill.opacity(M.lerp(1, 0, on)), in: Capsule())
             .overlay(Capsule().strokeBorder(DS.fresh, lineWidth: DS.Stroke.selected).opacity(on))

@@ -92,7 +92,7 @@ struct HomeHeader: View {
             ProfileButton(avatar: avatar)
         }
         .buttonStyle(.plain).foregroundStyle(DS.text)
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular.interactive(), in: Capsule())
         .macPillBase(Capsule())   // junto al selector de tipo: la misma base en la Mac
     }

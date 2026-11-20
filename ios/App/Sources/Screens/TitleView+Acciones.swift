@@ -128,10 +128,10 @@ extension TitleView {
             // En un renglón si cabe entero (iPad, Mac); si no, el nombre arriba y abajo las estrellas a la izquierda y la nota a
             // la derecha, centradas entre sí (el nombre nunca parte en dos).
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s3) { name.fixedSize(); Spacer(minLength: 0); stars; noteButton(model) }
+                HStack(spacing: DS.Space.s2) { name.fixedSize(); Spacer(minLength: 0); stars; noteButton(model) }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     name
-                    HStack(spacing: DS.Space.s3) { stars; Spacer(minLength: 0); noteButton(model) }
+                    HStack(spacing: DS.Space.s2) { stars; Spacer(minLength: 0); noteButton(model) }
                 }
             }
             .accessibilityElement(children: .contain)   // las estrellas conservan su identificador («rating-stars»)

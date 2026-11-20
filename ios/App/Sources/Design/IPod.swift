@@ -92,7 +92,7 @@ struct IPodScreen: View {
                 Image(systemName: "play.fill").font(DS.TextRecipe.caption.font.weight(.bold)).hidden()   // equilibra el de la izquierda
             }
             .foregroundStyle(face.lcdText)
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .frame(height: DS.IPod.statusHeight)
             .background(face.bar)
             .overlay(alignment: .bottom) { Rectangle().fill(face.barLine).frame(height: DS.IPod.line) }
@@ -108,7 +108,7 @@ struct IPodScreen: View {
                 }
                 .font(DS.TextRecipe.data.font.weight(.semibold)).foregroundStyle(face.lcdText)
             }
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.IPod.infoHeight, maxHeight: DS.IPod.infoHeight, alignment: .leading)
             .background(face.lcd)
         }

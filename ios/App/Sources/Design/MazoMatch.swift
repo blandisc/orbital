@@ -44,12 +44,12 @@ struct MatchCard: View {
                     Label { Text(pull.label) } icon: { Image(systemName: pull.symbol) }
                         .font(DS.TextRecipe.section.font)
                         .foregroundStyle(pull.color)
-                        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+                        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                         .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(pull.color, lineWidth: DS.Match.stampLine))
                         .background(DS.scrim, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .scaleEffect(DS.MatchLive.stampFrom + (1 - DS.MatchLive.stampFrom) * shown)
                         .rotationEffect(.degrees(pull.tilt))
-                        .padding(pull.alignment == .bottom ? DS.Space.s8 : DS.Space.s5)
+                        .padding(pull.alignment == .bottom ? DS.Space.s8 : DS.Space.s6)
                         .opacity(shown)
                         .accessibilityHidden(true)
                 }
@@ -154,7 +154,7 @@ struct MatchDeck: View {
         // Las cartas y sus datos los acomoda `MatchDeckLayout` en una sola pasada: los datos apartan su alto primero y la
         // carta toma lo que sobra (antes la orilla de los datos se guardaba en un estado al medir la carta, y cada cambio
         // volvía a medir todo: con el encabezado de la hoja, la app se colgaba al abrir «Una por una»; 13 nov 2026).
-        MatchDeckLayout(behind: behind, gap: DS.Space.s3, infoFullWidth: typeSize.isAccessibilitySize) {
+        MatchDeckLayout(behind: behind, gap: DS.Space.s2, infoFullWidth: typeSize.isAccessibilitySize) {
             GeometryReader { geo in
                 let fit = MatchDeckLayout.fitted(geo.size, behind: behind)
                 ZStack(alignment: .top) {

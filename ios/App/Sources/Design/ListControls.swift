@@ -135,7 +135,7 @@ struct SortableGrid<Cell: View>: View {
 
     var body: some View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd, states: states ?? [:])
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             if let bar { bar(ListBarParts(sort: sortMenu, filters: menu)) }
             if filter.isActive { ListFilterChips(filter: $filter) }
             // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
@@ -392,7 +392,7 @@ enum WatchStateName {
 }
 
 /// La cuadrícula de pósters de toda la app: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de
-/// accesibilidad), separadas por `DS.Space.s3` y con los bordes en el margen de la pantalla. Cada celda recibe el ancho de su
+/// accesibilidad), separadas por `DS.Space.s2` y con los bordes en el margen de la pantalla. Cada celda recibe el ancho de su
 /// columna para que el póster (2:3) la llene: antes, `.adaptive` con celdas fijas de 100 dejaba huecos de 27 y los pósters
 /// metidos del margen.
 struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.Element: Identifiable {
@@ -408,12 +408,12 @@ struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.E
     }
 
     private var cellWidth: CGFloat {
-        let inner = width - DS.Space.gutter * 2 - DS.Space.s3 * CGFloat(columns - 1)
+        let inner = width - DS.Space.gutter * 2 - DS.Space.s2 * CGFloat(columns - 1)
         return max(0, (inner / CGFloat(columns)).rounded(.down))
     }
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3, alignment: .topLeading), count: columns),
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .topLeading), count: columns),
                   alignment: .leading, spacing: rowSpacing) {
             if width > 0 { ForEach(items) { cell($0, cellWidth) } }
         }

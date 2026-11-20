@@ -157,7 +157,7 @@ struct ReorderListSheet: View {
         NavigationStack {
             List {
                 ForEach(items, id: \.imdb) { s in
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         PosterView(url: s.poster, title: titleName(s.title, id: s.imdb, kind: s.kind)).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
                             Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)).recipe(.cardTitle).lineLimit(1)

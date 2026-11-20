@@ -194,10 +194,10 @@ enum GuideCloudReady {
     static func row(_ posters: [(url: String?, title: String)], _ t: Double) -> some View {
         let M = GuideTraktScene.Motion.self
         let rl = M.item(t, 0.32, 8)
-        return VStack(spacing: DS.Space.s3) {
+        return VStack(spacing: DS.Space.s2) {
             Text("\(Image(systemName: "bolt.fill")) Listas al instante").recipe(.label, color: DS.fresh)
                 .opacity(rl.opacity).offset(y: rl.rise)
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 ForEach(Array(posters.prefix(4).enumerated()), id: \.offset) { i, item in
                     let p = M.item(t, 0.36 + 0.06 * Double(i), 14)
                     PosterView(url: item.url, title: item.title, aspect: nil, maxPoints: DS.Image.mosaic)   // no-es-título: ya pasó por titleName en la pantalla

@@ -368,7 +368,7 @@ struct TitleView: View {
         // `viewport` ya es el alto entre la barra de arriba y la de pestañas, y el contenido empieza bajo la de arriba (el arte
         // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
         // la segunda fila de acciones quedaba debajo de las pestañas.
-        let room = viewport.height - belowHero - padding - DS.Space.s3
+        let room = viewport.height - belowHero - padding - DS.Space.s2
         let width = contentWidth - (scheme == .dark ? 0 : DS.Space.gutter * 2)
         guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
@@ -509,7 +509,7 @@ struct TitleView: View {
     /// derecha, centrados entre sí (antes «3 de 22 vistos» flotaba debajo y dos círculos a un lado). Bajarla y marcarla vista
     /// viven en los mosaicos «Descargar» y «Vista».
     @ViewBuilder private func seasonHeading(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             seasonControl(model)
             Spacer(minLength: DS.Space.s2)
             if progress.total > 0 {

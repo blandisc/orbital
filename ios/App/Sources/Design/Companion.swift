@@ -47,7 +47,7 @@ struct CompanionPanel<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             // Sin ícono: las secciones de la app no llevan (la regla de `DSSectionHead`).
             Text(title).recipe(.cardTitle)
             content()
@@ -57,7 +57,7 @@ struct CompanionPanel<Content: View>: View {
         .frame(height: DS.Companion.panelHeight, alignment: .topLeading)
         // Casi todo el ancho (`width` ya descuenta los márgenes del carrusel): la siguiente solo asoma su orilla, `peek`
         // (antes asomaba media tarjeta con el texto cortado a media palabra).
-        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }   // ds-exception: el carrusel del acompañante, en su hoja (no en la columna)
+        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s2 - DS.Companion.peek }   // ds-exception: el carrusel del acompañante, en su hoja (no en la columna)
         .dsCard(.card)
     }
 }
@@ -87,7 +87,7 @@ struct ConsoleStatePanel: View {
                         ProgressView(value: Double(percent), total: 100).tint(percent <= DS.Companion.lowBattery ? DS.danger : DS.live)
                     }
                 }
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     ForEach(Array(s.controllers.enumerated()), id: \.offset) { _, c in
                         Label { Text(verbatim: controllerName(c.kind)) } icon: { Image(systemName: batteryGlyph(c.battery)) }.recipe(.caption)
                     }
@@ -236,7 +236,7 @@ struct GameAccessory: View {
 
     var body: some View {
         Button(action: open) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PosterView(url: game.cover ?? game.hero, title: game.title, aspect: DS.Poster.aspect)
                     .frame(height: DS.Size.accessoryArt).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 VStack(alignment: .leading, spacing: 0) {

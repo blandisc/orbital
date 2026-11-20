@@ -3,8 +3,8 @@
    Como Apple TV (31 oct 2026): cápsulas. El principal, siempre blanco con letra negra (el color lo pone la luz de atrás);
    los secundarios, de vidrio. */
 .button {
-  display: inline-flex; align-items: center; gap: var(--space-3);
-  height: var(--control-height); padding: 0 var(--space-5) 0 .7rem; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: var(--control-height); padding: 0 var(--space-6) 0 .7rem; border-radius: var(--radius-pill);
   font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap;
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass); color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
@@ -16,7 +16,7 @@
 .button--yield { flex-shrink: 1; }
 .button__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .button > :not(.button__label) { flex: none; }
-.button-row { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; max-width: 100%; }
+.button-row { display: flex; flex-wrap: nowrap; gap: var(--space-2); min-width: 0; max-width: 100%; }
 .button:hover { background: var(--color-glass-hover); }
 .button:active { transform: scale(var(--press-scale)); }
 .button--primary { padding-right: 1.6rem; background: var(--color-primary); box-shadow: var(--shadow-card); backdrop-filter: none; color: var(--color-on-primary); font-weight: var(--weight-bold); }
@@ -26,7 +26,7 @@
 
 /* Con el dedo no hay glifo (A, B…): el espacio que le dejaban los botones (más angosto a la izquierda) descentraba el texto
    («Jugar», «Ver la serie»). Mismo margen a los dos lados y el texto al centro; objetivos de ~44 px. */
-[data-input="touch"] .button { min-height: var(--touch-target); justify-content: center; padding-inline: var(--space-5); }
+[data-input="touch"] .button { min-height: var(--touch-target); justify-content: center; padding-inline: var(--space-6); }
 [data-input="touch"] .button--primary { padding-inline: 1.6rem; }/* Redondo (como DSIconButton del iPhone): un círculo del alto de los demás con su ícono, el glifo del mando en su orilla y
    su nombre debajo, chico, para que la leyenda siga diciendo qué hace. El botón mide lo que su nombre (dos seguidos no se
    enciman) y la fila los alinea arriba, con el principal. */

@@ -3,10 +3,10 @@
    En una serie, abajo, las temporadas (píldoras) y los episodios en una fila de imágenes. */
 .title {
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-6);
-  padding-top: calc(var(--space-14) + var(--safe-y)); /* un poco más de aire arriba que el marco común (.screen) */
+  padding-top: calc(var(--space-16) + var(--safe-y)); /* un poco más de aire arriba que el marco común (.screen) */
   animation-duration: var(--duration-fast); /* el arte aparece casi de inmediato y se queda quieto */
 }
-.title--series { grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-3); }
+.title--series { grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-2); }
 /* En una serie el alto se reparte con la fila de episodios: menos aire bajo los botones (el nombre del redondo enfocado
    cabe igual) y episodios un poco más chicos, para que el logo no tenga que encogerse. */
 .title--series .title__actions { margin-bottom: var(--space-6); }
@@ -23,9 +23,9 @@
    entero arriba a la derecha, donde el arte no se funde, sobre su copia desenfocada (antes, recortado: solo nubes). */
 .title__art {
   position: absolute; inset: 0; --art-fit-y: 25%; --art-fit-x: 100%;
-  --art-fit-pad: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) 30vh 50vw;
+  --art-fit-pad: calc(var(--space-16) + var(--safe-y)) var(--page-gutter) 30vh 50vw;
 }
-.title--series .title__art { --art-fit-pad: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) 40vh 50vw; }
+.title--series .title__art { --art-fit-pad: calc(var(--space-16) + var(--safe-y)) var(--page-gutter) 40vh 50vw; }
 /* En una serie la fila de episodios ocupa el tercio de abajo: el arte se funde antes. */
 .title--series .title__backdrop {
   -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 18%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 40%, var(--mask-solid) 66%);
@@ -55,7 +55,7 @@
 .title__info > .title__logo { flex-shrink: 1; min-height: 3rem; }
 /* Una serie trae además la fila de episodios: con un poco menos de aire entre renglones todo cabe y el logo ya no se sale por
    arriba de la pantalla (visto a 2560×1440 con letra Grande, regresión S2). */
-.title--series .title__info { gap: var(--space-3); }
+.title--series .title__info { gap: var(--space-2); }
 /* Con el dedo los botones redondos llevan su nombre debajo (renglón y medio más): un poco menos de aire todavía. */
 [data-input="touch"] .title--series .title__info { gap: var(--space-2); }
 /* …y el lugar guardado de «Ver más» sobra: con el dedo el foco no llega ahí (se toca la sinopsis), así que no hay brinco. */
@@ -69,8 +69,8 @@
 
 /* Un renglón: qué es (Película · clasificación · año · géneros · duración) y, a su lado, las calificaciones. */
 .title__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); font-size: var(--type-body); font-weight: var(--type-body-weight); font-variant-numeric: tabular-nums; }
-.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); }
-.title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
+.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-2); color: var(--color-text); }
+.title__fact { display: inline-flex; gap: var(--space-2); min-width: 0; }
 .title__sep { opacity: var(--opacity-faint); }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
 /* PT1: la clasificación al final (T10: tras un «·», sin la cajita del iPhone). */
@@ -98,8 +98,8 @@
 /* «Ver más»: la sinopsis completa, ahí mismo (la ficha crece hacia arriba; los botones no se mueven). */
 .title .title__description.title__description--open { display: block; }
 .title__read {
-  align-self: flex-start; display: inline-flex; align-items: center; margin-top: calc(-1 * var(--space-2)); padding: var(--space-1) var(--space-3);
-  margin-left: calc(-1 * var(--space-3)); border-radius: var(--radius-pill); color: var(--color-text); font-size: var(--type-label-large);
+  align-self: flex-start; display: inline-flex; align-items: center; margin-top: calc(-1 * var(--space-2)); padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2)); border-radius: var(--radius-pill); color: var(--color-text); font-size: var(--type-label-large);
   font-weight: var(--type-label-large-weight); text-shadow: var(--shadow-text-strong); transform-origin: left center;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
@@ -117,7 +117,7 @@
    izquierda: la única tarjeta de Orbital con esa franja. */
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
-  padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
+  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-2); border-radius: var(--radius-lg); text-shadow: none;
   background: var(--color-glass-strong); box-shadow: var(--shadow-overlay), inset 0 0 0 1px color-mix(in oklab, var(--color-danger) 45%, transparent); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
@@ -139,21 +139,21 @@
 /* Los botones en un renglón, como Apple TV: «Ver» / «Continuar» con su botón del mando y, a su lado, los demás redondos.
    Abajo queda el lugar del nombre del redondo enfocado (sale ahí, sin mover nada). */
 /* En un renglón siempre: si «Continuar» trae su versión larga, la versión se recorta (antes «Más» bajaba a otro renglón). */
-.title__actions { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-3) 0 var(--space-8); }
+.title__actions { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2); min-width: 0; margin: var(--space-2) 0 var(--space-8); }
 /* La fila de botones no se queda en la columna del texto (44rem): a la derecha solo hay arte. Usa lo que necesita, hasta el
    margen de la pantalla, así la versión («🇺🇸 · 1080p · CC») se lee entera también con letra grande y «Continuar T22 E10»
    (Fernando, 15 nov: «ve también el botón de escoger idioma»); solo si ni así cabe, se recorta. */
 .title__info > .title__actions { width: max-content; max-width: calc(100vw - 2 * var(--page-gutter)); }
 .title__action {
-  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: var(--control-height); border-radius: var(--radius-pill); flex: none; text-shadow: none;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
 .title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
 .title__action--primary {
   transform-origin: left center; /* enfocado crece hacia la derecha: no se sale del margen */
-  margin-inline-end: var(--space-5); /* …y ese crecimiento (6 % de su ancho) cabe antes del redondo de «Guardar» */
-  min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
+  margin-inline-end: var(--space-6); /* …y ese crecimiento (6 % de su ancho) cabe antes del redondo de «Guardar» */
+  min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-6);
   background: var(--color-primary); color: var(--color-on-primary); /* el principal, siempre en blanco (como «Jugar») */
   font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking);
 }
@@ -165,12 +165,12 @@
    cambia. Si no cabe, cede ella (se recorta), nunca «Continuar». */
 .title__version {
   display: inline-flex; align-items: center; gap: var(--space-2); flex: 0 1 auto; min-width: 0; min-height: var(--control-height);
-  padding: 0 var(--space-5); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  padding: 0 var(--space-6); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   color: var(--color-text); text-shadow: none; white-space: nowrap;
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-fast) var(--ease-out);
 }
-.title__version { margin-inline-end: var(--space-3); } /* enfocada crece (--inverse-scale): sin esto rozaba el redondo de al lado */
+.title__version { margin-inline-end: var(--space-2); } /* enfocada crece (--inverse-scale): sin esto rozaba el redondo de al lado */
 .title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .title__version > .flag + span::before { content: "· "; } /* el punto va con la bandera: si no hay bandera, no hay punto (T10) */
 .title__version:hover { background: var(--color-glass-hover); }
@@ -212,9 +212,9 @@
 .title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
 .title__episodes {
   --episode-width: 16rem;
-  display: flex; gap: var(--space-5); overflow-x: auto; scrollbar-width: none;
+  display: flex; gap: var(--space-6); overflow-x: auto; scrollbar-width: none;
   /* Arriba y a los lados, el lugar del anillo y del crecer del enfocado (si no, se cortaban). */
-  padding: var(--space-4) var(--space-3) var(--space-2); margin: 0 calc(-1 * var(--space-3));
+  padding: var(--space-4) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
   position: relative; /* offsetLeft de los episodios, relativo a la fila */
 }
 /* Se desvanece solo el lado donde hay más episodios (title.js · markEpisodeEdges): el último de la temporada se ve entero. */
@@ -232,7 +232,7 @@
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-out);
 }
 .episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
-.episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-3)); } /* sobre la barra, no encima de ella */
+.episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-2)); } /* sobre la barra, no encima de ella */
 .episode__check {
   position: absolute; right: var(--inset-poster); top: var(--inset-poster); display: grid; place-items: center;
   width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-badge-bg); color: var(--color-live);
@@ -260,7 +260,7 @@
    Si no cabe todo, la parte enfocada sube a la vista (title.js · paintMore mueve la pista). */
 .title__more {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-raised); max-height: 100%; display: flex; flex-direction: column;
-  padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) var(--hints-room);
+  padding: calc(var(--space-12) + var(--safe-y)) var(--page-gutter) var(--hints-room);
   transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
 }
 /* T8 (10 nov): abajo sigue el arte de la ficha, desenfocado (antes un tono liso tapaba todo): un vidrio que se funde desde
@@ -285,10 +285,12 @@
 .title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) :is(.title__info, .title__browser) {
   opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
-/* Aire de sobra para la sombra de la enfocada (se corta donde termina la fila: antes se veía un cuadro oscuro alrededor). */
+/* Aire de sobra para la sombra de la enfocada (se corta donde termina la fila: antes se veía un cuadro oscuro alrededor).
+   Debajo quedan 16 (--space-4): con el espacio entre partes suman 48, un paso de la escala (D3-B). Con 8 la parte de abajo
+   subía y «Detalles» asomaba media sinopsis cortada por el pie; así solo asoma su título, como antes. */
 .title__more-row {
   display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; align-items: flex-end;
-  padding: var(--space-3) calc(var(--page-gutter) + var(--space-2)) var(--space-14); margin: 0 calc(-1 * var(--page-gutter)) calc(var(--space-3) - var(--space-14));
+  padding: var(--space-2) calc(var(--page-gutter) + var(--space-2)) var(--space-16); margin: 0 calc(-1 * var(--page-gutter)) calc(var(--space-4) - var(--space-16));
 }
 .title__more-row > .card { flex: none; }
 /* Hay más a la derecha: esa orilla se desvanece (como home.css · home__viewport--more y shelf.css · shelf__edge--more). */
@@ -313,13 +315,13 @@
   font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
   /* R3-5: enfocada, «Detalles» se marca con una placa de vidrio (la misma que lleva nombres sobre el arte). Su lugar ya está
      guardado (padding con margen negativo): al llegar, el texto no se mueve; solo aparece la placa. */
-  padding: var(--space-3) var(--space-4); margin: 0 0 0 calc(-1 * (var(--space-2) + var(--space-4)));
+  padding: var(--space-2) var(--space-4); margin: 0 0 0 calc(-1 * (var(--space-2) + var(--space-4)));
   border-radius: var(--radius-lg); transition: background var(--duration-fast) var(--ease-out);
 }
 .is-focused.title__details { background: var(--color-glass-legible); }
 .title__details dt { color: var(--color-text-faint); }
 .title__details dd { margin: 0; color: var(--color-text); }
-.title__more-row--details { padding-top: 0; margin-top: calc(-1 * var(--space-3)); } /* sube lo que la placa ocupa arriba */
+.title__more-row--details { padding-top: 0; margin-top: calc(-1 * var(--space-2)); } /* sube lo que la placa ocupa arriba */
 
 @media (max-height: 820px) {
   .title__logo { max-height: 7rem; }
@@ -341,7 +343,7 @@
 }
 /* Con el dedo: «Atrás» no tapa las temporadas, y los redondos dicen su nombre siempre (no hay foco que lo enseñe). */
 [data-input="touch"] .title__tabs { padding-right: var(--touch-back-room); }
-[data-input="touch"] .title__actions { align-items: flex-start; margin-bottom: var(--space-3); }
+[data-input="touch"] .title__actions { align-items: flex-start; margin-bottom: var(--space-2); }
 [data-input="touch"] .title__action--icon { width: 5.5rem; flex-direction: column; gap: var(--space-1); }
 [data-input="touch"] .title__action-name { position: static; transform: none; opacity: 1; max-width: 100%; white-space: normal; text-align: center; color: var(--color-text-muted); }
 

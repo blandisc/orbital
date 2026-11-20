@@ -24,7 +24,7 @@ struct HomeChannels: View {
 
     var body: some View {
         let _ = model.track()
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .sectionTitle) {
                 DSSectionHead(title: Text("Canales"), eyebrow: Text("Siempre hay un episodio al aire"))
                 Spacer(minLength: DS.Space.s2)
@@ -42,7 +42,7 @@ struct HomeChannels: View {
             // Cada medio minuto se vuelve a calcular qué va al aire y cuánto lleva (es una cuenta: no pide nada a la red).
             TimelineView(.periodic(from: .now, by: DS.HomeChannels.tick)) { context in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                         ForEach(model.channels) { channel in
                             if let air = channel.onAir(at: context.date) { card(channel, air) }
                         }
@@ -108,14 +108,14 @@ struct HomeChannels: View {
                             Text(verbatim: air.episode.name).recipe(.cardTitle).lineLimit(1)
                         }
                         .onArt()
-                        .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s4)
+                        .padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s4)
                     }
-                    DSProgress(fraction: air.progress).padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s2)
+                    DSProgress(fraction: air.progress).padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s2)
                 }
                 .overlay(alignment: .topLeading) {
                     TitleLogo(url: channel.logo, title: name(channel.pick))
                         .frame(maxWidth: DS.HomeChannels.logoWidth, maxHeight: DS.HomeChannels.logoHeight, alignment: .topLeading)
-                        .padding(DS.Space.s3).onArt()
+                        .padding(DS.Space.s2).onArt()
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 // La serie arriba y el capítulo con lo que queda abajo, igual que una tarjeta de Seguir viendo (`StillCard`).
@@ -137,7 +137,7 @@ struct HomeChannels: View {
         // Sin la caja gris (Fernando, 17 nov 2026: «quítale la cajita esta gris de atrás»): un círculo con el + en turquesa y su
         // nombre debajo, al centro del alto de los canales.
         Button { choosing = true } label: {
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 Image(systemName: "plus").font(DS.TextRecipe.section.font).foregroundStyle(DS.brandMoon)
                     .frame(width: DS.HomeChannels.addCircle, height: DS.HomeChannels.addCircle)
                     .background(DS.fill, in: Circle())   // el turquesa es voz: solo el +, nunca el fondo ni la orilla
@@ -199,7 +199,7 @@ struct ChannelsSheet: View {
 
     /// De qué temporadas sale la dona (antes en Ajustes; revisión del 11 nov: vive con la dona, junto a los canales).
     private var simpsonsSeasons: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Un Simpson al azar"), level: .section)
             NavigationLink { SimpsonsSeasonsPage() } label: {
                 HStack(spacing: DS.Space.s2) {
@@ -207,7 +207,7 @@ struct ChannelsSheet: View {
                                 value: SimpsonsSeasonsSection.summary(env.services.appSettings.simpsonsSeasons))
                     Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .dsCard()
             }
             .buttonStyle(.plain)
@@ -216,9 +216,9 @@ struct ChannelsSheet: View {
     }
 
     private func section(_ title: Text, _ picks: [ChannelsModel.Pick], note: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: title, level: .section)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: DS.HomeChannels.gridColumns), spacing: DS.Space.s3) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.HomeChannels.gridColumns), spacing: DS.Space.s2) {
                 ForEach(picks) { pick in
                     Button { model.toggle(pick) } label: {
                         PosterView(url: pick.poster, title: titleName(pick.title, id: pick.id, kind: "series"))
@@ -252,7 +252,7 @@ struct ChannelsSheet: View {
                     let on = model.isChannel(pick.id)
                     // Todo el renglón es el botón; a la derecha, un ícono (no una pastilla de texto): + para añadir, ✓ si ya es canal.
                     Button { model.toggle(pick) } label: {
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             PosterView(url: pick.poster, title: titleName(pick.title, id: pick.id, kind: "series")).frame(width: DS.HomeChannels.resultPoster)
                             Text(verbatim: name(pick)).recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
                             Spacer(minLength: DS.Space.s2)

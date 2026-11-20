@@ -90,7 +90,7 @@ struct TraktCodeSheet: View {
             if case .linking(let code, let url) = settings.model.trakt, let url = URL(string: url) { return (code, url) }
             return nil
         }()
-        VStack(spacing: DS.Space.s5) {
+        VStack(spacing: DS.Space.s6) {
             DSSheetHeader(title: Text("Conecta con un código"))
             switch settings.model.trakt {
             case .linking(let code, let url):

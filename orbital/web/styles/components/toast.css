@@ -12,8 +12,8 @@
   --toast-lead: var(--control-height); /* de dónde nace la cajita: un círculo del alto del aviso, alrededor del ícono */
   --toast-slack: var(--space-8); /* el aire del rebote, a la derecha */
   position: fixed; z-index: var(--z-toast);
-  top: calc(var(--space-5) + var(--safe-y) + 3rem + var(--space-1)); right: var(--page-gutter);
-  display: flex; align-items: center; gap: var(--space-3);
+  top: calc(var(--space-6) + var(--safe-y) + 3rem + var(--space-1)); right: var(--page-gutter);
+  display: flex; align-items: center; gap: var(--space-2);
   width: max-content; max-width: min(46rem, calc(100vw - 2 * var(--page-gutter)));
   min-height: var(--control-height); padding: var(--space-1) var(--space-6) var(--space-1) var(--space-1);
   border-radius: var(--radius-pill); line-height: var(--leading-tight);
@@ -23,7 +23,7 @@
    derecha (T12, revisión del 10 nov: un error tapaba el selector). El selector mide su relleno (games.css · space-3 arriba)
    más una cápsula de vidrio (control-height y su space-1 por lado); el aviso queda a space-3 de él. */
 body[data-view="games"]:not([data-game-page]) .toast {
-  top: calc(var(--status-room) + var(--space-3) + var(--control-height) + 2 * var(--space-1) + var(--space-3)); }
+  top: calc(var(--status-room) + var(--space-2) + var(--control-height) + 2 * var(--space-1) + var(--space-2)); }
 /* Dos renglones o portada: menos redonda (una píldora alta se ve rara). */
 .toast--two-line { border-radius: var(--radius-lg); }
 
@@ -40,7 +40,7 @@ body[data-view="games"]:not([data-game-page]) .toast {
 .toast__icon, .toast__art { animation: toast-pop var(--duration-notice-icon) var(--ease-pop) both; }
 @keyframes toast-pop { from { opacity: 0; transform: scale(.4); } }
 .toast__body, .toast__action { animation: toast-text var(--duration-base) var(--ease-out) var(--delay-notice-text) both; }
-@keyframes toast-text { from { opacity: 0; transform: translateX(calc(-1 * var(--space-3))); } }
+@keyframes toast-text { from { opacity: 0; transform: translateX(calc(-1 * var(--space-2))); } }
 /* Movimiento reducido: solo aparece, entero y de una vez. */
 @media (prefers-reduced-motion: reduce) {
   .toast :is(.toast__shade, .toast__glass, .toast__icon, .toast__art, .toast__body, .toast__action) { animation: none; }
@@ -96,13 +96,13 @@ body[data-view="games"]:not([data-game-page]) .toast {
 .toast__countdown { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-accent); transform-origin: left; animation: toast-countdown linear forwards; }
 @keyframes toast-countdown { to { transform: scaleX(0); } }
 /* Con un menú lateral abierto el aviso sale a su izquierda: nunca encima del título del menú. */
-body:has(.sheet:not([hidden]):not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--page-gutter) + var(--space-5)); } /* la hoja también deja su margen: antes el aviso se le encimaba */
+body:has(.sheet:not([hidden]):not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--page-gutter) + var(--space-6)); } /* la hoja también deja su margen: antes el aviso se le encimaba */
 /* Con el dedo y algo encima, «Atrás» ocupa la esquina de arriba: el aviso baja lo que mide ese botón y su aire. */
-[data-input="touch"][data-overlay="true"] .toast { top: calc(var(--space-5) + var(--safe-y) + var(--control-height) + var(--space-4)); }
+[data-input="touch"][data-overlay="true"] .toast { top: calc(var(--space-6) + var(--safe-y) + var(--control-height) + var(--space-4)); }
 
 /* Calificar (16 nov 2026, como la pastilla «¿Qué tal…?» del iPhone): el póster más grande, la pregunta, las cinco estrellas
    vacías que invitan y «Y Calificar» en una pastilla en lugar de texto suelto. */
-.toast--rate { gap: var(--space-4); padding-right: var(--space-3); }
+.toast--rate { gap: var(--space-4); padding-right: var(--space-2); }
 .toast--rate .toast__art { height: 5.2rem; }
 .toast__stars { font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); padding-block: var(--space-1); }
 .toast--rate .toast__action {

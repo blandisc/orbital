@@ -22,7 +22,7 @@ struct VersionGroupHeader: View {
 /// `inset`: dónde empieza la raya (bajo el texto, no bajo el ícono); los renglones de «Audio y subtítulos» llevan su columna
 /// de ícono o bandera más ancha (`SubtitleRow.separatorInset`).
 struct VersionGroup<Content: View>: View {
-    var inset: CGFloat = DS.Space.s3 + DS.Version.mark
+    var inset: CGFloat = DS.Space.s2 + DS.Version.mark
     @ViewBuilder let content: Content
     var body: some View {
         VStack(spacing: 0) {
@@ -138,7 +138,7 @@ struct VersionListRow<Menu: View>: View {
                 }
                 .padding(.vertical, DS.Space.s1)
             }
-            .padding(.horizontal, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s2)
             .frame(minHeight: DS.Size.touchTarget)
             .contentShape(Rectangle())
         }
@@ -183,7 +183,7 @@ struct VersionPreview: View {
 
     var body: some View {
         let language = VersionText.name(code, uiLanguage)
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("\(Text.flag(code))\(Text(verbatim: "\(language) · \(option.quality)"))").recipe(.cardTitle, color: DS.text)
                 let facts = [VersionText.size(option, locale: locale), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")]
@@ -218,7 +218,7 @@ struct VersionLegend: View {
         Group {
             if shownBefore == false {
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s3) { items }
+                    HStack(spacing: DS.Space.s2) { items }
                     VStack(alignment: .leading, spacing: DS.Space.s1) { items }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -252,7 +252,7 @@ struct VersionMarkTip: View {
                 Text(verbatim: mark.words).recipe(.footnote, color: DS.text)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: DS.Version.preview)
-                    .padding(DS.Space.s3)
+                    .padding(DS.Space.s2)
                     .presentationCompactAdaptation(.popover)
             }
             .accessibilityLabel(Text(verbatim: mark.words))

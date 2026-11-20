@@ -175,6 +175,6 @@
 @media (max-width: 700px), (max-height: 520px) {
   .launch__stage { height: 13rem; }
   .launch__cover { height: 11rem; width: calc(11rem * var(--ratio, .667)); }
-  .launch__orbit { width: calc(11rem * var(--ratio, .667) + 8rem); height: 5rem; margin: calc(-1 * var(--space-10)) 0 0 calc((11rem * var(--ratio, .667) + 8rem) / -2); }
+  .launch__orbit { width: calc(11rem * var(--ratio, .667) + 8rem); height: 5rem; margin: calc(-1 * var(--space-12)) 0 0 calc((11rem * var(--ratio, .667) + 8rem) / -2); }
   .launch__content { gap: var(--space-4); }
 }

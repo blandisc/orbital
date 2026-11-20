@@ -3,19 +3,19 @@
    Los encabezados que usan esa esquina le dejan lugar (--touch-back-room). «Menú» (sin nada encima) sigue abajo a la derecha:
    arriba está la barra con la hora. */
 .touch-back {
-  position: fixed; right: var(--page-gutter); top: calc(var(--space-5) + var(--safe-y, 0px)); z-index: var(--z-touch-back);
-  display: none; align-items: center; gap: var(--space-2); min-height: var(--control-height); padding: 0 var(--space-5) 0 var(--space-4);
+  position: fixed; right: var(--page-gutter); top: calc(var(--space-6) + var(--safe-y, 0px)); z-index: var(--z-touch-back);
+  display: none; align-items: center; gap: var(--space-2); min-height: var(--control-height); padding: 0 var(--space-6) 0 var(--space-4);
   border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
   color: var(--color-text); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking);
 }
 .touch-back svg { width: var(--icon-md); height: var(--icon-md); }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
 /* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
-.touch-back--menu { top: auto; bottom: var(--space-5); }
+.touch-back--menu { top: auto; bottom: var(--space-6); }
 [data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
 [data-input="touch"]:not([data-overlay="true"]) .touch-back--menu,
 [data-input="touch"][data-overlay-menu="true"] .touch-back--menu { display: inline-flex; }
 /* Con una hoja del lado abierta, «Atrás» entra en su esquina (la hoja empieza donde él: antes quedaba montado en su borde). */
 body:has(.side-panel:not([hidden]):not(.side-panel--bottom)) .touch-back:not(.touch-back--menu) {
-  top: calc(var(--space-5) + var(--safe-y, 0px) + var(--space-4)); right: calc(var(--page-gutter) + var(--space-4));
+  top: calc(var(--space-6) + var(--safe-y, 0px) + var(--space-4)); right: calc(var(--page-gutter) + var(--space-4));
 }

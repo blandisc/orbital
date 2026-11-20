@@ -260,7 +260,7 @@ struct DownloadsView: View {
 
     /// Lo que se está bajando: póster, nombre, datos en SF Mono, el avance y pausar o seguir.
     private func row(_ item: DownloadItem, _ model: DownloadsModel) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             PosterView(url: item.poster, title: titleName(item.title, id: item.metaID, kind: item.kind)).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Dos renglones para el nombre y el estado en el suyo: con letra grande «En pausa» se caía al final de la línea.
@@ -329,7 +329,7 @@ struct DownloadsView: View {
 
     /// Una serie descargada: su póster, cuántas temporadas y episodios, y cuánto ocupa (sin archivos sueltos).
     private func seriesRow(_ g: DownloadGroup) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             PosterView(url: g.poster, title: titleName(g.title, id: g.metaID, kind: g.kind)).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: titleName(g.title, id: g.metaID, kind: g.kind)).recipe(.cardTitle).lineLimit(1)
@@ -341,7 +341,7 @@ struct DownloadsView: View {
 
     func readyRow(title: String, poster: String?, data: [String], item: DownloadItem, model: DownloadsModel) -> some View {
         Button { Task { env.play(await model.playRequest(item)) } } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 if let poster { PosterView(url: poster, title: title).frame(width: DS.Size.thumbSmall) }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(title).recipe(.cardTitle).lineLimit(1)
@@ -443,7 +443,7 @@ struct DownloadSeasonView: View {
             Section {
                 ForEach(items) { item in
                     Button { Task { env.play(await model.playRequest(item)) } } label: {
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
                                 Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : item.subtitle).recipe(.cardTitle).lineLimit(2)
                                 DataLine(parts: [item.quality, ByteSize.text(item.writtenBytes, locale: env.uiLocale)].compactMap { $0 })
@@ -486,7 +486,7 @@ struct DownloadSubtitlesSheet: View {
     @State private var saving: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : "\(titleName(item.title, id: item.metaID, kind: item.kind)) · \(item.subtitle)"))
             if let found {
                 if found.isEmpty {
@@ -510,7 +510,7 @@ struct DownloadSubtitlesSheet: View {
                 DSInlineProgress(text: Text("Buscando subtítulos…"))
             }
         }
-        .padding(DS.Space.s5)
+        .padding(DS.Space.s6)
         .task { found = await model.subtitleOptions(item) }
     }
 

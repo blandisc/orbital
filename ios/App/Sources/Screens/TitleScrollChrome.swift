@@ -71,7 +71,7 @@ struct TitleEntrance: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
-            .offset(y: shown || reduceMotion ? 0 : DS.Space.s5)
+            .offset(y: shown || reduceMotion ? 0 : DS.Space.s6)
             .onAppear {
                 guard !shown else { return }
                 withAnimation((DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade).delay(DesignTokens.Motion.base / 2)) { shown = true }

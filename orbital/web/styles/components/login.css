@@ -5,7 +5,7 @@
 .login { display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-6); justify-items: center; }
 /* Poca altura con letra Grande o Muy grande: fuera la explicación y menos aire, para que quepa el teclado. */
 @media (max-height: 820px) {
-  [data-text-size="large"] .login, [data-text-size="xlarge"] .login { gap: var(--space-3); }
+  [data-text-size="large"] .login, [data-text-size="xlarge"] .login { gap: var(--space-2); }
   [data-text-size="large"] .login__head .screen-head__lead, [data-text-size="xlarge"] .login__head .screen-head__lead { display: none; }
 }
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va y cómo espera al conectar. */
@@ -14,7 +14,7 @@
 .login--busy .keyboard { opacity: var(--opacity-faint); pointer-events: none; }
 
 
-.login__form { display: grid; gap: var(--space-3); width: min(40rem, 100%); }
+.login__form { display: grid; gap: var(--space-2); width: min(40rem, 100%); }
 /* Los campos y, a la derecha, el QR para escribir desde el celular (si hay túnel). */
 .login__body { display: flex; align-items: center; justify-content: center; gap: var(--space-8); width: 100%; min-width: 0; }
 .login__phone { display: grid; justify-items: center; gap: var(--space-2); margin: 0; width: 9rem; text-align: center; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
@@ -23,7 +23,7 @@
 .login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-sm); animation: rise-in var(--duration-enter) var(--ease-out); }
 @media (max-height: 820px) { .login__phone-qr { width: 5.5rem; height: 5.5rem; } }
 .login__field {
-  display: grid; gap: .2rem; min-width: 0; padding: var(--space-3) var(--space-5); border-radius: var(--radius-lg);
+  display: grid; gap: .2rem; min-width: 0; padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
@@ -38,4 +38,4 @@
 .login__quick strong { color: var(--color-text); }
 .login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; text-wrap: balance; }
 
-@media (max-height: 640px) { .login { gap: var(--space-3); } .login__head .screen-head__lead { display: none; } }
+@media (max-height: 640px) { .login { gap: var(--space-2); } .login__head .screen-head__lead { display: none; } }

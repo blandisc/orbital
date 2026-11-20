@@ -16,7 +16,7 @@ struct OnboardingSubtitles: View {
         GuidePage(title: Text("Más subtítulos"),
                   message: Text("Más subtítulos y de tu copia exacta. Conecta tu cuenta gratuita de OpenSubtitles."),
                   step: step, primary: model.connected ? Text("Seguir") : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let account = model.account {
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(account.username)"))
                 } else {

@@ -4,22 +4,22 @@
 .home {
   --home-peek: 3.4rem; /* lo que asoma de las consolas (home.js lo lee) */
   grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ min-height: 0; overflow: hidden;
-  padding: 0 var(--page-gutter) var(--space-5);
+  padding: 0 var(--page-gutter) var(--space-6);
 }
 /* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las filas no quedan debajo. */
-[data-input="touch"] .home { padding-bottom: calc(var(--space-5) + var(--space-4)); }
+[data-input="touch"] .home { padding-bottom: calc(var(--space-6) + var(--space-4)); }
 /* Lo de arriba se queda quieto bajo la barra (D4-B, 10 nov 2026: antes subía con todo y su logo quedaba cortado bajo la barra);
    las filas se deslizan debajo y la enfocada queda justo debajo de lo de arriba. `--home-stage` (el alto de lo de arriba) lo
    pone home.js; lo que sube por detrás de lo de arriba se desvanece, y lo que asoma abajo también. */
 .home { position: relative; }
 .home__rows {
   --rows-fade-top: transparent; --rows-fade-bottom: var(--mask-solid);
-  position: absolute; inset: 0 0 var(--space-5); padding: 0 var(--page-gutter); overflow: hidden; /* recorta en la orilla de la pantalla: la enfocada crece sin cortarse */
-  -webkit-mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-10)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
-  mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-10)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
+  position: absolute; inset: 0 0 var(--space-6); padding: 0 var(--page-gutter); overflow: hidden; /* recorta en la orilla de la pantalla: la enfocada crece sin cortarse */
+  -webkit-mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-12)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
+  mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-12)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
 }
 .home__rows--more { --rows-fade-bottom: transparent; }
-[data-input="touch"] .home__rows { bottom: calc(var(--space-5) + var(--space-4)); }
+[data-input="touch"] .home__rows { bottom: calc(var(--space-6) + var(--space-4)); }
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--layout-between-sections); transition: transform var(--duration-slow) var(--ease-out); }
 
 /* Arriba: lo enfocado, abajo a la izquierda de su lugar. Al cambiar, entra con un fundido. */
@@ -42,8 +42,8 @@
      pegada al título): ese aire es de la fila, así lo enfocado nunca se monta en su título. Abajo y a los lados, aire para la
      sombra de la enfocada (antes se cortaba en un cuadro oscuro); el margen lo devuelve. */
   --row-grow: 0px;
-  overflow: hidden; padding: max(var(--space-3), calc(var(--row-grow) + var(--orbit-width) + var(--orbit-gap) + var(--space-1))) var(--space-10) var(--space-14);
-  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-10)) calc(var(--space-2) - var(--space-14));
+  overflow: hidden; padding: max(var(--space-2), calc(var(--row-grow) + var(--orbit-width) + var(--orbit-gap) + var(--space-1))) var(--space-12) var(--space-16);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-12)) calc(var(--space-2) - var(--space-16));
   -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
   mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
 }
@@ -53,11 +53,11 @@
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
 .home__viewport--card { --row-grow: calc(8.4rem * .1); }
 .home__viewport--mine { --row-grow: calc(9.6rem * .1); }
-.home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-3); /* lo que crece la enfocada */ }
+.home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-2); /* lo que crece la enfocada */ }
 .home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
 /* Seguir viendo y Mi lista: las portadas de Películas y series, un paso más bajas (lo de arriba ya dice cuál es). */
-.home__track--posters { --card-height: 9.6rem; --card-focus-scale: 1.1; gap: var(--card-gap); padding-bottom: var(--space-3); }
+.home__track--posters { --card-height: 9.6rem; --card-focus-scale: 1.1; gap: var(--card-gap); padding-bottom: var(--space-2); }
 .home__track--posters .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
 /* Tus consolas: tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más). La enfocada crece hacia

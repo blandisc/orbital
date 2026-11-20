@@ -4,7 +4,7 @@
 .status-bar {
   position: relative; z-index: var(--z-above); display: flex; align-items: center; gap: var(--space-8); min-width: 0;
   transition: opacity var(--duration-base) var(--ease-out), translate var(--duration-slow) var(--ease-out);
-  height: var(--control-height); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
+  height: var(--control-height); margin: calc(var(--space-6) + var(--safe-y)) var(--page-gutter) 0;
   font-size: var(--type-body); font-weight: var(--type-body-weight);
 }
 /* Al bajar a lo de abajo (Juegos, como el Apple TV), la barra se sube y se va; al volver arriba, regresa (main.js · onChrome). */
@@ -92,7 +92,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
    de su orilla: a la derecha, el aire de arriba y abajo; a la izquierda, ese mismo más lo que la lupa es más chica (antes
    .85rem y .5rem: todo corrido ~1,4 px a la derecha y el círculo casi tocando la orilla). */
 .status-bar__search {
-  display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
+  display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-2));
   padding: .4rem .4rem .4rem .625rem; border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
   color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
@@ -109,7 +109,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 @media (max-width: 1600px) {
   [data-text-size="xlarge"] .status-bar__search > span:not(.status-bar__search-glyph),
   [data-text-size="xlarge"] .status-bar__playing-title { display: none; }
-  [data-text-size="xlarge"] .status-bar { gap: var(--space-5); }
+  [data-text-size="xlarge"] .status-bar { gap: var(--space-6); }
 }
 /* Muy grande en cualquier ancho: el nombre quedaba en «▶ M»; solo el ▶. */
 [data-text-size="xlarge"] .status-bar__playing-title { display: none; }
@@ -122,18 +122,18 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .status-bar--tight-1 .status-bar__search > span:not(.status-bar__search-glyph), .status-bar--tight-1 .status-bar__playing-title { display: none; }
 .status-bar--tight-2 { gap: var(--space-4); }
 .status-bar--tight-2 .status-bar__tab { padding-inline: var(--space-2); }
-.status-bar--tight-2 .status-bar__right { gap: var(--space-3); }
+.status-bar--tight-2 .status-bar__right { gap: var(--space-2); }
 .status-bar--tight-3 .status-bar__offline { font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .status-bar--tight-4 .status-bar__wordmark { display: none; }
 .status-bar--tight-5 .status-bar__tabs .glyph { display: none; }
 .status-bar--tight-6 .status-bar__tab { font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .status-bar--tight-6 .status-bar__clock { font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
-.status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-6); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }
 /* La hora cierra la barra: grande y separada del estado por una línea fina. */
 .status-bar__clock {
-  padding-left: var(--space-5); border-left: 1px solid var(--color-hairline-strong);
+  padding-left: var(--space-6); border-left: 1px solid var(--color-hairline-strong);
   color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight);
   letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; line-height: var(--leading-none);
 }

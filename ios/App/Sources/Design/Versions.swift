@@ -70,7 +70,7 @@ struct VersionsSkeleton: View {
                             Spacer(minLength: DS.Space.s2)
                             Text(verbatim: "2.9 GB").recipe(.footnote)
                         }
-                        .padding(.horizontal, DS.Space.s3)
+                        .padding(.horizontal, DS.Space.s2)
                         .frame(minHeight: DS.Size.touchTarget)
                     }
                 }
@@ -103,7 +103,7 @@ struct VersionEvidence: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(.row, translucent: true)
         .accessibilityElement(children: .combine)
     }

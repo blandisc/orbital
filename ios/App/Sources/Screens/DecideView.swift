@@ -185,7 +185,7 @@ struct DecideView: View {
     /// (`DecideControls`: el tipo y los filtros de ícono, con lo puesto dicho en una línea). El mismo en las dos pestañas.
     private func header(_ m: DecideModel) -> some View {
         let count = mode == .deck ? deckCount ?? m.deckPool().count : m.count()
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             // La cuenta junto al título; con letra de accesibilidad, debajo de él (el título no se parte). Se decide por el tamaño
             // de letra, no con `ViewThatFits`: medir dos encabezados alineados por línea base en cada pasada congelaba la hoja
             // (0x8BADF00D, 13 nov 2026; regla «ViewThatFits no se anida ni vive bajo alineación por línea base»).
@@ -310,7 +310,7 @@ struct DecideView: View {
     /// Ver · Barajar · ⋯ en un renglón del mismo alto, de margen a margen: «Ver» se estira y Barajar y «⋯» son círculos de la
     /// familia de `DSIconButton` (pulido de DE2).
     private func actions(_ m: DecideModel, _ s: Suggestion) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             // Ver ahora: la película, o en una serie el capítulo en que vas (el primero si no la has empezado).
             let start = seriesStart?.metaID == s.imdb ? seriesStart : nil
             Button {
@@ -389,7 +389,7 @@ struct DecideView: View {
     @ViewBuilder private func nothing(_ m: DecideModel, _ empty: DecideModel.Empty) -> some View {
         switch empty {
         case .offline, .nothingSuggested:
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 Image(systemName: empty == .offline ? DS.Symbol.offline : "rectangle.stack").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
                 (empty == .offline ? Text("Sin conexión") : Text("Aún no hay sugerencias")).recipe(.cardTitle).multilineTextAlignment(.center)
                 (empty == .offline ? Text("Cuando vuelva el internet, aquí salen tres de tus sugerencias.") : Text("Cuando Explorar cargue sus listas, aquí salen."))
@@ -403,12 +403,12 @@ struct DecideView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Space.s5)
+            .padding(.vertical, DS.Space.s6)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("decide-offline")
         case .filters:
             let relax = m.relaxations()
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 Image(systemName: DS.Symbol.decide).font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
                 Text(verbatim: String(format: Strings.tr("Nada con %@", language: language), words.activeSummary(m))).recipe(.cardTitle).multilineTextAlignment(.center)
                 Text("Prueba quitando un filtro.").recipe(.footnote).multilineTextAlignment(.center)
@@ -424,7 +424,7 @@ struct DecideView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Space.s5)
+            .padding(.vertical, DS.Space.s6)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("decide-nothing")
         }

@@ -4,14 +4,14 @@
 /* Abajo, aire antes del pie: el título de la fila que asoma ya no queda pegado a las pistas («RePág AvPág…»). */
 .shelf {
   grid-row: 3; grid-column: 1; /* ídem */
-  height: calc(var(--row-height) + var(--row-peek)); overflow: hidden; margin-bottom: var(--space-3);
+  height: calc(var(--row-height) + var(--row-peek)); overflow: hidden; margin-bottom: var(--space-2);
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);
   mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);
 }
 .shelf__rows { transition: transform var(--duration-slow) var(--ease-out); will-change: transform; }
 .shelf__row { height: var(--row-height); padding: 0 var(--page-gutter); }
 .shelf__heading {
-  display: flex; align-items: baseline; gap: var(--space-3); padding-top: var(--space-2); height: var(--row-heading-height);
+  display: flex; align-items: baseline; gap: var(--space-2); padding-top: var(--space-2); height: var(--row-heading-height);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight);
   transition: opacity var(--duration-base) var(--ease-out);
 }
@@ -26,14 +26,14 @@
 /* Hay más a la derecha: la orilla se desvanece, como las filas del Inicio (home.css · home__viewport--more); al final, no.
    R2-10: si la fila ya avanzó, lo que quedó antes del margen se corta en seco (antes asomaba una tira del póster anterior). */
 .shelf__edge--more { --edge-end: transparent; --edge-end-at: 86%; }
-.shelf__edge--less { --edge-start-at: calc(var(--page-gutter) - var(--space-3)); }
+.shelf__edge--less { --edge-start-at: calc(var(--page-gutter) - var(--space-2)); }
 :is(.shelf__edge--more, .shelf__edge--less) {
   -webkit-mask-image: linear-gradient(90deg, transparent var(--edge-start-at, 0), var(--mask-solid) var(--edge-start-at, 0), var(--mask-solid) var(--edge-end-at, 100%), var(--edge-end, var(--mask-solid)) 100%);
   mask-image: linear-gradient(90deg, transparent var(--edge-start-at, 0), var(--mask-solid) var(--edge-start-at, 0), var(--mask-solid) var(--edge-end-at, 100%), var(--edge-end, var(--mask-solid)) 100%);
 }
 .shelf__track {
   display: flex; align-items: flex-end; gap: var(--card-gap);
-  height: calc(var(--row-height) - var(--row-heading-height) - var(--space-5));
+  height: calc(var(--row-height) - var(--row-heading-height) - var(--space-6));
   transition: transform var(--duration-slow) var(--ease-out);
 }
 /* Al abrir Orbital: las portadas entran escalonadas, una sola vez. */
@@ -51,7 +51,7 @@
 .view--from-left { animation: section-in-left var(--duration-enter) var(--ease-out); }
 
 /* Destacados (carrusel): un punto por pieza junto al título; el actual, alargado (como PageDots del iPhone). */
-.shelf__dots { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: var(--space-3); }
+.shelf__dots { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: var(--space-2); }
 .shelf__dots i { width: .45rem; height: .45rem; border-radius: var(--radius-pill); background: var(--color-text-faint);
   transition: width var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out); }
 .shelf__dots i.on { width: 1.4rem; background: var(--color-text); }
@@ -62,7 +62,7 @@
 .shelf__stage {
   /* Tan alto como la portada enfocada (la fila ya le deja ese lugar). */
   position: relative; flex: none; width: var(--because-stage-width); height: calc(var(--card-height) * var(--card-focus-scale)); isolation: isolate;
-  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-3); padding: var(--inset-card);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-2); padding: var(--inset-card);
   border-radius: var(--tile-radius); background: var(--color-surface); box-shadow: var(--shadow-card); opacity: var(--opacity-near);
   transition: box-shadow var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out);
 }
@@ -86,7 +86,7 @@
 /* Abajo: un punto por título (el actual, alargado) y hacia dónde sigue (RT salta a las sugeridas). */
 .shelf__stage-foot { display: flex; align-items: center; min-height: 1.8rem; }
 .shelf__stage-dots { margin-left: 0; }
-.shelf__stage-next { margin-left: auto; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); white-space: nowrap; }
+.shelf__stage-next { margin-left: auto; padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); white-space: nowrap; }
 /* Lo relacionado se recorta solo a los lados (arriba crece la enfocada). */
 .shelf__stage-rest { flex: 1; min-width: 0; clip-path: inset(-4rem 0 -2rem 0); }
 .shelf__stage-rest--first { clip-path: inset(-4rem 0 -2rem -1.6rem); } /* la enfocada crece y lleva su anillo: a la izquierda cabe en el hueco */

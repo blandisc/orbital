@@ -448,7 +448,7 @@ struct ListRow: View {
     let posters: [String]
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             ZStack(alignment: .leading) {
                 ForEach(Array(posters.prefix(DS.ParaTiB.matchFan).enumerated().reversed()), id: \.offset) { i, url in
                     PosterView(url: url, title: "").frame(width: DS.Collections.stackPoster)

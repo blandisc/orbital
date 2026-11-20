@@ -28,7 +28,7 @@ struct DSNotice: View {
             Spacer(minLength: 0)
         }
         .foregroundStyle(color)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
     }
 
@@ -52,7 +52,7 @@ struct DSProblem<Fixes: View>: View {
     @ViewBuilder let fixes: () -> Fixes
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             IconBeside(symbol: symbol, color: DS.warning) {
                 title.recipe(.labelLarge, color: DS.text)
                 if let detail { detail.recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true) }
@@ -101,7 +101,7 @@ struct DSDegradedNotice: View {
             .dsGlassButton().dsControlSize(.small).padding(.top, DS.Space.s1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(translucent: true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("degraded-notice")
@@ -171,7 +171,7 @@ struct DSLoadingState: View {
     var body: some View {
         ProgressView()
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Space.s10)
+            .padding(.vertical, DS.Space.s12)
             .accessibilityLabel(Text("Cargando"))
     }
 }

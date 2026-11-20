@@ -73,7 +73,7 @@ extension SettingsView {
     @ViewBuilder func lettering(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
+            SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s2, leading: DS.Space.s4, bottom: DS.Space.s2, trailing: DS.Space.s4))
             Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
                 ForEach(AppSettings.subtitleSizes, id: \.self) { sizeName($0).tag($0) }
             }

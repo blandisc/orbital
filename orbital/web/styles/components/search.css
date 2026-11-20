@@ -7,7 +7,7 @@
   /* El tamaño de las portadas de una lista (--card-height del sistema, el foco crece 1.1): antes eran más chicas y de otro estilo. */
   --card-focus-scale: 1.1; --key-height: min(2.75rem, 5vh); --keyboard-width: 24rem;
   display: grid; grid-template-columns: min(var(--keyboard-width), 44%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
-  column-gap: var(--space-10); row-gap: var(--space-6); overflow: hidden;
+  column-gap: var(--space-12); row-gap: var(--space-6); overflow: hidden;
   /* El cielo del sistema (P4): la luz del color del arte arriba a la derecha, sobre los resultados, y el fondo hondo (antes
      negro plano). La misma receta que el fondo vivo de Inicio (backdrop.css · .backdrop__glow), sin estrellas que repintar. */
   background:
@@ -22,10 +22,10 @@
 /* En la columna del teclado, el campo con letra muy grande usaría dos renglones: baja un paso. */
 [data-text-size="xlarge"] .search__field { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
 
-.search__top { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.search__top { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .search__field {
-  display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0;
-  padding-bottom: var(--space-3); border-bottom: 2px solid var(--color-hairline);
+  display: flex; align-items: center; gap: var(--space-2); flex: 1; min-width: 0;
+  padding-bottom: var(--space-2); border-bottom: 2px solid var(--color-hairline);
   font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-tight);
   transition: border-color var(--duration-base) var(--ease-out);
 }
@@ -35,11 +35,11 @@
 /* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
    que escribías aparecía corrido a la izquierda. La caja vacía de lo escrito no ocupa lugar. */
 /* La ayuda en letra de encabezado: «Juego, película o serie» cabe entera en la columna del teclado compacto (P4). */
-.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(2px - var(--space-3)); } /* justo después del cursor, sin que lo tape (revisión 2, 16) */
+.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(2px - var(--space-2)); } /* justo después del cursor, sin que lo tape (revisión 2, 16) */
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
-.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: var(--radius-sm); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-2)); border-radius: var(--radius-sm); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }
@@ -65,7 +65,7 @@
   /* A la derecha, el aire de lo que crece sale del margen de la pantalla: la última columna termina donde el teclado empieza
      del otro lado (centrado); la de la orilla crece hacia adentro (card.css · data-edge="end"). */
   margin: calc(-1 * var(--focus-grow) - var(--space-2)) calc(-1 * (var(--focus-grow) / 2 + var(--space-2))) 0 calc(-1 * var(--space-2));
-  scroll-padding-block: calc(var(--focus-grow) + var(--space-10)) calc(var(--caption-room) + var(--space-6));
+  scroll-padding-block: calc(var(--focus-grow) + var(--space-12)) calc(var(--caption-room) + var(--space-6));
   overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
   mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
@@ -82,12 +82,12 @@
 .search .keyboard__key--wide { font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); letter-spacing: normal; }
 /* Con el dedo: sin pie de controles; teclas más altas (se aciertan sin mirar) y la columna del teclado más ancha. */
 [data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.8rem, 7.4vh); --keyboard-width: 30rem; }
-[data-input="touch"] .search__results { margin-top: var(--space-10); } /* «Atrás» (arriba a la derecha) no tapa el primer grupo */
+[data-input="touch"] .search__results { margin-top: var(--space-12); } /* «Atrás» (arriba a la derecha) no tapa el primer grupo */
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
 .search__set { flex: none; max-width: 100%; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
-.search__set-cards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--caption-room) + var(--focus-grow) + var(--space-3)) var(--space-6); }
+.search__set-cards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--caption-room) + var(--focus-grow) + var(--space-2)) var(--space-6); }
 /* Centrado (Fernando, 13 nov 2026: «Ve que esté centrado el buscar»): las portadas van en columnas que se reparten a lo ancho,
    así la última termina en el margen derecho como el teclado empieza en el izquierdo (antes sobraba un hueco a la derecha y
    todo se veía cargado a la izquierda). Un grupo corto usa las mismas columnas que los demás. */
@@ -108,7 +108,7 @@
 .search { --caption-size: var(--type-secondary); }
 /* Caja vacía, solo búsquedas recientes (sin portadas): las píldoras, sin el lugar de las portadas. */
 .search__results--recent { min-height: 0; padding-bottom: var(--space-4); }
-.search__set--pills { gap: var(--space-3); }
+.search__set--pills { gap: var(--space-2); }
 /* Lo que va en camino: portadas vacías del tamaño de las de verdad, con un brillo que pasa (search.js · showResults). */
 .search__ghost {
   flex: none; width: calc(var(--card-height) * .667); height: var(--card-height); border-radius: var(--card-radius);
@@ -119,10 +119,10 @@
 .search__ghost:nth-child(3) { animation-delay: var(--delay-2), var(--duration-none); }
 .search__ghost:nth-child(4) { animation-delay: var(--delay-3), var(--duration-none); }
 @keyframes search-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-.search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); padding-bottom: 0; }
+.search__set--pills .search__set-cards { align-items: center; gap: var(--space-2); padding-bottom: 0; }
 
 @media (max-height: 640px) {
-  .search { gap: var(--space-3); }
+  .search { gap: var(--space-2); }
   .search__hint { display: none; }
 }
 @media (max-width: 760px) { .search__hint { display: none; } }

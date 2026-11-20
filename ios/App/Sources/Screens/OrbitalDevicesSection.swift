@@ -56,7 +56,7 @@ struct OrbitalDevicesSection: View {
     @ViewBuilder private func row(_ device: OrbitalPairedDevice, _ model: OrbitalDevicesModel) -> some View {
         if model.canRemove(device) {
             Button { opened = device } label: {
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     label(device)
                     Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint).accessibilityHidden(true)
                 }
@@ -75,7 +75,7 @@ struct OrbitalDevicesSection: View {
     }
 
     private func label(_ device: OrbitalPairedDevice) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: Self.symbol(device.platform)).foregroundStyle(DS.textMuted).frame(width: DS.SettingsLook.rowIcon).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: device.name).foregroundStyle(DS.text).lineLimit(1)

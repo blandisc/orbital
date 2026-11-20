@@ -11,7 +11,7 @@
 /* Si no caben (con «Tus canales», en la Legion Go con letra grande), la lista se recorre con el foco y la última que asoma se
    desvanece (tv.js · tv__cats--more): antes quedaba partida y detrás del pie. */
 .tv__cats--more { -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); }
-.tv__cat { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+.tv__cat { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-lg); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); text-align: left;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
 .tv__cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -51,11 +51,11 @@
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
 .tv__grid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
-  gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
+  gap: var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 
 /* Tecleando un número (como el control del cable): las cifras en la esquina hasta que se sintoniza. */
 .tv__typed { position: absolute; top: var(--space-4); right: var(--page-gutter); z-index: var(--z-panel);
-  padding: var(--space-2) var(--space-5); border-radius: var(--radius-lg); background: var(--color-badge-bg); box-shadow: var(--shadow-badge);
+  padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg); background: var(--color-badge-bg); box-shadow: var(--shadow-badge);
   font-family: var(--font-sans); font-size: var(--type-stat); font-weight: var(--type-stat-weight); font-variant-numeric: tabular-nums; letter-spacing: var(--tracking-digits); }
 
 /* Una casilla: el logo al centro, el nombre abajo y su número en la esquina. */

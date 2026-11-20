@@ -11,7 +11,7 @@ struct TVLiveActivity: Widget {
         ActivityConfiguration(for: TVActivityAttributes.self) { context in
             // El póster a todo lo alto a la izquierda (2:3, entero); a su derecha el nombre, la barra y los botones (Fernando,
             // 6 nov: con los botones en su propio renglón la actividad pasaba del alto que deja iOS y se comía el póster).
-            HStack(alignment: .center, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
                 ActivityPoster(file: context.state.poster, width: DS.Widget.tvPoster, placeholder: "tv")
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     // TV3 (Fernando, 8 nov): el sello de Orbital (la luna, encendida mientras suena) y el turquesa solo en lo de
@@ -104,7 +104,7 @@ struct TVLiveActivity: Widget {
 private struct TVButtons: View {
     var state: TVActivityAttributes.ContentState
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             if !state.live { key("gobackward.10", action: "back", label: Text("−10 s")) }
             key(state.paused ? "play.fill" : "pause.fill", action: "toggle", label: state.paused ? Text("Continuar") : Text("Pausa"), solid: true)
             if !state.live { key("goforward.10", action: "forward", label: Text("+10 s")) }

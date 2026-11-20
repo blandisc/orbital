@@ -53,7 +53,7 @@ struct ContinueAction: View {
             if note != nil || aside != nil {
                 // Si el aviso y la otra salida no caben juntos (aviso largo, letra grande), la salida baja sola.
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s3) { status(note); if aside != nil { Spacer(minLength: 0); asideButton } }
+                    HStack(spacing: DS.Space.s2) { status(note); if aside != nil { Spacer(minLength: 0); asideButton } }
                     VStack(alignment: .leading, spacing: DS.Space.s2) { status(note); asideButton }
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -69,13 +69,13 @@ struct ContinueAction: View {
     /// si la barra ya no tendría su ancho mínimo, «quedan…» baja solo y la barra y ↺ siguen juntos.
     private var resumeLine: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 bar.frame(minWidth: DS.TitleAction.resumeBarMin)
                 status(left).fixedSize()
                 restartButton
             }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                HStack(spacing: DS.Space.s3) { bar; restartButton }
+                HStack(spacing: DS.Space.s2) { bar; restartButton }
                 status(left)
             }
         }
@@ -95,7 +95,7 @@ struct ContinueAction: View {
             } else { title }
         }
         .font(DS.TextRecipe.cardTitle.font).lineLimit(2).multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
+        .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s2 * 2)
     }
 
     /// «quedan 50 min» o el aviso, en gris (ámbar si es un problema). El aviso solo, hasta dos renglones («Muchas descargas

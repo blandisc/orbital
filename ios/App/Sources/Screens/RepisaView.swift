@@ -88,7 +88,7 @@ struct RepisaView: View {
             let perRow = min(sizeClass == .regular ? DS.Repisa.shelfWide : DS.Repisa.shelf, max(1, items.count))
             ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in
                 ShelfLedge {
-                    HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                    HStack(alignment: .bottom, spacing: DS.Space.s2) {
                         ForEach(items[i..<min(i + perRow, items.count)]) { c in
                             NavigationLink(value: c.id) {
                                 VStack(spacing: DS.Space.s2) {
@@ -151,7 +151,7 @@ struct RepisaCollectionView: View {
                         DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Quita alguno de arriba para ver más."))
                     }
                     ForEach(shown.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(verbatim: group.title).recipe(.cardTitle)   // no-es-título: un grupo de la colección
                                 Spacer()
@@ -209,7 +209,7 @@ struct RepisaCollectionView: View {
     /// ganadoras desde 2000» y «5 de 26 vistas» con su barra.
     private func header(_ c: CanonCollection, _ model: RepisaModel) -> some View {
         let seen = c.seen(model.watched), total = max(c.total, c.items.count)
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .center, spacing: DS.Space.s4) {
                 ShelfEmblem(id: c.id, height: DS.Repisa.header)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -268,7 +268,7 @@ struct RepisaCollectionView: View {
     }
 
     private func nextBar(_ item: CanonCollection.Item, _ c: CanonCollection) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind)).frame(width: DS.Repisa.nextPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 why(c, item).recipe(.badge, color: DS.eyebrow)
@@ -281,7 +281,7 @@ struct RepisaCollectionView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { onOpenTitle(route(item)) }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
         .accessibilityElement(children: .contain)
@@ -312,7 +312,7 @@ struct RepisaCollectionView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("repisa-open-title")
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Button { picked = nil; Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
                     .dsSolidPrimaryButton().dsControlSize(.large)
                 if !seen {

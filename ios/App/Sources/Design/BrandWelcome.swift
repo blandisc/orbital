@@ -139,7 +139,7 @@ struct WelcomeRowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: row.symbol)
                 .font(DS.styled(.body).weight(.semibold))
                 .foregroundStyle(DS.brandMoon)

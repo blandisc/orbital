@@ -156,7 +156,7 @@ struct SourcesSheet: View {
     var body: some View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una") : Text("Toca para ver · mantén presionado para más")) {
                 // Qué quiere decir cada ícono y etiqueta (⚡, ☁︎, 4K, DV, REMUX…).
                 Button { showsGlossary = true } label: { Image(systemName: "info.circle").font(DS.TextRecipe.section.font) }
@@ -345,7 +345,7 @@ struct SourcesSheet: View {
                 Text("\(Text("Más idiomas · "))\(Text.withFlagImages(model.moreLanguages.map { LanguageFlags.flagged(VersionText.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", ")))")
             }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
             .dsCard(translucent: true)
             .tint(DS.textMuted)
         }
@@ -402,7 +402,7 @@ struct SourcesGlossary: View {
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             DSSheetHeader(title: Text("Qué significa cada etiqueta"))
             ForEach(shown, id: \.0) { symbol, title, detail in
-                HStack(alignment: .top, spacing: DS.Space.s3) {
+                HStack(alignment: .top, spacing: DS.Space.s2) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(title).recipe(.labelLarge, color: DS.text)
@@ -411,7 +411,7 @@ struct SourcesGlossary: View {
                 }
             }
         }
-        .padding(DS.Space.s5)
+        .padding(DS.Space.s6)
     }
 }
 

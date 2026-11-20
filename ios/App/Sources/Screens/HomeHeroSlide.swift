@@ -19,7 +19,7 @@ struct HomeHeroSlide: View {
         // La portada abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
         // ficha en vez de reproducir).
         BleedArt(url: s.wide, title: titleName(s.title, id: s.imdb, kind: s.kind), aspect: aspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind), tile: tile) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let reason = Self.reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
                     TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: titleName(s.title, id: s.imdb, kind: s.kind), size: .hero)

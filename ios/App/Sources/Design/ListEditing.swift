@@ -154,7 +154,7 @@ struct AddToListSheet: View {
     private func row(_ r: SearchResult) -> some View {
         let inList = contains(r.metaID)
         return Button { Task { await toggle(r); version += 1 } } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PosterView(url: r.poster, title: titleName(r.title, id: r.metaID, kind: r.kind)).frame(width: DS.Size.thumbSmall)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)).recipe(.cardTitle)

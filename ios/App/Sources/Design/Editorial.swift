@@ -52,7 +52,7 @@ struct WideCard: View {
                 ArtVeil(at: DS.Editorial.veilStart)
                 TitleLogo(url: logo, title: title, size: .tile)
                     .frame(maxWidth: DS.Editorial.wideLogo.width, maxHeight: DS.Editorial.wideLogo.height, alignment: .bottomLeading)
-                    .padding(DS.Space.s3).onArt()
+                    .padding(DS.Space.s2).onArt()
             }
             .overlay(alignment: .topTrailing) {
                 if let platform { PlatformBadge(name: platform).padding(DS.Space.s2) }
@@ -82,7 +82,7 @@ struct WatchlistCard: View {
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+        HStack(alignment: .top, spacing: DS.Space.s2) {
             PosterView(url: poster, title: title).frame(width: DS.Editorial.watchlistPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 if !facts.isEmpty { Text(verbatim: facts).recipe(.badge, color: DS.warning).lineLimit(1) }

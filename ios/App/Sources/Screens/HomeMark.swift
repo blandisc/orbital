@@ -49,13 +49,13 @@ struct StudioEmblem: View {
                     switch phase {
                     // El logo en blanco (como la TV: brightness(0) invert(1)), sin cápsula.
                     case .success(let image): image.resizable().scaledToFit().brightness(-1).colorInvert()
-                    default: nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio (cápsula clara fija, letra oscura)
+                    default: nameText.padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio (cápsula clara fija, letra oscura)
                     }
                 }
                 .frame(width: DS.Collections.studioLogoWidth, height: DS.Collections.studioLogoHeight)
             } else {
                 // Sin logo, el nombre en cápsula.
-                nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio
+                nameText.padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio
             }
         }
         .shadow(DS.Elevation.high.drop(0))
@@ -107,7 +107,7 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+            LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                 ForEach(items, id: id) { item in
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         header?(item)

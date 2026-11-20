@@ -154,7 +154,7 @@ struct HistoryScreen: View {
 
     private func row(_ e: TraktHistoryEntry, repeated: Bool) -> some View {
         Button { editing = e } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: titleName(e.title, id: e.target.imdb, kind: e.target.isEpisode ? "series" : "movie")).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: name(e)).recipe(.cardTitle, color: DS.text).lineLimit(2)

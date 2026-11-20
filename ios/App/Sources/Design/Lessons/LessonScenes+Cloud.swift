@@ -122,7 +122,7 @@ struct LessonCloudAsk: View {
         ZStack(alignment: .topLeading) {
             LessonVersionCard(art: art, asked: t > 1.55 ? 1.01 : p).sceneAt(22, 84).scenePut(card.o, 0, card.y)
             LessonNote(title: Text(verbatim: "Orbital"), detail: Text("Castellano ya está en tu nube: \(art.movie(0).title)"))
-                .sceneAt(DS.Space.s5, 10).scenePut(M.clamp((t - 1.55) / 0.2), 0, (1 - note) * -70)
+                .sceneAt(DS.Space.s6, 10).scenePut(M.clamp((t - 1.55) / 0.2), 0, (1 - note) * -70)
             LessonFinger(t: t, x: 328, y: 258, at: 0.6)
         }
     }
@@ -156,7 +156,7 @@ struct LessonCloudPrice: View {
                 .sceneBox(402, 160).sceneAt(0, 110).scenePut(e.o, 0, e.y)
             }
             LessonNote(title: Text(verbatim: "Orbital"), detail: Text("Te quedan 3 días de Real-Debrid · Renovar", cloud: art.cloud, locale: locale), symbol: "cloud.fill")   // edición: la lección de la nube solo sale con instantStreams
-                .sceneAt(DS.Space.s5, 10).scenePut(M.clamp((t - 0.75) / 0.2), 0, (1 - note) * -70)
+                .sceneAt(DS.Space.s6, 10).scenePut(M.clamp((t - 0.75) / 0.2), 0, (1 - note) * -70)
         }
     }
 
@@ -231,7 +231,7 @@ struct LessonCloudTry: View {
             LessonVersionCard(art: art, asked: p, tryMe: true, ask: { askedAt = t })
                 .sceneAt(22, 84).scenePut(card.o, 0, card.y)
             LessonNote(title: Text(verbatim: "Orbital"), detail: Text("Castellano ya está en tu nube (de práctica)"))
-                .sceneAt(DS.Space.s5, 10).scenePut(s > 1.0 ? 1 : 0, 0, (1 - note) * -70)
+                .sceneAt(DS.Space.s6, 10).scenePut(s > 1.0 ? 1 : 0, 0, (1 - note) * -70)
                 .accessibilityHidden(s < 1.0)
         }
         .onChange(of: s > 1.1) { _, arrived in if arrived { done() } }

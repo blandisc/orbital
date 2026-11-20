@@ -24,7 +24,7 @@ struct Rail<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             Group {
                 if let route {
                     NavigationLink(value: route) { DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, chevron: true, source: source, eyebrow: eyebrow, quiet: quiet) }
@@ -35,7 +35,7 @@ struct Rail<Content: View>: View {
             }
             .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
             .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)

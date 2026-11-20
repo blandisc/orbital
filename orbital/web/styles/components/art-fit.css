@@ -17,6 +17,6 @@
 }
 /* El póster entero: del alto de la caja menos su aire; a la derecha por omisión (el texto de estas cajas va a la izquierda). */
 .art-fit__poster {
-  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; padding: var(--art-fit-pad, var(--space-3));
+  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; padding: var(--art-fit-pad, var(--space-2));
   object-fit: contain; object-position: var(--art-fit-x, 88%) 50%; filter: var(--shadow-drop);
 }

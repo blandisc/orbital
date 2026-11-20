@@ -41,7 +41,7 @@ struct AllSourcesList: View {
                                        shownPerGroup: Int.max)   // se corta abajo (para poder abrir un grupo)
         let hidden = AllSources.count(sources, filter: filter).hidden
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
                 legend
                 Spacer(minLength: 0)
                 filterMenu
@@ -72,7 +72,7 @@ struct AllSourcesList: View {
 
     private var legend: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: DS.Space.s3) { legendItems }
+            HStack(spacing: DS.Space.s2) { legendItems }
             VStack(alignment: .leading, spacing: DS.Space.s1) { legendItems }
         }
         .accessibilityElement(children: .combine)
@@ -132,7 +132,7 @@ struct AllSourcesList: View {
             DSGroupLabel(title: Text("\(qualityName(group.quality))\(Text(verbatim: " · \(group.total)"))"))
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.index) { i, source in
-                    if i > 0 { Divider().overlay(DS.hairline).padding(.leading, DS.Space.s3) }
+                    if i > 0 { Divider().overlay(DS.hairline).padding(.leading, DS.Space.s2) }
                     row(source)
                 }
             }
@@ -167,7 +167,7 @@ struct AllSourcesList: View {
     private func row(_ source: Source) -> some View {
         let isOpen = opened == source.index
         let hidden = AllSources.isHidden(source)
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             Button {
                 withAnimation(DS.Motion.base(reduceMotion)) { opened = isOpen ? nil : source.index }
             } label: {
@@ -185,7 +185,7 @@ struct AllSourcesList: View {
             .accessibilityIdentifier("all-sources-row-\(source.index)")
             if isOpen { details(source) }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .opacity(hidden ? DS.Opacity.faint : 1)
     }
 

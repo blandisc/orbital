@@ -71,7 +71,7 @@ struct BrowseView: View {
             // los géneros) se recorre con el mismo resorte, sin brincar (Fernando, 2 nov 2026, K5).
             .animation(DS.Motion.smooth(reduceMotion), value: FilterTile.compact(FilterContext(filter: env.advancedFilter.filter)))
             .refreshOrbitHost()   // la luna de tirar para actualizar
-            .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
+            .padding(.top, DS.Space.s2)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Layout.screenBottom)
         }
         // Solo el desplazamiento de verdad: el rebote al final de la página (que se pasa y regresa) no cuenta como subir.
@@ -285,11 +285,11 @@ struct BrowseView: View {
     }
 
     private func popularWall(_ model: CatalogModel) -> some View {
-        let gap = DS.Space.s3, room = WindowMetrics.column.width - 2 * DS.Space.gutter
+        let gap = DS.Space.s2, room = WindowMetrics.column.width - 2 * DS.Space.gutter
         let columns = max(1, Int((room + gap) / (DS.Poster.railWidth + gap)))
         // Los que caben y crecen lo justo para llegar a la orilla (con el ancho fijo quedaba un hueco a la derecha).
         let width = (room - CGFloat(columns - 1) * gap) / CGFloat(columns)
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("Lo más popular hoy"), eyebrow: Text("Para empezar")).padding(.horizontal, DS.Space.gutter)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: gap), count: columns), alignment: .leading, spacing: DS.Space.s4) {
                 ForEach(model.popular.prefix(columns * Self.wallRows(posterWidth: width)).map(PopularGridView.suggestion)) { s in
@@ -315,7 +315,7 @@ struct BrowseView: View {
 
     /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.
     private var recent: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             // El mismo encabezado de subsección que «Por género» (y que la TV en su caja vacía), no una nota gris.
             DSSectionHead(title: Text("Buscaste hace poco")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
@@ -343,7 +343,7 @@ struct PopularGridView: View {
             SortableGrid(listID: "popular", items: model.popular.map(Self.suggestion), collections: env.collections, loading: model.isLoading) { s, width in
                 TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
-            .padding(.top, DS.Space.s3)
+            .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())

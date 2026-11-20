@@ -20,7 +20,7 @@ struct EpisodesPanel: View {
 
     var body: some View {
         let shown = season ?? seasons.first { $0.episodes.contains { $0.id == current } }?.season ?? seasons.first?.season
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack {
                 Text("Episodios").recipe(.cardTitle, color: DS.text)
                 Spacer()
@@ -52,7 +52,7 @@ struct EpisodesPanel: View {
         let now = ep.id == current, upcoming = ep.id == next
         let available = playable?.contains(ep.id) ?? true
         return Button { if !now { pick(ep.id) } } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 PosterView(url: ep.thumbnail, title: "", aspect: DS.Poster.stillAspect, bleed: true)
                     .frame(width: DS.PlayerPanel.episodeThumb)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))

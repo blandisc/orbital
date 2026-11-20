@@ -48,7 +48,7 @@ struct SavedPileContent: View {
                 } else if status == .watched {
                     bar(nil, every: every)
                     ForEach(months(items, board), id: \.0) { month, group in
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection)
                                 .padding(.horizontal, DS.Space.gutter)
                             DSPosterGrid(items: group) { s, width in cell(s, width: width) }
@@ -171,7 +171,7 @@ struct SavedPileContent: View {
     /// «¿Las dejaste?»: las series a medias que no ves hace más de seis meses ya no cuentan en Viendo; un toque las deja todas
     /// (o una por una, manteniendo el dedo), y si no, siguen aquí.
     private func stale(_ shows: [Suggestion]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: Text("¿Las dejaste?"), count: shows.count, eyebrow: Text("Hace más de seis meses que no las ves"))
                 .padding(.horizontal, DS.Space.gutter)
             DSPosterGrid(items: shows) { s, width in cell(s, width: width) }

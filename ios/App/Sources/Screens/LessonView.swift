@@ -49,7 +49,7 @@ struct LessonView: View {
         .contentShape(Rectangle())
         .gesture(current.practice ? nil : DragGesture(minimumDistance: DS.Space.s8).onEnded { g in
             guard abs(g.translation.width) > abs(g.translation.height) * 2 else { return }
-            if g.translation.width < -DS.Space.s14 { next() } else if g.translation.width > DS.Space.s14 { back() }
+            if g.translation.width < -DS.Space.s16 { next() } else if g.translation.width > DS.Space.s16 { back() }
         })
         .onKeyPress(.rightArrow) { next(); return .handled }
         .onKeyPress(.leftArrow) { back(); return .handled }
@@ -82,7 +82,7 @@ struct LessonView: View {
     }
 
     private var page: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s5) {
+        VStack(alignment: .leading, spacing: DS.Space.s6) {
             LessonScene(id: current.scene, art: art, start: start) { tried = true }
                 .frame(maxWidth: DS.Lesson.sceneMax)
                 .frame(maxWidth: .infinity)
@@ -102,7 +102,7 @@ struct LessonView: View {
             .padding(.horizontal, DS.Space.s6)
             .animation(DS.Motion.spring(reduceMotion), value: tried)
         }
-        .padding(.top, DS.Space.s3)
+        .padding(.top, DS.Space.s2)
         .accessibilityElement(children: .contain)
     }
 
@@ -143,7 +143,7 @@ struct LessonView: View {
         }
         .animation(DS.Motion.base(reduceMotion), value: tried)
         .frame(maxWidth: DS.Welcome.buttonWidth)
-        .padding(.horizontal, DS.Space.s6).padding(.bottom, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s6).padding(.bottom, DS.Space.s2)
         .frame(maxWidth: .infinity)
     }
 

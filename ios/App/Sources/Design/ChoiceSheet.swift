@@ -83,8 +83,8 @@ struct ChoiceSheet: View {
 
     /// La imagen a la izquierda y el nombre con su línea gris; con letra de accesibilidad, la imagen arriba (no aprieta el texto).
     private var header: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s3))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s3))
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s2))
         return layout {
             if let art = card.art {
                 PosterView(url: art, title: "", aspect: card.artAspect)
@@ -120,7 +120,7 @@ struct ChoiceSheet: View {
                 }
                 .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
+            .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s2 * 2)
         }
         .dsSolidPrimaryButton()
         .accessibilityIdentifier(action.id)

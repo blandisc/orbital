@@ -80,6 +80,6 @@ struct DebridSharedOffer: View {
 private struct OfferCard: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
-        if on { content.buttonStyle(.plain).padding(DS.Space.s3).dsCard(translucent: true) } else { content }
+        if on { content.buttonStyle(.plain).padding(DS.Space.s2).dsCard(translucent: true) } else { content }
     }
 }

@@ -124,7 +124,7 @@ struct CollectionGridView: View {
             // Una temporada o un género: su ícono con el halo de su color, el título de la lista y su renglón.
             HStack(spacing: DS.Space.s4) {
                 CollectionIconEmblem(slug: route.id, name: "", size: DS.Collections.iconHeader, glow: heading.tint)
-                    .padding(DS.Space.s3)
+                    .padding(DS.Space.s2)
                     .background(heading.tint, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     heading.title.recipe(.title).fixedSize(horizontal: false, vertical: true)
@@ -167,7 +167,7 @@ struct CollectionGridView: View {
             if isLoading { DSLoadingState() }
             else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
         } else {
-            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
+            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2), spacing: DS.Space.s6) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                     TitleNavigationLink(route: s.route) {
                         RankedPosterCard(rank: s.rank ?? index + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, zoom: s.route)

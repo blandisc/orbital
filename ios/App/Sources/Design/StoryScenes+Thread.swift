@@ -11,7 +11,7 @@ struct SceneHandoff: View {
                 Image(systemName: "arrow.down").font(DS.TextRecipe.section.font).foregroundStyle(step == 1 ? DS.fresh : DS.textFaint)
                 SceneDevice(symbol: "ipad.landscape", label: Text(verbatim: "iPad"), progress: step == 2 ? DS.Opacity.faint + DS.Opacity.selectedFill : nil)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -41,7 +41,7 @@ struct SceneDevice: View {
             }
             .frame(height: DS.Scene.line)
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(.card)
     }
 
@@ -63,7 +63,7 @@ struct SceneBecause: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -80,9 +80,9 @@ struct SceneLockAlert: View {
                         SceneButton(title: step == 1 ? "Siguiendo" : "Seguir", symbol: step == 1 ? "checkmark" : "plus", prominent: false, pressed: step == 1)
                             .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
                     }
-                    .padding(DS.Space.s3)
+                    .padding(DS.Space.s2)
                 } else {
-                    VStack(spacing: DS.Space.s3) {
+                    VStack(spacing: DS.Space.s2) {
                         Text(verbatim: "9:41").recipe(.display, color: DS.paper).padding(.top, DS.Space.s8)
                         SceneNotice(symbol: "calendar", text: Text("Sale hoy: The Bear T4 · E1")).transition(.move(edge: .top).combined(with: .opacity))
                     }
@@ -113,7 +113,7 @@ struct SceneCalendar: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -136,7 +136,7 @@ struct SceneToggles: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -147,7 +147,7 @@ struct SceneYear: View {
 
     var body: some View {
         SceneLoop(steps: 4) { step in
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Tu año").recipe(.footnote, color: DS.textMuted)
                 Text(verbatim: ["0", "96", "214", "214"][step]).recipe(.display, color: DS.text).contentTransition(.numericText())
                 Text("horas").recipe(.footnote, color: DS.textMuted)
@@ -165,7 +165,7 @@ struct SceneYear: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -225,7 +225,7 @@ struct SceneSendToTV: View {
                             progress: back && step == 2 ? DS.Opacity.faint + DS.Opacity.selectedFill : nil)
                     .overlay { if !back { SceneFinger(pressed: step == 1, shown: step == 1) } }
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }
@@ -247,7 +247,7 @@ struct SceneVoice: View {
                     .frame(width: DS.Scene.finger * 2, height: DS.Scene.finger * 2).background(DS.surface, in: Circle())
                     .overlay { SceneFinger(pressed: step == 1 || step == 2, shown: step == 1 || step == 2) }
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
         }
     }
 }

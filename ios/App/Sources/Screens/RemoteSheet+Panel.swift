@@ -112,7 +112,7 @@ struct RemotePanelIdle: View {
 
     var body: some View {
         let items = Array(home.model.continueWatching.prefix(DS.Remote.panelContinueCount))
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             if !items.isEmpty {
                 DSSectionHead(title: Text("Seguir viendo"), eyebrow: Text("Un toque y empieza en la TV"))
                 ForEach(items) { item in

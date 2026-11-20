@@ -62,7 +62,7 @@ struct DSExplainerCard: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s3))
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                   : AnyLayout(HStackLayout(alignment: .center, spacing: DS.Space.s4))
         layout {
             DSIconTile(symbol: symbol, tint: tint)
@@ -92,7 +92,7 @@ struct DebridFlowStrip: View {
     ]
 
     var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s3))
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                   : AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.s1))
         layout {
             ForEach(steps.indices, id: \.self) { i in
@@ -124,7 +124,7 @@ struct DebridFlowStrip: View {
 
     @ViewBuilder private func node(_ i: Int) -> some View {
         let item = steps[i]
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: DS.Space.s3)) : AnyLayout(VStackLayout(spacing: DS.Space.s2))
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: DS.Space.s2)) : AnyLayout(VStackLayout(spacing: DS.Space.s2))
         layout {
             DSIconTile(symbol: item.symbol, tint: lit(i) ? item.tint : DS.textFaint, side: DS.Explainer.flowTile)
                 .scaleEffect(!reduceMotion && i == step ? 1 : DS.Explainer.restScale)
@@ -153,7 +153,7 @@ struct DebridExplainer: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?", cloud: service, locale: locale) : Text("¿Qué es esto?"))
                     .padding(.bottom, DS.Space.s1)
                 switch topic {

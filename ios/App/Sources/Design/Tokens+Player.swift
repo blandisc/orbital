@@ -44,7 +44,7 @@ extension DS {
         static let indicatorChrome: CGFloat = 32
         static let indicatorBarMin: CGFloat = 48
         /// Qué tan lejos de la orilla va (en vertical, casi pegado; en horizontal, fuera de la zona de la cámara y los botones).
-        static let indicatorInsetPortrait: CGFloat = DS.Space.s3, indicatorInsetLandscape: CGFloat = DS.Space.s8
+        static let indicatorInsetPortrait: CGFloat = DS.Space.s2, indicatorInsetLandscape: CGFloat = DS.Space.s8
         /// Un toque de un dedo y uno de dos tan juntos son el mismo toque (s).
         static let twoFingerTapGuard: TimeInterval = 0.35
         /// Un pellizco que termina este rato después de girar el teléfono es el agarre, no un pellizco (no cambia el zoom).
@@ -64,12 +64,12 @@ extension DS {
         /// En horizontal, lo que ocupa abajo la barra de avance con sus tiempos (dentro del `padding` de `controls` +
         /// `scrubHit`) y su aire: el indicador de brillo o volumen no baja de ahí.
         static var aboveScrubInset: CGFloat {
-            DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
+            DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s2
         }
         /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, «Saltar intro», la propia
         /// barra y sus tiempos).
         static var fastForwardPillFillInset: CGFloat {
-            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
+            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s2 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s2
         }
     }
 
@@ -103,7 +103,7 @@ extension DS {
         static let offlineExtraLanguages = 2
         /// La agarradera, montada en el borde de abajo del video (mitad dentro, mitad fuera): la franja que la toma (dentro del
         /// video, desde abajo, y un poco por fuera) y el aire entre el borde de abajo de la cápsula y el nombre del título.
-        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap = DS.Space.s3, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap = DS.Space.s2, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
         static let handleReach: CGFloat = 12
         /// Desde el borde del video hasta donde empiezan los controles: la mitad de la cápsula que cuelga por fuera más su aire
         /// (antes se contaba el aire desde el borde del video y la cápsula quedaba a 1 pt del nombre, 29 oct).

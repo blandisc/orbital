@@ -136,7 +136,7 @@ struct SimpsonsRoulette: View {
             HStack(spacing: DS.Space.s4) {
                 screen
                 // Perillas y bocina.
-                VStack(spacing: DS.Space.s3) {
+                VStack(spacing: DS.Space.s2) {
                     knob.rotationEffect(.degrees(Double(clicks) * DS.Simpsons.knobTurn))
                     knob
                     VStack(spacing: DS.Simpsons.grilleGap) {

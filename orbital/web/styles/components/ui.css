@@ -30,7 +30,7 @@
 /* Pill: una píldora que se elige (filtro, pestaña, búsqueda reciente). Una sola pieza para todas: misma altura, mismo peso,
    lo elegido con relleno tenue y el foco invertido (sin contornos blancos). */
 .pill {
-  flex: none; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-5);
+  flex: none; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-6);
   border-radius: var(--radius-pill); white-space: nowrap; color: var(--color-text-muted);
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
@@ -43,17 +43,17 @@
    Películas de una lista, las temporadas). Sin cápsula: el texto tenue y la elegida en blanco, en negrita, con su rayita. */
 /* Sin cápsula: se lee sobre el arte (AA, P4). R3-6 (11 nov): en blanco también las no elegidas; en gris daban 2,8 contra lo
    más claro del arte (Hades a 1280 × 800). Las distingue la elegida: negrita y su raya. */
-.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; color: var(--color-text); text-shadow: var(--shadow-text-strong); }
+.pill--tab { position: relative; padding-inline: var(--space-2); background: transparent; box-shadow: none; color: var(--color-text); text-shadow: var(--shadow-text-strong); }
 .is-focused.pill--tab { text-shadow: none; }
 .pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-bold); background: transparent; }
 .pill--tab.pill--on::after {
-  content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0; height: var(--tab-mark);
+  content: ""; position: absolute; left: var(--space-2); right: var(--space-2); bottom: 0; height: var(--tab-mark);
   border-radius: var(--tab-mark); background: currentColor;
 }
 .is-focused.pill--tab.pill::after, .is-focused.pill--tab::after { content: none; }
 /* Píldora con nombre (NQ-2 y PS-1/PS-2, 16 nov 2026): el ícono y su nombre siempre a la vista (las pestañas y los botones de
    arriba de Películas y series). */
-.pill--named { gap: var(--space-2); padding-inline: var(--space-3) var(--space-4); }
+.pill--named { gap: var(--space-2); padding-inline: var(--space-2) var(--space-4); }
 .pill--named .icon { width: var(--icon-md); height: var(--icon-md); }
 .is-focused.pill, .is-focused.pill { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 /* GlassSwitch: el selector de vidrio del segundo piso (las consolas de Juegos). La cápsula es vidrio; la elegida, blanco tenue;
@@ -69,7 +69,7 @@
   background: var(--color-glass-selected-legible); box-shadow: var(--edge-glass-selected); /* R3-6: «Steam» en blanco, AA */
 }
 .glass-switch__item {
-  position: relative; padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text); /* R3-6: en gris, 3,1 sobre arte claro */
+  position: relative; padding: 0 var(--space-4) 0 var(--space-2); color: var(--color-text); /* R3-6: en gris, 3,1 sobre arte claro */
   transition: padding var(--duration-slow) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }
 .glass-switch__item.pill--on { background: transparent; color: var(--color-text); }
@@ -87,7 +87,7 @@
 .glass-switch--measuring .glass-switch__item, .glass-switch--measuring .glass-switch__label { transition: none; }
 .glass-switch__img { flex: none; height: var(--icon-xl); width: calc(var(--icon-xl) * 1.5); object-fit: contain; filter: var(--shadow-drop-sm); }
 .glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) .glass-switch__label { grid-template-columns: 0fr; opacity: 0; }
-.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) { padding-inline: var(--space-3); }
+.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) { padding-inline: var(--space-2); }
 [data-input="touch"] .glass-switch__item { min-height: var(--touch-target); }
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
    enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */
@@ -108,7 +108,7 @@
   background: var(--color-scrim); animation: fade-in var(--duration-base) var(--ease-out);
 }
 .side-panel__panel {
-  align-self: flex-start; max-height: calc(100% - 2 * (var(--space-5) + var(--safe-y))); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0 0;
+  align-self: flex-start; max-height: calc(100% - 2 * (var(--space-6) + var(--safe-y))); margin: calc(var(--space-6) + var(--safe-y)) var(--page-gutter) 0 0;
   border-radius: var(--radius-lg); background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
   box-shadow: var(--edge-glass), var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);
@@ -119,8 +119,8 @@
    se sigue viendo el arte. Lo usa «Elegir versión» (antes a la derecha y a todo lo alto: con dos idiomas, media pantalla vacía). */
 .side-panel--bottom { align-items: flex-end; justify-content: stretch; }
 .side-panel--bottom .side-panel__panel {
-  width: auto; flex: 1; height: auto; max-height: calc(100vh - var(--space-14) - var(--safe-y));
-  margin: 0 var(--page-gutter) calc(var(--space-5) + var(--safe-y));
+  width: auto; flex: 1; height: auto; max-height: calc(100vh - var(--space-16) - var(--safe-y));
+  margin: 0 var(--page-gutter) calc(var(--space-6) + var(--safe-y));
   animation-name: slide-in-up;
 }
 .side-panel--bottom.side-panel--leaving .side-panel__panel { animation-name: slide-out-down; }
@@ -133,7 +133,7 @@
 .progress__fill { display: block; height: 100%; border-radius: inherit; background: var(--color-progress); }
 
 /* SectionHead, en dos niveles como el iPhone. Subsección: el título blanco y, si ayuda, su porqué arriba en turquesa. */
-.section-head { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.section-head { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
 .section-head--reason { flex-wrap: wrap; row-gap: var(--space-1); }
 .section-head__reason { flex-basis: 100%; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); white-space: nowrap; }
@@ -171,7 +171,7 @@
 .platform-mark { flex: none; width: var(--icon-lg); height: var(--icon-lg); object-fit: contain; filter: var(--shadow-drop-sm); }
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
-.badge--lg { padding: var(--space-1) var(--space-3); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.badge--lg { padding: var(--space-1) var(--space-2); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* «En Netflix» (PlatformBadge): una cápsula de vidrio con el logo de la plataforma a la izquierda y el texto en blanco. El
    color de la plataforma va solo en su logo (Fernando, 2 nov 2026, unslop): la cápsula roja o morada le competía al logo
    del título, que es lo que tiene que brillar. --platform-color se queda para lo que sí lleva su color (una pieza sin arte). */
@@ -189,7 +189,7 @@
 /* Pantalla completa encima de todo (Buscar, la ficha, Conectar Stremio…): el mismo fondo, margen y entrada. */
 .screen {
   position: fixed; inset: 0; z-index: var(--z-overlay);
-  padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) var(--hints-room);
+  padding: calc(var(--space-12) + var(--safe-y)) var(--page-gutter) var(--hints-room);
   background: var(--color-tinted-bg);
   animation: fade-in var(--duration-base) var(--ease-out);
 }
@@ -235,7 +235,7 @@
 /* RemoveMark: el «−» de un póster al editar una lista tuya (DSRemoveMark): un disco rojo con el «−» blanco, en la esquina de
    arriba a la izquierda, con el área del dedo alrededor. */
 .select-mark {
-  position: absolute; top: calc(-1 * var(--space-3)); left: calc(-1 * var(--space-3)); z-index: var(--z-above);
+  position: absolute; top: calc(-1 * var(--space-2)); left: calc(-1 * var(--space-2)); z-index: var(--z-above);
   display: grid; place-items: center; width: var(--touch-target); height: var(--touch-target); cursor: pointer;
 }
 .select-mark__disc {
@@ -264,7 +264,7 @@
 .skeleton { display: block; flex: none; border-radius: var(--card-radius); background: var(--color-fill); }
 .skeleton--poster { width: calc(var(--card-height) * .667); height: var(--card-height); }
 .skeleton--line { height: 1em; border-radius: var(--radius-sm); } /* un renglón: su ancho y su letra los pone quien lo usa */
-.skeleton--heading { width: 14rem; height: var(--type-section); margin-block: var(--space-2) var(--space-5); border-radius: var(--radius-sm); }
+.skeleton--heading { width: 14rem; height: var(--type-section); margin-block: var(--space-2) var(--space-6); border-radius: var(--radius-sm); }
 
 /* RowCount (T12): el contador de una fila, el mismo en toda la TV («3 / 15», «15», «21 juegos»). Con velo sobre el arte. */
 .row-count {
@@ -272,7 +272,7 @@
   letter-spacing: normal; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: var(--shadow-text-strong); /* sobre el arte (AA, P4) */
 }
 .row-count--veil {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass-legible); color: var(--color-text); text-shadow: none;
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); background: var(--color-glass-legible); color: var(--color-text); text-shadow: none;
 }
 .row-count:empty { display: none; }
 

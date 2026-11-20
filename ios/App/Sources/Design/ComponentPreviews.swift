@@ -32,13 +32,13 @@ private struct CatalogSample: View {
                 DSProgress(fraction: 0.4)
                 DSKindFilter(kind: $kind)
                 DSSelector(choices: [(0, "Películas"), (1, "Series")], selection: $segment)
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     FavoriteButton(isFavorite: false) {}
                     FavoriteButton(isFavorite: true) {}
                 }
                 RatingStars(value: 3.5) { _ in }
                 RatingReminder(title: "Moonlight", poster: nil, more: 2, onRate: { _ in }, onDismiss: {}, onOpenQueue: {})
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     DSIconButton(symbol: "plus", label: "Agregar") {}
                     DSIconButton(symbol: "play.fill", label: "Ver", prominent: true) {}
                     DSMoreMenu { Button("Compartir") {} }
@@ -46,11 +46,11 @@ private struct CatalogSample: View {
                 DSNotice(text: "Sin conexión", tone: .warn)
                 DSNotice(text: "No se pudo cargar", tone: .error)
                 DSNotice(text: "Listo", tone: .success)
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     DSSpeedPill()
                     DSToastPill(text: "Llenar", detail: Text(verbatim: "Español · 2 de 7"))
                 }
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     DSGestureIndicator(symbol: "sun.max.fill", value: 0.6)
                     DSSeekBubble(time: "1:24:10", delta: "+1:20")
                     DSLoader()

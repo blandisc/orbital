@@ -203,7 +203,7 @@ struct TVAccessory: View {
     }
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Button(action: openRemote) { info }.buttonStyle(.plain).accessibilityHint(Text("Control remoto"))
             Spacer(minLength: DS.Space.s2)
             if !now.live {
@@ -213,7 +213,7 @@ struct TVAccessory: View {
                     .accessibilityLabel(now.paused ? Text("Continuar") : Text("Pausa"))
             }
         }
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2)
         .accessibilityElement(children: .contain)
     }
 }
@@ -306,7 +306,7 @@ struct MosaicCaption<More: View>: View {
     @State private var opened = 0
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Eyebrow(text: reason, accent: true)
                 // Los logos de metahub son claros: sobre el papel del modo claro, el nombre en texto.
@@ -350,7 +350,7 @@ struct HeroActions<Content: View>: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: DS.Space.s3) { content() }
+            HStack(spacing: DS.Space.s2) { content() }
             VStack(alignment: .leading, spacing: DS.Space.s2) { content() }
         }
         .macHeroButtons()

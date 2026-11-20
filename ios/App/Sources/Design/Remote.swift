@@ -87,7 +87,7 @@ struct TouchPad: View {
             }
             .minimumScaleFactor(DS.Size.statScale)
             // Entre las flechas, sin encimarse: con letra de accesibilidad «Reproducir» tapaba las de arriba y abajo.
-            .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s5)
+            .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s6)
             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         }
         .padding(DS.Space.s4)
@@ -156,7 +156,7 @@ struct RemoteTextField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: "keyboard").foregroundStyle(DS.textMuted).accessibilityHidden(true)
             TextField("Escribir en la TV", text: $text)
                 .submitLabel(.search)
@@ -375,7 +375,7 @@ private struct ScareStatus: View {
     var body: some View {
         let next = scares.first { $0.time > position }
         let left = scares.filter { $0.time > position }
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             let majorCount = left.filter(\.major).count
             // Sin línea base dentro de `ViewThatFits` (regla «ViewThatFits no se anida ni vive bajo alineación por línea base»).
             ViewThatFits(in: .horizontal) {
@@ -391,7 +391,7 @@ private struct ScareStatus: View {
             }
             ScareTimeline(position: position, duration: duration, scares: scares)
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s3) { countdown(next); Spacer(); warnToggle.fixedSize() }
+                HStack(spacing: DS.Space.s2) { countdown(next); Spacer(); warnToggle.fixedSize() }
                 VStack(alignment: .leading, spacing: DS.Space.s2) { countdown(next); warnToggle }
             }
             Text("Tiempos de Where's The Jump").recipe(.caption, color: DS.textFaint)

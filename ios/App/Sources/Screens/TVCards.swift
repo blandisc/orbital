@@ -22,10 +22,10 @@ struct NowPlayingCard: View {
     @State private var tap = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv.and.mediabox")
                 .font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
-            HStack(alignment: .center, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
                 PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback).frame(width: DS.Poster.nowPlayingWidth)
                     .remoteMorph("poster", in: morph)
                 info
@@ -33,7 +33,7 @@ struct NowPlayingCard: View {
             }
             controls
         }
-        .padding(framed ? DS.Space.s3 : 0)
+        .padding(framed ? DS.Space.s2 : 0)
         .background { if framed { Color.clear.dsCard(.row, translucent: true) } }
         .accessibilityElement(children: .contain)
     }

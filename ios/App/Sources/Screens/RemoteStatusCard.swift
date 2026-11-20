@@ -20,7 +20,7 @@ struct RemoteStatusCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if model.unreachable && !model.answered || model.unreachable && model.now == nil {
             // Apagada u otra red: lo dice y deja reintentar (antes «Conectando…» se quedaba girando para siempre).
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     // Sin internet en el iPhone no es la consola (antes la culpaba a ella).
                     if env.isOnline {
@@ -38,7 +38,7 @@ struct RemoteStatusCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if !model.answered {
             // La TV todavía no contesta (recién abierta la app): no se dice «nada sonando» antes de saberlo.
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.fill)
                     .frame(width: DS.Size.thumbSmall, height: DS.Size.thumbSmall / DS.Poster.aspect)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {

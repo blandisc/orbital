@@ -46,7 +46,7 @@ struct StorageBar: View {
             .frame(height: DS.Storage.height)
             // En renglón; si no cabe (letra grande, iPhone chico), uno debajo del otro: sin «Series…».
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s3) { legends }
+                HStack(spacing: DS.Space.s2) { legends }
                 VStack(alignment: .leading, spacing: DS.Space.s1) { legends }
             }
         }

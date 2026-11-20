@@ -1,7 +1,7 @@
 /* Una lista abierta (js/components/list-screen.js), como SortableGrid del iPhone: la lista en grande arriba (estatuilla o
    logo), pestañas en píldora, filtros activos en cápsula y la cuadrícula de pósters con su nombre. El marco (fondo,
    margen, entrada y salida) es .screen. */
-.list-screen { display: flex; flex-direction: column; gap: var(--space-5); }
+.list-screen { display: flex; flex-direction: column; gap: var(--space-6); }
 .list-screen__head { display: flex; align-items: flex-end; gap: var(--space-6); min-height: 6rem; padding-bottom: var(--space-8); }
 /* La estatuilla, un poco más chica: ya no se encima con la primera fila (que crece al enfocarla). */
 .list-screen__media { flex: none; align-self: center; display: grid; place-items: center; height: 6rem; }
@@ -16,7 +16,7 @@
 /* Una lista tuya: «Editar» (o «Agregar» y «Listo») junto a su nombre, para el mouse y el dedo (el mando usa X y ☰). */
 /* R2-9: «Editar» (y, editando, sus botones) al final del encabezado, al ras de abajo con la línea de datos; antes flotaba
    junto al título. */
-.list-screen__tools { flex: none; display: flex; gap: var(--space-3); align-self: flex-end; margin-left: auto; }
+.list-screen__tools { flex: none; display: flex; gap: var(--space-2); align-self: flex-end; margin-left: auto; }
 .list-screen__tools:not([hidden]) + .list-screen__chips { margin-left: 0; } /* el empuje a la derecha ya lo dio «Editar» */
 /* Eligiendo varios (G3-A): cuántas van, junto a «Todas» y «Con las elegidas…». */
 .list-screen__count { align-self: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
@@ -24,7 +24,7 @@
 .list-screen__grabbed { box-shadow: var(--edge-glass-selected), var(--focus-lift); }
 .list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
 .list-screen__chip {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass);
   box-shadow: var(--edge-hairline); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
 }
 .list-screen__tabs { display: flex; gap: var(--space-2); }

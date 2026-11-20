@@ -115,14 +115,14 @@ concéntricas (`--radius-inner-row`) y los dibujos de aparatos (`ds-exception`) 
 
 | Qué | Token | Valor |
 |---|---|---|
-| La escala | `--space-1` … `--space-14` | 4 px a 16 px/rem: .25, .5, .75, 1, 1,25, 1,5, 2, 2,5, 3,5 rem |
+| La escala | `--space-1`, `-2`, `-4`, `-6`, `-8`, `-12`, `-16` | **Siete pasos y nada más (D3-B, Fernando, 20 nov 2026): 4 · 8 · 16 · 24 · 32 · 48 · 64** (.25, .5, 1, 1,5, 2, 3, 4 rem; en el iPhone `DS.Space.s1` … `s16`, los mismos puntos). 4 y 8 dentro de un grupo, 16 y 24 entre piezas, 32, 48 y 64 entre grupos. Si un aire no cae en la escala, se usa el paso más cercano, no un número nuevo; 12, 20, 40 y 56 ya no existen (pasaron a 8, 24, 48 y 64). `tests/web/design-parity.test.mjs` («siete pasos») falla si aparece otro en la TV o en el iPhone |
 | A los lados de la pantalla | `--page-gutter` | El margen de la TV (`--safe-x`, Ajustes › Márgenes de la TV), nunca menos de `--space-4` |
-| Lo que ocupa la barra de arriba | `--status-room` | `--space-5` + `--safe-y` + `--control-height` |
-| Del título a lo suyo | `--layout-title-to-content` | `--space-3` (el mismo 12 del iPhone) |
+| Lo que ocupa la barra de arriba | `--status-room` | `--space-6` + `--safe-y` + `--control-height` |
+| Del título a lo suyo | `--layout-title-to-content` | `--space-2` (el mismo 8 del iPhone) |
 | Entre filas del Inicio y de Juegos | `--layout-between-sections` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma; entre ellas, el mismo espacio de sección que en el resto de la app. En el Inicio, lo de arriba (`.home__hero`) ocupa lo que queda sobre la fila enfocada y nunca menos que lo suyo: no se mete bajo la barra |
 | Entre tarjetas de una fila | `--card-gap`, `--tile-gap`, `--space-6` (tarjetas anchas) | — |
 | Dentro de una tarjeta | `--inset-poster` · `--inset-row` · `--inset-card` · `--inset-feature` | Un margen por tarjeta, igual en los cuatro lados (§ 3) |
-| Entre botones de una fila | `--space-3` (`.button-row`) | Nunca se parte ni se corta |
+| Entre botones de una fila | `--space-2` (`.button-row`) | Nunca se parte ni se corta |
 | Alturas | `--control-height` (botón), `--pill-height` (píldora), `--menu-row-height` (opción), `--touch-target` (el dedo) | — |
 
 ### Reglas que salieron de recorrer todas las pantallas (2 nov 2026)
@@ -254,10 +254,10 @@ iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `-
 `design-system.test.mjs` (cada tamaño con el grosor de su receta; `data` y `stat`, tabulares) y `design-parity.test.mjs`
 (misma receta, mismo estilo de Dynamic Type y mismo grosor en los dos lados; una receta solo de la TV dice por qué).
 
-**Espacios de una pantalla, los del iPhone (`DS.Layout`):** del título a lo suyo `--layout-title-to-content` (12), entre
+**Espacios de una pantalla, los del iPhone (`DS.Layout`):** del título a lo suyo `--layout-title-to-content` (8), entre
 subsecciones `--layout-between-subsections` (24), entre secciones `--layout-between-sections` (32). En la TV se usan donde se
 apilan partes (lo de abajo de la ficha, Cambiar el arte, TV en vivo); entre las filas de alto fijo de Inicio, Juegos y
-Películas y series manda el alto de cada fila, y al pie va el pie de pistas (`--hints-room`) en lugar del 56 del iPhone.
+Películas y series manda el alto de cada fila, y al pie va el pie de pistas (`--hints-room`) en lugar del 64 del iPhone.
 
 **Jerarquía de encabezados (iPhone, 30 oct 2026; regla A del 31 oct):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
 Una sección es el **rótulo**: ícono gris, el nombre en letra normal (`groupLabel`, sin mayúsculas espaciadas desde el 2 nov 2026) y una línea fina hasta la orilla
@@ -270,9 +270,9 @@ Una sección es el **rótulo**: ícono gris, el nombre en letra normal (`groupLa
 | Subsección (por omisión) | `section` | título blanco; su porqué arriba en `eyebrow` turquesa solo si ayuda | En tendencia, Seguir viendo, Próximas temporadas, Tus 5 estrellas |
 
 **Espacios (iPhone, decisión 2 del 31 oct 2026):** cuatro medidas, en `DS.Layout`, medidas desde donde termina lo que se ve
-(el pie de un póster cuenta; los reflejos se quitaron de toda la app el 2 nov 2026): del título a lo suyo **12** (`titleToContent`), entre
-subsecciones **24** (`betweenSubsections`), entre secciones **32** (`betweenSections`, también `DS.Editorial.sectionGap`) y
-al pie de la pantalla **56** (`screenBottom`). Arriba de cada pantalla, 12 (`screenTop`).
+(el pie de un póster cuenta; los reflejos se quitaron de toda la app el 2 nov 2026): del título a lo suyo **8** (`titleToContent`), entre
+subsecciones **24** (`betweenSubsections`), entre secciones **32** (`betweenSections`) y
+al pie de la pantalla **64** (`screenBottom`). Arriba de cada pantalla, 8 (`screenTop`). (12 y 56 hasta el 20 nov 2026: D3-B.)
 | Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
 | Cuerpo · secundario · pie · etiqueta · dato | `body` · `secondary` · `footnote` · `caption` · `data` | — | lo que explica, datos, notas, placas, números |
 
@@ -345,10 +345,10 @@ fijas («Más de 50 formas» mentía si había menos). Sin jerga («Al instante�
 **Antes de cerrar una pantalla.** Se revisa en cuatro combinaciones: claro y oscuro, en un iPhone SE y en uno grande
 (`scripts/ios_capture_matrix.sh`). Varios errores de esta revisión solo se veían en una de las cuatro.
 
-**Espacios.** Entre secciones de una pantalla, `DS.Editorial.sectionGap` (36) en todas: Inicio, Para ti, Buscar, Lo que ves,
-Colecciones, Mi media, una persona, la hoja de Canales. Del encabezado a su contenido, `DS.Space.s3`. Entre renglones o
+**Espacios.** Entre secciones de una pantalla, `DS.Layout.betweenSections` (32) en todas: Inicio, Para ti, Buscar, Lo que ves,
+Colecciones, Mi media, una persona, la hoja de Canales. Del encabezado a su contenido, `DS.Space.s2`. Entre renglones o
 tarjetas de una lista, `DS.Space.s2`. A los lados, `DS.Space.gutter`. Los grupos dentro de una misma lista (las décadas de una
-colección) van más juntos (`s5`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
+colección) van más juntos (`s6`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
 reflejo ya pone el resto del aire.
 
 **Listas con rótulo por sección (Descargas, 2 nov 2026, I2).** Cuando el rótulo de una sección es el primer renglón de una
@@ -373,7 +373,7 @@ En la lista de episodios, el que sigue lleva ▶ sobre su imagen (sin cápsula �
 
 **Lo que se corrigió en Ajustes › Resumen (TV, 20 nov 2026; regla dura 16):**
 - Un ícono, un significado: el destello (`spark`) es solo Explorar (su pestaña, su pantalla y sus listas) y la versión
-  recomendada (decisión anterior, igual en el iPhone; si se cambia, en los dos). Trakt es la cadena `link`, «Decide por mí»
+  recomendada (VR-A, Fernando, 20 nov 2026: se queda, igual en el iPhone; si un día se cambia, en los dos). Trakt es la cadena `link`, «Decide por mí»
   el dado `dice` (como el iPhone), un género la etiqueta `tag`, el canal «Orbital 24/7» el reloj y la clave de MDBList el
   trofeo. En el iPhone, «Aprende» es el birrete (`DS.Symbol.learn`, `testSparklesOnlyMeansDiscover`). Prueba: `tests/web/icon-meaning.test.mjs`.
 - La ayuda al pie nunca repite el renglón: dice qué abre o para qué sirve («Abre lo último que llegó por voz y de dónde

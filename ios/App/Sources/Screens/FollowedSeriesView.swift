@@ -91,7 +91,7 @@ struct HiddenSeriesView: View {
                 Section {
                     ForEach(hidden, id: \.imdb) { show in
                         let name = Strings.tr(show.title, language: env.services.appSettings.uiLanguage)
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             SeriesLabel(imdb: show.imdb, name: name)
                             Spacer(minLength: DS.Space.s2)
                             Button {
@@ -119,7 +119,7 @@ private struct SeriesLabel: View {
     let name: String
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             PosterView(url: String(format: ForYou.metahubPoster, imdb), title: name, maxPoints: DS.Decide.listPoster)
                 .frame(width: DS.Decide.listPoster)
             Text(verbatim: name).recipe(.cardTitle).lineLimit(2)

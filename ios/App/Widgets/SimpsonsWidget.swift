@@ -126,7 +126,7 @@ struct SimpsonsDayView: View {
             title.font(DS.font(.xs, weight: .semibold))
         }
         .foregroundStyle(solid ? DS.Simpsons.amarillo : DS.backdropDeep)
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2)
         .frame(minHeight: DS.Widget.button)
         .background(Capsule().fill(solid ? DS.backdropDeep : DS.Simpsons.tvBody.opacity(DS.Opacity.faint)))
     }

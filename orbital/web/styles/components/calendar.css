@@ -1,7 +1,7 @@
 /* Próximos estrenos en vista calendario (js/components/calendar.js), como «Sale hoy › el mes» del iPhone: el mes a la
    izquierda (cada día con el arte de lo que sale; dos, la casilla partida; más, «+N») y lo del día enfocado a la derecha.
    El marco es .screen. */
-.calendar { display: flex; flex-direction: column; gap: var(--space-5); }
+.calendar { display: flex; flex-direction: column; gap: var(--space-6); }
 .calendar__head .screen-head { justify-items: start; text-align: left; }
 .calendar__body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--space-8); }
 .calendar__month { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; }
@@ -33,11 +33,11 @@
 .is-focused.calendar__cell { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .calendar__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 
-.calendar__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-glass-strong); }
+.calendar__side { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-glass-strong); }
 .calendar__day-title { margin: 0; font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 .calendar__list { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow: hidden; }
 .calendar__show {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-3); padding: var(--inset-row);
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-2); padding: var(--inset-row);
   border-radius: var(--radius-lg); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text); text-align: left;
 }
 .is-focused.calendar__show { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }

@@ -30,7 +30,7 @@ struct DownloadLiveActivity: Widget {
         ActivityConfiguration(for: DownloadActivityAttributes.self) { context in
             // D3 (Fernando, 8 nov): el póster, «The Office y 2 más · 2 de 5», qué baja ahora y la tanda en tramos (verde lo listo,
             // blanco lo que baja). Una sola descarga se ve como antes: nombre, episodio y su barra.
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 ActivityPoster(file: context.state.poster, width: DS.Widget.activityPoster)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     HStack(alignment: .firstTextBaseline) {
@@ -76,7 +76,7 @@ struct DownloadLiveActivity: Widget {
                     .environment(\.locale, Locale(identifier: context.state.language))
                 }
             } compactLeading: {
-                ActivityPoster(file: context.state.poster, width: DS.Space.s5)
+                ActivityPoster(file: context.state.poster, width: DS.Space.s6)
             } compactTrailing: {
                 // Un anillo chico y blanco que se llena (con la app en segundo plano, solo hasta la hora estimada); al terminar,
                 // la palomita. Antes: el porcentaje, que en segundo plano se volvía una cuenta regresiva que estiraba la isla.

@@ -75,7 +75,7 @@ struct GuidePage<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
+            VStack(alignment: .leading, spacing: DS.Space.s6) {
                 if step != nil || skipGuide != nil {
                     HStack(spacing: DS.Space.s4) {
                         if let back {
@@ -122,7 +122,7 @@ struct GuidePage<Content: View>: View {
                 }
             }
             .frame(maxWidth: DS.Welcome.buttonWidth)
-            .padding(.horizontal, DS.Space.s6).padding(.bottom, DS.Space.s3)
+            .padding(.horizontal, DS.Space.s6).padding(.bottom, DS.Space.s2)
             .frame(maxWidth: .infinity)
         }
         .background(Backdrop())
@@ -151,7 +151,7 @@ struct GuidePiece: View {
     var tag: Text?
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+        HStack(alignment: .top, spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(tint)
                 .frame(width: DS.Guide.pieceIcon, height: DS.Guide.pieceIcon)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -174,7 +174,7 @@ struct GuideNumberedStep<Accessory: View>: View {
     @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Text(verbatim: "\(number)").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.onPrimary)
                 .frame(width: DS.Guide.stepNumber, height: DS.Guide.stepNumber)
                 .background(DS.accent, in: Circle())
@@ -193,7 +193,7 @@ struct GuideCode: View {
     var body: some View {
         Text(verbatim: code).font(DS.TextRecipe.display.font.monospaced()).tracking(DS.Guide.codeTracking)
             .foregroundStyle(DS.text).textSelection(.enabled)
-            .frame(maxWidth: .infinity).padding(DS.Space.s5)
+            .frame(maxWidth: .infinity).padding(DS.Space.s6)
             .dsCard()
             .accessibilityLabel(Text(verbatim: code.map(String.init).joined(separator: " ")))
     }
@@ -212,7 +212,7 @@ struct DeviceCodeCard: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             Text("Escribe este código en \(Text(verbatim: Self.site(url)).bold())").recipe(.secondary, color: DS.textMuted)
             GuideCode(code: code)
             if showsOpen, let url {

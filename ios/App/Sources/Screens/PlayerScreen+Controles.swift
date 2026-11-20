@@ -95,7 +95,7 @@ extension PlayerScreen {
                 ZStack {
                     ArtVeil(kind: .both, strength: .soft).ignoresSafeArea().allowsHitTesting(false)
                     topScrim
-                    VStack(spacing: DS.Space.s3) {
+                    VStack(spacing: DS.Space.s2) {
                         topBar(model)
                         Spacer()
                         // El nombre sobre la barra y, a su derecha, «Saltar intro» y «Siguiente» (encima de la barra, no a su lado:
@@ -103,7 +103,7 @@ extension PlayerScreen {
                         // Sin separación entre el nombre y la barra: el área de toque de la barra (`scrubHit`) ya deja el aire
                         // justo arriba de la línea; con el espaciado normal encima quedaba un hueco grande.
                         VStack(spacing: 0) {
-                            HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                            HStack(alignment: .bottom, spacing: DS.Space.s2) {
                                 playerTitle
                                 if offersSkipOrNext(model) { nextEpisode(model); skipIntro(model) }
                             }
@@ -136,7 +136,7 @@ extension PlayerScreen {
                             .accessibilityIdentifier("player-drag-hint")
                     }
                     VStack(spacing: 0) {
-                    VStack(spacing: DS.Space.s3) {
+                    VStack(spacing: DS.Space.s2) {
                         // El nombre pegado a la barra (su área de toque ya deja el aire), como en horizontal.
                         VStack(spacing: 0) {
                             playerTitle
@@ -207,7 +207,7 @@ extension PlayerScreen {
     /// La barra de arriba, igual en los dos sentidos: solo botones. ✕ a la izquierda; episodios, subtítulos, AirPlay y «⋯» a la
     /// derecha. El nombre vive abajo (`playerTitle`).
     func topBar(_ model: PlayerModel) -> some View {
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
             Spacer(minLength: 0)

@@ -41,7 +41,7 @@ struct ListGridView: View {
         ScrollView {
             if let plan = model.shelves.first(where: { $0.id == shelfID }) {
                 VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         if plan.style != .plain, let logo = plan.list.logo { DSPlatformLogo(url: logo) }
                         if let meta = shelfMeta(plan) { meta.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(2) }
                         Spacer(minLength: 0)
@@ -119,7 +119,7 @@ struct PlatformRankingsView: View {
                 }
                 // Sus listas, como pestañas de texto con el subrayado en el color de la plataforma.
                 if sources.count > 1, let current {
-                    HStack(spacing: DS.Space.s5) {
+                    HStack(spacing: DS.Space.s6) {
                         ForEach(sources, id: \.rawValue) { src in
                             Button { withAnimation(DS.Motion.base(reduceMotion)) { source = src } } label: {
                                 VStack(spacing: DS.Space.s2) {
@@ -152,7 +152,7 @@ struct PlatformRankingsView: View {
         if items.isEmpty && !model.isLoading(ranking: ranking) {
             DSEmptyState(symbol: "tray", title: Text("Hoy no hay ranking de este servicio."))
         }
-        LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
+        LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2), spacing: DS.Space.s6) {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                 TitleNavigationLink(route: s.route) {

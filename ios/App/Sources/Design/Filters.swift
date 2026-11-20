@@ -99,17 +99,17 @@ struct DSTextTabs<ID: Hashable>: View {
         ViewThatFits(in: .horizontal) {
             tabs(titles: true)
             // R4: antes de soltar los íconos, más juntas (en el SE «Descargas · Mi media · Guardado» con ícono cabe así).
-            tabs(titles: true, spacing: DS.Space.s3)
+            tabs(titles: true, spacing: DS.Space.s2)
             // Con numerito (Descargas) no hay versión sin íconos: el numerito va en la esquina del ícono y nunca junto al
             // nombre, donde tapaba la «s» o ensanchaba la barra (R4, 11 nov). Sin numerito, los nombres solos (I13).
             if !hasBadge {
                 tabs(titles: true, icons: false)
-                tabs(titles: true, icons: false, spacing: DS.Space.s3)
+                tabs(titles: true, icons: false, spacing: DS.Space.s2)
             }
             if options.allSatisfy({ $0.symbol == nil }) {
                 // Sin íconos a dónde bajar (Semana · Mes · Año · Siempre): se deslizan enteras en vez de cortarse en «Se…»
                 // (revisión 2 del 11 nov, letra grande en el SE).
-                ScrollView(.horizontal, showsIndicators: false) { tabs(titles: true, icons: false, spacing: DS.Space.s3) }
+                ScrollView(.horizontal, showsIndicators: false) { tabs(titles: true, icons: false, spacing: DS.Space.s2) }
                 .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             } else {
                 tabs(titles: false)
@@ -117,7 +117,7 @@ struct DSTextTabs<ID: Hashable>: View {
         }
     }
 
-    private func tabs(titles: Bool, icons: Bool = true, spacing: CGFloat = DS.Space.s5) -> some View {
+    private func tabs(titles: Bool, icons: Bool = true, spacing: CGFloat = DS.Space.s6) -> some View {
         HStack(spacing: spacing) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let on = selection == option.id

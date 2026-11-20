@@ -47,7 +47,7 @@
 
 /* Qué es: su ícono en un círculo de vidrio (la consola de un juego, o serie / película). */
 .foryou-mosaic__kind {
-  position: absolute; left: var(--space-3); top: var(--space-3); z-index: var(--z-raised); display: grid; place-items: center;
+  position: absolute; left: var(--space-2); top: var(--space-2); z-index: var(--z-raised); display: grid; place-items: center;
   width: 2.2rem; height: 2.2rem; border-radius: 50%; color: var(--color-text);
   background: var(--color-glass); backdrop-filter: var(--filter-glass); box-shadow: var(--edge-glass);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
@@ -61,7 +61,7 @@
 
 /* Solo la enfocada habla: una etiqueta corta, el logo (o el nombre) y un dato. */
 .foryou-mosaic__info {
-  position: absolute; left: var(--space-6); right: var(--space-6); bottom: var(--space-5); z-index: var(--z-raised);
+  position: absolute; left: var(--space-6); right: var(--space-6); bottom: var(--space-6); z-index: var(--z-raised);
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); pointer-events: none;
   opacity: 0; transform: translateY(.6rem);
   transition: opacity var(--duration-slow) var(--ease-out) var(--delay-1), transform var(--duration-slow) var(--ease-out) var(--delay-1);

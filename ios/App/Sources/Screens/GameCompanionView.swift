@@ -18,14 +18,14 @@ struct GameCompanionView: View {
 
     var body: some View {
         let m = tvNow.model
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             GameNowCard(game: game, busy: m.busy,
                         onResume: { Task { await m.game("resume") } },
                         onHome: { Task { await m.game("home") } },
                         onClose: { Task { await m.game("close") } })
                 .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     ConsoleStatePanel(state: m.console,
                                       setPower: { mode in Task { await m.setConsole(powerMode: mode) } },
                                       closeApp: { app in Task { await m.setConsole(closeApp: app) } })

@@ -28,7 +28,7 @@ struct LessonYoursTrakt: View {
         let tint = [DS.success, DS.ListTint.bookmark, DS.fresh][i]
         let title = [Text("Lo que viste"), Text("Tu lista"), Text("Dónde ibas")][i]
         let detail = [Text("412 películas · 61 series"), Text("38 por ver"), Text("\(art.show(0).title) · T2 E3 · minuto 34")][i]
-        return HStack(spacing: DS.Space.s3) {
+        return HStack(spacing: DS.Space.s2) {
             DSIconTile(symbol: symbol, tint: tint, side: DS.Lesson.rowIcon)
             VStack(alignment: .leading, spacing: DS.Lesson.tight) {
                 title.font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
@@ -37,7 +37,7 @@ struct LessonYoursTrakt: View {
             .lineLimit(1)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s2)
         .dsCard(translucent: true)
     }
 }
@@ -174,7 +174,7 @@ struct LessonYoursAlert: View {
             Text(verbatim: "9:41").font(DS.TextRecipe.stat.font).foregroundStyle(DS.text)
                 .sceneWidth(402).sceneAt(0, 8).opacity(M.clamp(t / 0.3))
             LessonNote(title: Text("Orbital · Sale hoy"), detail: Text("\(art.show(1).title) · Nuevo episodio, ya disponible"))
-                .sceneAt(DS.Space.s5, 76).scenePut(M.clamp((t - 0.4) / 0.2), 0, (1 - note) * -60)
+                .sceneAt(DS.Space.s6, 76).scenePut(M.clamp((t - 0.4) / 0.2), 0, (1 - note) * -60)
             HStack(alignment: .top, spacing: DS.Space.s2) {
                 ForEach(0..<7, id: \.self) { i in
                     VStack(spacing: DS.Space.s1) {

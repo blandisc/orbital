@@ -87,7 +87,7 @@ struct ReleaseCalendarView: View {
             } else if airings.isEmpty && !model.loading { Text("Ese día no sale nada de lo que sigues.").recipe(.footnote) }
             ForEach(airings) { a in
                 Button { open(a.series.route) } label: {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         PosterView(url: a.series.poster, title: titleName(a.series.title, id: a.series.imdb, kind: "series")).frame(width: DS.Size.thumbSmall)
                         VStack(alignment: .leading, spacing: 0) {
                             Text(verbatim: titleName(a.series.title, id: a.series.imdb, kind: "series")).recipe(.cardTitle).lineLimit(1)

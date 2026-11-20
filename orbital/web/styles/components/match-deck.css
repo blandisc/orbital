@@ -2,10 +2,10 @@
    arriba a la izquierda el título, al centro la carta (un póster grande, la siguiente asoma detrás) y abajo
    ✕ · ★ · ♥ con su color. Al decidir, la carta se tiñe, asoma su sello y sale volando hacia allá. */
 /* AD-10: el mazo a la derecha, los datos a la izquierda (decide.css · .decide__info), el encabezado arriba de los dos. */
-.match { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); column-gap: var(--space-14); }
+.match { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); column-gap: var(--space-16); }
 .match > .decide-head { grid-column: 1 / -1; }
 .match > .match__info { grid-row: 2; grid-column: 1; }
-.match > .match__stage { grid-row: 2; grid-column: 2; margin-right: var(--space-10); }
+.match > .match__stage { grid-row: 2; grid-column: 2; margin-right: var(--space-12); }
 /* Cuántas guardaste en esta vuelta (el ♥ verde de Guardar). */
 .match__saved {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-4);
@@ -26,8 +26,8 @@
 .match__card--skeleton { box-shadow: none; }
 /* La de atrás: un poco más chica y más abajo (DS.Match.behindShrink, behindDrop), sin nada encima. */
 .match__card--behind { opacity: var(--opacity-away); box-shadow: var(--shadow-card); pointer-events: none; animation: none; }
-.match__card--behind-1 { transform: translateX(var(--space-5)) rotate(4deg) scale(.96); }
-.match__card--behind-2 { transform: translateX(calc(2 * var(--space-5))) rotate(8deg) scale(.92); }
+.match__card--behind-1 { transform: translateX(var(--space-6)) rotate(4deg) scale(.96); }
+.match__card--behind-2 { transform: translateX(calc(2 * var(--space-6))) rotate(8deg) scale(.92); }
 /* El póster llena lo que deja su ficha de abajo (recortado por abajo: ahí suele ir el logo, que ya no queda bajo el nombre). */
 .match__poster { flex: 1 1 auto; min-height: 0; width: 100%; object-fit: cover; object-position: top; }
 .match__card--behind .match__poster { height: 100%; }
@@ -35,7 +35,7 @@
 /* El color de lo que va a pasar y su sello (PASO, GUARDAR, ★ PARA HOY), como Tinder; solo al decidir. */
 .match__tint { inset: 0; opacity: 0; pointer-events: none; transition: opacity var(--duration-fast) var(--ease-out); }
 .match__stamp {
-  top: var(--space-5); padding: var(--space-1) var(--space-3); border: var(--match-stamp-line) solid currentColor; border-radius: var(--radius-sm);
+  top: var(--space-6); padding: var(--space-1) var(--space-2); border: var(--match-stamp-line) solid currentColor; border-radius: var(--radius-sm);
   background: var(--color-scrim); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight);
   letter-spacing: var(--tracking-caps); text-transform: uppercase; opacity: 0; transition: opacity var(--duration-fast) var(--ease-out); /* ds-exception: sello del mazo */
 }
@@ -45,8 +45,8 @@
 .match__card--tonight .match__tint { background: linear-gradient(0deg, transparent 50%, var(--color-match-tonight)); }
 :is(.match__card--pass, .match__card--keep, .match__card--tonight) .match__tint { opacity: var(--opacity-match-tint); }
 :is(.match__card--pass, .match__card--keep, .match__card--tonight) .match__stamp { opacity: 1; }
-.match__card--pass .match__stamp { right: var(--space-5); color: var(--color-match-pass); transform: rotate(var(--match-stamp-tilt)); }
-.match__card--keep .match__stamp { left: var(--space-5); color: var(--color-match-keep); transform: rotate(calc(-1 * var(--match-stamp-tilt))); }
+.match__card--pass .match__stamp { right: var(--space-6); color: var(--color-match-pass); transform: rotate(var(--match-stamp-tilt)); }
+.match__card--keep .match__stamp { left: var(--space-6); color: var(--color-match-keep); transform: rotate(calc(-1 * var(--match-stamp-tilt))); }
 .match__card--tonight .match__stamp { top: auto; bottom: 40%; left: 50%; color: var(--color-match-tonight); transform: translateX(-50%); }
 .match__card--pass { transform: translateX(-120%) rotate(calc(-1 * var(--match-stamp-tilt))); opacity: 0; }
 .match__card--keep { transform: translateX(120%) rotate(var(--match-stamp-tilt)); opacity: 0; }

@@ -39,13 +39,11 @@
   /* Espaciado (múltiplos de 4 px a 16 px/rem) */
   --space-1: .25rem;
   --space-2: .5rem;
-  --space-3: .75rem;
   --space-4: 1rem;
-  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-14: 3.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 
   /* Radios: rectángulos suaves, no burbujas */
   /* Dos esquinas y la cápsula (ritmo del 5 nov 2026; T11, 10 nov: antes siete nombres para estos dos valores). Las del
@@ -257,7 +255,7 @@
   --card-focus-scale: 1.2;
   --card-radius: var(--radius-sm);
   --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
-  --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
+  --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-6));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
   --hints-room: calc(3.4rem + var(--space-4) + var(--safe-y)); /* lo que deja libre el pie de controles abajo */
   --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
@@ -268,7 +266,7 @@
   --match-stamp-line: 3px; /* el borde del sello (DS.Match.stampLine) */
   --match-stamp-tilt: 12deg; /* el giro del sello y de la carta al salir (DS.Match.stampTilt) */
   --caption-room: calc((.65rem + 2.8 * var(--type-footnote)) * 1.15);
-  --status-room: calc(var(--space-5) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
+  --status-room: calc(var(--space-6) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
   --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
   --menu-row-height: 3.6rem; /* una fila de un menú y el pie de controles */
   --touch-target: 2.9rem; /* con el dedo: al menos ~44 px */
@@ -288,7 +286,7 @@
   --tab-mark: .14rem; /* la rayita bajo la pestaña de texto elegida (DSTextTabs) */
   /* Los espacios de una pantalla (DS.Layout del iPhone, design/tokens.json › layout). En la TV solo existe el del título a lo
      suyo: entre filas y secciones manda el alto fijo de cada fila (la pantalla es la medida, no hay pila que crezca). */
-  --layout-title-to-content: var(--space-3);
+  --layout-title-to-content: var(--space-2);
   --layout-between-subsections: var(--space-6); /* entre subsecciones de una pila (DS.Layout.betweenSubsections): las tandas de Cambiar el arte, TV en vivo */
   --layout-between-sections: var(--space-8); /* entre secciones de una pila (DS.Layout.betweenSections): lo de abajo de la ficha */
   --icon-xl: 1.8rem;

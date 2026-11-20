@@ -59,7 +59,7 @@ extension DS {
         /// sin pasar de `macMax`.
         static func width(count: Int) -> CGFloat {
             guard WindowMetrics.roomy, count > 0 else { return width }
-            let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(count) * DS.Space.s3 - addWidth
+            let row = WindowMetrics.column.width - 2 * DS.Space.gutter - CGFloat(count) * DS.Space.s2 - addWidth
             return min(macMax, max(width, row / CGFloat(count)))
         }
         static let macMax: CGFloat = 420
@@ -145,7 +145,7 @@ extension DS {
         /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
         static var width: CGFloat {
             if WindowMetrics.roomy { return maxWidth }
-            return min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2)
+            return min(maxWidth, (WindowMetrics.column.width - DS.Space.gutter - DS.Space.s2 - DS.Poster.peek) / 2)
         }
         /// En la Mac las tarjetas (Plataformas, Premios, Estudios) crecen hasta que `perRow` llenan el renglón, sin pasar de
         /// `maxScale`: con su tamaño de iPhone dejaban media pantalla vacía a la derecha (Fernando, 16 nov 2026).
@@ -154,8 +154,8 @@ extension DS {
         static var scale: CGFloat {
             guard WindowMetrics.roomy else { return 1 }
             let room = WindowMetrics.column.width - 2 * DS.Space.gutter
-            let count = max(perRow, Int(ceil((room + DS.Space.s3) / (maxScale * baseWidth + DS.Space.s3))))
-            let row = room - CGFloat(count - 1) * DS.Space.s3
+            let count = max(perRow, Int(ceil((room + DS.Space.s2) / (maxScale * baseWidth + DS.Space.s2))))
+            let row = room - CGFloat(count - 1) * DS.Space.s2
             return min(maxScale, max(1, row / (CGFloat(count) * baseWidth)))
         }
         static let perRow = 6, maxScale: CGFloat = 2, baseWidth: CGFloat = 168

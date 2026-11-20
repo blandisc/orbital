@@ -155,14 +155,16 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// (el pie de un póster cuenta): del título a lo suyo, entre subsecciones, entre secciones y al pie.
     /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
-        static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s8, screenBottom = Space.s14
-        static let screenTop = Space.s3
+        static let titleToContent = Space.s2, betweenSubsections = Space.s6, betweenSections = Space.s8, screenBottom = Space.s16
+        static let screenTop = Space.s2
     }
 
     enum Space {
-        static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s3 = CGFloat(DesignTokens.Space.s3)
-        static let s4 = CGFloat(DesignTokens.Space.s4), s5 = CGFloat(DesignTokens.Space.s5), s6 = CGFloat(DesignTokens.Space.s6)
-        static let s8 = CGFloat(DesignTokens.Space.s8), s10 = CGFloat(DesignTokens.Space.s10), s14 = CGFloat(DesignTokens.Space.s14)
+        /// Siete pasos y nada más (D3-B, Fernando, 20 nov 2026): 4 y 8 dentro de un grupo, 16 y 24 entre piezas, 32, 48 y 64
+        /// entre grupos. `tests/web/design-parity.test.mjs` falla si aparece otro (12, 20, 40 y 56 ya no existen).
+        static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s4 = CGFloat(DesignTokens.Space.s4)
+        static let s6 = CGFloat(DesignTokens.Space.s6), s8 = CGFloat(DesignTokens.Space.s8), s12 = CGFloat(DesignTokens.Space.s12)
+        static let s16 = CGFloat(DesignTokens.Space.s16)
         /// Margen lateral de las pantallas. En la Mac, el de una app de escritorio (17 nov 2026, Fernando: Inicio con el arte y
         /// las tiras pegados a la orilla de la ventana): con 16 pt, al 77 % salía de 12 px. C2: con espacio, `wideGutter`.
         static var gutter: CGFloat { WindowMetrics.roomy ? wideGutter : s4 }
@@ -260,7 +262,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Puntos por segundo: se lee mientras avanza.
         static let speed: Double = 30
         /// El desvanecido de las orillas mientras no se ve entero.
-        static let fade = Space.s3
+        static let fade = Space.s2
         /// El paso de ida o de regreso: parejo, sin acelerar (se va leyendo).
         static func travel(_ seconds: Double) -> Animation { .linear(duration: seconds) }
     }
@@ -558,8 +560,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Cuántas columnas en `width` (el ancho del contenido, con sus márgenes).
         static func gridColumns(for width: CGFloat) -> Int {
             guard width >= gridWideWidth else { return gridColumns }
-            let inner = width - DS.Space.gutter * 2 + DS.Space.s3
-            return max(gridColumnsWide, Int(inner / (gridCellMax + DS.Space.s3)))
+            let inner = width - DS.Space.gutter * 2 + DS.Space.s2
+            return max(gridColumnsWide, Int(inner / (gridCellMax + DS.Space.s2)))
         }
         /// Las cuadrículas «de dos en dos» del iPhone (Top 10 completo, tus listas, Seguir viendo): en una ventana ancha (iPad,
         /// Mac) dos columnas hacían pósters de ~500 pt; ahí van tantas como quepan de al menos `wideMin`. El iPhone (vertical

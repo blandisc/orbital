@@ -67,7 +67,7 @@ struct FilterEditor: View {
     }
 
     private var genre: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSelector(choices: [(false, "Quiero"), (true, "No quiero")], selection: $excluding)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                 ForEach(Tmdb.filterGenres, id: \.slug) { g in
@@ -96,7 +96,7 @@ struct FilterEditor: View {
     }
 
     private var era: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: 0) {
                 (FilterText.years(filter) ?? Text("Cualquier año")).recipe(.title).monospacedDigit()
                 eraDetail.recipe(.caption, color: DS.textMuted)
@@ -116,7 +116,7 @@ struct FilterEditor: View {
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
                 } } icon: { Image(systemName: DS.Symbol.spreadDecades).foregroundStyle(DS.Filter.amber) }
             }
-            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
+            .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .dsCard()
             .tint(DS.Filter.amber)
             .accessibilityIdentifier("filter-spread")
@@ -130,7 +130,7 @@ struct FilterEditor: View {
 
     private var length: some View {
         let series = filter.format == .series
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 lengthChoice(.short, "hare", Text("Cortita"), series ? Text("≤ 30 min") : Text("< 1 h 35"))
                 lengthChoice(.regular, "clock", Text("Normal"), series ? Text("30–50 min") : Text("1 h 30 – 2 h 10"))
@@ -175,7 +175,7 @@ struct FilterEditor: View {
     }
 
     private var origin: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 ForEach(FilterCatalog.regions, id: \.id) { region in
                     let all = Set(region.codes)
@@ -201,7 +201,7 @@ struct FilterEditor: View {
     /// Cada premio con su estatuilla (las de Colecciones). Los ganadores vienen con la app: con premios, el resto de los
     /// filtros que no son formato ni época no aplica, y se dice.
     private var awards: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                 ForEach(FilterCatalog.awards, id: \.self) { id in
                     FilterLogoChoice(title: AwardNames.title(id), selected: filter.awards.contains(id)) {

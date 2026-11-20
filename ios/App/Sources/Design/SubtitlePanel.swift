@@ -129,7 +129,7 @@ struct LanguageSearchList: View {
 
     /// Como los renglones del panel: una sola bandera en su columna fija (o el globo), y el nombre donde empieza el texto.
     private func languageName(_ code: String) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Group {
                 if let flag = Text.flagMark(SubtitleLanguage.code(code) ?? code) { flag.font(DS.TextRecipe.labelLarge.font) }
                 else { Image(systemName: "globe").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted) }

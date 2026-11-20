@@ -19,7 +19,7 @@ struct DebridCloudChooser: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Button { model.target = cloud } label: {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         DSCloudMark(cloud: cloud)
                         TorrentioRowLabel(title: Text(verbatim: cloud.name), detail: Text("Conectar con tu clave"))   // G3-B: la dirección va adentro, en su página   // no-es-título: el nombre de la nube
                     }
@@ -35,7 +35,7 @@ struct DebridCloudChooser: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Link(destination: cloud.signupURL) {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         DSCloudMark(cloud: cloud)
                         TorrentioRowLabel(title: Text("Ver \(cloud.name)"), detail: Text(verbatim: cloud.site))   // no-es-título: el nombre de la nube
                         Spacer(minLength: DS.Space.s2)
@@ -68,7 +68,7 @@ struct DebridCloudList: View {
         Section {
             ForEach(DebridService.allCases) { cloud in
                 Button { Task { await model.use(cloud) } } label: {
-                    HStack(spacing: DS.Space.s3) {
+                    HStack(spacing: DS.Space.s2) {
                         DSCloudMark(cloud: cloud)
                         Text(verbatim: cloud.name).foregroundStyle(DS.text)   // no-es-título: el nombre de la nube
                         Spacer(minLength: DS.Space.s2)
@@ -100,7 +100,7 @@ struct DebridCloudList: View {
 struct DebridCloudsExplainer: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {   // ds-exception: hoja de tarjetas, como DebridExplainer
+            VStack(alignment: .leading, spacing: DS.Space.s2) {   // ds-exception: hoja de tarjetas, como DebridExplainer
                 DSSheetHeader(title: Text("¿Qué es esto?")).padding(.bottom, DS.Space.s1)
                 DSExplainerCard(symbol: "icloud.fill", tint: DS.ListTint.series, title: Text("Las tres hacen lo mismo"),
                                 detail: Text("Guardan películas y series en sus servidores: lo que ya tienen arranca al instante y lo que no, se lo pides y lo bajan."))

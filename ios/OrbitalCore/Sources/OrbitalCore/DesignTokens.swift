@@ -22,8 +22,8 @@ public enum DesignTokens {
         public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
     }
 
-    /// Espacio (puntos): 4, 8, 12, 16, 20, 24, 32, 40, 56.
-    public enum Space { public static let s1 = 4.0, s2 = 8.0, s3 = 12.0, s4 = 16.0, s5 = 20.0, s6 = 24.0, s8 = 32.0, s10 = 40.0, s14 = 56.0 }
+    /// Espacio (puntos): 4, 8, 16, 24, 32, 48, 64.
+    public enum Space { public static let s1 = 4.0, s2 = 8.0, s4 = 16.0, s6 = 24.0, s8 = 32.0, s12 = 48.0, s16 = 64.0 }
     /// Las esquinas (puntos); la cápsula, `pill`, vive abajo (`extension DesignTokens.Radius`).
     public enum Radius { public static let xs = 8.0, sm = 8.0, md = 8.0, lg = 16.0, xl = 16.0, xxl = 16.0 }
     /// Duraciones en segundos (las de la TV: `design/tokens.json`); con «Reducir movimiento» valen 0.

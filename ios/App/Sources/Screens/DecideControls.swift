@@ -26,7 +26,7 @@ struct DecideControls: View {
             // Siempre en un renglón: la pastilla del tipo y el círculo de «Filtros» son de tamaño fijo (hasta xxxLarge) y caben
             // juntos aun en un SE con letra grande; sin `ViewThatFits` (regla «ViewThatFits no se anida ni vive bajo
             // alineación por línea base»: medir dos veces la pastilla congelaba la hoja).
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 kind(m)
                 Spacer(minLength: 0)
                 DSFiltersButton(count: setCount(m), action: openFilters).accessibilityIdentifier("decide-filters")
@@ -99,7 +99,7 @@ struct DecideControls: View {
                 Task { await m.apply() }
             }
         } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 ForEach(setItems(m)) { item in
                     HStack(spacing: DS.Space.s1) {
                         Image(systemName: item.symbol).font(DS.TextRecipe.label.font).foregroundStyle(item.tint)

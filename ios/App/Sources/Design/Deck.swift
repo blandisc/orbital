@@ -25,7 +25,7 @@ struct AvatarPicker: View {
     @Binding var selection: String
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Avatar.picker), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Avatar.picker), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
             ForEach(AvatarImage.all, id: \.self) { id in
                 Button { selection = id } label: {
                     AvatarImage(id: id, size: DS.Avatar.picker)
@@ -46,7 +46,7 @@ struct AppIconPicker: View {
     @State private var current = UIApplication.shared.alternateIconName
 
     var body: some View {
-        HStack(spacing: DS.Space.s5) {
+        HStack(spacing: DS.Space.s6) {
             option(nil, preview: "AppIconPreview/day", label: Text("Clásico"))
             option("AppIconNight", preview: "AppIconPreview/night", label: Text("Cielo nocturno"))
             Spacer(minLength: 0)

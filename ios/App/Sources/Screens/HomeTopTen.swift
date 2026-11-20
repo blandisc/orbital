@@ -24,7 +24,7 @@ struct HomeTopTen: View {
         let pageKind = model.spotlightKind
         let movies = pageKind == "movie" ? true : pageKind == "series" ? false : (topMovies && !films.isEmpty || series.isEmpty)
         let items = movies ? films : series
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             // Con letra de accesibilidad la pastilla baja bajo el título (al lado lo empujaba fuera de la pantalla).
             let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
@@ -66,7 +66,7 @@ struct HomeTopTen: View {
             }
             .dsFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {
+                LazyHStack(alignment: .bottom, spacing: DS.Space.s2) {
                     if items.isEmpty {
                         if model.loadingTop { ShelfSkeleton() }
                         else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }

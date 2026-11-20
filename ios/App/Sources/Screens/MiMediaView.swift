@@ -81,7 +81,7 @@ struct MiMediaView<Top: View>: View {
 
     /// Tu carpeta: cuántos títulos, cuándo se revisó, revisar ahora y más (orden, carpetas, ajustes).
     private func header(_ model: MiMediaModel) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: 0) {
                 if let name = OneDriveModel.folderName(model.folder) { Text("Tu OneDrive · \(name)").recipe(.cardTitle).lineLimit(1) }
                 else { Text("Todo tu OneDrive").recipe(.cardTitle) }
@@ -105,12 +105,12 @@ struct MiMediaView<Top: View>: View {
 
     private func grid(_ model: MiMediaModel) -> some View {
         let shown = model.shown
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             if !shown.isEmpty {
                 DSSectionHead(title: model.filter == .series ? Text("Series") : model.filter == .movies ? Text("Películas") : Text("Todo"), count: shown.count, level: .section)
                     .padding(.horizontal, DS.Space.gutter)
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], alignment: .leading, spacing: DS.Space.s4) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s2)], alignment: .leading, spacing: DS.Space.s4) {
                 ForEach(shown) { t in poster(t, model, fill: true) }
             }
             .padding(.horizontal, DS.Space.gutter)
@@ -146,13 +146,13 @@ struct MiMediaView<Top: View>: View {
             DSSectionHead(title: Text("Sin ficha"), count: model.unmatched.count, level: .section)
             Text("No los reconocí por su nombre: elige cuál es.").recipe(.footnote, color: DS.textMuted)
             ForEach(model.unmatched, id: \.id) { file in
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     Image(systemName: "questionmark.square.dashed").foregroundStyle(DS.textMuted)
                     Text(verbatim: file.name).recipe(.footnote, color: DS.text).lineLimit(2)
                     Spacer(minLength: DS.Space.s2)
                     Button("Corregir") { fixing = file }.dsSecondaryButton()
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .dsCard()
             }
         }
@@ -247,7 +247,7 @@ struct MiMediaTitleView: View {
     /// Ver (donde ibas: tu copia, o la del iPhone si ya la bajaste) y bajar al iPhone (la de 1080p). En una serie, la temporada.
     @ViewBuilder private func actions(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
         let target = next ?? (t.kind == "movie" ? t.imdb : t.entries.first?.videoID)
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Button { if let target { play(t, videoID: target, model) } } label: {
                 ActionTileLabel(title: t.kind == "series" && target != nil ? Text("Ver \(episodeName(target ?? ""))") : Text("Ver"), symbol: "play.fill")
             }
@@ -273,7 +273,7 @@ struct MiMediaTitleView: View {
 
     /// Una película: sus versiones (la de la TV y la de bajar) y lo que dice cada archivo.
     private func versions(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: t.entries.count > 1 ? Text("Versiones en tu carpeta") : Text("El archivo"), level: .section)
             ForEach(t.entries, id: \.file.id) { e in
                 let d = e.details
@@ -297,7 +297,7 @@ struct MiMediaTitleView: View {
                         .dsSecondaryButton().dsControlSize(.small)
                     }
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .dsCard()
             }
             if t.entries.count > 1 { Text("«Ver» usa la mejor; «Descargar», la de 1080p.").recipe(.caption) }
@@ -306,7 +306,7 @@ struct MiMediaTitleView: View {
 
     /// Una serie: sus temporadas y episodios; los que no están en tu carpeta, en gris con «Buscar fuente».
     private func episodes(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             if seasons.count > 1 {
                 // Como la ficha: las temporadas en la lista desplegable.
                 DSSeasonMenu(seasons: seasons.map(\.season), selection: $season)
@@ -319,10 +319,10 @@ struct MiMediaTitleView: View {
     private func episodeRow(_ t: OneDriveLibrary.Title, _ row: MiMediaModel.EpisodeRow, _ model: MiMediaModel) -> some View {
         let best = row.versions.first
         let name = row.episode.hasTitle ? row.episode.title : String(format: Strings.tr("Episodio %lld", language: env.services.appSettings.uiLanguage), row.episode.episode)
-        return HStack(spacing: DS.Space.s3) {
+        return HStack(spacing: DS.Space.s2) {
             // Tocar el episodio lo pone (un botón de verdad: VoiceOver lo anuncia); lo de la derecha es aparte.
             Button { if !row.missing { play(t, videoID: row.id, model) } } label: {
-                HStack(spacing: DS.Space.s3) {
+                HStack(spacing: DS.Space.s2) {
                     Text(verbatim: "\(row.episode.episode)").recipe(.data, color: DS.textMuted)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(verbatim: name).recipe(.secondary, color: row.missing ? DS.textMuted : DS.text).lineLimit(1)
@@ -357,7 +357,7 @@ struct MiMediaTitleView: View {
 
     private func fixRow(_ t: OneDriveLibrary.Title) -> some View {
         Button { fixing = true } label: {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Image(systemName: "pencil").foregroundStyle(DS.warning)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(t.kind == "series" ? "¿No es esta serie?" : "¿No es esta película?").recipe(.cardTitle)
@@ -366,7 +366,7 @@ struct MiMediaTitleView: View {
                 Spacer()
                 Image(systemName: "chevron.right").foregroundStyle(DS.textFaint)
             }
-            .padding(DS.Space.s3)
+            .padding(DS.Space.s2)
             .dsCard()
             .contentShape(Rectangle())
         }
@@ -429,7 +429,7 @@ struct FixMatchSheet: View {
                     else if results.isEmpty { Text("Sin resultados: prueba con el título en inglés.").recipe(.footnote) }
                     ForEach(results) { r in
                         Button { Task { if let choose { await choose(r) } else { await model.fix(info, to: r) }; dismiss() } } label: {
-                            HStack(spacing: DS.Space.s3) {
+                            HStack(spacing: DS.Space.s2) {
                                 PosterView(url: r.poster, title: titleName(r.title, id: r.metaID, kind: r.kind)).frame(width: DS.Size.thumbSmall)
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)).recipe(.cardTitle)

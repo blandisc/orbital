@@ -25,7 +25,7 @@ body[data-screensaver] .status-bar { z-index: var(--z-overlay); }
 /* En una cápsula de vidrio, como la etiqueta de plataforma: se lee sobre cualquier póster (sobre uno claro, el texto con
    sombra se perdía), y sigue siendo discreta. */
 body[data-screensaver] .status-bar__right {
-  margin-left: auto; gap: var(--space-4); padding: var(--space-2) var(--space-5); border-radius: var(--radius-pill); color: var(--color-text);
+  margin-left: auto; gap: var(--space-4); padding: var(--space-2) var(--space-6); border-radius: var(--radius-pill); color: var(--color-text);
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
 body[data-screensaver] .status-bar__clock { padding-left: var(--space-4); border-left-color: var(--color-hairline-strong); }
@@ -34,6 +34,6 @@ body[data-screensaver] .battery__body { border-color: var(--color-text); }
 body[data-screensaver] .battery__level, body[data-screensaver] .battery__body::after { background: var(--color-text); }
 
 /* D5-A: «Decide por mí» con el dedo (con mando, teclado o mouse, X en el pie). Abajo a la izquierda, donde iría el pie. */
-.foryou__decide { position: absolute; left: var(--page-gutter); bottom: var(--space-5); z-index: var(--z-raised); display: none; }
+.foryou__decide { position: absolute; left: var(--page-gutter); bottom: var(--space-6); z-index: var(--z-raised); display: none; }
 [data-input="touch"] .foryou__decide { display: inline-flex; }
 body[data-screensaver] .foryou__decide { display: none; }

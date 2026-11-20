@@ -75,7 +75,7 @@ struct OnboardingSeeHere: View {
                     }
                     .opacity(lead.opacity).offset(y: lead.rise)
                 }
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
                     fact("creditcard", Text("Se paga en su página."), Text("Orbital no cobra nada.")).opacity(f0.opacity).offset(y: f0.rise)
                     fact("person", Text("Una cuenta por persona."), Text("Si dos la usan a la vez, se corta.")).opacity(f1.opacity).offset(y: f1.rise)
                 }
@@ -85,7 +85,7 @@ struct OnboardingSeeHere: View {
     }
 
     private func fact(_ symbol: String, _ bold: Text, _ rest: Text) -> some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
             Text("\(bold.foregroundStyle(DS.text).bold()) \(rest.foregroundStyle(DS.textMuted))")
                 .font(DS.TextRecipe.secondary.font).fixedSize(horizontal: false, vertical: true)
@@ -98,7 +98,7 @@ struct OnboardingSeeHere: View {
         TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
             let t = reduceMotion ? GuideCloudReady.end + 1 : ctx.date.timeIntervalSince(readyStart), M = GuideTraktScene.Motion.self
             let title = M.item(t, 0.12, 12), lead = M.item(t, 0.2, 8)
-            VStack(spacing: DS.Space.s5) {
+            VStack(spacing: DS.Space.s6) {
                 GuideCloudReady.badge(t).padding(.top, DS.Space.s8)
                 VStack(spacing: DS.Space.s2) {
                     Text("Listo: \(name) conectado").recipe(.display, color: DS.text).multilineTextAlignment(.center)
@@ -134,7 +134,7 @@ struct CloudNoneSheet: View {
             VStack(spacing: DS.Space.s2) {
                 ForEach(DebridService.allCases) { cloud in
                     Link(destination: cloud.signupURL) {
-                        HStack(spacing: DS.Space.s3) {
+                        HStack(spacing: DS.Space.s2) {
                             DSCloudMark(cloud: cloud)
                             TorrentioRowLabel(title: Text(verbatim: cloud.name),   // no-es-título: el nombre de la nube
                                               detail: cloud == .realDebrid ? Text("Te lo sugerimos: se conecta con un código, sin copiar claves")
@@ -142,7 +142,7 @@ struct CloudNoneSheet: View {
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: "arrow.up.right").foregroundStyle(DS.textMuted).accessibilityHidden(true)
                         }
-                        .padding(DS.Space.s3).contentShape(Rectangle())
+                        .padding(DS.Space.s2).contentShape(Rectangle())
                         .dsCard(fill: cloud == .realDebrid ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
                     }
                     .buttonStyle(.plain)
@@ -174,7 +174,7 @@ struct DebridCodeConnect: View {
 
     var body: some View {
         let model = observer.model
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             switch model.codeFlow {
             case .idle:
                 if showsStart {
@@ -203,12 +203,12 @@ struct DebridKeyField: View {
 
     var body: some View {
         let debrid = observer.model
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 TextField("Pega tu clave", text: Binding(get: { debrid.token }, set: { debrid.token = $0 }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled().font(DS.TextRecipe.data.font)
                     .onSubmit { Task { await debrid.verify() } }
-                    .padding(DS.Space.s3).dsCard(translucent: true)
+                    .padding(DS.Space.s2).dsCard(translucent: true)
                     .accessibilityIdentifier("debrid-token")
                 Button("Pegar", systemImage: "doc.on.clipboard") {
                     if let text = UIPasteboard.general.string { debrid.token = text; Task { await debrid.verify() } }
@@ -245,7 +245,7 @@ struct DebridKeyLink: View {
     var body: some View {
         let model = observer.model
         Link(destination: model.tokenURL) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 TorrentioRowLabel(title: Text("Sacar tu clave"), detail: Text(verbatim: model.connecting.keyPlace))
                 Spacer(minLength: DS.Space.s2)
                 Image(systemName: "arrow.up.right").foregroundStyle(DS.textMuted).accessibilityHidden(true)

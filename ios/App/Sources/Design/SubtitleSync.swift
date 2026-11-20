@@ -19,7 +19,7 @@ struct SubtitleSyncView: View {
     var language = "es"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
+        VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 Button(action: back) {
                     Image(systemName: "chevron.left").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
@@ -40,7 +40,7 @@ struct SubtitleSyncView: View {
                         answer(Text("Otra vez"), primary: false, action: again).accessibilityIdentifier("subtitle-sync-again")
                     }
                 }
-                .padding(DS.Space.s3)
+                .padding(DS.Space.s2)
                 .background(DS.solidPrimary, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
             } else {
                 Text("Toca la frase en el momento en que la escuches.").recipe(.footnote)
@@ -48,7 +48,7 @@ struct SubtitleSyncView: View {
                     Button { pick(line) } label: {
                         Text(verbatim: line.text).recipe(.secondary, color: DS.text).lineLimit(compact ? 1 : 2).multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-                            .padding(.horizontal, DS.Space.s3)
+                            .padding(.horizontal, DS.Space.s2)
                             .background(picked == line.start ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
                             .contentShape(Rectangle())
                     }
@@ -57,7 +57,7 @@ struct SubtitleSyncView: View {
                 }
             }
         }
-        .padding(compact ? DS.Space.s3 : DS.Space.s4)
+        .padding(compact ? DS.Space.s2 : DS.Space.s4)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
     }
 

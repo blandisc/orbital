@@ -16,7 +16,7 @@ extension DS.TitleAction {
     /// arte baja a `bandHeroShare` para que la primera fila se asome; la sinopsis a un ancho de lectura y hasta
     /// `bandSynopsisLines` renglones.
     static let bandFrom: CGFloat = 1100, bandHeroShare: CGFloat = 0.72, bandSynopsisLines = 4
-    static var bandGap: CGFloat { DS.Mac.sized(DS.Space.s14) }
+    static var bandGap: CGFloat { DS.Mac.sized(DS.Space.s16) }
     /// La sinopsis de la banda: de 360 a 640 pt (~75 letras por renglón; en 2580 pt llegaba a 1000 y se leía mal).
     static let bandReading: CGFloat = 640, bandSynopsisMin: CGFloat = 360
 }

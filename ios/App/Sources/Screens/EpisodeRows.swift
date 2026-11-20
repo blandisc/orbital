@@ -70,9 +70,9 @@ struct EpisodeRowView: View {
     @ViewBuilder private var bodyContent: some View {
         // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
         // Miniatura, texto y estado en una misma línea central: el estado siempre cae en la misma columna.
-        HStack(alignment: .center, spacing: DS.Space.s3) {
+        HStack(alignment: .center, spacing: DS.Space.s2) {
             Button(action: play) {
-                HStack(alignment: .center, spacing: DS.Space.s3) {
+                HStack(alignment: .center, spacing: DS.Space.s2) {
                     ZStack(alignment: .bottom) {
                         PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
                         if let progress = row.progress {
@@ -106,15 +106,15 @@ struct EpisodeRowView: View {
             .buttonStyle(.plain)
             stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)
         }
-        .padding(.vertical, DS.Space.s3)
+        .padding(.vertical, DS.Space.s2)
         // Calificar el capítulo: las estrellas en su propio renglón bajo el texto, fuera del botón que reproduce (tocarlas no
         // lo pone).
         .padding(.bottom, row.watched && rate != nil ? DS.Rating.episodeRow : 0)
         .overlay(alignment: .bottomLeading) {
             if row.watched, let rate {
                 RatingStars(value: rating, size: DS.Rating.starEpisode, onChange: rate)
-                    .padding(.leading, DS.Poster.episodeThumbWidth + DS.Space.s3)
-                    .padding(.bottom, DS.Space.s3)
+                    .padding(.leading, DS.Poster.episodeThumbWidth + DS.Space.s2)
+                    .padding(.bottom, DS.Space.s2)
                     .accessibilityIdentifier("episode-rating")
             }
         }

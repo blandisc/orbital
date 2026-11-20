@@ -75,7 +75,7 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         // Sin el hueco grande de arriba del primer grupo y con aire abajo: el último grupo no queda bajo la barra flotante.
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
-        .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
+        .contentMargins(.bottom, DS.Space.s12, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()   // iPad y Mac: los renglones al centro
     }

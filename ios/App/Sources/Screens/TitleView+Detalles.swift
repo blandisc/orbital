@@ -47,7 +47,7 @@ extension TitleView {
     @ViewBuilder func details(_ model: TitleModel) -> some View {
         let rows = detailRows(model)
         if !rows.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSSectionHead(title: "Detalles", eyebrow: Text("Los datos de la ficha"))
                 Grid(alignment: .leading, horizontalSpacing: DS.Space.s4, verticalSpacing: DS.Space.s2) {
                     ForEach(rows, id: \.0) { label, value in
@@ -116,10 +116,10 @@ extension TitleView {
     }
 
     func section<Content: View>(title: LocalizedStringKey, meta: Text, count: Int? = nil, headed: Bool = true, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             if headed { DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, side) }
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
+                LazyHStack(alignment: .top, spacing: DS.Space.s2) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
             .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, side, for: .scrollContent)

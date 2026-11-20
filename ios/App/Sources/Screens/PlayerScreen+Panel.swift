@@ -139,7 +139,7 @@ extension PlayerScreen {
         // La que suena va primero: sale marcada como la elegida.
         let ranked = model.sourceChoices.filter { $0.index == model.source?.index } + model.sourceChoices.filter { $0.index != model.source?.index }
         let rows = SourcesModel.languageRows(ranked, prefs: prefs, limitGB: env.services.appSettings.warnCellularOverGB)
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             // En horizontal, las pestañas y «Listo» arriba, como en «Audio y subtítulos» (y se vuelve con ellas).
             if landscape {
                 HStack(spacing: DS.Space.s2) {
@@ -166,12 +166,12 @@ extension PlayerScreen {
                     let name = VersionText.inline(VersionText.name(yours.code, ui), ui)
                     VersionYoursAside(language: Text.withFlagImages(LanguageFlags.flagged(name, yours.code)), option: yours.option,
                                       status: yoursStatus(model), request: { Task { await requestYoursFromPlayer(model) } })
-                        .padding(.bottom, DS.Space.s3)
+                        .padding(.bottom, DS.Space.s2)
                 } else if !dockState.versionShowsAll, let code = model.yoursRefused {
                     // LN2: tu idioma existía, pero Real-Debrid rechazó la única que lo trae (18 nov).
                     VersionYoursRefused(language: Text.withFlagImages(LanguageFlags.flagged(VersionText.inline(VersionText.name(code, ui), ui), code)),
                                         service: env.services.debrid.service)
-                        .padding(.bottom, DS.Space.s3)
+                        .padding(.bottom, DS.Space.s2)
                 }
                 if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,

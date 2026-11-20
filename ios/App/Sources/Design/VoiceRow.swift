@@ -46,7 +46,7 @@ struct VoiceRow: View {
             // tele») mide lo que mide (antes dejaba medio renglón gris vacío abajo).
             if phase == .idle { idle } else { open.frame(minHeight: plainAnswer ? nil : DS.Remote.voiceOpenHeight, alignment: .top) }
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .dsCard(translucent: true)
         .dsFeedback(.impact(flexibility: .soft), trigger: taps)
@@ -58,7 +58,7 @@ struct VoiceRow: View {
     // MARK: Quieto
 
     private var idle: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             micButton(listening: false)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Button { tap(actions.mic) } label: { Text("Dile a Orbital").recipe(.cardTitle).frame(maxWidth: .infinity, alignment: .leading) }
@@ -114,7 +114,7 @@ struct VoiceRow: View {
     }
 
     private var listening: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack {
                 Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow)
                 Spacer(minLength: DS.Space.s2)
@@ -125,7 +125,7 @@ struct VoiceRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(nil, value: transcript)
             Spacer(minLength: 0)
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 micButton(listening: true)
                 if phase == .asking { DSInlineProgress(text: Text("Un momento")) }
                 else { Text("Se detiene sola al callarte").recipe(.caption, color: DS.textMuted) }
@@ -135,8 +135,8 @@ struct VoiceRow: View {
 
     private var answer: some View {
         let ok = reply?.ok == true
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
                 // Lo que quedó en la TV: su póster; sin póster (prender la tele, el volumen), el ícono de la tele.
                 if ok, let now {
                     PosterView(url: now.art, title: titleName(now.title, id: now.metaID, kind: now.kind), aspect: DS.Poster.aspect, whole: true, fallback: now.artFallback).frame(width: DS.Size.thumbSmall)
@@ -235,16 +235,16 @@ struct VoiceChoicesCarousel: View {
                 DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { actions.close() }
             }
             ScrollView(.horizontal) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
-                LazyHStack(spacing: DS.Space.s3) {
+                LazyHStack(spacing: DS.Space.s2) {
                     ForEach(reply.choices) { choice in card(choice).containerRelativeFrame(.horizontal) { width, _ in width * DS.Remote.choiceCardShare } }   // ds-exception: su carrusel, dentro del control
                 }
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $current, anchor: .center)
-            .contentMargins(.horizontal, DS.Space.s5, for: .scrollContent)
+            .contentMargins(.horizontal, DS.Space.s6, for: .scrollContent)
             .scrollIndicators(.hidden)
-            .padding(.horizontal, -DS.Space.s3)   // el carrusel llega a las orillas del renglón: así asoman las de los lados
+            .padding(.horizontal, -DS.Space.s2)   // el carrusel llega a las orillas del renglón: así asoman las de los lados
             PageDots(count: reply.choices.count, index: reply.choices.firstIndex { $0.id == current } ?? 0).frame(maxWidth: .infinity)
         }
         .onAppear {
@@ -255,7 +255,7 @@ struct VoiceChoicesCarousel: View {
     }
 
     private func card(_ choice: OrbitalRemote.VoiceChoice) -> some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+        HStack(alignment: .top, spacing: DS.Space.s2) {
             PosterView(url: choice.image, title: choice.title, aspect: DS.Poster.aspect).frame(width: DS.Remote.choicePoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: choice.title).recipe(.cardTitle).lineLimit(2)
@@ -264,7 +264,7 @@ struct VoiceChoicesCarousel: View {
                 if playing == choice.id {
                     // Lo que pasa ahora, en turquesa y sin cápsula teñida (2 nov 2026: el turquesa no pinta fondos).
                     Text("Poniéndose").font(DS.TextRecipe.label.font).foregroundStyle(DS.brandMoon)
-                        .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+                        .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Size.touchTarget)
                 } else {
                     Button { playing = choice.id; actions.choose(choice) } label: {
                         Label(reply.picked == nil ? "Poner" : "Poner esta", systemImage: "play.fill").font(DS.TextRecipe.label.font)
@@ -275,7 +275,7 @@ struct VoiceChoicesCarousel: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(DS.Space.s3)
+        .padding(DS.Space.s2)
         .dsCard(fill: DS.fillStrong)
         .id(choice.id)
         .accessibilityElement(children: .contain)
@@ -291,7 +291,7 @@ struct ConnectionTrail: View {
     let close: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("No llegó a tu Orbital").recipe(.cardTitle)

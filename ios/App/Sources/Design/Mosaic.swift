@@ -174,7 +174,7 @@ struct Mosaic: View {
 
     private func configure(items: [Suggestion], columnCount: Int) {
         configuredIDs = Set(items.map(\.imdb))
-        runtime.configure(items: items, columnCount: columnCount, gap: Double(DS.Space.s3), ring: Double(DS.Space.s2), growRatio: Double(DS.Mosaic.growRatio), focusedRowRatio: Double(DS.Mosaic.focusedRowRatio))
+        runtime.configure(items: items, columnCount: columnCount, gap: Double(DS.Space.s2), ring: Double(DS.Space.s2), growRatio: Double(DS.Mosaic.growRatio), focusedRowRatio: Double(DS.Mosaic.focusedRowRatio))
     }
 
     private func dismiss(_ item: Suggestion) {
@@ -331,7 +331,7 @@ private struct MosaicTileCell: View {
             if focused { ArtVeil() }
             // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
             // y sin puesto (el puesto es de su lista, en Listas).
-            if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
+            if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s2) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     // «En Mi lista» con su ícono, como en un póster (D10: íconos, no cápsulas de texto).
@@ -343,7 +343,7 @@ private struct MosaicTileCell: View {
                     }
                     .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
-                .padding(DS.Space.s5)
+                .padding(DS.Space.s6)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))

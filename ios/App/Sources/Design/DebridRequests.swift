@@ -40,7 +40,7 @@ struct IconBeside<Content: View>: View {
 
     var body: some View {
         let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
-                                                  : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: DS.Space.s3))
+                                                  : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: DS.Space.s2))
         layout {
             Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(color)
                 .frame(width: typeSize.isAccessibilitySize ? nil : DS.SettingsLook.rowIcon, alignment: .center)
@@ -76,7 +76,7 @@ struct DebridWhereLine: View {
             if let explain {
                 Button(action: explain) { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(minHeight: DS.Size.touchTarget) }
                     .buttonStyle(.borderless).tint(DS.accent)
-                    .padding(.leading, DS.SettingsLook.rowIcon + DS.Space.s3)
+                    .padding(.leading, DS.SettingsLook.rowIcon + DS.Space.s2)
                     .accessibilityIdentifier("debrid-where-explain")
             }
         }

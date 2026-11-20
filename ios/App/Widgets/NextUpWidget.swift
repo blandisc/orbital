@@ -189,7 +189,7 @@ private struct MediumView: View {
 
     var body: some View {
         if let first = snapshot.items.first {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
                 Link(destination: first.link ?? URL(fileURLWithPath: "/")) {
                     ZStack(alignment: .bottomLeading) {
                         Art(item: first, wide: true)
@@ -263,7 +263,7 @@ struct WatchActions: View {
             if showsTitle { title.font(DS.font(.xs, weight: .semibold)).lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink) }
         }
         .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
-        .padding(.horizontal, showsTitle ? DS.Space.s3 : 0)
+        .padding(.horizontal, showsTitle ? DS.Space.s2 : 0)
         .frame(minWidth: DS.Widget.button, minHeight: DS.Widget.button)
         .background(Capsule().fill(solid ? DS.paper : DS.fillStrong))
     }
@@ -277,11 +277,11 @@ private struct LargeView: View {
 
     var body: some View {
         if let first = snapshot.items.first {
-            VStack(spacing: DS.Space.s3) {
+            VStack(spacing: DS.Space.s2) {
                 ZStack(alignment: .bottomLeading) {
                     Art(item: first, wide: true)
                     bottomScrim(wide: true)
-                    Caption(item: first, actions: .labeled).padding(DS.Space.s3)
+                    Caption(item: first, actions: .labeled).padding(DS.Space.s2)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 .frame(maxHeight: .infinity)

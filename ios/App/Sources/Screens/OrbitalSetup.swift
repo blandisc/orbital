@@ -54,7 +54,7 @@ struct OrbitalSetupView: View {
                 // IOS-6: al conectar, la misma revisión de Real-Debrid que en Cuentas (la cuenta, no la clave), con su pregunta
                 // solo si las dos cuentas son distintas.
                 if debrid.canShareWithTV {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) { DebridTVCompare(debrid: debrid) }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) { DebridTVCompare(debrid: debrid) }
                         .padding(DS.Space.s4).dsCard(translucent: true)
                         .task { await debrid.load(); await debrid.compareWithTV() }
                 }
@@ -72,7 +72,7 @@ struct OrbitalSetupView: View {
                 GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › Conectar un aparato. Aparece un código.")) { EmptyView() }
                 GuideNumberedStep(number: 2, text: Text("Toca «Escanear el código» y apúntale.")) { EmptyView() }
                 DeviceNameField(name: Binding(get: { model.deviceName }, set: { model.deviceName = $0 }))   // CX7-A
-                    .padding(DS.Space.s3).dsCard(translucent: true)
+                    .padding(DS.Space.s2).dsCard(translucent: true)
                 if model.connecting { DSInlineProgress(text: Text("Conectando…")) }
                 if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .warn) }   // IOS-9: ámbar
             }
@@ -104,7 +104,7 @@ struct OrbitalSetupView: View {
         default:
             GuidePage(title: Text("Y también"), message: Text("Lo encuentras cuando lo necesites; no hay que aprenderlo ahora."),
                       step: (1, 2), primary: last ? Text("Listo") : Text("Siguiente"), next: next) {
-                VStack(spacing: DS.Space.s3) {
+                VStack(spacing: DS.Space.s2) {
                     GuidePiece(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Háblale"),
                                detail: Text("«Oye Siri, pon Dune en Orbital» o «pausa la tele». Las frases, en Ajustes › Voz y Siri."))
                     GuidePiece(symbol: "tray.and.arrow.down", tint: DS.ListTint.library, title: Text("Desde la TV"),

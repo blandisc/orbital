@@ -136,7 +136,7 @@ struct IPadInviteCard: View {
         if let pending = model.invite, model.state != .joined {
             Section {
                 if model.inviteIsValid {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
                         IconBeside(symbol: "ipad.and.iphone", color: DS.accent) {
                             Text("¿Conectar con \(pending.tvName)?").recipe(.labelLarge, color: DS.text)
                             Text("Tu iPhone te invita. Este iPad tendrá su propia conexión.").recipe(.footnote, color: DS.textMuted)

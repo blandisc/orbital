@@ -25,8 +25,8 @@ const EXPLORAR = [
   ["components/foryou.js", /./],
   ["core/menus-setup.js", /label: "Explorar"/],
   ["core/menus-voice.js", /sparkles: "spark"/],
-  // La versión recomendada lleva el destello en los dos lados (decisión anterior, «el destello: solo eso»); si se cambia,
-  // se cambia en la TV y en el iPhone a la vez (pendiente de Fernando, paridad-registro).
+  // La versión recomendada lleva el destello en los dos lados (VR-A, Fernando, 20 nov 2026: se queda); si un día se
+  // cambia, se cambia en la TV y en el iPhone a la vez (paridad-registro).
   ["components/sources.js", /ICONS\.spark/],
 ];
 
