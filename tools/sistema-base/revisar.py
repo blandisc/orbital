@@ -30,6 +30,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# En Windows la consola de GitHub escribe en cp1252 y se caía con «✓» (Orbital, 20 nov 2026): siempre UTF-8.
+for _flujo in (sys.stdout, sys.stderr):
+    if hasattr(_flujo, "reconfigure"):
+        _flujo.reconfigure(encoding="utf-8", errors="replace")
+
 AQUI = Path(__file__).resolve().parent
 NUM = r"(-?(?:\d+(?:\.\d+)?|\.\d+))"
 IGNORA = "sistema-base: ignora"

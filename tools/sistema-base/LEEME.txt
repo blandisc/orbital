@@ -1,2 +1,2 @@
 Copia de ~/code/interoperabilidad/sistema-base (no se edita aquí: se cambia en la casa y se vuelve a copiar con copiar.sh).
-Versión: 028a44008283
+Versión: d18a68e07d66
