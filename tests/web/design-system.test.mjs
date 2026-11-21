@@ -288,3 +288,82 @@ test("la etiqueta de arriba (eyebrow) es una sola receta: turquesa, sin otros co
   }
   assert.deepEqual(problems, []);
 });
+
+// D2-B (20 nov 2026) y OT-2: la negrita es solo del título más grande (las recetas `hero` y `display`) y de las placas y las
+// cifras (`badge`, `stat`). Ninguna pieza pone negrita a mano: lo que antes se marcaba en negrita (el botón «Jugar», la pestaña
+// elegida, el nombre enfocado de una fila, la tecla «Buscar», un <strong> dentro de un texto) va en seminegrita. Las únicas
+// negritas sueltas son cifras o marcas que no tienen receta, con su selector aquí y su porqué en el comentario de la línea.
+const BOLD_RECIPES = /var\(--type-(hero|display|badge|stat)-weight\)/;
+const BOLD_ALLOWED = [
+  [/\.card-ranked__number\b/, "la cifra enorme del Top 10"],
+  [/\.title__rating\b/, "la nota de la ficha, una cifra"],
+  [/^\.brand-name$/, "el nombre de una plataforma con el carácter de su marca (Netflix en negrita)"],
+];
+test("negrita (D2-B): solo las recetas del título más grande, las placas y las cifras", () => {
+  const offenders = [];
+  for (const r of cssRules()) {
+    for (const [, value] of r.body.matchAll(/font-weight:\s*([^;]+)/g)) {
+      const v = value.trim();
+      if (BOLD_RECIPES.test(v)) continue;
+      const bold = /var\(--weight-(bold|heavy)\)|\b(bold|bolder|[7-9]00)\b/.test(v);
+      if (bold && !BOLD_ALLOWED.some(([sel]) => sel.test(r.sel))) offenders.push(`${rule(r)}: font-weight ${v}`);
+    }
+    const short = r.body.match(/(?:^|;)\s*font:\s*([^;]+)/)?.[1] || "";
+    if (short && !BOLD_RECIPES.test(short) && /var\(--weight-(bold|heavy)\)|\b(bold|bolder|[7-9]00)\b/.test(short)) offenders.push(`${rule(r)}: font ${short}`);
+  }
+  assert.deepEqual(offenders, [], "Usa --weight-semibold o el grosor de su receta (--type-<receta>-weight); la negrita es de hero, display, badge y stat");
+  // Y las recetas en negrita son esas cuatro (las demás, seminegrita o normal).
+  const bold = [...read(TOKEN_FILES[0]).matchAll(/--type-([a-z-]+)-weight:\s*var\(--weight-(bold|heavy)\)/g)].map((m) => m[1]).sort();
+  assert.deepEqual(bold, ["badge", "display", "hero", "stat"]);
+});
+
+// OT-8 (20 nov 2026): un token se define una sola vez por archivo (--icon-xl estaba dos veces, con 1,75 y 1,8 rem, y valía el
+// segundo sin que nadie lo viera).
+test("cada token se define una sola vez en su archivo", () => {
+  const problems = [];
+  for (const file of TOKEN_FILES) {
+    const seen = new Map();
+    stripCssComments(read(file)).split("\n").forEach((line, i) => {
+      // Solo lo de :root (sin sangría extra de un @media o de un tema dentro de otra regla).
+      const m = line.match(/^ {2}(--[\w-]+)\s*:/);
+      if (!m) return;
+      if (seen.has(m[1])) problems.push(`${file.slice(WEB.length + 1)}: ${m[1]} en las líneas ${seen.get(m[1])} y ${i + 1}`);
+      else seen.set(m[1], i + 1);
+    });
+  }
+  assert.deepEqual(problems, []);
+});
+
+// OT-8: con el mouse, las cápsulas (40 px) y el segmentado (32 px) se tocan en --touch-target (~44 px) sin verse distintos.
+test("las cápsulas y el segmentado se tocan en al menos --touch-target (con mouse, sin cambiar cómo se ven)", () => {
+  const ui = stripCssComments(read(join(STYLES, "components", "ui.css")));
+  for (const piece of ["pill", "segmented__item"]) {
+    const hit = ui.match(new RegExp(`\\.${piece}::before[^{]*\\{([^}]*)\\}`))?.[1] || ui.match(new RegExp(`[,\\s]\\.${piece}::before\\s*\\{([^}]*)\\}`))?.[1] || "";
+    assert.match(hit, /height:\s*max\(100%,\s*var\(--touch-target\)\)/, `.${piece}: su zona de toque crece hasta --touch-target`);
+    assert.match(hit, /content:\s*""/, `.${piece}: la zona es una capa invisible (sin fondo ni borde)`);
+    assert.doesNotMatch(hit, /background|box-shadow|border/, `.${piece}: la zona no se ve`);
+  }
+  const tokens = read(TOKEN_FILES[0]);
+  const rem = (name) => Number(tokens.match(new RegExp(`${name}:\\s*([\\d.]+)rem`))?.[1]);
+  assert.ok(rem("--touch-target") * 16 >= 44, "--touch-target mide al menos 44 px");
+  assert.ok(rem("--pill-height") < rem("--touch-target"), "por eso la cápsula necesita su zona más alta");
+});
+
+// OT-6 (20 nov 2026): el ámbar de aviso solo es de los avisos. Las estrellas y los favoritos tienen su propio token (no se
+// definen con --color-warning) y «Listo» (el tono `good`) se ve verde, como el iPhone (DS.success).
+test("colores de estado: el ámbar es de los avisos; las estrellas, los favoritos y «Listo» tienen el suyo", () => {
+  const theme = read(join(STYLES, "themes", "orbital.css"));
+  for (const name of ["--color-rating", "--color-favorite"]) {
+    const value = theme.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1] || "";
+    assert.ok(value && !/--color-warning/.test(value), `${name} tiene su propio valor (no el de los avisos): ${value}`);
+  }
+  const offenders = cssRules().filter((r) => /var\(--color-warning\)/.test(r.body) && /star|rating|favorite|good|ok\b|success|date/.test(r.sel));
+  assert.deepEqual(offenders.map(rule), [], "Estrellas: --color-rating; favoritos: --color-favorite; «Listo»: --color-success");
+  const ui = stripCssComments(read(join(STYLES, "components", "ui.css")));
+  assert.match(ui, /\.chip--good\s*\{[^}]*color:\s*var\(--color-success\)/, "«Listo», «Descargado», «Al instante»: verde");
+});
+
+test("negrita (D2-B): la del navegador (<strong>, <b>, <h1>…<h3>) no se cuela", () => {
+  const base = stripCssComments(read(join(STYLES, "base.css")));
+  assert.match(base, /strong, b, h1, h2, h3\s*\{\s*font-weight:\s*var\(--weight-semibold\);?\s*\}/);
+});

@@ -54,7 +54,7 @@ struct SavedListsContent: View {
         .orbitalRefreshable { [model] in await model.load() }
         .alert("Nueva lista", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
             TextField("Nombre", text: $newListName)
-            Button("Cancelar", role: .cancel) {}
+            Button("Ahora no", role: .cancel) {}
             Button("Crear") { createList(newListName) }
                 .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: { Text("Nace «Solo tú». Puedes cambiar quién la ve en su «···».") }

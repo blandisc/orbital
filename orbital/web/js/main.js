@@ -10,6 +10,7 @@ import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints } from 
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { tokenMs } from "./core/tokens.js";
+import { failure, retry, serverDetail } from "./core/notices.js";
 import { cloudRow, cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, debridSignupMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
@@ -181,7 +182,7 @@ const ui = {
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
     onSendPhone: (send) => sendToPhone(send),
-    onNotice: (message, error = false) => { sound.play(error ? "error" : "select"); ui.toast.show(message, { error }); },
+    onNotice: (message) => { sound.play("select"); ui.toast.show(message); },
     onMove: () => { sound.play("move"); renderHints(); },
     onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },
@@ -190,21 +191,7 @@ const ui = {
     onPlay: (play) => watch(play),
     // T8-A: «Pedir a la nube» justo esa versión (o, si ya está pedida, su hoja con cuánto falta, «Ver …, ya arranca» y
     // «Esperar a que llegue», RX2-A).
-    onAsk: async (ask) => {
-      if (ask.known) {
-        ui.sources.close();
-        return runCommand({ type: "rd-request-menu", hash: ask.known.hash, instead: ask.instead || null });
-      }
-      try {
-        const res = await api.stremioRequest({ kind: ask.kind, id: ask.id, video: ask.video_id || ask.id, title: ask.title, hash: ask.hash });
-        sound.play("select");
-        ui.toast.show(`Le pedí ${ask.title || "esto"} a la nube`, { tone: "success", detail: res?.availability?.detail || "Te aviso cuando esté" });
-        api.settings().then(applySettings).catch(() => {});
-        ui.sources.close();
-      } catch (err) {
-        ui.toast.show(err.message || "La nube no pudo con ese pedido", { tone: "warn" });
-      }
-    },
+    onAsk: (ask) => askCloud(ask),
     requests: () => state.settings?.realdebrid?.requests || [],
     // RX3-A: la primera vez que sale «↓ Por pedir», «Así funciona» encima de «Versión» (se recuerda en la consola).
     onFirstAsk: () => {
@@ -346,9 +333,11 @@ const ui = {
       captureFrom = null;
       if (from) setTimeout(() => { if (!ui.sheet.isOpen && !topOverlay()) { ui.sheet.open(capturesMenu(state.captures || []), { ...from.options, index: from.first + at }); renderHints(); } }, 0);
     },
-    onOpenVideo: (item) => api.openCapture(item.path).catch((err) => ui.toast.show(err.message, { error: true })),
+    onOpenVideo: (item) => openCapture(item),
   }),
-  toast: createToast({ onTone: (tone) => tone === "error" && sound.play("error") }), // un error siempre suena (también los del servidor)
+  // Un error siempre suena (también los del servidor); su arreglo (OT-3) también se hace con Y, como «Deshacer».
+  toast: createToast({ onTone: (tone) => tone === "error" && sound.play("error"),
+    bindAction: ({ label, run, duration }) => offerToastAction({ label, button: "options", duration, run }) }),
 };
 
 // Inicio (app/home-screen.js): «A continuación», Mi lista y Tus consolas, el destacado que sigue al foco y sus botones.
@@ -391,6 +380,11 @@ async function refreshPhone() {
 }
 
 /** «Enviar al iPhone» / «Descargar en el iPhone»: la consola lo deja en su bandeja y dice, en palabras, qué pasará. */
+/** Un video de Capturas, en el reproductor. */
+function openCapture(item) {
+  return api.openCapture(item.path).catch((err) => ui.toast.show("No pude abrir el video", failure(retry(() => openCapture(item)), { err })));
+}
+
 async function sendToPhone({ action, kind, metaId, videoId, title }) {
   // R2-8: el botón «Al iPhone» de la ficha abre las dos opciones (antes eran dos botones casi iguales).
   if (action === "choose") {
@@ -405,7 +399,8 @@ async function sendToPhone({ action, kind, metaId, videoId, title }) {
     ui.toast.show(res.message);
   } catch (err) {
     sound.play("error");
-    ui.toast.show(err.message, { error: true });
+    ui.toast.show(action === "download" ? "No pude pedir la descarga al iPhone" : "No pude mandarlo al iPhone",
+      failure(retry(() => sendToPhone({ action, kind, metaId, videoId, title })), { err }));
     refreshPhone(); // si ya no hay iPhone, las opciones se van
   }
 }
@@ -670,6 +665,24 @@ function applySettings(settings) {
 function afterBoot(fn, tries = 40) {
   if (!boot.waiting) return fn();
   if (tries > 0) setTimeout(() => afterBoot(fn, tries - 1), tokenMs("--duration-brand-fade"));
+}
+
+/** T8-A: «Pedir a la nube» justo esa versión (o, si ya está pedida, su hoja con cuánto falta, RX2-A). */
+async function askCloud(ask) {
+  if (ask.known) {
+    ui.sources.close();
+    return runCommand({ type: "rd-request-menu", hash: ask.known.hash, instead: ask.instead || null });
+  }
+  try {
+    const res = await api.stremioRequest({ kind: ask.kind, id: ask.id, video: ask.video_id || ask.id, title: ask.title, hash: ask.hash });
+    sound.play("select");
+    ui.toast.show(`Le pedí ${ask.title || "esto"} a la nube`, { tone: "success", detail: res?.availability?.detail || "Te aviso cuando esté" });
+    api.settings().then(applySettings).catch(() => {});
+    ui.sources.close();
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(`No pude pedir ${ask.title || "esto"} a la nube`, failure(retry(() => askCloud(ask)), { err }));
+  }
 }
 
 /** VE1-A: el aviso de que tu Real-Debrid vence (14, 3 y 0 días), una vez por fecha; «Renovar» abre tu cuenta (dice cómo).
@@ -1003,7 +1016,10 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0 && !boot.waiting) ui.toast.show("No pude cargar la biblioteca", { error: true, detail: `${err.message.replace(/\.$/, "")} · Reintentando…` });
+    if (libraryRetry === 0 && !boot.waiting) {
+      ui.toast.show("No pude cargar la biblioteca", failure(retry(() => loadLibrary({ refresh, keepId })),
+        { detail: `${serverDetail(err)} · Sigo intentando solo` }));
+    }
     // Tras varios intentos se dice qué pasa (antes «Conectando…» para siempre, sin pista de nada).
     if (boot.waiting) boot.status(libraryRetry < 3 ? "Conectando con Orbital…" : `No pude cargar tu biblioteca: ${err.message.replace(/\.$/, "")}. Sigo intentando…`);
     libraryRetry++;
@@ -1343,11 +1359,12 @@ function fixTitle({ kind, imdb = null, title, fileId = null }) {
   sound.play("open");
   let busy = false; // un A de más no la corrige dos veces
   if (ui.listScreen.isOpen) ui.listScreen.el.after(ui.search.el); // desde Mi media › Sin ficha: Buscar encima de la lista
-  ui.search.open(title || "", { pick: { kind, onPick: async (result) => {
+  const pickIt = async (result) => {
     if (busy) return;
-    busy = true;
     const ref = titleRef(result);
-    if (!ref?.meta_id?.startsWith("tt")) return ui.toast.show("Elige una película o serie", { error: true });
+    // No es un error de Orbital: el aviso dice qué elegir (y la búsqueda sigue abierta para elegir otra).
+    if (!ref?.meta_id?.startsWith("tt")) { sound.play("error"); return ui.toast.show("Eso no es una película ni una serie", { tone: "warn", detail: "Elige una de la lista" }); }
+    busy = true;
     try {
       const res = await api.onedriveFix({ kind: ref.kind, imdb: ref.meta_id, name: result.title, year: Number(result.year || result.extra?.year) || null,
         file_id: fileId, current: imdb });
@@ -1357,10 +1374,12 @@ function fixTitle({ kind, imdb = null, title, fileId = null }) {
       buildCuration();
       openTitle({ ...curatedItem({ meta_id: ref.meta_id, kind: ref.kind, title: result.title, image: result.image }), own: true });
     } catch (err) {
+      busy = false; // se puede volver a intentar (antes A se quedaba sin hacer nada)
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show("No pude corregir la ficha", failure(retry(() => pickIt(result)), { err }));
     }
-  } } });
+  };
+  ui.search.open(title || "", { pick: { kind, onPick: pickIt } });
   renderHints();
 }
 
@@ -1458,7 +1477,7 @@ async function downloadTitle(body, job) {
     loadDownloads();
   } catch (err) {
     sound.play("error");
-    ui.toast.show(err.message || "No pude empezar la descarga", { error: true });
+    ui.toast.show(`No pude descargar ${body.title || "esto"}`, failure(retry(() => downloadTitle(body, job)), { err }));
   }
 }
 
@@ -1467,7 +1486,7 @@ function downloadMenu(item) {
   const job = item.download;
   const options = [];
   if (job.status === "done") options.push({ icon: "play", label: "Ver", command: { type: "download-play", item } });
-  if (job.status === "failed") options.push({ icon: "refresh", label: "Reintentar", hint: job.error || "", command: { type: "download-retry", id: job.id } });
+  if (job.status === "failed") options.push({ icon: "refresh", label: "Reintentar", hint: job.error || "", command: { type: "download-retry", id: job.id, title: job.title } });
   options.push({ icon: "info", label: "Ver la ficha", command: { type: "download-title", item } });
   options.push({ icon: "close", label: job.status === "done" ? "Quitar la descarga" : "Cancelar la descarga", danger: true,
     hint: job.status === "done" ? "Libera espacio" : "", command: { type: "download-remove", id: job.id, title: job.title } });
@@ -1543,7 +1562,7 @@ async function openListItem(item) {
       sound.play("open");
     } catch (err) {
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show(`No pude abrir ${item.title || "el archivo"}`, failure(retry(() => openListItem(item)), { err }));
     }
     return;
   }
@@ -1553,7 +1572,7 @@ async function openListItem(item) {
     openTitle({ ...item, meta_id: imdb, id: `cinemeta:${item.kind}:${imdb}` });
   } catch (err) {
     sound.play("error");
-    ui.toast.show(err.message || "No encontré este título.", { error: true });
+    ui.toast.show("No encontré su ficha", failure(retry(() => openListItem(item)), { err }));
   }
 }
 
@@ -1746,7 +1765,7 @@ function openingFrom() {
 
 const { watch, trailer, launch, resumeRunning, playChannel } = createLaunching({
   state, ui, current: () => current(), openMenu: (...args) => openMenu(...args), openTitle: (item) => openTitle(item),
-  openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(),
+  openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(), findItem: (id) => findItem(id),
   // De dónde vuela la portada: la tarjeta enfocada de la vista en pantalla (no la fila oculta).
   focusedRect: () => {
     const view = inHome() ? ui.home.el : inGames() ? ui.games.el : null;
@@ -1965,7 +1984,8 @@ async function runCommand(command, context = null) {
     }
   } catch (err) {
     sound.play("error");
-    ui.toast.show(err.message, { error: true });
+    // Lo que dijo el servidor va en el detalle; el aviso dice que no se pudo y ofrece hacerlo otra vez (OT-3).
+    ui.toast.show("No pude hacerlo", failure(retry(() => runCommand(command, context)), { err }));
   }
 }
 
@@ -2008,19 +2028,22 @@ async function saveOrder(editable, ids) {
     ui.toast.show("Guardé tu orden", { tone: "success", detail: editable.name });
   } catch (err) {
     sound.play("error");
-    ui.toast.show("No pude guardar tu orden", { error: true, detail: err?.message || "" });
+    ui.toast.show("No pude guardar tu orden", failure(retry(() => saveOrder(editable, ids)), { err, detail: editable.name }));
   }
 }
 
 /** Un cambio con «Deshacer» (Y mientras se ve el aviso; con el mouse o el dedo, en el aviso): el gestor de lo tuyo. */
 function undoable(message, detail, undo, { label = "Deshacer", tone = "info", rating = false } = {}) {
   ui.toast.show(message, { tone, detail: detail || "", duration: UNDO_MS, rating,
-    ...offerToastAction({ label, button: "options", duration: UNDO_MS, run: () => {
-      Promise.resolve(undo()).then(() => sound.play("select")).catch((err) => {
-        sound.play("error");
-        ui.toast.show("No pude deshacerlo", { error: true, detail: err?.message || "" });
-      });
-    } }) });
+    ...offerToastAction({ label, button: "options", duration: UNDO_MS, run: () => runUndo(undo) }) });
+}
+
+/** Deshacer (o lo que diga el aviso): si no se pudo, el aviso lo dice y ofrece intentarlo otra vez. */
+function runUndo(undo) {
+  Promise.resolve(undo()).then(() => sound.play("select")).catch((err) => {
+    sound.play("error");
+    ui.toast.show("No pude deshacerlo", failure(retry(() => runUndo(undo)), { err }));
+  });
 }
 
 /** Un aviso de voz con acción («No era eso», «Lo que puedes decir»): el botón que la hace mientras se ve, y con el mouse o
@@ -2071,7 +2094,8 @@ async function undoHide(undo = state.undoHide) {
     ui.toast.show("Vuelve a estar en tu biblioteca", { tone: "success" });
     await loadLibrary({ keepId: undo.id });
   } catch (err) {
-    ui.toast.show(err.message, { error: true });
+    sound.play("error");
+    ui.toast.show("No pude regresarlo a tu biblioteca", failure(retry(() => { state.undoHide = undo; return undoHide(undo); }), { err }));
   }
 }
 

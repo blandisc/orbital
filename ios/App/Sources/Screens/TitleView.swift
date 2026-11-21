@@ -272,11 +272,7 @@ struct TitleView: View {
     @ViewBuilder private func wideSections(_ model: TitleModel) -> some View {
         if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
         if let error = model.error, !model.isLoading {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                DSNotice(verbatim: env.message(error), tone: .warn)
-                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.load() } }
-                    .dsGlassButton().accessibilityIdentifier("title-retry")
-            }
+            DSNotice(verbatim: env.message(error), tone: .warn)   // «Reintentar» es el botón principal (OI-3)
         }
         if ThisDevice.isMac { macSections(model) } else { tabbedSections(model) }
     }
@@ -335,12 +331,8 @@ struct TitleView: View {
     @ViewBuilder private func readingSections(_ model: TitleModel, withSynopsis: Bool = true) -> some View {
         if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
         if let error = model.error, !model.isLoading {
-            // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                DSNotice(verbatim: env.message(error), tone: .warn)
-                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.load() } }
-                    .dsGlassButton().accessibilityIdentifier("title-retry")
-            }
+            // No cargó (sin red, Cinemeta caído): lo dice, y el botón principal dice «Reintentar» (antes «Cargando» se quedaba para siempre).
+            DSNotice(verbatim: env.message(error), tone: .warn)   // «Reintentar» es el botón principal (OI-3)
         }
         if withSynopsis { synopsis(model) }
         creditLine(model)

@@ -571,4 +571,14 @@ extension DS {
         /// lado a lado o uno entero (nunca un hueco).
         static let coverPosters = 4, coverAspect: CGFloat = 1
     }
+
+    /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
+    /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
+    /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
+    enum Ribbon {
+        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat }
+        static let regular = Size(corner: 60, length: 104, center: 22)
+        static let compact = Size(corner: 42, length: 72, center: 16)   // OI-5: «Nuevo» en 12 pt cabe en la banda
+        static let angle: Double = -45, shine: Double = 0.28
+    }
 }

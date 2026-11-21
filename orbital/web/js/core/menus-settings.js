@@ -442,7 +442,7 @@ export function emulatorMenu(e) {
       command: { type: "emulator-install", id: e.id, name: e.name } });
   }
   if (e.can_rollback) {
-    options.push({ icon: "refresh", label: `Regresar a ${e.previous}`, hint: "Si la versión nueva salió mal",
+    options.push({ icon: "undo", label: `Regresar a ${e.previous}`, hint: "Si la versión nueva salió mal",
       command: { type: "emulator-rollback", id: e.id, name: e.name } });
   }
   return { title: e.name, crumb: e.name, subtitle: e.installed ? `Versión ${e.installed}` : "", options };
@@ -636,23 +636,23 @@ export function opensubtitlesRow(status) {
   return { ...base, value: "✓ Conectada", ok: true, hint: `${status.username} · ${left}`, command: { type: "os-account" } };
 }
 
-/** OpenSubtitles conectado: desconectar (Cancelar primero). */
+/** OpenSubtitles conectado: desconectar («Dejarla conectada» primero). */
 export function opensubtitlesMenu(status) {
   return {
     title: "OpenSubtitles", subtitle: `Conectada como ${status?.username || "tú"}. Sin ella, los subtítulos salen del complemento de siempre (menos opciones).`,
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarla conectada", command: { type: "close" } },
       { icon: "minus", label: "Desconectar", danger: true, command: { type: "os-disconnect" } },
     ],
   };
 }
 
-/** OneDrive conectado: la carpeta, buscar de nuevo y desconectar (Cancelar primero). */
+/** OneDrive conectado: la carpeta, buscar de nuevo y desconectar («Dejarlo como está» primero). */
 export function onedriveMenu(status) {
   return {
     title: "OneDrive", subtitle: "Orbital solo lee la carpeta que elijas: nunca cambia ni borra nada.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
       { icon: "folder", label: "Carpeta de tus videos", value: status?.folder || "Elegir", command: { type: "onedrive-folder", path: "" } },
       status?.folder && { icon: "refresh", label: "Buscar de nuevo", hint: "Lo nuevo que subiste", command: { type: "onedrive-scan" } },
       { icon: "cloud", label: "Clave de OneDrive", value: "✓ Guardada", ok: true, command: { type: "keys-menu", service: "onedrive" } },
@@ -707,14 +707,14 @@ export function phoneRows(settings, now = Date.now()) {
 
 const PLATFORM_NAMES = { iphone: "iPhone", ipad: "iPad", mac: "Mac" };
 
-/** Un aparato emparejado (K1-A): «Quitar» pide confirmar y «Cancelar» va primero. */
+/** Un aparato emparejado (K1-A): «Quitar» pide confirmar y «Dejarlo conectado» va primero. */
 export function deviceMenu(device) {
   const name = device.name || PLATFORM_NAMES[device.platform] || "iPhone";
   return {
     title: name,
     subtitle: "Tiene su propia conexión con esta TV.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo conectado", command: { type: "close" } },
       { icon: "minus", label: "Quitar", danger: true, hint: "Para volver, escanea el código de la TV",
         command: { type: "device-remove-ask", id: device.device_id, name } },
     ],
@@ -741,7 +741,7 @@ export function deviceRemoveMenu(command) {
     title: `¿Quitar ${command.name}?`,
     subtitle: "Deja de hablar con esta TV al instante. Para volver, escanea el código de la TV otra vez.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "close", label: "Dejarlo conectado", command: { type: "back" } },
       { icon: "minus", label: "Quitar", danger: true, command: { type: "device-remove", id: command.id, name: command.name } },
     ],
   };
@@ -773,15 +773,15 @@ function keyRow(service, status) {
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 
-/** Una clave que ya escribiste: cambiarla o quitarla (y «Cancelar» va primero). */
+/** Una clave que ya escribiste: cambiarla o quitarla (y «Conservar la clave» va primero). */
 export function keysMenu(service) {
   const form = KEY_FORMS[service];
   return {
     title: form?.title || "Clave",
     subtitle: "Está guardada cifrada en esta consola.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
-      { icon: "refresh", label: "Cambiar", command: { type: "keys", service } },
+      { icon: "close", label: "Conservar la clave", command: { type: "close" } },
+      { icon: "key", label: "Cambiar la clave", command: { type: "keys", service } },
       { icon: "minus", label: "Quitar", danger: true, command: { type: "keys-remove", service } },
     ],
   };

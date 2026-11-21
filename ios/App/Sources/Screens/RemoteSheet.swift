@@ -461,7 +461,7 @@ struct RemoteSheet: View {
             .accessibilityIdentifier("remote-options")
             // Atrás hasta la última pantalla y ahí Salir (Fernando, 6 nov): lo decide la TV (cierra el panel abierto o sale).
             let exits = (model.legend["back"] ?? "Salir") == "Salir"
-            RemoteKey(symbol: exits ? "xmark" : "chevron.backward", title: model.legend["back"].map { Text(verbatim: $0) } ?? Text("Salir")) {
+            RemoteKey(symbol: exits ? DS.Symbol.leave : "chevron.backward", title: model.legend["back"].map { Text(verbatim: $0) } ?? Text("Salir")) {
                 Task { await model.press(.back) }
             }
         }

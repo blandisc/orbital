@@ -34,7 +34,7 @@ struct SavedListManagement: ViewModifier {
             }
             .alert("Cambiar nombre", isPresented: $renaming) {   // ds-exception: pide un nombre: el campo de texto del sistema
                 TextField("Nombre", text: $newName)
-                Button("Cancelar", role: .cancel) {}
+                Button("Dejarlo como está", role: .cancel) {}
                 Button("Guardar") { let name = newName; run("No pude cambiar el nombre") { try await model.renameList(listID, to: name) } }
                     .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -47,6 +47,7 @@ struct SavedListManagement: ViewModifier {
                         dismiss()
                     }
                 }
+                Button("Conservar la lista", role: .cancel) {}
             } message: { Text("No se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas.") }
             .confirmationDialog(Text("Esta lista es «Solo tú»"), isPresented: $openToShare, titleVisibility: .visible) {   // ds-exception: confirma un cambio de quién la ve (una sola acción)
                 Button("Abrir con el enlace y copiarlo") {
@@ -56,6 +57,7 @@ struct SavedListManagement: ViewModifier {
                         copyLink(id)
                     }
                 }
+                Button("Ahora no", role: .cancel) {}
             } message: { Text("Para compartirla, quien tenga el enlace podrá verla. Puedes regresarla a «Solo tú» cuando quieras.") }
             .sheet(isPresented: $reordering) {
                 ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName),

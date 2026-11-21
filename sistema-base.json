@@ -1,0 +1,133 @@
+{
+  "_": "Lo propio de Orbital para el revisor común del sistema base (tools/sistema-base/, copia de ~/code/interoperabilidad/sistema-base). Excepciones con su porqué; `heredado` es la cuenta de lo que ya había (trinquete): solo baja.",
+  "css_rem_px": 16,
+  "fuentes": [
+    {
+      "tipo": "swift",
+      "rutas": [
+        "ios/App/Sources",
+        "ios/App/Widgets",
+        "ios/App/Shared",
+        "ios/OrbitalCore/Sources"
+      ]
+    },
+    {
+      "tipo": "css",
+      "rutas": [
+        "orbital/web/styles"
+      ]
+    },
+    {
+      "tipo": "js",
+      "rutas": [
+        "orbital/web/js"
+      ],
+      "reglas": [
+        "SB-1"
+      ]
+    },
+    {
+      "tipo": "html",
+      "rutas": [
+        "orbital/web/index.html"
+      ]
+    }
+  ],
+  "excluir": [
+    "**/Tests/**",
+    "**/*Tests.swift",
+    "**/Preview*/**"
+  ],
+  "tokens": [
+    {
+      "regla": "SB-3",
+      "archivo": "ios/OrbitalCore/Sources/OrbitalCore/DesignTokens.swift",
+      "patron": "\\b(?:xs|sm|md|lg|xl|xxl|display) = (\\d+(?:\\.\\d+)?)",
+      "en_linea": "enum TextSize"
+    },
+    {
+      "regla": "SB-2",
+      "archivo": "ios/OrbitalCore/Sources/OrbitalCore/DesignTokens.swift",
+      "patron": "\\bs\\d+ = (\\d+(?:\\.\\d+)?)",
+      "en_linea": "enum Space"
+    },
+    {
+      "regla": "SB-2",
+      "archivo": "orbital/web/styles/tokens.css",
+      "patron": "--space-\\d+:\\s*(\\d*\\.?\\d+)rem",
+      "factor": 16
+    },
+    {
+      "regla": "SB-4",
+      "archivo": "orbital/web/styles/tokens.css",
+      "patron": "--(?:control-height|control-sm|touch-target|pill-height|segment-height):\\s*(\\d*\\.?\\d+)rem",
+      "factor": 16
+    }
+  ],
+  "excepciones": [
+    {
+      "regla": "SB-4",
+      "archivo": "orbital/web/styles/tokens.css",
+      "contiene": "--pill-height",
+      "porque": "La píldora se dibuja de 40, pero su zona de toque (::before) mide al menos --touch-target (OT-8, 20 nov 2026)."
+    }
+  ],
+  "heredado": {
+    "SB-1": {
+      "ios/App/Sources/Design/Collections.swift": 1,
+      "ios/App/Sources/Design/EpisodesPanel.swift": 2,
+      "ios/App/Sources/Design/Feedback.swift": 1,
+      "ios/App/Sources/Design/PlayerControls.swift": 2,
+      "ios/App/Sources/Design/PlayerIndicators.swift": 1,
+      "ios/App/Sources/Design/Projection.swift": 1,
+      "ios/App/Sources/Design/QRScanner.swift": 1,
+      "ios/App/Sources/Design/SubtitlePanel.swift": 1,
+      "ios/App/Sources/Screens/DownloadsCloud.swift": 1,
+      "ios/App/Sources/Screens/LearnView.swift": 1,
+      "ios/App/Sources/Screens/MatchDeckScreen.swift": 1,
+      "ios/App/Sources/Screens/MiMediaView.swift": 1,
+      "ios/App/Sources/Screens/Onboarding/OnboardingTrakt.swift": 1,
+      "ios/App/Sources/Screens/OneDriveSettings.swift": 2,
+      "ios/App/Sources/Screens/OrbitalConnectViews.swift": 1,
+      "ios/App/Sources/Screens/RemoteSheet.swift": 4,
+      "ios/App/Sources/Screens/SavedListMenu.swift": 1,
+      "ios/App/Sources/Screens/SettingsView.swift": 1,
+      "ios/App/Sources/Screens/SimpsonsRoulette.swift": 1,
+      "ios/App/Sources/Screens/TVCards.swift": 1,
+      "ios/App/Sources/Screens/TitleView+Acciones.swift": 1,
+      "ios/App/Sources/Screens/TitleView+TusVistas.swift": 1,
+      "ios/App/Sources/Screens/WrappedView.swift": 1,
+      "ios/App/Widgets/TVActivityWidget.swift": 1,
+      "orbital/web/js/components/launch-overlay.js": 1,
+      "orbital/web/js/components/title.js": 2,
+      "orbital/web/js/core/home.js": 1,
+      "orbital/web/js/core/library.js": 1,
+      "orbital/web/js/core/menus-settings.js": 1,
+      "orbital/web/js/core/watch.js": 3
+    },
+    "SB-2": {
+      "ios/App/Sources/Design/BrandGuideCloud.swift": 2,
+      "ios/App/Sources/Design/BrandGuideTV.swift": 2,
+      "ios/App/Sources/Design/BrandGuideTrakt.swift": 5,
+      "orbital/web/styles/components/boot.css": 1,
+      "orbital/web/styles/components/browse.css": 1,
+      "orbital/web/styles/components/button.css": 3,
+      "orbital/web/styles/components/card.css": 3,
+      "orbital/web/styles/components/collection-card.css": 1,
+      "orbital/web/styles/components/glyph.css": 1,
+      "orbital/web/styles/components/hints.css": 1,
+      "orbital/web/styles/components/launch-overlay.css": 3,
+      "orbital/web/styles/components/list-screen.css": 1,
+      "orbital/web/styles/components/login.css": 2,
+      "orbital/web/styles/components/rail.css": 3,
+      "orbital/web/styles/components/sheet.css": 2,
+      "orbital/web/styles/components/status-bar.css": 13,
+      "orbital/web/styles/components/tiles.css": 1,
+      "orbital/web/styles/components/title.css": 1,
+      "orbital/web/styles/components/tv.css": 3,
+      "orbital/web/styles/components/ui.css": 6
+    },
+    "SB-3": {},
+    "SB-4": {}
+  }
+}

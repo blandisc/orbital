@@ -28,7 +28,7 @@ struct OnboardingTrakt: View {
         let model = guide.model
         let linked = settings.model.traktLinked
         GuidePage(title: nil, step: step,
-                  primary: linked ? Text("Continuar") : Text("Conectar Trakt"),
+                  primary: linked ? guide.model.ahead(after: .trakt) : Text("Conectar Trakt"),
                   secondary: linked ? nil : Text("Ahora no"),
                   next: { if linked { next() } else { showsCode = true } },
                   skip: next, skipGuide: skip, back: back) {

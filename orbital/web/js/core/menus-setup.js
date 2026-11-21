@@ -4,13 +4,13 @@
  */
 import { hasPhone } from "./menus-settings.js";
 
-/** Trakt conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+/** Trakt conectado: desconectar pide confirmar (y «Dejarla conectada», lo que protege, va primero; OT-4). */
 export function traktAccountMenu() {
   return {
     title: "Cuenta de Trakt",
     subtitle: "Explorar dejará de enseñar tus listas y recomendaciones.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarla conectada", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "trakt-unlink" } },
     ],
   };
@@ -105,17 +105,18 @@ export function moviesSetupMenu(settings = {}) {
  */
 export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const steps = [
+    // `next`: lo que dice el botón que lleva a este paso (X1-B: el verbo de lo que sigue, nunca «Siguiente» a secas).
     { title: "Jugar y volver", text: legion
       ? "A abre un juego. En el juego, un toque de Start + Select a la vez te trae a Orbital (el juego queda en pausa); A te regresa."
       : "A abre un juego. En el juego, Home te trae a Orbital (el juego queda en pausa); A o Home te regresan." },
-    { title: "Cerrar un juego", text: legion
+    { title: "Cerrar un juego", next: "Aprender a cerrar un juego", text: legion
       ? "Mantén Start + Select hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar."
       : `Mantén ${gamesir ? "LB + RB + Select" : "Start + Select + Home"} hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar.` },
-    { title: "Panel rápido", text: legion
+    { title: "Panel rápido", next: "Conocer el Panel rápido", text: legion
       ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
       : "Mantén Home y pulsa LB (o ☰ → Panel rápido): volumen, brillo, energía y batería. Home + RB toma una captura." },
-    { title: "Buscar y ver", text: "El botón Vista ⧉ busca juegos, películas y series. En Películas y series, A sigue donde te quedaste." },
-    { title: "Con la voz", text: "«Alexa, pídele a mi consola que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
+    { title: "Buscar y ver", next: "Aprender a buscar", text: "El botón Vista ⧉ busca juegos, películas y series. En Películas y series, A sigue donde te quedaste." },
+    { title: "Con la voz", next: "Aprender a usar la voz", text: "«Alexa, pídele a mi consola que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
   ];
   const current = steps[step];
   const last = step === steps.length - 1;
@@ -124,7 +125,7 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
     subtitle: current.text,
     options: [
       last ? { icon: "check", label: "¡Listo!", command: { type: "close" } }
-        : { icon: "play", label: "Siguiente", command: { type: "tour", step: step + 1 } },
+        : { icon: "play", label: steps[step + 1].next, command: { type: "tour", step: step + 1 } },
       ...(last ? [] : [{ icon: "close", label: "Saltar la guía", command: { type: "close" } }]),
     ],
   };

@@ -73,7 +73,7 @@ private struct ReleasePoster: View {
         WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }) {
             ZStack {
                 DS.surface
-                Text(verbatim: airing.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+                Text(verbatim: airing.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted)
                     .multilineTextAlignment(.center).padding(DS.Space.s1)
             }
         }
@@ -105,7 +105,8 @@ private struct ReleaseWhen {
     /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: la hora de hoy («21:00»), «Hoy»,
     /// «Ayer», «Mañana» o el día abreviado («Vie»). «Nuevo» no va aquí: es el listón del póster, como en Inicio.
     var label: Text {
-        if !isOut, calendar.isDate(airing.date, inSameDayAs: now) { return hour }
+        // Hoy, sin hora conocida: «Hoy» (en 12 pt «Madrugada» no cabe en el ancho del póster; OI-5, nada en 11).
+        if !isOut, calendar.isDate(airing.date, inSameDayAs: now) { return airing.aired == nil ? Text("Hoy") : hour }
         if calendar.isDate(airing.date, inSameDayAs: now) { return Text("Hoy") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(airing.date, inSameDayAs: yesterday) { return Text("Ayer") }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now), calendar.isDate(airing.date, inSameDayAs: tomorrow) { return Text("Mañana") }
@@ -133,7 +134,7 @@ private struct ReleaseDot: View {
 private func noReleases() -> some View {
     VStack(alignment: .leading, spacing: DS.Space.s1) {
         Text("Lo nuevo de lo tuyo").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text)
-        Text("Cuando salga algo de tus series, aparece aquí.").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+        Text("Cuando salga algo de tus series, aparece aquí.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
 }
@@ -155,7 +156,7 @@ private struct ReleasesLine: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Lo nuevo de lo tuyo").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text)
                         Spacer(minLength: DS.Space.s2)
-                        Text("Ya salió y lo que viene").font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                        Text("Ya salió y lo que viene").font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
                     }
                     HStack(alignment: .top, spacing: DS.Space.s2) {
                         ForEach(Array(out), id: \.id) { card($0) }
@@ -174,7 +175,7 @@ private struct ReleasesLine: View {
     /// La marca HOY: una línea turquesa delgada que se desvanece hacia abajo, con «Hoy» arriba (la de Inicio, `HomeTimeline`).
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
-            Text("Hoy").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.fresh)
+            Text("Hoy").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.fresh)
             Capsule().fill(LinearGradient(colors: [DS.fresh, .clear], startPoint: .top, endPoint: .bottom))
                 .frame(width: DS.HomeTimeline.markLine).frame(maxHeight: .infinity)
         }
@@ -189,7 +190,7 @@ private struct ReleasesLine: View {
                 // El rótulo nunca pasa del ancho del póster: antes podía usar el aire entre pósters y «Mañana» se encimaba con el
                 // punto del siguiente (Fernando, 3 nov 2026). Si con el punto no cabe, va sin él y un poco más chico (el color
                 // del texto sigue diciendo si ya salió).
-                let label = when.label.font(DS.font(.xs, weight: .semibold)).foregroundStyle(when.isOut ? DS.text : DS.textMuted).lineLimit(1)
+                let label = when.label.font(DS.font(.sm, weight: .semibold)).foregroundStyle(when.isOut ? DS.text : DS.textMuted).lineLimit(1)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: DS.Space.s1) { ReleaseDot(out: when.isOut); label }.fixedSize()
                     label.minimumScaleFactor(DS.Widget.labelShrink)
@@ -197,7 +198,7 @@ private struct ReleasesLine: View {
                 .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                     .overlay(alignment: .topLeading) { if when.isNew { DSCornerRibbon(text: "Nuevo", compact: true) } }
-                Text(verbatim: airing.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                Text(verbatim: airing.episodeLabel).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Widget.labelShrink)
             }
             .frame(width: DS.Widget.releasePoster)
@@ -225,12 +226,12 @@ private struct ReleasesSpotlight: View {
                 if !when.isNew {
                     HStack(spacing: DS.Space.s1) {
                         ReleaseDot(out: when.isOut, onArt: true)
-                        Text("\(when.day) · \(when.hour)").font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                        Text("\(when.day) · \(when.hour)").font(DS.font(.sm, weight: .semibold)).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 0)
-                Text(verbatim: airing.title).font(DS.font(.md, weight: .bold)).lineLimit(2)
-                Text(verbatim: airing.episodeLabel).font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                Text(verbatim: airing.title).font(DS.font(.md, weight: .semibold)).lineLimit(2)   // la negrita es de la cuenta de abajo (una por pantalla)
+                Text(verbatim: airing.episodeLabel).font(DS.font(.sm, weight: .medium)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                 (when.isOut ? Text("Ya salió") : countdown(airing, when)).font(DS.font(.lg, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink)
             }
             .foregroundStyle(DS.text)
@@ -301,12 +302,15 @@ private struct ReleasesLockRound: View {
                 let calendar = Calendar.current
                 let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: entry.date), to: airing.date).day ?? 0
                 VStack(spacing: 0) {
-                    if days == 0 {
-                        ReleaseWhen(airing: airing, now: entry.date, language: entry.language).hour.font(DS.font(.sm, weight: .bold)).minimumScaleFactor(DS.Widget.labelShrink)
-                        Text("hoy").font(DS.font(.xs))
+                    if days == 0, airing.aired == nil {
+                        // Sin hora conocida, «Madrugada» no cabe en el círculo con 12 pt (OI-5: nada más chico): solo «Hoy».
+                        Text("Hoy").font(DS.font(.lg, weight: .bold))
+                    } else if days == 0 {
+                        ReleaseWhen(airing: airing, now: entry.date, language: entry.language).hour.font(DS.font(.sm, weight: .semibold))
+                        Text("hoy").font(DS.font(.sm))
                     } else {
                         Text(verbatim: "\(days)").font(DS.font(.lg, weight: .bold))
-                        Text(days == 1 ? "día" : "días").font(DS.font(.xs))
+                        Text(days == 1 ? "día" : "días").font(DS.font(.sm))
                     }
                 }
             } else {

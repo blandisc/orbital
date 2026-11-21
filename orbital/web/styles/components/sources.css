@@ -68,7 +68,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6)
 .is-focused.source .source__res { background: var(--on-light-fill-strong); color: inherit; }
 .is-focused.source .source__release { color: inherit; opacity: var(--opacity-near); }
 .is-focused.source .chip { background: var(--on-light-fill); }
-.is-focused.source .chip--good { color: var(--on-light-live); }
+.is-focused.source .chip--good { color: var(--on-light-success); }
 .is-focused.source .chip--warn { color: var(--on-light-warning); }
 
 /* «Elegir versión»: una fila por idioma (nombre a la izquierda; «Tu idioma», «Original», «Tal vez» debajo) y sus
@@ -96,7 +96,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6)
 .version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
 .version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
-.version__state--good { color: var(--color-live); }
+.version__state--good { color: var(--color-success); }
 .version__state--warn { color: var(--color-warning); }
 .version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
 .version__badge { display: inline-flex; flex: none; color: var(--color-orbital); } /* la recomendada: ✦ antes de la calidad (como el iPhone) */
@@ -106,7 +106,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6)
 /* Foco invertido, como las fuentes y el menú. */
 .is-focused.version, .is-focused.version:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
 .is-focused.version .version__res--4k { color: inherit; }
-.is-focused.version .version__state--good { color: var(--on-light-live); }
+.is-focused.version .version__state--good { color: var(--on-light-success); }
 .is-focused.version .version__state--warn { color: var(--on-light-warning); }
 .is-focused.version .version__badge { color: var(--on-light-live); } /* el turquesa oscuro sobre el blanco del foco */
 .is-focused.version .version__facts { color: inherit; opacity: var(--opacity-near); }

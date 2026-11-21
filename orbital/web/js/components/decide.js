@@ -424,7 +424,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
 
   // El pie: lo que hacen A, Y y X ya lo dicen los botones de la izquierda (como el Inicio); aquí lo demás.
   const hints = (g) => (panelFrom != null
-    ? [{ glyph: "◀ ▶", label: "Elegir" }, { glyph: g.select, label: "Siguiente" }, { glyph: g.back, label: "Listo", end: true }]
+    ? [{ glyph: "◀ ▶", label: "Elegir" }, { glyph: g.select, label: "Siguiente pregunta" }, { glyph: g.back, label: "Listo", end: true }]
     : [picks.length > 0 && { glyph: "◀ ▶", label: "Otra" }, { glyph: g.section, label: "Una por una" },
       current() && { glyph: g.menu, label: "Opciones" }, { glyph: g.back, label: "Atrás", end: true }]).filter(Boolean);
 

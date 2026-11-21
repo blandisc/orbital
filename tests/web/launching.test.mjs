@@ -95,6 +95,29 @@ test("el juego se pide con el arte ya decodificado; B mientras tanto no abre nad
 
 test("si la versión ya no está, el aviso son dos frases cortas (revisión 2, punto 11)", async () => {
   const { playProblem } = await import("../../orbital/web/js/app/launching.js");
-  assert.deepEqual(playProblem(new Error("Esa versión ya no está disponible; vuelve a abrir la lista")), ["Esa versión ya no está.", "Elige otra de la lista."]);
-  assert.deepEqual(playProblem(new Error("Sin conexión")), ["Sin conexión", ""]);
+  assert.deepEqual(playProblem(new Error("Esa versión ya no está disponible; vuelve a abrir la lista"), "Dune"),
+    { title: "Esa versión ya no está", detail: "Elige otra de la lista", gone: true });
+  // OT-3: lo demás lo dice Orbital («No pude abrir Dune»); lo del servidor va al detalle del aviso, nunca de título.
+  assert.deepEqual(playProblem(new Error("Sin conexión"), "Dune"), { title: "No pude abrir Dune", detail: "", gone: false });
+});
+
+test("OT-3: si un juego no abre, el aviso lo dice con palabras de Orbital y ofrece Reintentar (también sin internet)", async () => {
+  const shown = [];
+  let tries = 0;
+  const { state } = setup({ launch: async () => { tries++; throw Object.assign(new Error("Orbital no pudo hacerlo (error 500). Intenta de nuevo."), { status: 500 }); } });
+  const ui = { launch: { show: () => {}, hide: () => {}, hold: () => {}, status: () => {}, visible: true },
+    toast: { show: (text, options) => shown.push({ text, ...options }) }, shelf: { focused: () => null }, sources: { isOpen: false, close: () => {} } };
+  const own = createLaunching({ state, ui, current: () => null, openMenu: () => {}, openTitle: () => {}, openSearch: () => {}, pollStatus: () => {} });
+  await own.launch(hades);
+  assert.equal(shown.at(-1).text, "No pude abrir Hades");
+  assert.equal(shown.at(-1).error, true);
+  assert.equal(shown.at(-1).fix.label, "Reintentar");
+  assert.equal(shown.at(-1).detail, "Orbital no pudo hacerlo (error 500)");
+  state.launchLockedUntil = 0;
+  await shown.at(-1).fix.run();
+  assert.equal(tries, 2);
+  state.online = false;
+  await own.launch({ ...hades, id: "gfn:1", source: "geforcenow", title: "Fortnite" });
+  assert.equal(shown.at(-1).text, "Sin internet");
+  assert.equal(shown.at(-1).fix.label, "Reintentar");
 });

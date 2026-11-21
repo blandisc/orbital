@@ -49,7 +49,7 @@ export function languageMenu(languages = [], code) {
       up && validLanguages(up) && !same(up) && { icon: "back", label: "Subir", command: set(up) },
       down && validLanguages(down) && !same(down) && { icon: "chevron", label: "Bajar", command: set(down) },
       validLanguages(removed) && { icon: "close", label: "Quitar", danger: true, command: set(removed) },
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
   };
 }

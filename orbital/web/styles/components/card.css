@@ -58,13 +58,13 @@
   font-variant-numeric: tabular-nums;
 }
 .card__trend--down.badge { color: var(--color-text-muted); }
-.card__trend--new.badge { font-weight: var(--weight-bold); }
+.card__trend--new.badge { font-weight: var(--type-badge-weight); } /* una placa: negrita de receta (D2-B) */
 /* Top 10 (RankedCard): la cifra enorme en gris detrás del póster, como el iPhone (RankedPosterCard). Se apoya en la
    base del póster; el póster va encima y, al enfocarse, crece sobre ella. Con la cifra, el ▲ ▼ sube a la esquina. */
 .card-ranked { display: inline-flex; align-items: flex-end; flex: none; }
 .card-ranked__number {
   flex: none; margin-right: calc(-1 * var(--space-6)); margin-bottom: calc(-.12 * var(--card-height));
-  color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold);
+  color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold); /* D2-B: una cifra (el Top 10) */
   line-height: var(--leading-none); letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
 }
 .card-ranked .card__trend.badge { top: var(--inset-poster); }
@@ -131,7 +131,7 @@
 }
 .card__stand-in-photo { width: 88%; max-height: 50%; object-fit: contain; filter: var(--shadow-drop-lg); }
 .card--stand-in .card__subtitle { display: none; } /* la consola ya la dice la foto */
-.card--stand-in .card__title { font-family: var(--font-sans); font-size: min(var(--type-body), calc(var(--card-height) * .115)); /* la portada chica (Buscar) no parte palabras */ font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
+.card--stand-in .card__title { font-family: var(--font-sans); font-size: min(var(--type-body), calc(var(--card-height) * .115)); /* la portada chica (Buscar) no parte palabras */ font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); }
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }

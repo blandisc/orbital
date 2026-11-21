@@ -72,11 +72,11 @@ struct DebridTVCompare: View {
         }
         .confirmationDialog(passTitle(model), isPresented: $confirmPass, titleVisibility: .visible) {   // ds-exception: confirma reemplazar la clave de la TV (una sola acción)
             Button("Pasar a la TV") { Task { await model.passToTV() } }
-            Button("Cancelar", role: .cancel) {}
+            Button("Dejarlo como está", role: .cancel) {}
         } message: { Text("Si Real-Debrid no la reconoce, tu TV se queda con la que tenía.", cloud: model.service, locale: env.uiLocale) }
         .confirmationDialog(useTitle(model), isPresented: $confirmUse, titleVisibility: .visible) {   // ds-exception: confirma reemplazar la clave del iPhone (una sola acción)
             Button("Usar la de la TV") { Task { await model.useTVKey() } }
-            Button("Cancelar", role: .cancel) {}
+            Button("Dejarlo como está", role: .cancel) {}
         } message: { Text("Reemplaza la de este iPhone si Real-Debrid la acepta con Premium.", cloud: model.service, locale: env.uiLocale) }
     }
 

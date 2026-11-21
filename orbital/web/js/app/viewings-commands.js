@@ -9,6 +9,7 @@
  *  Sin internet, las vistas y la nota esperan en la cola de Trakt. */
 import { STARS } from "./yours-commands.js";
 import { clock } from "../core/format.js";
+import { failure, retry } from "../core/notices.js";
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -81,7 +82,7 @@ export function historyMenu(found, page = 1, now = Date.now()) {
  *  otra fecha. */
 export function watchedFixMenu(about, at) {
   return { title: "La marcaste vista", subtitle: [about.title, episodeLabel(about.videoId)].filter(Boolean).join(" · "), options: [
-    { icon: "refresh", label: "Deshacer", hint: "Quita solo la de hoy; las de antes se quedan", command: { type: "watched-undo", about, at } },
+    { icon: "undo", label: "Deshacer", hint: "Quita solo la de hoy; las de antes se quedan", command: { type: "watched-undo", about, at } },
     { icon: "calendar", label: "Otra fecha", command: { type: "watched-redate", about, at } },
   ] };
 }
@@ -95,9 +96,10 @@ export function seasonStarsMenu({ id, title, season }, stars = null) {
 }
 
 export function viewingsCommands({ api, nested, openMenu, openListForm, renderHints, sound, ui }) {
-  const failed = (err, title) => {
+  /** No se pudo: qué pasó con palabras de Orbital y «Reintentar» (`again`: el mismo comando otra vez, OT-3). */
+  const failed = (err, title, again) => {
     sound.play("error");
-    ui.toast.show(title, { error: true, detail: err?.message || "" });
+    ui.toast.show(title, failure(retry(again), { err }));
     return renderHints();
   };
   const offline = (r) => (r?.queued ? "Sin internet: se manda a Trakt en cuanto haya" : "");
@@ -107,10 +109,10 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
     try {
       const { viewings, offline } = await api.viewings(about.kind, about.id, about.videoId);
       return openMenu(viewingsMenu(about, viewings, Date.now(), { offline }), context);
-    } catch (err) { return failed(err, "No pude leer tus vistas"); }
+    } catch (err) { return failed(err, "No pude leer tus vistas", () => openViewings(about, context)); }
   }
 
-  return {
+  const commands = {
     "viewings": async (command, context) => openViewings(command.about, nested(context)),
     "viewing-menu": async (command, context) => openMenu(viewingMenu(command.about, command.viewing), nested(context)),
     "viewing-when": async (command, context) => openMenu({ title: command.action === "add" ? "¿Cuándo la viste otra vez?" : "¿Qué día la viste?",
@@ -125,7 +127,7 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         ui.toast.show({ add: "Una vista más", move: "Cambié la fecha", remove: "Borré esa vista" }[action], { tone: "success",
           detail: offline(r) || (action === "remove" ? "Las demás se quedan" : about.title) });
         ui.title.statusChanged?.(about.id);
-      } catch (err) { return failed(err, "No pude cambiar tu historial"); }
+      } catch (err) { return failed(err, "No pude cambiar tu historial", () => commands["viewing-change"](command)); }
       return renderHints();
     },
     "watched-fix": async (command, context) => openMenu(watchedFixMenu(command.about, command.at), nested(context)),
@@ -137,7 +139,7 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         sound.play("select");
         ui.toast.show("Ya no está vista hoy", { tone: "info", detail: command.about.title });
         ui.title.statusChanged?.(command.about.id);
-      } catch (err) { return failed(err, "No pude deshacerla"); }
+      } catch (err) { return failed(err, "No pude deshacerla", () => commands["watched-undo"](command)); }
       return renderHints();
     },
     "watched-redate": async (command, context) => {
@@ -147,13 +149,13 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         if (!mine) throw new Error("Trakt aún no la tiene: búscala en «Tus vistas» en un momento");
         return openMenu({ title: "¿Qué día la viste?", subtitle: command.about.title,
           options: dayOptions({ type: "viewing-change", about: command.about, action: "move", viewing: mine }, Date.now(), { today: false }) }, nested(context));
-      } catch (err) { return failed(err, "No pude cambiar la fecha"); }
+      } catch (err) { return failed(err, "No pude cambiar la fecha", () => commands["watched-redate"](command, context)); }
     },
     "history": async (command, context) => {
       try {
         const found = await api.history(command.page || 1);
         return openMenu(historyMenu(found, command.page || 1), command.page > 1 ? nested(context) : {});
-      } catch (err) { return failed(err, "No pude leer tu historial"); }
+      } catch (err) { return failed(err, "No pude leer tu historial", () => commands["history"](command, context)); }
     },
     "history-repeats": async (command) => {
       ui.sheet.close();
@@ -162,13 +164,13 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         sound.play("select");
         ui.toast.show(command.ids.length === 1 ? "Borré la vista repetida" : `Borré ${command.ids.length} vistas repetidas`, { tone: "success",
           detail: offline(r) || "Queda la primera de cada una" });
-      } catch (err) { return failed(err, "No pude borrarlas"); }
+      } catch (err) { return failed(err, "No pude borrarlas", () => commands["history-repeats"](command)); }
       return renderHints();
     },
     // «Tu nota»: Trakt con VIP; sin VIP, solo en esta tele.
     "note": async (command) => {
       let found;
-      try { found = await api.note(command.kind, command.id); } catch (err) { return failed(err, "No pude leer tu nota"); }
+      try { found = await api.note(command.kind, command.id); } catch (err) { return failed(err, "No pude leer tu nota", () => commands["note"](command)); }
       ui.sheet.close();
       return openListForm({ eyebrow: "Tu nota", title: command.title, submitLabel: "Guardar", value: found.text || "", optional: true,
         lead: found.vip ? "Privada: solo tú la ves. Se guarda en tu Trakt (hasta 500 letras)."
@@ -192,8 +194,9 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         await api.rateSeason(command.id, command.season, command.stars);
         sound.play(command.stars ? "success" : "select");
         ui.toast.show(command.stars ? `${command.title}, temporada ${command.season}` : "Quité tu calificación de la temporada", { tone: "success", stars: command.stars || 0 });
-      } catch (err) { return failed(err, "No pude guardar tu calificación"); }
+      } catch (err) { return failed(err, "No pude guardar tu calificación", () => commands["season-rate-set"](command)); }
       return renderHints();
     },
   };
+  return commands;
 }

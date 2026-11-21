@@ -81,7 +81,11 @@ struct HomeHeader: View {
             if showsRemote {
                 // Mientras eliges, el control se pliega con la cápsula (su ancho y su aire bajan a cero al mismo paso): antes
                 // se quitaba y, apagándose, quedaba un instante encima de tu foto.
-                Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
+                // OI-1: el aire de la cápsula alrededor del ícono también es el botón (sin mover el dibujo), para atinarle con el dedo.
+                Button(action: remote) {
+                    Image(systemName: "av.remote").font(DS.TextRecipe.section.font)
+                        .padding(DS.Space.s2).contentShape(Rectangle()).padding(-DS.Space.s2)   // ds-exception: crece el toque, no el dibujo
+                }
                     .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                     .opacity(kindOpen ? 0 : 1)
                     .frame(width: kindOpen ? 0 : nil, alignment: .leading)

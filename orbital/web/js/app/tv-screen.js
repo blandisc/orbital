@@ -5,6 +5,7 @@
  */
 import { api } from "../core/api.js";
 import { mainMenu, mineChannelMenu } from "../core/menus.js";
+import { failure, retry } from "../core/notices.js";
 import { sound } from "../core/sound.js";
 
 export function createTvScreen({ state, ui, inTv, renderHints, goToSection, stepSection, openSearch, openMenu, traktLinked, resumeRunning,
@@ -36,7 +37,7 @@ export function createTvScreen({ state, ui, inTv, renderHints, goToSection, step
       setTimeout(() => ui.tv.load({ force: true }), 600); // ya dice «revisando cuáles abren»
     } catch (err) {
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show("No pude buscar los canales", failure(retry(tvRefresh), { err }));
     }
   }
 

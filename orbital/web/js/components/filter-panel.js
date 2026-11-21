@@ -211,7 +211,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
   }
 
   const hints = (g) => [at === FILTERS.length ? { glyph: g.select, label: "Ver los títulos" } : { glyph: "◀ ▶", label: "Elegir" },
-    at < FILTERS.length && { glyph: g.select, label: "Siguiente" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+    at < FILTERS.length && { glyph: g.select, label: "Siguiente pregunta" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

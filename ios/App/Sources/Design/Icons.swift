@@ -54,7 +54,7 @@ extension DS {
         /// «Audio y subtítulos» del reproductor (S1, 11 nov 2026): un ícono por renglón. Apagados es la burbuja vacía, la misma
         /// del botón de subtítulos con ellos apagados.
         static let subtitlesOff = "character.bubble", otherLanguage = "magnifyingglass", offline = "wifi.slash"
-        static let subtitleSync = "timer", syncWithLine = "text.line.first.and.arrowtriangle.forward", resetDelay = "arrow.counterclockwise"
+        static let subtitleSync = "timer", syncWithLine = "text.line.first.and.arrowtriangle.forward", resetDelay = "0.circle"
         static let subtitleSize = "textformat.size", audioTrack = "speaker.wave.2", videoVersion = "square.stack"
         /// Las versiones de subtítulos para sordos y las de solo lo que no se entiende (forzados): ícono y palabra.
         static let hearingImpaired = "ear", forcedSubtitles = "quote.bubble", subtitleVersion = "captions.bubble"
@@ -63,8 +63,9 @@ extension DS {
         static let padMenu = "line.3.horizontal", padView = "rectangle.on.rectangle"
         /// F1 (Fernando, 12 nov 2026): marcar como visto (el mosaico «Vista» de la ficha), relleno y en verde cuando ya lo viste.
         static let watched = "checkmark.circle", watchedFill = "checkmark.circle.fill"
-        /// R1: volver a empezar lo que ibas viendo («Desde el principio», el botón redondo junto al avance).
-        static let restart = "arrow.counterclockwise"
+        /// R1: volver a empezar lo que ibas viendo («Desde el principio», el botón redondo junto al avance). Su propio ícono, la
+        /// flecha a la orilla (20 nov 2026, como la TV): la flecha en círculo es solo «otra vez» y deshacer es la flecha en U.
+        static let restart = "arrow.left.to.line"
         /// «Tu nota»: escribir una (con el más) o la que ya escribiste (botón redondo al final de «Tu calificación»).
         static let addNote = "note.text.badge.plus", note = "note.text"
         /// Calificar (con estrellas): «Calificar la temporada» en el menú de «Vista».
@@ -75,8 +76,10 @@ extension DS {
         /// Los filtros de «Decide por mí» (cada uno con su tinte, `DS.DecideLive`): la duración, el ánimo, la calificación (la
         /// misma estrella de calificar) y «Afinar»; y «Barajar» los tres carteles.
         static let filterTime = "clock", filterMood = "face.smiling", filterRating = rate, refine = "slider.horizontal.3", shuffle = "shuffle"
-        /// Las tres salidas de una carta del mazo, en el botón y en su sello: Paso, Guardar y «Para hoy».
-        static let matchPass = "xmark", matchKeep = "heart.fill", matchTonight = "star.fill"
+        /// Las tres salidas de una carta del mazo, en el botón y en su sello: Paso, Guardar y «Para hoy». «Paso» es el pulgar
+        /// abajo (OI-8, 20 nov 2026: la ✕ es solo cerrar), «Guardar» el marcador de guardar (♥ es solo favoritos) y «Para hoy»
+        /// la tachuela (★ es solo calificar), como en la TV.
+        static let matchPass = "hand.thumbsdown.fill", matchKeep = saved, matchTonight = "pin.fill"
         static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
         /// MO1 (Fernando, 13 nov 2026): el mosaico, la cuadrícula de 3×3, solo para él (su puerta en la portada de Explorar).
         /// «Lo que ves» lleva sus barras (antes la misma cuadrícula, rellena) y «Todo» del selector su 2×2 (`KindGlyph.all`).
@@ -88,7 +91,10 @@ extension DS {
         /// «¿Para el resto de la serie también?» (13 nov 2026): «Sí, desde aquí» (de este episodio en adelante) y «Solo este
         /// episodio» (uno nada más).
         static let fromHereOn = "arrow.right.circle", onlyThisOne = "1.circle"
-        /// «¿Sigues viendo?» › «Salir»: cerrar el reproductor (la misma ✕ de cerrar: una idea, un ícono).
-        static let leavePlayer = close
+        /// OI-8 (auditoría del 20 nov 2026): la ✕ es solo cerrar. Quitar algo (de una lista, un filtro, la búsqueda, el
+        /// recordatorio de calificar) es el menos; salir (del video en la TV, del reproductor) es la puerta con la flecha.
+        static let remove = "minus", leave = "rectangle.portrait.and.arrow.right"
+        /// «¿Sigues viendo?» › «Salir»: dice «Salir», así que lleva la puerta (la ✕ de la barra dice «Cerrar»).
+        static let leavePlayer = leave
     }
 }

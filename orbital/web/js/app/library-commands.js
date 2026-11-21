@@ -1,9 +1,10 @@
 /** Comandos de tu biblioteca: preferencias, arte, ordenar y filtrar una lista, Mi lista, descargas y tu carpeta.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
 import { decadeName, MIN_RATINGS, ratingName } from "../components/list-screen.js";
+import { failure, retry } from "../core/notices.js";
 
 export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
-  return {
+  const commands = {
     "prefs": async (command, context) => {
       if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
       await api.setPrefs(command.id, command.prefs);
@@ -138,7 +139,8 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
     },
     "download-retry": async (command, context) => {
       ui.sheet.close();
-      await api.downloadRetry(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
+      await api.downloadRetry(command.id).catch((err) => ui.toast.show(`No pude descargar ${command.title || "esto"} otra vez`,
+        failure(retry(() => commands["download-retry"](command, context)), { err })));
       return loadDownloads();
     },
     "download-title": async (command, context) => {
@@ -147,8 +149,13 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
     },
     "download-remove": async (command, context) => {
       ui.sheet.close();
-      await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-      ui.toast.show(`Quité la descarga de ${command.title}`, { tone: "success" });
+      try {
+        await api.downloadRemove(command.id);
+        ui.toast.show(`Quité la descarga de ${command.title}`, { tone: "success" });
+      } catch (err) { // antes decía «Quité…» aunque no se hubiera quitado
+        sound.play("error");
+        ui.toast.show(`No pude quitar la descarga de ${command.title}`, failure(retry(() => commands["download-remove"](command, context)), { err }));
+      }
       return loadDownloads();
     },
     "foryou-dismiss": async (command, context) => {
@@ -162,4 +169,5 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
       return renderHints();
     },
   };
+  return commands;
 }

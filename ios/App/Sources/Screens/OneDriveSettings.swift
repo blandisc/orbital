@@ -39,7 +39,7 @@ struct OneDriveSettings: View {
                     Button("Desconectar OneDrive", role: .destructive) { confirmUnlink = true }
                 case .failed(let message):
                     DSNotice(verbatim: env.message(message), tone: .error)
-                    Button("Volver a intentar") { Task { await model.link() } }
+                    Button("Reintentar") { Task { await model.link() } }
                 }
             } header: { Text("Cuenta") }
             .listRowBackground(DS.surface)
@@ -93,6 +93,7 @@ struct OneDriveSettings: View {
         }
         .confirmationDialog("¿Desconectar OneDrive?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
             Button("Desconectar", role: .destructive) { Task { await model.unlink() } }
+            Button("Dejarlo conectado", role: .cancel) {}
         } message: { Text("Mi media se vacía. Lo que ya bajaste al iPhone se queda.") }
     }
 }
@@ -123,7 +124,7 @@ struct OneDriveFolderPicker: View {
             Section {
                 if let error {
                     DSNotice(verbatim: env.message(error), tone: .warn)
-                    Button("Volver a intentar", systemImage: "arrow.clockwise") { Task { await load() } }
+                    Button("Reintentar", systemImage: "arrow.clockwise") { Task { await load() } }
                 }
                 else if let folders {
                     if folders.isEmpty { Text("No hay más carpetas aquí.").recipe(.footnote) }

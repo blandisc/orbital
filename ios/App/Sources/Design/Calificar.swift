@@ -140,7 +140,7 @@ struct RatingStars: View {
 }
 
 /// El recordatorio de calificar: una pastilla de vidrio sobre la barra de pestañas con el póster, «¿Qué tal …?» y las
-/// estrellas en línea (calificas sin abrir nada). «y 2 más» abre la fila completa; la ✕ es «no calificar esta».
+/// estrellas en línea (calificas sin abrir nada). «y 2 más» abre la fila completa; el menos es «no calificar esta».
 struct RatingReminder: View {
     let title: String
     let poster: URL?
@@ -180,7 +180,7 @@ struct RatingReminder: View {
                 Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }   // nunca letra por letra
                     .accessibilityIdentifier("rating-reminder-more")
             }
-            DSIconButton(symbol: "xmark", label: "No calificar esta", size: .small, action: onDismiss)
+            DSIconButton(symbol: DS.Symbol.remove, label: "No calificar esta", size: .small, action: onDismiss)
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
         .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)

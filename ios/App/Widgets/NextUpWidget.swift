@@ -140,7 +140,7 @@ private struct Caption: View {
             } else {
                 Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
             }
-            if !item.detail.isEmpty { Text(item.detail).font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.text).lineLimit(2) }
+            if !item.detail.isEmpty { Text(item.detail).font(DS.font(.sm, weight: .medium)).foregroundStyle(DS.text).lineLimit(2) }
             if let progress = item.progress { ProgressLine(fraction: progress) }
             if let actions { WatchActions(item: item, style: actions).padding(.top, DS.Space.s1) }
         }
@@ -155,7 +155,7 @@ private struct EmptyState: View {
         VStack(spacing: DS.Space.s2) {
             OrbitalMark(size: DS.Size.touchTarget).foregroundStyle(DS.text)   // la marca de la TV
             Text("Nada pendiente").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
-            Text("Abrir Orbital").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+            Text("Abrir Orbital").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .widgetURL(URL(string: "\(WidgetLink.scheme)://"))
@@ -259,8 +259,8 @@ struct WatchActions: View {
     private func pill(_ title: Text, symbol: String, solid: Bool, wide: Bool = false) -> some View {
         let showsTitle = style == .labeled || wide
         return HStack(spacing: DS.Space.s1) {
-            Image(systemName: symbol).font(DS.font(.xs, weight: .bold))
-            if showsTitle { title.font(DS.font(.xs, weight: .semibold)).lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink) }
+            Image(systemName: symbol).font(DS.font(.sm, weight: .semibold))
+            if showsTitle { title.font(DS.font(.sm, weight: .semibold)).lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink) }
         }
         .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
         .padding(.horizontal, showsTitle ? DS.Space.s2 : 0)
@@ -312,7 +312,7 @@ private struct Row: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(item.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-                    Text(item.detail).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    Text(item.detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -336,9 +336,9 @@ private struct UpcomingRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text("Próximo estreno").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+            Text("Próximo estreno").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             Text(episode.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-            Text("\(episode.episodeLabel) · \(dayText)").font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+            Text("\(episode.episodeLabel) · \(dayText)").font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -148,21 +148,24 @@ extension TitleView {
 
     /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, una línea con la barrita, cuánto falta y ↺ «Desde el principio» (R1; la
     /// TV lo dice con texto, `core/watch.js`). La versión que va a sonar va en la zona derecha del botón («🇲🇽 1080p ⌄», `playVersion`); sin
-    /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga la ficha, «Cargando» entero; mientras se busca la
+    /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga la ficha, «Cargando la ficha» entero; mientras se busca la
     /// versión de un episodio que ya se sabe, la zona derecha en gris con su ancho.
     func continueAction(_ model: TitleModel) -> ContinueAction {
         let label = model.continueLabel
         let go = { play(model) }
         if model.continueVideoID == nil && !model.isLoading {
             // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
-            // Con internet no es «Sin conexión»: es que no se pudo cargar (Cinemeta caído, un id raro).
-            let failed = model.error == nil ? nil : env.isOnline ? Text("No se pudo cargar") : Text("Sin conexión")
-            return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
+            // No cargó (sin red, Cinemeta caído, un id raro): el botón mismo reintenta (OI-3, 20 nov 2026: un error trae su
+            // arreglo). El aviso de abajo dice qué pasó.
+            if model.error != nil {
+                return ContinueAction(title: Text("Reintentar"), symbol: "arrow.clockwise", play: { Task { await model.load() } })
+            }
+            return ContinueAction(title: Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
             // Entero mientras carga la ficha: partido, un lado salía gris (apagado) y el otro blanco, y si al final no
             // había episodios la zona de la versión aparecía y se iba (Fernando, 11 nov: «aparece la parte blanca y la otra gris»).
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, play: go)
+            return ContinueAction(title: Text("Cargando la ficha"), loading: true, enabled: false, play: go)
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }

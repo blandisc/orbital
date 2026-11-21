@@ -178,7 +178,7 @@ struct ViewingsSheet: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint(Text("Cambiar la fecha"))
-                            Button(role: .destructive) { remove(v) } label: { Image(systemName: "trash") }
+                            Button(role: .destructive) { remove(v) } label: { Image(systemName: "trash").frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget).contentShape(Rectangle()) }
                                 .buttonStyle(.borderless)
                                 .accessibilityLabel(Text("Borrar esta vista"))
                                 .accessibilityIdentifier("viewing-delete")

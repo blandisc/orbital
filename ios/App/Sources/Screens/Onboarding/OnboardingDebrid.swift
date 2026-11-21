@@ -34,7 +34,7 @@ struct OnboardingSeeHere: View {
         let model = debrid.model
         let posters = guide.model.candidates.prefix(4).map { (url: $0.poster, title: titleName($0.title, id: $0.imdb, kind: $0.kind)) }
         GuidePage(title: nil, step: step,
-                  primary: model.ready ? Text("Continuar") : Text("Ya tengo uno"),
+                  primary: model.ready ? guide.model.ahead(after: .debrid) : Text("Ya tengo uno"),
                   secondary: model.ready ? Text("Cambiar") : Text("Ahora no"),
                   alternate: model.ready ? nil : Text("Aún no tengo"), alternateAction: { none = true },
                   next: { if model.ready { next() } else { choosing = true } },
@@ -87,7 +87,7 @@ struct OnboardingSeeHere: View {
     private func fact(_ symbol: String, _ bold: Text, _ rest: Text) -> some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
-            Text("\(bold.foregroundStyle(DS.text).bold()) \(rest.foregroundStyle(DS.textMuted))")
+            Text("\(bold.foregroundStyle(DS.text).fontWeight(.semibold)) \(rest.foregroundStyle(DS.textMuted))")
                 .font(DS.TextRecipe.secondary.font).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)

@@ -190,11 +190,11 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     // MARK: Tipografía (con Dynamic Type: hace de «Tamaño del texto»)
     enum Typeface {
-        case xs, sm, md, lg, xl, xxl, display
+        case sm, md, lg, xl, xxl, display   // sin xs: nada en 11 pt (OI-5, DesignRulesTests+Legible)
         /// El tope de letra del campo de búsqueda del sistema (con letra de accesibilidad se dibujaba vacío).
         static let searchFieldMax = DynamicTypeSize.xxxLarge
         var style: Font.TextStyle {
-            switch self { case .xs: .caption2; case .sm: .caption; case .md: .subheadline; case .lg: .headline; case .xl: .title2; case .xxl: .title; case .display: .largeTitle }
+            switch self { case .sm: .caption; case .md: .subheadline; case .lg: .headline; case .xl: .title2; case .xxl: .title; case .display: .largeTitle }
         }
     }
 
@@ -354,16 +354,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
     enum PlatformBadge { static let logo: CGFloat = 16, logoRadius = Radius.logo(16) }
-    /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
-    /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
-    /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
-    enum Ribbon {
-        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat }
-        static let regular = Size(corner: 60, length: 104, center: 22)
-        static let compact = Size(corner: 38, length: 66, center: 14)
-        static let angle: Double = -45, shine: Double = 0.28
-    }
-
     enum Brand {
         static let box: CGFloat = 32
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8

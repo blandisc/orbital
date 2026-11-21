@@ -160,7 +160,7 @@ struct UpNextCard: View {
             Circle().trim(from: 0, to: progress).stroke(DS.onPrimary, style: StrokeStyle(lineWidth: DS.PlayerPanel.ringWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(DS.Motion.base(reduceMotion), value: card.secondsLeft)   // respeta «Reducir movimiento»
-            Text(verbatim: "\(card.secondsLeft)").recipe(.caption, color: DS.onPrimary).fontWeight(.bold).monospacedDigit()
+            Text(verbatim: "\(card.secondsLeft)").recipe(.badge, color: DS.onPrimary).monospacedDigit()
         }
         .frame(width: DS.PlayerPanel.ring, height: DS.PlayerPanel.ring)
         .accessibilityHidden(true)

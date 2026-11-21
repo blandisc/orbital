@@ -53,7 +53,7 @@ struct SavedSelectionBar: View {
         }
         .alert("Lista nueva", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
             TextField("Nombre", text: $newName)
-            Button("Cancelar", role: .cancel) { newName = "" }
+            Button("Ahora no", role: .cancel) { newName = "" }
             Button("Crear") { let name = newName; newName = ""; run { await createAndMove(name) } }
         } message: { Text("Nace «Solo tú» y lo que elegiste entra ahí.") }
     }

@@ -33,8 +33,8 @@ export function freshDiscards(all, now = Date.now()) {
 /** Cada dirección con su nombre, su sello y su color (DS.Match.pass · tonight · keep). */
 const WAYS = {
   pass: { label: "Paso", stamp: "Paso", icon: "close", glyph: "◀" },
-  tonight: { label: "Para hoy", stamp: "★ Para hoy", icon: "star", glyph: "▲" },
-  keep: { label: "Guardar", stamp: "Guardar", icon: "heart", glyph: "▶" },
+  tonight: { label: "Para hoy", stamp: "Para hoy", icon: "pin", glyph: "▲" }, // OT-5: ★ es calificar
+  keep: { label: "Guardar", stamp: "Guardar", icon: "bookmark", glyph: "▶" }, // lo guardado es el marcador (Guardado); ♥ es favoritos
 };
 
 export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null }) {
@@ -76,7 +76,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   async function refill() {
     const mine = ++token;
-    mount(stage, h("div", { class: "match__card match__card--skeleton", "aria-label": "Cargando" }));
+    mount(stage, h("div", { class: "match__card match__card--skeleton", "aria-label": "Cargando tus propuestas" }));
     paintActions();
     try {
       const res = await load();
@@ -98,7 +98,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   function paint() {
     saved.hidden = !kept.length;
-    mount(saved, svg(ICONS.heart), String(kept.length));
+    mount(saved, svg(ICONS.bookmark), String(kept.length));
     head.tick();
     const [top, next, after] = cards;
     backdrop.show(top?.hero || top?.image || null);
@@ -149,7 +149,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     const then = () => {
       flying = false;
       if (way === "pass") discard();
-      else keep({ tonight: way === "tonight" }).catch((err) => onSaved?.(null, null, err));
+      else keep({ tonight: way === "tonight" }).catch((err) => onSaved?.(null, null, err, { tonight: way === "tonight" }));
     };
     if (!node || reducedMotion()) return then();
     flying = true;

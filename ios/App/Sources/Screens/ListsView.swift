@@ -91,7 +91,7 @@ struct ListsView: View {
                 TextField("Nombre", text: $newListName)
                 Button("Crear") { createList() }
                     .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button("Cancelar", role: .cancel) { newListName = "" }
+                Button("Ahora no", role: .cancel) { newListName = "" }
             } message: { Text("Se crea en Trakt (privada). Agrégale títulos desde su ficha, con «Guardar en…».") }
     }
 

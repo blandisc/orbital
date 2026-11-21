@@ -106,7 +106,7 @@ struct DSMoreMenu<Content: View>: View {
 
 /// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26. El único círculo de vidrio
 /// de la app (D7): cerrar una hoja, el ✕ y el ♥ del mazo, una flecha. Tres tamaños: `small` (junto a un texto chico),
-/// `regular` (cerrar una hoja) y `large` (lo de siempre, 44 pt táctiles); el ícono crece con él.
+/// `regular` (cerrar una hoja) y `large` (lo de siempre); el ícono crece con él. Los tres responden en 44 × 44 pt.
 struct DSIconButton: View {
     enum Size {
         case small, regular, large
@@ -160,6 +160,12 @@ struct DSIconButton: View {
         .buttonRepeatBehavior(repeats ? .enabled : .automatic)
         .buttonBorderShape(.circle).dsControlSize(size.control)
         .accessibilityLabel(Text(label))
+        // OI-1 (auditoría del 20 nov 2026): todo tamaño se atina con el dedo. El círculo se dibuja igual (chico o mediano), pero
+        // la pieza ocupa y responde en 44 × 44: el aire alrededor también es el botón, y como es su lugar en el acomodo, nunca
+        // se encima con el control de al lado. `DesignRulesTests+TouchTarget` lo cuida.
+        .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
     }
 }
 

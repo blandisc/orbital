@@ -48,6 +48,7 @@ struct OpenSubtitlesSettings: View {
         .task { await model.refresh() }
         .confirmationDialog("¿Desconectar OpenSubtitles?", isPresented: $confirmDisconnect, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
             Button("Desconectar", role: .destructive) { model.disconnect() }
+            Button("Dejarla conectada", role: .cancel) {}
         }
     }
 }

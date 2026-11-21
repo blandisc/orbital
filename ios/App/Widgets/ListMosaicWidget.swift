@@ -115,7 +115,7 @@ struct ListMosaicView: View {
                         .allowsHitTesting(false)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(verbatim: list.title).font(DS.font(family == .systemLarge ? .lg : .md, weight: .bold)).lineLimit(1)
-                        Text("\(list.posters.count) títulos").font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.onArtSecondary)
+                        Text("\(list.posters.count) títulos").font(DS.font(.sm, weight: .medium)).foregroundStyle(DS.onArtSecondary)
                     }
                     .foregroundStyle(DS.paper)
                     .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
@@ -135,7 +135,7 @@ struct ListMosaicView: View {
             } else {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Mosaico de una lista").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text)
-                    Text("Abre Explorar una vez y aquí salen tus listas.").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+                    Text("Abre Explorar una vez y aquí salen tus listas.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
                 }
                 .padding(DS.Space.s4)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -202,7 +202,7 @@ struct ListMosaicView: View {
             } else {
                 ZStack {
                     DS.surface
-                    Text(verbatim: poster.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+                    Text(verbatim: poster.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted)
                         .multilineTextAlignment(.center).padding(DS.Space.s1)
                 }
             }

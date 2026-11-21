@@ -34,6 +34,9 @@ body[data-holding] { --duration-slow: var(--duration-fast); }
 body:not([data-pointer]), body:not([data-pointer]) * { cursor: none; }
 
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+/* D2-B (20 nov 2026): la negrita del navegador (<strong>, <b>, los títulos <h1>…<h3>) no se cuela. Lo que no dice su grosor va
+   en seminegrita; la negrita la ponen solo las recetas del título más grande, las placas y las cifras. */
+strong, b, h1, h2, h3 { font-weight: var(--weight-semibold); }
 
 [hidden] { display: none !important; }
 

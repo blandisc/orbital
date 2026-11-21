@@ -105,7 +105,7 @@ struct NowPlayingCard: View {
 
     private var moreMenu: some View {
         DSMoreMenu {
-            Button("Salir del video", systemImage: "xmark.circle") { act("stop") }
+            Button("Salir del video", systemImage: DS.Symbol.leave) { act("stop") }
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
         }
         .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity)
@@ -157,7 +157,7 @@ struct FromTVCard: View {
                     HStack(alignment: .firstTextBaseline) {
                         Label { eyebrow } icon: { Image(systemName: "tv.and.mediabox") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
-                        DSIconButton(symbol: "xmark", label: "Quitar", size: .small, action: onDismiss)
+                        DSIconButton(symbol: DS.Symbol.remove, label: "Quitar", size: .small, action: onDismiss)
                             .font(DS.TextRecipe.label.font)
                     }
                     Spacer(minLength: DS.Space.s2)

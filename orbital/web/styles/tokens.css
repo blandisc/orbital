@@ -277,7 +277,7 @@
   --icon-sm: 1rem;
   --icon-md: 1.25rem;
   --icon-lg: 1.4rem;
-  --icon-xl: 1.75rem; /* el símbolo de un paso de «¿Qué es esto?» */
+  --icon-xl: 1.8rem; /* lo grande: el símbolo de un paso de «¿Qué es esto?», la lupa de Buscar, el ícono del riel (OT-8: uno solo; antes otro de 1,75 rem quedaba tapado) */
   --explain-tile: 3rem; /* «¿Qué es esto?»: el cuadro de color de cada idea (DSIconTile del iPhone, 44 pt, a escala de TV) */
   --explain-step: 3.75rem; /* y el de cada uno de los tres pasos (56 pt en el iPhone) */
   --ribbon-corner: 4.6rem; /* el listón «Nuevo»: el cuadro de la esquina del póster que lo recorta (DS.Ribbon.corner del iPhone, a escala de TV) */
@@ -289,7 +289,6 @@
   --layout-title-to-content: var(--space-2);
   --layout-between-subsections: var(--space-6); /* entre subsecciones de una pila (DS.Layout.betweenSubsections): las tandas de Cambiar el arte, TV en vivo */
   --layout-between-sections: var(--space-8); /* entre secciones de una pila (DS.Layout.betweenSections): lo de abajo de la ficha */
-  --icon-xl: 1.8rem;
   /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
   --stroke-fine: 1.75;
   --stroke-regular: 2;

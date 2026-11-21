@@ -5139,6 +5139,39 @@
         }
       }
     },
+    "Conocer el control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meet the remote"
+          }
+        }
+      }
+    },
+    "Conservar la clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the key"
+          }
+        }
+      }
+    },
+    "Conservar la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the list"
+          }
+        }
+      }
+    },
     "Listo: este iPhone ya tiene su propia conexión": {
       "extractionState": "manual",
       "localizations": {
@@ -5255,6 +5288,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect your iPad"
+          }
+        }
+      }
+    },
+    "Conectar tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your cloud"
           }
         }
       }
@@ -6148,6 +6192,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ends in ••••%@. If Real-Debrid doesn't recognize it, your TV keeps the one it had."
+          }
+        }
+      }
+    },
+    "Termina la guía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends the guide"
           }
         }
       }
@@ -10215,6 +10270,17 @@
         }
       }
     },
+    "Salir de la guía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave the guide"
+          }
+        }
+      }
+    },
     "Ahora, viendo %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12518,6 +12584,28 @@
         }
       }
     },
+    "Cargando la ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the details"
+          }
+        }
+      }
+    },
+    "Cargando subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading subtitles"
+          }
+        }
+      }
+    },
     "Cargando tus listas de Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -12529,13 +12617,13 @@
         }
       }
     },
-    "Cargando…": {
+    "Cargando video": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loading…"
+            "value": "Loading video"
           }
         }
       }
@@ -13823,6 +13911,17 @@
         }
       }
     },
+    "Conectar OpenSubtitles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect OpenSubtitles"
+          }
+        }
+      }
+    },
     "Conectar Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -14918,6 +15017,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keep the one I have"
+          }
+        }
+      }
+    },
+    "Dejarla conectada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it connected"
+          }
+        }
+      }
+    },
+    "Dejarlo como está": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave it as is"
+          }
+        }
+      }
+    },
+    "Dejarlo conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it connected"
           }
         }
       }
@@ -16734,6 +16866,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose another version"
+          }
+        }
+      }
+    },
+    "Elegir plataformas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose platforms"
           }
         }
       }
@@ -28539,17 +28682,6 @@
         }
       }
     },
-    "Saltar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skip"
-          }
-        }
-      }
-    },
     "Saltar intro": {
       "extractionState": "manual",
       "localizations": {
@@ -31223,6 +31355,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ended"
+          }
+        }
+      }
+    },
+    "Terminar la guía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish the guide"
           }
         }
       }
@@ -35361,6 +35504,17 @@
         }
       }
     },
+    "Ver el siguiente paso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the next step"
+          }
+        }
+      }
+    },
     "Ver en Descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -35478,6 +35632,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show the lists"
+          }
+        }
+      }
+    },
+    "Ver lo que trajimos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See what we brought"
           }
         }
       }
@@ -35929,17 +36094,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign in again"
-          }
-        }
-      }
-    },
-    "Volver a intentar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try again"
           }
         }
       }
@@ -42953,6 +43107,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "View by language"
+          }
+        }
+      }
+    },
+    "Ver qué más hay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See what else there is"
           }
         }
       }

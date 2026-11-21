@@ -34,7 +34,7 @@ struct OnboardingPlatforms: View {
     var body: some View {
         let model = guide.model
         let any = !model.chosenPlatforms.isEmpty
-        GuidePage(title: nil, step: step, primary: any ? Text("Continuar") : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
+        GuidePage(title: nil, step: step, primary: any ? guide.model.ahead(after: .platforms) : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
             TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in
                 let t = reduceMotion ? Self.end + 1 : ctx.date.timeIntervalSince(start)
                 content(model, t)

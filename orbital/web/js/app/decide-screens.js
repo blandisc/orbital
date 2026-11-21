@@ -4,6 +4,7 @@
  * el iPhone: X en Explorar (o su botón con el dedo). `ui()` es una función porque los dos se crean antes que el resto de `ui`.
  */
 import { api } from "../core/api.js";
+import { failure, retry } from "../core/notices.js";
 import { sound } from "../core/sound.js";
 import { createDecide } from "../components/decide.js";
 import { createMatchDeck } from "../components/match-deck.js";
@@ -50,7 +51,9 @@ export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints,
     onOpen: (card) => openTitle(card),
     onPlay: (card) => play(card),
     // «Para hoy» (★): guardada y primera en Mi lista hoy; el aviso ofrece verla ya (como el iPhone).
-    onSaved: (card, where, err, { tonight = false } = {}) => (err ? (sound.play("error"), ui().toast.show(err.message, { error: true }))
+    // Si no se guardó, la carta vuelve arriba y «Reintentar» la manda otra vez a donde ibas (→ o ↑).
+    onSaved: (card, where, err, { tonight = false } = {}) => (err ? (sound.play("error"),
+      ui().toast.show("No pude guardarla", failure(retry(() => match.handle(tonight ? "up" : "right")), { err })))
       : tonight ? ui().toast.show("Para hoy", { tone: "success", detail: card.title, action: { label: "Ver ya", onPress: () => { match.close(); match.play(card); } } })
         : ui().toast.show(where === "match" ? "Guardada en Tu match perfecto" : "Guardada en Mi lista", { tone: "success", detail: card.title })),
     onMove: moved,

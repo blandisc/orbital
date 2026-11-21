@@ -137,6 +137,9 @@ final class DesignRulesTests: XCTestCase {
         let files = try sources()
         let skip = { (f: Source) in ["PlayerControls", "IPod", "Brand", "SimpsonsRoulette"].contains { f.name.hasPrefix($0) } || self.isTokens(f) }
         var problems = hits(#"TextRecipe\.\w+\.font\.weight\("#, in: files, skip: skip)
+        // También con un ternario: `(grande ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)` (así se le
+        // escapaba el título de Art, OI-4 del 20 nov 2026).
+        problems += hits(#"TextRecipe\.\w+\)\.font\.weight\("#, in: files, skip: skip)
         problems += hits(#"\.recipe\([^)]*\)\.fontWeight\("#, in: files, skip: skip)
         problems += hits(#"TextRecipe\.\w+\.font\)\.fontWeight\("#, in: files, skip: skip)
         check(problems, "Receta torcida con .weight: usa label, labelLarge, badge, groupLabel o stat")

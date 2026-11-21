@@ -88,7 +88,7 @@ struct SimpsonsDayView: View {
         HStack(spacing: DS.Space.s4) {
             SimpsonsTV(day: entry.day).frame(width: DS.Widget.simpsonsTV)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("Los Simpson en la tele").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.backdropDeep.opacity(DS.Opacity.dimmed))
+                Text("Los Simpson en la tele").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.backdropDeep.opacity(DS.Opacity.dimmed))
                 caption(lines: 2)
                 Spacer(minLength: 0)
                 HStack(spacing: DS.Space.s2) {
@@ -111,7 +111,7 @@ struct SimpsonsDayView: View {
             .font(DS.font(.md, weight: .heavy)).lineLimit(lines).minimumScaleFactor(DS.Widget.labelShrink)
         if let day {
             Text(verbatim: episodeLabel(day))
-                .font(DS.font(.xs, weight: .semibold)).monospacedDigit()
+                .font(DS.font(.sm, weight: .semibold)).monospacedDigit()
         }
     }
 
@@ -122,8 +122,8 @@ struct SimpsonsDayView: View {
 
     private func pill(_ title: Text, symbol: Image, solid: Bool) -> some View {
         HStack(spacing: DS.Space.s1) {
-            symbol.font(DS.font(.xs, weight: .bold))
-            title.font(DS.font(.xs, weight: .semibold))
+            symbol.font(DS.font(.sm, weight: .semibold))
+            title.font(DS.font(.sm, weight: .semibold))
         }
         .foregroundStyle(solid ? DS.Simpsons.amarillo : DS.backdropDeep)
         .padding(.horizontal, DS.Space.s2)

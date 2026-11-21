@@ -60,8 +60,10 @@ export function linesOf(message, detail = "") {
   return { title: text, detail: "" };
 }
 
-/** `onTone(tone)`: cada aviso que sale (para su sonido: un error suena aunque venga del servidor). */
-export function createToast({ onTone = () => {} } = {}) {
+/** `onTone(tone)`: cada aviso que sale (para su sonido: un error suena aunque venga del servidor).
+ *  `bindAction({ label, run, duration })`: el arreglo de un error (`fix`, core/notices.js) también con el mando: devuelve la
+ *  `action` del aviso con su glifo (main.js · offerToastAction). Sin él, el arreglo solo se toca. */
+export function createToast({ onTone = () => {}, bindAction = ({ label, run }) => ({ action: { label, onPress: run } }) } = {}) {
   const el = h("div", { class: "toast", role: "status", "aria-live": "polite", hidden: true });
   const queue = [];
   let timer;
@@ -139,15 +141,20 @@ export function createToast({ onTone = () => {} } = {}) {
    * `message`: el título (con « · », también el detalle). Opciones: `tone`, `detail`, `image`, `heading` (el título
    * cuando `message` es el detalle: «Hades» / «Jugaste 2 h»), `action` ({ label, glyph, onPress }), `duration`,
    * `countdown`, `urgent`, `rating` (calificar: estrellas vacías y la acción en pastilla), `stars` (la calificación que diste,
-   * en ámbar). Las de antes siguen: `error`, `voice`, `onPress`.
+   * en ámbar), `fix` (el arreglo de un error: { label, run }; core/notices.js · failure). Las de antes siguen: `error`,
+   * `voice`, `onPress`.
    */
   function show(message, { tone = "", error = false, voice = false, countdown = 0, duration = 0, onPress = null, urgent = false,
-    heading = "", image = "", detail = "", action = null, rating = false, stars = 0 } = {}) {
+    heading = "", image = "", detail = "", action = null, rating = false, stars = 0, fix = null } = {}) {
     if (!message) return;
     const text = heading || message;
     const below = heading ? message : detail;
     const last = queue.at(-1) || current;
     if (last?.message === text && (last?.detail || "") === (below || "")) return; // el mismo aviso dos veces seguidas no aporta
+    if (fix && !action) {
+      duration = duration || tokenMs("--duration-notice-long", 6500);
+      action = bindAction({ label: fix.label, run: fix.run, duration }).action;
+    }
     const toast = {
       message: text, detail: below, image, countdown, duration, rating, stars,
       tone: toneOf({ tone, error, voice, message: text }),

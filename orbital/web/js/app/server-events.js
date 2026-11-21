@@ -7,6 +7,7 @@ import { api } from "../core/api.js";
 import { closedSummary, crashMessage } from "../core/format.js";
 import { voiceToastAction } from "../core/hints.js";
 import { deviceUpgradeMenu, healthMenu } from "../core/menus.js";
+import { failure, fixWith, OPEN_DIAGNOSTICS, openSettings, retry } from "../core/notices.js";
 import { sound } from "../core/sound.js";
 
 export function createServerEvents({ state, ui, openSearch, openTitle, goToSection, applyStatus, openMenu, findItem, handleAction, padWake, remoteText, applySettings, deferred, openQuick, pollSystem, loadLibrary, pollStatus, runCommand, offerVoiceAction, downloadProgress, loadDownloads, buildCuration, traktFrom, phoneFrom, loadCuration, markPip, boot, warnDebridExpiry, traktLinked }) {
@@ -64,17 +65,23 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
       if (!deferred.offer(event)) return;
       sound.play("error");
       // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
-      if (state.running?.managed) return ui.toast.show(event.message, { error: true });
-      return openMenu(healthMenu(event.message, { restart: event.restart !== false, release: event.release || null }));
+      const menu = () => openMenu(healthMenu(event.message, { restart: event.restart !== false, release: event.release || null }));
+      if (state.running?.managed) return ui.toast.show("Se está llenando la memoria", failure(fixWith("Ver qué hacer", menu), { detail: event.message }));
+      return menu();
     },
-    "open-quick": (event) => openQuick().catch((err) => ui.toast.show(err.message, { error: true })),
+    "open-quick": function quick() {
+      return openQuick().catch((err) => ui.toast.show("No pude abrir el menú rápido", failure(retry(quick), { err })));
+    },
     "emulator-update-done": (event) => {
       sound.play(event.ok ? "select" : "error");
-      return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
+      if (event.ok) return ui.toast.show(event.message, { tone: "success" });
+      return ui.toast.show("No pude actualizar el emulador",
+        failure(fixWith("Ver los emuladores", () => runCommand({ type: "emulators" })), { detail: event.message }));
     },
     "update-done": (event) => {
       sound.play(event.ok ? "select" : "error");
-      return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
+      if (event.ok) return ui.toast.show(event.message, { tone: "success" });
+      return ui.toast.show("No pude actualizar Orbital", failure(retry(() => runCommand({ type: "update-apply" })), { detail: event.message }));
     },
     // volvió de suspender: ponerse al día
     resumed: (event) => {
@@ -88,7 +95,15 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
     },
     toast: (event) => {
       const voiceAction = voiceToastAction(event.action);
-      ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,
+      // Lo que no salió (ok: false), en rojo y con su arreglo (OT-3): el que manda el servidor (`fix`: { label, command }) o,
+      // si no trae, el Diagnóstico, donde está qué pasó. Su texto ya viene escrito para la pantalla (no es un error crudo).
+      if (event.ok === false && !voiceAction && !event.voice) {
+        const fix = event.fix?.label && event.fix?.command ? fixWith(event.fix.label, () => runCommand(event.fix.command))
+          : fixWith(OPEN_DIAGNOSTICS, () => runCommand({ type: "diagnostics" }));
+        ui.toast.show(event.message, failure(fix, { detail: event.detail || "" })); // aviso-del-servidor
+        return pollStatus();
+      }
+      ui.toast.show(event.message, { tone: event.tone || "", voice: !!event.voice, countdown: event.countdown || 0,
         detail: event.detail || "", ...(voiceAction ? offerVoiceAction(voiceAction) : {}) });
       if (event.voice) ui.status.pulseAlexa();
       pollStatus();
@@ -164,7 +179,8 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
       if (traktFrom()) traktFrom().done = true;
       ui.traktLink.close({ cancel: false });
       sound.play("select");
-      ui.toast.show("OneDrive conectado · Ahora elige la carpeta de tus videos en Ajustes › Cuentas", { tone: "success" });
+      ui.toast.show("OneDrive conectado · Ahora elige la carpeta de tus videos en Ajustes › Cuentas", { tone: "success",
+        fix: openSettings(() => runCommand({ type: "settings", page: "accounts" })) });
       api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
       return;
     },
@@ -222,7 +238,10 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
       } else if (event.crashed) {
         // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
         sound.play("error");
-        ui.toast.show(crashMessage(event), { error: true });
+        const item = findItem(event.id);
+        const fix = item ? retry(() => runCommand({ type: "launch", id: item.id }))
+          : fixWith(OPEN_DIAGNOSTICS, () => runCommand({ type: "diagnostics" }));
+        ui.toast.show(crashMessage(event), failure(fix));
       } else {
         // Con su portada y el tiempo jugado en su propio renglón (antes una sola frase larga).
         const { heading, message } = closedSummary(event);

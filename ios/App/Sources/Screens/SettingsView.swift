@@ -10,7 +10,7 @@ struct SettingsView: View {
     private func sayFromSettings(_ phrase: String) {
         Task { @MainActor in
             let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(phrase)
-            let text = outcome.speech.isEmpty ? (outcome.ok ? "Listo." : "No se pudo.") : outcome.speech
+            let text = outcome.speech.isEmpty ? (outcome.ok ? "Listo." : "No llegó a tu Orbital") : outcome.speech
             env.notify(text, tone: outcome.ok ? .success : .warn)
         }
     }
@@ -182,9 +182,11 @@ struct SettingsView: View {
             .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
             .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
+                Button("Dejarla conectada", role: .cancel) {}
             } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
             .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
+                Button("Dejarla conectada", role: .cancel) {}
             } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
             .sheet(isPresented: $editingAvatar) { profileSheet }
     }
@@ -460,7 +462,7 @@ struct SettingsView: View {
                 scrobbleRow(model)
             case .failed(let message):
                 DSNotice(verbatim: env.message(message), tone: .error)
-                Button("Volver a intentar") { Task { await model.linkTrakt() } }
+                Button("Reintentar") { Task { await model.linkTrakt() } }
             }
             // Fuera del switch: escribir el Client ID cambia el estado (sin app → por conectar) sin perder el foco del campo.
             switch model.trakt {

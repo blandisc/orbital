@@ -34,7 +34,7 @@ struct SaveView: View {
             TextField("Nombre", text: $newName)
             Button("Crear") { let name = newName.trimmingCharacters(in: .whitespacesAndNewlines); newName = ""; Task { await m.createList(named: name) } }
                 .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("Cancelar", role: .cancel) { newName = "" }
+            Button("Ahora no", role: .cancel) { newName = "" }
         } message: { Text("Se crea en Trakt (privada) y este título entra en ella.") }
     }
 

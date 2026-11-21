@@ -74,6 +74,7 @@ struct LetterboxdSettings: View {
         }
         .confirmationDialog("¿Desconectar Letterboxd?", isPresented: $confirmDisconnect, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
             Button("Desconectar", role: .destructive) { model.disconnect(); typed = "" }
+            Button("Dejarlo conectado", role: .cancel) {}
         }
     }
 

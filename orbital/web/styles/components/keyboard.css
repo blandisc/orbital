@@ -15,7 +15,7 @@
 .keyboard__key:active { transform: scale(var(--press-scale)); }
 .keyboard__key--wide { font-size: var(--type-body); font-weight: var(--type-body-weight); color: var(--color-text-muted); }
 .keyboard__key--action { color: var(--color-text-muted); }
-.keyboard__key--go { background: var(--color-glass-selected); color: var(--color-text); font-weight: var(--weight-bold); }
+.keyboard__key--go { background: var(--color-glass-selected); color: var(--color-text); font-weight: var(--weight-semibold); }
 .keyboard__key--on { color: var(--color-accent); box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
 /* Dictando: la tecla «Escuchando…» respira con el acento, como la línea del campo. */
 .keyboard__key--on:has(.icon) { color: var(--color-accent); animation: listening-key var(--duration-breathe) var(--ease-float) infinite; }

@@ -36,7 +36,7 @@ export function inCloud(thing, service) {
   return out;
 }
 
-/** Stremio conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+/** Stremio conectado: desconectar pide confirmar (y «Dejarlo conectado» va primero). */
 // --- Real-Debrid («La TV sin Stremio», corte S2) --------------------------------------------------------------------
 // Las palabras son las de design/vocabulario.json (las mismas que el iPhone).
 const DEBRID_PROBLEMS = {
@@ -212,7 +212,7 @@ export function debridSignupMenu(service) {
     qr: `/api/debrid/qr.svg?service=${s}`, qrLabel: `Código QR de ${c.site}`,
     options: [
       { icon: "key", label: "Ya la tengo: conectar", hint: "Pegar tu clave aquí o desde cualquier celular", command: { type: "rd-service", service: s } },
-      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "close", label: "Ahora no", command: { type: "back" } },
     ],
   };
 }
@@ -263,10 +263,10 @@ function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
       // Fernando, 4 nov: el camino visible para regresar la fila que ocultaste (y para ocultarla desde aquí).
       { icon: rowHidden ? "hide" : "show", label: "Fila en Películas y series", hint: CLOUD_ROW, value: rowHidden ? "Oculta" : "Se ve",
         command: { type: "rd-row", hide: !rowHidden, from: "settings" } },
-      !problem && rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
+      !problem && rd.expires && { icon: "premium", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
-      { icon: "refresh", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone",
+      { icon: "key", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone",
         command: { type: "rd-connect", service: cloudOf(rd?.service) } },
       which,
       explainRow("realdebrid"), // PT13: los cuatro puntos del iPhone
@@ -291,13 +291,13 @@ export function debridForm(service) {
   return { ...inCloud(DEBRID_FORM, s), id: s, remote: s };
 }
 
-/** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «Cancelar» va primero. */
+/** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «No usarla» va primero. */
 export function debridRemoteMenu(event) {
   return {
     title: event.account ? `¿Usar la cuenta ${event.account}?` : "¿Usar esta clave?",
-    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar. Si cierras, se borra.",
+    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige «No usarla». Si cierras, se borra.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "rd-remote-cancel", code: event.code } },
+      { icon: "close", label: "No usarla", command: { type: "rd-remote-cancel", code: event.code } },
       { icon: "check", label: "Usar", command: { type: "rd-remote-confirm", code: event.code } },
     ],
     // K1-A (Fernando, 3 nov): cerrar sin contestar (B, tocar fuera) la borra; antes se quedaba en memoria hasta 20 min.
@@ -395,7 +395,7 @@ function debridCancelWords(command) {
       title: "¿Quitarlo de tu Real-Debrid?",
       subtitle: `${command.title || "El archivo"} se borra de tu cuenta. Para verlo otra vez habría que pedirlo de nuevo.`,
       options: [
-        { icon: "close", label: "Cancelar", command: { type: "back" } },
+        { icon: "close", label: "Dejarlo en tu Real-Debrid", command: { type: "back" } },
         { icon: "trash", label: "Quitar", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true, ...(command.service ? { service: command.service } : {}) } },
       ],
     };
@@ -496,18 +496,18 @@ function debridRequestWords(req, { account = null, now = Date.now(), instead = n
         ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, ...(req.service ? { service: req.service } : {}) } }
         : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true, ...(req.service ? { service: req.service } : {}) } },
       explainRow("requests"), // PT9: como el iPhone
-      !going && { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
+      !going && { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Dejarlo en tu Real-Debrid" : "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
   };
 }
 
-/** «¿Desconectar Stremio?» (TV-17): «Cancelar» primero. */
+/** «¿Desconectar Stremio?» (TV-17): «Dejarlo conectado» primero. */
 export function stremioLogoutMenu(command = {}) {
   return {
     title: "¿Desconectar Stremio?",
     subtitle: command.backup ? "No se pierde nada: lo tuyo ya está en Trakt." : "Dejarás de ver tu Seguir viendo y Mi lista de Stremio aquí.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "close", label: "Dejarlo conectado", command: { type: "back" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
     ],
   };
@@ -528,7 +528,7 @@ export function stremioAccountMenu(settings = {}) {
           command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
       { icon: "exit", label: "Desconectar sin pasarla", danger: true, hint: "Dejarás de ver tu Mi lista y tu Seguir viendo de Stremio",
         command: { type: "stremio-logout-ask", backup: false } },
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo conectado", command: { type: "close" } },
     ],
   };
 }
@@ -612,7 +612,7 @@ export function addonMenu(entry, { first = false, last = false, lastSource = fal
       !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
       entry.origin !== "orbital" && { icon: "close", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
         command: { type: "addon-change", id: entry.id, action: "remove", name: entry.name } },
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
   };
 }
@@ -701,7 +701,7 @@ function torrentioWords(entry, languages = [], service) {
         command: set({ sizefilter: nextOf(TORRENTIO_SIZES, TORRENTIO_SIZES.some(([v]) => v === o.sizefilter) ? o.sizefilter : undefined) }) },
       { icon: "search", label: "Sitios donde busca", value: `${sites} de ${TORRENTIO_PROVIDERS.length}`,
         command: { type: "torrentio-providers" } },
-      !isRecommended(o) && { icon: "refresh", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, Screener ni sin calidad",
+      !isRecommended(o) && { icon: "undo", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, Screener ni sin calidad",
         command: { type: "torrentio-set", options: { ...TORRENTIO_RECOMMENDED, verbatim: o.verbatim }, reopen: "main" } },
       explainRow("torrentio"),
     ].filter(Boolean),
@@ -734,7 +734,7 @@ export function torrentioLanguageMenu(entry, key) {
       i > 0 && { icon: "back", label: "Subir", command: { type: "torrentio-set", options: { ...o, language: moved(i - 1) }, reopen: "languages", back: true } },
       i < mine.length - 1 && { icon: "chevron", label: "Bajar", command: { type: "torrentio-set", options: { ...o, language: moved(i + 1) }, reopen: "languages", back: true } },
       { icon: "close", label: "Quitar", danger: true, command: { type: "torrentio-set", options: { ...o, language: mine.filter((k) => k !== key) }, reopen: "languages", back: true } },
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
   };
 }

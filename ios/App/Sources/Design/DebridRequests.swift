@@ -207,7 +207,7 @@ extension View {
         confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?", cloud: service, locale: locale) : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta (cancelar o quitar un pedido), como la TV
             if finished {
                 Button("Quitar", role: .destructive, action: perform)
-                Button("Cancelar", role: .cancel) {}
+                Button("Dejarlo como está", role: .cancel) {}
             } else {
                 Button("Cancelar pedido", role: .destructive, action: perform)
                 Button("Seguir esperando", role: .cancel) {}

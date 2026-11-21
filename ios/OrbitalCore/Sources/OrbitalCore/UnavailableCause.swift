@@ -99,7 +99,7 @@ public enum UnavailableCause: Equatable, Sendable {
     public static func label(_ action: Action, _ tr: (String) -> String = { $0 }) -> String {
         switch action {
         case .renew: tr("Renovar")
-        case .settings: tr("Ajustes")
+        case .settings: tr("Abrir Ajustes")   // como la TV y `DegradedState` (20 nov 2026)
         case .retry: tr("Reintentar")
         case .otherVersion: tr("Elegir otra versión")
         case .request: tr("Pedir a la nube")

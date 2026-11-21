@@ -146,7 +146,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
       card.dataset.focusId = `game:${i}`;
       return card;
     }, { focusIdOf: (i) => `game:${i}` }) : EmptyState(filter === "favorites"
-      ? { icon: "star", title: "Aún no tienes favoritos aquí", text: "Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos." }
+      ? { icon: "heart", title: "Aún no tienes favoritos aquí", text: "Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos." }
       : c?.folder !== undefined
         ? { icon: "folder", title: "Ya tienes el emulador", text: `Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.` }
         : { icon: "gamepad", title: "Nada por aquí" }));

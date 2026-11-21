@@ -1,0 +1,33 @@
+{
+  "_": "Reglas comunes del sistema base (D1-B · DB-A, Fernando, 20 nov 2026). Se escriben aquí, una vez; copiar.sh las lleva a cada repo (tools/sistema-base/). Cada repo pone lo suyo en sistema-base.json: dónde buscar, excepciones con su porqué y la cuenta de lo heredado (trinquete). Guía: docs/sistema-base/.",
+  "version": 1,
+  "SB-1": {
+    "nombre": "Botones y avisos que dicen qué hacen",
+    "reglas_guia": ["V1", "V6", "C3", "C5", "C9", "X1-B"],
+    "porque": "Un botón dice verbo y objeto («Elegir plataformas», no «Continuar»); el otro botón de una confirmación dice lo que protege («Conservar la lista», no «Cancelar»); un error dice qué pasó y su arreglo; una carga dice qué carga.",
+    "prohibidos": [
+      "Aceptar", "OK", "Ok", "Okay", "Continuar", "Siguiente", "Aplicar", "Enviar", "Mandar", "Omitir", "Saltar",
+      "No gracias", "No, gracias", "Cancelar", "Algo salió mal", "Ocurrió un error", "Error", "Cargando", "Cargando…", "Cargando...",
+      "Continue", "Next", "Skip", "Submit", "Apply", "Cancel", "Something went wrong", "Loading", "Loading…", "Loading..."
+    ]
+  },
+  "SB-2": {
+    "nombre": "Escala de espacios",
+    "reglas_guia": ["B1", "D3-B"],
+    "porque": "Solo siete pasos de espacio; si un aire no cae en la escala, se usa el paso más cercano, nunca un número nuevo.",
+    "escala": [0, 4, 8, 16, 24, 32, 48, 64],
+    "escala_web_extra": [96, 128]
+  },
+  "SB-3": {
+    "nombre": "Letra mínima",
+    "reglas_guia": ["B4"],
+    "porque": "Nada se escribe por debajo de 12 (pt en Apple, px en web), widgets incluidos.",
+    "minimo": 12
+  },
+  "SB-4": {
+    "nombre": "Toque mínimo",
+    "reglas_guia": ["B13"],
+    "porque": "Todo lo que se toca responde en 44 × 44 o más, aunque se dibuje más chico.",
+    "minimo": 44
+  }
+}

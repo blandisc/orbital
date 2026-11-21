@@ -111,6 +111,7 @@ struct HistoryScreen: View {
         }
         .confirmationDialog(Text("¿Quitar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
             Button("Quitar", role: .destructive) { cleanRepeats() }
+            Button("Dejarlo como está", role: .cancel) {}
         } message: { Text("De cada título se queda la primera vista.") }
     }
 

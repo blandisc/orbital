@@ -209,7 +209,7 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
     return [
       adjustable(o) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" },
       // El pie dice lo mismo que el botón del renglón («Ver qué ha oído», «Conectar Trakt»), si lo tiene (`action`).
-      o?.command && o.command.type !== "stay" && { glyph: g.select, label: o.command.type === "setting" ? "Siguiente" : o.action || "Abrir" },
+      o?.command && o.command.type !== "stay" && { glyph: g.select, label: o.command.type === "setting" ? "Siguiente opción" : o.action || "Abrir" },
       { glyph: g.section, label: "Categoría", secondary: true },
       { glyph: g.back, label: "Categorías", end: true },
     ].filter(Boolean);

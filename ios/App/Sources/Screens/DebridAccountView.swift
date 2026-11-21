@@ -234,7 +234,7 @@ struct DebridAccountView: View {
                         .accessibilityIdentifier("debrid-remove-here")
                     Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
                         .accessibilityIdentifier("debrid-remove-everywhere")
-                    Button("Cancelar", role: .cancel) {}
+                    Button("Conservar la clave", role: .cancel) {}
                 } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de \(model.service.name) no se toca.") }
         } header: { Text("Tu clave") } footer: { Self.keyFooter(model.service) }
         .listRowBackground(DS.surface)

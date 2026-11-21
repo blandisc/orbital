@@ -82,7 +82,7 @@ struct GuideCloudScene: View {
             poster(1).frame(width: Self.mini.width, height: Self.mini.height)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                 .overlay(alignment: .topTrailing) {
-                    Image(systemName: "checkmark").font(DS.styled(.caption2).weight(.heavy)).foregroundStyle(DS.onPrimary)
+                    Image(systemName: "checkmark").font(DS.styled(.caption).weight(.heavy)).foregroundStyle(DS.onPrimary)
                         .frame(width: Self.check, height: Self.check).background(DS.success, in: Circle())
                         .overlay(Circle().stroke(DS.bg, lineWidth: 2.5))
                         .offset(x: 8, y: -8)
@@ -204,7 +204,7 @@ enum GuideCloudReady {
                         .frame(width: DS.Guide.readyPoster.width, height: DS.Guide.readyPoster.height)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .overlay(alignment: .topTrailing) {
-                            Image(systemName: "bolt.fill").font(DS.styled(.caption2).weight(.bold)).foregroundStyle(DS.onPrimary)
+                            Image(systemName: "bolt.fill").font(DS.styled(.caption).weight(.bold)).foregroundStyle(DS.onPrimary)
                                 .frame(width: 22, height: 22).background(DS.fresh, in: Circle()).overlay(Circle().stroke(DS.bg, lineWidth: 2.5))   // ds-exception: dibujo de la escena de la guía
                                 .offset(x: 7, y: -7).scaleEffect(max(0, M.spring(t - 0.62 - 0.08 * Double(i), 0.55, 0.45)))
                         }

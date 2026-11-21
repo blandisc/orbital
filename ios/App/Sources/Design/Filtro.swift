@@ -35,7 +35,7 @@ enum FilterPage: String, Hashable, CaseIterable, Identifiable {
     /// Su color (solo en detalles). Dónde verla lleva el azul de Orbital; Estudios, blanco: el color lo ponen sus logos.
     var hue: Color {
         switch self {
-        case .genre: DS.Filter.coral; case .era, .awards: DS.Filter.amber; case .length: DS.Filter.sky; case .rating: DS.Filter.lime
+        case .genre: DS.Filter.coral; case .era, .awards: DS.Filter.rose; case .length: DS.Filter.sky; case .rating: DS.Filter.lime
         case .fame: DS.Filter.meadow; case .place: DS.orbitalBlue; case .origin: DS.Filter.lavender; case .studio: DS.text
         }
     }
@@ -180,7 +180,7 @@ struct FilterArt: View {
                 // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más» y el logo de TMDB).
                 HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
-                    Text(verbatim: FilterText.number(f.minRating ?? f.minLetterboxd ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
+                    Text(verbatim: FilterText.number(f.minRating ?? f.minLetterboxd ?? 0)).font((mini ? DS.TextRecipe.labelLarge : DS.TextRecipe.title).font).monospacedDigit().foregroundStyle(page.hue)
                 }
             case .fame where f.fame != .any:
                 // Con una elegida, el cuadro chiquito con su esquina; sin nada, su ícono de línea como los demás (antes, cuatro
@@ -327,8 +327,8 @@ struct MiniRuler: View {
                     Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Stroke.regular, height: geo.size.height / 2).offset(x: x(d))
                 }
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                    .fill(DS.Filter.amberFill)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.amber, lineWidth: DS.Stroke.selected))
+                    .fill(DS.Filter.roseFill)
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.rose, lineWidth: DS.Stroke.selected))
                     // Siempre visible y dentro de la regla (los años muy recientes, como Estrenos, quedaban fuera de la orilla).
                     .frame(width: windowWidth, height: geo.size.height)
                     .offset(x: min(x(years.lowerBound), geo.size.width - windowWidth))
@@ -422,7 +422,7 @@ struct FilterDoor: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("browse-filters")
                 if !context.filter.isEmpty {
-                    DSIconButton(symbol: "xmark", label: "Limpiar la búsqueda avanzada", size: .regular, action: clear)
+                    DSIconButton(symbol: DS.Symbol.remove, label: "Limpiar la búsqueda avanzada", size: .regular, action: clear)
                         .accessibilityIdentifier("browse-filters-clear")
                 }
             }
@@ -531,7 +531,7 @@ struct FilterSummarySquare: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            if let remove { Button("Quitar", systemImage: "xmark", role: .destructive, action: remove) }
+            if let remove { Button("Quitar", systemImage: DS.Symbol.remove, role: .destructive, action: remove) }
         }
         .accessibilityElement(children: .combine)
         .accessibilityActions {

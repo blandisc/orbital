@@ -15,7 +15,7 @@
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
   border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
 }
-.chip--good { color: var(--color-live); }
+.chip--good { color: var(--color-success); } /* OT-6: «Listo», «Descargado», «Al instante» en verde, como el iPhone (DS.success) */
 .chip--warn { color: var(--color-warning); }
 
 /* Badge: una etiqueta que llama la atención («3 nuevos», «Recomendada»). Clara sobre lo oscuro. */
@@ -45,7 +45,7 @@
    más claro del arte (Hades a 1280 × 800). Las distingue la elegida: negrita y su raya. */
 .pill--tab { position: relative; padding-inline: var(--space-2); background: transparent; box-shadow: none; color: var(--color-text); text-shadow: var(--shadow-text-strong); }
 .is-focused.pill--tab { text-shadow: none; }
-.pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-bold); background: transparent; }
+.pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-semibold); background: transparent; } /* D2-B: la marca la raya, no la negrita */
 .pill--tab.pill--on::after {
   content: ""; position: absolute; left: var(--space-2); right: var(--space-2); bottom: 0; height: var(--tab-mark);
   border-radius: var(--tab-mark); background: currentColor;
@@ -99,6 +99,12 @@
 .is-focused.sheet__item .segmented__item { color: var(--inverse-fg); }
 .is-focused.sheet__item .segmented__item.pill--on { background: var(--inverse-fg); color: var(--inverse-bg); }
 [data-input="touch"] .segmented__item { min-height: var(--touch-target); }
+/* OT-8 (20 nov 2026): con el mouse (y con el dedo en la orilla), la cápsula (--pill-height, 40 px) y el segmentado (32 px) se
+   tocan en al menos --touch-target (~44 px) sin verse distintos: una capa invisible más alta que ellos, centrada encima. */
+.pill, .segmented__item { position: relative; }
+.pill::before, .segmented__item::before {
+  content: ""; position: absolute; inset-inline: 0; top: 50%; height: max(100%, var(--touch-target)); transform: translateY(-50%);
+}
 
 /* SidePanel: un panel a la derecha sobre un velo (los menús —sheet— y las fuentes —sources—). Comparten el velo que se funde, el
    marco y cómo entra y sale; cada uno pone su ancho, su relleno y su contenido. El marco es vidrio que flota separado de las
@@ -209,7 +215,7 @@
 /* El nombre de una plataforma dentro de un texto (mosaico: «N.º 1 en Prime Video»): con el color y el carácter de su marca;
    el resto del texto no cambia. Netflix, apretado y en negrita; Prime Video en minúsculas, como su logo; Apple TV+ con el
    color del texto y seminegrita, como Apple. */
-.brand-name { font-weight: var(--weight-bold); }
+.brand-name { font-weight: var(--weight-bold); } /* D2-B: el carácter de la marca (Netflix), no un título */
 .brand-name--netflix { color: var(--brand-netflix); letter-spacing: var(--tracking-tight); }
 .brand-name--prime { color: var(--brand-prime); text-transform: lowercase; }
 .brand-name--disney { color: var(--brand-disney); }

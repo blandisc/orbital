@@ -152,8 +152,8 @@ extension PlayerScreen {
                 .frame(minHeight: DS.Size.touchTarget)
             } else {
                 HStack(spacing: DS.Space.s2) {
-                    Button { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .media } } label: { Image(systemName: "chevron.left") }
-                        .buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("version-back")
+                    DSIconButton(symbol: "chevron.backward", label: "Atrás", size: .regular) { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .media } }
+                        .accessibilityIdentifier("version-back")
                     Text("Versión").recipe(.cardTitle)
                     Spacer()
                 }
@@ -255,7 +255,7 @@ extension PlayerScreen {
         let name = LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language, language)
         // En el idioma de la app (no el del sistema: salía «1 of 3» con la app en español).
         let title = at.map { String(format: Strings.tr("%@ · %lld de %lld", language: env.services.appSettings.uiLanguage), name, $0 + 1, versions.count) } ?? name
-        guard let at else { return (title, Text("Cargando…")) }
+        guard let at else { return (title, Text("Cargando subtítulos")) }
         let v = versions[at]
         if v.fromVideo { return (title, Text("Del video")) }
         if v.saved != nil { return (title, Text("Guardado con la descarga")) }

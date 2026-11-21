@@ -182,7 +182,8 @@ public enum DesignTokens {
     }
 
     /// Tamaños de letra (se escalan con Dynamic Type, que hace de «Tamaño del texto»).
-    public enum TextSize { public static let xs = 11.0, sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
+    /// Sin `xs` (11 pt): nada se escribe en 11 (OI-5, 20 nov 2026); lo más chico es `sm`. `DesignRulesTests+Legible` lo cuida.
+    public enum TextSize { public static let sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
     public enum Opacity {
         public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9

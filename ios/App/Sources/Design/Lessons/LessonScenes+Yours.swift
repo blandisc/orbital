@@ -74,7 +74,7 @@ struct LessonYoursHandoff: View {
             .sceneAt(180, 60).scenePut(pad.o * M.lerp(0.55, 1, M.smooth(1.1, 1.35, t)), 0, pad.y)
             LessonCaption(text: Text("iPhone"), w: 92).sceneAt(40, 246).opacity(phone.o)
             LessonCaption(text: Text("iPad"), w: 190).sceneAt(180, 206).opacity(pad.o)
-            LessonChip { Text("Sigue en el minuto \(Text(verbatim: "34").foregroundStyle(DS.fresh).bold())") }
+            LessonChip { Text("Sigue en el minuto \(Text(verbatim: "34").foregroundStyle(DS.fresh).fontWeight(.semibold))") }
                 .sceneAt(196, 236).scenePut(M.clamp((t - 1.25) / 0.2), 0, (1 - chip) * 8)
         }
     }

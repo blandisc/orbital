@@ -20,7 +20,7 @@ struct OnboardingWin: View {
 
     var body: some View {
         let model = guide.model
-        GuidePage(title: nil, step: step, primary: Text("Continuar"), next: next, skipGuide: skip, back: back) {
+        GuidePage(title: nil, step: step, primary: guide.model.ahead(after: .win), next: next, skipGuide: skip, back: back) {
             WinMosaic(tiles: model.winTiles, seedID: model.tonight?.seedID, start: start)
                 .padding(.horizontal, -DS.Space.s6)
             TimelineView(.animation(minimumInterval: DS.Welcome.introFrame, paused: reduceMotion)) { ctx in

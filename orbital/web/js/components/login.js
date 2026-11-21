@@ -22,7 +22,7 @@ const LETTERS = [[..."1234567890"], [..."qwertyuiop"], [..."asdfghjklñ"], [..."
 const SYMBOLS = [[..."1234567890"], [..."!#$%&*+=?/"], [..."-'\"():;,~^"], [..."<>[]{}|\\`€"]];
 const ACTIONS = [
   { key: "shift", label: "Mayúsculas", span: 2 }, { key: "symbols", label: "Símbolos", span: 2 },
-  { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente", span: 2, tone: "go" },
+  { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente campo", span: 2, tone: "go" },
 ];
 
 const STREMIO = {
@@ -67,7 +67,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
   const last = () => active === fields.length - 1;
   const grid = () => [...(symbols ? SYMBOLS : LETTERS).map((r) => r.map((k) => ({ key: k, label: shift && !symbols ? k.toUpperCase() : k }))),
     ACTIONS.map((a) => ({ ...a, on: (a.key === "shift" && shift) || (a.key === "symbols" && symbols),
-      ...(a.key === "next" ? { label: last() ? form.submitLabel : "Siguiente" } : {}) }))];
+      ...(a.key === "next" ? { label: last() ? form.submitLabel : "Siguiente campo" } : {}) }))]; // X1-B: con su objeto
 
   function renderFields() {
     fields.forEach((field, i) => {

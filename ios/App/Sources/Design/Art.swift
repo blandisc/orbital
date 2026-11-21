@@ -200,7 +200,7 @@ struct TitleLogo: View {
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
-        Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)).foregroundStyle(DS.text)
+        Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font).foregroundStyle(DS.text)
             .lineLimit(size == .hero ? 2 : 1).multilineTextAlignment(centered ? .center : .leading)
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
     }

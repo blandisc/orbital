@@ -5,28 +5,32 @@
 import { api } from "../core/api.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
 import { beforePlayMenu, keepBothMenu, switchMenu as closeAndOpenMenu } from "../core/menus.js";
+import { failure, fixWith, retry } from "../core/notices.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
 const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
 
-/** Lo que dice el aviso cuando no arrancó: el servidor manda una frase larga; aquí, dos cortas (revisión 2, punto 11:
- *  «Esa versión ya no está disponible; vuelve a abrir la lista» tapaba las tarjetas de Elegir versión). */
-export function playProblem(err) {
-  const message = err?.message || "No pude abrirlo";
-  if (/versión ya no está disponible/i.test(message)) return ["Esa versión ya no está.", "Elige otra de la lista."];
-  return [message, ""];
+/** Lo que dice el aviso cuando no arrancó, con palabras de Orbital (OT-3): el título dice qué pasó; lo que dijo el servidor,
+ *  si sirve, en el detalle. `gone`: la versión elegida ya no está (revisión 2, punto 11: «Esa versión ya no está disponible;
+ *  vuelve a abrir la lista» tapaba las tarjetas de Elegir versión), y el arreglo es usar la recomendada. */
+export function playProblem(err, title = "") {
+  const message = err?.message || "";
+  if (/versión ya no está disponible/i.test(message)) return { title: "Esa versión ya no está", detail: "Elige otra de la lista", gone: true };
+  return { title: title ? `No pude abrir ${title}` : "No pude abrirlo", detail: "", gone: false };
 }
 
-export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
+export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused(),
+  findItem = () => null }) {
   // «¿Cerrar X?» o, si en Ajustes dijiste que abrir algo no cierra lo anterior, «¿Abrir Y también?» (no promete cerrar).
   const switchMenu = (args) => (state.settings?.close_previous === false && args.running.title !== args.title
     ? keepBothMenu(args) : closeAndOpenMenu(args));
-  /** Sin internet, lo que lo necesita lo dice al instante (antes la pantalla de carga se quedaba y luego fallaba). */
-  function offlineBlock(title) {
+  /** Sin internet, lo que lo necesita lo dice al instante (antes la pantalla de carga se quedaba y luego fallaba).
+   *  `again`: lo mismo otra vez, para «Reintentar» cuando vuelva la conexión. */
+  function offlineBlock(title, again) {
     if (state.online !== false) return false;
     sound.play("error");
-    ui.toast.show("Sin internet", { error: true, detail: `${title || "Esto"} necesita conexión · Tus juegos siguen aquí` });
+    ui.toast.show("Sin internet", failure(retry(again), { detail: `${title || "Esto"} necesita conexión · Tus juegos siguen aquí` }));
     return true;
   }
 
@@ -44,10 +48,12 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     return playStremio(play);
   }
 
-  async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false,
-    own = false, file_id: fileId = null, remember = false }) {
+  async function playStremio(play) {
+    const { kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false,
+      own = false, file_id: fileId = null, remember = false } = play;
+    const again = () => playStremio(play);
     const local = !!videoId && !!state.downloaded?.has(videoId); // lo descargaste: del disco, también sin internet
-    if (!local && offlineBlock(title)) return;
+    if (!local && offlineBlock(title, again)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     state.launchingId = "media:player";
@@ -76,7 +82,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
         ui.toast.show(`${title} está tardando`, { detail: "Se abrirá solo en cuanto esté listo" });
         const release = () => { if (state.launchingTitle === title) { state.launchingTitle = null; state.launchLockedUntil = 0; } };
         const giveUp = setTimeout(release, 180_000);
-        request.then(() => pollStatus(), (err) => { sound.play("error"); ui.toast.show(err.message, { error: true }); })
+        request.then(() => pollStatus(), (err) => { sound.play("error"); ui.toast.show(`No pude abrir ${title}`, failure(retry(again), { err })); })
           .finally(() => { clearTimeout(giveUp); release(); });
         return;
       }
@@ -96,8 +102,10 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       state.launchingTitle = null;
       ui.launch.hide();
       sound.play("error");
-      const [text, detail] = playProblem(err);
-      ui.toast.show(text, { error: true, detail });
+      const problem = playProblem(err, title);
+      // La versión ya no está: la recomendada (sin `source`); si no, lo mismo otra vez.
+      const fix = problem.gone ? fixWith("Usar la recomendada", () => playStremio({ ...play, source: null })) : retry(again);
+      ui.toast.show(problem.title, failure(fix, { err: problem.detail ? null : err, detail: problem.detail }));
     }
   }
 
@@ -111,8 +119,10 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     return playTrailer(play);
   }
 
-  async function playTrailer({ kind, id, title, item, keep = false }) {
-    if (offlineBlock(`El tráiler de ${title}`)) return;
+  async function playTrailer(play) {
+    const { kind, id, title, item, keep = false } = play;
+    const again = () => playTrailer(play);
+    if (offlineBlock(`El tráiler de ${title}`, again)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     state.launchingId = "media:player";
@@ -137,7 +147,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       state.launchingTitle = null;
       ui.launch.hide();
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show(`No pude abrir el tráiler de ${title}`, failure(retry(again), { err }));
     }
   }
 
@@ -147,7 +157,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
    */
   async function playChannel(channel, category = "todos", { confirmed = false, keep = false } = {}) {
     if (!channel) return;
-    if (offlineBlock(channel.name)) return;
+    const again = () => playChannel(channel, category, { confirmed: true, keep });
+    if (offlineBlock(channel.name, again)) return;
     const running = !confirmed && gameInTheWay(state.running, "media:player");
     if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category } }));
     if (!takeLaunchLock(state)) return;
@@ -173,7 +184,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       state.launchingTitle = null;
       ui.launch.hide();
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show(`No pude sintonizar ${channel.name}`, failure(retry(again), { err }));
     }
   }
 
@@ -184,11 +195,17 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       const res = await api.resume();
       if (res.ok === false) { // la ventana ya no existe (se cerró por su cuenta): no dejar A muerto
         sound.play("error");
-        ui.toast.show(`No encuentro la ventana de ${state.running?.title || "lo que estaba abierto"}`, { error: true, detail: "Ábrelo otra vez" });
+        const gone = state.running;
+        const item = gone && findItem(gone.id);
+        // «Abrir otra vez» (lo que decía el detalle, ahora en el botón); sin el juego a la mano, volver a buscar su ventana.
+        const fix = item ? fixWith("Abrir otra vez", () => { if (state.running?.id === item.id) state.running = null; return launch(item, null, { confirmed: true }); })
+          : retry(resumeRunning);
+        ui.toast.show(`No encuentro la ventana de ${gone?.title || "lo que estaba abierto"}`, failure(fix, { detail: "Se cerró por su cuenta" }));
         pollStatus();
       }
     } catch (err) {
-      ui.toast.show(err.message, { error: true });
+      sound.play("error");
+      ui.toast.show(`No pude regresar a ${state.running?.title || "lo que estaba abierto"}`, failure(retry(resumeRunning), { err }));
     }
   }
 
@@ -213,7 +230,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       return playStremio({ kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item });
     }
     if (isWatchable(item)) return openTitle(item); // del catálogo: primero la ficha
-    if (needsInternet(item) && offlineBlock(item.title)) return; // la nube, una app web, instalar de Steam
+    const again = () => launch(item, runner, { confirmed, keep, roomChecked });
+    if (needsInternet(item) && offlineBlock(item.title, again)) return; // la nube, una app web, instalar de Steam
     if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
     const inTheWay = !confirmed && gameInTheWay(state.running, item.id);
     if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));
@@ -243,13 +261,13 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       // Sin conexión con Orbital tampoco: no es culpa del emulador.
       const alt = err.status === 404 || err.network ? null : alternativeRunner(item);
       if (alt && alt.id !== runner) {
-        return openMenu({ title: err.message, options: [
+        return openMenu({ title: `No pude abrir ${item.title}`, subtitle: err.message, options: [
           { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },
           { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
           { icon: "close", label: "Entendido", command: { type: "close" } },
         ] });
       }
-      ui.toast.show(err.message, { error: true });
+      ui.toast.show(`No pude abrir ${item.title}`, failure(retry(again), { err }));
     } finally {
       inFlight = false;
     }

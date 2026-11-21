@@ -55,9 +55,9 @@ struct WatchedWhenSheet: View {
                     }
                 }
                 if alreadyWatched {
-                    WatchedOption(symbol: "arrow.counterclockwise", title: Text("La vi otra vez"), detail: Text("Otra vista en tu historial, ahora mismo")) { finish { again?() } }
+                    WatchedOption(symbol: "arrow.clockwise", title: Text("La vi otra vez"), detail: Text("Otra vista en tu historial, ahora mismo")) { finish { again?() } }
                         .accessibilityIdentifier("watched-again")
-                    WatchedOption(symbol: "xmark.circle", title: Text("Quitar de vistas"), detail: watchedDetail) { finish { remove?() } }
+                    WatchedOption(symbol: DS.Symbol.remove, title: Text("Quitar de vistas"), detail: watchedDetail) { finish { remove?() } }
                         .accessibilityIdentifier("watched-remove")
                 } else if let asking {
                     (earlier == 1 ? Text("El episodio anterior tampoco lo has visto.") : Text("Los \(earlier) episodios anteriores tampoco los has visto."))

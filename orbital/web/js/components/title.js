@@ -736,7 +736,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       avail.hidden = true; // las de la ficha anterior no se quedan
       mount(avail);
       cloud.hidden = true;
-      status.textContent = "Cargando…";
+      status.textContent = "Cargando la ficha…";
       status.classList.remove("title__status--error");
       status.hidden = false;
       render();

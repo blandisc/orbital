@@ -27,7 +27,7 @@ struct OnboardingTV: View {
     var body: some View {
         let connected = guide.model.orbitalConfigured
         GuidePage(title: nil, step: step,
-                  primary: connected ? Text("Continuar") : Text("Sí, conectar mi TV"),
+                  primary: connected ? guide.model.ahead(after: .tv) : Text("Sí, conectar mi TV"),
                   secondary: connected ? nil : Text("No tengo la TV"),
                   next: {
                       if connected { next() } else if guide.model.practice { guide.model.connectPracticeTV(); start = Date() } else { connecting = true }

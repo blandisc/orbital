@@ -4,10 +4,13 @@ import OrbitalCore
 /// Los tokens de calificar (estrellas, la pastilla del recordatorio y las marcas de cada servicio), aparte de Tokens+Screens para
 /// que ninguno pase de su tope.
 extension DS {
-    /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
-    /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
+    /// El ámbar de calificar: el mismo valor que el de los avisos (`amber-300`), pero su propio token, como `--color-rating` en
+    /// la TV (20 nov 2026): el ámbar de `DS.warning` queda solo para avisos y las estrellas no cambian si un día cambia ese.
+    static let rating = role(.warning)
+    /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (`DS.rating`, como las de Trakt), su
+    /// tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
     enum Rating {
-        static let filled = DS.warning, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
+        static let filled = DS.rating, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
         static let star: CGFloat = 26, starInline: CGFloat = 17, gap = DS.Space.s1
         /// Las que se tocan en la pastilla «¿Qué tal…?» y en «Por calificar»: más grandes que las de un renglón y con más aire
         /// entre ellas, para atinarle a la media (Fernando, 13 nov 2026: «es bien difícil atinarle»). `starInline` queda para

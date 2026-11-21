@@ -460,7 +460,7 @@ haya caracteres de texto usados como ícono.
 | Sin conexión | `wifi.slash` (`DS.Symbol.offline`) | «Audio y subtítulos», sin red |
 | Sincronía de los subtítulos | `timer` (`DS.Symbol.subtitleSync`) | «Audio y subtítulos» › Sincronía |
 | Sincronizar con una línea | `text.line.first.and.arrowtriangle.forward` (`DS.Symbol.syncWithLine`) | «Audio y subtítulos» |
-| Regresar el ajuste a cero | `arrow.counterclockwise` (`DS.Symbol.resetDelay`) | Sincronía, «Volver a cero» |
+| Regresar el ajuste a cero | `0.circle` (`DS.Symbol.resetDelay`) | Sincronía, «Volver a cero» |
 | Tamaño de los subtítulos | `textformat.size` (`DS.Symbol.subtitleSize`) | «Audio y subtítulos» › Tamaño |
 | Pista de audio | `speaker.wave.2` (`DS.Symbol.audioTrack`) | «Audio y subtítulos» › Audio |
 | Versión del video | `square.stack` (`DS.Symbol.videoVersion`) | «Audio y subtítulos» › Versión |
@@ -468,12 +468,12 @@ haya caracteres de texto usados como ícono.
 | Subtítulos forzados | `quote.bubble` (`DS.Symbol.forcedSubtitles`) | Versiones de subtítulos, con la palabra |
 | Una versión de subtítulos | `captions.bubble` (`DS.Symbol.subtitleVersion`) | Versiones de subtítulos |
 | Marcar como visto | `checkmark.circle` / `checkmark.circle.fill` (`DS.Symbol.watched`, `watchedFill`) | Mosaico «Vista» de la ficha (lleno y en verde: ya la viste) |
-| Volver a empezar | `arrow.counterclockwise` (`DS.Symbol.restart`) | ↺ «Desde el principio», junto al avance (R1) |
+| Volver a empezar | `arrow.left.to.line` (`DS.Symbol.restart`) | «Desde el principio», junto al avance (R1) |
 | Tu nota | `note.text.badge.plus` / `note.text` (`DS.Symbol.addNote`, `note`) | Al final de «Tu calificación» |
 | Calificar | `star` (`DS.Symbol.rate`) | «Calificar la temporada», en el menú de «Vista» |
 | De este episodio en adelante | `arrow.right.circle` (`DS.Symbol.fromHereOn`) | «¿Para el resto de la serie también?» › «Sí, desde aquí» |
 | Solo este episodio | `1.circle` (`DS.Symbol.onlyThisOne`) | «¿Para el resto de la serie también?» |
-| Salir del reproductor | `xmark` (`DS.Symbol.leavePlayer`) | «¿Sigues viendo?» › «Salir» (la ✕ de la barra del reproductor) |
+| Salir del reproductor | `rectangle.portrait.and.arrow.right` (`DS.Symbol.leavePlayer`, igual a `leave`) | «¿Sigues viendo?» › «Salir» (la ✕ de la barra del reproductor) |
 | Decide por mí (el sorteo), y nada más | `dice` (`DS.Symbol.decide`) | La entrada de «Decide por mí» y su vacío por filtros |
 | Las temporadas de la dona (de cuáles sale el episodio) | `rectangle.stack.badge.play` (`DS.Symbol.channelSeasons`) | Inicio › Canales › la dona › Temporadas |
 | Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
@@ -484,12 +484,14 @@ haya caracteres de texto usados como ícono.
 | Ánimo (sin elegir) | `face.smiling` (`DS.Symbol.filterMood`) | Lo mismo; elegido, el ícono de su ánimo |
 | Calificación | la estrella de calificar (`DS.Symbol.filterRating`, igual a `rate`) | «Decide por mí» › Filtros › Calificación y Letterboxd |
 | Barajar | `shuffle` (`DS.Symbol.shuffle`) | «Tres que caben» |
-| Paso · Guardar · Para hoy | `xmark`, `heart.fill`, `star.fill` (`DS.Symbol.matchPass`, `matchKeep`, `matchTonight`) | «Una por una»: los botones y el sello de la carta |
+| Paso · Guardar · Para hoy | `hand.thumbsdown.fill`, `bookmark.fill` (= `saved`), `pin.fill` (`DS.Symbol.matchPass`, `matchKeep`, `matchTonight`) | «Una por una»: los botones y el sello de la carta |
 | Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 | El mosaico | `square.grid.3x3` (`DS.Symbol.mosaic`) | La chapa de la portada de Explorar, el mosaico vacío. Solo él usa la cuadrícula de 3×3 (MO1) |
 | «Lo que ves» | `chart.bar.xaxis` (`DS.Symbol.whatYouWatch`) | El índice de Explorar (antes la cuadrícula rellena, que se confundía con el mosaico) |
 | Toda la serie (descargar) | `square.stack.3d.up` (`DS.Symbol.wholeSeries`) | «Descargar» de una serie (antes la cuadrícula del mosaico) |
 | Cerrar y regresar | `xmark` (`DS.Symbol.close`) | Salir del mosaico en el iPad y la Mac (F1); «Cerrar» del panel de una ficha |
+| Quitar (de una lista, un filtro, la búsqueda, el recordatorio de calificar) | `minus` (`DS.Symbol.remove`) | «Quitar de Seguir viendo», «Quitar de vistas», «Quitar filtros», la ficha de un filtro, «No calificar esta» (OI-8, 20 nov 2026: la ✕ es solo cerrar) |
+| Salir (del video en la TV, del reproductor) | `rectangle.portrait.and.arrow.right` (`DS.Symbol.leave`) | «Salir del video», la tecla «Salir» del control, «¿Sigues viendo?» › «Salir» (OI-8) |
 
 «Todo» del selector de tipo se queda con su 2×2 (`KindGlyph.all`): ninguna cuadrícula significa dos cosas.
 

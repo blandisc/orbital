@@ -59,7 +59,9 @@ struct GuidePage<Content: View>: View {
     let title: Text?
     var message: Text?
     var step: (current: Int, total: Int)?
-    var primary: Text = Text("Continuar")
+    /// Lo que dice el botón de seguir: el verbo de lo que sigue («Elegir plataformas», «Conectar Trakt»), nunca «Continuar» o
+    /// «Siguiente» a secas (X1-B, Fernando, 20 nov 2026). Por eso no tiene valor por omisión.
+    var primary: Text
     var primaryEnabled = true
     var secondary: Text?
     /// Un segundo camino entre el principal y «Ahora no» (tu nube: «Aún no tengo»); «Ahora no» pasa a ser un enlace.
@@ -67,7 +69,7 @@ struct GuidePage<Content: View>: View {
     var alternateAction: (() -> Void)?
     let next: () -> Void
     var skip: (() -> Void)?
-    /// «Saltar» arriba a la derecha: termina la guía desde cualquier paso (nada es obligatorio).
+    /// «Ahora no» arriba a la derecha: termina la guía desde cualquier paso (nada es obligatorio).
     var skipGuide: (() -> Void)?
     /// La flecha de regresar, arriba a la izquierda (la guía no va en una pila de navegación).
     var back: (() -> Void)?
@@ -130,13 +132,15 @@ struct GuidePage<Content: View>: View {
     }
 }
 
-/// «Saltar» de la guía: siempre a la vista, con su ícono.
+/// «Ahora no» de la guía (antes «Saltar»; OI-2, 20 nov 2026): siempre a la vista, con su ícono. Termina la guía; la retomas en
+/// Aprende.
 struct GuideSkip: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) { Label("Saltar", systemImage: "forward.end").labelStyle(.titleAndIcon) }
+        Button(action: action) { Label("Salir de la guía", systemImage: "forward.end").labelStyle(.titleAndIcon) }
             .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+            .accessibilityHint(Text("Termina la guía"))
             .accessibilityIdentifier("guide-skip-all")
     }
 }
@@ -213,7 +217,7 @@ struct DeviceCodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text("Escribe este código en \(Text(verbatim: Self.site(url)).bold())").recipe(.secondary, color: DS.textMuted)
+            Text("Escribe este código en \(Text(verbatim: Self.site(url)).fontWeight(.semibold))").recipe(.secondary, color: DS.textMuted)
             GuideCode(code: code)
             if showsOpen, let url {
                 Button("Copiar y abrir \(service)", systemImage: "arrow.up.forward.app") { Self.copyAndOpen(code, url, openURL) }

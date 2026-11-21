@@ -42,11 +42,19 @@ export const ICONS = {
   swap: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14m0 0-3.5-3.5M18 8l-3.5 3.5M20 16H6m0 0 3.5-3.5M6 16l3.5 3.5"/></svg>',
   check: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
   star: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.4l-5.4 3 1.2-5.9-4.4-4.1 6-.7z"/></svg>',
+  // ★ es calificar (tus estrellas, la calificación de un filtro); los favoritos son el corazón (como el iPhone, DS.Favorites) y
+  // Premium, el diamante.
+  premium: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.25 4.5h9.5L20.5 9 12 20 3.5 9z"/><path d="M3.5 9h17M9.75 4.5 8.5 9 12 20l3.5-11-1.25-4.5"/></svg>',
   "star-off": '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.4l-5.4 3 1.2-5.9-4.4-4.1 6-.7z"/></svg>',
   hide: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c5 0 8.5 4.5 9.5 7a13 13 0 0 1-2.8 3.9M6.3 6.4A13 13 0 0 0 2.5 12c1 2.5 4.5 7 9.5 7a9.8 9.8 0 0 0 4.7-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   show: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12C3.5 9.5 7 5 12 5s8.5 4.5 9.5 7c-1 2.5-4.5 7-9.5 7s-8.5-4.5-9.5-7z"/><circle cx="12" cy="12" r="3"/></svg>',
   close: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  // OT-5 (20 nov 2026): un ícono, una idea (tests/web/icon-meaning.test.mjs). ↻ es hacerlo otra vez (actualizar, buscar de
+  // nuevo, reintentar); deshacer, volver al principio y reiniciar tienen el suyo.
   refresh: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4.5V11h-6.5"/></svg>',
+  undo: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5 4.5 10 9 14.5"/><path d="M4.5 10h9.5a5.25 5.25 0 0 1 0 10.5H11"/></svg>',
+  fromStart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 5.5v13"/><path d="M18 6.3v11.4L9.75 12z"/></svg>',
+  restart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v6.5"/><path d="M16.8 6.3a7.5 7.5 0 1 1-9.6 0"/><path d="M16.8 2.8v3.5h3.5"/></svg>',
   sound: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18.3 6.3a8 8 0 0 1 0 11.4"/></svg>',
   stop: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
   windows: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="13" height="10" rx="1.5"/><path d="M7.5 19h12a1 1 0 0 0 1-1V9"/></svg>',
@@ -109,6 +117,10 @@ export const ICONS = {
   tag: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 12.1V5.05a1.3 1.3 0 0 1 1.3-1.3h7.05l8.2 8.2a1.5 1.5 0 0 1 0 2.12l-6.48 6.48a1.5 1.5 0 0 1-2.12 0z"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
   heart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  heartFill: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/></svg>',
+  heartOff: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/><path d="M4 4l16 16"/></svg>',
+  // «Para hoy» (el mazo): la tachuela que la pone primero en Mi lista hoy.
+  pin: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5h6l-1 6 3.5 3.5h-11L10 9.5z"/><path d="M12 13v7.5"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   // «En Mi lista» en el botón de estado de la ficha (G1-A), como bookmark.fill del iPhone.
   bookmarkFill: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/></svg>',

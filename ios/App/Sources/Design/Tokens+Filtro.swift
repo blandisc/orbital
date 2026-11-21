@@ -43,11 +43,13 @@ extension DS {
         /// El color de cada filtro (Fernando, 31 oct 2026, dirección A; el arcoíris, 2 nov): solo en detalles (el ícono, un puntito
         /// cuando tiene algo y el control abierto); lo elegido sigue en blanco. Son el arcoíris del azul de Orbital
         /// (`design/tokens.json` › rainbow: oklch 0.804 0.11 girado), los mismos de la TV; sobre el papel, oklch 0.52 0.12 (4.5:1).
-        static let coral = DS.adaptive(dark: "#fea39b", light: "#a34945"), amber = DS.adaptive(dark: "#f0b070", light: "#975800")
+        /// Época y premios van en rosa (hue 320), no en ámbar: el ámbar es el de los avisos (`DS.warning`) y un filtro no es
+        /// un aviso (OI-8, auditoría del 20 nov 2026).
+        static let coral = DS.adaptive(dark: "#fea39b", light: "#a34945"), rose = DS.adaptive(dark: "#dfa8eb", light: "#875093")
         static let lime = DS.adaptive(dark: "#c3c56f", light: "#6e6e00"), meadow = DS.adaptive(dark: "#8ad399", light: "#287c42")
         static let sky = DS.adaptive(dark: "#66cef4", light: "#00769c"), lavender = DS.adaptive(dark: "#a3bcff", light: "#4e63ae")
-        /// El velo y el brillo ámbar de la ventana de Época.
-        static let amberFill = amber.opacity(0.16), amberGlow = amber.opacity(0.35)   // ds-exception: velo y brillo del ámbar de la regla
+        /// El velo y el brillo rosa de la ventana de Época.
+        static let roseFill = rose.opacity(0.16), roseGlow = rose.opacity(0.35)   // ds-exception: velo y brillo del rosa de la regla
         static let dot: CGFloat = 7
         /// Lo más angosto de la ventana de la regla chiquita (un año o dos se leen igual).
         static let miniWindow: CGFloat = 12, windowMin: CGFloat = 32

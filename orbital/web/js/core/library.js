@@ -126,7 +126,7 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : item.collection?.type === "decide" ? "Decide por mí" : "Ver la lista";
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
-  if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver la serie";
+  if (isSeries(item)) return item.progress > 0 ? "Continuar la serie" : "Ver la serie"; // X1-B: «Continuar» con su objeto (como DecideView del iPhone)
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };
 

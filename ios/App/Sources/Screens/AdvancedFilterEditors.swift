@@ -103,10 +103,10 @@ struct FilterEditor: View {
             }
             YearRuler(years: Binding(get: { filter.years }, set: { y in edit { $0.years = y } }), first: AdvancedFilter.firstYear, last: filter.currentYear)
             HStack(spacing: DS.Space.s2) {
-                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), hue: DS.Filter.amber, selected: filter.years == filter.releases) {
+                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), hue: DS.Filter.rose, selected: filter.years == filter.releases) {
                     edit { $0.years = $0.years == $0.releases ? nil : $0.releases }
                 }
-                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), hue: DS.Filter.amber, selected: filter.years == AdvancedFilter.classics) {
+                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), hue: DS.Filter.rose, selected: filter.years == AdvancedFilter.classics) {
                     edit { $0.years = $0.years == AdvancedFilter.classics ? nil : AdvancedFilter.classics }
                 }
             }
@@ -114,11 +114,11 @@ struct FilterEditor: View {
                 Label { VStack(alignment: .leading, spacing: 0) {
                     Text("Repartido por décadas").recipe(.label, color: DS.text)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
-                } } icon: { Image(systemName: DS.Symbol.spreadDecades).foregroundStyle(DS.Filter.amber) }
+                } } icon: { Image(systemName: DS.Symbol.spreadDecades).foregroundStyle(DS.Filter.rose) }
             }
             .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .dsCard()
-            .tint(DS.Filter.amber)
+            .tint(DS.Filter.rose)
             .accessibilityIdentifier("filter-spread")
         }
     }

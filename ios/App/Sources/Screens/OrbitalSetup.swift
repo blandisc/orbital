@@ -86,7 +86,7 @@ struct OrbitalSetupView: View {
         case 1:
             GuidePage(title: Text("Pásalo a la TV"),
                       message: Text("En cualquier película o serie toca «Ver en la TV»: empieza en la sala justo donde ibas. Lo que veas allá sale arriba de la barra, en «En la TV»."),
-                      step: (1, 2), primary: Text("Siguiente"), secondary: Text("Saltar"), next: next, skip: { dismiss() }) {
+                      step: (1, 2), primary: Text("Conocer el control"), secondary: Text("Ahora no"), next: next, skip: { dismiss() }) {
                 GuideArt(symbol: "tv.and.mediabox", tint: DS.ListTint.series) {
                     HStack(spacing: DS.Space.s2) {
                         Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fill, in: Capsule())
@@ -98,12 +98,12 @@ struct OrbitalSetupView: View {
         case 2:
             GuidePage(title: Text("Tu iPhone es el control"),
                       message: Text("Toca «En la TV» y luego el control: muévete por los menús, pausa y sube el volumen sin buscar el mando. También está en el Centro de control."),
-                      step: (1, 2), primary: Text("Siguiente"), secondary: Text("Saltar"), next: next, skip: { dismiss() }) {
+                      step: (1, 2), primary: Text("Ver qué más hay"), secondary: Text("Ahora no"), next: next, skip: { dismiss() }) {
                 GuideArt(symbol: "appletvremote.gen4", tint: DS.accent) { EmptyView() }
             }
         default:
             GuidePage(title: Text("Y también"), message: Text("Lo encuentras cuando lo necesites; no hay que aprenderlo ahora."),
-                      step: (1, 2), primary: last ? Text("Listo") : Text("Siguiente"), next: next) {
+                      step: (1, 2), primary: last ? Text("Listo") : Text("Ver qué más hay"), next: next) {
                 VStack(spacing: DS.Space.s2) {
                     GuidePiece(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Háblale"),
                                detail: Text("«Oye Siri, pon Dune en Orbital» o «pausa la tele». Las frases, en Ajustes › Voz y Siri."))

@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalModels
 
 /// La guía de la primera vez, versión 3 (Fernando, 18 nov 2026; el camino en `OnboardingModel.plan`): bienvenida, tu TV,
-/// Trakt, «Trajimos lo tuyo», tu nube o tus plataformas, más subtítulos y «Listo». Nada es obligatorio y «Saltar» siempre está arriba. Un paso empuja al siguiente con una sola transición
+/// Trakt, «Trajimos lo tuyo», tu nube o tus plataformas, más subtítulos y «Listo». Nada es obligatorio y «Ahora no» siempre está arriba. Un paso empuja al siguiente con una sola transición
 /// (lo que sale se encoge y se desvanece, lo que entra sube); la luna avanza por el arco de arriba. Si cierras la app a
 /// medias, al volver (antes de 24 h) sigues donde ibas.
 struct OnboardingView: View {
@@ -78,7 +78,7 @@ struct OnboardingView: View {
         case .win: OnboardingWin(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .platforms: OnboardingPlatforms(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
         case .tv: OnboardingTV(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
-        case .subtitles: OnboardingSubtitles(step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .subtitles: OnboardingSubtitles(step: position, back: back, next: { go(from: step) }, skip: finish, ahead: model.ahead(after: step))
         case .done: OnboardingDone(guide: model, finish: finish)
         }
     }
@@ -99,5 +99,21 @@ struct OnboardingView: View {
         if practice { Demo.practice = false; return done() }
         guide.model.finish(explained: explained)
         done()
+    }
+}
+
+/// X1-B (Fernando, 20 nov 2026): el botón de seguir dice el verbo de lo que sigue, nunca «Continuar» o «Siguiente» a secas.
+/// Como el camino cambia según lo que ya tienes (`plan`), el texto sale del paso que de verdad viene.
+extension OnboardingModel {
+    func ahead(after step: Step) -> Text {
+        switch next(after: step) {
+        case .tv: Text("Conectar tu TV")
+        case .trakt: Text("Conectar Trakt")
+        case .win: Text("Ver lo que trajimos")
+        case .debrid: Text("Conectar tu nube")
+        case .platforms: Text("Elegir plataformas")
+        case .subtitles: Text("Conectar OpenSubtitles")
+        case .done, .welcome, nil: Text("Terminar la guía")
+        }
     }
 }

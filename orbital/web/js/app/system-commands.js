@@ -62,7 +62,7 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     "voice-try": async (command, context) => {
       const res = await api.voice(command.text);
       sound.play(res.ok === false ? "error" : "select");
-      if (res.speech) ui.toast.show(res.speech, { voice: true, error: res.ok === false });
+      if (res.speech) ui.toast.show(res.speech, { voice: true }); // lo que contestó Alexa (si no pudo, ya sonó el error)
       ui.settings.refresh();
       return renderHints();
     },

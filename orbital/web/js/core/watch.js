@@ -135,7 +135,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
       const started = resume.position > 0;
       out.push({ id: "play", video_id: resume.video_id, primary: true, icon: "play",
         label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
-      if (started) restart = { id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio", short: "Desde el inicio" };
+      if (started) restart = { id: "restart", video_id: resume.video_id, icon: "fromStart", label: "Desde el principio", short: "Desde el inicio" };
     } else if (first) {
       // El primero de verdad (hay series que empiezan en la temporada 2 o en el episodio 0).
       const firstSeason = (details.seasons || []).find((s) => s.season !== 0)?.season ?? 1;
@@ -143,7 +143,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
     }
   } else if (resume?.position > 0) {
     out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });
-    restart = { id: "restart", icon: "refresh", label: "Desde el principio", short: "Desde el inicio" };
+    restart = { id: "restart", icon: "fromStart", label: "Desde el principio", short: "Desde el inicio" };
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }

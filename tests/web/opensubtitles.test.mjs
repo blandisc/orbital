@@ -14,9 +14,9 @@ test("OpenSubtitles en Cuentas: sin la clave de la app no sale; sin cuenta, Cone
   assert.equal(on.command.type, "os-account");
 });
 
-test("el formulario pide usuario y contraseña (la contraseña escondida) y el menú pone Cancelar primero", () => {
+test("el formulario pide usuario y contraseña (la contraseña escondida) y el menú pone «Dejarla conectada» primero", () => {
   assert.deepEqual(OPENSUBTITLES_FORM.fields.map((f) => [f.name, f.secret]), [["username", false], ["password", true]]);
   const menu = opensubtitlesMenu({ username: "fer" });
-  assert.equal(menu.options[0].label, "Cancelar");
+  assert.equal(menu.options[0].label, "Dejarla conectada");
   assert.equal(menu.options.at(-1).command.type, "os-disconnect");
 });

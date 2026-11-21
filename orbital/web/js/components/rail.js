@@ -52,10 +52,10 @@ export function createRail({ label, onPick, onStep }) {
     const [prev, next2] = (glyphs.page || "").split(" ");
     // Las flechas también se tocan (con el dedo, las primeras secciones quedaban fuera de alcance).
     mount(el,
-      prev && h("button", { class: "rail__key", type: "button", tabindex: "-1", "aria-label": "Anterior", onClick: () => onStep?.(-1) },
+      prev && h("button", { class: "rail__key", type: "button", tabindex: "-1", "aria-label": "Sección anterior", onClick: () => onStep?.(-1) },
         Glyph(prev, { small: true }), h("span", { class: "rail__arrow" }, svg(ICONS.chevron))),
       windowEl,
-      next2 && h("button", { class: "rail__key rail__key--next", type: "button", tabindex: "-1", "aria-label": "Siguiente", onClick: () => onStep?.(1) },
+      next2 && h("button", { class: "rail__key rail__key--next", type: "button", tabindex: "-1", "aria-label": "Sección siguiente", onClick: () => onStep?.(1) },
         h("span", { class: "rail__arrow" }, svg(ICONS.chevron)), Glyph(next2, { small: true })));
   }
 

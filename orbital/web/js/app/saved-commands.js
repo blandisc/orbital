@@ -9,6 +9,7 @@
  *    lista» en ☰ de Guardado. Todo eso necesita internet (como el iPhone).
  *  Las palabras son las del iPhone (`SavedSelectionBar`, `SavedMoveMenu`, `SavedListMenu`). */
 import { curatedItem } from "../core/curation.js";
+import { failure, openSettings, retry } from "../core/notices.js";
 
 /** Los montones de Guardado, con su nombre. */
 export const PILES = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"]];
@@ -120,9 +121,10 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
   let board = null; // lo último que trajo el tablero
   let lists = []; // tus listas de Trakt: { id, name, privacy, count }
 
-  const failed = (err, title = "No pude hacerlo") => {
+  /** No se pudo: qué pasó con palabras de Orbital y «Reintentar» (`again`: lo mismo otra vez, OT-3). */
+  const failed = (err, title, again) => {
     sound.play("error");
-    ui.toast.show(title, { error: true, detail: err?.message || "" });
+    ui.toast.show(title, failure(retry(again), { err }));
   };
   const screen = () => ui.listScreen.sorter;
   const onBoard = () => ui.listScreen.isOpen && screen().id === "saved";
@@ -148,13 +150,14 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
       found = await api.board();
     } catch (err) {
       if (waiting && onBoard()) ui.listScreen.close();
-      return failed(err, "No pude traer lo tuyo de Trakt");
+      return failed(err, "No pude traer lo tuyo de Trakt", () => openSaved({ tab }));
     }
     if (waiting && !onBoard()) return; // la cerraste mientras cargaba
     if (!found.trakt) {
       if (waiting) ui.listScreen.close();
       sound.play("error");
-      return ui.toast.show("Lo que guardas vive en Trakt", { tone: "warn", detail: "Conéctalo en Ajustes › Cuentas y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas" });
+      return ui.toast.show("Lo que guardas vive en Trakt", { tone: "warn", detail: "Conéctalo en Ajustes › Cuentas y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas",
+        fix: openSettings(() => { ui.settings.open("accounts"); renderHints(); }) });
     }
     board = found;
     lists = found.lists || [];
@@ -250,11 +253,11 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
       undoable(done.message, items.length === 1 ? items[0].title : "", async () => { await done.undo(); await after(); });
       return after(done.gone);
     } catch (err) {
-      return failed(err, "No pude cambiarlo en Trakt");
+      return failed(err, "No pude cambiarlo en Trakt", () => runBatch(action, place, items, extra));
     }
   }
 
-  return {
+  const commands = {
     "saved": async () => {
       ui.sheet.close();
       return openSaved();
@@ -304,7 +307,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         undoable(`${item.title} pasó a ${where}`, "", async () => { await undo(); await after(); });
         return after([item]);
       } catch (err) {
-        return failed(err, "No pude cambiarlo en Trakt");
+        return failed(err, "No pude cambiarlo en Trakt", () => commands["saved-move"](command));
       }
     },
     // «¿Las dejaste?» › «Sí, las dejé»: todas las de esa pestaña.
@@ -346,7 +349,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         sound.play("select");
         ui.toast.show(`«${command.name}» · ${privacyName(command.privacy)}`, { tone: "success" });
         if (command.share) return openMenu(shareMenu(command.where, command.name));
-      } catch (err) { failed(err, "No pude cambiar quién la ve"); }
+      } catch (err) { failed(err, "No pude cambiar quién la ve", () => commands["list-privacy"](command)); }
       return renderHints();
     },
     "list-reorder": async (command) => {
@@ -360,7 +363,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         const made = await api.manageList("duplicate", { where: command.where, name: `Copia de ${command.name}` });
         sound.play("success");
         ui.toast.show(`Hice «${made.name}»`, { tone: "success", detail: "Solo tú, con los mismos títulos" });
-      } catch (err) { failed(err, "No pude duplicarla"); }
+      } catch (err) { failed(err, "No pude duplicarla", () => commands["list-duplicate"](command)); }
       return renderHints();
     },
     "list-share": async (command, context) => {
@@ -370,14 +373,14 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
       if (privacy === "private") {
         return openMenu({ title: "¿La abro con el enlace?", subtitle: `«${command.name}» es «Solo tú»: con el enlace, quien lo tenga la ve`, options: [
           { icon: "check", label: "Sí, con el enlace", command: { type: "list-privacy", where: command.where, name: command.name, privacy: "link", share: true } },
-          { icon: "close", label: "Cancelar", command: { type: "close" } }] }, nested(context));
+          { icon: "close", label: "Dejarla solo para ti", command: { type: "close" } }] }, nested(context));
       }
       return openMenu(shareMenu(command.where, command.name), nested(context));
     },
     "list-delete-confirm": async (command, context) => openMenu({ title: `¿Borrar «${command.name}»?`,
       subtitle: "No se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas", options: [
         { icon: "trash", label: "Borrar lista", danger: true, command: { type: "list-delete", where: command.where, name: command.name } },
-        { icon: "close", label: "Cancelar", command: { type: "back" } }] }, nested(context)),
+        { icon: "close", label: "Conservar la lista", command: { type: "back" } }] }, nested(context)),
     "list-delete": async (command) => {
       ui.sheet.close();
       try {
@@ -386,13 +389,14 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         ui.toast.show(`Borré «${command.name}»`, { tone: "success" });
         ui.listScreen.close();
         lists = lists.filter((l) => `list:${l.id}` !== command.where);
-      } catch (err) { failed(err, "No pude borrarla"); }
+      } catch (err) { failed(err, "No pude borrarla", () => commands["list-delete"](command)); }
       return renderHints();
     },
     /** Para ☰ de Guardado: tus listas y «Nueva lista». */
     get lists() { return lists; },
     get board() { return board; },
   };
+  return commands;
 }
 
 /** «Compartir enlace» en la TV: el enlace de trakt.tv (por su id: no cambia al renombrarla), para abrirlo en el celular. */

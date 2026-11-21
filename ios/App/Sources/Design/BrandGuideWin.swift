@@ -92,7 +92,7 @@ struct WinMosaic: View {
                 shape.fill(DS.surfaceRaised).frame(width: Self.tile.width, height: Self.tile.height)
             }
             if item?.listed == true {
-                Image(systemName: "bookmark.fill").font(DS.styled(.caption2).weight(.bold)).foregroundStyle(DS.brandMoon)
+                Image(systemName: "bookmark.fill").font(DS.styled(.caption).weight(.bold)).foregroundStyle(DS.brandMoon)
                     .frame(width: Self.badge, height: Self.badge).background(DS.bg.opacity(Self.badgeBacking), in: Circle())
                     .padding(Self.badgeInset).scaleEffect(badge)
             }

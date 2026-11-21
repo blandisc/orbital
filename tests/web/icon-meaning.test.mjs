@@ -1,4 +1,5 @@
-// Un ícono, un significado (regla dura 16, 20 nov 2026): el destello (`spark`) es Explorar y nada más. Antes Trakt, «Decide
+// Un ícono, un significado (regla dura 16, 20 nov 2026; OT-5 de la auditoría del 20 nov): cada ícono que se repetía con dos
+// ideas tiene su idea en ICON_MEANINGS (abajo), y una línea que lo use para otra cosa hace fallar la prueba. El destello (`spark`) es Explorar y nada más. Antes Trakt, «Decide
 // por mí», el género, la versión recomendada, el canal «Orbital 24/7» y la clave de MDBList también lo llevaban, y en
 // Ajustes › Resumen Trakt se veía igual que Explorar. Si alguien vuelve a usarlo para otra cosa, esto falla.
 import assert from "node:assert/strict";
@@ -76,4 +77,49 @@ test("en Ajustes, Trakt es la cadena (link), nunca el destello de Explorar", () 
   }
   const linked = settingsCategory("summary", { trakt: { configured: true, linked: true } }).options.find((o) => o.label === "Trakt");
   assert.equal(linked.icon, "link");
+});
+
+// OT-5: el mapa ícono → idea. Cada línea de orbital/web/js que use el ícono tiene que coincidir con alguna de sus formas
+// permitidas (la etiqueta que lo acompaña o el sitio donde vive). Un ícono nuevo con dos ideas entra aquí con la suya.
+const ICON_MEANINGS = {
+  refresh: {
+    idea: "↻ hacerlo otra vez: reintentar, buscar de nuevo, actualizar, revisar, otras tres, y el aviso «en curso»",
+    ok: [/label: "(Reintentar|Reintentar la descarga|Buscar de nuevo|Buscar otra vez|Buscar juegos nuevos|Actualizar Orbital|Actualizar ahora|Actualizaciones|Actualizar biblioteca|Revisar ahora|Otras tres)"/,
+      /label: "Buscando tus listas de Trakt…"/, /progress: "refresh"/],
+  },
+  undo: { idea: "↶ deshacer o volver a lo de antes", ok: [/label: "Deshacer"/, /label: `Regresar a /, /label: "Volver a lo recomendado"/] },
+  fromStart: { idea: "⏮ ver desde el principio", ok: [/label: "Desde el principio"/] },
+  restart: { idea: "reiniciar (la consola o el juego)", ok: [/label: (`Reiniciar|"Reiniciar)/, /action === "restart" \? "restart"/] },
+  star: {
+    idea: "★ calificar o la calificación (tus estrellas, el filtro, lo mejor calificado del género)",
+    ok: [/label: "Calific(ar|ación)"/, /label: `Calificar la temporada/, /STARS\.map/, /label: "Cualquiera"/, /label: ratingName/, /RATE = /,
+      /"genre-top": "star"/, /id: "rating"/],
+  },
+  heart: { idea: "♥ favoritos (los juegos y títulos que marcas; lo guardado es el marcador)", ok: [/label: "Añadir a favoritos"/, /Aún no tienes favoritos/] },
+  heartFill: { idea: "♥ favoritos (marcado)", ok: [/"Favorito"/] },
+  heartOff: { idea: "♥ quitar de favoritos", ok: [/label: "Quitar de favoritos"/] },
+  premium: { idea: "el diamante de Premium (Real-Debrid)", ok: [/label: "Premium"/] },
+  pin: { idea: "«Para hoy»: la primera de Mi lista hoy", ok: [/label: "Para hoy"/] },
+};
+
+test("un ícono, una idea: cada uso de ↻, ★, ♥, deshacer, reiniciar… coincide con su idea (OT-5)", () => {
+  const wrong = [];
+  for (const path of files(web)) {
+    const file = relative(web, path).replaceAll("\\", "/");
+    if (file === "core/icons.js" || file === "core/input.js") continue; // donde se dibujan; las teclas (F5: "refresh") no son íconos
+    readFileSync(path, "utf8").split("\n").forEach((line, i) => {
+      for (const [icon, { idea, ok }] of Object.entries(ICON_MEANINGS)) {
+        // Un uso es el ícono de un botón u opción (icon: …"x"), un dibujo (ICONS.x) o una tabla de íconos (clave: "x").
+        const uses = new RegExp(`icon: [^,]*"${icon}"|ICONS\\.${icon}\\b|ICONS\\["${icon}"\\]|[\\w"-]+: "${icon}"[,}]`).test(line)
+          && !/\b(type|kind|action|id|case)\b:? *"/.test(line.match(new RegExp(`[\\w]+:? *"${icon}"`))?.[0] || "");
+        if (uses && !ok.some((re) => re.test(line))) wrong.push(`${file}:${i + 1} usa «${icon}» (${idea}): ${line.trim().slice(0, 90)}`);
+      }
+    });
+  }
+  assert.deepEqual(wrong, [], "Usa el ícono de esa idea (undo, fromStart, restart, heart, premium, pin…) o añade la idea al mapa");
+});
+
+test("el mapa cubre íconos que existen", async () => {
+  const { ICONS } = await import("../../orbital/web/js/core/icons.js");
+  for (const icon of Object.keys(ICON_MEANINGS)) assert.ok(ICONS[icon], `falta dibujar «${icon}» en core/icons.js`);
 });

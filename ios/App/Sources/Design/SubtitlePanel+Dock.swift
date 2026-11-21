@@ -146,7 +146,7 @@ struct SubtitleDock: View {
         let spoken = [named.map(LanguageFlags.withoutFlags),
                       version.map { String(format: Strings.tr("versión %lld de %lld", language: language), $0.index + 1, $0.count) }]
             .compactMap { $0 }.joined(separator: ", ")
-        return SubtitleRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: named.map { Text.flagged($0) } ?? Text("Cargando…"),
+        return SubtitleRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: named.map { Text.flagged($0) } ?? Text("Cargando subtítulos"),
                            mark: loading || version == nil ? .loading : .check, opensList: version != nil, identifier: "subtitle-dock-versions",
                            action: version == nil ? nil : allVersions, below: steps,
                            selected: true, spoken: spoken, hint: "Ver todas las versiones", versionStep: several ? step : nil)

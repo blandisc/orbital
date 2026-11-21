@@ -120,11 +120,12 @@ struct DSSelector<ID: Hashable>: View {
         }
     }
 
-    /// La elegida en negrita; la gruesa escondida guarda el lugar para que nada brinque al cambiar.
+    /// La elegida en seminegrita (la negrita es solo del título más grande, D2-B / OI-4); la gruesa escondida guarda el lugar
+    /// para que nada brinque al cambiar.
     private func weighted(_ title: Text, on: Bool) -> some View {
         ZStack {
-            title.fontWeight(.bold).hidden()   // ds-exception: la elegida se distingue por el peso
-            title.fontWeight(on ? .bold : .medium)   // ds-exception: la elegida se distingue por el peso
+            title.fontWeight(.semibold).hidden()   // ds-exception: la elegida se distingue por el peso
+            title.fontWeight(on ? .semibold : .regular)   // ds-exception: la elegida se distingue por el peso
         }
         .lineLimit(1)
     }

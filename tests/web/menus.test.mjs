@@ -52,11 +52,11 @@ test("menú ☰: solo el sistema (D5-A); lo técnico en Ajustes → Mantenimient
     ["emulators", "folders", "refresh"]);
 });
 
-test("salir al escritorio pide confirmación y empieza en Cancelar", () => {
+test("salir al escritorio pide confirmación y empieza en «Quedarme en Orbital» (OT-4: lo que protege)", () => {
   const withExit = mainMenu({ canExit: true });
   assert.deepEqual(withExit.options.at(-1).command, { type: "confirm-exit" });
   const confirm = exitMenu();
-  assert.equal(confirm.options[0].label, "Cancelar"); // el foco inicial es seguro
+  assert.equal(confirm.options[0].label, "Quedarme en Orbital"); // el foco inicial es seguro
   assert.deepEqual(confirm.options[1].command, { type: "exit" });
 });
 
@@ -91,11 +91,11 @@ test("apagar: suspender primero; reiniciar y apagar marcados como peligrosos", (
     { type: "power-confirm", action: "restart" }, { type: "power-confirm", action: "shutdown" }]); // piden confirmar
 });
 
-test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () => {
+test("confirmar apagar: «Dejarla prendida» primero y aviso si hay un juego abierto", () => {
   const menu = powerConfirmMenu("shutdown", { title: "Zelda", managed: true });
   assert.equal(menu.title, "¿Apagar la consola?");
   assert.match(menu.subtitle, /Zelda sigue abierto/);
-  assert.equal(menu.options[0].label, "Cancelar");
+  assert.equal(menu.options[0].label, "Dejarla prendida");
   assert.deepEqual(menu.options[1].command, { type: "power", action: "shutdown" });
   assert.equal(powerConfirmMenu("restart").subtitle, "");
 });
@@ -114,9 +114,9 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   // La lista: subir, bajar, quitar y agregar; «Idioma original» nunca queda primero.
   const list = languagesMenu(languages);
   assert.deepEqual(list.options.map((o) => o.label), ["1. Latino", "2. Idioma original", "3. Inglés", "4. Castellano", "Agregar idioma"]);
-  assert.deepEqual(languageMenu(languages, "original").options.map((o) => o.label), ["Bajar", "Quitar", "Cancelar"]);
+  assert.deepEqual(languageMenu(languages, "original").options.map((o) => o.label), ["Bajar", "Quitar", "Dejarlo como está"]);
   // Quitar Latino dejaría «original» primero: el siguiente sube y él queda segundo. Bajarlo no cambiaría nada: no sale.
-  assert.deepEqual(languageMenu(languages, "es-419").options.map((o) => o.label), ["Quitar", "Cancelar"]);
+  assert.deepEqual(languageMenu(languages, "es-419").options.map((o) => o.label), ["Quitar", "Dejarlo como está"]);
   assert.deepEqual(languageMenu(languages, "es-419").options[0].command.languages, ["en", "original", "es-ES"]);
   assert.deepEqual(languageMenu(languages, "en").options[0].command, { type: "languages-set", languages: ["es-419", "en", "original", "es-ES"], back: true });
   assert.ok(languageAddMenu(languages).options.every((o) => !languages.includes(o.command.languages.at(-1)) && o.command.languages.length === 5));
@@ -398,7 +398,7 @@ test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conect
   assert.equal(rows[2].command.type, "phone-link");
 });
 
-test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» pregunta con «Cancelar» primero", async () => {
+test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» pregunta con «Dejarlo conectado» primero", async () => {
   const { phoneRows, deviceMenu, deviceRemoveMenu } = await import("../../orbital/web/js/core/menus.js");
   const now = Date.UTC(2026, 10, 3, 12);
   const s = now / 1000;
@@ -413,7 +413,7 @@ test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» p
   assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 horas"]); // emparejado: nunca «Conectar»
   assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });
   const sheet = deviceMenu({ device_id: "a1", name: "iPhone de Fernando", platform: "iphone" });
-  assert.deepEqual(sheet.options.map((o) => o.label), ["Cancelar", "Quitar"]);
+  assert.deepEqual(sheet.options.map((o) => o.label), ["Dejarlo conectado", "Quitar"]);
   const ask = deviceRemoveMenu(sheet.options[1].command);
   assert.equal(ask.title, "¿Quitar iPhone de Fernando?");
   assert.deepEqual(ask.options.map((o) => o.command.type), ["back", "device-remove"]);
@@ -620,12 +620,12 @@ test("cada paso de la guía dice en cuál vas, aunque se abra desde «Cómo se u
   assert.equal(tourMenu(4).progress, "Guía 5 de 5");
 });
 
-test("«Otra portada» pide confirmar antes de descartar la de ahora (Cancelar primero)", async () => {
+test("«Otra portada» pide confirmar antes de descartar la de ahora («Conservar la portada» primero)", async () => {
   const { artMenu, artConfirmMenu } = await import("../../orbital/web/js/core/menus.js");
   const other = artMenu({ id: "emu:psp:1", title: "Battlefront" }).options.find((o) => o.label === "Otra portada");
   assert.equal(other.command.type, "art-confirm");
   const confirm = artConfirmMenu(other.command);
-  assert.equal(confirm.options[0].label, "Cancelar");
+  assert.equal(confirm.options[0].label, "Conservar la portada");
   assert.deepEqual(confirm.options[1].command, { type: "art", id: "emu:psp:1", kind: "cover", title: "Battlefront" });
 });
 
@@ -664,8 +664,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
-  assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
-  assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
+  assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Dejarlo como está"]);
+  assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Dejarlo como está"]);
   // Sin nada agregado: ni el encabezado (y nunca «Traer de tu Stremio»).
   assert.deepEqual(addonRows({ source: "own", stremio_linked: true, entries: [] }).map((r) => r.label), ["Se preguntan en este orden", "¿Qué es esto?"]);
 });
@@ -742,7 +742,7 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   const langs = torrentioLanguagesMenu({ options: { language: ["latino", "japanese"] } });
   assert.deepEqual(langs.options.map((o) => o.label), ["1. Latino", "2. Japonés", "Agregar idioma"]);
   const japanese = torrentioLanguageMenu({ options: { language: ["latino", "japanese"] } }, "japanese");
-  assert.deepEqual(japanese.options.map((o) => o.label), ["Subir", "Quitar", "Cancelar"]);
+  assert.deepEqual(japanese.options.map((o) => o.label), ["Subir", "Quitar", "Dejarlo como está"]);
   assert.deepEqual(japanese.options[0].command.options.language, ["japanese", "latino"]);
   const quality = torrentioQualitiesMenu(entry).options.find((o) => o.label === "Grabada en el cine (CAM)");
   assert.equal(quality.value, "Se esconde");
@@ -766,7 +766,7 @@ test("resumen sin Stremio: lo que falta para películas y series (corte S4, AD-1
 
 test("cuentas › Stremio (Fernando, 4 nov): pasar tu Mi lista a «Mi lista Stremio» de Trakt y desconectar", () => {
   const menu = stremioAccountMenu({ trakt: { linked: true } });
-  assert.deepEqual(menu.options.map((o) => o.label), ["Pasar a Trakt y desconectar", "Desconectar sin pasarla", "Cancelar"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Pasar a Trakt y desconectar", "Desconectar sin pasarla", "Dejarlo conectado"]);
   assert.deepEqual(menu.options[0].command, { type: "stremio-to-trakt" });
   assert.equal(stremioAccountMenu({ trakt: { configured: true } }).options[0].command.type, "trakt-link"); // sin Trakt, primero Trakt
 });
@@ -791,7 +791,7 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
   assert.ok(!labels.includes("Volver a los de Stremio") && !labels.includes("Traídos de tu Stremio") && !labels.includes("De dónde salen"));
   // TV-4: lo que ya terminó se ve, y quitarlo de Real-Debrid lo dice.
   const ready = debridRequestMenu({ hash: "h", state: "ready", title: "Midsommar", meta_id: "tt1", kind: "movie", by: "TV" });
-  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
+  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Dejarlo en tu Real-Debrid"]);
   assert.equal(debridCancelMenu(ready.options[2].command).title, "¿Quitarlo de tu Real-Debrid?");
   // Fernando, 4 nov: desde la fila, «Ocultar esta fila» (la fila entera); vuelve sola en cuanto pides algo después.
   const fromRow = debridRequestMenu({ hash: "h", state: "downloading", title: "Dune", meta_id: "tt2", kind: "movie", by: "TV" }, { row: true });
@@ -824,7 +824,7 @@ test("K1-A (Fernando, 3 nov): cerrar «¿Usar la cuenta?» sin contestar borra l
   const menu = debridRemoteMenu({ code: "abc", account: "fernando" });
   assert.equal(menu.title, "¿Usar la cuenta fernando?");
   assert.deepEqual(menu.cancel, { type: "rd-remote-cancel", code: "abc" }); // B o tocar fuera = Cancelar
-  assert.equal(menu.options[0].label, "Cancelar");
+  assert.equal(menu.options[0].label, "No usarla");
   assert.match(menu.subtitle, /Si cierras, se borra/);
 });
 

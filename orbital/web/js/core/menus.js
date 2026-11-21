@@ -91,8 +91,8 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   }
   if (isGame(item) || item.category === "apps") {
     options.push(item.favorite
-      ? { icon: "star-off", label: "Quitar de favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: false }, message: "Quitado de favoritos" } }
-      : { icon: "star", label: "Añadir a favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: true }, message: "Añadido a favoritos" } });
+      ? { icon: "heartOff", label: "Quitar de favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: false }, message: "Quitado de favoritos" } }
+      : { icon: "heart", label: "Añadir a favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: true }, message: "Añadido a favoritos" } });
   }
   // Emulador e imagen: cada uno en su propia hoja (antes eran cuatro opciones sueltas).
   const others = isOpen || !isGame(item) ? [] : (item.runners || []).filter((r) => r.id !== item.runner);
@@ -151,14 +151,14 @@ export function artMenu(item) {
   };
 }
 
-/** ¿Descartar la imagen de ahora? Cancelar primero: buscar otra la tira para siempre. */
+/** ¿Descartar la imagen de ahora? «Conservar la portada» primero: buscar otra la tira para siempre. */
 export function artConfirmMenu(command) {
   const cover = command.kind === "cover";
   return {
     title: cover ? "¿Buscar otra portada?" : "¿Buscar otro fondo?",
     subtitle: `${cover ? "La portada" : "El fondo"} de ahora se descarta y no vuelve. Para escoger entre todas: «Elegir portada o fondo».`,
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: cover ? "Conservar la portada" : "Conservar el fondo", command: { type: "close" } },
       { icon: cover ? "cover" : "wide", label: cover ? "Buscar otra portada" : "Buscar otro fondo", danger: true,
         command: { type: "art", id: command.id, kind: command.kind, title: command.title } },
     ],
@@ -250,7 +250,7 @@ export function powerMenu() {
     title: "Apagar",
     options: [
       { icon: "moon", label: "Suspender", command: { type: "power", action: "sleep" } },
-      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "power-confirm", action: "restart" } },
+      { icon: "restart", label: "Reiniciar", danger: true, command: { type: "power-confirm", action: "restart" } },
       { icon: "power", label: "Apagar", danger: true, command: { type: "power-confirm", action: "shutdown" } },
     ],
   };
@@ -328,10 +328,10 @@ export function videoMemoryOptions(video) {
   if (!video || video.dwm_mb < 1024) return [];
   const value = gb(video.dwm_mb);
   if (video.release === "ready") {
-    return [{ icon: "refresh", label: "Liberar memoria de video", value, hint: "La pantalla parpadea un momento",
+    return [{ icon: "memory", label: "Liberar memoria de video", value, hint: "La pantalla parpadea un momento",
       command: { type: "video-release" } }];
   }
-  return [{ icon: "refresh", label: "Liberar memoria de video sin reiniciar", value,
+  return [{ icon: "memory", label: "Liberar memoria de video sin reiniciar", value,
     hint: "Windows pedirá permiso una sola vez (con ratón, teclado o tocando la pantalla)", command: { type: "video-setup" } }];
 }
 
@@ -375,7 +375,7 @@ export function playersMenu({ players = [], game = null }) {
     options.push({ icon: "gamepad", label: "No hay controles conectados", hint: "Conecta uno: entra como el siguiente jugador", command: { type: "stay" } });
   }
   if (game && !game.live_join && players.length) {
-    options.push({ icon: "refresh", label: `Reiniciar ${game.title} con estos jugadores`, hint: "Lo no guardado se pierde",
+    options.push({ icon: "restart", label: `Reiniciar ${game.title} con estos jugadores`, hint: "Lo no guardado se pierde",
       danger: true, command: { type: "players-restart-confirm", title: game.title } });
   }
   options.push({ icon: "check", label: "Listo", command: { type: "close" } });
@@ -395,24 +395,24 @@ export function playerMenu({ slot, name, player }) {
   };
 }
 
-/** Reiniciar el juego con los jugadores de ahora: se pierde lo no guardado (Cancelar primero). */
+/** Reiniciar el juego con los jugadores de ahora: se pierde lo no guardado («Seguir jugando» primero). */
 export function playersRestartMenu({ title }) {
   return {
     title: `¿Reiniciar ${title}?`, subtitle: "Se cierra y se abre con estos jugadores. Lo que no hayas guardado se perderá.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "back" } },
-      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "players-restart" } },
+      { icon: "close", label: "Seguir jugando", command: { type: "back" } },
+      { icon: "restart", label: "Reiniciar", danger: true, command: { type: "players-restart" } },
     ],
   };
 }
 
-/** Cerrar una app para liberar memoria: puede perder lo no guardado, así que se pregunta (Cancelar primero). */
+/** Cerrar una app para liberar memoria: puede perder lo no guardado, así que se pregunta («Dejarla abierta» primero). */
 export function closeAppConfirmMenu({ exe, name }) {
   return {
     title: `¿Cerrar ${name}?`,
     subtitle: "Lo que no hayas guardado en ella se perderá.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "close", label: "Dejarla abierta", command: { type: "back" } },
       { icon: "close", label: `Cerrar ${name}`, danger: true, command: { type: "close-app", exe, name } },
     ],
   };
@@ -459,7 +459,7 @@ export function healthMenu(message, { restart = true, release = null } = {}) {
     options: [
       { icon: "close", label: "Más tarde", command: { type: "close" } },
       ...(release ? videoMemoryOptions({ dwm_mb: Infinity, release }).map((o) => ({ ...o, value: undefined })) : []),
-      { icon: "refresh", label: "Reiniciar ahora", danger: true, command: { type: "power-confirm", action: "restart" } },
+      { icon: "restart", label: "Reiniciar ahora", danger: true, command: { type: "power-confirm", action: "restart" } },
     ],
   };
 }
@@ -479,7 +479,7 @@ export function exitMenu() {
     title: "¿Salir al escritorio?",
     subtitle: "Para volver, pulsa Home.",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "close", label: "Quedarme en Orbital", command: { type: "close" } },
       { icon: "exit", label: "Salir al escritorio", danger: true, command: { type: "exit" } },
     ],
   };
@@ -487,7 +487,7 @@ export function exitMenu() {
 
 /**
  * Reiniciar y Apagar piden confirmar (un A de más ya no apaga la consola). Si hay un juego
- * abierto, se dice: lo que no se guardó se pierde. "Cancelar" va primero.
+ * abierto, se dice: lo que no se guardó se pierde. «Dejarla prendida» va primero.
  */
 export function powerConfirmMenu(action, running = null) {
   const verb = action === "restart" ? "Reiniciar" : "Apagar";
@@ -495,8 +495,8 @@ export function powerConfirmMenu(action, running = null) {
     title: `¿${verb} la consola?`,
     subtitle: running?.managed ? `${running.title} sigue abierto: lo que no hayas guardado se perderá.` : "",
     options: [
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
-      { icon: action === "restart" ? "refresh" : "power", label: verb, danger: true, command: { type: "power", action } },
+      { icon: "close", label: "Dejarla prendida", command: { type: "close" } },
+      { icon: action === "restart" ? "restart" : "power", label: verb, danger: true, command: { type: "power", action } },
     ],
   };
 }

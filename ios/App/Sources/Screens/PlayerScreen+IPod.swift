@@ -26,7 +26,7 @@ extension PlayerScreen {
     private func ipodStatus(_ model: PlayerModel) -> LocalizedStringKey {
         let state = model.snapshot.state
         if state == .playing { return "Reproduciendo" }
-        return state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa"
+        return state == .loading || state == .buffering || model.phase == .preparing ? "Cargando video" : "En pausa"
     }
 
     /// El iPod: arriba ✕, AirPlay y «⋯» (los de siempre); la pantalla con el video, el nombre, la versión y el avance; la rueda.

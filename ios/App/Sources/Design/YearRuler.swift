@@ -52,19 +52,19 @@ struct YearRuler: View {
     private func window(_ r: ClosedRange<Int>, _ width: CGFloat) -> some View {
         let left = x(max(r.lowerBound, first), width), right = x(min(r.upperBound, last), width)   // «Clásicos» empieza antes de la regla
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-        return shape.fill(DS.Filter.amberFill)
-            .overlay(shape.strokeBorder(DS.Filter.amber, lineWidth: DS.Stroke.selected))
+        return shape.fill(DS.Filter.roseFill)
+            .overlay(shape.strokeBorder(DS.Filter.rose, lineWidth: DS.Stroke.selected))
             .overlay(alignment: .leading) { handle.offset(x: -DS.Filter.handleWidth / 2) }
             .overlay(alignment: .trailing) { handle.offset(x: DS.Filter.handleWidth / 2) }
             // Con uno o dos años la ventana tiene un ancho mínimo (las orillas no se enciman) y no se sale de la regla.
             .frame(width: max(right - left, DS.Filter.windowMin), height: DS.Filter.rulerWindow)
             .offset(x: min(left, width - max(right - left, DS.Filter.windowMin)), y: -DS.Space.s1)
-            .glow(DS.Filter.amberGlow)
+            .glow(DS.Filter.roseGlow)
             .animation(drag == nil ? DS.Motion.base(reduceMotion) : nil, value: r)
     }
 
     private var handle: some View {
-        Capsule().fill(DS.Filter.amber).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
+        Capsule().fill(DS.Filter.rose).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
     }
 
     /// Las décadas debajo, cada una centrada en su tramo: tocar una la elige entera.
@@ -78,7 +78,7 @@ struct YearRuler: View {
                     Text(verbatim: "’\(String(format: "%02d", d % 100))")
                         .recipe(.label, color: on ? DS.bg : DS.textMuted).monospacedDigit()
                         .frame(width: DS.Filter.decadeButton, height: DS.Size.touchTarget)
-                        .background(on ? DS.Filter.amber : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                        .background(on ? DS.Filter.rose : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

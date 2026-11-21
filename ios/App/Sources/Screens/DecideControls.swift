@@ -94,7 +94,7 @@ struct DecideControls: View {
                 }
             }
             Divider()
-            Button("Quitar filtros", systemImage: "xmark", role: .destructive) {
+            Button("Quitar filtros", systemImage: DS.Symbol.remove, role: .destructive) {
                 m.clearFilters()
                 Task { await m.apply() }
             }

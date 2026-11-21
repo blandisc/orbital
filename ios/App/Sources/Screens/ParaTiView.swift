@@ -75,7 +75,7 @@ struct ParaTiView: View {
                     // La Mac: el logo y las pestañas en su renglón, con «Actualizar» y la ✕ del mosaico (en Listas lo pone `ListsView`).
                     .macOwnTopRow {
                         HStack(spacing: DS.Space.s4) {
-                            Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                            Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }   // ds-exception: renglón de arriba de la Mac (se usa con puntero)
                                 .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
                             mosaicBack(m)
                         }
@@ -110,7 +110,7 @@ struct ParaTiView: View {
             // «Actualizar»: en Listas, deslizando hacia abajo; el mosaico no se desliza, así que ahí es un botón.
             if m.mode == .mosaic {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                    Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }   // ds-exception: en la barra de arriba el sistema le da los 44 pt
                         .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
                 }
             }
@@ -154,7 +154,7 @@ struct ParaTiView: View {
     /// la barra de pestañas va en ese renglón y mandaba lo de la izquierda a «⋯» (no había salida visible, solo deslizar de
     /// lado): ahí es «Cerrar» (✕) al final de la derecha, en el lugar del perfil.
     private func mosaicBack(_ m: ParaTiModel) -> some View {
-        Button { m.mode = .lists } label: { Image(systemName: ThisDevice.platform == "iphone" ? "chevron.backward" : DS.Symbol.close) }
+        Button { m.mode = .lists } label: { Image(systemName: ThisDevice.platform == "iphone" ? "chevron.backward" : DS.Symbol.close) }   // ds-exception: va en la barra de arriba, donde el sistema le da los 44 pt
             .accessibilityLabel(Text("Regresar a Explorar"))
             .accessibilityIdentifier("paraTi-back")
     }

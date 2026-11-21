@@ -54,16 +54,18 @@
   /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
   --inverse-bg: var(--color-primary);
   --inverse-fg: var(--color-on-primary);
+  /* OT-6 (20 nov 2026): el ámbar de aviso (--color-warning) es solo para avisos. Las estrellas y los favoritos tienen su propio
+     token: el mismo ámbar que el iPhone (DS.Rating.filled), pero no se mueven si un día cambia el de los avisos. */
   --color-favorite: var(--palette-amber-300);
   --color-danger: var(--palette-red-400);
-  --color-warning: var(--palette-amber-300);
-  --color-rating: var(--color-warning);
+  --color-warning: var(--palette-amber-300); /* solo avisos: «funciona, pero…», lo que necesita tu atención */
+  --color-rating: var(--palette-amber-300); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
   --color-rating-on-light: var(--palette-amber-700); /* las estrellas en un renglón enfocado (blanco): el ámbar claro no se lee */
   /* El mazo «¿Qué vemos hoy?», como Tinder (DS.Match del iPhone, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» en el
      azul de Orbital; la carta se tiñe de ese color al decidir. */
   --color-match-pass: var(--color-danger);
   --color-match-keep: var(--color-success);
-  --color-match-tonight: var(--color-orbital); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
+  --color-match-tonight: var(--color-orbital);
   --color-live: var(--palette-teal-300);
   --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
   /* El arcoíris del azul de Orbital (Fernando, 31 oct 2026): el turquesa de la luna (oklch .804 .110 183) girado por el círculo
@@ -181,6 +183,7 @@
   --on-light-fill-strong: rgba(0, 0, 0, .1);
   --on-light-live: #0c7a6b;
   --on-light-warning: #8a5b00;
+  --on-light-success: #1f7a38; /* «Listo», «Al instante» sobre el blanco del foco (≥ 4,5:1) */
   /* Color de cada consola (punto, brillo de su tarjeta y el tono del fondo al enfocarla). */
   --system-switch: #e4002b;
   --system-gc: #7a5cff;

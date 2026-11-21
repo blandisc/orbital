@@ -215,7 +215,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
         battery.classList.toggle("battery--charging", info.charging);
         level.style.setProperty("--battery-level", `${pct}%`);
         bolt.style.display = info.charging ? "" : "none";
-        battery.title = `${info.charging ? "Cargando" : "Batería"} · ${pct} %`;
+        battery.title = `${info.charging ? "Batería cargándose" : "Batería"} · ${pct} %`;
         percent.textContent = `${pct}%`;
       };
       update();

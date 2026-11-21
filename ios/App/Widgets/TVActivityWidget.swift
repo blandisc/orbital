@@ -19,7 +19,7 @@ struct TVLiveActivity: Widget {
                     HStack(alignment: .firstTextBaseline) {
                         OrbitalSeal(paused: context.state.paused)
                         Spacer(minLength: DS.Space.s2)
-                        subtitle(context.state).font(DS.font(.xs)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                        subtitle(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                     }
                     Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
                     if !context.state.live { bar(context.state).tint(context.state.paused ? DS.onArtSecondary : DS.accent) }
@@ -138,7 +138,7 @@ struct OrbitalSeal: View {
                 .foregroundStyle(paused ? DS.onArtSecondary : DS.accent)
                 .shadow(color: paused ? .clear : DS.accent.opacity(DS.Widget.sealGlow), radius: DS.Space.s1)
             if !compact {
-                Text("En tu TV").font(DS.font(.xs, weight: .bold)).foregroundStyle(paused ? DS.onArtSecondary : DS.accent)
+                Text("En tu TV").font(DS.font(.sm, weight: .semibold)).foregroundStyle(paused ? DS.onArtSecondary : DS.accent)
             }
         }
         .accessibilityElement(children: .ignore)

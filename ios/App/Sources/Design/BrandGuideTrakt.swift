@@ -167,13 +167,13 @@ struct GuideShowCard: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: "Shōgun").font(DS.styled(.subheadline).weight(.semibold)).foregroundStyle(DS.text)
                 if watches {
-                    Text("T1 E7 · quedan 18 min").font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                    Text("T1 E7 · quedan 18 min").font(DS.styled(.caption)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     Capsule().fill(DS.text.opacity(0.14)).frame(height: 3)   // ds-exception: dibujo de la escena de la guía
                         .overlay(alignment: .leading) { GeometryReader { g in Capsule().fill(DS.brandMoon).frame(width: g.size.width * 0.62) } }
                         .padding(.top, 4)
                 } else {
                     Text("\(Text(Image(systemName: "checkmark")).foregroundStyle(DS.brandMoon)) \(Text("T1 E7 · vista"))")
-                        .font(DS.styled(.caption2)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        .font(DS.styled(.caption)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 }
             }
         }

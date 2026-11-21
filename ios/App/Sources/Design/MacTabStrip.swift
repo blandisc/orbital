@@ -263,7 +263,7 @@ struct MacSearchField: View {
                 .textFieldStyle(.plain).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
                 .focused(focused).submitLabel(.search).autocorrectionDisabled()
             if !text.isEmpty {
-                DSIconButton(symbol: "xmark", label: "Borrar la búsqueda", size: .regular) { text = "" }
+                DSIconButton(symbol: DS.Symbol.remove, label: "Borrar la búsqueda", size: .regular) { text = "" }
             }
         }
         .padding(.horizontal, DS.Space.s6)

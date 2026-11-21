@@ -43,7 +43,7 @@ struct LearnView: View {
                 }
                 .accessibilityIdentifier("settings-guide")
                 Button { confirmReset = true } label: {
-                    SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
+                    SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.clockwise", tint: DS.ListTint.addon, linked: false)
                 }
                 .accessibilityIdentifier("learn-reset")
             } footer: { Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez.") }
@@ -93,7 +93,7 @@ struct ResetTipsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             HStack(spacing: DS.Space.s2) {
-                DSIconTile(symbol: "arrow.counterclockwise", tint: DS.ListTint.addon)
+                DSIconTile(symbol: "arrow.clockwise", tint: DS.ListTint.addon)
                 DSSheetHeader(title: Text("¿Volver a ver los avisos?"))
             }
             Text("Los avisos sobre la pantalla vuelven a salir, uno a la vez, y las lecciones de Aprende vuelven a decir que no las has visto.")

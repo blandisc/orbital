@@ -1,11 +1,12 @@
 import { CLOUD_ROW, languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
+import { failure, retry } from "../core/notices.js";
 
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
 export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, debridSignupMenu, renderHints, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
-  return {
+  const commands = {
     // Ajustes › Complementos («La TV sin Stremio», S1)
     "addon-menu": async (command, context) => {
       const entries = state.settings?.addons?.entries || [];
@@ -159,8 +160,9 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
       const d = res.done || {};
       if (!d.unlinked) {
         sound.play("error");
-        return ui.toast.show(`Llegaron ${d.in_list} de ${d.stremio} a Trakt`, { error: true,
-          detail: "No desconecté Stremio: faltan algunos (sin IMDb o Trakt no los aceptó)" });
+        // «Reintentar» pasa otra vez los que faltan (lo que ya llegó no se repite en Trakt).
+        return ui.toast.show(`Llegaron ${d.in_list} de ${d.stremio} a Trakt`, failure(retry(() => commands["stremio-to-trakt"]()),
+          { detail: "No desconecté Stremio: faltan algunos (sin IMDb o Trakt no los aceptó)" }));
       }
       state.stremioLinked = false;
       sound.play("select");
@@ -230,4 +232,5 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
       return ui.foryou.load({ force: true });
     },
   };
+  return commands;
 }

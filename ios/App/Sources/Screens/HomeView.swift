@@ -445,7 +445,7 @@ struct HomeView: View {
         if env.services.orbital.isConfigured {
             Button("Ver en la TV", systemImage: "tv.and.mediabox") { Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) } }
         }
-        Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { removeFromContinue(model, item) }
+        Button("Quitar de Seguir viendo", systemImage: DS.Symbol.remove) { removeFromContinue(model, item) }
     }
 
     /// «Quitar de Seguir viendo» con «Deshacer»: Trakt y la biblioteca se enteran cuando el aviso ya se fue.
@@ -541,7 +541,7 @@ struct HomeView: View {
                                   progress: item.progress, width: nil, fallback: item.background == nil ? nil : item.poster)
                     }
                     .buttonStyle(.plain)
-                    .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { removeFromContinue(model, item) } }
+                    .contextMenu { Button("Quitar de Seguir viendo", systemImage: DS.Symbol.remove) { removeFromContinue(model, item) } }
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)

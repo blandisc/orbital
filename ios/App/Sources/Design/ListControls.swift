@@ -371,7 +371,7 @@ struct ListFilterChips: View {
         Button(action: remove) {
             HStack(spacing: DS.Space.s1) {
                 title
-                Image(systemName: "xmark").font(DS.TextRecipe.badge.font)   // ds-exception: la ✕ dice que tocar la ficha quita el filtro (no es cerrar)
+                Image(systemName: DS.Symbol.remove).font(DS.TextRecipe.badge.font)   // el menos: tocar la ficha quita el filtro (OI-8)
             }
             .font(DS.TextRecipe.footnote.font)
         }

@@ -60,7 +60,7 @@ struct EpisodesPanel: View {
                     Text(verbatim: "E" + String(ep.episode)).recipe(.caption)
                     Text(verbatim: ep.title).recipe(.labelLarge, color: DS.text).lineLimit(2)
                     if now { Text("Viendo").recipe(.badge, color: DS.brandMoon) }
-                    else if upcoming { Text("Siguiente").recipe(.badge, color: DS.warning) }
+                    else if upcoming { Text("Siguiente").recipe(.badge, color: DS.accent) }   // no es un aviso: sin el ámbar de DS.warning
                     else if !available { Text("No descargado").recipe(.caption) }
                 }
                 Spacer(minLength: 0)

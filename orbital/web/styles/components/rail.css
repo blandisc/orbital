@@ -91,5 +91,5 @@
 }
 .rail__meta { color: var(--color-text-faint); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail__item--current .rail__name { color: var(--color-text); }
-.is-focused.rail__item .rail__name { color: var(--color-text); font-weight: var(--weight-bold); }
+.is-focused.rail__item .rail__name { color: var(--color-text); } /* D2-B: el foco se ve por el color, sin negrita */
 .is-focused.rail__item .rail__meta { color: var(--color-text-muted); }

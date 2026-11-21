@@ -1,3 +1,5 @@
+import { failure, retry } from "../core/notices.js";
+
 /** «Guardar en…» y editar tus listas (Mi lista y tus listas de Trakt), fuera de main.js (revisión 2, 17e, 11 nov 2026).
  *  Como el iPhone: «Guardar en…» marca en qué listas va un título, varias a la vez; quitar y agregar cambia al instante, con
  *  «Deshacer» en el aviso, y si Trakt no acepta, regresa y lo dice. `ctx` trae lo de la app que esto necesita. */
@@ -65,7 +67,9 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
         set(!add);
         refreshSave();
         sound.play("error");
-        ui.toast.show(err.message || "No pude guardarlo", { error: true });
+        // La casilla ya regresó; «Reintentar» la vuelve a marcar (si «Guardar en…» sigue siendo de ese título).
+        ui.toast.show(add ? "No pude guardarlo" : "No pude quitarlo", failure(retry(() => { if (saving === s && get() !== add) toggleSave(where); }),
+          { err, detail: s.title || "" }));
       });
   }
 
@@ -107,24 +111,25 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
     const shown = openListOf(list)?.without(metaId) || [];
     const rows = listLocally(list.where, metaId, false);
     const back = () => { listLocally(list.where, metaId, true, { removed: rows }); openListOf(list)?.restore(shown); };
+    const undoRemove = () => {
+      back();
+      sound.play("select");
+      api.saveTo(kind, metaId, list.where, true).catch((err) => listFailed(list, err, () => {
+        listLocally(list.where, metaId, false);
+        openListOf(list)?.without(metaId);
+      }, undoRemove));
+    };
     sound.play("select");
     ui.toast.show(`Quitada de ${quoted(list)}`, { detail: item.title || "", duration: UNDO_MS,
-      ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
-        back();
-        sound.play("select");
-        api.saveTo(kind, metaId, list.where, true).catch((err) => listFailed(list, err, () => {
-          listLocally(list.where, metaId, false);
-          openListOf(list)?.without(metaId);
-        }));
-      } }) });
-    api.saveTo(kind, metaId, list.where, false).catch((err) => listFailed(list, err, back));
+      ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: undoRemove }) });
+    api.saveTo(kind, metaId, list.where, false).catch((err) => listFailed(list, err, back, () => removeFromList(list, item)));
   }
 
-  /** Trakt no aceptó: regresa lo que se cambió y lo dice. */
-  function listFailed(list, err, undo) {
+  /** Trakt no aceptó: regresa lo que se cambió, lo dice y ofrece intentarlo otra vez (`again`, OT-3). */
+  function listFailed(list, err, undo, again) {
     undo();
     sound.play("error");
-    ui.toast.show(`No pude cambiar ${quoted(list)}`, { error: true, detail: err?.message || "" });
+    ui.toast.show(`No pude cambiar ${quoted(list)}`, failure(retry(again), { err }));
   }
 
   /** «Agregar» (☰ › Agregar a esta lista…, el botón de arriba): Buscar para elegir qué poner, encima de la lista. */
@@ -144,23 +149,25 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
 
   function addPicked(list, result) {
     const ref = titleRef(result);
-    if (!/^tt\d+$/.test(ref?.meta_id || "")) { sound.play("error"); return ui.toast.show("Elige una película o serie", { error: true }); }
+    // No es un error de Orbital: el aviso dice qué elegir (Buscar sigue abierto para elegir otra).
+    if (!/^tt\d+$/.test(ref?.meta_id || "")) { sound.play("error"); return ui.toast.show("Eso no es una película ni una serie", { tone: "warn", detail: "Elige una de la lista" }); }
     const kind = ref.kind === "series" ? "series" : "movie";
     const entry = { meta_id: ref.meta_id, kind, title: result.title, image: result.image || ref.image, year: Number(result.year || result.extra?.year) || undefined };
     openListOf(list)?.prepend(curatedItem(entry));
     listLocally(list.where, ref.meta_id, true, { entry });
     const out = () => { listLocally(list.where, ref.meta_id, false); openListOf(list)?.without(ref.meta_id); };
+    const undoAdd = () => {
+      out();
+      sound.play("select");
+      api.saveTo(kind, ref.meta_id, list.where, false).catch((err) => listFailed(list, err, () => {
+        listLocally(list.where, ref.meta_id, true, { entry });
+        openListOf(list)?.prepend(curatedItem(entry));
+      }, undoAdd));
+    };
     sound.play("select");
     ui.toast.show(`Agregada a ${quoted(list)}`, { tone: "success", detail: result.title || "", duration: UNDO_MS,
-      ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
-        out();
-        sound.play("select");
-        api.saveTo(kind, ref.meta_id, list.where, false).catch((err) => listFailed(list, err, () => {
-          listLocally(list.where, ref.meta_id, true, { entry });
-          openListOf(list)?.prepend(curatedItem(entry));
-        }));
-      } }) });
-    api.saveTo(kind, ref.meta_id, list.where, true).catch((err) => listFailed(list, err, out));
+      ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: undoAdd }) });
+    api.saveTo(kind, ref.meta_id, list.where, true).catch((err) => listFailed(list, err, out, () => addPicked(list, result)));
   }
 
   return { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer };

@@ -8,6 +8,8 @@ struct OnboardingSubtitles: View {
     let back: (() -> Void)?
     let next: () -> Void
     let skip: () -> Void
+    /// El botón de seguir: el verbo de lo que sigue (`OnboardingModel.ahead`).
+    let ahead: Text
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
@@ -15,7 +17,7 @@ struct OnboardingSubtitles: View {
         let _ = model.track()
         GuidePage(title: Text("Más subtítulos"),
                   message: Text("Más subtítulos y de tu copia exacta. Conecta tu cuenta gratuita de OpenSubtitles."),
-                  step: step, primary: model.connected ? Text("Seguir") : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
+                  step: step, primary: model.connected ? ahead : Text("Ahora no"), next: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let account = model.account {
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(account.username)"))

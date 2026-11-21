@@ -136,7 +136,7 @@ struct LessonView: View {
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted)
                     .accessibilityIdentifier("lesson-done")
             } else {
-                Button { last ? finish(true) : next() } label: { Text(last ? "Listo" : "Siguiente").frame(maxWidth: .infinity) }
+                Button { last ? finish(true) : next() } label: { Text(last ? "Listo" : "Ver el siguiente paso").frame(maxWidth: .infinity) }
                     .dsPrimaryButton().dsControlSize(.large)
                     .accessibilityIdentifier(last ? "lesson-done" : "lesson-next")
             }
