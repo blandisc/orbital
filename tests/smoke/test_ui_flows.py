@@ -584,9 +584,14 @@ def test_choose_version_is_whole_and_the_notice_does_not_cover(browser, server, 
     page.wait_for_timeout(700)
     toast = page.evaluate("""() => {
       const t = document.querySelector('.toast').getBoundingClientRect();
+      // Solo lo que se ve: una fila que la lista ya recortó (abajo de su borde) no cuenta, aunque el aviso pase encima.
+      const L = document.querySelector('.sources__list').getBoundingClientRect();
       const hit = [...document.querySelectorAll('.sources .version')].filter((v) => {
-        const r = v.getBoundingClientRect();
-        return r.height && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top; });
+        const b = v.getBoundingClientRect();
+        const r = { left: Math.max(b.left, L.left), right: Math.min(b.right, L.right),
+                    top: Math.max(b.top, L.top), bottom: Math.min(b.bottom, L.bottom) };
+        return r.bottom > r.top && r.right > r.left
+          && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top; });
       return { text: document.querySelector('.toast').innerText, hit: hit.map((v) => v.textContent.trim().slice(0, 20)) }; }""")
     assert "Esa versión ya no está" in toast["text"] and "Elige otra de la lista" in toast["text"], toast
     assert not toast["hit"], toast
