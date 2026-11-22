@@ -62,7 +62,10 @@ extension PlayerModel {
         guard mine == generation else { return }
         // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
         // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
-        if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
+        if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) {
+            Self.note("subtítulos: como lo dejaste (\(choice.subtitle?.off == true ? "apagados" : choice.subtitle?.language ?? "sin idioma")) · \(s.subtitleTracks.count) en el video")
+            return
+        }
         var langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
         // Lo seguías viendo en otro idioma (inglés, por ejemplo): ese es tu idioma para este título, no se avisa «no está en
         // tu idioma» (Fernando, 6 nov).
@@ -74,7 +77,7 @@ extension PlayerModel {
         // versión trae tu idioma, lo dice `offerVersionInYourLanguage`.
         offerVersionInYourLanguage(s, prefs: langs.prefs)
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
-        if picked { return }
+        if picked { Self.note("subtítulos: los que elegiste en este título"); return }
         let mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)
         var sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
@@ -84,6 +87,8 @@ extension PlayerModel {
             sub = s.subtitleTracks.first { $0.isForced && TrackChooser.matches($0, yours) }
         }
         guard mine == generation else { return }
+        // En la bitácora (21 nov 2026: «no cargó los subtítulos» y no había cómo saber qué se decidió).
+        Self.note("subtítulos: \(mode) · audio \(audioLanguage) · del video: \(sub?.language ?? "ninguno") de \(s.subtitleTracks.count)")
         if let sub { await engine.selectSubtitle(sub.id) }
         // El video no trae tu idioma (a lo más los carteles del audio): se busca en internet aunque haya puesto los carteles.
         if case .language(let language) = mode, !(sub.map { TrackChooser.matches($0, language) } ?? false),
@@ -184,7 +189,9 @@ extension PlayerModel {
             let file = request.localFile.flatMap(FileFingerprint.of)
             url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
         }
-        if let url, let real = await finder.playableSubtitle(url) { pendingSubtitleURL = url; await engine.addSubtitle(url: real, language: language) }
+        guard let url, let real = await finder.playableSubtitle(url) else { return Self.note("subtítulos de internet en \(language): ninguno") }
+        Self.note("subtítulos de internet en \(language): \(url.host ?? "archivo")")
+        pendingSubtitleURL = url; await engine.addSubtitle(url: real, language: language)
     }
 
     public func loadScares() async {

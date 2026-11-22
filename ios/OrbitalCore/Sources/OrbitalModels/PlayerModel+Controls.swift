@@ -10,7 +10,7 @@ extension PlayerModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     func loadVideo(_ url: URL, at start: Double) async throws {
-        let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
+        let src = source.map { "\($0.cached ? "en la nube" : ($0.debrid ? "la nube aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
         Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
         loadStartedAt = clock(); lastLoggedState = ""
         if rd.shortDuration != nil { rd.shortDuration = nil }   // otra carga: la duración corta era de la anterior
