@@ -38,6 +38,18 @@ extension DesignRulesTests {
         check(problems, "Diálogo del sistema con `ds-exception:` sin su porqué")
     }
 
+    /// Confirmar un cambio que no borra ni desconecta (pasar o usar la clave de la TV, abrir una lista con el enlace) también
+    /// es tarjeta (Fernando, 21 nov 2026: «sale un anuncio de sistema muy feo. Mejor que salga una card de abajo»).
+    func testConfirmingAChangeIsAnAppCard() throws {
+        for name in ["DebridTVSection.swift", "SavedListMenu.swift"] {
+            let file = try XCTUnwrap(try sources(["Screens"]).first { $0.name == name })
+            let code = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            XCTAssertTrue(code.contains(".choiceSheet(item:"), "\(name): la confirmación es una `ChoiceSheet`")
+            XCTAssertFalse(code.contains("ds-exception: confirma un cambio") || code.contains("ds-exception: confirma reemplazar"), "\(name): confirmar un cambio ya no es excepción")
+        }
+        XCTAssertFalse(try sources(["Screens"]).first { $0.name == "DebridTVSection.swift" }!.lines.joined().contains("confirmationDialog("))
+    }
+
     /// El episodio que ya viste abre su tarjeta (EV1, 13 nov), no la pregunta del sistema.
     func testRewatchIsAnAppCard() throws {
         let file = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "TitleView+Acciones.swift" })

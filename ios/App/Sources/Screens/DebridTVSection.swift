@@ -31,8 +31,10 @@ struct DebridTVSection: View {
 struct DebridTVCompare: View {
     @State private var observer: ModelObserver<DebridModel>
     private var debrid: DebridModel { observer.model }
-    @State private var confirmPass = false
-    @State private var confirmUse = false
+    /// La pregunta antes de reemplazar una clave: una tarjeta de la app, no el aviso del sistema (Fernando, 21 nov 2026: «sale
+    /// un anuncio de sistema muy feo. Mejor que salga una card de abajo»).
+    @State private var asking: TVAsk?
+    enum TVAsk: String, Identifiable { case pass, use; var id: String { rawValue } }
     @Environment(AppEnvironment.self) private var env
 
     init(debrid: DebridModel) { _observer = State(wrappedValue: ModelObserver(debrid)) }
@@ -70,14 +72,24 @@ struct DebridTVCompare: View {
             }
             result(model)
         }
-        .confirmationDialog(passTitle(model), isPresented: $confirmPass, titleVisibility: .visible) {   // ds-exception: confirma reemplazar la clave de la TV (una sola acción)
-            Button("Pasar a la TV") { Task { await model.passToTV() } }
-            Button("Dejarlo como está", role: .cancel) {}
-        } message: { Text("Si Real-Debrid no la reconoce, tu TV se queda con la que tenía.", cloud: model.service, locale: env.uiLocale) }
-        .confirmationDialog(useTitle(model), isPresented: $confirmUse, titleVisibility: .visible) {   // ds-exception: confirma reemplazar la clave del iPhone (una sola acción)
-            Button("Usar la de la TV") { Task { await model.useTVKey() } }
-            Button("Dejarlo como está", role: .cancel) {}
-        } message: { Text("Reemplaza la de este iPhone si Real-Debrid la acepta con Premium.", cloud: model.service, locale: env.uiLocale) }
+        .choiceSheet(item: $asking) { ask in card(ask, model) }
+    }
+
+    /// «Pasar a la TV» / «Usar la de la TV»: arriba qué cuenta queda y qué pasa si Real-Debrid no la acepta; abajo la acción.
+    /// Dejarlo como está es cerrarla (deslizar, tocar fuera o Esc).
+    private func card(_ ask: TVAsk, _ model: DebridModel) -> ChoiceCard {
+        switch ask {
+        case .pass:
+            ChoiceCard(title: passTitle(model), detail: Text("Si Real-Debrid no la reconoce, tu TV se queda con la que tenía.", cloud: model.service, locale: env.uiLocale),
+                       primary: ChoiceAction(id: "debrid-pass-confirm", title: Text("Pasar a la TV"), symbol: "arrow.up.forward.app") {
+                           Task { await model.passToTV() }
+                       }, id: "debrid-pass-card")
+        case .use:
+            ChoiceCard(title: useTitle(model), detail: Text("Reemplaza la de este iPhone si Real-Debrid la acepta con Premium.", cloud: model.service, locale: env.uiLocale),
+                       primary: ChoiceAction(id: "debrid-use-confirm", title: Text("Usar la de la TV"), symbol: "arrow.down.app") {
+                           Task { await model.useTVKey() }
+                       }, id: "debrid-use-card")
+        }
     }
 
     /// «Tu TV usará la cuenta fernando»: se dice la cuenta, no las letras de la clave (IOS-6).
@@ -102,13 +114,13 @@ struct DebridTVCompare: View {
     }
 
     private func passButton(_ title: Text, _ detail: Text) -> some View {
-        Button { confirmPass = true } label: { actionLabel(title, detail, "arrow.up.forward.app") }
+        Button { asking = .pass } label: { actionLabel(title, detail, "arrow.up.forward.app") }
             .disabled(debrid.tvShare == .working)
             .accessibilityIdentifier("debrid-pass-to-tv")
     }
 
     private func useButton(_ title: Text, _ detail: Text) -> some View {
-        Button { if debrid.hasToken { confirmUse = true } else { Task { await debrid.useTVKey() } } } label: { actionLabel(title, detail, "arrow.down.app") }
+        Button { if debrid.hasToken { asking = .use } else { Task { await debrid.useTVKey() } } } label: { actionLabel(title, detail, "arrow.down.app") }
             .disabled(debrid.tvShare == .working)
             .accessibilityIdentifier("debrid-use-tv")
     }

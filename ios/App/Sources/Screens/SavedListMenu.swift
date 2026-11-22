@@ -20,6 +20,7 @@ struct SavedListManagement: ViewModifier {
     @State private var newName = ""
     @State private var deleting = false
     @State private var openToShare = false
+    private struct ShareAsk: Identifiable { var id: String { "share" } }
 
     private var listID: String { model.selected }
     private var own: Bool { model.canEdit && listID != SavedModel.watchlist }
@@ -49,16 +50,18 @@ struct SavedListManagement: ViewModifier {
                 }
                 Button("Conservar la lista", role: .cancel) {}
             } message: { Text("No se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas.") }
-            .confirmationDialog(Text("Esta lista es «Solo tú»"), isPresented: $openToShare, titleVisibility: .visible) {   // ds-exception: confirma un cambio de quién la ve (una sola acción)
-                Button("Abrir con el enlace y copiarlo") {
-                    let id = listID
-                    run("No pude cambiar quién la ve") {
-                        try await model.setPrivacy(id, "link")
-                        copyLink(id)
-                    }
-                }
-                Button("Ahora no", role: .cancel) {}
-            } message: { Text("Para compartirla, quien tenga el enlace podrá verla. Puedes regresarla a «Solo tú» cuando quieras.") }
+            // Confirma un cambio, no borra nada: tarjeta de la app (21 nov 2026, la misma regla que «Pasar a la TV»).
+            .choiceSheet(item: Binding(get: { openToShare ? ShareAsk() : nil }, set: { if $0 == nil { openToShare = false } })) { _ in
+                ChoiceCard(title: Text("Esta lista es «Solo tú»"),
+                           detail: Text("Para compartirla, quien tenga el enlace podrá verla. Puedes regresarla a «Solo tú» cuando quieras."),
+                           primary: ChoiceAction(id: "list-open-share", title: Text("Abrir con el enlace y copiarlo"), symbol: "link") {
+                               let id = listID
+                               run("No pude cambiar quién la ve") {
+                                   try await model.setPrivacy(id, "link")
+                                   copyLink(id)
+                               }
+                           }, id: "list-share-card")
+            }
             .sheet(isPresented: $reordering) {
                 ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName),
                                  items: model.items) { order in

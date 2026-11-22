@@ -258,6 +258,9 @@ diálogos del sistema.**
 - **«Ya lo viste»** (tocar un episodio visto): la miniatura, «T2 E5 · nombre» y «Ya lo viste» en gris; «Ver otra vez» con la
   versión que va a sonar («🇲🇽 Español»); «Otra versión o idioma» (`DS.Symbol.switchVersion`) y «Marcar como no visto»
   (`DS.Symbol.watched`; no va en rojo: se puede volver a marcar). En el iPad es la misma tarjeta, centrada y a la medida.
+- **Confirmar un cambio que no borra ni desconecta también es tarjeta** (21 nov 2026, Fernando: «sale un anuncio de sistema
+  muy feo. Mejor que salga una card de abajo»): «Pasar a la TV» y «Usar la de la TV» de Cuentas, y «Esta lista es «Solo tú»»
+  al compartir una lista. Arriba qué queda y qué pasa si falla; la acción grande; dejarlo como está es cerrarla.
 - Se quedan como pregunta del sistema, cada una con `ds-exception: <motivo>` en su renglón: las confirmaciones cortas de algo
   destructivo o de desconectar («¿Quitar…?», «¿Desconectar Trakt?»), las que piden un nombre (el campo de texto del sistema) y
   «¿Terminaste de verlo?» (llega al volver de Infuse sobre lo que esté abierto). Los `Menu` que se despliegan del propio botón
