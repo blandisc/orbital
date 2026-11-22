@@ -24,7 +24,7 @@ final class HomeNewUITests: XCTestCase {
     }
 
     func testPeliculasEscondeCanales() {
-        let edit = app.buttons["home-channels-edit"]
+        let edit = app.buttons["home-channels-add"]
         scrollTo(edit)
         XCTAssertTrue(edit.waitForExistence(timeout: 20), "Canales aparece con Todo")
         shot("canales")
@@ -40,11 +40,11 @@ final class HomeNewUITests: XCTestCase {
         sleep(1)
         shot("peliculas")
         for _ in 0..<8 { app.swipeUp(velocity: .slow) }
-        XCTAssertFalse(app.buttons["home-channels-edit"].exists, "con Películas no hay Canales")
+        XCTAssertFalse(app.buttons["home-channels-add"].exists, "con Películas no hay Canales")
     }
 
     func testBuscarYAnadirUnCanal() throws {
-        let edit = app.buttons["home-channels-edit"]
+        let edit = app.buttons["home-channels-add"]
         scrollTo(edit)
         XCTAssertTrue(edit.waitForExistence(timeout: 20))
         edit.tap()

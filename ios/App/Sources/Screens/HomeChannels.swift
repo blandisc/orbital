@@ -4,7 +4,7 @@ import OrbitalModels
 
 /// Canales (Inicio, docs/producto/inicio-benchmark/): tus series siempre al aire, como la tele. Cada canal enseña la imagen
 /// y el nombre del capítulo que está pasando (no el arte de la serie), con su barra que avanza sola; cuando termina, entra
-/// otro al azar. Tocas uno y entras justo donde va. El «+» abre la hoja para elegir tus canales (los tuyos, unas sugeridas
+/// otro al azar. Tocas uno y entras justo donde va. «Añadir canal», al final de la fila, abre la hoja para elegir tus canales (los tuyos, unas sugeridas
 /// y un buscador). Solo series: con «Películas» en la barra, no se pinta.
 struct HomeChannels: View {
     let model: ChannelsModel
@@ -34,9 +34,7 @@ struct HomeChannels: View {
                         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
                         .accessibilityIdentifier("home-random-simpsons")
                 }
-                DSIconButton(symbol: "plus", label: "Elegir canales", size: .regular) { choosing = true }
-                    .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-                    .accessibilityIdentifier("home-channels-edit")
+                // Sin «+» aquí: «Añadir canal» al final de la fila ya lo hace (Fernando, 22 nov 2026: «tienes dos botones»).
             }
             .padding(.horizontal, DS.Space.gutter)
             // Cada medio minuto se vuelve a calcular qué va al aire y cuánto lleva (es una cuenta: no pide nada a la red).
@@ -50,7 +48,7 @@ struct HomeChannels: View {
                     }
                     .scrollTargetLayout()
                 }
-                .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
                 .pagingArrows()   // C4: ‹ › con el puntero

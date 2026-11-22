@@ -173,7 +173,7 @@ struct DecideView: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { h in if h != trioHeight { trioHeight = h } }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .scrollClipDisabled()   // la sombra de la elegida y el resplandor no se cortan en el margen
+        .rowEdge(.bleeds)   // la sombra de la elegida y el resplandor no se cortan en el margen
         .frame(height: overflows || trioHeight == 0 ? nil : trioHeight)
         .onChange(of: contentHeight, initial: true) {
             let over = contentHeight > WindowMetrics.size.height * DS.Sheet.maxShare

@@ -48,7 +48,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         let because = any("because-deck")
         scrollTo(because)
         XCTAssertTrue(because.waitForExistence(timeout: 10), "«Por lo que viste»")
-        let channels = app.buttons["home-channels-edit"]
+        let channels = app.buttons["home-channels-add"]
         scrollTo(channels)
         XCTAssertTrue(channels.waitForExistence(timeout: 10), "Canales")
         shot("inicio-canales")

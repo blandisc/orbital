@@ -34,7 +34,7 @@ struct FilterResultsView: View {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                 }
-                .scrollClipDisabled()
+                .rowEdge(.bleeds)
                 if !model.filter.awards.isEmpty {
                     Text("Con premios cuentan el formato, la época y lo que ya viste.").recipe(.caption, color: DS.textMuted)
                         .padding(.horizontal, DS.Space.gutter)

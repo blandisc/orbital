@@ -132,6 +132,12 @@ que llega después de abrir) y cortaba una semana a la mitad en la orilla.
 - **Regla: lo que se desplaza a lo ancho abre mostrando lo importante completo, y dice que hay más.** Lo importante es lo de
   hoy (o lo elegido); «completo» es sin una columna o tarjeta a medias en la orilla de la columna; «dice que hay más» es un
   desvanecido en la orilla de lo que queda atrás (o la tarjeta que se asoma en un carrusel de orilla a orilla).
+- **Regla: lo que va dentro de una tarjeta no se sale de ella** (22 nov 2026, en la Mac: «Lo nuevo de lo tuyo» se salía del
+  panel por los dos lados y los pósters de «Por lo que viste» pasaban la orilla de su tarjeta). Cada fila dice hasta dónde
+  llega: `.rowEdge(.bleeds)` la suelta, que llega a la orilla de la pantalla; `.rowEdge(.inCard)` la que va en una tarjeta o
+  un panel. Lo vigilan `testRowsSayWhereTheyEnd` y `testHorizontalRowsDoNotClipWhatGrows`.
+- **Una acción, un botón:** una fila que termina con su tarjeta de añadir («Añadir canal») no repite el «+» en su
+  encabezado (`testRowsDoNotRepeatTheirAddButton`).
 - Los mapas de semanas son una pieza, `DSWeekStrip` (`Design/WeekStrip.swift`, medidas en `DS.WeekStrip`): las casillas salen
   del ancho que le queda (`WindowMetrics.column`), caben semanas enteras, abre en la de hoy por su id (también cuando llega
   más historial), se detiene por semanas, desvanece lo de atrás y, si todo cabe (iPad, Mac), no se desliza. Arriba, el mes

@@ -49,7 +49,7 @@ struct DSWeekStrip<Cell: View>: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+            .rowEdge(.inCard)   // va dentro de la tarjeta de «Día por día»: no se sale a los lados
             .scrollPosition($position, anchor: .trailing)
             .scrollTargetBehavior(.viewAligned)
             .scrollDisabled(!fit.scrolls)

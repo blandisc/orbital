@@ -55,7 +55,7 @@ struct HomeTopTen: View {
                     .padding(.vertical, DS.Stroke.selected)   // el anillo de la elegida no se recorta
                     .scrollTargetLayout()
                 }
-                .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 // Un riel: solo de lado. Antes la fila tenía unos puntos de más y se podía mover arriba y abajo.
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
@@ -80,7 +80,7 @@ struct HomeTopTen: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+            .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .pagingArrows()   // C4: ‹ › con el puntero

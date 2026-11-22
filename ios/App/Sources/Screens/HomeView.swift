@@ -433,7 +433,7 @@ struct HomeView: View {
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
+            .rowEdge(.bleeds)
             .pagingArrows()   // C4: ‹ › con el puntero
             .edgeBump()
         }
@@ -478,7 +478,7 @@ struct HomeView: View {
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
+            .rowEdge(.bleeds)
             .pagingArrows()   // C4
         }
         .accessibilityElement(children: .contain).accessibilityIdentifier("home-up-next")
@@ -507,7 +507,7 @@ struct HomeView: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+            .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .pagingArrows()   // C4

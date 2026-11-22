@@ -309,6 +309,6 @@ struct WatchingFiveStars: View {
             .padding(.horizontal, DS.Space.gutter)
         }
         .padding(.horizontal, -DS.Space.gutter)
-        .scrollClipDisabled()
+        .rowEdge(.bleeds)
     }
 }

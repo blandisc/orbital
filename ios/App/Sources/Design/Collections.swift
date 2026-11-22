@@ -241,7 +241,7 @@ struct BecauseCard<Related: View>: View {
                         LazyHStack(spacing: DS.Space.s2) { related() }
                             .environment(\.posterCaptions, false)
                     }
-                    .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                    .rowEdge(.inCard)   // dentro de la tarjeta: los pósters no se salen a los lados (Mac, 22 nov 2026)
                 case .loading:
                     HStack(spacing: DS.Space.s2) {
                         ForEach(0..<DS.Collections.relatedPlaceholders, id: \.self) { _ in

@@ -26,7 +26,7 @@ extension DesignRulesTests {
         XCTAssertEqual(bad, [], "Respuesta del sistema armada dentro de la pantalla (truena en Swift 6): va en una función `nonisolated`")
     }
 
-    /// Un listón no recorta lo que crece (13 nov 2026): todo `ScrollView(.horizontal` lleva `.scrollClipDisabled()` en sus
+    /// Un listón no recorta lo que crece (13 nov 2026) y dice hasta dónde llega (22 nov): todo `ScrollView(.horizontal` lleva `.rowEdge(…)` en sus
     /// modificadores, salvo un carrusel de página completa marcado `// recorta:`.
     func testHorizontalRowsDoNotClipWhatGrows() throws {
         let root = repo.appendingPathComponent("ios/App/Sources")
@@ -47,14 +47,14 @@ extension DesignRulesTests {
                 while i < chars.count { if chars[i] == "{" { depth += 1 } else if chars[i] == "}" { depth -= 1; if depth == 0 { break } }; i += 1 }
                 let after = String(chars[min(i + 1, chars.count)..<min(i + 1500, chars.count)]).components(separatedBy: "\n").dropFirst()
                 let chain = after.prefix { $0.trimmingCharacters(in: .whitespaces).hasPrefix(".") || $0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
-                if !chain.contains(where: { $0.contains(".scrollClipDisabled()") }) {
+                if !chain.contains(where: { $0.contains(".rowEdge(") }) {
                     let line = text[..<r.lowerBound].filter { $0 == "\n" }.count + 1
                     clipped.append("\(file.lastPathComponent):\(line)")
                 }
             }
         }
         XCTAssertGreaterThan(rows, 20, "se leyeron los listones")
-        XCTAssertEqual(clipped, [], "Listón que recorta lo que crece: `.scrollClipDisabled()` o `// recorta: <motivo>`")
+        XCTAssertEqual(clipped, [], "Listón que no dice hasta dónde llega: `.rowEdge(.bleeds)` (suelto), `.rowEdge(.inCard)` (en una tarjeta) o `// recorta: <motivo>`")
     }
 
     /// Un buscador que flota tapa lo que pasa por debajo (13 nov 2026): todo archivo con `.searchable(` lleva

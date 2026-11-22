@@ -60,7 +60,7 @@ struct DSSelector<ID: Hashable>: View {
             track(names: true, equal: true)
             if options.allSatisfy({ $0.symbol != nil }) { track(names: false, equal: true) }
             ScrollView(.horizontal, showsIndicators: false) { track(names: true, equal: false) }
-                .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
         }
     }
 

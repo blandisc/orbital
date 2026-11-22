@@ -5,6 +5,30 @@ import XCTest
 /// `docs/ios-interfaz.md` § «Lo que se desplaza a lo ancho». Y la de las gráficas: una gráfica, un color; el nombre y el valor
 /// en el mismo renglón («Tus géneros», antes una dona de cinco colores).
 extension DesignRulesTests {
+    /// Lo que va dentro de una tarjeta no se sale de ella (Fernando, 22 nov 2026, en la Mac: «Lo nuevo de lo tuyo… sigue hacia
+    /// la derecha», y los pósters de «Por lo que viste» pasaban la orilla de su tarjeta). Cada fila que se desliza dice hasta
+    /// dónde llega con `.rowEdge(.bleeds | .inCard)`; nadie usa `scrollClipDisabled()` directo.
+    func testRowsSayWhereTheyEnd() throws {
+        let files = try sources()
+        check(hits(#"\.scrollClipDisabled\(\)"#, in: files, skip: { $0.name == "Surfaces.swift" }),
+              "Una fila que se desliza usa `.rowEdge(.bleeds)` (suelta) o `.rowEdge(.inCard)` (dentro de una tarjeta), no `scrollClipDisabled()`")
+        for (name, why) in [("Collections.swift", "«Por lo que viste» va dentro de su tarjeta"),
+                            ("HomeTimeline.swift", "«Lo nuevo de lo tuyo» en el panel del tablero"),
+                            ("WeekStrip.swift", "el mapa «Día por día» va dentro de su tarjeta")] {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            XCTAssertTrue(file.lines.contains { $0.contains(".inCard") }, "\(name): \(why) (`.rowEdge(.inCard)`)")
+        }
+    }
+
+    /// Una acción, un botón: Canales tenía «+» arriba y «Añadir canal» al final de la fila (Fernando, 22 nov 2026: «tienes dos
+    /// botones»). Una fila que termina con su tarjeta de añadir no repite el «+» en su encabezado.
+    func testRowsDoNotRepeatTheirAddButton() throws {
+        for file in try sources(["Screens"]) where file.lines.contains(where: { $0.contains("private var addCard") }) {
+            let doubled = file.lines.contains { $0.contains(#"DSIconButton(symbol: "plus""#) && !$0.contains("ds-exception:") }
+            XCTAssertFalse(doubled, "\(file.name): ya tiene su tarjeta de añadir al final; sin «+» en el encabezado")
+        }
+    }
+
     /// `defaultScrollAnchor(.trailing…)` no es de fiar con una lista perezosa ni con contenido que crece después (el historial
     /// completo llega tras abrir): el mapa abría en el otro extremo. Para abrir en el final se va por id (`ScrollPosition`).
     func testWideStripsOpenByIDNotByDefaultAnchor() throws {

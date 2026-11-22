@@ -161,7 +161,7 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
                 .padding(.horizontal, DS.Space.gutter)
                 .padding(.top, DS.Space.s2)
             }
-            .scrollClipDisabled()
+            .rowEdge(.bleeds)
             if let hint { hint.recipe(.footnote, color: DS.textMuted).padding(.horizontal, DS.Space.gutter) }
         }
     }

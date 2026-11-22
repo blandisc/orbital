@@ -47,16 +47,17 @@ struct ReleaseTimeline: View {
             .padding(.horizontal, inset ?? DS.Space.gutter)
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s2) {
-                        ForEach(Array(airings.enumerated()), id: \.element.id) { i, a in
-                            if i == nowIndex { todayMark.id(Self.today) }
-                            card(a, moment: a.moment(now: now))
-                        }
-                        if nowIndex == airings.count { todayMark.id(Self.today) }
+                    // En el panel del tablero, una fila simple (no perezosa): el panel la mide con `ViewThatFits` y una fila
+                    // perezosa medida así se volvía a acomodar sin parar (Inicio quieto gastaba un núcleo entero en la Mac,
+                    // 22 nov 2026).
+                    if inset == nil {
+                        LazyHStack(alignment: .top, spacing: DS.Space.s2) { items(nowIndex: nowIndex, now: now) }.scrollTargetLayout()
+                    } else {
+                        HStack(alignment: .top, spacing: DS.Space.s2) { items(nowIndex: nowIndex, now: now) }.scrollTargetLayout()
                     }
-                    .scrollTargetLayout()
                 }
-                .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                // Suelta, llega a la orilla de la pantalla; en el panel, nada se sale de sus lados.
+                .rowEdge(inset == nil ? .bleeds : .inCard)
                 .contentMargins(.horizontal, inset ?? DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
                 .pagingArrows()   // C4: ‹ › con el puntero
@@ -75,6 +76,14 @@ struct ReleaseTimeline: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder private func items(nowIndex: Int, now: Date) -> some View {
+        ForEach(Array(airings.enumerated()), id: \.element.id) { i, a in
+            if i == nowIndex { todayMark.id(Self.today) }
+            card(a, moment: a.moment(now: now))
+        }
+        if nowIndex == airings.count { todayMark.id(Self.today) }
     }
 
     private static let today = "hoy"

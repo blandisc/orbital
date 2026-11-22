@@ -164,7 +164,7 @@ struct DSSeasonPicker: View {
             }
             .scrollTargetLayout()
         }
-        .scrollClipDisabled()   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+        .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
         .fixedSize(horizontal: false, vertical: true)
         .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         .scrollPosition(id: $scrolled, anchor: .center)
@@ -173,5 +173,27 @@ struct DSSeasonPicker: View {
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("season-picker")
+    }
+}
+
+/// Hasta dónde llega una fila que se desliza a lo ancho (Fernando, 22 nov 2026, en la Mac: «Lo nuevo de lo tuyo… sigue hacia
+/// la derecha»). Cada fila lo dice: `.bleeds` es una fila suelta, que llega a la orilla de la pantalla; `.inCard` va dentro de
+/// una tarjeta o un panel y nada se sale de sus lados. En las dos, lo que crece al picarlo (o al dejarlo apretado) no se corta
+/// arriba ni abajo. Nadie usa `scrollClipDisabled()` directo (`DesignRulesTests.testRowsSayWhereTheyEnd`).
+enum RowEdge { case bleeds, inCard }
+
+extension View {
+    func rowEdge(_ edge: RowEdge) -> some View { modifier(RowEdgeClip(edge: edge)) }
+}
+
+private struct RowEdgeClip: ViewModifier {
+    let edge: RowEdge
+
+    func body(content: Content) -> some View {
+        switch edge {
+        case .bleeds: content.scrollClipDisabled()
+        // Recorta solo a los lados: arriba y abajo queda aire para lo que crece.
+        case .inCard: content.scrollClipDisabled().mask { Rectangle().padding(.vertical, -DS.Space.s6) }
+        }
     }
 }

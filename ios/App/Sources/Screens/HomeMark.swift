@@ -124,7 +124,7 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
         // Desde la orilla izquierda, como el resto de las tiras (sin espacio muerto antes de la primera).
         .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
-        .scrollClipDisabled()
+        .rowEdge(.bleeds)
         .pagingArrows()   // C4: ‹ › con el puntero
         .edgeBump()
     }
