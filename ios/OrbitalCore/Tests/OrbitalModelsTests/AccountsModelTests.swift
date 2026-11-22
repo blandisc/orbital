@@ -13,6 +13,28 @@ final class AccountsModelTests: XCTestCase {
 
     func premium(_ rig: ServicesRig) { rig.http.json[user] = ["username": "fernando", "type": "premium", "premium": .int(143 * 86400)] }
 
+    /// 21 nov 2026: con la clave recién guardada en otra pantalla (la guía), «Tu nube» de Ajustes seguía diciendo «Sin clave»
+    /// hasta salir y volver a entrar. Cuando un modelo guarda o quita una clave, los demás se enteran y se vuelven a pintar.
+    func testGuardarUnaClaveEnOtraPantallaPoneAlDiaLasDemas() async throws {
+        let rig = try ServicesRig(signedIn: false)
+        premium(rig)
+        let settings = DebridModel(rig.services), guide = DebridModel(rig.services)
+        var repaints = 0
+        let watching = settings.onChange { repaints += 1 }
+        guide.token = token
+        await guide.verify()
+        await Task.yield(); await Task.yield()
+        XCTAssertGreaterThan(repaints, 0, "Ajustes se vuelve a pintar")
+        XCTAssertTrue(settings.hasKey(.realDebrid))
+        XCTAssertEqual(settings.status?.username, "fernando", "y trae la cuenta nueva sin salir")
+        repaints = 0
+        await guide.remove()
+        await Task.yield(); await Task.yield()
+        XCTAssertGreaterThan(repaints, 0)
+        XCTAssertNil(settings.status, "al quitarla también")
+        watching.cancel()
+    }
+
     func testSinRedLaClaveNoSeGuardaYDiceQueRevisesTuConexion() async throws {
         let rig = try ServicesRig(signedIn: false)
         rig.http.offline = true

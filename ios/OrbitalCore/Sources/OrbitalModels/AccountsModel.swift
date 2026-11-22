@@ -30,10 +30,31 @@ public final class DebridModel: ObservableModel {
     public var token = "" { didSet { if oldValue != token { check = .idle; changed() } } }
     let services: Services
 
+    /// Hay varios a la vez (Ajustes, la guía, conectar tu Orbital): cuando uno guarda, cambia o quita una clave, los demás se
+    /// ponen al día al instante. Antes, con la clave de TorBox recién pegada, «Tu nube» seguía en «Sin clave» y Real-Debrid
+    /// como «La que usas» hasta salir y volver a entrar (Fernando, 21 nov 2026).
+    public static let accountChanged = Notification.Name("orbital.debrid-account-changed")
+    let notifications = NotificationTokens()
+
     public init(_ services: Services) {
         self.services = services
         status = services.debrid.saved
         super.init()
+        notifications.observe(Self.accountChanged) { [weak self] note in
+            let sender = note.object.map { ObjectIdentifier($0 as AnyObject) }
+            MainActor.assumeIsolated {
+                guard let self, sender != ObjectIdentifier(self) else { return }
+                if self.target.map(self.hasKey) == true { self.target = nil }
+                self.status = self.services.debrid.hasToken ? self.services.debrid.saved : nil
+                self.changed()
+            }
+        }
+    }
+
+    /// Dile a los demás que tu cuenta cambió (y vuelve a pintar a quien lee esta).
+    func announceAccountChange() {
+        changed()
+        NotificationCenter.default.post(name: Self.accountChanged, object: self)
     }
 
     public var hasToken: Bool { services.debrid.hasToken }
@@ -56,7 +77,7 @@ public final class DebridModel: ObservableModel {
         services.addonList.startWithRecommended()
         await services.resetAccountCaches()
         await load()
-        changed()
+        announceAccountChange()
         return true
     }
     /// La clave se tomó de tu Torrentio importado de Stremio (no la pegaste): se dice en Ajustes.
@@ -123,6 +144,7 @@ public final class DebridModel: ObservableModel {
                 services.addonList.startWithRecommended()
                 await services.resetAccountCaches()
                 status = found; keyCheck = .confirmed; check = .ok(found); codeFlow = .idle
+                announceAccountChange()
                 return
             }
             if !Task.isCancelled { codeFlow = .failed("El código venció. Pide otro.") }
@@ -141,6 +163,7 @@ public final class DebridModel: ObservableModel {
         await services.resetAccountCaches()
         status = found
         keyCheck = .confirmed   // Real-Debrid la acaba de aceptar
+        announceAccountChange()
     }
 
     /// K1 · «Pasar a la TV» y «Usar la de la TV»: trabajando, lo que quedó o por qué no (en palabras).
@@ -173,6 +196,7 @@ public final class DebridModel: ObservableModel {
         services.sharedDebrid = .none
         await services.resetAccountCaches()
         status = nil; token = ""; check = .idle; keyCheck = .checking
+        announceAccountChange()
     }
 
     /// «Te quedan 143 días» / «Vence hoy» / «Venció hace 2 días» / «Cuenta gratuita»: cómo está, en palabras.

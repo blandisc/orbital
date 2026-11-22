@@ -37,6 +37,7 @@ extension DebridModel {
             await services.resetAccountCaches()
             status = found; keyCheck = .confirmed; check = .ok(found)
             services.sharedDebrid = .none
+            announceAccountChange()
         } catch let error as DebridError { check = .failed(error.description) }
         catch { check = .failed(DebridError.unexpected.description) }
     }
