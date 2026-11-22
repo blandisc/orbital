@@ -31,6 +31,10 @@ Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
    ¿filas que no alinean con lo de arriba?, ¿texto o botones que sobran (un «más» que no abre nada)?, ¿algo cortado o
    diminuto?, ¿se ve igual de cuidado que la pantalla de al lado? Se corrige lo que encuentre antes de enseñarle nada a
    Fernando.
+   **También al solo instalar o abrir la app en la Mac:** se recorre Inicio de arriba abajo con la ventana ancha (el
+   tablero sale desde 1200 pt), se juzga con esta lista y se mide el CPU con Inicio quieto (`top -pid`; menos de 5 %).
+   *Por qué:* el 22 nov se instaló en la Mac y solo se comprobó que abría; Fernando encontró una fila que se salía del
+   panel, el «+» repetido en Canales e Inicio quieto gastando un núcleo entero.
    *Por qué:* el 17 nov Fernando encontró la ficha clavada a la izquierda, un primer arreglo «descentrado feo» y un «más»
    que no abría nada. Todo estaba en capturas que ya se habían tomado, pero en un solo tamaño y sin nadie que las juzgara.
 
