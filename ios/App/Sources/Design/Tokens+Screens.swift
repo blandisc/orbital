@@ -226,7 +226,13 @@ extension DS {
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
     enum Repisa {
         /// La vitrina de Para ti (`CollectionsShowcase`): el alto del objeto, el ancho de cada uno y su barra de avance.
-        static let showcaseEmblem: CGFloat = 60, showcaseWidth: CGFloat = 84, showcaseBar: CGFloat = 4
+        /// En ventana ancha (iPad, Mac) crecen: a 60 pt se veían diminutos junto a las tarjetas de Premios (Fernando, 22 nov 2026).
+        static var showcaseEmblem: CGFloat { WindowMetrics.roomy ? (showcaseWidth * showcaseShape).rounded() : 60 }
+        static var showcaseWidth: CGFloat { WindowMetrics.roomy ? (DS.PlatformFan.width * showcaseShare).rounded() : 84 }
+        /// En ventana ancha, cada objeto mide una parte de la tarjeta de Premios de al lado (con 156 pt fijos seguía viéndose a la
+        /// mitad en la Mac) y su alto guarda la forma de la vitrina del iPhone.
+        static let showcaseShare: CGFloat = 0.64, showcaseShape: CGFloat = 0.78
+        static let showcaseBar: CGFloat = 4
         static let emblem: CGFloat = 84, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
         /// Cuántas colecciones por repisa en la portada de Colecciones: en el iPhone y en el iPad y la Mac.
         static let shelf = 3, shelfWide = 6
@@ -399,7 +405,9 @@ extension DS {
         /// Lo más que se achica un nombre largo para caber en sus dos renglones.
         static let becauseTitleScale: CGFloat = 0.6
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
-        static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
+        /// En ventana ancha, del ancho de una tarjeta de Premios (Fernando, 22 nov 2026: «años se ve muy chiquito»).
+        static var yearWidth: CGFloat { WindowMetrics.roomy ? DS.PlatformFan.width : 150 }   // como Géneros y Premios
+        static var yearHeight: CGFloat { yearWidth }
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
         static let spyLine: CGFloat = 70
 

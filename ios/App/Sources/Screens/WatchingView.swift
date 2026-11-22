@@ -169,9 +169,9 @@ struct WatchingView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, DS.Space.gutter)
             }
             .padding(.horizontal, -DS.Space.gutter)
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .rowEdge(.bleeds)
         }
         // Un solo mapa con zoom: año → mes → día (Fernando, 31 oct 2026, Z1). «Tu año» vive aquí adentro.

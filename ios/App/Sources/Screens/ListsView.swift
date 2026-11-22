@@ -278,7 +278,7 @@ struct ListsView: View {
                     if collections.model.traktLinked {
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSChapterHead(label: Text("Colecciones"), symbol: "books.vertical")
-                            CollectionsCardLoader().padding(.horizontal, DS.Space.gutter)
+                            CollectionsCardLoader()   // su fila trae su margen: con otro aquí, empezaba más adentro que todo lo demás (22 nov 2026)
                         }
                     }
                     if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }

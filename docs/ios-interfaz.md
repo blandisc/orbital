@@ -134,8 +134,10 @@ que llega después de abrir) y cortaba una semana a la mitad en la orilla.
   desvanecido en la orilla de lo que queda atrás (o la tarjeta que se asoma en un carrusel de orilla a orilla).
 - **Regla: lo que va dentro de una tarjeta no se sale de ella** (22 nov 2026, en la Mac: «Lo nuevo de lo tuyo» se salía del
   panel por los dos lados y los pósters de «Por lo que viste» pasaban la orilla de su tarjeta). Cada fila dice hasta dónde
-  llega: `.rowEdge(.bleeds)` la suelta, que llega a la orilla de la pantalla; `.rowEdge(.inCard)` la que va en una tarjeta o
-  un panel. Lo vigilan `testRowsSayWhereTheyEnd` y `testHorizontalRowsDoNotClipWhatGrows`.
+  llega: `.rowEdge(.bleeds)` la suelta, que en el iPhone llega a la orilla de la pantalla y en ventana ancha (iPad, Mac) termina en
+  el mismo margen que todo lo demás, con un desvanecido ancho (`DS.Size.rowFade`) que dice que hay más; `.rowEdge(.inCard)` la
+  que va en una tarjeta o un panel. El margen de cada fila va por dentro del desplazamiento (`contentMargins`), nunca como
+  relleno de afuera (con los dos, Colecciones empezaba más adentro que todo lo demás). Lo vigilan `testRowsSayWhereTheyEnd` y `testHorizontalRowsDoNotClipWhatGrows`.
 - **Una acción, un botón:** una fila que termina con su tarjeta de añadir («Añadir canal») no repite el «+» en su
   encabezado (`testRowsDoNotRepeatTheirAddButton`).
 - Los mapas de semanas son una pieza, `DSWeekStrip` (`Design/WeekStrip.swift`, medidas en `DS.WeekStrip`): las casillas salen

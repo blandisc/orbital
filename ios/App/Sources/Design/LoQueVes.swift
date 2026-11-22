@@ -306,9 +306,9 @@ struct WatchingFiveStars: View {
                     .accessibilityLabel(Text(verbatim: titleName(item.title, id: item.id, kind: item.kind)))
                 }
             }
-            .padding(.horizontal, DS.Space.gutter)
         }
         .padding(.horizontal, -DS.Space.gutter)
+        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .rowEdge(.bleeds)
     }
 }

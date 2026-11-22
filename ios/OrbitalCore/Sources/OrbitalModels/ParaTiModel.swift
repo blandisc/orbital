@@ -36,16 +36,16 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var airings: [Airing] = [] { didSet { if airings != oldValue { changed() } } }
     /// «Porque viste X» para «Decide por mí»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin
     /// relacionados). «Por lo que viste», con su mazo para elegir, vive en Inicio (`BecauseModel`).
-    public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
+    public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { if because?.seed.imdb != oldValue?.seed.imdb || because?.items != oldValue?.items { changed() } } }
     /// «Nuevo en tus plataformas» (TMDB): series con episodios recientes y películas recién llegadas, de tus plataformas.
-    public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { changed() } }
+    public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { if newOnPlatforms != oldValue { changed() } } }
     /// El porqué de cada título en un póster (lo más fuerte: que sale pronto, o su puesto en una plataforma), por IMDb.
     public private(set) var badges: [String: PosterBadge] = [:] { didSet { if oldValue != badges { changed() } } }
-    public private(set) var error: String? { didSet { changed() } }
+    public private(set) var error: String? { didSet { if error != oldValue { changed() } } }
     /// El mosaico es lo que está en tendencia en Trakt (nada tuyo todavía): la pantalla invita a conectar tus fuentes.
-    public private(set) var isGeneric = false { didSet { changed() } }
+    public private(set) var isGeneric = false { didSet { if isGeneric != oldValue { changed() } } }
     /// De dónde vino lo que se ve ahora: la pantalla lo enseña en un pie discreto.
-    public private(set) var source: Source = .phone { didSet { changed() } }
+    public private(set) var source: Source = .phone { didSet { if source != oldValue { changed() } } }
     private let services: Services
 
     public init(_ services: Services) {
@@ -156,7 +156,9 @@ public final class ParaTiModel: ObservableModel {
 
     /// Al volver a la pestaña: solo si la última carga ya tiene un rato (antes se volvía a pedir y a pintar todo cada vez que
     /// entrabas, justo mientras la barra de abajo animaba el salto, y el cambio de pestaña se sentía lento).
-    public func loadIfStale(maxAge: TimeInterval = 120) async {
+    /// Diez minutos (antes dos): al volver a Explorar se recargaba todo casi siempre y la pantalla se redibujaba entera; al
+    /// regresar a la app se refresca igual (`returnedToApp`). Fernando, 22 nov 2026: «se tarda muchísimo, debería ser instantáneo».
+    public func loadIfStale(maxAge: TimeInterval = 600) async {
         if let lastLoad, services.now().timeIntervalSince(lastLoad) < maxAge, !lists.isEmpty || !mosaic.isEmpty { return }
         await load()
     }

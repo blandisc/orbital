@@ -158,9 +158,9 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
                     }
                     NavigationLink(value: all) { seeAll }.buttonStyle(.plain).accessibilityIdentifier("showcase-all")
                 }
-                .padding(.horizontal, DS.Space.gutter)
                 .padding(.top, DS.Space.s2)
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .rowEdge(.bleeds)
             if let hint { hint.recipe(.footnote, color: DS.textMuted).padding(.horizontal, DS.Space.gutter) }
         }

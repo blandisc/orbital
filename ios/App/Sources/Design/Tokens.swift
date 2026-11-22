@@ -381,6 +381,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let noteEditor: CGFloat = 160
         /// Cuánto se desvanece la orilla de una tira horizontal que no cabe (`edgeFade`).
         static let edgeFade: CGFloat = 28
+        /// La orilla de una fila de pósters que sigue (`rowEdge`): ancha, para que la tarjeta cortada se funda y no parezca rota.
+        static let rowFade: CGFloat = 72
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
         static let pageDotStretch: CGFloat = 2.6
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).

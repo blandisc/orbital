@@ -18,6 +18,10 @@ extension DesignRulesTests {
             let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
             XCTAssertTrue(file.lines.contains { $0.contains(".inCard") }, "\(name): \(why) (`.rowEdge(.inCard)`)")
         }
+        // En ventana ancha, toda fila suelta termina en el margen (el de su desplazamiento) con el mismo desvanecido.
+        let surfaces = try XCTUnwrap(files.first { $0.name == "Surfaces.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(surfaces.contains("contentInsets.trailing") && surfaces.contains("DS.Size.rowFade"),
+                      "`rowEdge` corta las filas en su margen (`contentInsets`) con el desvanecido `DS.Size.rowFade`")
     }
 
     /// Una acción, un botón: Canales tenía «+» arriba y «Añadir canal» al final de la fila (Fernando, 22 nov 2026: «tienes dos

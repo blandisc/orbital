@@ -177,9 +177,12 @@ struct DSSeasonPicker: View {
 }
 
 /// Hasta dónde llega una fila que se desliza a lo ancho (Fernando, 22 nov 2026, en la Mac: «Lo nuevo de lo tuyo… sigue hacia
-/// la derecha»). Cada fila lo dice: `.bleeds` es una fila suelta, que llega a la orilla de la pantalla; `.inCard` va dentro de
-/// una tarjeta o un panel y nada se sale de sus lados. En las dos, lo que crece al picarlo (o al dejarlo apretado) no se corta
-/// arriba ni abajo. Nadie usa `scrollClipDisabled()` directo (`DesignRulesTests.testRowsSayWhereTheyEnd`).
+/// la derecha» y «todas las listas que siguen a la derecha, cortarlos a la misma altura… que el corte se vea estético»). Cada
+/// fila lo dice: `.bleeds` es una fila suelta y `.inCard` va dentro de una tarjeta o un panel. En ventana ancha (iPad, Mac) las
+/// dos terminan donde empiezan: en el margen de su contenido, el mismo a la izquierda y a la derecha, y la orilla por donde
+/// sigue se desvanece (dice que hay más). En el iPhone, la suelta sigue hasta la orilla de la pantalla. Lo que crece al picarlo
+/// (o al dejarlo apretado) no se corta arriba ni abajo. Nadie usa `scrollClipDisabled()` directo
+/// (`DesignRulesTests.testRowsSayWhereTheyEnd`).
 enum RowEdge { case bleeds, inCard }
 
 extension View {
@@ -188,12 +191,34 @@ extension View {
 
 private struct RowEdgeClip: ViewModifier {
     let edge: RowEdge
+    @State private var geo = RowGeo()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Dónde empieza y termina el contenido (sus márgenes) y si hay más a cada lado.
+    struct RowGeo: Equatable { var before = false, after = false, lead: CGFloat = 0, trail: CGFloat = 0 }
 
     func body(content: Content) -> some View {
-        switch edge {
-        case .bleeds: content.scrollClipDisabled()
-        // Recorta solo a los lados: arriba y abajo queda aire para lo que crece.
-        case .inCard: content.scrollClipDisabled().mask { Rectangle().padding(.vertical, -DS.Space.s6) }
+        if edge == .bleeds && !WindowMetrics.roomy {
+            content.scrollClipDisabled()
+        } else {
+            content.scrollClipDisabled()
+                .onScrollGeometryChange(for: RowGeo.self) { g in
+                    let offset = g.contentOffset.x + g.contentInsets.leading
+                    let end = g.contentSize.width + g.contentInsets.leading + g.contentInsets.trailing - g.containerSize.width
+                    return RowGeo(before: offset > 1, after: offset < end - 1, lead: g.contentInsets.leading, trail: g.contentInsets.trailing)
+                } action: { _, now in
+                    withAnimation(DS.Motion.base(reduceMotion)) { geo = now }
+                }
+                .mask {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: geo.lead)
+                        LinearGradient(colors: [geo.before ? .clear : .black, .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.rowFade)
+                        Color.black
+                        LinearGradient(colors: [.black, geo.after ? .clear : .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.rowFade)
+                        Color.clear.frame(width: geo.trail)
+                    }
+                    .padding(.vertical, -DS.Space.s6)   // arriba y abajo, aire para lo que crece
+                }
         }
     }
 }
