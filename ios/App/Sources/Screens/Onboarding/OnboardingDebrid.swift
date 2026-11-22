@@ -210,10 +210,14 @@ struct DebridKeyField: View {
                     .onSubmit { Task { await debrid.verify() } }
                     .padding(DS.Space.s2).dsCard(translucent: true)
                     .accessibilityIdentifier("debrid-token")
-                Button("Pegar", systemImage: "doc.on.clipboard") {
-                    if let text = UIPasteboard.general.string { debrid.token = text; Task { await debrid.verify() } }
+                // El botón de pegar del sistema: pega sin el aviso «Permitir pegar» de iOS (antes salía cada vez, porque la app leía
+                // el portapapeles por su cuenta) y sin los espacios o saltos que se cuelan al copiar la clave (Fernando, 22 nov 2026).
+                PasteButton(payloadType: String.self) { pasted in
+                    guard let text = pasted.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
+                    Task { @MainActor in debrid.token = text; await debrid.verify() }
                 }
-                .dsGlassButton()
+                .labelStyle(.titleAndIcon).buttonBorderShape(.capsule)
+                .accessibilityIdentifier("debrid-paste")
             }
             switch debrid.check {
             case .idle: if !debrid.token.isEmpty { Button("Comprobar") { Task { await debrid.verify() } }.dsGlassButton() }

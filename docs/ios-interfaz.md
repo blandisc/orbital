@@ -1222,3 +1222,9 @@ rellenado a 16:9), `PictureBars` las encuentra en tres cuadros y el motor llena 
 Parado no hay zoom: ni «Imagen» en el «⋯» ni pellizco. Acostado sí, y el video sigue a los dedos mientras pellizcas. *Por qué:*
 *It's Always Sunny* T4 salía parado con dos rayas a los lados, y llenar parado recortaba tres cuartas partes de la imagen.
 `DesignRulesTests+VideoFrame` falla si el motor recibe otro zoom que `engineZoom` o si vuelve un zoom en vertical.
+
+### Pegar es el botón del sistema (22 nov 2026)
+
+Para pegar se usa `PasteButton`, nunca `UIPasteboard.general.string` leído por código; al pegar se quitan los espacios y los
+saltos de las orillas. *Por qué:* leerlo por código hace que iOS pregunte «Permitir pegar» cada vez, y así pasaba al pegar la
+clave de una nube. Copiar (escribir en el portapapeles) sí se vale. `DesignRulesTests+Paste` falla si vuelve una lectura.
