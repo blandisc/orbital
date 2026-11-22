@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import UIKit
 import OrbitalCore
 
@@ -23,7 +24,7 @@ enum DownloadTimeline {
         let rate = last.map { max(0, Double(written - $0.bytes) / now.timeIntervalSince($0.at)) / 1e6 }
         last = (written, now)
         let state = switch UIApplication.shared.applicationState { case .active: "abierta"; case .inactive: "inactiva"; default: "fuera" }
-        let line = [ISO8601DateFormatter().string(from: now), state, fastLane ? "rapido" : "fondo", continued ? "tarea-ios" : "sin-tarea",
+        let line = [ISODates.string(now), state, fastLane ? "rapido" : "fondo", continued ? "tarea-ios" : "sin-tarea",
                     String(format: "%.1f MB", Double(written) / 1e6), rate.map { String(format: "%.1f MB/s", $0) } ?? "-"].joined(separator: " ")   // ds-exception: bitácora técnica, nadie la lee en pantalla
         append(line + "\n")
         #endif

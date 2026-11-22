@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 
 /// Descargas › Mi media: tu carpeta de OneDrive como biblioteca (como Infuse). Lo más reciente primero, filtros, sagas,
@@ -230,7 +231,7 @@ public final class MiMediaModel: ObservableModel {
         return result.sorted { ($0.season == 0 ? Int.max : $0.season) < ($1.season == 0 ? Int.max : $1.season) }
     }
 
-    static func date(_ text: String) -> Date? { ISO8601DateFormatter().date(from: text) ?? ISO8601DateFormatter().date(from: text.replacingOccurrences(of: #"\.\d+"#, with: "", options: .regularExpression)) }
+    static func date(_ text: String) -> Date? { ISODates.parse(text) }
 
     /// Para ver: el pedido del reproductor con tu copia primero (también para el siguiente episodio).
     public func playRequest(_ title: OneDriveLibrary.Title, videoID: String, version: OneDriveLibrary.Entry? = nil, fromStart: Bool = false) async -> PlayRequest {

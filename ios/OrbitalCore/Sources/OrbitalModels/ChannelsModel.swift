@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 
 /// Canales de Inicio (docs/producto/inicio-benchmark/): las series que eliges, cada una siempre al aire con un episodio al
@@ -109,8 +110,7 @@ public final class ChannelsModel: ObservableModel {
 
     /// Un canal desde la ficha de Cinemeta: los episodios que ya salieron (sin especiales), con su imagen y su nombre.
     nonisolated static func channel(_ pick: Pick, meta: JSON, now: Date, originalTitle: String? = nil) -> Channel? {
-        let day = ISO8601DateFormatter()
-        day.formatOptions = [.withFullDate]
+        let day = ISODates.day
         let episodes = CinemetaParsing.seasons(meta).filter { !$0.isSpecials }.flatMap { season in
             season.episodes.filter { e in
                 guard let released = e.released, let at = day.date(from: String(released.prefix(10))) else { return true }

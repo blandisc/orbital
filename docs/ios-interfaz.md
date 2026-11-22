@@ -1204,3 +1204,10 @@ de verdad de qué viste y cuánto. Cada reproductor avisa de lo que reproduce é
 - Los términos de Trakt no se pudieron leer.
 
 **Lo que debe comprobar el usuario:** en trakt.tv → Ajustes → Apps, cuántas apps hay conectadas y si la de Orbital sigue existiendo.
+
+### Las fechas ISO se leen con `ISODates` (21 nov 2026)
+
+Nunca un `ISO8601DateFormatter()` nuevo por llamada: se usa `ISODates.parse`, `ISODates.string` o `ISODates.day`
+(`OrbitalAddons/ISODates.swift`), creados una sola vez. *Por qué:* crear uno arranca ICU y gasta mucha pila; la ficha de una
+serie armaba dos en cada dibujo y, al girar el iPhone (también con el reproductor encima), la 2436 se cerró por pila agotada.
+`ISODatesRuleTests` falla si vuelve a aparecer fuera de `ISODates.swift` y de la demostración.

@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 // OneDrive: tus películas y series guardadas ahí, como una fuente más (sin Jellyfin ni Real-Debrid). Lo mismo que
 // `orbital/library/onedrive.py` en la TV:
@@ -257,7 +258,7 @@ public actor OneDrive {
                 let child = folder.isEmpty ? name : "\(folder)/\(name)"
                 if r["folder"]?.object != nil, depth < Self.depth { try await walk(child, depth + 1) }
                 else if r["file"]?.object != nil, let id = r["id"]?.nonEmptyString, let info = OneDriveName.parse(name, now: clock()) {
-                    let added = r["createdDateTime"]?.string.flatMap { ISO8601DateFormatter().date(from: $0.replacingOccurrences(of: #"\.\d+"#, with: "", options: .regularExpression)) }
+                    let added = r["createdDateTime"]?.string.flatMap { ISODates.parse($0) }
                     found.append(OneDriveFile(id: id, name: name, path: child, size: r["size"]?.intValue ?? 0, info: info, added: added))
                 }
             }

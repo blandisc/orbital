@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Las reglas de lo tuyo: cuándo algo ya se dio por visto, cuándo vuelve una serie, y el formato `libraryItem` (el de la
 /// biblioteca que comparte la consola: `_mtime`, `state.video_id`, `timeOffset` en ms, el bitfield de vistos). Antes se llamaba
@@ -38,11 +39,7 @@ public enum LibraryRules {
 
     public static func epoch(_ value: JSON?) -> Double? {
         guard let text = value?.nonEmptyString else { return nil }
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: text) { return date.timeIntervalSince1970 }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: text)?.timeIntervalSince1970
+        return ISODates.parse(text)?.timeIntervalSince1970
     }
 
     /// Un número finito y no negativo (un NaN o infinito de un motor o de una URL no tumba nada).

@@ -1,5 +1,6 @@
 import BackgroundTasks
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 import OrbitalModels
 import UIKit
@@ -53,7 +54,7 @@ enum ReleaseNotifier {
     static let logFile = AppFiles.support.appendingPathComponent("release-checks.txt")
     @MainActor private static func log(_ origin: String, _ parts: [String]) {
         let state = switch UIApplication.shared.applicationState { case .active: "abierta"; case .inactive: "inactiva"; default: "fuera" }
-        DownloadTimeline.append(([ISO8601DateFormatter().string(from: Date()), origin, state] + parts).joined(separator: " ") + "\n", to: logFile)
+        DownloadTimeline.append(([ISODates.string(Date()), origin, state] + parts).joined(separator: " ") + "\n", to: logFile)
     }
     /// Una revisión a la vez (al abrir la app y en segundo plano podían cruzarse y avisar dos veces).
     @MainActor private static var checking = false
@@ -100,7 +101,7 @@ enum ReleaseNotifier {
             alerts.markSent(due.map(\.id))
         }
         log(origin, [String(format: "%.1fs", report.seconds), "pendientes=\(report.pending)", "avisados=\(due.map(\.id))", cut ? "iOS-cortó" : "",
-                     report.nextAiring.map { "siguiente=\(ISO8601DateFormatter().string(from: $0))" } ?? ""].filter { !$0.isEmpty })
+                     report.nextAiring.map { "siguiente=\(ISODates.string($0))" } ?? ""].filter { !$0.isEmpty })
     }
 
     @MainActor static func post(_ due: [ReleaseAlerts.Alert], language: String, images: Bool = true) async {

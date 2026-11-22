@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Los tipos de Trakt (errores, entradas, estrenos, código de aparato, scrobble, destino) y cómo se leen sus respuestas.
 
@@ -214,10 +215,6 @@ public enum TraktParsing {
 /// Los formateadores de fechas de Trakt, creados una sola vez (V10, 10 nov 2026): armar uno por fecha costaba en listas de
 /// cientos de renglones. `ISO8601DateFormatter` es seguro entre hilos.
 enum TraktDates {
-    nonisolated(unsafe) static let precise: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-    nonisolated(unsafe) static let plain = ISO8601DateFormatter()
+    static var precise: ISO8601DateFormatter { ISODates.precise }
+    static var plain: ISO8601DateFormatter { ISODates.plain }
 }

@@ -155,11 +155,7 @@ public struct RealDebrid: DebridProvider {
     }
 
     static func date(_ text: String) -> Date? {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: text) { return d }
-        f.formatOptions = [.withInternetDateTime]
-        return f.date(from: text)
+        ISODates.parse(text)
     }
 }
 

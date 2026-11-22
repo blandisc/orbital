@@ -148,9 +148,7 @@ public enum AddonShare {
         switch json {
         case .number(let n)?: return Date(timeIntervalSince1970: n)
         case .string(let s)?:
-            let f = ISO8601DateFormatter()
-            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return f.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+            return ISODates.parse(s)
         default: return nil
         }
     }

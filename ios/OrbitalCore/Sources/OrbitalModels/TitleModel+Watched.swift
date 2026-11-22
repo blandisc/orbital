@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 
 /// Cuándo la viste (la hoja «¿Cuándo la viste?», como Trakt): ahora mismo, el día que salió, otro día o no sé cuándo.
@@ -111,9 +112,7 @@ extension TitleModel {
     /// La fecha de estreno si todavía no llega («2026-10-23T02:00:00.000Z»).
     static func airDate(_ released: String?, now: Date = Date()) -> Date? {
         guard let released else { return nil }
-        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        guard let date = iso.date(from: released) ?? plain.date(from: released), date > now else { return nil }
+        guard let date = ISODates.parse(released), date > now else { return nil }
         return date
     }
 

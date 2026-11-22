@@ -398,7 +398,7 @@ public actor Trakt {
 
     /// Lo que viste entre dos fechas (cada película y cada episodio con su día y hora), por páginas: «Tu año» y «Porque viste».
     public func plays(since: Date, until: Date, maxPages: Int = 20) async throws -> [TraktPlay] {
-        let f = ISO8601DateFormatter()
+        let f = TraktDates.plain
         var out: [TraktPlay] = []
         var pageSize: Int?
         for page in 1...max(1, maxPages) {

@@ -147,7 +147,7 @@ extension AddonList {
         if tv.addons.map(\.id).filter(sentSet.contains) != sent.filter({ byID[$0] != nil }) { differs = true }
         let removed = removedIDs.compactMap { links[$0] }.sorted()
         if !Set(removed).isSubset(of: tv.removed) { differs = true }
-        let stamp = ISO8601DateFormatter().string(from: now)
+        let stamp = ISODates.string(now)
         let body: StoredJSON = .object(["base_revision": .number(Double(tv.revision)), "changed_at": .string(stamp),
                                         "changed_by": .string(String(changedBy.prefix(60))), "addons": .array(items),
                                         "removed": .array(removed.map(StoredJSON.string))])

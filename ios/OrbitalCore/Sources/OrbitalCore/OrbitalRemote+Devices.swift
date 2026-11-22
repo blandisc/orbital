@@ -207,8 +207,6 @@ extension OrbitalRemote {
     static func date(_ json: JSON?) -> Date? {
         if let seconds = json?.doubleValue { return Date(timeIntervalSince1970: seconds) }
         guard let text = json?.nonEmptyString else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        return ISODates.parse(text)
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// «Aprobadas por la crítica» en Para ti: Rotten Tomatoes no tiene API pública, así que las películas salen de una lista
 /// pública de MDBList (Certified Fresh recientes) y las series de una lista pública de Trakt (Certified Fresh, por
@@ -62,8 +63,7 @@ public struct Critics: Sendable {
         guard let url = URL(string: "https://v3-cinemeta.strem.io/meta/movie/\(imdb).json"),
               let response = try? await http.send(HTTPRequest(url: url, timeout: 8)), response.status == 200,
               let text = JSON.parse(response.data)?["meta"]?["released"]?.string else { return nil }
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        return ISODates.parse(text)
     }
 
     private func moviesFromMDBList() async throws -> [TraktEntry] {
