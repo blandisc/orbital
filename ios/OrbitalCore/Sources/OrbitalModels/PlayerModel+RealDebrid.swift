@@ -130,6 +130,17 @@ extension PlayerModel {
         return .triedAnotherSource(attempt: min(failedSources.count + 1, total), of: total)
     }
 
+    /// Una versión no abrió y a Real-Debrid aún no se le preguntó por tu cuenta en este video: se le pregunta una vez. Si venció,
+    /// no tiene Premium o la clave ya no sirve, ninguna otra va a abrir: la causa, en vez de probar la siguiente (21 nov 2026:
+    /// con el Premium vencido Torrentio seguía dando versiones y el reproductor pasaba de una en una sin decir nada).
+    func accountStopsRetries(generation mine: Int) async -> UnavailableCause? {
+        guard debridHealth == nil, let debridTrouble else { return nil }
+        let health = await debridTrouble()
+        guard mine == generation else { return nil }
+        debridHealth = health
+        return accountCause
+    }
+
     /// Lo que Torrentio mandó en lugar de versiones: si es de tu cuenta («RD error», sin acceso), se le pregunta ya a
     /// Real-Debrid (lo guardado puede decir «Premium» el día que venció, B-P1-1).
     func noteTorrentioNotices(_ notices: [StreamNotice], generation mine: Int) async {

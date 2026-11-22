@@ -39,6 +39,39 @@ final class RealDebridRetryTests: XCTestCase {
         XCTAssertEqual(rig.model.cause, .debridExpired, "el reproductor dice «Tu Real-Debrid venció» con «Renovar»")
     }
 
+    /// 21 nov 2026: con el Premium vencido Torrentio sigue dando versiones normales que no abren; el reproductor pasaba de una
+    /// en una sin decir nada. Al fallar la primera se le pregunta a Real-Debrid y, si venció, se dice ya.
+    func testAnExpiredAccountStopsAtTheFirstFailedVersion() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("best"), rig.stream("other", size: "💾 2.4 GB")]]
+        let asked = Counter()
+        let expired = DebridStatus(service: "Real-Debrid", username: "x", isPremium: false, expires: rig.clock.now.addingTimeInterval(-2 * 86_400), checkedAt: rig.clock.now)
+        rig.model.debridTrouble = { asked.add(); return .status(expired) }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.map(\.url.lastPathComponent), ["best.mkv"], "no prueba la siguiente")
+        XCTAssertEqual(asked.value, 1)
+        XCTAssertEqual(rig.model.failure, .noSources)
+        XCTAssertEqual(rig.model.cause, .debridExpired, "«Tu Real-Debrid venció» con «Renovar»")
+    }
+
+    func testAHealthyAccountIsAskedOnceAndTheNextVersionIsTried() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
+            rig.stream("best"), rig.stream("other", size: "💾 2.4 GB"), rig.stream("third", size: "💾 2.6 GB")]]
+        let asked = Counter()
+        let fine = DebridStatus(service: "Real-Debrid", username: "x", isPremium: true, expires: rig.clock.now.addingTimeInterval(90 * 86_400), checkedAt: rig.clock.now)
+        rig.model.debridTrouble = { asked.add(); return .status(fine) }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
+        await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.count, 3, "con la cuenta bien sigue probando")
+        XCTAssertEqual(asked.value, 1, "a Real-Debrid se le pregunta una sola vez por video")
+    }
+
     func testABlockedFileSaysRealDebridDidNotLetIt() async throws {
         let rig = try Rig()
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [

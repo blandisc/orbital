@@ -282,7 +282,7 @@ public final class PlayerModel: ObservableModel {
     nonisolated public static func note(_ text: String) {
         log.notice("\(text, privacy: .public)")
         guard NSClassFromString("XCTestCase") == nil else { return }   // las pruebas no escriben en la Mac
-        let line = ISO8601DateFormatter().string(from: Date()) + " " + text
+        let line = ISODates.string(Date()) + " " + text
         logLock.withLock {
             let old = (try? String(contentsOf: logFile, encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
             let kept = (old + [line]).suffix(logKeep).joined(separator: "\n") + "\n"
@@ -391,8 +391,8 @@ public final class PlayerModel: ObservableModel {
                 Self.note("versiones encontradas: \(sourceChoices.count)")
                 await noteTorrentioNotices(await finder.notices(kind: request.kind, videoID: request.videoID), generation: mine)
                 // Real-Debrid acaba de decir que tu cuenta no sirve (venció, sin Premium, clave vieja): ninguna versión va a
-                // abrir, así que se dice ya en vez de probarlas (cada una sería otro aviso de Torrentio).
-                if mine == generation, debridHealth != nil, let blocked = accountCause { return fail(blocked.title(), .noSources) }
+                // abrir, así que se dice ya en vez de probarlas. Si solo lo guardado dice que venció, se le pregunta antes (21 nov).
+                if mine == generation, let blocked = debridHealth != nil ? accountCause : accountCause == nil ? nil : await accountStopsRetries(generation: mine) { return fail(blocked.title(), .noSources) }
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
@@ -440,6 +440,7 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation else { return }
                 markFailed(found, "no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")
                 attempts = failedSources.count
+                if let blocked = await accountStopsRetries(generation: mine) { return fail(blocked.title(), .noSources) }
                 if failedSources.count > PlaybackRules.maxSourceRetries || remainingInstant == 0 { return fail("Ninguna versión funcionó.", .noneWorked) }
                 notice = triedAnother()
                 acceptingSnapshots = false

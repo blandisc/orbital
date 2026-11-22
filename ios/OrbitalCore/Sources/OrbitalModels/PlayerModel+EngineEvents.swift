@@ -155,6 +155,7 @@ extension PlayerModel {
         let task = Task { [weak self] in
             guard let self else { return }
             await engine.stop()
+            if let blocked = await accountStopsRetries(generation: mine) { retrying = false; return fail(blocked.title(), .noSources) }
             await prepare(startAt: position > 5 ? position : nil, generation: mine)
         }
         transition = task
