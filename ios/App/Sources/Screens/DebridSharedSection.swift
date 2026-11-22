@@ -3,7 +3,7 @@ import OrbitalCore
 import OrbitalAddons
 import OrbitalModels
 
-/// CX2-A · tu clave entre tus aparatos Apple, arriba de la página de Real-Debrid. Otra cuenta en la copia compartida: «Tu iPad
+/// CX2-A · tu clave entre tus aparatos Apple, arriba de la página de tu nube (la de la copia: Real-Debrid, TorBox o AllDebrid). Otra cuenta en la copia compartida: «Tu iPad
 /// cambió la clave de Real-Debrid · Usar la nueva / Seguir con la de este iPhone». Nunca cambia sola.
 struct DebridSharedPrompt: View {
     @State private var debrid: ModelObserver<DebridModel>
@@ -34,11 +34,24 @@ struct DebridSharedPrompt: View {
     /// IOS-11: «iPad de Fernando cambió la clave…» con el nombre; de una copia de antes, el tipo, salvo que sea el mismo tipo
     /// que este aparato («Tu iPad cambió…» leído en un iPad parecía hablar de sí mismo).
     private func changedTitle(_ from: String) -> Text {
+        let cloud = debrid.model.sharedCloud ?? .realDebrid
+        guard cloud == .realDebrid else { return otherCloudTitle(from, cloud) }
         if let device = DebridModel.deviceWord(from) {
             return from == env.services.platform ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple")   // solo Real-Debrid: la copia de tus aparatos Apple
                                                  : Text("Tu \(device) cambió la clave de Real-Debrid")   // solo Real-Debrid
         }
         return from.isEmpty ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple") : Text("\(from) cambió la clave de Real-Debrid")   // solo Real-Debrid
+    }
+
+    /// Lo mismo con TorBox o AllDebrid: la frase del catálogo y luego el nombre de esa nube (`DebridService.spoken`).
+    private func otherCloudTitle(_ from: String, _ cloud: DebridService) -> Text {
+        let ui = env.services.appSettings.uiLanguage
+        let anywhere = cloud.spoken(Strings.tr("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple", language: ui))   // cloud: se dice con su nombre
+        if let device = DebridModel.deviceWord(from) {
+            return Text(verbatim: from == env.services.platform ? anywhere
+                                  : cloud.spoken(String(format: Strings.tr("Tu %@ cambió la clave de Real-Debrid", language: ui), device)))   // cloud: se dice con su nombre
+        }
+        return Text(verbatim: from.isEmpty ? anywhere : cloud.spoken(String(format: Strings.tr("%@ cambió la clave de Real-Debrid", language: ui), from)))   // cloud: se dice con su nombre
     }
 
     /// Se compara la cuenta, no las letras: «La nueva es de la cuenta ana · la de este iPhone, de fer».

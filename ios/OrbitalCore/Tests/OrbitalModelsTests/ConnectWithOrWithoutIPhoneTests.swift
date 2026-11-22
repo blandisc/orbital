@@ -27,6 +27,9 @@ private final class FakeHouse: HTTPClient, @unchecked Sendable {
                 let ana = token.contains("ANA")
                 return json(["id": .int(ana ? 2 : 1), "username": .string(ana ? "ana" : "fer"), "type": "premium", "premium": 3_000_000])
             }
+            if request.url.host == "api.torbox.app" {   // TorBox: tu cuenta, con `data`
+                return json(["success": true, "data": ["id": 42, "email": "fer@torbox", "plan": 2, "premium_expires_at": "2027-01-01T00:00:00Z"]])
+            }
             if path == "/api/devices/pair" { return json(["device_id": .string(Self.id), "key": .string(Self.key), "tv_name": "Sala", "tv_id": .string(tvID)]) }
             if path.hasPrefix("/api/devices/upgrade") {
                 let (status, body) = upgradeSteps.isEmpty ? (404, JSON.object([:])) : upgradeSteps.removeFirst()
@@ -129,6 +132,24 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1)
         XCTAssertEqual(mac.debrid.service, .realDebrid, "la copia compartida es de Real-Debrid: nunca se prueba ni se guarda en TorBox")
         XCTAssertNil(local.get(DebridService.torBox.keyStore))
+    }
+
+    /// 21 nov 2026 (Fernando: «que la que yo usé en mi iPhone se sincronice vía iCloud con Mac y iPad»): la copia ya no es solo
+    /// de Real-Debrid. La de TorBox viaja con su nube; la Mac sin clave la ofrece y, al usarla, TorBox queda como su nube.
+    func testATorBoxKeyTravelsWithItsCloud() async throws {
+        let cloud = InMemorySecrets()
+        let (iphone, _, _) = rig("iphone", shared: cloud)
+        let key = "tb-" + String(repeating: "a1b2", count: 8)
+        await iphone.debrid.save(token: key, status: try await iphone.debrid.verify(key, service: .torBox), service: .torBox)
+        let copy = try XCTUnwrap(SharedDebridKey.decode(cloud.get(SecretKey.sharedRealDebrid)))
+        XCTAssertEqual(copy.cloud, .torBox, "la copia dice de qué nube es")
+        let (mac, local, _) = rig("mac", shared: cloud, allows: false)
+        guard case .offer(_, let account) = await mac.debrid.checkShared() else { return XCTFail("la Mac sin clave la ofrece") }
+        XCTAssertEqual(account.username, "fer@torbox")
+        _ = try await mac.debrid.useShared()
+        XCTAssertEqual(mac.debrid.service, .torBox)
+        XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
+        XCTAssertNil(local.get(AddonKeys.realDebridToken), "nunca se guarda como de Real-Debrid")
     }
 
     func testAKeyFromBeforeIsSharedOnTheFirstCheck() async {

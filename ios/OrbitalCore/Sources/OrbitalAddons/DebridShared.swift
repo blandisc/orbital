@@ -1,7 +1,8 @@
 import Foundation
 import CryptoKit
 
-/// CX2-A · tu clave de Real-Debrid entre tus aparatos Apple. Cada aparato usa SU clave (la del llavero de este aparato) y
+/// CX2-A · tu clave de tu nube entre tus aparatos Apple (Real-Debrid y, desde el 21 nov 2026, también TorBox o AllDebrid:
+/// Fernando, «que la que yo usé en mi iPhone se sincronice vía iCloud con Mac y iPad»). Cada aparato usa SU clave (la del llavero de este aparato) y
 /// deja una copia en el llavero de iCloud (si lo usas). Nada cambia solo: si la copia compartida es de otra cuenta, se
 /// pregunta («Tu iPad cambió la clave de Real-Debrid · Usar la nueva / Seguir con la de este iPhone»); si es la misma cuenta,
 /// se queda la que funciona. Se compara la cuenta (`GET /user`), nunca las últimas letras.
@@ -14,9 +15,13 @@ public struct SharedDebridKey: Codable, Equatable, Sendable, CustomStringConvert
     public var removed: String?
     /// IOS-11 · el nombre del aparato que la puso («iPad de Fernando»); nil en una copia de antes.
     public var name: String?
+    /// De qué nube es («torbox»); nil en una copia de antes (era de Real-Debrid).
+    public var service: String?
+    public var cloud: DebridService { service.flatMap { DebridService(rawValue: $0) } ?? .realDebrid }
 
-    public init(key: String, from: String, removed: String? = nil, name: String? = nil) {
+    public init(key: String, from: String, removed: String? = nil, name: String? = nil, service: DebridService = .realDebrid) {
         self.key = key; self.from = from; self.removed = removed; self.name = name
+        self.service = service == .realDebrid ? nil : service.rawValue
     }
     public var description: String { "sharedDebridKey(from: \(from), key: •••, removed: \(removed != nil))" }
 
@@ -51,9 +56,9 @@ extension DebridAccount {
     /// La copia compartida (nil si no hay o si el llavero de iCloud todavía no la trae).
     public nonisolated var sharedKey: SharedDebridKey? { SharedDebridKey.decode(vaultRef.secret(AddonKeys.sharedRealDebridToken)) }
 
-    nonisolated func publishShared(_ key: String) {
+    nonisolated func publishShared(_ key: String, service cloud: DebridService) {
         guard !key.isEmpty else { return }
-        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName()).encoded)
+        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName(), service: cloud).encoded)
     }
 
     nonisolated func retireShared(_ key: String) {
@@ -74,15 +79,16 @@ extension DebridAccount {
 
     /// Al abrir la app, al volver a ella y al abrir tu cuenta (TEC-6: lo de iCloud puede llegar en cualquier momento).
     public func checkShared() async -> SharedDebrid {
-        guard service == .realDebrid else { return .none }   // la copia compartida es solo de Real-Debrid (DN1)
-        let local = vaultRef.secret(AddonKeys.realDebridToken) ?? ""
         guard let shared = sharedKey else {
             // Lo de antes de CX2-A (migración): la clave de este aparato se queda y, además, se deja la copia compartida.
-            if !local.isEmpty { publishShared(local) }
+            if let mine = vaultRef.debridToken(service) { publishShared(mine, service: service) }
             return .none
         }
+        // La copia es de la nube que la puso; aquí se compara con la clave de esa misma nube.
+        let cloud = shared.cloud
+        let local = vaultRef.debridToken(cloud) ?? ""
         if let removed = shared.removed {
-            guard !local.isEmpty, SharedDebridKey.fingerprint(local) == removed, sharedSeen != shared.encoded else { return .none }
+            guard cloud == service, !local.isEmpty, SharedDebridKey.fingerprint(local) == removed, sharedSeen != shared.encoded else { return .none }
             remove()
             markSharedSeen(shared.encoded)
             return .removedEverywhere(from: shared.from)
@@ -91,15 +97,16 @@ extension DebridAccount {
         let who = shared.name.flatMap { $0.isEmpty ? nil : $0 } ?? shared.from
         if local == shared.key { markSharedSeen(shared.key); return .none }
         if !local.isEmpty, sharedSeen == shared.key { return .none }
-        guard let theirs = try? await provider.status(token: shared.key) else { return .none }   // no sirve o no contestó: nada que ofrecer
+        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: nada que ofrecer
         guard !local.isEmpty else { return theirs.isPremium ? .offer(from: who, account: theirs) : .none }
+        guard cloud == service else { return .none }   // tienes otra clave de esa nube, pero no la usas ahora: no se pregunta
         switch await checkNow() {
         case .status(let mine):
             if Self.sameAccount(mine, theirs) { markSharedSeen(shared.key); return .none }   // la misma cuenta y las dos sirven
             return .differs(from: who, shared: theirs, local: mine)
         case .invalidToken:
             if Self.sameAccount(saved, theirs) {
-                save(token: shared.key, status: theirs, share: false)
+                save(token: shared.key, status: theirs, share: false, service: cloud)
                 return .adopted(from: who)
             }
             return .differs(from: who, shared: theirs, local: nil)
@@ -110,9 +117,9 @@ extension DebridAccount {
     /// «Usar la nueva» / «Usar la clave de tus aparatos Apple»: se comprueba y se guarda en este aparato.
     public func useShared() async throws -> DebridStatus {
         guard let shared = sharedKey, !shared.key.isEmpty else { throw DebridError.unexpected }
-        // La copia compartida es de Real-Debrid aunque ahora uses otra nube (DN1): nunca se prueba contra TorBox o AllDebrid.
-        let status = try await providers(.realDebrid).status(token: shared.key)
-        guard save(token: shared.key, status: status, share: false, service: .realDebrid) else { throw DebridError.unexpected }
+        // La copia dice de qué nube es: se prueba contra esa y esa queda como la tuya.
+        let status = try await providers(shared.cloud).status(token: shared.key)
+        guard save(token: shared.key, status: status, share: false, service: shared.cloud) else { throw DebridError.unexpected }
         return status
     }
 

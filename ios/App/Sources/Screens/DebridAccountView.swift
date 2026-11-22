@@ -307,7 +307,7 @@ struct DebridAccountView: View {
         Section {
             DebridKeyField(debrid: model)
             DebridKeyLink(debrid: model)
-            if cloud == .realDebrid { DebridSharedOffer(debrid: model) }   // CX2-A: junto a «Pega tu clave», nunca en su lugar
+            if model.sharedCloud == cloud { DebridSharedOffer(debrid: model) }   // CX2-A: junto a «Pega tu clave», nunca en su lugar (la copia de esa nube)
         } header: { cloud == .realDebrid ? Text("O pega tu clave") : Text("Pega tu clave") } footer: { Self.keyFooter(cloud) }
         .listRowBackground(DS.surface)
         if !model.hasToken { DebridTVSection(debrid: model) }   // K1: sin clave aquí, «Usar la de la TV»

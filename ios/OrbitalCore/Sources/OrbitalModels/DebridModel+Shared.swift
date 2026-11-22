@@ -16,6 +16,8 @@ extension Services {
 
 extension DebridModel {
     public var shared: SharedDebrid { services.sharedDebrid }
+    /// De qué nube es la copia de tus aparatos Apple (Real-Debrid, TorBox o AllDebrid); nil si no hay.
+    public var sharedCloud: DebridService? { services.debrid.sharedKey?.cloud }
 
     /// «iPhone», «iPad» o «Mac»: el aparato que puso la copia compartida (nunca se promete «tu iPhone» si vino del iPad, UX-19).
     nonisolated public static func deviceWord(_ platform: String) -> String? {

@@ -340,10 +340,10 @@ public actor DebridAccount {
         vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
         lastTrouble = nil
         remember(status)
-        guard cloud == .realDebrid else { return true }   // la copia para tus aparatos Apple y la conexión con código: solo Real-Debrid
-        vault.setSecret(AddonKeys.realDebridOAuth, nil)  // una pegada no se renueva (la de código vuelve a anotar su conexión)
-        if share { publishShared(clean) }
+        if share { publishShared(clean, service: cloud) }   // la copia para tus aparatos Apple, de cualquiera de las tres
         markSharedSeen(clean)
+        guard cloud == .realDebrid else { return true }   // la conexión con código: solo Real-Debrid
+        vault.setSecret(AddonKeys.realDebridOAuth, nil)  // una pegada no se renueva (la de código vuelve a anotar su conexión)
         return true
     }
 
