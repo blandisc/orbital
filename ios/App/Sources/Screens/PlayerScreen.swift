@@ -104,7 +104,12 @@ struct PlayerScreen: View {
     @State var lastNotch: Date?
     #if DEBUG
     #endif
-    var zoom: VideoZoom { landscape ? framing.landscapeZoom : framing.portraitZoom }
+    /// Parado no hay zoom: llenar recortaba tres cuartas partes de la imagen (Fernando, 21 nov 2026: «hacia arriba no tiene mucho
+    /// sentido porque hace como un zoom raro»). El botón y el pellizco son solo de horizontal.
+    var zoom: VideoZoom { landscape ? framing.landscapeZoom : .fit }
+    /// Lo que se le pide al motor: el zoom, salvo un video con rayas pintadas a los lados en vertical, que llena el recuadro de su
+    /// imagen de verdad (`pictureAspect`) y así las rayas quedan fuera.
+    var engineZoom: VideoZoom { !landscape && pictureAspect != nil ? .fill : zoom }
     struct PlayerNotice: Equatable {
         var title: String, detail: String?, tone: DSNotice.Tone
         var showsDownloads = false
@@ -156,6 +161,8 @@ struct PlayerScreen: View {
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
     var current: PlayRequest { holder.model.request ?? request }
     @State var knownAspect: Double?
+    /// La proporción de la imagen de verdad cuando el archivo trae rayas negras pintadas a los lados (`PictureBars`); nil si no.
+    @State var pictureAspect: Double?
     @State var aspectTitle: String?
     /// Lo que enseña el botón grande (la carga o el play/pausa): una sola regla, probada en `PlayerPresentationTests`.
     @State var presentation = PlayerPresentation()
@@ -181,7 +188,7 @@ struct PlayerScreen: View {
                     // arriba), se estiraba debajo del reloj y se cortaba su parte de arriba.
                     holder.engine.surface.ignoresSafeArea(edges: landscape ? .all : [])
                     if let frozenFrame { frozenCover(frozenFrame).transition(.opacity) }
-                    if drag.dragAxis != .horizontal && !fillsPortrait {
+                    if drag.dragAxis != .horizontal {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
@@ -191,26 +198,13 @@ struct PlayerScreen: View {
                             .transition(.opacity)
                     }
                 }
+                .modifier(PinchScaled(framing: framing))
                 .frame(width: rect.width, height: rect.height)
                 .clipped()   // un video en «Recortar» nunca se dibuja fuera de su lugar (bajo el panel de la derecha)
                 // Al arrastrarlo solo se nota con una sombra. Antes además se encogía y redondeaba: al soltar, el motor se quedaba con
                 // el cuadro de la animación y el video brincaba hacia arriba, cortado bajo el reloj.
                 .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
                 .offset(x: rect.minX, y: rect.minY)
-                // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
-                // controles a la vista suben sobre ellos.
-                .overlay(alignment: .bottom) {
-                    if fillsPortrait && drag.dragAxis != .horizontal {
-                        // Con los controles, ya van por encima de ellos; si además está la píldora, un poco más. Sin controles
-                        // y con la píldora al pie, suben lo bastante para no taparla.
-                        let aboveControls = controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6
-                        let abovePill = speedPillVisible ? (controlsVisible ? DS.Space.s12 : DS.Subtitle.liftWithSpeedPill) : 0
-                        holder.engine.subtitleOverlay(lifted: false, speedPill: false, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
-                            .frame(width: geo.size.width, height: geo.size.width / DS.Poster.stillAspect)
-                            .padding(.bottom, aboveControls + abovePill)
-                            .allowsHitTesting(false)
-                    }
-                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
@@ -362,7 +356,7 @@ struct PlayerScreen: View {
             let engine = holder.engine
             framing.landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
             #if DEBUG
-            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { framing.landscapeZoom = VideoZoom(stored: raw); framing.portraitZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { framing.landscapeZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
             if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
@@ -441,7 +435,7 @@ struct PlayerScreen: View {
         .task {
             guard moveHintSeen < DS.PlayerPanel.moveHintTimes, !reduceMotion else { return }
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 3)
-            guard !landscape, ipod == nil, !fillsPortrait, controlsVisible else { return }
+            guard !landscape, ipod == nil, controlsVisible else { return }
             moveHintSeen += 1
             withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = openingCenter + DS.PlayerPanel.moveNudge }
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8)
@@ -494,6 +488,7 @@ struct PlayerScreen: View {
             if drag.isFastForwarding { endFastForward(holder.model, force: true) }
             await loadLocalizedEpisodes()
         }
+        .task(id: current.videoID) { await watchPictureBars() }   // las rayas pintadas, aparte: tarda hasta medio minuto
         .onChange(of: PlayerPresentation.loadKind(model), initial: true) { _, kind in
             presentation.update(kind, playing: model.wantsToPlay, videoID: current.videoID)
         }
@@ -502,16 +497,13 @@ struct PlayerScreen: View {
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
         // El motor recibe el zoom desde un solo lugar: cada vez que cambia el de este sentido (al girar, al pellizcar, desde el «⋯»).
-        .onChange(of: zoom, initial: true) { holder.engine.setZoom(zoom) }
+        .onChange(of: engineZoom, initial: true) { holder.engine.setZoom(engineZoom) }
         .onChange(of: landscape) {
-            PlayerModel.note("giro a \(landscape ? "horizontal" : "vertical") (zoom vertical era \(framing.portraitZoom.rawValue))")
+            PlayerModel.note("giro a \(landscape ? "horizontal" : "vertical")")
             framing.rotatedAt = Date()
-            // Vertical vuelve siempre al cuadro completo al girar: si algo puso «Recortar» sin querer (un pellizco al sujetar el
-            // teléfono), el giro lo deshace.
-            framing.portraitZoom = .fit
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: DS.Timing.rotationSettle)
-                holder.engine.setZoom(zoom)
+                holder.engine.setZoom(engineZoom)
             }
         }
         .task(id: pendingSeek) { if pendingSeek != nil, (try? await Task.sleep(nanoseconds: DS.Timing.seekPatience)) != nil { pendingSeek = nil } }

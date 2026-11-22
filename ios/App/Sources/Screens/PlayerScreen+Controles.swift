@@ -116,25 +116,19 @@ extension PlayerScreen {
                 let rect = videoRect(in: geo.size)
                 ZStack(alignment: .top) {
                     // El velo de arriba se apaga conforme el video sube (antes oscurecía la parte de arriba del video al subirlo).
-                    topScrim.opacity(fillsPortrait ? 1 : min(1, max(0, rect.minY / DS.PlayerPanel.portraitTopClearance)))
-                    // Con el video a pantalla completa, los controles van encima: un velo abajo para que se lean.
-                    if fillsPortrait {
-                        ArtVeil().ignoresSafeArea().allowsHitTesting(false)
-                    }
+                    topScrim.opacity(min(1, max(0, rect.minY / DS.PlayerPanel.portraitTopClearance)))
                     if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2).transition(.opacity) }
                     // La agarradera, montada en el borde de abajo del video: se ve dónde va el dedo para subirlo o bajarlo (se pidió
                     // que fuera evidente, 29 oct). El arrastre lo lee la capa de gestos (desde la agarradera o desde lo negro).
                     // Para VoiceOver trae «Subir el video» y «Bajar el video».
-                    if !fillsPortrait {
-                        DSVideoHandle(active: movingVideo)
-                            .position(x: rect.midX, y: rect.maxY)
-                            .accessibilityElement()
-                            .accessibilityLabel(Text("Mover el video"))
-                            .accessibilityHint(Text("Arrastra hacia arriba o hacia abajo"))
-                            .accessibilityAction(named: Text("Subir el video")) { stepVideo(-1, size: geo.size) }
-                            .accessibilityAction(named: Text("Bajar el video")) { stepVideo(1, size: geo.size) }
-                            .accessibilityIdentifier("player-drag-hint")
-                    }
+                    DSVideoHandle(active: movingVideo)
+                        .position(x: rect.midX, y: rect.maxY)
+                        .accessibilityElement()
+                        .accessibilityLabel(Text("Mover el video"))
+                        .accessibilityHint(Text("Arrastra hacia arriba o hacia abajo"))
+                        .accessibilityAction(named: Text("Subir el video")) { stepVideo(-1, size: geo.size) }
+                        .accessibilityAction(named: Text("Bajar el video")) { stepVideo(1, size: geo.size) }
+                        .accessibilityIdentifier("player-drag-hint")
                     VStack(spacing: 0) {
                     VStack(spacing: DS.Space.s2) {
                         // El nombre pegado a la barra (su área de toque ya deja el aire), como en horizontal.
@@ -157,12 +151,12 @@ extension PlayerScreen {
                     // Lo que miden de verdad: con «Siguiente episodio», «Saltar intro» y la barra de ✕ a la vez (o letra grande) no
                     // cabían en el lugar de abajo y se salían de la pantalla; entonces suben lo justo, sobre el borde del video.
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsNeed = $0 }
-                    if !fillsPortrait { Spacer(minLength: 0) }
+                    Spacer(minLength: 0)
                     }
                     .padding(.horizontal, DS.Space.gutter)
-                    .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : min(rect.maxY + DS.PlayerPanel.handleClearance, max(0, geo.size.height - controlsNeed - DS.Space.s4)))
-                    .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
+                    .padding(.bottom, DS.Space.s4)
+                    .padding(.top, min(rect.maxY + DS.PlayerPanel.handleClearance, max(0, geo.size.height - controlsNeed - DS.Space.s4)))
+                    .frame(maxHeight: .infinity, alignment: .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
@@ -275,12 +269,15 @@ extension PlayerScreen {
                 Task { await model.setRate(next) }
             }
             .accessibilityIdentifier("player-speed")
-            PlayerMenuRow(title: "Imagen", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
-                .accessibilityHint(Text("Cambia entre la imagen completa y llenar la pantalla. También pellizcando el video."))
-                .accessibilityIdentifier("player-zoom")
-                #if DEBUG
-                .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(framing.lastPinch)" : ""))
-                #endif
+            // Solo acostado: parado el video ya va a lo ancho y llenar recortaba tres cuartas partes (Fernando, 21 nov 2026).
+            if landscape {
+                PlayerMenuRow(title: "Imagen", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
+                    .accessibilityHint(Text("Cambia entre la imagen completa y llenar la pantalla. También pellizcando el video."))
+                    .accessibilityIdentifier("player-zoom")
+                    #if DEBUG
+                    .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(framing.lastPinch)" : ""))
+                    #endif
+            }
             if !landscape {
                 // Prender o apagar el iPod (y su color): no → blanco → negro → no.
                 PlayerMenuRow(title: "Modo iPod", symbol: "ipod", detail: Text(verbatim: Strings.tr(IPodFace.name(ipodFace), language: language))) {

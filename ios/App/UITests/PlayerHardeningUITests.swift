@@ -13,29 +13,17 @@ final class PlayerHardeningUITests: XCTestCase {
         return app
     }
 
-    /// El zoom puesto, como lo dice el renglón «Zoom» del «⋯» (el aviso del zoom no lo lee VoiceOver).
-    private func zoomLabel(_ app: XCUIApplication) -> String {
-        if !app.buttons["player-more"].waitForExistence(timeout: 2) { app.tap() }
-        app.buttons["player-more"].tap()
-        let row = app.buttons["player-zoom"]
-        _ = row.waitForExistence(timeout: 5)
-        let label = row.label + " · " + String(describing: row.value ?? "")
-        app.buttons["player-more"].tap()   // cierra el «⋯»
-        sleep(1)
-        return label
-    }
-
-    /// Abrir los dedos recorta. (El pellizco leve y el de cerrar no se pueden simular de forma fiable: `pinch(withScale: 1.08)` le
-    /// llega a la app como ~2× y el de cerrar a veces ni llega. La zona muerta se prueba en `SettingsTests`.)
-    func testPinchOpenCrops() {
+    /// Parado no hay zoom (Fernando, 21 nov 2026: «hacia arriba no tiene mucho sentido porque hace como un zoom raro»): abrir los
+    /// dedos no recorta y el «⋯» no ofrece «Imagen».
+    func testPinchInPortraitDoesNotCrop() {
         let app = launch()
-        XCTAssertTrue(zoomLabel(app).contains("Completa"))
         sleep(5)   // que se escondan los controles
         app.pinch(withScale: 2, velocity: 1)
         sleep(1)
-        let opened = zoomLabel(app)
-        XCTAssertTrue(opened.contains("Llenar pantalla"), "abrir los dedos recorta (\(opened))")
-
+        if !app.buttons["player-more"].waitForExistence(timeout: 2) { app.tap() }
+        app.buttons["player-more"].tap()
+        XCTAssertTrue(app.buttons["player-speed"].waitForExistence(timeout: 5), "el «⋯» abierto")
+        XCTAssertFalse(app.buttons["player-zoom"].exists, "parado no hay «Imagen»")
     }
 
     func testBackFromBackgroundThePlayerIsStillThere() {

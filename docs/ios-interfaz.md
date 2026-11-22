@@ -1214,3 +1214,11 @@ Nunca un `ISO8601DateFormatter()` nuevo por llamada: se usa `ISODates.parse`, `I
 (`OrbitalAddons/ISODates.swift`), creados una sola vez. *Por qué:* crear uno arranca ICU y gasta mucha pila; la ficha de una
 serie armaba dos en cada dibujo y, al girar el iPhone (también con el reproductor encima), la 2436 se cerró por pila agotada.
 `ISODatesRuleTests` falla si vuelve a aparecer fuera de `ISODates.swift` y de la demostración.
+
+### El video, del tamaño de su imagen (21 nov 2026)
+
+Parado, el recuadro del video toma la forma de la imagen de verdad: si el archivo trae rayas negras pintadas a los lados (un 4:3
+rellenado a 16:9), `PictureBars` las encuentra en tres cuadros y el motor llena ese recuadro, así que las rayas quedan fuera.
+Parado no hay zoom: ni «Imagen» en el «⋯» ni pellizco. Acostado sí, y el video sigue a los dedos mientras pellizcas. *Por qué:*
+*It's Always Sunny* T4 salía parado con dos rayas a los lados, y llenar parado recortaba tres cuartas partes de la imagen.
+`DesignRulesTests+VideoFrame` falla si el motor recibe otro zoom que `engineZoom` o si vuelve un zoom en vertical.

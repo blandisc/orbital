@@ -55,11 +55,9 @@ final class PlayerStuckUITests: XCTestCase {
         let screen = app.windows.firstMatch.frame
         XCTAssertTrue(screen.contains(app.buttons["player-close"].frame), "✕ dentro de la pantalla (\(app.buttons["player-close"].frame))")
         button(app, "player-more").tap()
-        let zoom = app.buttons["player-zoom"]
-        XCTAssertTrue(zoom.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["player-speed"].waitForExistence(timeout: 5))
         shot("s4-menu")
-        print("zoom: \(zoom.label)")
-        XCTAssertTrue(zoom.label.contains("Completa"), "el video en su franja, no agrandado (\(zoom.label))")
+        XCTAssertFalse(app.buttons["player-zoom"].exists, "parado no hay zoom: el video en su franja, no agrandado")
     }
 
     /// Sin tocar nada: la versión trabada da paso sola a otra en menos de un minuto (antes, si se colgaba al pedirla otra vez,

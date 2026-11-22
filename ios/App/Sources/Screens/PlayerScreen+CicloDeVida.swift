@@ -24,7 +24,7 @@ extension PlayerScreen {
 
     /// El cuadro guardado, con el mismo zoom que el video.
     @ViewBuilder func frozenCover(_ image: UIImage) -> some View {
-        switch zoom {
+        switch engineZoom {
         case .fill: Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }.clipped()   // sin crecer más que el video
         case .fit: Image(uiImage: image).resizable().scaledToFit()
         }
@@ -76,7 +76,7 @@ extension PlayerScreen {
     /// El iPad de pie (ancho regular, ventana más alta que ancha): «Audio y subtítulos» (y «Episodios») se comportan como en
     /// el iPhone (se abren con su botón, «Listo» o tocar el video los cierra) pero van a todo lo ancho justo bajo el video, que
     /// no se mueve: sobra pantalla. En el iPhone de pie el ancho nunca es regular: no cambia nada.
-    var dockPinned: Bool { horizontalSize == .regular && !landscape && !fillsPortrait && ipod == nil }
+    var dockPinned: Bool { horizontalSize == .regular && !landscape && ipod == nil }
 
     var landscape: Bool {
         verticalSize == .compact || (horizontalSize == .regular && WindowMetrics.size.width > WindowMetrics.size.height)   // ds-exception: el reproductor ocupa la ventana entera
@@ -98,8 +98,6 @@ extension PlayerScreen {
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
         if ipod != nil { return IPodLayout(in: size, aspect: portraitAspect).video }   // dentro de la pantalla del iPod
-        // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
-        if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
         var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? openingCenter, aspect: portraitAspect)
         // Con «Audio y subtítulos» abierto, el video justo arriba del panel (pegado abajo): sin hueco negro entre los dos si el
@@ -125,13 +123,13 @@ extension PlayerScreen {
 
     /// El video subido hasta tapar la barra de ✕ y el nombre: esa barra pasa abajo, con los demás controles.
     func raisedPortrait(_ rect: CGRect) -> Bool {
-        !landscape && !fillsPortrait && ipod == nil && rect.minY < DS.PlayerPanel.portraitTopClearance - 1
+        !landscape && ipod == nil && rect.minY < DS.PlayerPanel.portraitTopClearance - 1
     }
 
     /// La proporción del cuadro que suena (la mide el motor al cargar); 16:9 mientras no se sabe.
     /// Mientras el motor la vuelve a medir (al regresar a la app suelta el video y la olvida un momento), la última que midió de
     /// este video: antes, al volver, un 4:3 se veía como 16:9 y la imagen se hacía más chica.
-    var portraitAspect: Double { holder.engine.videoAspect ?? knownAspect ?? Double(DS.Poster.stillAspect) }
+    var portraitAspect: Double { pictureAspect ?? holder.engine.videoAspect ?? knownAspect ?? Double(DS.Poster.stillAspect) }
 
     /// Dónde va el video en vertical si no lo has movido: en el iPhone, arriba (`portraitCenter` < 0); en el iPad de pie, a
     /// media pantalla (`DS.PlayerPanel.regularCenter`). Con «Audio y subtítulos» o «Episodios» abiertos sube a donde abre en el
@@ -150,8 +148,6 @@ extension PlayerScreen {
     /// Dónde dejaste el video en vertical (se recuerda entre videos).
     static let portraitCenterKey = "player-portrait-center"
 
-    /// Vertical con «Recortar»: el video a pantalla completa.
-    var fillsPortrait: Bool { !landscape && ipod == nil && zoom == .fill }
 
     /// En horizontal con el panel: dónde va el panel (a la derecha, dentro del área segura) y el video (`PlayerLayout.sideDock`),
     /// medidos sobre la pantalla entera (el video y el panel ignoran el área segura y la cuentan aquí).

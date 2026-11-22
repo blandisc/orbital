@@ -66,11 +66,6 @@ extension DS {
         static var aboveScrubInset: CGFloat {
             DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s2
         }
-        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, «Saltar intro», la propia
-        /// barra y sus tiempos).
-        static var fastForwardPillFillInset: CGFloat {
-            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s2 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s2
-        }
     }
 
     /// El reproductor: el video en vertical, «Audio y subtítulos» (a la derecha en horizontal, bajo el video en vertical) y los controles.
@@ -120,8 +115,6 @@ extension DS {
         /// iPad de pie, panel fijo: lo que se aparta bajo el video para la barra de avance y sus botones antes de medirlos (al
         /// abrir aún no se han medido).
         static let pinnedControlsMin: CGFloat = 120
-        /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
-        static let portraitFillControlsShare: CGFloat = 0.3
         /// El globo del «⋯» entra un poco más chico.
         static let lockScale: CGFloat = 0.9
         /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
@@ -258,6 +251,10 @@ extension DS {
     enum Timing {
         /// Lo que cuenta minutos a la vista («Llevas 12 min»): se vuelve a pintar cada minuto, no antes.
         static let minute: TimeInterval = 60
+        /// Rayas pintadas a los lados (`PictureBars`): cada cuánto se mira un cuadro del video que suena, y cuántas veces como mucho
+        /// (los cuadros todo negros, como un fundido, no cuentan).
+        static let pictureBarsGap: Duration = .seconds(4)
+        static let pictureBarsTries = 8
         /// De vuelta de segundo plano: cada cuánto se mira si el video ya está para quitar el cuadro guardado.
         static let frozenFramePoll: UInt64 = 100_000_000
         /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.

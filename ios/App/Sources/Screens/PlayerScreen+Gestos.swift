@@ -57,13 +57,18 @@ extension PlayerScreen {
             // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
             .gesture(TwoFingerTap { twoFingerTap(model) })
             .gesture(VideoPinch(changed: { magnification in
+                guard landscape else { return }   // parado no hay zoom
                 if framing.pinchStartedAt == nil { framing.pinchStartedAt = Date() }
+                // El video sigue a los dedos mientras pellizcas (antes no se movía hasta soltar y se sentía trabado), sin pasar
+                // de lo que mide lleno ni de lo que mide completo.
+                framing.pinchScale = pinchScale(for: magnification)
                 // La guía en vivo: qué pasa si sueltas ahora (3 nov 2026: «una pequeña interfaz para que entienda qué está haciendo»).
                 let preview = VideoZoom.pinched(magnification: magnification)
                 if !framing.pinching || framing.pinchPreview != preview {
                     withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = true; framing.pinchPreview = preview }
                 }
             }, ended: { magnification in
+                guard landscape else { return }
                 withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = false; framing.pinchPreview = nil }
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let lasted = framing.pinchStartedAt.map { Date().timeIntervalSince($0) } ?? 0
@@ -76,9 +81,12 @@ extension PlayerScreen {
                 guard Date().timeIntervalSince(framing.rotatedAt) > DS.Gesture.pinchAfterRotationGuard,
                       lasted >= DS.Gesture.pinchMinDuration,
                       Date().timeIntervalSince(twoFingerTapAt) > DS.Gesture.pinchTapGuard,
-                      let target = VideoZoom.pinched(magnification: magnification), target != zoom else { return }
+                      let target = VideoZoom.pinched(magnification: magnification), target != zoom else { return settlePinch(to: nil) }
                 framing.zoomBeforePinch = (zoom, Date())
-                setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", magnification, lasted))
+                // Primero el video termina de crecer (o de encogerse) hasta donde va; luego el motor cambia de modo, ya sin brinco.
+                settlePinch(to: target) {
+                    setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", magnification, lasted))
+                }
             }))
             .dsFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
@@ -148,7 +156,7 @@ extension PlayerScreen {
                     // se perdían el brillo y el volumen).
                     // Con un panel abierto (Episodios, Audio y subtítulos) el video no se mueve: el panel cuelga de él y se movía
                     // al arrastrar entre las pastillas de temporada.
-                    case .vertical where !dockState.subtitleDock && (!landscape && !fillsPortrait && ipod == nil
+                    case .vertical where !dockState.subtitleDock && (!landscape && ipod == nil
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size)):
                         movingVideo = true
@@ -321,12 +329,9 @@ extension PlayerScreen {
     /// La píldora «2×» se ve mientras mantienes el dedo y, si quedó fija, cuando hay controles. Bloqueada la pantalla, no.
     var speedPillVisible: Bool { drag.isFastForwarding && (drag.fastForwardHolding || controlsVisible) && !padlock.locked }
 
-    /// Vertical: abajo al centro, al pie del área segura, salvo «Recortar» con controles, que va encima de su barra.
-    /// Horizontal: arriba al centro, a la altura de los botones de arriba, lejos de los subtítulos (2 y 3 nov 2026).
-    var speedPillBottomInset: CGFloat {
-        if fillsPortrait && controlsVisible { return DS.Gesture.fastForwardPillFillInset }
-        return DS.Space.s2
-    }
+    /// Vertical: abajo al centro, al pie del área segura. Horizontal: arriba al centro, a la altura de los botones de arriba,
+    /// lejos de los subtítulos (2 y 3 nov 2026).
+    var speedPillBottomInset: CGFloat { DS.Space.s2 }
 
     var speedPill: some View {
         VStack {
@@ -362,8 +367,8 @@ extension PlayerScreen {
         drag.fastForwardToggledThisHold = false
         fastForwardProgress = 0
         hideTask?.cancel()
-        // En vertical (sin «Recortar») la pantalla queda limpia mientras el dedo sigue puesto.
-        if !landscape && !fillsPortrait {
+        // En vertical la pantalla queda limpia mientras el dedo sigue puesto.
+        if !landscape {
             withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false }
         }
         guard !drag.isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
@@ -439,16 +444,43 @@ extension PlayerScreen {
 
     func pulse() { controlsVisible = true; scheduleHide() }
 
-    /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó.
+    /// Cuánto crece el video con el pellizco en curso: de su tamaño completo a lo que mide lleno (horizontal).
+    func pinchScale(for magnification: Double) -> CGFloat {
+        let full = fillScale
+        return zoom == .fit ? min(max(magnification, 1), full) : min(max(magnification, 1 / full), 1)
+    }
+
+    /// Lo que crece un video completo para llenar la pantalla acostada (1.22 un 16:9 en un iPhone 17 Pro).
+    var fillScale: CGFloat {
+        let aspect = holder.engine.videoAspect ?? knownAspect ?? Double(DS.Poster.stillAspect)
+        let screen = layoutSize.height > 0 ? Double(layoutSize.width / layoutSize.height) : aspect
+        return CGFloat(max(screen / aspect, aspect / screen))
+    }
+
+    /// Al soltar: el video llega animado al tamaño del modo que queda (o regresa, si no cambió) y entonces `then` cambia el modo.
+    func settlePinch(to target: VideoZoom?, then: @escaping () -> Void = {}) {
+        let end: CGFloat = switch (zoom, target) {
+        case (.fit, .fill?): fillScale
+        case (.fill, .fit?): 1 / fillScale
+        default: 1
+        }
+        withAnimation(DS.Motion.base(reduceMotion)) { framing.pinchScale = end } completion: {
+            then()
+            framing.pinchScale = nil
+        }
+    }
+
+    /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó. Solo en horizontal.
     func setZoom(_ target: VideoZoom, cause: String = "menú") {
+        guard landscape else { return }
         PlayerModel.note("zoom \(landscape ? "horizontal" : "vertical") → \(target.rawValue) (\(cause))")
         let queueToast = topNoticesAreWaiting
         if queueToast { notices.heldNotices.hold(.zoom(target), key: QueuedNoticeKey.zoom) }
         withAnimation(DS.Motion.base(reduceMotion)) {
-            if landscape { framing.landscapeZoom = target } else { framing.portraitZoom = target }
+            framing.landscapeZoom = target
             if !queueToast { framing.zoomToast = target }
         }
-        if landscape { env.services.settings.update { $0.videoZoom = target.rawValue } }   // el de vertical no se guarda
+        env.services.settings.update { $0.videoZoom = target.rawValue }
         guard !queueToast else { return }
         framing.zoomToastTask?.cancel()
         framing.zoomToastTask = Task { @MainActor in
@@ -507,14 +539,14 @@ extension PlayerScreen {
             let room = max(0, size.height - top - bottom)
             return (top + room / 2, bar(room))
         }
-        if fillsPortrait || ipod != nil { return (size.height / 2, DS.Gesture.indicatorBarHeight) }
+        if ipod != nil { return (size.height / 2, DS.Gesture.indicatorBarHeight) }
         let rect = videoRect(in: size)
         return (rect.midY, bar(rect.height - DS.Space.s4))
     }
 
     /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
     func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
-        guard !landscape, !fillsPortrait, ipod == nil else { return false }
+        guard !landscape, ipod == nil else { return false }
         let rect = videoRect(in: size)
         return point.y >= rect.maxY - DS.PlayerPanel.handleGrab && point.y <= rect.maxY + DS.PlayerPanel.handleBelow
     }
