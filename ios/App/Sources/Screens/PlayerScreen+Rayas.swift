@@ -25,7 +25,14 @@ extension PlayerScreen {
             if let aspect = PictureBars.pictureAspect(frameAspect: frameAspect, samples: samples) {
                 PlayerModel.note(String(format: "rayas pintadas a los lados (%.0f %% y %.0f %%): la imagen es %.2f, no %.2f",
                                         samples.map(\.left).min()! * 100, samples.map(\.right).min()! * 100, aspect, frameAspect))
-                withAnimation(DS.Motion.base(reduceMotion)) { pictureAspect = aspect }
+                // El recuadro crece despacio hacia la forma de la imagen (no brinca) y el aviso dice que fue a propósito. Acostado no
+                // se ve ningún cambio, así que no hay aviso.
+                let visible = !landscape
+                withAnimation(DS.Motion.spring(reduceMotion)) { pictureAspect = aspect; framing.framedToast = visible }
+                guard visible else { return }
+                UIAccessibility.post(notification: .announcement, argument: Strings.tr("Orbital ajustó la imagen", language: env.services.appSettings.uiLanguage))
+                try? await Task.sleep(nanoseconds: DS.Timing.banner)
+                withAnimation(DS.Motion.base(reduceMotion)) { framing.framedToast = false }
             }
             return
         }

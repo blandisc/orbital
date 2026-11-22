@@ -48424,6 +48424,28 @@
           }
         }
       }
+    },
+    "Orbital ajustó la imagen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital adjusted the picture"
+          }
+        }
+      }
+    },
+    "Este video traía franjas negras a los lados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This video came with black bars on the sides"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

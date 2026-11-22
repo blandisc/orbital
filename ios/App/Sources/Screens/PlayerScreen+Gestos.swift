@@ -270,6 +270,13 @@ extension PlayerScreen {
             }
             .padding(.top, DS.Space.s16)
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+        } else if framing.framedToast, !padlock.lockNoticeVisible {
+            VStack {
+                DSToastPill(text: "Orbital ajustó la imagen", detail: Text("Este video traía franjas negras a los lados"))
+                Spacer()
+            }
+            .padding(.top, DS.Space.s16)
+            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         } else if let zoomToast = framing.zoomToast, !padlock.lockNoticeVisible {
             // Los avisos de texto, todos en el mismo lugar (arriba, como el de subtítulos); antes el del zoom en vertical salía al
             // centro del video. Al centro del video solo van los glifos de los gestos.

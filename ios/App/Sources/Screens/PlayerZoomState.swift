@@ -21,6 +21,9 @@ final class PlayerZoomState {
     var zoomBeforePinch: (zoom: VideoZoom, at: Date)?
     var lastPinch = 0.0
     var zoomToast: VideoZoom?
+    /// «Orbital ajustó la imagen»: se quitaron las franjas pintadas a los lados (`PictureBars`). Dice que fue a propósito, para
+    /// que el cambio de tamaño no parezca una falla (Fernando, 22 nov 2026).
+    var framedToast = false
     var zoomToastTask: Task<Void, Never>?
 }
 
