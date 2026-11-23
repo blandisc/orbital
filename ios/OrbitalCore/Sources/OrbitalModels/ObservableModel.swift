@@ -19,6 +19,13 @@ open class ObservableModel: Observable {
     private var version = 0
     public init() {}
 
+    /// Guarda una llave de una caché solo si cambió, sin comparar las demás. Para los diccionarios que se van llenando de a
+    /// poco (estantes, estudios, temporadas): su `didSet` avisa sin comparar, porque comparar todo el diccionario en cada
+    /// llegada costaba 0.3 s de la primera visita a Explorar en la Mac (22 nov 2026).
+    public final func put<K: Hashable, V: Equatable>(_ cache: inout [K: V], _ key: K, _ value: V) {
+        if cache[key] != value { cache[key] = value }
+    }
+
     /// Se llama cada vez que cambia algo publicado. Guarda la suscripción mientras la quieras.
     public func onChange(_ handler: @escaping () -> Void) -> Subscription {
         let id = UUID()

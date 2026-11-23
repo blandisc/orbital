@@ -2,12 +2,7 @@ import Foundation
 
 /// Lo que eliges en Ajustes. El idioma de la app, el del audio y el de los subtítulos son tres cosas distintas.
 public struct AppSettings: Codable, Equatable, Sendable {
-    public var uiLanguage = "es"               // idioma de la app (menús y botones): «es» | «en»
-    /// El de los títulos y las sinopsis (ID-A, Fernando, 22 nov 2026: «el idioma del app y el idioma de los metadatos»), aparte
-    /// del de la app. nil = el mismo que la app (lo de siempre: al llegar nada cambia).
-    public var metadataLanguage: String?
-    /// El que vale para títulos y sinopsis: el suyo o, si no se eligió, el de la app.
-    public var titleLanguage: String { metadataLanguage ?? uiLanguage }
+    public var uiLanguage = "es", metadataLanguage: String?   // la app (menús) y títulos y sinopsis (nil = el de la app; Settings+Idiomas)
     public var audio = "es"                    // idioma de audio preferido de las fuentes
     public var subtitles = "es"                // idioma de subtítulos («» = sin subtítulos)
     public var onlyForcedSubtitles = false
@@ -91,8 +86,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         self.init()
         let c = try decoder.container(keyedBy: Keys.self)
-        uiLanguage = try c.decodeIfPresent(String.self, forKey: .uiLanguage) ?? uiLanguage
-        metadataLanguage = try c.decodeIfPresent(String.self, forKey: .metadataLanguage)
+        uiLanguage = try c.decodeIfPresent(String.self, forKey: .uiLanguage) ?? uiLanguage; metadataLanguage = try c.decodeIfPresent(String.self, forKey: .metadataLanguage)
         audio = try c.decodeIfPresent(String.self, forKey: .audio) ?? audio
         subtitles = try c.decodeIfPresent(String.self, forKey: .subtitles) ?? subtitles
         onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles

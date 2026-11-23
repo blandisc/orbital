@@ -66,7 +66,7 @@ extension SavedModel {
         let newID = "list:\(made.id)"
         appendList(SavedList(id: newID, name: made.name))
         listCounts[newID] = source.count
-        listPosters[newID] = Array(source.prefix(3).map(\.poster))
+        put(&listPosters, newID, Array(source.prefix(3).map(\.poster)))
         privacies[newID] = "private"
         services.traktOutbox.remember(lists: services.traktOutbox.cachedLists + [(made.id, made.name)])
         await refreshLists()

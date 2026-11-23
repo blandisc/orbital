@@ -97,7 +97,7 @@ extension DesignRulesTests {
         let add = try XCTUnwrap(channels.range(of: "private var addCard: some View {")).upperBound
         XCTAssertFalse(channels[add...].prefix(900).contains("dsCard("), "«Añadir canal» va sin caja detrás")
         let collections = try String(contentsOf: repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalModels/CollectionsModel.swift"), encoding: .utf8)
-        XCTAssertFalse(collections.contains("{ didSet { changed() } }"), "Lo mismo no vuelve a pintar Explorar entero (`if x != oldValue`)")
+        XCTAssertTrue(collections.contains("{ put(&studioItems, id, found) }"), "Lo mismo no vuelve a pintar Explorar entero: cada llave se guarda con `put`, que no avisa si no cambió")
         let tmdb = try String(contentsOf: repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalCore/Tmdb.swift"), encoding: .utf8)
         XCTAssertTrue(tmdb.contains("return try await details(kind: kind, tmdbID: id, urgent: true).imdb"),
                       "Un ranking que ves no hace fila detrás de los detalles de fondo")

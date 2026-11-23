@@ -20,9 +20,12 @@ struct CoachContent: Equatable {
 
 /// Dónde está lo que señala un aviso con foco (solo mientras el aviso está a la vista: fuera de eso no hay preferencia).
 struct CoachAnchorKey: PreferenceKey {
-    static let defaultValue: [String: Anchor<CGRect>] = [:]
-    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    /// Solo publica lo que señala el aviso a la vista (uno a la vez): un valor opcional, no un diccionario. Con el diccionario,
+    /// cada vista de la pantalla mezclaba uno vacío al juntar las preferencias: 0.2 s de la primera visita a Explorar en la Mac
+    /// (22 nov 2026).
+    static let defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        if value == nil { value = nextValue() }
     }
 }
 
@@ -37,7 +40,7 @@ private struct CoachAnchor: ViewModifier {
     @Environment(\.coachShowing) private var showing
 
     func body(content: Content) -> some View {
-        if showing == id { content.anchorPreference(key: CoachAnchorKey.self, value: .bounds) { [id: $0] } } else { content }
+        if showing == id { content.anchorPreference(key: CoachAnchorKey.self, value: .bounds) { $0 } } else { content }
     }
 }
 
@@ -50,7 +53,7 @@ extension View {
         environment(\.coachShowing, coach?.id).overlayPreferenceValue(CoachAnchorKey.self) { anchors in
             if let coach {
                 GeometryReader { geo in
-                    CoachOverlay(coach: coach, target: anchors[coach.id].map { geo[$0] }, size: geo.size, insets: geo.safeAreaInsets,
+                    CoachOverlay(coach: coach, target: anchors.map { geo[$0] }, size: geo.size, insets: geo.safeAreaInsets,
                                  story: story, done: done, skipAll: skipAll)
                 }
             }

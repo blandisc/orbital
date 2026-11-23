@@ -33,7 +33,7 @@ public final class SavedModel: ObservableModel {
     /// Mi lista entera, aunque veas otra lista (el tablero cuenta lo que tienes en ella).
     public internal(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
     /// Tus listas de Trakt: unos pósters y cuántos títulos tiene cada una (los renglones de «Tus listas»).
-    public internal(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
+    public internal(set) var listPosters: [String: [String]] = [:] { didSet { changed() } }   // se escribe con `put` o comparando antes
     /// Quién ve cada una de tus listas (`list:<id>` → `private`, `link`, `friends` o `public`), para el «···» (G4-A).
     public internal(set) var privacies: [String: String] = [:] { didSet { if privacies != oldValue { changed() } } }
     public internal(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
@@ -94,7 +94,8 @@ public final class SavedModel: ObservableModel {
             for await (id, items) in group { if let items { out[id] = items } }
             return out
         }
-        listPosters = found.mapValues { Array($0.prefix(Self.coverPosters).map(\.poster)) }
+        let posters = found.mapValues { Array($0.prefix(Self.coverPosters).map(\.poster)) }
+        if posters != listPosters { listPosters = posters }
         listCounts = found.mapValues(\.count)
     }
 

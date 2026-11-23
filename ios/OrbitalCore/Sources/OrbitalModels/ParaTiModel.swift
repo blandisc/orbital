@@ -28,7 +28,7 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var kind = "all" { didSet { if kind != oldValue { visibleMemo = nil; changed() } } }
     /// Las listas que aún se están pidiendo (su estante enseña esqueletos, no un hueco).
     public private(set) var loadingKeys = Set<String>() { didSet { if loadingKeys != oldValue { visibleMemo = nil; changed() } } }
-    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { if railItems != oldValue { visibleMemo = nil; changed() } } }
+    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { visibleMemo = nil; changed() } }   // se escribe con `put` (por llave) o comparando antes
     public private(set) var watchlistKeys = Set<String>() { didSet { if watchlistKeys != oldValue { changed() } } }
     public private(set) var traktLinked = false { didSet { if traktLinked != oldValue { changed() } } }
     public private(set) var isLoading = false { didSet { if isLoading != oldValue { visibleMemo = nil; changed() } } }
@@ -75,7 +75,7 @@ public final class ParaTiModel: ObservableModel {
         } else if let i = items.firstIndex(where: { $0.imdb == s.imdb }) {
             hiddenFavorites[s.imdb] = (i, items.remove(at: i))
         } else { return }
-        railItems[k] = items
+        put(&railItems, k, items)
     }
 
     /// Pruebas: lo que trae un estante sin pasar por la red.
@@ -201,7 +201,7 @@ public final class ParaTiModel: ObservableModel {
         async let fetchedKeys = try? remote.watchlistKeys()
         async let fetchedBecause = forYou.becauseYouWatched()
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
-        if source != .console { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
+        if source != .console, !railItems.isEmpty { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
         source = .console
         traktLinked = newLists.contains { $0.id == "watchlist" || $0.id == "mine" }
         lists = newLists
@@ -233,7 +233,7 @@ public final class ParaTiModel: ObservableModel {
     /// Todo a la vez: los estantes empiezan en cuanto llegan las listas (antes esperaban al mosaico, que son varias
     /// peticiones a Trakt) y «Porque viste», lo nuevo en tus plataformas y el calendario aparecen cada uno al llegar.
     private func loadFromPhone() async {
-        if source != .phone { railItems = [:] }
+        if source != .phone, !railItems.isEmpty { railItems = [:] }
         source = .phone
         let forYou = services.forYou
         // Al abrir la app, el de la última vez (guardado en el teléfono): el mosaico aparece al instante. El nuevo no lo
@@ -397,7 +397,7 @@ public final class ParaTiModel: ObservableModel {
             for await (k, found) in group {
                 loadingKeys.remove(k)
                 // Si falló o se canceló (te fuiste a mitad de la carga), no se guarda vacío: la próxima carga lo vuelve a pedir.
-                if let found, !Task.isCancelled { railItems[k] = found; staleKeys.remove(k) }
+                if let found, !Task.isCancelled { put(&railItems, k, found); staleKeys.remove(k) }
             }
         }
     }
@@ -449,7 +449,7 @@ public final class ParaTiModel: ObservableModel {
         hubsMemo = hubs
         return hubs
     }
-    public private(set) var rankingItems: [String: [Suggestion]] = [:] { didSet { if rankingItems != oldValue { changed() } } }
+    public private(set) var rankingItems: [String: [Suggestion]] = [:] { didSet { changed() } }   // se escribe con `put`
     private var rankingLoading: Set<String> = []
 
     /// Un ranking ya cargado: lo pedido en la página o, si es del tipo que enseñan los estantes, lo de su estante.
@@ -481,7 +481,7 @@ public final class ParaTiModel: ObservableModel {
             }
             for await (id, found) in group {
                 rankingLoading.remove(id)
-                if let found, !Task.isCancelled { rankingItems[id] = found; staleRankings.remove(id) }
+                if let found, !Task.isCancelled { put(&rankingItems, id, found); staleRankings.remove(id) }
             }
         }
     }
@@ -523,7 +523,7 @@ public final class ParaTiModel: ObservableModel {
             }
             rails[key] = items
         }
-        railItems = rails
+        if rails != railItems { railItems = rails }
     }
     private var hiddenInLists: [String: (Int, Suggestion)] = [:]
 
@@ -542,7 +542,8 @@ public final class ParaTiModel: ObservableModel {
             if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
         }
         mosaic.removeAll { $0.imdb == s.imdb }
-        railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
+        let without = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
+        if without != railItems { railItems = without }
         airings.removeAll { $0.series.imdb == s.imdb }
         if let current = because { because = (current.seed, current.items.filter { $0.imdb != s.imdb }) }
     }

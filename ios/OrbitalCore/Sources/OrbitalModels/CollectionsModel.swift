@@ -9,7 +9,10 @@ public final class CollectionsModel: ObservableModel {
     /// Mi lista de Stremio (tu biblioteca), lo más reciente primero.
     public private(set) var myList: [Suggestion] = [] { didSet { if myList != oldValue { changed() } } }   // la misma lista al volver a la pestaña no redibuja
     /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
-    public private(set) var yearPosters: [Int: [String]] = [:] { didSet { if yearPosters != oldValue { changed() } } }
+    /// Las cachés por llave (pósters del año, estudios y sus logos, temporadas, géneros) avisan sin comparar todo el
+    /// diccionario: cada una se escribe con `put`, que mira solo su llave. Comparar todo en cada llegada, con decenas de listas
+    /// cargadas, costaba 0.3 s de la primera visita a Explorar en la Mac (22 nov 2026).
+    public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
     private var watchedCache: Set<String>?
 
     /// Viste algo: «Ocultar lo que ya vi» se vuelve a preguntar.
@@ -18,18 +21,18 @@ public final class CollectionsModel: ObservableModel {
     public func resetAccount() { watchedCache = nil; myList = [] }
     /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
     public let studios: [(id: Int, name: String)] = Tmdb.studios
-    public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { if studioItems != oldValue { changed() } } }
+    public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }
     /// El logo de cada estudio (TMDB), si lo tiene; se guarda en el iPhone (no cambia).
-    public private(set) var studioLogos: [Int: String] = [:] { didSet { if oldValue != studioLogos { changed() } } }
+    public private(set) var studioLogos: [Int: String] = [:] { didSet { changed() } }
     public var tmdbReady: Bool { services.tmdb.configured }
     /// «Temporadas»: la de hoy primero (o la siguiente en llegar) y las demás en el orden en que llegan; lo de cada una se pide al verla.
     public var seasons: [TmdbSeason] { Tmdb.orderedSeasons(today: services.now()) }
     /// Las temporadas con los días que faltan (0: ya va), de la más cercana a la más lejana.
     public var seasonCountdown: [(season: TmdbSeason, days: Int)] { Tmdb.seasonCountdown(today: services.now()) }
-    public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { if seasonItems != oldValue { changed() } } }
+    public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { changed() } }
     /// «Lo mejor del género»: los 14 géneros y el Top de cada uno (con el año de verdad), que se pide al verlo.
     public let genres: [TmdbGenre] = Tmdb.genres
-    public private(set) var genreCharts: [String: GenreChart] = [:] { didSet { if genreCharts != oldValue { changed() } } }
+    public private(set) var genreCharts: [String: GenreChart] = [:] { didSet { changed() } }
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
 
@@ -72,7 +75,7 @@ public final class CollectionsModel: ObservableModel {
             // Si se cancela (la tarjeta salió de la vista) o falla, no se guarda nada: la próxima vez se vuelve a pedir (antes
             // quedaba vacía para siempre).
             guard let popular = try? await trakt.popular(kind: "movie", limit: Self.yearCover, years: String(year)), !Task.isCancelled else {
-                if !posters.isEmpty, !Task.isCancelled { yearPosters[year] = Array(posters.prefix(Self.yearCover)) }
+                if !posters.isEmpty, !Task.isCancelled { put(&yearPosters, year, Array(posters.prefix(Self.yearCover))) }
                 return
             }
             for e in popular where posters.count < Self.yearCover {
@@ -80,7 +83,7 @@ public final class CollectionsModel: ObservableModel {
                 if !posters.contains(poster) { posters.append(poster) }
             }
         }
-        yearPosters[year] = Array(posters.prefix(Self.yearCover))
+        put(&yearPosters, year, Array(posters.prefix(Self.yearCover)))
     }
 
     static let yearCover = 4
@@ -89,7 +92,7 @@ public final class CollectionsModel: ObservableModel {
     public func loadStudio(_ id: Int) async {
         guard studioItems[id] == nil, let studio = studios.first(where: { $0.id == id }) else { return }
         let found = await services.forYou.studioItems(companyID: id, name: studio.name)
-        if !found.isEmpty { studioItems[id] = found }
+        if !found.isEmpty { put(&studioItems, id, found) }
         await loadStudioLogo(id)
     }
 
@@ -100,11 +103,11 @@ public final class CollectionsModel: ObservableModel {
         guard studioLogos[id] == nil, !studiosWithoutLogo.contains(id) else { return }
         let key = "studio-logo.\(id)"
         if let saved = services.kv.data(key).flatMap({ String(data: $0, encoding: .utf8) }) {
-            if saved.isEmpty { studiosWithoutLogo.insert(id) } else { studioLogos[id] = saved }
+            if saved.isEmpty { studiosWithoutLogo.insert(id) } else { put(&studioLogos, id, saved) }
         } else if services.tmdb.configured {
             let answer: String?
             do { answer = try await services.tmdb.companyLogo(id) } catch { return }   // no contestó: se intenta otra vez luego
-            if let answer { studioLogos[id] = answer } else { studiosWithoutLogo.insert(id) }
+            if let answer { put(&studioLogos, id, answer) } else { studiosWithoutLogo.insert(id) }
             services.kv.set(key, data: (answer ?? "").data(using: .utf8))
         }
     }
@@ -114,13 +117,13 @@ public final class CollectionsModel: ObservableModel {
     public func loadSeason(_ slug: String) async {
         guard seasonItems[slug] == nil else { return }
         let found = await services.forYou.seasonItems(slug: slug)
-        if !found.isEmpty { seasonItems[slug] = found }
+        if !found.isEmpty { put(&seasonItems, slug, found) }
     }
 
     /// El Top de un género (una vez; luego de la caché).
     public func loadGenre(_ slug: String) async {
         guard genreCharts[slug] == nil else { return }
-        if let chart = await services.forYou.genreChart(slug: slug), !chart.items.isEmpty { genreCharts[slug] = chart }
+        if let chart = await services.forYou.genreChart(slug: slug), !chart.items.isEmpty { put(&genreCharts, slug, chart) }
     }
 
     /// La calificación de IMDb de cada título (de Cinemeta, 12 a la vez), para «Mejor calificadas en IMDb»; se recuerda.

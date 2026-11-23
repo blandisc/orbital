@@ -51,5 +51,26 @@ extension DesignRulesTests {
             file.name != "DeviceInfo.swift" && file.lines.contains { $0.contains(".volumeAvailableCapacity") }
         }.map(\.name)
         XCTAssertEqual(asking, [], "Pide el espacio libre con DiskSpace.freeBytes(): no le preguntes al disco al pintar")
+
+        // 5 · Lo que llega de a poco no compara todo lo que ya llegó: un diccionario de listas (estantes, estudios, temporadas)
+        // avisa sin comparar y se escribe con `put`, que mira solo su llave. Comparar todo en cada llegada costaba 0.3 s de la
+        // primera visita a Explorar en la Mac (22 nov 2026).
+        let models = repo.appendingPathComponent("ios/OrbitalCore/Sources/OrbitalModels")
+        let whole = try NSRegularExpression(pattern: #"var (\w+): \[[\w.]+: \[[^\]]+\]\] = \[:\] \{ didSet \{ if (\1 != oldValue|oldValue != \1)"#)
+        var comparing: [String] = []
+        for case let file as URL in try XCTUnwrap(FileManager.default.enumerator(at: models, includingPropertiesForKeys: nil)).allObjects
+        where file.pathExtension == "swift" {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            for m in whole.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                if let r = Range(m.range(at: 1), in: text) { comparing.append("\(file.lastPathComponent) · \(text[r])") }
+            }
+        }
+        XCTAssertEqual(comparing, [], "Un diccionario de listas no se compara entero en su didSet: escríbelo con put(&cache, llave, valor)")
+
+        // 6 · Lo que señala un aviso de la guía viaja solo (uno a la vez): un diccionario que arma cada vista de la pantalla
+        // costaba 0.2 s de la primera visita a Explorar en la Mac.
+        let coach = try XCTUnwrap(try sources(["Design"]).first { $0.name == "CoachMark.swift" })
+        XCTAssertTrue(coach.lines.contains { $0.contains("static let defaultValue: Anchor<CGRect>? = nil") },
+                      "CoachAnchorKey lleva un solo ancla, no un diccionario de todas")
     }
 }
