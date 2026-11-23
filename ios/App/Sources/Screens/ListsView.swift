@@ -441,16 +441,15 @@ struct ListsView: View {
     /// Una temporada de la línea de tiempo y cuántos días faltan.
     private struct SeasonStop { let season: TmdbSeason; let days: Int }
 
-    /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
-    /// Trakt) y «De tus complementos».
+    /// Un grupo de listas («Tus listas» y «De tus complementos»): mosaicos que se deslizan en todas las pantallas.
     @ViewBuilder private func listRows(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)? = nil) -> some View {
-        if WindowMetrics.roomy { listTiles(label: label, symbol: symbol, cards: cards, create: create) }
-        else { listColumn(label: label, symbol: symbol, cards: cards, create: create) }
+        listTiles(label: label, symbol: symbol, cards: cards, create: create)
     }
 
-    /// En la Mac y el iPad: tus listas en mosaicos que se deslizan, como en Biblioteca, y «Nueva lista» como el primer mosaico
-    /// (Fernando, 22 nov 2026: «replantear cómo presentamos tus listas… y el botón de crear una lista»). Antes eran renglones
-    /// a todo lo ancho, al pie de Explorar, con un botón suelto al final.
+    /// Tus listas en mosaicos que se deslizan, como en Biblioteca, y «Nueva lista» como el primer mosaico (Fernando, 22 nov 2026:
+    /// «replantear cómo presentamos tus listas… y el botón de crear una lista», primero en la Mac y el iPad; el 23 nov también en
+    /// el iPhone: «solo quiero que se mejore la forma en la que las presentamos»). Antes eran renglones a todo lo ancho, al pie
+    /// de Explorar, con un botón suelto «Crear una lista» al final.
     private func listTiles(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)?) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: label, symbol: symbol)
@@ -460,6 +459,7 @@ struct ListsView: View {
                         Button(action: create) { SavedNewListTile() }
                             .buttonStyle(.plain)
                             .frame(width: DS.Saved.listTileRow)
+                            .fixedSize(horizontal: false, vertical: true)   // la portada, del ancho del mosaico (sin esto, más angosta y centrada)
                             .accessibilityIdentifier("list-create")
                     }
                     ForEach(cards) { c in
@@ -467,6 +467,7 @@ struct ListsView: View {
                             NavigationLink(value: shelf) { SavedListTile(name: Text(verbatim: c.name), posters: c.posters) }
                                 .buttonStyle(.plain).pointerHover(.lift)
                                 .frame(width: DS.Saved.listTileRow)
+                                .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("list-\(c.id)")
                         }
                     }
@@ -479,42 +480,6 @@ struct ListsView: View {
             .pagingArrows()
             .edgeBump()
         }
-    }
-
-    private func listColumn(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)?) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSChapterHead(label: label, symbol: symbol)
-            VStack(spacing: DS.Space.s2) {
-                ForEach(cards) { c in
-                    if let shelf = c.shelf {
-                        NavigationLink(value: shelf) { ListRow(name: c.name, detail: listDetail(c), posters: c.posters) }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("list-\(c.id)")
-                    }
-                }
-                // Al final de tus listas: una nueva en Trakt.
-                if let create {
-                    Button(action: create) { Label("Crear una lista", systemImage: "plus") }
-                        .dsSecondaryButton()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("list-create")
-                }
-            }
-            .padding(.horizontal, DS.Space.gutter)
-        }
-    }
-
-    /// «Lo que dejaste pendiente · 34», «Lo que marcaste con el corazón · 21», «Las que estás viendo · 18» o «42 títulos».
-    private func listDetail(_ c: ListCardItem) -> Text {
-        let what: Text? = switch c.id {
-        case "watchlist": Text("Lo que dejaste pendiente")
-        case ForYou.favoritesList: Text("Lo que marcaste con el corazón")
-        case "mine": Text("Las que estás viendo")
-        default: c.id.hasPrefix("lb:") ? Text(verbatim: "Letterboxd") : nil
-        }
-        guard let count = c.count else { return what ?? Text(verbatim: "") }
-        guard let what else { return Text("\(count) títulos") }
-        return Text("\(what) · \(count)")
     }
 
     /// Lo mejor del género: el Top 10 del año de cada género (TMDB, por nota), con su ícono y su nombre al pie.
