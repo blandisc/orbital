@@ -429,6 +429,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let iconColumn: CGFloat = 24
         /// Cuántos pósters de lo popular se piden al abrir la app (los del Top 10 de Buscar).
         static let searchPrefetch = 10
+        /// Pósters vacíos mientras llega una búsqueda: dos filas completas en la Mac (11 columnas), no una a medias.
+        static let searchPlaceholders = 22
         /// El mejor resultado de Buscar, en grande.
         static let searchTopHeight: CGFloat = 200
         /// «Los siguientes N episodios» del panel de Descargar.

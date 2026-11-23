@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
         ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
+        DS.Mac.styleBarTitles()   // en la Mac, el título de cada pantalla con la escala de la Mac (no el de iPhone)
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         SiriPhrases.refresh()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)

@@ -431,18 +431,24 @@ struct YearCard: View {
 /// que sigue hasta la siguiente (sale de la tarjeta para unirlas).
 struct SeasonTimelineStop: View {
     let days: Int
+    /// La última de la línea: la línea termina en la orilla de su tarjeta con otro punto, como empieza (Fernando, 22 nov 2026:
+    /// «que acabe en el mismo punto que con el que empieza»). Antes seguía hacia la nada.
+    var last = false
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
+            dot
             when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
             // En turquesa a propósito (Fernando, 2 nov 2026).
             Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
-                .padding(.trailing, -DS.Space.s2)   // hasta la siguiente tarjeta
+                .padding(.trailing, last ? 0 : -DS.Space.s2)   // hasta la siguiente tarjeta
+            if last { dot }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(when)
     }
+
+    private var dot: some View { Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot) }
 
     private var when: Text {
         if days <= 1 { return Text("mañana") }

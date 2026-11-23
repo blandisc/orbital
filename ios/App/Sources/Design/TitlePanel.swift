@@ -17,6 +17,8 @@ struct TitlePanelOpener: Equatable {
 
 extension EnvironmentValues {
     @Entry var titlePanel: TitlePanelOpener? = nil
+    /// Lo que se ve dentro del panel de la derecha (FI-B): la ficha va en su versión de una columna (`TitleView.sizeClass`).
+    @Entry var titleInPanel = false
 }
 
 /// El enlace a una ficha del catálogo: con panel (iPad, Mac), la abre a la derecha; sin él (iPhone), navega como siempre.
@@ -90,11 +92,12 @@ struct TitlePanel: View {
                 .titleDestinations()
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Cerrar", systemImage: "xmark", action: close).accessibilityIdentifier("title-panel-close")   // ds-exception: botón nativo de la barra de navegación (D7)
+                        Button("Cerrar", systemImage: "xmark", action: close).keyboardShortcut(.cancelAction).accessibilityIdentifier("title-panel-close")   // ds-exception: botón nativo de la barra de navegación (D7)
                     }
                 }
         }
         .environment(\.titlePanel, nil)   // dentro del panel, las fichas navegan dentro de él
+        .environment(\.titleInPanel, true)
         .onChange(of: route) { path = NavigationPath() }
     }
 }

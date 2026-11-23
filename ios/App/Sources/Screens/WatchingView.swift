@@ -21,7 +21,7 @@ struct WatchingCardLoader: View {
                 let language = env.services.appSettings.uiLanguage
                 NavigationLink(value: WatchingRoute()) {
                     WatchingCard(stats: shown, name: Strings.tr("Lo que ves", language: language), genres: (shown?.genres ?? []).map { WatchingText.genre($0.name, language: language) },
-                                 period: period, lastTitle: model.lastPlay?.title)
+                                 period: period, lastTitle: model.lastPlay?.title, large: WindowMetrics.roomy)
                 }
                 .buttonStyle(.plain)
             }

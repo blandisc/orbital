@@ -15,6 +15,10 @@ enum FocalPoint {
     /// El lado mayor de la miniatura que mira Vision: para hallar caras grandes y lo que destaca sobra.
     nonisolated static let thumbPixels = 256
     nonisolated static let writeDelay: Duration = .seconds(3)
+    /// La fila de Vision, fuera de los hilos de Swift (ver `find`), y cuántas pueden esperar en ella.
+    nonisolated private static let queue = DispatchQueue(label: "orbital.focal-point", qos: .utility)
+    nonisolated private static let backlog = OSAllocatedUnfairLock(initialState: 0)
+    nonisolated static let maxBacklog = 6
     nonisolated private static var file: URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Orbital-SWR/focal-points.json")
     }
@@ -53,7 +57,24 @@ enum FocalPoint {
         if let hit = cached(key) { return hit }
         let center = CGPoint(x: 0.5, y: 0.5)
         guard let source = image.cgImage else { return center }
-        guard let found = await Task.detached(priority: .userInitiated, operation: { locate(thumbnail(source)) }).value else { return center }
+        // Vision espera en su propia fila sin soltar el hilo. Antes corría en los hilos de Swift (`Task.detached`): con una
+        // cuadrícula de pósters los ocupaba TODOS esperando a Vision, y nada más avanzaba: la ficha se quedaba en «Cargando
+        // la ficha» y las imágenes no llegaban (Fernando, 22 nov 2026: «sigue lentísima… tardan mucho en cargar las
+        // imágenes»). Ahora va en una fila aparte, una a la vez, y si ya hay muchas esperando, al centro sin recordarlo.
+        let admitted = backlog.withLock { n -> Bool in
+            guard n < maxBacklog else { return false }
+            n += 1
+            return true
+        }
+        guard admitted else { return center }
+        let found: CGPoint?? = await withCheckedContinuation { done in
+            queue.async {
+                let result = locate(thumbnail(source))
+                backlog.withLock { $0 -= 1 }
+                done.resume(returning: result)
+            }
+        }
+        guard let found else { return center }
         let point = found ?? center
         remember(point, for: key)
         return point

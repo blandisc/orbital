@@ -17,7 +17,12 @@ struct TitleView: View {
     @State private var closing = false
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
-    @Environment(\.horizontalSizeClass) var sizeClass
+    @Environment(\.horizontalSizeClass) private var windowSizeClass
+    @Environment(\.titleInPanel) private var inPanel
+    /// En el panel de la derecha de la Mac (FI-B), siempre la ficha de una columna. No basta con poner `.compact` en el entorno:
+    /// la pila de navegación del panel lo vuelve a tomar de la ventana, y la ficha ancha en un panel angosto se medía sin fin
+    /// (la app se trabó al abrir una ficha, 22 nov 2026).
+    var sizeClass: UserInterfaceSizeClass? { inPanel ? .compact : windowSizeClass }
     /// La pestaña elegida bajo el arte en el iPad y la Mac (nil: la primera que haya).
     @State private var wideTab: WideTab?
     /// Lo que dice Letterboxd de la película (su promedio y sus reseñas populares); las series casi nunca están.

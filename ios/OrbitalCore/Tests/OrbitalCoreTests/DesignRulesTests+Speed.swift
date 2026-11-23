@@ -1,0 +1,42 @@
+import XCTest
+
+/// Cambiar de pantalla no relee nada ni vuelve a pintar lo que no cambió (Fernando, 22 nov 2026: «le pico en Explorar y se
+/// tardan 3 segundos en cambiar pantalla… es inaceptable»). Una muestra del cambio de pestaña en la Mac: 16 % releyendo
+/// `Localizable.strings` del disco por cada texto (el idioma de la app no era el del sistema) y cada póster repintado porque
+/// un valor del entorno llevaba acciones dentro. Regla en `docs/ios-interfaz.md` § «Revisión pantalla por pantalla en la Mac».
+extension DesignRulesTests {
+    func testSwitchingScreensRereadsNothingAndRepaintsOnlyWhatChanged() throws {
+        // 1 · Lo que viaja por el entorno lleva solo datos; lo que hace vive aparte (V9, como `RemoteOpener`). La tira de
+        // pestañas de la Mac (`MacTabs`) se queda: la leen solo sus renglones de arriba y cambia con la pestaña de todos modos.
+        // Tampoco cuentan los que pone una sola pantalla para lo suyo (Ajustes, una historia, el reproductor): no los lee
+        // cada póster de las cuatro pestañas.
+        let files = try sources(["Design", "Screens"])
+        let entry = try NSRegularExpression(pattern: #"@Entry var \w+: (\w+)\?"#)
+        let closure = try NSRegularExpression(pattern: #"^\s*(let|var) \w+: (@Sendable )?\("#)
+        var types = Set<String>()
+        for file in files { for line in file.lines {
+            let range = NSRange(line.startIndex..., in: line)
+            if let m = entry.firstMatch(in: line, range: range), let r = Range(m.range(at: 1), in: line) { types.insert(String(line[r])) }
+        } }
+        types.subtract(["MacTabs", "SettingsPane", "SettingsSubPane", "StoryTurn", "PlayerCommands"])
+        var offenders: [String] = []
+        for file in files {
+            var inside: String?
+            for line in file.lines {
+                if let name = types.first(where: { line.hasPrefix("struct \($0)") && line.contains("{") }) { inside = name; continue }
+                if inside != nil, line.hasPrefix("}") { inside = nil; continue }
+                if let name = inside, closure.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) != nil {
+                    offenders.append("\(file.name) · \(name): \(line.trimmingCharacters(in: .whitespaces))")
+                }
+            }
+        }
+        XCTAssertEqual(offenders, [], "Un valor del entorno con acciones dentro se da por cambiado en cada pasada y repinta todo lo que lo lee")
+
+        // 2 · El idioma de Orbital es el preferido de la app y su `Locale` es el del sistema cuando coinciden: con otro, cada
+        // texto se resolvía leyendo la tabla del disco en el hilo principal.
+        let app = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/OrbitalApp.swift"), encoding: .utf8)
+        XCTAssertTrue(app.contains(#"forKey: "AppleLanguages")"#), "OrbitalApp ya no pone el idioma de Orbital como preferido de la app")
+        let env = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/AppEnvironment.swift"), encoding: .utf8)
+        XCTAssertTrue(env.contains("? Locale.current : Locale(identifier: language)"), "uiLocale debe ser Locale.current cuando ya habla el idioma de Orbital")
+    }
+}

@@ -41,6 +41,8 @@ extension DS {
     /// «Lo nuevo de lo tuyo»: el ancho de cada pieza, el renglón del día, la marca de hoy y lo apagado de lo que viene.
     enum HomeTimeline {
         static let width: CGFloat = 112, labelRow: CGFloat = 18, dot: CGFloat = 7
+        /// El punto de «Nuevo» en la esquina del póster (en vez del listón, que tapaba media portada).
+        static let newDot: CGFloat = 10
         /// Con letra grande la tarjeta crece con el texto hasta este múltiplo (más, y la línea ya no se recorre de un vistazo);
         /// la hora o el día se encoge a lo más hasta `labelShrink` antes de cortarse.
         static let maxGrowth: CGFloat = 1.5, labelShrink: CGFloat = 0.8
@@ -86,10 +88,13 @@ extension DS {
         static let coverColumnStep: Duration = .milliseconds(45)
         /// En ventana ancha (iPad acostado o grande, Mac) el muro suma columnas del mismo ancho hasta cubrir la ventana (con
         /// las ocho de siempre quedaba una cuña en blanco a la izquierda). Hasta el ancho del iPad de pie, las ocho de siempre.
+        /// Inclinado, el muro deja una cuña sin pósters abajo a la izquierda: se cuenta `coverTiltSlack` de más en cada orilla
+        /// (Fernando, 22 nov 2026: «un carril adicional a la extrema izquierda en el mosaico»).
         static func coverColumns(forWidth width: CGFloat) -> Int {
-            let needed = Int((CGFloat(coverColumns) * width / coverWall).rounded(.up))
-            return needed > coverColumns ? needed + 1 : coverColumns
+            let needed = Int((CGFloat(coverColumns) * (width + 2 * coverTiltSlack) / coverWall).rounded(.up))
+            return max(needed, coverColumns)
         }
+        static let coverTiltSlack: CGFloat = 140
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
         /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los
         /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.
@@ -123,6 +128,8 @@ extension DS {
         /// «La temporada»: cuánto la tiñe su color (sus pósters son los de la puerta, `doorPoster`). Un renglón de «Tuyo»:
         /// cuánto asoma cada póster.
         static let seasonGlow: Double = 0.42, rowShift: CGFloat = 14
+        /// La puerta grande de un renglón (`ListRow(large:)`, «Lo que ves» en la Mac y el iPad): pósters casi del doble.
+        static let largePoster: CGFloat = 92, largeShift: CGFloat = 30
         /// Su ícono, su altura mínima, su anillo del color y cuántos más asoman en la tira de la Mac (17 nov 2026).
         static let seasonIcon: CGFloat = 72, seasonHeight: CGFloat = 168, seasonRing: Double = 0.5, seasonStrip = 7
         /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba

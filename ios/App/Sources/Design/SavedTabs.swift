@@ -6,7 +6,9 @@ import OrbitalModels
 /// la mitad de una) y qué es o cuántos tiene. Toca y abre la misma pantalla de lista de siempre.
 struct SavedListTile: View {
     let name: Text
-    let detail: Text
+    /// Qué es o cuántos tiene. En Explorar va sin él: solo el nombre (Fernando, 22 nov 2026: «no se ve bien que tenga la
+    /// descripción… con que venga el título»).
+    var detail: Text? = nil
     let posters: [String]
     /// El ícono de la portada vacía (y la marca de Favoritos).
     var symbol = "rectangle.portrait.on.rectangle.portrait.fill"
@@ -16,7 +18,7 @@ struct SavedListTile: View {
             SavedCover(posters: posters, symbol: symbol)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 name.recipe(.cardTitle).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                detail.recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                if let detail { detail.recipe(.footnote, color: DS.textMuted).lineLimit(1) }
             }
         }
         .contentShape(Rectangle())
@@ -33,7 +35,7 @@ struct SavedNewListTile: View {
             SavedCover(posters: [], symbol: "plus")
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("Nueva lista").recipe(.cardTitle, color: DS.accent).lineLimit(2)
-                (online ? Text("Nace «Solo tú»") : Text("Necesita internet")).recipe(.footnote, color: DS.textMuted).lineLimit(2)
+                if !online { Text("Necesita internet").recipe(.footnote, color: DS.textMuted).lineLimit(2) }   // como las listas: solo el nombre
             }
         }
         .contentShape(Rectangle())

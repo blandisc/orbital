@@ -79,7 +79,8 @@ struct HomeView: View {
 
     /// Las filas de abajo, escalonadas: lo que sale de tus series, sugerencias, «Porque viste», canales, Top 10 y Mi lista.
     @ViewBuilder private func lowerRows(_ model: HomeModel, kind: String?, picks: [Suggestion], pending: [Suggestion]) -> some View {
-        // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta). En el tablero va en el panel.
+        // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta). En el tablero va en el panel, bajo
+        // «Seguir viendo» (Fernando, 22 nov 2026).
         if kind != "movie", !model.timeline.isEmpty, !board {
             ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
                 .entrance("home:timeline", order: 0)   // las filas de abajo entran escalonadas
@@ -392,6 +393,14 @@ struct HomeView: View {
         .onChange(of: items.map(\.id)) { old, new in
             let current = heroSlot.flatMap { old.indices.contains($0) ? old[$0] : nil }
             heroSlot = current.flatMap { new.firstIndex(of: $0) } ?? 0
+        }
+        // Al cambiar el tamaño de la ventana el carrusel se quedaba a medio camino entre dos portadas (se asomaba el «Ver» de
+        // la siguiente junto al panel, Mac, 22 nov 2026): ya quieta la ventana, vuelve a acomodarse en la que estabas.
+        .task(id: WindowMetrics.column.width) {
+            guard let slot = heroSlot, (try? await Task.sleep(for: .milliseconds(120))) != nil else { return }
+            heroSlot = nil
+            await Task.yield()
+            heroSlot = slot
         }
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
         .dsFeedback(.selection, trigger: heroSlot) { old, _ in old != nil }

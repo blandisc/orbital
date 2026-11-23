@@ -52,12 +52,24 @@ struct RemoteImage<Content: View>: View {
         return didFail ? .failure : .loading
     }
 
+    /// Si falla, se vuelve a pedir mientras siga en pantalla (V4, Fernando, 22 nov 2026: «algunas imágenes siguen sin
+    /// cargarse»): con la red o la Mac ocupadas una descarga se pasaba de tiempo y el póster se quedaba en su sombra hasta
+    /// salir y volver a entrar; y como el fallo se anota un minuto, las demás piezas con esa imagen ni lo intentaban.
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
         if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { if loaded !== hit { loaded = hit }; if let perfTag { Perf.mark(perfTag + ".image") }; return }   // al volver a aparecer, la misma: no se repinta
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
-        if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
-        didFail = false
+        var skip = ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels)   // falló hace poco: primero espera, no la pide ya
+        didFail = skip
+        for wait in [0] + DS.Timing.imageRetries {
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            if Task.isCancelled { return }
+            if !skip { await attempt(pixels); if loaded != nil || Task.isCancelled { return } }
+            skip = false
+        }
+    }
+
+    private func attempt(_ pixels: CGFloat) async {
         #if DEBUG
         ImageWait.begin(); defer { ImageWait.end(loaded != nil) }
         #endif

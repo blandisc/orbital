@@ -21,6 +21,8 @@ struct WatchingCard: View {
     var lastTitle: String?
     /// nil: solo el renglón (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsShowcase`).
     var action: (() -> Void)?
+    /// La puerta grande (Explorar en la Mac y el iPad).
+    var large = false
 
     var body: some View {
         if let action { Button(action: action) { row }.buttonStyle(.plain).accessibilityIdentifier("watching-card") }
@@ -28,7 +30,7 @@ struct WatchingCard: View {
     }
 
     private var row: some View {
-        ListRow(name: name, detail: detail, posters: (stats?.top ?? []).prefix(DS.ParaTiB.matchFan).map(\.poster))
+        ListRow(name: name, detail: detail, posters: (stats?.top ?? []).prefix(DS.ParaTiB.matchFan).map(\.poster), large: large)
             .contentShape(Rectangle())
     }
 

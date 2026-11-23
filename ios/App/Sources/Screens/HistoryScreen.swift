@@ -59,14 +59,14 @@ struct HistoryScreen: View {
                 }
             }
             if model.failed {
-                DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tu historial"), message: Text("Revisa tu conexión e inténtalo otra vez.")) {
+                DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tu historial"), message: Text("Revisa tu conexión e inténtalo otra vez."), fills: false) {
                     Button("Reintentar") { Task { await model.loadMore() } }
                 }
                 .listRowBackground(Color.clear)
             } else if model.loading {
                 DSLoadingState().listRowBackground(Color.clear)
             } else if model.entries.isEmpty {
-                DSEmptyState(symbol: "clock", title: Text("Nada en tu historial"), message: Text("Lo que veas o marques como visto aparece aquí."))
+                DSEmptyState(symbol: "clock", title: Text("Nada en tu historial"), message: Text("Lo que veas o marques como visto aparece aquí."), fills: false)
                     .listRowBackground(Color.clear)
             } else if model.more {
                 Button("Ver más") { Task { await model.loadMore() } }.accessibilityIdentifier("history-more").listRowBackground(Color.clear)

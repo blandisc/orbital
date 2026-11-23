@@ -1,0 +1,95 @@
+<title>Cómo abre la ficha en la Mac</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Tres maquetas de ventana de Mac lado a lado: ficha completa, panel a la derecha y hoja que sube. */
+:root {
+  --bg: #f3f4f8; --ink: #161a2b; --muted: #5d6378; --card: #ffffff; --line: #dfe2ec;
+  --win: #12141f; --win-2: #1c2030; --win-3: #262b40; --win-ink: #e9ebf3; --win-muted: #8d93aa; --moon: #2bb8a8;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c0e16; --ink: #e9ebf3; --muted: #9298ad; --card: #151827; --line: #262b3d; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0c0e16; --ink: #e9ebf3; --muted: #9298ad; --card: #151827; --line: #262b3d; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-family: var(--display); font-size: 30px; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); max-width: 72ch; margin: 6px 0 0; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.opt { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.rec { border-color: var(--moon); }
+.head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.code { font-family: var(--display); font-weight: 600; color: var(--moon); font-size: 18px; }
+.name { font-family: var(--display); font-weight: 600; font-size: 17px; }
+.tag { font-size: 12px; color: var(--moon); font-weight: 600; }
+.opt p { margin: 0; color: var(--muted); }
+.opt ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.gain li::marker { content: "+  "; color: var(--moon); }
+.lose li::marker { content: "−  "; color: var(--muted); }
+.note { margin: 0; color: var(--muted); max-width: 80ch; }
+.dictar { font-family: var(--display); color: var(--moon); font-weight: 600; }
+.win { background: var(--win); border-radius: 10px; aspect-ratio: 16 / 10; max-width: 100%; position: relative; overflow: hidden; color: var(--win-ink); font-size: 8px; }
+.under { position: absolute; inset: 0; padding: 8px; display: grid; gap: 5px; align-content: start; }
+.bar { display: flex; gap: 4px; justify-content: center; } .bar b { background: var(--win-2); border-radius: 99px; padding: 1px 6px; font-weight: 500; color: var(--win-muted); }
+.row { display: grid; grid-auto-flow: column; grid-auto-columns: 26px; gap: 3px; overflow: hidden; }
+.p { aspect-ratio: 2 / 3; border-radius: 2px; }
+.dim { position: absolute; inset: 0; background: rgba(5, 6, 12, .55); }
+.fullpage { position: absolute; inset: 0; background: var(--win); display: grid; grid-template-rows: 55% 1fr; }
+.art { background: linear-gradient(120deg, hsl(36 45% 34%), hsl(28 50% 10%)); position: relative; }
+.art span, .panel .t { font-family: var(--display); font-weight: 600; letter-spacing: .05em; }
+.art span { position: absolute; left: 10px; bottom: 8px; font-size: 12px; }
+.info { padding: 8px 10px; display: grid; gap: 4px; align-content: start; }
+.btn { background: var(--win-ink); color: var(--win); border-radius: 4px; padding: 3px 8px; width: max-content; font-weight: 600; }
+.line { height: 3px; background: var(--win-3); border-radius: 2px; }
+.panel { position: absolute; top: 0; right: 0; bottom: 0; width: 42%; background: var(--win-2); box-shadow: -6px 0 18px rgba(0,0,0,.45); display: grid; grid-template-rows: 38% 1fr; }
+.panel .art span { font-size: 10px; }
+.sheet { position: absolute; left: 12%; right: 12%; top: 14%; bottom: 0; background: var(--win-2); border-radius: 10px 10px 0 0; display: grid; grid-template-rows: 46% 1fr; overflow: hidden; }
+.grab { position: absolute; top: 4px; left: 50%; width: 22px; height: 3px; margin-left: -11px; border-radius: 3px; background: rgba(255,255,255,.5); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>¿Cómo abre la ficha en la Mac?</h1>
+    <p class="lead">Hoy, al tocar un póster, la ficha tapa toda la ventana y pierdes de vista dónde estabas. Tres formas de abrirla. Las tres abren al instante: la lentitud de «Cargando la ficha» venía de otra cosa y ya está corregida (abajo). Dicta el código.</p>
+  </header>
+
+  <section class="options" id="opciones"></section>
+
+  <p class="note">Mi recomendación: <span class="dictar">FI-B</span>. En una ventana grande, la ficha a la derecha te deja ver de dónde vienes: revisas varias fichas seguidas sin perder la fila, y «Ver» y «Guardar» quedan a la mano. Si eliges una serie para verla, un botón la abre a ventana completa. En el iPad acostado funciona igual; de pie, la ficha completa como hoy. En el iPhone no cambia.</p>
+  <p class="note">Sobre la velocidad: la app buscaba la cara o la figura de cada imagen para recortarla bien, y esa búsqueda ocupaba todos los hilos de trabajo de la app. Mientras tanto, ni la ficha ni las imágenes avanzaban. Ahora esa búsqueda va aparte, una a la vez, y lo demás no la espera.</p>
+</div>
+
+<script>
+const hues = [[18,60],[200,45],[350,55],[42,70],[160,40],[280,40],[8,65],[220,55],[90,35],[30,55]];
+const posters = (n, s = 0) => Array.from({ length: n }, (_, i) => { const [h, k] = hues[(i + s) % hues.length];
+  return `<div class="p" style="background:linear-gradient(160deg,hsl(${h} ${k}% 46%),hsl(${(h+30)%360} ${k}% 22%))"></div>`; }).join("");
+const under = `<div class="under"><div class="bar"><b>Inicio</b><b>Explorar</b><b>Biblioteca</b></div>
+  <div>En tendencia</div><div class="row">${posters(16)}</div><div>Lo más popular</div><div class="row">${posters(16, 3)}</div><div>Aprobadas por la crítica</div><div class="row">${posters(16, 6)}</div></div>`;
+const info = `<div class="info"><div class="btn">▶ Ver T1 E1</div><div class="line" style="width:80%"></div><div class="line" style="width:65%"></div><div class="line" style="width:72%"></div></div>`;
+const options = [
+  { code: "FI-A", name: "Ventana completa (hoy)",
+    what: "La ficha ocupa toda la ventana; «‹» regresa.",
+    gain: ["El arte se ve enorme", "Ya existe"], lose: ["Pierdes de vista la fila de donde venías", "Para comparar varias, entras y sales"],
+    mock: `${under}<div class="fullpage"><div class="art"><span>THE RINGS OF POWER</span></div>${info}</div>` },
+  { code: "FI-B", name: "Panel a la derecha", rec: true,
+    what: "La ficha entra desde la derecha y ocupa cerca de 40 % del ancho; lo de atrás se oscurece un poco y sigue ahí. Clic afuera o Esc la cierra; tocar otro póster la cambia.",
+    gain: ["No pierdes dónde estabas", "Revisas varias fichas seguidas", "Se siente rápido: no cambia toda la pantalla"],
+    lose: ["El arte se ve más chico", "Temporadas y episodios en una columna más angosta (botón para abrirla completa)"],
+    mock: `${under}<div class="dim"></div><div class="panel"><div class="art"><span>THE RINGS OF POWER</span></div>${info}</div>` },
+  { code: "FI-C", name: "Hoja que sube",
+    what: "Como en el iPhone: la ficha sube desde abajo, centrada, con la fila asomando arriba. Deslizar hacia abajo o Esc la cierra.",
+    gain: ["Igual que en el iPhone", "El arte se ve grande"],
+    lose: ["Tapa casi todo igual que la completa", "En una pantalla ancha deja franjas vacías a los lados"],
+    mock: `${under}<div class="dim"></div><div class="sheet"><span class="grab"></span><div class="art"><span>THE RINGS OF POWER</span></div>${info}</div>` },
+];
+document.getElementById("opciones").innerHTML = options.map(o => `
+  <article class="opt${o.rec ? " rec" : ""}">
+    <div class="head"><span class="code">${o.code}</span><span class="name">${o.name}</span>${o.rec ? '<span class="tag">Recomendada</span>' : ""}</div>
+    <div class="win">${o.mock}</div>
+    <p>${o.what}</p>
+    <ul class="gain">${o.gain.map(g => `<li>${g}</li>`).join("")}</ul>
+    <ul class="lose">${o.lose.map(g => `<li>${g}</li>`).join("")}</ul>
+  </article>`).join("");
+</script>

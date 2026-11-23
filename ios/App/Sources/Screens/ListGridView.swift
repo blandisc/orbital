@@ -69,6 +69,7 @@ struct ListGridView: View {
             }
         }
         .background(Backdrop())
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -141,6 +142,7 @@ struct PlatformRankingsView: View {
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
         .navigationTitle(Text(verbatim: hub.name)).navigationBarTitleDisplayMode(.inline)
         .task { await model.loadRankings(hub) }
     }

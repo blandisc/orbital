@@ -177,6 +177,8 @@ extension DS {
     /// aunque un dibujo sea más bajo que el otro (antes el «−» salía más chico que el «+»).
     enum IconButton {
         static let steadyGlyph: CGFloat = 20
+        /// Un dibujo del catálogo (la dona) en el círculo: un poco más que un símbolo, porque trae su propio contorno.
+        static let assetSmall: CGFloat = 18, assetRegular: CGFloat = 22, assetLarge: CGFloat = 28
     }
 
     /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).
@@ -251,6 +253,8 @@ extension DS {
     enum Timing {
         /// Lo que cuenta minutos a la vista («Llevas 12 min»): se vuelve a pintar cada minuto, no antes.
         static let minute: TimeInterval = 60
+        /// Una imagen que falló se vuelve a pedir tras estos segundos mientras siga en pantalla (`RemoteImage`).
+        static let imageRetries: [Double] = [3, 10, 30, 60]
         /// Rayas pintadas a los lados (`PictureBars`): cada cuánto se mira un cuadro del video que suena, y cuántas veces como mucho
         /// (los cuadros todo negros, como un fundido, no cuentan).
         static let pictureBarsGap: Duration = .seconds(4)

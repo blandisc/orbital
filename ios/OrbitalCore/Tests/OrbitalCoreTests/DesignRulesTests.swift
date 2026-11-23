@@ -77,12 +77,14 @@ final class DesignRulesTests: XCTestCase {
     /// `LanguageFlags.plain`.
     /// Una imagen de la red empieza a bajar aunque quien la pinta no muestre nada mientras carga: la carga cuelga de un ancla
     /// propia de `RemoteImage`, no de su contenido (que puede ser vacío y entonces SwiftUI no lo monta). El 19 nov 2026 el muro
-    /// de Explorar se quedó en las sombras de los pósters por eso.
+    /// de Explorar se quedó en las sombras de los pósters por eso. Y si falla, se vuelve a pedir mientras siga en pantalla
+    /// (22 nov 2026, en la Mac: con la red ocupada, pósters que se quedaban vacíos hasta salir y volver a entrar).
     func testRemoteImageLoadsEvenWhenItsContentIsEmpty() throws {
         let file = try XCTUnwrap(try sources(["Design"]).first { $0.name == "RemoteImage.swift" })
         let tasks = file.lines.filter { $0.contains(".task(id: url)") }
         XCTAssertFalse(tasks.isEmpty, "RemoteImage ya no carga con .task(id: url)")
         XCTAssertTrue(tasks.allSatisfy { !$0.contains("content(") }, "la carga de RemoteImage no puede colgar del contenido")
+        XCTAssertTrue(file.lines.contains { $0.contains("DS.Timing.imageRetries") }, "RemoteImage ya no vuelve a pedir la imagen que falló")
     }
 
     func testTheSpanishFlagIsNeverDrawnAsABrokenBox() throws {

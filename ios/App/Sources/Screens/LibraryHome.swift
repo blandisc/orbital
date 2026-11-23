@@ -5,11 +5,11 @@ import OrbitalModels
 /// Una de las partes de Guardado en pantalla completa, desde su fila en Biblioteca de la Mac («Mi lista ›»).
 struct LibrarySavedRoute: Hashable { let tab: SavedTab }
 
-/// Biblioteca en la Mac (BI-A, 22 nov 2026: «replanteamiento completo de biblioteca porque se ve muy mal»): sin la columna de la
+/// Biblioteca en la Mac y el iPad ancho (BI-A, 22 nov 2026: «replanteamiento completo de biblioteca porque se ve muy mal»): sin la columna de la
 /// izquierda, que se comía un cuarto de la ventana, y con filas como Inicio y Explorar (mismo margen, mismo desvanecido). Arriba
-/// lo que estás viendo; luego Mi lista, Vistas y tus listas; al final, Descargas y Mi media. El encabezado de cada fila abre su
+/// Descargas y Mi media; luego lo que estás viendo, Mi lista, Vistas y tus listas. El encabezado de cada fila abre su
 /// pantalla completa (la cuadrícula con su orden, su buscador y sus pestañas de siempre).
-/// En el iPhone y el iPad, Biblioteca sigue con sus pestañas arriba; la TV no tiene Biblioteca.
+/// En el iPhone (y el iPad angosto), Biblioteca sigue con sus pestañas arriba; la TV no tiene Biblioteca.
 struct LibraryHome: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
@@ -27,13 +27,13 @@ struct LibraryHome: View {
         let ready = model.boardReady
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+                places   // arriba: lo que bajaste y tu nube, a la mano (Fernando, 22 nov 2026)
                 if model.traktLinked {
                     row(Text("Viendo"), eyebrow: Text("Lo que tienes a medias"), tab: .watching, items: board.watching, ready: ready, progress: true)
                     row(Text("Mi lista"), eyebrow: Text("Lo que dejaste pendiente"), tab: .myList, items: board.inList, ready: ready)
                     row(Text("Vistas"), eyebrow: Text("Lo más reciente primero"), tab: .watched, items: board.watched, ready: ready)
                     lists
                 }
-                places
             }
             .padding(.top, DS.Layout.betweenSubsections)   // aire bajo la barra de la Mac, como el primer estante de Inicio
             .padding(.bottom, DS.Layout.screenBottom)

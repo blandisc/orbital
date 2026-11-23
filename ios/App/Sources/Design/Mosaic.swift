@@ -132,7 +132,8 @@ struct Mosaic: View {
         }
         .task(id: runtime.mode) {
             // El ambiente es lo único que se mueve solo: en foco no hay temporizador (ni se invalida nada cada segundo).
-            guard runtime.mode == .ambient, !reduceMotion else { return }
+            // En la Mac el muro se queda quieto: bajar solo costaba ~25 % de CPU con Explorar en reposo (22 nov 2026).
+            guard runtime.mode == .ambient, !reduceMotion, ThisDevice.ambientMotion else { return }
             var last = Date()
             while !Task.isCancelled {
                 guard (try? await Task.sleep(nanoseconds: DS.Timing.mosaicDrift)) != nil else { break }

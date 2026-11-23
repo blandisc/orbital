@@ -29,7 +29,7 @@ struct DownloadsCloudPart: View {
                 chapter
                 DSEmptyState(symbol: DS.Symbol.cloud, title: Text("Nada en la nube"),
                              message: DeviceWords.text("Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPhone.",
-                                                       mac: "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en esta Mac.")) {
+                                                       mac: "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en esta Mac."), fills: false) {
                     Button("¿Qué es esto?") { sheets.explaining = true }.accessibilityIdentifier("cloud-empty-explain")
                 }
                 .listRowBackground(Color.clear)

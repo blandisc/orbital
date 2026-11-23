@@ -81,7 +81,7 @@ struct ListsView: View {
         case "mine": Strings.tr("Tus series", language: language)
         default: plan.title.isEmpty ? plan.id : plan.title
         }
-        return ListCardItem(id: plan.id, name: name, posters: items.prefix(DS.ParaTiB.matchFan).map(\.poster), count: items.isEmpty ? nil : items.count, shelf: ShelfRoute(id: plan.id))
+        return ListCardItem(id: plan.id, name: name, posters: Array(items.lazy.map(\.poster).filter { !$0.isEmpty }.prefix(DS.Saved.coverPosters)), count: items.isEmpty ? nil : items.count, shelf: ShelfRoute(id: plan.id))
     }
 
     var body: some View {
@@ -257,6 +257,12 @@ struct ListsView: View {
         if !catalog.model.popular.isEmpty { PopularTodayShelf(items: catalog.model.popular).id("popular-today") }   // `-demo-shelf popular-today`
     }
 
+    /// Las tres portadas de cada tarjeta de una fila, sin repetir las de las tarjetas de antes (`CoverSpread`).
+    private static func spread<Key: Hashable>(_ keys: [Key], from items: [Key: [Suggestion]]) -> [Key: [String?]] {
+        let picked = CoverSpread.pick(keys.map { items[$0] ?? [] }, count: DS.Collections.coversPerCard, id: \.imdb)
+        return Dictionary(zip(keys, picked.map { $0.map { Optional($0.poster) } }), uniquingKeysWith: { a, _ in a })
+    }
+
     /// Sin repetir, en el mismo orden.
     private static func distinct(_ items: [String]) -> [String] {
         var seen = Set<String>()
@@ -380,12 +386,13 @@ struct ListsView: View {
 
     /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
     private var studiosSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
+        let covers = Self.spread(collections.model.studios.map(\.id), from: collections.model.studioItems)
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Estudios"), symbol: CollectionSection.studios.symbol)
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
-                                   posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio, captioned: false) {
+                                   posters: covers[studio.id] ?? [], tint: DS.Collections.studio, captioned: false) {
                         StudioEmblem(name: studio.name, logo: collections.model.studioLogos[studio.id])
                     }
                 }
@@ -416,14 +423,16 @@ struct ListsView: View {
             DSSectionHead(title: Text("Próximas temporadas")).padding(.horizontal, DS.Space.gutter)
                 .padding(.top, DS.Space.s2)
             // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
+            let lastSlug = countdown.last?.season.slug
+            let covers = Self.spread(countdown.dropFirst().map(\.season.slug), from: collections.model.seasonItems)
             CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
                              cardWidth: DS.PlatformFan.width,
-                             header: { AnyView(SeasonTimelineStop(days: $0.days)) }) { stop in
+                             header: { AnyView(SeasonTimelineStop(days: $0.days, last: $0.season.slug == lastSlug)) }) { stop in
                 let season = stop.season
                 let name = Strings.tr(season.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
-                                   posters: (collections.model.seasonItems[season.slug] ?? []).prefix(3).map { Optional($0.poster) },
+                                   posters: covers[season.slug] ?? [],
                                    tint: DS.Collections.season(season.slug), captioned: false) {
                         CollectionIconEmblem(slug: season.slug, name: name)
                     }
@@ -440,7 +449,45 @@ struct ListsView: View {
 
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».
-    private func listRows(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)? = nil) -> some View {
+    @ViewBuilder private func listRows(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)? = nil) -> some View {
+        if WindowMetrics.roomy { listTiles(label: label, symbol: symbol, cards: cards, create: create) }
+        else { listColumn(label: label, symbol: symbol, cards: cards, create: create) }
+    }
+
+    /// En la Mac y el iPad: tus listas en mosaicos que se deslizan, como en Biblioteca, y «Nueva lista» como el primer mosaico
+    /// (Fernando, 22 nov 2026: «replantear cómo presentamos tus listas… y el botón de crear una lista»). Antes eran renglones
+    /// a todo lo ancho, al pie de Explorar, con un botón suelto al final.
+    private func listTiles(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)?) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            DSChapterHead(label: label, symbol: symbol)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s4) {
+                    if let create {
+                        Button(action: create) { SavedNewListTile() }
+                            .buttonStyle(.plain).pointerHover(.lift)
+                            .frame(width: DS.Saved.listTileRow)
+                            .accessibilityIdentifier("list-create")
+                    }
+                    ForEach(cards) { c in
+                        if let shelf = c.shelf {
+                            NavigationLink(value: shelf) { SavedListTile(name: Text(verbatim: c.name), posters: c.posters) }
+                                .buttonStyle(.plain).pointerHover(.lift)
+                                .frame(width: DS.Saved.listTileRow)
+                                .accessibilityIdentifier("list-\(c.id)")
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .rowEdge(.bleeds)
+            .pagingArrows()
+            .edgeBump()
+        }
+    }
+
+    private func listColumn(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)?) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: label, symbol: symbol)
             VStack(spacing: DS.Space.s2) {
@@ -479,13 +526,14 @@ struct ListsView: View {
     /// Lo mejor del género: el Top 10 del año de cada género (TMDB, por nota), con su ícono y su nombre al pie.
     private var genresSection: some View {
         let language = env.services.appSettings.uiLanguage
+        let covers = Self.spread(collections.model.genres.map(\.slug), from: collections.model.genreCharts.mapValues(\.items))
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: Text("Géneros"), symbol: CollectionSection.genres.symbol)
             CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
-                                   posters: (collections.model.genreCharts[genre.slug]?.items ?? []).prefix(3).map { Optional($0.poster) },
+                                   posters: covers[genre.slug] ?? [],
                                    tint: DS.Collections.genre(genre.slug), captioned: false) {
                         CollectionIconEmblem(slug: genre.slug, name: name)
                     }

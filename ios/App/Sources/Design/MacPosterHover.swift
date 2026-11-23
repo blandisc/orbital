@@ -13,11 +13,11 @@ extension EnvironmentValues {
 /// Lo que hacen ▶ y ＋ sobre un póster: la raíz lo conecta con la app (las piezas del catálogo no tocan su estado).
 /// Se compara por `id` (la app que lo armó): con cierres nuevos en cada pasada de la raíz, cada póster se volvía a pintar
 /// (lo mismo que se corrigió en `TitlePanelOpener`).
+/// Solo datos (V9, como `RemoteOpener`): con las acciones dentro, SwiftUI daba el valor por cambiado en cada pasada de la raíz
+/// (cada cambio de pestaña) aunque `==` dijera igual, y volvía a pintar cada póster de las cuatro pestañas (22 nov 2026). Lo
+/// que hacen ▶ y ＋ vive en `PosterQuick+App.swift`.
 struct PosterQuick: Equatable {
     let id: ObjectIdentifier
-    let play: (TitleRoute) -> Void
-    let save: (TitleRoute) -> Void
-    static func == (a: PosterQuick, b: PosterQuick) -> Bool { a.id == b.id }
 }
 
 /// Dónde está el póster dentro del enlace: el marco y ▶ ＋ van sobre él, no sobre toda la tarjeta (una tarjeta ancha

@@ -121,8 +121,9 @@ struct PersonFace: View {
     var body: some View {
         VStack(spacing: DS.Space.s1) {
             PersonPhoto(name: name, photo: photo)
-            Text(verbatim: name).recipe(.caption, color: DS.text).lineLimit(2).multilineTextAlignment(.center)
-            if !role.isEmpty { Text(verbatim: role).recipe(.caption, color: DS.textMuted).lineLimit(1) }
+            // En ventana grande, la cara crece y el nombre con ella (un escalón arriba).
+            Text(verbatim: name).recipe(WindowMetrics.roomy ? .footnote : .caption, color: DS.text).lineLimit(2).multilineTextAlignment(.center)
+            if !role.isEmpty { Text(verbatim: role).recipe(WindowMetrics.roomy ? .footnote : .caption, color: DS.textMuted).lineLimit(1) }
         }
         .frame(width: DS.Rich.faceColumn, alignment: .top)
         .accessibilityElement(children: .combine)

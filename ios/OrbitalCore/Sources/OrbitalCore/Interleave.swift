@@ -18,3 +18,18 @@ public enum Interleave {
         turns(batches, limit: limit, id: \.imdb)
     }
 }
+
+/// Las portadas de una fila de tarjetas (Géneros, Premios…): cada tarjeta toma sus primeros `count` sin repetir los que ya
+/// usaron las de antes. Antes Acción, Aventura y Animación enseñaban los mismos tres pósters (el anime del año era el primero
+/// de las tres; revisión de la Mac, 22 nov 2026). Si a una le faltan nuevos, completa con los suyos de siempre.
+public enum CoverSpread {
+    public static func pick<T, ID: Hashable>(_ rows: [[T]], count: Int, id: (T) -> ID) -> [[T]] {
+        var used = Set<ID>()
+        return rows.map { row in
+            var picked = Array(row.filter { !used.contains(id($0)) }.prefix(count))
+            for item in row where picked.count < count && !picked.contains(where: { id($0) == id(item) }) { picked.append(item) }
+            picked.forEach { used.insert(id($0)) }
+            return picked
+        }
+    }
+}

@@ -290,8 +290,10 @@ struct MainTabs: View {
     private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }   // ds-exception: decide si hay panel: mide la ventana
 
     /// La ficha como panel a la derecha: con ancho regular (iPad de pie o acostado, Mac). En el iPhone, a pantalla completa.
-    /// Ya no: desde FE1 (4 nov 2026) la ficha del iPad y la Mac se abre a pantalla completa, como en el iPhone.
-    private var titleAsPanel: Bool { false }
+    /// Desde FE1 (4 nov 2026) la ficha del iPad se abre a pantalla completa, como en el iPhone. En la Mac con ventana ancha, a
+    /// la derecha sobre lo que estabas viendo (FI-B, Fernando, 22 nov 2026: «que yo le pique y salga a la derecha»): revisas
+    /// varias fichas seguidas sin perder la fila. Va encima, no como columna: así Inicio no se vuelve a acomodar al abrirla.
+    private var titleAsPanel: Bool { ThisDevice.isMac && remoteAsPanel }
 
     /// ¿Hay algo en el panel de la derecha? (El control en ventana ancha o una ficha.)
     private var sidePanelShown: Binding<Bool> {
@@ -310,7 +312,7 @@ struct MainTabs: View {
     private var titleOpener: TitlePanelOpener? {
         guard titleAsPanel else { return nil }
         ui.titlePanels[window] = { route, _ in
-            showRemote = false
+            if remoteAsPanel { showRemote = false }
             panelTitle = route
         }
         return TitlePanelOpener(window: window)
@@ -353,6 +355,7 @@ struct MainTabs: View {
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
         .inspector(isPresented: sidePanelShown) { sidePanel }
+        .modifier(SideTitle(item: Binding(get: { titleAsPanel ? panelTitle : nil }, set: { panelTitle = $0 })))
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
@@ -585,5 +588,27 @@ private struct TabBarFirst: ViewModifier {
         if Demo.isOn, Demo.has("-demo-sidebar") { return content.defaultAdaptableTabBarPlacement(.sidebar) }   // la barra lateral abierta (capturas)
         #endif
         return content.defaultAdaptableTabBarPlacement(.tabBar)
+    }
+}
+
+/// La ficha en la Mac (FI-B): entra por la derecha, cerca de 40 % del ancho, sobre la pantalla oscurecida que sigue ahí.
+/// Tocar afuera, la ✕ o Esc la cierran; tocar otro póster la cambia. Adentro, la ficha del iPhone (una columna).
+private struct SideTitle: ViewModifier {
+    @Binding var item: TitleRoute?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .trailing) {
+            if let route = item {
+                ZStack(alignment: .trailing) {
+                    DS.scrim.ignoresSafeArea().onTapGesture { item = nil }.accessibilityHidden(true)
+                    TitlePanel(route: route, close: { item = nil })
+                        .frame(width: DS.TitleAction.sidePanelWidth)
+                        .background(DS.backdropDeep.ignoresSafeArea())
+                        .shadow(DS.Elevation.medium)
+                        .transition(.move(edge: .trailing))
+                }
+            }
+        }
+        .animation(DS.Motion.spring(reduceMotion), value: item)
     }
 }

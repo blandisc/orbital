@@ -120,16 +120,17 @@ struct ReleaseTimeline: View {
                 .frame(minHeight: scaledLabelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: titleName(a.series.title, id: a.series.imdb, kind: "series"))
                     .overlay(alignment: .topLeading) {
-                        if moment == .new { DSCornerRibbon(text: "Nuevo") }
-                    }
-                    .overlay(alignment: .bottomLeading) {
-                        if case .soon(let days) = moment, days >= 2 {
-                            Text("en \(days) días").recipe(.badge, color: DS.onArtSecondary)
-                                .padding(DS.Space.s2).onArt()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(ArtVeil(at: 0))
+                        // Un punto, no el listón: en pósters de este tamaño hasta el chico tapaba media portada (Fernando, 22 nov
+                        // 2026: «el ribbon de nuevo sigue siendo demasiado grande»). La línea de arriba ya dice cuándo salió.
+                        if moment == .new {
+                            Circle().fill(DS.fresh).frame(width: DS.HomeTimeline.newDot, height: DS.HomeTimeline.newDot)
+                                .overlay(Circle().strokeBorder(DS.backdropDeep, lineWidth: DS.Stroke.regular))
+                                .padding(DS.Space.s1)
+                                .accessibilityLabel(Text("Nuevo"))
                         }
                     }
+                    // Sin «en 3 días» encima del póster: la línea de arriba ya dice el día («Miércoles») y la placa tapaba media
+                    // portada (Fernando, 22 nov 2026: «el texto en 3 días se ve muy grande»).
                     .opacity(soon ? DS.Opacity.dimmed : 1)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: titleName(a.series.title, id: a.series.imdb, kind: "series")).recipe(.label).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)

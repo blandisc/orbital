@@ -210,7 +210,7 @@ struct MosaicCover: View {
         #if DEBUG
         if Demo.noIdle { return true }
         #endif
-        return reduceMotion
+        return reduceMotion || !ThisDevice.ambientMotion
     }
 
     /// El ancho de una columna del muro y lo que mide una vuelta de su tira (sus pósters una vez, con su separación).
@@ -395,14 +395,21 @@ struct DecideDoor: View {
 /// texto (los de la derecha, nítidos).
 /// Muestra solo los que caben (los más nítidos, los de la derecha): en el iPad la tira de ocho aplastaba el título a una letra
 /// por renglón (17 nov 2026). El texto de al lado lleva `layoutPriority(1)` y la tira toma lo que sobra.
+/// Cuántos caben se cuenta con el ancho libre (cada cartel mide lo mismo), no se prueba: antes un `ViewThatFits` armaba hasta
+/// ocho tiras de pósters cada vez que se dibujaba Explorar (revisión de velocidad de la Mac, 22 nov 2026).
 struct DecideStrip: View {
     let posters: [String]
+    @State private var width: CGFloat = 0
+
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            ForEach(Array(stride(from: posters.count, to: 0, by: -2)), id: \.self) { n in row(Array(posters.suffix(n))) }
-            EmptyView()
-        }
-        .accessibilityHidden(true)
+        let step = DS.ParaTiB.stripPoster + DS.Space.s2
+        let fits = max(0, min(posters.count, Int(((width + DS.Space.s2) / step).rounded(.down))))
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: (DS.ParaTiB.stripPoster / DS.Poster.aspect).rounded(.up))   // el alto de un cartel: no estira la fila
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .overlay(alignment: .trailing) { if fits > 0 { row(Array(posters.suffix(fits))) } }
+            .accessibilityHidden(true)
     }
 
     private func row(_ shown: [String]) -> some View {
@@ -446,26 +453,31 @@ struct ListRow: View {
     let name: String
     let detail: Text
     let posters: [String]
+    /// Una puerta grande (la de «Lo que ves» en la Mac y el iPad): pósters y nombre más grandes, más aire. Fernando, 22 nov 2026:
+    /// «lo que ves, hazlo también más grande».
+    var large = false
 
     var body: some View {
-        HStack(spacing: DS.Space.s2) {
+        let poster = large ? DS.ParaTiB.largePoster : DS.Collections.stackPoster
+        let shift = large ? DS.ParaTiB.largeShift : DS.ParaTiB.rowShift
+        HStack(spacing: large ? DS.Space.s6 : DS.Space.s2) {
             ZStack(alignment: .leading) {
                 ForEach(Array(posters.prefix(DS.ParaTiB.matchFan).enumerated().reversed()), id: \.offset) { i, url in
-                    PosterView(url: url, title: "").frame(width: DS.Collections.stackPoster)
-                        .offset(x: CGFloat(i) * DS.ParaTiB.rowShift)
+                    PosterView(url: url, title: "").frame(width: poster)
+                        .offset(x: CGFloat(i) * shift)
                         .shadow(DS.Elevation.low.drop(DS.Space.s1))
                 }
             }
-            .frame(width: DS.Collections.stackPoster + DS.ParaTiB.rowShift * CGFloat(DS.ParaTiB.matchFan - 1), alignment: .leading)
+            .frame(width: poster + shift * CGFloat(DS.ParaTiB.matchFan - 1), alignment: .leading)
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: name).recipe(.cardTitle).lineLimit(1)
-                detail.recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                Text(verbatim: name).recipe(large ? .title : .cardTitle).lineLimit(1)
+                detail.recipe(large ? .body : .footnote, color: DS.textMuted).lineLimit(large ? 2 : 1)
             }
             Spacer(minLength: DS.Space.s2)
             Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
         }
-        .padding(DS.Space.s2)
+        .padding(large ? DS.Space.s4 : DS.Space.s2)
         .padding(.trailing, DS.Space.s2)
         .dsCard()
         .contentShape(Rectangle())

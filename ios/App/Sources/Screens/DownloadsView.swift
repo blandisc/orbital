@@ -67,7 +67,7 @@ struct DownloadsView: View {
         // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las tres vistas,
         // así al cambiar no brinca ni se mueve nada.
         .safeAreaBar(edge: .top) {
-            if !ThisDevice.isMac { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
+            if !Self.rows { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
         .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Biblioteca")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .macOwnTopRow { ProfileButton() }   // la Mac: el logo, las pestañas y tu perfil en su renglón (MAC-A)
@@ -116,20 +116,20 @@ struct DownloadsView: View {
             UserDefaults.standard.set(new.rawValue, forKey: Self.partKey)
         }
         // Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: a «Descargas», aunque la dejaras en otra parte.
-        .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; if ThisDevice.isMac { macPart = .phone }; env.ui.showDownloads = false } }
+        .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; if Self.rows { macPart = .phone }; env.ui.showDownloads = false } }
         // El aviso «Ya está…» de un pedido: aquí, con su hoja abierta.
         .onChange(of: env.ui.openCloudRequest, initial: true) { _, hash in
             guard let hash else { return }
             part = .phone
-            if ThisDevice.isMac { macPart = .phone }
+            if Self.rows { macPart = .phone }
             cloud.opened = .init(id: hash)
             env.ui.openCloudRequest = nil
         }
         // Viendo Descargas, lo que avisaba ya está a la vista: se quitan sus avisos y la marca de la pestaña (Fernando, 4 nov
         // 2026, la 1774: «si ya estás en Descargas, el aviso y la marca deben morir»).
-        .onAppear { seeing(!ThisDevice.isMac && part == .phone) }
+        .onAppear { seeing(!Self.rows && part == .phone) }
         .onDisappear { seeing(false) }
-        .onChange(of: part) { _, new in seeing(!ThisDevice.isMac && new == .phone) }
+        .onChange(of: part) { _, new in seeing(!Self.rows && new == .phone) }
         .task {
             let requests = env.services.debridRequests
             cloudActive = requests.active.count
@@ -149,9 +149,12 @@ struct DownloadsView: View {
         if on { Task { await DebridRequestNotifier.clearDelivered() } }
     }
 
-    /// MB1: en la Mac, las tres partes en una columna a la izquierda (como Música) y la parte elegida a la derecha.
+    /// Biblioteca en filas (BI-A): en la Mac y en el iPad ancho. Fernando, 22 nov 2026: «esta pantalla también me gusta para el
+    /// iPad». En el iPhone (y el iPad angosto, en pantalla dividida) siguen las pestañas de arriba.
+    static var rows: Bool { ThisDevice.isMac || (UIDevice.current.userInterfaceIdiom == .pad && WindowMetrics.roomy) }
+
     @ViewBuilder private func macSplit(_ content: some View) -> some View {
-        if ThisDevice.isMac {
+        if Self.rows {
             // BI-A (22 nov 2026): filas como Inicio en vez de la columna de la izquierda (MB1), que se comía un cuarto de la ventana.
             LibraryHome(saved: saved, downloading: cloudActive + observer.model.active.count) { macPart = $0 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -181,7 +184,7 @@ struct DownloadsView: View {
                 Section {
                     DSSectionHead(title: Text("Para ver sin internet"), level: .section, symbol: ThisDevice.symbol)   // antes «En este iPhone · sin internet», que se leía como aviso de que no hay red (revisión del 11 nov)
                         .listHeadRow().accessibilityIdentifier("downloads-device")
-                    if model.items.isEmpty { deviceEmpty.listRowBackground(Color.clear) }
+                    if model.items.isEmpty { deviceEmpty(fills: false).listRowBackground(Color.clear) }
                 }
                 .downloadCard()
             }
@@ -237,7 +240,7 @@ struct DownloadsView: View {
         .overlay(alignment: .top) {
             // Sin nube y sin nada en cola ni listo: el vacío nativo, con qué hacer (con nube, cada parte tiene el suyo). Arriba,
             // donde empezaría la lista, como en Guardado e Historial (I13: aquí iba centrado y allá arriba).
-            if model.items.isEmpty && !showsCloud { deviceEmpty.padding(.top, DS.Space.s2) }
+            if model.items.isEmpty && !showsCloud { deviceEmpty(fills: true).padding(.top, DS.Space.s2) }
         }
         .modifier(CloudSheetsHost(sheets: $cloud, active: showsCloud))
         .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
@@ -257,8 +260,9 @@ struct DownloadsView: View {
     }
 
     /// Nada descargado en este aparato: qué hacer y su única salida, buscar qué ver.
-    private var deviceEmpty: some View {
-        DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin internet.")) {
+    /// `fills`: solo cuando es lo único de la pantalla (sin la nube arriba).
+    private func deviceEmpty(fills: Bool) -> some View {
+        DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin internet."), fills: fills) {
             Button("Buscar qué ver") { env.openTab = AppEnvironment.searchTab }.accessibilityIdentifier("downloads-empty-search")
         }
     }

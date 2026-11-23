@@ -56,6 +56,11 @@ enum ThisDevice {
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
     static let isMac = ProcessInfo.processInfo.isiOSAppOnMac || macLookForDemo
+    /// Adornos que se mueven solos (el cielo, el muro de Explorar, los canales que se deslizan): en la Mac, quietos. Su pantalla
+    /// va a 165 Hz y a todo lo ancho: el compositor de la Mac (WindowServer) se iba a 60–95 % con Orbital en reposo y ni la
+    /// ventana se dejaba mover (Fernando, 22 nov 2026: «está inusable»). En la Mac se mueve lo que tocas, nada más.
+    /// `DesignRulesTests` cuida que todo adorno en movimiento pregunte por esto.
+    static let ambientMotion = !ProcessInfo.processInfo.isiOSAppOnMac
     /// `-demo-mac-look` (solo Debug): el acomodo de la Mac (pestañas en cápsula, ficha en filas, Buscar grande, ▶ ＋) en el
     /// simulador del iPad, para recorrer los flujos de la Mac con XCUITest cuando nadie está frente a la Mac (allí la app de
     /// iPad se queda dormida si no se ve). Solo cambia `isMac`; la letra y los tamaños siguen siendo los del iPad.

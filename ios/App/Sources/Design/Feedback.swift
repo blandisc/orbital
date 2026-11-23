@@ -127,6 +127,10 @@ struct DSEmptyState<Actions: View>: View {
     let symbol: String
     let title: Text
     var message: Text?
+    /// En la Mac y el iPad ancho, el aviso llena casi todo lo visible (RB2). `false` cuando es una de varias partes de la
+    /// pantalla (las dos de Descargas): ahí, estirado dentro de su renglón, el ícono se cortaba y el botón no se veía
+    /// (revisión de la Mac, 22 nov 2026).
+    var fills = true
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
@@ -141,7 +145,7 @@ struct DSEmptyState<Actions: View>: View {
         // aunque lo pongan arriba (revisión del 11 nov: Descargas vacía seguía al centro).
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
-        .modifier(MacEmptyHeight())
+        .modifier(MacEmptyHeight(on: fills))
     }
 }
 
@@ -150,8 +154,9 @@ struct DSEmptyState<Actions: View>: View {
 /// hoja), no de la ventana entera: en una hoja chica no se sale. También el iPad con espacio (17 nov 2026: en el de 13" el
 /// aviso de Biblioteca quedaba arriba y el resto vacío); el iPhone, arriba.
 private struct MacEmptyHeight: ViewModifier {
+    let on: Bool
     func body(content: Content) -> some View {
-        if WindowMetrics.roomy {
+        if on, WindowMetrics.roomy {
             content.containerRelativeFrame(.vertical) { length, _ in length * DS.Mac.emptyShare }   // ds-exception: el alto (no el ancho) de lo visible, para centrar el aviso
         } else {
             content
@@ -160,8 +165,8 @@ private struct MacEmptyHeight: ViewModifier {
 }
 
 extension DSEmptyState where Actions == EmptyView {
-    init(symbol: String, title: Text, message: Text? = nil) {
-        self.init(symbol: symbol, title: title, message: message) { EmptyView() }
+    init(symbol: String, title: Text, message: Text? = nil, fills: Bool = true) {
+        self.init(symbol: symbol, title: title, message: message, fills: fills) { EmptyView() }
     }
 }
 

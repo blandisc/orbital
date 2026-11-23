@@ -42,8 +42,9 @@ extension View {
     }
 
     /// El botón de vidrio sin tinte (Reintentar, Conectar, una acción junto a un aviso): el secundario sobre arte o sobre una
-    /// superficie de vidrio. Antes cada pantalla escribía `.buttonStyle(.glass)`.
-    func dsGlassButton() -> some View { buttonStyle(.glass) }
+    /// superficie de vidrio. Antes cada pantalla escribía `.buttonStyle(.glass)`. La letra, del color del texto: en la Mac el
+    /// vidrio la ponía oscura sobre el fondo oscuro y «Conectar OneDrive» o «Buscar qué ver» casi no se veían (22 nov 2026).
+    func dsGlassButton() -> some View { buttonStyle(.glass).foregroundStyle(DS.text) }
 
     /// Los botones dentro de un aviso pintado en el papel sólido (`DS.solidPrimary`: «¿Van a tiempo los subtítulos?»): el
     /// principal, lleno del color de la letra del aviso; el otro, con su relleno tenue. En cápsula y a tamaño de dedo. Antes
@@ -111,6 +112,8 @@ struct DSIconButton: View {
     enum Size {
         case small, regular, large
         var control: ControlSize { switch self { case .small: .small; case .regular: .regular; case .large: .large } }
+        /// El lado de un dibujo del catálogo en este tamaño (`asset:`).
+        var assetGlyph: CGFloat { switch self { case .small: DS.IconButton.assetSmall; case .regular: DS.IconButton.assetRegular; case .large: DS.IconButton.assetLarge } }
     }
     let symbol: String
     let label: LocalizedStringKey
@@ -144,7 +147,12 @@ struct DSIconButton: View {
     }
 
     private var image: some View {
-        (asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol))
+        // El dibujo del catálogo a la medida del botón, como crecería un símbolo: antes iba a sus 24 pt fijos y en el círculo se
+        // veía chico y suelto (la dona de Canales, 22 nov 2026).
+        Group {
+            if let asset { Image(asset).renderingMode(.original).resizable().scaledToFit().frame(width: size.assetGlyph, height: size.assetGlyph) }
+            else { Image(systemName: symbol) }
+        }
             .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? 0 : kick)
     }
     @ViewBuilder private var glyph: some View {

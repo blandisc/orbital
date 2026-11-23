@@ -376,7 +376,12 @@ final class AppEnvironment {
         await inbox.process(snapshot.inbox)
     }
 
-    var uiLocale: Locale { Locale(identifier: services.appSettings.uiLanguage) }
+    /// El de la Mac o el iPhone si ya habla el idioma de Orbital: con otro locale, cada texto se resolvía leyendo la tabla del
+    /// disco (ver `OrbitalApp.init`). Solo si no coincide (el primer arranque tras cambiar de idioma), uno con ese idioma.
+    var uiLocale: Locale {
+        let language = services.appSettings.uiLanguage
+        return Locale.current.language.languageCode?.identifier == language ? Locale.current : Locale(identifier: language)
+    }
     /// El idioma de la interfaz («es» o «en»), para los textos que se arman en código.
     var language: String { services.appSettings.uiLanguage }
     /// Ajustes › Apariencia: nil sigue al iPhone.

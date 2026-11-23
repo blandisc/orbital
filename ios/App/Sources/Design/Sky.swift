@@ -21,7 +21,7 @@ struct SkyField: View {
         #if DEBUG
         if Demo.noIdle || MacSelfCheck.off.contains("sky") { return true }
         #endif
-        return systemReduceMotion
+        return systemReduceMotion || !ThisDevice.ambientMotion
     }
     /// Solo se mueve con la app al frente y en pantalla: las otras pestañas y la pantalla debajo de una ficha también tienen
     /// su cielo, y seguían pintando estrellas (y leyendo el giroscopio) sin que se vieran.

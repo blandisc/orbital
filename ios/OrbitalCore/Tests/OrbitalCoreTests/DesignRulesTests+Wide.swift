@@ -124,7 +124,7 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("Collections.swift").contains("if posters.count > DS.ParaTiB.matchFan, WindowMetrics.roomy {"))
         let paraTi = try code("ParaTiB.swift"), collections = try code("Collections.swift")
         let strip = try XCTUnwrap(paraTi.range(of: "struct DecideStrip: View {")).upperBound
-        XCTAssertTrue(paraTi[strip...].prefix(300).contains("ViewThatFits(in: .horizontal)"), "La tira muestra solo los carteles que caben")
+        XCTAssertTrue(paraTi[strip...].prefix(900).contains("posters.suffix(fits)"), "La tira muestra solo los carteles que caben (los cuenta con su ancho)")
         for (name, text) in [("ParaTiB.swift", paraTi), ("Collections.swift", collections)] {
             XCTAssertTrue(text.contains(".fixedSize(horizontal: false, vertical: true)\n                .layoutPriority(1)")
                           || text.contains(".fixedSize(horizontal: false, vertical: true)\n            .layoutPriority(1)"),

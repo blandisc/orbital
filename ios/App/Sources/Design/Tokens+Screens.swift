@@ -82,6 +82,10 @@ extension DS {
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70
+        /// La ficha a la derecha en la Mac (FI-B): cerca de 40 % de la ventana, nunca más angosta que un iPhone grande ni tan
+        /// ancha que la ficha de una columna se estire.
+        static var sidePanelWidth: CGFloat { min(max(WindowMetrics.size.width * sidePanelShare, sidePanelMin), sidePanelMax) }   // ds-exception: la ficha flota sobre la ventana entera
+        static let sidePanelShare: CGFloat = 0.4, sidePanelMin: CGFloat = 460, sidePanelMax: CGFloat = 680
         /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo. Largo (AR1, 13
         /// nov 2026; antes 36): lo que sube se va despacio, sin franja con orilla ni texto cortado a la mitad (el SE).
         static let topFade: CGFloat = 96, fadeAt: CGFloat = 0.85
@@ -280,9 +284,14 @@ extension DS {
     }
 
     enum Rich {
-        static let face: CGFloat = 72, faceColumn: CGFloat = 84
+        /// En ventana grande (Mac, iPad ancho) el reparto y los videos llenan el ancho: unas nueve caras y tres videos y medio
+        /// a la vista (Fernando, 22 nov 2026: «el reparto y equipo debería ser más grande, debería ocupar todo, igual tráileres
+        /// y extras»). Con los del iPhone quedaban chiquitos y amontonados a la izquierda.
+        static var face: CGFloat { WindowMetrics.roomy ? 120 : 72 }
+        static var faceColumn: CGFloat { WindowMetrics.roomy ? 140 : 84 }
         static let badgeStroke = DS.Stroke.regular, badgeRadius = DS.Radius.tag
-        static let clipWidth: CGFloat = 240, trailerPlay: CGFloat = 44
+        static var clipWidth: CGFloat { WindowMetrics.roomy ? 380 : 240 }
+        static var trailerPlay: CGFloat { WindowMetrics.roomy ? 60 : 44 }
         static let logo: CGFloat = 36
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
@@ -380,6 +389,8 @@ extension DS {
     }
 
     enum Collections {
+        /// Pósters en abanico de cada tarjeta de Estudios, Temporadas y Géneros.
+        static let coversPerCard = 3
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
         static var emblem: CGFloat { 70 * PlatformFan.scale }   // crece con la tarjeta en la Mac
@@ -558,7 +569,9 @@ extension DS {
         static let columnsPortrait = DesignTokens.Mosaic.columnsPortrait, columnsLandscape = DesignTokens.Mosaic.columnsLandscape
         static let columnsCompact = DesignTokens.Mosaic.columnsCompact, compactWidth = CGFloat(DesignTokens.Mosaic.compactWidth)
         static let uniform = DesignTokens.Mosaic.uniform
-        static let wideColumn: CGFloat = 170   // ventana ancha (iPad, Mac): más columnas de este ancho, no pósters gigantes
+        /// Ventana ancha (iPad, Mac): tantas columnas de este ancho como quepan, no pósters gigantes. De 170 a 210 (Fernando,
+        /// 22 nov 2026: «en mosaico… menos hileras un poquito más anchas»).
+        static let wideColumn: CGFloat = 210
         static let growRatio = CGFloat(DesignTokens.Mosaic.growRatio)
         static let driftTick = DesignTokens.Mosaic.driftTick
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
@@ -572,6 +585,8 @@ extension DS {
         /// Tus listas en mosaico: dos columnas en el iPhone; en ventana ancha (iPad, Mac), las que quepan de `listTileMin`.
         static let listColumns = 2
         static let listTileMin: CGFloat = 180
+        /// Tus listas en una fila que se desliza (Explorar en la Mac y el iPad): del ancho de las tarjetas de Años y Géneros.
+        static var listTileRow: CGFloat { DS.PlatformFan.width }
         static func listColumns(forWidth width: CGFloat) -> Int {
             max(listColumns, Int((width - DS.Space.gutter * 2 + DS.Space.s2) / (listTileMin + DS.Space.s2)))
         }

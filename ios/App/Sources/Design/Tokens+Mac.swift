@@ -32,6 +32,17 @@ extension DS {
         /// Los controles nativos (botones, selectores) en la Mac van un tamaño arriba: con el de iPad salían de 24–30 px.
         /// Toda la app pide su tamaño con `dsControlSize`, que pasa por aquí; los que no piden ninguno toman `controlDefault` (el que sale de pedir `.large`).
         static let controlDefault: ControlSize = .extraLarge
+        /// El título de arriba de cada pantalla (Mi media, Descargas, una lista): lo dibuja la barra del sistema, que no pasa por
+        /// `DS.styled` ni por `systemType`, y salía de 13 px (Fernando, 22 nov 2026: «en Mi media el título se me hace muy
+        /// pequeño… hacían sentido en el iPhone los tamaños, pero aquí ya no»). En la Mac, del estilo `barTitle` con la escala.
+        static let barTitle: Font.TextStyle = .title2
+        @MainActor static func styleBarTitles() {
+            guard ProcessInfo.processInfo.isiOSAppOnMac else { return }
+            let size = (styleSizes[barTitle] ?? bodySize) * typeScale
+            let bar = UINavigationBar.appearance()
+            bar.titleTextAttributes = [.font: UIFont.systemFont(ofSize: size, weight: .bold)]
+            bar.largeTitleTextAttributes = [.font: UIFont.systemFont(ofSize: (styleSizes[.largeTitle] ?? size) * typeScale, weight: .bold)]
+        }
         static func control(_ size: ControlSize) -> ControlSize {
             guard ProcessInfo.processInfo.isiOSAppOnMac else { return size }
             switch size {

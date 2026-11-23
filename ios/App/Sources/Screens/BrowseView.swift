@@ -240,7 +240,7 @@ struct BrowseView: View {
         }
         if status == .waiting && model.results.isEmpty {
             // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
-            DSPosterGrid(items: DSPosterSlot.slots(9)) { _, width in
+            DSPosterGrid(items: DSPosterSlot.slots(DS.Size.searchPlaceholders)) { _, width in
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).frame(width: width).aspectRatio(DS.Poster.aspect, contentMode: .fit)
             }
             .accessibilityHidden(true)

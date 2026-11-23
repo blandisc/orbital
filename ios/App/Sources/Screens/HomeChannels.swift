@@ -29,7 +29,8 @@ struct HomeChannels: View {
                 DSSectionHead(title: Text("Canales"), eyebrow: Text("Siempre hay un episodio al aire"))
                 Spacer(minLength: DS.Space.s2)
                 if let simpsons, let simpsonsZoom {
-                    DSIconButton(asset: "Glyphs/donut", label: "Un Simpson al azar", size: .regular, action: simpsons)
+                    DSIconButton(asset: "Glyphs/donut", label: "Un Simpson al azar", action: simpsons)
+                        .help(Text("Un Simpson al azar"))   // con el puntero, dice qué hace
                         .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
                         .accessibilityIdentifier("home-random-simpsons")
@@ -280,9 +281,9 @@ private struct ChannelDrift: ViewModifier {
 
     func body(content: Content) -> some View {
         #if DEBUG
-        let on = running && visible && !MacSelfCheck.off.contains("drift")
+        let on = running && visible && ThisDevice.ambientMotion && !MacSelfCheck.off.contains("drift")
         #else
-        let on = running && visible
+        let on = running && visible && ThisDevice.ambientMotion
         #endif
         TimelineView(.animation(minimumInterval: DS.HomeChannels.driftFrame, paused: !on)) { context in
             content.scaleEffect(on ? Self.scale(after: context.date.timeIntervalSince(start)) : 1)

@@ -91,7 +91,7 @@ struct SimpsonsRoulette: View {
             tv
             caption.opacity(expanded ? 0 : 1)
             Spacer(minLength: 0)
-            Button("Cancelar") { run?.cancel(); dismiss() }.buttonStyle(.glass).opacity(expanded ? 0 : 1)
+            Button("Cancelar") { run?.cancel(); dismiss() }.dsGlassButton().opacity(expanded ? 0 : 1)
         }
         .padding(.vertical, DS.Space.s8)
     }

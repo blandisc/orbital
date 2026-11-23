@@ -86,6 +86,9 @@ struct ParaTiView: View {
         // El mismo aire bajo el título que Inicio. En listas va adentro de la lista: afuera la despegaba de la orilla y iOS
         // ya no la pasaba detrás de la barra (el mosaico se cortaba en seco bajo el título).
         .padding(.top, m.mode == .lists ? 0 : DS.Space.s2)
+        // El cambio entre Explorar y el mosaico, animado: sin esto su transición (crecer desde la portada) nunca corría y el
+        // mosaico aparecía de golpe (Fernando, 22 nov 2026: «hacer más suave la transición a mosaico desde Explorar»).
+        .animation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade, value: m.mode)
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         // El mismo encabezado que Inicio (Fernando, 31 oct 2026): «Para ti» a la izquierda, donde va el logo, y los pósters debajo.

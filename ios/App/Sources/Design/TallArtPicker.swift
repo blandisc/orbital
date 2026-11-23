@@ -11,18 +11,17 @@ struct TallArtKey: Hashable, Sendable {
 /// Cómo se pregunta por el póster sin texto: lo pone la raíz (`RootView`); sin él (previsualizaciones, el widget) va el fondo.
 /// Igual mientras sea el mismo `TallArt`: la raíz lo arma en cada pasada y, sin esto, cada cambio de pestaña o regreso de
 /// una ficha volvía a pintar todos los pósters de las cuatro pestañas.
+/// Solo la referencia, sin cierres (V9, como `RemoteOpener`): con cierres dentro, SwiftUI lo daba por cambiado en cada pasada
+/// de la raíz y volvía a pintar cada marco que lo lee.
 struct TallArtLookup: Sendable, Equatable {
-    var known: @Sendable (TallArtKey) -> TallArt.Answer
-    var fetch: @Sendable (TallArtKey) async -> String?
-    private let source: ObjectIdentifier
+    private let art: TallArt
 
-    init(_ art: TallArt) {
-        source = ObjectIdentifier(art)
-        known = { art.known(imdb: $0.imdb, kind: $0.kind) }
-        fetch = { await art.poster(imdb: $0.imdb, kind: $0.kind) }
-    }
+    init(_ art: TallArt) { self.art = art }
 
-    static func == (a: Self, b: Self) -> Bool { a.source == b.source }
+    func known(_ key: TallArtKey) -> TallArt.Answer { art.known(imdb: key.imdb, kind: key.kind) }
+    func fetch(_ key: TallArtKey) async -> String? { await art.poster(imdb: key.imdb, kind: key.kind) }
+
+    static func == (a: Self, b: Self) -> Bool { a.art === b.art }
 }
 
 extension EnvironmentValues {

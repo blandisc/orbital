@@ -7,6 +7,14 @@ struct OrbitalApp: App {
     @State private var env = AppEnvironment.shared
 
     init() {
+        // El idioma de Orbital como idioma preferido de la app (cuenta desde el siguiente arranque): así `Locale.current` ya es
+        // español y los textos salen de la tabla en memoria. Con un idioma distinto al del sistema, SwiftUI releía y volvía a
+        // analizar `Localizable.strings` del disco por cada texto, en el hilo principal: 16 % de cambiar de pestaña en la Mac
+        // (Fernando, 22 nov 2026: «le pico en Explorar y se tarda 3 segundos»).
+        let language = AppEnvironment.shared.language
+        if (UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []).first != language {
+            UserDefaults.standard.set([language], forKey: "AppleLanguages")
+        }
         // Video con sonido aunque el teléfono esté en silencio (como cualquier reproductor).
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         #if AETHER_ENGINE

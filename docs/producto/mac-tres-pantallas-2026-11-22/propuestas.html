@@ -1,0 +1,188 @@
+<title>Orbital en la Mac: tres pantallas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Una sección por pantalla (Inicio, Explorar, Biblioteca); en cada una, tres maquetas de ventana de Mac lado a lado con su código. */
+:root {
+  --bg: #f3f4f8; --ink: #161a2b; --muted: #5d6378; --card: #ffffff; --line: #dfe2ec;
+  --win: #12141f; --win-2: #1c2030; --win-3: #262b40; --win-ink: #e9ebf3; --win-muted: #8d93aa; --moon: #2bb8a8; --warn: #d9a441;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c0e16; --ink: #e9ebf3; --muted: #9298ad; --card: #151827; --line: #262b3d; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0c0e16; --ink: #e9ebf3; --muted: #9298ad; --card: #151827; --line: #262b3d; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-family: var(--display); font-size: 30px; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 22px; margin: 0; }
+.lead { color: var(--muted); max-width: 72ch; margin: 6px 0 0; }
+.speed { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 6px; }
+.speed b { font-family: var(--display); }
+.speed p { margin: 0; color: var(--muted); max-width: 80ch; }
+section.page { display: grid; gap: 14px; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.opt { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.rec { border-color: var(--moon); }
+.head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.code { font-family: var(--display); font-weight: 600; color: var(--moon); font-size: 18px; }
+.name { font-family: var(--display); font-weight: 600; font-size: 17px; }
+.tag { font-size: 12px; color: var(--moon); font-weight: 600; }
+.opt p { margin: 0; color: var(--muted); }
+.opt ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.gain li::marker { content: "+  "; color: var(--moon); }
+.lose li::marker { content: "−  "; color: var(--muted); }
+.ipad { font-size: 13px; color: var(--muted); }
+.rec-note { margin: 0; color: var(--muted); max-width: 80ch; }
+.dictar { font-family: var(--display); color: var(--moon); font-weight: 600; }
+/* La maqueta: una ventana de Orbital en miniatura */
+.win { background: var(--win); border-radius: 10px; padding: 8px; aspect-ratio: 16 / 10; max-width: 100%; display: grid; grid-template-rows: auto 1fr; gap: 6px; overflow: hidden; color: var(--win-ink); font-size: 8px; }
+.bar { display: flex; align-items: center; gap: 6px; }
+.dots { display: flex; gap: 3px; } .dots i { width: 5px; height: 5px; border-radius: 50%; background: #3a3f55; display: block; }
+.srch { background: var(--win-2); border-radius: 99px; padding: 2px 8px; color: var(--win-muted); }
+.tabs { margin: 0 auto; display: flex; gap: 3px; background: var(--win-2); border-radius: 99px; padding: 2px; }
+.tabs b { padding: 1px 6px; border-radius: 99px; font-weight: 500; color: var(--win-muted); }
+.tabs b.on { background: var(--win-ink); color: var(--win); }
+.body { display: grid; gap: 5px; align-content: start; min-height: 0; overflow: hidden; padding: 0 4px; }
+.lbl { color: var(--moon); font-size: 7px; } .ttl { font-weight: 600; font-size: 9px; }
+.row { display: grid; grid-auto-flow: column; grid-auto-columns: 26px; gap: 3px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.row.wide { grid-auto-columns: 50px; } .row.big { grid-auto-columns: 74px; }
+.p { aspect-ratio: 2 / 3; border-radius: 2px; } .w { aspect-ratio: 16 / 9; border-radius: 2px; }
+.hero { border-radius: 4px; position: relative; overflow: hidden; }
+.hero span { position: absolute; left: 6px; bottom: 6px; font-family: var(--display); font-weight: 600; font-size: 10px; letter-spacing: .06em; }
+.split { display: grid; grid-template-columns: 1.9fr 1fr; gap: 5px; }
+.panel { background: var(--win-2); border-radius: 4px; padding: 4px; display: grid; gap: 3px; align-content: start; }
+.li { display: grid; grid-template-columns: 22px 1fr; gap: 3px; align-items: center; }
+.li i { height: 3px; background: var(--win-3); border-radius: 2px; display: block; }
+.decide { margin-top: auto; background: var(--win-3); border-radius: 3px; padding: 3px; font-weight: 600; }
+.chips { display: flex; gap: 3px; flex-wrap: wrap; }
+.chip { padding: 1px 5px; border-radius: 99px; background: var(--win-2); color: var(--win-muted); }
+.chip.on { color: var(--win-ink); outline: 1px solid var(--moon); }
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.tile { background: var(--win-2); border-radius: 4px; padding: 4px; display: flex; gap: 4px; align-items: center; }
+.tile b { width: 10px; height: 10px; border-radius: 3px; display: block; }
+.grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.side { display: grid; grid-template-columns: 1fr 3.2fr; gap: 5px; }
+.toc { display: grid; gap: 3px; align-content: start; background: var(--win-2); border-radius: 4px; padding: 4px; color: var(--win-muted); }
+.toc .on { color: var(--win-ink); }
+.wall { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; opacity: .8; }
+.sq { aspect-ratio: 1; border-radius: 3px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Orbital en la Mac: Inicio, Explorar y Biblioteca</h1>
+    <p class="lead">Tres formas de cada pantalla, pensadas para la ventana grande de la Mac y que crecen igual en el iPad acostado. En el iPhone no cambia nada. Dicta un código por pantalla (por ejemplo «IN-A, EX-A, BI-A»).</p>
+  </header>
+
+  <div class="speed">
+    <b>Primero, la velocidad (ya corregido, sin elegir nada)</b>
+    <p>Lo que trababa la ventana no era Orbital pensando: eran los adornos que se mueven solos (el cielo de Inicio, el muro de Explorar, los canales que se deslizan). Tu monitor ancho los repinta 165 veces por segundo y el sistema de la Mac que dibuja las ventanas se iba al 60–95 % aunque no tocaras nada. Desde ahora, en la Mac nada se mueve solo: se mueve lo que tú tocas. Las tres propuestas de abajo respetan esa regla.</p>
+  </div>
+
+  <section class="page" id="inicio">
+    <h2>Inicio</h2>
+    <div class="options" data-page="inicio"></div>
+    <p class="rec-note">Mi recomendación: <span class="dictar">IN-A</span>. Es lo que ya tienes, con lo que pediste: «Seguir viendo» grande, «Lo nuevo de lo tuyo» debajo y «Decide por mí» al pie, sin hueco. Abres y lo primero a la mano es lo que estabas viendo. <span class="dictar">IN-B</span> si casi siempre entras a seguir algo y la portada te estorba.</p>
+  </section>
+
+  <section class="page" id="explorar">
+    <h2>Explorar</h2>
+    <div class="options" data-page="explorar"></div>
+    <p class="rec-note">Mi recomendación: <span class="dictar">EX-A</span>. Explorar es larga (Plataformas, Premios, Colecciones, Años, Tus listas); en la Mac un índice arriba te lleva directo a cada parte sin bajar y bajar. El muro queda quieto y se abre igual con un clic.</p>
+  </section>
+
+  <section class="page" id="biblioteca">
+    <h2>Biblioteca</h2>
+    <div class="options" data-page="biblioteca"></div>
+    <p class="rec-note">Mi recomendación: <span class="dictar">BI-A</span> (la que ya tienes, con Descargas y Mi media arriba). Si lo que más haces en Biblioteca es buscar un título entre tus 314, <span class="dictar">BI-B</span>.</p>
+  </section>
+</div>
+
+<script>
+const hues = [[18,60],[200,45],[350,55],[42,70],[160,40],[280,40],[8,65],[220,55],[90,35],[30,55],[190,50],[330,45]];
+const art = (i, cls = "p") => { const [h, s] = hues[i % hues.length];
+  return `<div class="${cls}" style="background:linear-gradient(160deg,hsl(${h} ${s}% 46%),hsl(${(h+30)%360} ${s}% 22%))"></div>`; };
+const arts = (n, start = 0, cls = "p") => Array.from({ length: n }, (_, i) => art(i + start, cls)).join("");
+const bar = on => `<div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="srch">⌕ Buscar</span>
+  <span class="tabs">${["Inicio","Explorar","Biblioteca"].map(t => `<b class="${t===on?"on":""}">${t}</b>`).join("")}</span></div>`;
+const hero = (h, label = "THE ODYSSEY") => `<div class="hero" style="height:${h}px;background:linear-gradient(120deg,hsl(20 60% 30%),hsl(30 70% 12%))"><span>${label}</span></div>`;
+const li = i => `<div class="li">${art(i, "w")}<i></i></div>`;
+
+const pages = {
+  inicio: [
+    { code: "IN-A", name: "Tablero", rec: true,
+      what: "Portada a la izquierda; a la derecha «Seguir viendo» en grande, «Lo nuevo de lo tuyo» debajo y «Decide por mí» al pie. Abajo, tus filas.",
+      gain: ["Lo que estabas viendo, a un clic al abrir", "Lo que sale de tus series, a la vista sin bajar", "Ya construido: solo pulir"],
+      lose: ["La portada comparte el ancho"], ipad: "iPad acostado: igual. De pie: una columna, como el iPhone.",
+      mock: `<div class="split">${hero(78)}<div class="panel"><span class="lbl">Seguir viendo</span>${li(1)}${li(2)}${li(3)}<span class="lbl">Lo nuevo de lo tuyo</span><div class="row">${arts(6,4)}</div><div class="decide">Decide por mí</div></div></div>
+        <div class="ttl">Sugerencias</div><div class="row">${arts(16,2)}</div>` },
+    { code: "IN-B", name: "Seguir viendo primero",
+      what: "Arriba una fila de tarjetas grandes de lo que tienes a medias, con su avance. La portada baja a una franja más delgada.",
+      gain: ["Retomar algo es lo más rápido posible", "Tarjetas grandes, fáciles de atinar con el puntero"],
+      lose: ["La portada pierde protagonismo", "Lo nuevo de lo tuyo pasa a la segunda fila"], ipad: "iPad: igual; caben 3 tarjetas de pie y 4 acostado.",
+      mock: `<span class="lbl">Lo que tienes a medias</span><div class="ttl">Seguir viendo</div><div class="row big">${arts(5,1,"w")}</div>
+        ${hero(40)}<div class="ttl">Lo nuevo de lo tuyo</div><div class="row">${arts(16,5)}</div>` },
+    { code: "IN-C", name: "Portada a lo ancho",
+      what: "La portada ocupa todo el ancho, como en una app de cine; «Seguir viendo» flota sobre su orilla de abajo.",
+      gain: ["La más espectacular", "Se parece a la tele"],
+      lose: ["Imagen enorme: más memoria y más trabajo para la Mac", "Lo tuyo queda más abajo"], ipad: "iPad: igual.",
+      mock: `${hero(92)}<div class="row wide" style="margin-top:-22px;position:relative">${arts(8,1,"w")}</div>
+        <div class="ttl">Lo nuevo de lo tuyo</div><div class="row">${arts(16,5)}</div>` },
+  ],
+  explorar: [
+    { code: "EX-A", name: "Índice arriba", rec: true,
+      what: "Bajo las pestañas, un renglón con las partes de Explorar (Para ti, Plataformas, Premios, Colecciones, Años, Tus listas); un clic te lleva. El muro, quieto, abre el mosaico.",
+      gain: ["Llegas a cualquier parte en un clic", "Sabes qué hay sin bajar hasta el fondo", "Nada se mueve solo"],
+      lose: ["Un renglón más arriba"], ipad: "iPad: igual (el índice se desliza si no cabe).",
+      mock: `<div class="chips">${["Para ti","Plataformas","Premios","Colecciones","Años","Tus listas"].map((c,i)=>`<span class="chip${i===0?" on":""}">${c}</span>`).join("")}</div>
+        <div class="wall">${arts(24,0,"sq")}</div><div class="ttl">En tendencia</div><div class="row">${arts(16,3)}</div><div class="ttl">Tus listas</div><div class="row wide">${arts(8,6,"w")}</div>` },
+    { code: "EX-B", name: "Índice a un lado",
+      what: "Una columna angosta a la izquierda con las partes de Explorar, siempre a la vista; las filas a la derecha.",
+      gain: ["El índice nunca se pierde", "Como Música o Finder"],
+      lose: ["Le quita ancho a las filas (lo que no te gustó en Biblioteca)"], ipad: "iPad acostado: sí. De pie: se esconde.",
+      mock: `<div class="side"><div class="toc"><span class="on">Para ti</span><span>Plataformas</span><span>Premios</span><span>Colecciones</span><span>Años</span><span>Tus listas</span></div>
+        <div class="body" style="padding:0"><div class="ttl">En tendencia</div><div class="row">${arts(12,3)}</div><div class="ttl">Premios</div><div class="row wide">${arts(6,2,"w")}</div><div class="ttl">Años</div><div class="row">${arts(12,7)}</div></div></div>` },
+    { code: "EX-C", name: "El mosaico es Explorar",
+      what: "Explorar abre directo en el mosaico de pósters; las filas (Plataformas, Premios, Tus listas…) quedan en un botón «Ver por secciones».",
+      gain: ["Lo más visual y lo más rápido para encontrar algo al azar"],
+      lose: ["Premios, Colecciones y Tus listas quedan un clic más lejos", "El mosaico grande cuesta más a la Mac"], ipad: "iPad: igual.",
+      mock: `<div class="chips"><span class="chip on">Mosaico</span><span class="chip">Ver por secciones</span></div><div class="grid">${arts(40,1)}</div>` },
+  ],
+  biblioteca: [
+    { code: "BI-A", name: "Filas, con tus lugares arriba", rec: true,
+      what: "Arriba Descargas y Mi media; luego Viendo, Mi lista, Vistas y Tus listas en filas. El nombre de cada fila abre su pantalla completa.",
+      gain: ["Igual que Inicio y Explorar", "Ya construida, también para el iPad ancho"],
+      lose: ["Para buscar uno entre 314 entras a la fila"], ipad: "iPad ancho: ya así. iPhone: sus pestañas de siempre.",
+      mock: `<div class="tiles"><div class="tile"><b style="background:var(--moon)"></b>Descargas</div><div class="tile"><b style="background:var(--warn)"></b>Mi media</div></div>
+        <div class="ttl">Viendo</div><div class="row wide">${arts(8,0,"w")}</div><div class="ttl">Mi lista · 314</div><div class="row">${arts(16,3)}</div><div class="ttl">Vistas · 112</div><div class="row">${arts(16,6)}</div>` },
+    { code: "BI-B", name: "Cuadrícula con filtros",
+      what: "Un renglón con Mi lista, Viendo, Vistas, Listas, Descargas y Mi media (con su número) y un buscador; abajo, todos los pósters.",
+      gain: ["Lo más rápido para encontrar un título", "Un clic para cambiar de parte"],
+      lose: ["Se ve una sola parte a la vez", "Menos parecida a Inicio"], ipad: "iPad: igual, con menos columnas de pie.",
+      mock: `<div class="chips"><span class="chip on">Mi lista 314</span><span class="chip">Viendo 10</span><span class="chip">Vistas 112</span><span class="chip">Listas 13</span><span class="chip">Descargas</span><span class="chip">Mi media</span></div>
+        <div class="grid">${arts(40,1)}</div>` },
+    { code: "BI-C", name: "Tablero de lo tuyo",
+      what: "Arriba, tarjetas grandes con tu avance: lo que tienes a medias, lo que bajaste y lo nuevo de tu nube; abajo, Mi lista y tus listas.",
+      gain: ["Se siente como un resumen de lo tuyo", "Lo que está pasando (descargas, avance) al frente"],
+      lose: ["Más alto: Mi lista queda abajo"], ipad: "iPad: igual.",
+      mock: `<div class="split"><div class="panel"><span class="lbl">Viendo</span>${li(0)}${li(1)}${li(2)}</div><div class="panel"><span class="lbl">Descargas</span>${li(4)}${li(5)}<span class="lbl">Mi media</span>${li(7)}</div></div>
+        <div class="ttl">Mi lista · 314</div><div class="row">${arts(16,3)}</div>` },
+  ],
+};
+
+for (const [page, options] of Object.entries(pages)) {
+  const on = { inicio: "Inicio", explorar: "Explorar", biblioteca: "Biblioteca" }[page];
+  document.querySelector(`[data-page="${page}"]`).innerHTML = options.map(o => `
+    <article class="opt${o.rec ? " rec" : ""}">
+      <div class="head"><span class="code">${o.code}</span><span class="name">${o.name}</span>${o.rec ? '<span class="tag">Recomendada</span>' : ""}</div>
+      <div class="win">${bar(on)}<div class="body">${o.mock}</div></div>
+      <p>${o.what}</p>
+      <ul class="gain">${o.gain.map(g => `<li>${g}</li>`).join("")}</ul>
+      <ul class="lose">${o.lose.map(g => `<li>${g}</li>`).join("")}</ul>
+      <p class="ipad">${o.ipad}</p>
+    </article>`).join("");
+}
+</script>

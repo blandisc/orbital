@@ -64,7 +64,9 @@ struct MacSearchChip: View {
             } label: {
                 Label("Buscar", systemImage: "magnifyingglass").recipe(.labelLarge, color: tabs.current == 2 ? DS.bg : DS.text)
                     .macTabLabel(compact: compact)
-                    .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
+                    // Tan alto como la cápsula de las pestañas (su aire de adentro más el de su orilla) y más ancho: antes se veía
+                    // más chico que ellas (Fernando, 22 nov 2026: «buscar lo haría un poquito más grande»).
+                    .padding(.horizontal, compact ? DS.Space.s6 : DS.Space.s8).padding(.vertical, DS.Space.s2 + DS.Space.s1)
                     .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
                     .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
             }
