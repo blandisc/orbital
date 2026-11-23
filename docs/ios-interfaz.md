@@ -137,7 +137,10 @@ que llega después de abrir) y cortaba una semana a la mitad en la orilla.
   llega: `.rowEdge(.bleeds)` la suelta, que en el iPhone llega a la orilla de la pantalla y en ventana ancha (iPad, Mac) termina en
   el mismo margen que todo lo demás, con un desvanecido ancho (`DS.Size.rowFade`) que dice que hay más; `.rowEdge(.inCard)` la
   que va en una tarjeta o un panel. El margen de cada fila va por dentro del desplazamiento (`contentMargins`), nunca como
-  relleno de afuera (con los dos, Colecciones empezaba más adentro que todo lo demás). Lo vigilan `testRowsSayWhereTheyEnd` y `testHorizontalRowsDoNotClipWhatGrows`.
+  relleno de afuera (con los dos, Colecciones empezaba más adentro que todo lo demás). El corte solo esconde lo que ya pasó: al inicio de una fila no hay corte a la izquierda (se comía el «1» de «Lo que más
+  viste»), y una fila que lleva su margen como relleno de adentro también termina en el margen de la ventana. Lo mismo en
+  una cuadrícula: un puesto cabe con su número (`DS.Poster.rankedWideMin`; en el Top de un género el póster tapaba la cifra
+  de al lado), lo vigila `testRankedGridsMakeRoomForTheirNumber`. Lo vigilan `testRowsSayWhereTheyEnd` y `testHorizontalRowsDoNotClipWhatGrows`.
 - **Una acción, un botón:** una fila que termina con su tarjeta de añadir («Añadir canal») no repite el «+» en su
   encabezado (`testRowsDoNotRepeatTheirAddButton`).
 - Los mapas de semanas son una pieza, `DSWeekStrip` (`Design/WeekStrip.swift`, medidas en `DS.WeekStrip`): las casillas salen
@@ -954,7 +957,7 @@ nuevos tamaños»):
   - Buscar vacío muestra un muro de «Lo más popular hoy» que llena lo ancho y lo alto (los renglones que caben bajo la búsqueda avanzada, al menos `DS.Mac.searchRowsMin`).
   - Inicio también lleva la sombra bajo la barra (`macTopShade`): al bajar, las pestañas se perdían sobre la portada.
 - **La Mac con su propio acomodo** (Fernando, 16 nov 2026: «vamos con tus recomendaciones», MB1 · MA1 · MS1 · MT1 · MC1):
-  - Biblioteca: Descargas, Mi media y Guardado en una columna a la izquierda (`MacSidebar`), como Música; no una segunda fila de pestañas.
+  - Biblioteca (BI-A, 22 nov 2026; reemplaza la columna de la izquierda de MB1, que se comía un cuarto de la ventana): filas como Inicio (`LibraryHome`): Viendo, Mi lista, Vistas y Tus listas, cada una con cuántos hay y su pantalla completa en el encabezado; al final, Descargas y Mi media en dos tarjetas. En el iPhone y el iPad siguen sus pestañas arriba.
   - Ajustes: lista y detalle, como Ajustes del Sistema. Cada renglón es un `SettingsLink`: en la Mac abre su página a la derecha (`SettingsView.destination`); en iPhone y iPad la empuja.
   - Buscar: el campo grande al centro (`MacSearchField`, 88 pt de alto y letra de título) en vez del de la barra, y los seis mosaicos de la búsqueda avanzada en una fila, de 150 pt de alto con su dibujo grande (`DS.Mac.doorTileHeight`): con el tamaño del iPhone eran franjas que se leían como botones de formulario.
   - Al cambiar de pestaña, el cambio es al momento (sin el fundido del sistema, `DS.Mac.tabSwitchQuiet`).

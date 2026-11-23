@@ -24,6 +24,16 @@ extension DesignRulesTests {
                       "`rowEdge` corta las filas en su margen (`contentInsets`) con el desvanecido `DS.Size.rowFade`")
     }
 
+    /// Un puesto en cuadrícula cabe con su cifra: con la celda de dos pósters, en la Mac la tarjeta del Top de un género se salía,
+    /// empezaba antes del margen y tapaba el número de la de al lado (22 nov 2026).
+    func testRankedGridsMakeRoomForTheirNumber() throws {
+        for file in try sources(["Screens"]) where file.lines.contains(where: { $0.contains("RankedPosterCard(") }) {
+            for line in file.lines where line.contains("LazyVGrid(") {
+                XCTAssertTrue(line.contains("rankedWideMin"), "\(file.name): una cuadrícula de puestos usa `DS.Poster.rankedWideMin`")
+            }
+        }
+    }
+
     /// Una acción, un botón: Canales tenía «+» arriba y «Añadir canal» al final de la fila (Fernando, 22 nov 2026: «tienes dos
     /// botones»). Una fila que termina con su tarjeta de añadir no repite el «+» en su encabezado.
     func testRowsDoNotRepeatTheirAddButton() throws {

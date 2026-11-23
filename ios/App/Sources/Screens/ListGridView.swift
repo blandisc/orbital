@@ -152,7 +152,7 @@ struct PlatformRankingsView: View {
         if items.isEmpty && !model.isLoading(ranking: ranking) {
             DSEmptyState(symbol: "tray", title: Text("Hoy no hay ranking de este servicio."))
         }
-        LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2), spacing: DS.Space.s6) {
+        LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2, wideMin: DS.Poster.rankedWideMin), spacing: DS.Space.s6) {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                 TitleNavigationLink(route: s.route) {

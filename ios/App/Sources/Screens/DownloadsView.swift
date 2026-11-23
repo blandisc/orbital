@@ -30,6 +30,8 @@ struct DownloadsView: View {
     /// Lo que baja en la nube (Real-Debrid): «Descargas · 2» en la pestaña de texto.
     @State private var cloudActive = 0
     @State private var cloudWatch: ObservableModel.Subscription?
+    /// En la Mac, Descargas o Mi media abiertas desde su tarjeta en Biblioteca (`LibraryHome`).
+    @State private var macPart: Part?
     static let partKey = "library.part"
 
     /// Donde la dejaste en este aparato; la primera vez, Guardado (BI2-A). En la demostración, siempre igual: Guardado, o lo
@@ -83,6 +85,20 @@ struct DownloadsView: View {
             .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
             .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
             .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
+            .navigationDestination(for: LibrarySavedRoute.self) { route in
+                LibrarySavedView(observer: saved, tab: route.tab).scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
+                    .navigationTitle(Text("Guardado")).navigationBarTitleDisplayMode(.inline)
+            }
+            .navigationDestination(item: $macPart) { part in
+                Group {
+                    if part == .media { MiMediaView(observer: media) { EmptyView() }.readableListWidth() }
+                    else { phoneList(observer.model).readableListWidth() }
+                }
+                .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
+                .navigationTitle(part == .media ? Text("Mi media") : Text("Descargas")).navigationBarTitleDisplayMode(.inline)
+                .onAppear { seeing(part == .phone) }
+                .onDisappear { seeing(false) }
+            }
             .navigationDestination(for: DiaryRoute.self) { _ in
                 HistoryScreen().background(Backdrop()).navigationTitle("Historial").navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
             }
@@ -100,19 +116,20 @@ struct DownloadsView: View {
             UserDefaults.standard.set(new.rawValue, forKey: Self.partKey)
         }
         // Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: a «Descargas», aunque la dejaras en otra parte.
-        .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; env.ui.showDownloads = false } }
+        .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; if ThisDevice.isMac { macPart = .phone }; env.ui.showDownloads = false } }
         // El aviso «Ya está…» de un pedido: aquí, con su hoja abierta.
         .onChange(of: env.ui.openCloudRequest, initial: true) { _, hash in
             guard let hash else { return }
             part = .phone
+            if ThisDevice.isMac { macPart = .phone }
             cloud.opened = .init(id: hash)
             env.ui.openCloudRequest = nil
         }
         // Viendo Descargas, lo que avisaba ya está a la vista: se quitan sus avisos y la marca de la pestaña (Fernando, 4 nov
         // 2026, la 1774: «si ya estás en Descargas, el aviso y la marca deben morir»).
-        .onAppear { seeing(part == .phone) }
+        .onAppear { seeing(!ThisDevice.isMac && part == .phone) }
         .onDisappear { seeing(false) }
-        .onChange(of: part) { _, new in seeing(new == .phone) }
+        .onChange(of: part) { _, new in seeing(!ThisDevice.isMac && new == .phone) }
         .task {
             let requests = env.services.debridRequests
             cloudActive = requests.active.count
@@ -135,13 +152,9 @@ struct DownloadsView: View {
     /// MB1: en la Mac, las tres partes en una columna a la izquierda (como Música) y la parte elegida a la derecha.
     @ViewBuilder private func macSplit(_ content: some View) -> some View {
         if ThisDevice.isMac {
-            HStack(spacing: 0) {
-                MacSidebar(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.circle", badge: cloudActive + observer.model.active.count),
-                                     .init(id: .media, title: Text("Mi media"), symbol: "folder"),
-                                     .init(id: .saved, title: Text("Guardado"), symbol: "bookmark")], selection: $part)
-                    .accessibilityIdentifier("library-parts")
-                content.frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            // BI-A (22 nov 2026): filas como Inicio en vez de la columna de la izquierda (MB1), que se comía un cuarto de la ventana.
+            LibraryHome(saved: saved, downloading: cloudActive + observer.model.active.count) { macPart = $0 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             content
         }

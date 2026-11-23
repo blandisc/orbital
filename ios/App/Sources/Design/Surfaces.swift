@@ -192,6 +192,9 @@ extension View {
 private struct RowEdgeClip: ViewModifier {
     let edge: RowEdge
     @State private var geo = RowGeo()
+    /// Dónde queda la fila en la ventana: una fila suelta que lleva su margen como relleno de adentro (no como `contentMargins`)
+    /// no lo dice en `contentInsets`, y llegaba a la orilla de la ventana (los episodios en la ficha, 22 nov 2026).
+    @State private var span = ClosedRange<CGFloat>(uncheckedBounds: (0, 0))
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Dónde empieza y termina el contenido (sus márgenes) y si hay más a cada lado.
@@ -209,16 +212,31 @@ private struct RowEdgeClip: ViewModifier {
                 } action: { _, now in
                     withAnimation(DS.Motion.base(reduceMotion)) { geo = now }
                 }
+                .onGeometryChange(for: ClosedRange<CGFloat>.self) { $0.frame(in: .global).minX...max($0.frame(in: .global).minX, $0.frame(in: .global).maxX) } action: { span = $0 }
                 .mask {
                     HStack(spacing: 0) {
-                        Color.clear.frame(width: geo.lead)
+                        Color.clear.frame(width: lead)
                         LinearGradient(colors: [geo.before ? .clear : .black, .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.rowFade)
                         Color.black
                         LinearGradient(colors: [.black, geo.after ? .clear : .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.rowFade)
-                        Color.clear.frame(width: geo.trail)
+                        Color.clear.frame(width: trail)
                     }
                     .padding(.vertical, -DS.Space.s6)   // arriba y abajo, aire para lo que crece
                 }
         }
+    }
+
+    /// Una fila suelta termina en el margen de la pantalla aunque su margen no venga en `contentInsets`; una de tarjeta, en el suyo.
+    /// Al inicio de la fila no hay nada que esconder a la izquierda: sin corte ahí (en «Lo que ves», con el margen contado dos
+    /// veces, el corte se comía el «1» y la orilla del primer póster, 22 nov 2026). Igual a la derecha al llegar al final.
+    private var lead: CGFloat {
+        guard geo.before else { return 0 }
+        guard edge == .bleeds else { return geo.lead }
+        return max(geo.lead, DS.Space.gutter - span.lowerBound, 0)
+    }
+    private var trail: CGFloat {
+        guard geo.after else { return 0 }
+        guard edge == .bleeds else { return geo.trail }
+        return max(geo.trail, DS.Space.gutter - (WindowMetrics.column.width - span.upperBound), 0)
     }
 }

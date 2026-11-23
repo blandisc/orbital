@@ -15,6 +15,8 @@ extension DS {
     enum Mac {
         /// Cuánto crece la letra: con 1.25 el cuerpo de 17 pt sale de ~16 en pantalla en vez de 13.
         static let typeScale: CGFloat = 1.25
+        /// Cuántos pósters lleva cada fila de Biblioteca (`LibraryHome`): el resto, en su pantalla completa.
+        static let libraryRow = 30
         /// Los tamaños de cada estilo del iPhone (letra «Grande», la de fábrica): en la Mac se parte de estos.
         static let bodySize: CGFloat = 17
         /// La escala de letra de la Mac (sistema de tamaños, Fernando, 16 nov 2026: «haz esa misma revisión en cuanto a tamaños
@@ -51,8 +53,8 @@ extension DS {
         static let searchRowsMin = 2, searchTop: CGFloat = 520, searchCaption: CGFloat = 52
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
         static let topScrim: CGFloat = 120
-        /// La columna de la izquierda de la Biblioteca (MB1) y la lista de Ajustes (MA1), como Música y Ajustes del Sistema.
-        static let sidebarWidth: CGFloat = 340, settingsListWidth: CGFloat = 560
+        /// La lista de Ajustes (MA1), como Ajustes del Sistema.
+        static let settingsListWidth: CGFloat = 560
         /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
         static let tabSwitchQuiet: Double = 0.4
         /// El campo de Buscar en la Mac (MS1): grande y al centro, no la rayita de la barra.
@@ -97,6 +99,11 @@ extension DS.Space {
 }
 
 extension DS.Poster {
+    /// Una cuadrícula de puestos (el Top de un género, los rankings de una plataforma): cada celda cabe el póster y su cifra.
+    /// Con el mínimo de dos pósters lado a lado (`pairWideMin`), en la Mac la tarjeta se salía de su celda, empezaba antes del
+    /// margen y tapaba la cifra de la de al lado (22 nov 2026).
+    static var rankedWideMin: CGFloat { railWidth + rankDigitRoom }
+    static let rankDigitRoom: CGFloat = 64
     /// C5: con espacio, las tiras cuentan columnas (de 5 a 10 pósters, de 3 a 6 tarjetas anchas) y llenan el renglón hasta la orilla.
     static let railColumns = 5...10, stillColumns = 3...6
     /// El ancho para que quepan las que tocan (cerca de `target`) más un pedazo de la siguiente (`peek`), entre las dos orillas.

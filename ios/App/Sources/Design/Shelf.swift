@@ -18,6 +18,10 @@ struct Shelf<Content: View>: View {
     var source: ListSource?
     /// El porqué arriba del título, en ámbar (va en lugar de `meta`, abajo).
     var eyebrow: Text?
+    /// Lo de la derecha, a la altura del título: cuántos hay de lo tuyo en Biblioteca («319 títulos»).
+    var trailing: Text?
+    /// A dónde lleva el encabezado cuando no es una lista de Para ti (`ShelfRoute`): la pantalla completa de lo tuyo.
+    var destination: (any Hashable)?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -40,11 +44,17 @@ struct Shelf<Content: View>: View {
     @ViewBuilder private var header: some View {
         if let route {
             NavigationLink(value: route) { headerRow(chevron: true) }.buttonStyle(.plain)
+        } else if let destination {
+            link(destination)
         } else { headerRow(chevron: false) }
     }
 
+    private func link<Value: Hashable>(_ value: Value) -> AnyView {
+        AnyView(NavigationLink(value: value) { headerRow(chevron: true) }.buttonStyle(.plain))
+    }
+
     private func headerRow(chevron: Bool) -> some View {
-        DSSectionHead(title: title, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
+        DSSectionHead(title: title, trailing: trailing, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
     }
 }
 

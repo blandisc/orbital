@@ -157,7 +157,8 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("Filters.swift").contains("if options.count < 2 { EmptyView() }"), "Una sola pestaña no se dibuja")
         XCTAssertTrue(try code("TitleView.swift").contains(".frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)"), "Las reseñas a ancho de lectura")
         // Cuarta pasada (16 nov, MB1 · MA1 · MS1 · MC1): la Mac con su propio acomodo.
-        XCTAssertTrue(try code("DownloadsView.swift").contains("MacSidebar(options:"), "Biblioteca en la Mac: sus partes en una columna a la izquierda")
+        // BI-A (22 nov 2026) reemplazó la columna de MB1: Biblioteca en la Mac son filas como Inicio, sin columna a la izquierda.
+        XCTAssertTrue(try code("DownloadsView.swift").contains("LibraryHome(saved: saved"), "Biblioteca en la Mac: filas como Inicio (BI-A)")
         XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
         XCTAssertTrue(try code("BrowseView.swift").contains("if TopRow.tabsInLogoRow { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac (y el iPad con espacio, C1): el campo grande")
         XCTAssertTrue(try code("Filtro.swift").contains("count: mac ? FilterPage.main.count :"), "Buscar en la Mac: los seis mosaicos en una fila")

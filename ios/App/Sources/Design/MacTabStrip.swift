@@ -213,44 +213,6 @@ extension View {
 
 }
 
-/// MB1 (Fernando, 16 nov 2026): en la Mac, las partes de una pantalla (Descargas · Mi media · Guardado) en una columna a la
-/// izquierda, como Música o Fotos, en vez de una segunda fila de pestañas que se sentía puesta a la fuerza. La elegida con su
-/// relleno; el numerito de lo que baja a la derecha.
-struct MacSidebar<ID: Hashable>: View {
-    struct Option { let id: ID; let title: Text; let symbol: String; var badge: Int = 0 }
-    let options: [Option]
-    @Binding var selection: ID
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            ForEach(options, id: \.id) { option in
-                let on = option.id == selection
-                Button { selection = option.id } label: {
-                    HStack(spacing: DS.Space.s2) {
-                        Image(systemName: option.symbol).font(DS.TextRecipe.cardTitle.font)
-                            .foregroundStyle(on ? DS.text : DS.textMuted).frame(width: DS.SettingsLook.rowIcon)
-                        option.title.bold(on).recipe(.cardTitle, color: on ? DS.text : DS.textMuted)
-                        Spacer(minLength: 0)
-                        if option.badge > 0 { Text(verbatim: "\(option.badge)").recipe(.badge, color: DS.textMuted).monospacedDigit() }
-                    }
-                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
-                    .dsCard(fill: on ? DS.surfaceRaised : .clear)
-                    .contentShape(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .pointerHover(.highlight)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, DS.Space.s2).padding(.top, DS.Space.s2)
-        .frame(width: DS.Mac.sidebarWidth, alignment: .leading)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .overlay(alignment: .trailing) { Rectangle().fill(DS.hairline).frame(width: DS.Stroke.hairline) }
-        .dsFeedback(.selection, trigger: selection)
-    }
-}
-
 /// MS1 (Fernando, 16 nov 2026): en la Mac, Buscar trae su campo grande al centro en vez de la rayita de la barra del sistema.
 struct MacSearchField: View {
     @Binding var text: String

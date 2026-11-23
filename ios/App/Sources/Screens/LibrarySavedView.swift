@@ -28,6 +28,12 @@ struct LibrarySavedView: View {
     private var model: SavedModel { observer.model }
     static let tabKey = "library.saved.tab", watchedKey = "library.saved.watched"
 
+    /// `tab`: la pestaña con que abre desde una fila de Biblioteca en la Mac («Mi lista ›»); sin ella, la que dejaste.
+    init(observer: ModelObserver<SavedModel>, tab: SavedTab? = nil) {
+        self.observer = observer
+        _tab = State(initialValue: tab ?? Self.lastTab)
+    }
+
     /// La que dejaste en este aparato; la primera vez, Mi lista. En la demostración, `-demo-saved-tab` (o `-demo-open history` /
     /// `vistas`, que abren Vistas).
     private static var lastTab: SavedTab {
