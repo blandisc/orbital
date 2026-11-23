@@ -200,6 +200,7 @@ class _Base:
     trakt: trakt_api.Trakt
     tmdb: tmdb_api.Tmdb
     _posters_down_until: float
+    _imdb_down_until: float
     rawg: rawg_api.Rawg
     mdblist: mdblist_api.MdbList
     letterboxd: letterboxd_api.Letterboxd
@@ -227,6 +228,7 @@ class _Base:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.services.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
         self._posters_down_until = 0.0
+        self._imdb_down_until = 0.0
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))
         self.mdblist = mdblist_api.MdbList(self._key("mdblist_key"))
         self.letterboxd = letterboxd_api.Letterboxd(self._key("letterboxd_user"))

@@ -11,6 +11,7 @@ from collections.abc import Callable
 
 from ..atomic import atomic_write
 from ..library import certification
+from ..library import imdb as imdb_api
 from ..library import letterboxd as letterboxd_api
 from ..library import rawg as rawg_api
 from ..library import tmdb as tmdb_api
@@ -44,6 +45,20 @@ class _Titles(_Sources):
         """La dirección de donde bajar un póster: si es de metahub, el de TMDB de ese título cuando lo hay (`tmdb_poster`)."""
         found = METAHUB_POSTER.fullmatch(url or "")
         return (self.tmdb_poster(found[1]) if found else None) or url
+
+    def poster_rescue(self, url: str, width: int) -> str | None:
+        """Si el póster de metahub no cargó (404) y TMDB no lo tiene: la imagen de IMDb de ese título, al ancho en que se ve
+        (library/imdb.py; como el iPhone). None si no es de metahub o si IMDb tampoco la tiene: el nombre sobre color."""
+        found = METAHUB_POSTER.fullmatch(url or "")
+        if not found or time.monotonic() < self._imdb_down_until:
+            return None
+        try:
+            image = self.cache.get(f"imdb:poster:{found[1]}", POSTER_TTL, lambda: imdb_api.poster(found[1]))
+        except Exception:  # noqa: BLE001 - un respaldo: sin IMDb queda el nombre, y un rato no se le pregunta
+            log.info("No pude preguntar a IMDb el póster de %s", found[1])
+            self._imdb_down_until = time.monotonic() + 10 * 60
+            return None
+        return imdb_api.sized(image, width) if image else None
 
     def imdb_ratings(self, wanted: list[tuple[str, str]]) -> dict[str, float]:
         """La calificación de IMDb de cada título (de Cinemeta, varios a la vez; se recuerda un día), para ordenar una lista

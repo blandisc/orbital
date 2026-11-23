@@ -58,6 +58,55 @@ def test_a_metahub_poster_goes_first_with_the_tmdb_one(make_client, library, mon
     assert asked[-1] == "https://images.metahub.space/poster/medium/tt9/img"  # TMDB no lo tiene: el de siempre
 
 
+def test_a_metahub_poster_that_is_missing_comes_from_imdb(make_client, library, monkeypatch):
+    """23 nov: 13 % de los resultados de Buscar no tenían póster en metahub ni en TMDB; IMDb sí (como el iPhone)."""
+    from orbital.library import imdb
+
+    asked: list[str] = []
+
+    def fetch(url, timeout=10):
+        asked.append(url)
+        if "metahub" in url:
+            raise NetError("404")
+        return jpeg((1000, 1500))
+
+    monkeypatch.setattr(remote_art, "fetch", fetch)
+    monkeypatch.setattr(library.foryou, "tmdb_poster", lambda imdb_id: None)
+    lookups: list[str] = []
+    monkeypatch.setattr(imdb, "poster", lambda i: lookups.append(i) or ("https://m.media-amazon.com/images/M/MV5Bx._V1_.jpg" if i == "tt7" else None))
+    c = make_client()
+    ok = c.get("/api/img", params={"u": "https://images.metahub.space/poster/medium/tt7/img", "w": 240})
+    assert ok.status_code == 200 and asked[-1] == "https://m.media-amazon.com/images/M/MV5Bx._V1_QL75_UX240_.jpg"
+    gone = c.get("/api/img", params={"u": "https://images.metahub.space/poster/medium/tt8/img", "w": 240}, follow_redirects=False)
+    assert gone.status_code == 307  # IMDb tampoco: la tarjeta pone el nombre sobre color
+    c.get("/api/img", params={"u": "https://images.metahub.space/poster/medium/tt8/img", "w": 320}, follow_redirects=False)
+    assert lookups == ["tt7", "tt8"]  # «no la tiene» se recuerda
+
+
+def test_imdb_reads_that_title_only_and_the_size_shown():
+    from orbital.library import imdb
+
+    body = {"d": [{"id": "tt1", "i": {"imageUrl": "https://m.media-amazon.com/images/M/otro._V1_.jpg"}},
+                  {"id": "tt4705944", "i": {"imageUrl": "https://m.media-amazon.com/images/M/MV5Babc._V1_.jpg"}}]}
+    assert imdb.parse(body, "tt4705944") == "https://m.media-amazon.com/images/M/MV5Babc._V1_.jpg"
+    assert imdb.parse(body, "tt9") is None and imdb.parse({"d": [{"id": "tt2"}]}, "tt2") is None and imdb.parse(None, "tt1") is None
+    assert imdb.sized("https://m.media-amazon.com/images/M/MV5Babc._V1_.jpg", 500).endswith("MV5Babc._V1_QL75_UX500_.jpg")
+    assert imdb.sized("https://example.com/a.png", 500) == "https://example.com/a.png"
+    assert imdb.poster("../etc") is None
+    assert remote_art.allowed("https://m.media-amazon.com/images/M/MV5Babc._V1_.jpg")
+
+
+def test_without_imdb_it_waits_a_while_before_asking_again(library, monkeypatch):
+    from orbital.library import imdb
+
+    calls: list[str] = []
+    monkeypatch.setattr(imdb, "poster", lambda i: calls.append(i) or (_ for _ in ()).throw(NetError("x")))
+    assert library.foryou.poster_rescue("https://images.metahub.space/poster/medium/tt1/img", 240) is None
+    assert library.foryou.poster_rescue("https://images.metahub.space/poster/medium/tt2/img", 240) is None
+    assert library.foryou.poster_rescue("https://image.tmdb.org/t/p/w500/a.jpg", 240) is None
+    assert calls == ["tt1"]
+
+
 def test_tmdb_poster_needs_a_key_and_waits_after_a_failure(library, monkeypatch):
     from orbital.library.tmdb import TmdbError
 

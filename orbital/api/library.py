@@ -132,6 +132,9 @@ def router(d: Deps) -> APIRouter:
             path = await loop.run_in_executor(_WEB_ART, remote_art.sized, source, width)
         if path is None:
             path = await loop.run_in_executor(_WEB_ART, remote_art.sized, u, width)
+        # 23 nov: si metahub no lo tiene (13 % de los resultados de Buscar, los títulos poco conocidos), el de IMDb.
+        if path is None and (rescue := await loop.run_in_executor(_WEB_ART, catalog.foryou.poster_rescue, u, width)):
+            path = await loop.run_in_executor(_WEB_ART, remote_art.sized, rescue, width)
         if path is None:
             return RedirectResponse(u, status_code=307)
         return FileResponse(path, media_type=image_type(path), headers={"Cache-Control": "max-age=604800"})
