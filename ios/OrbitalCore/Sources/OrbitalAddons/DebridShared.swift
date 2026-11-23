@@ -71,6 +71,16 @@ extension DebridAccount {
     nonisolated func markSharedSeen(_ value: String) { _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridSeen, value) }
     nonisolated var sharedSeen: String? { vaultRef.secret(AddonKeys.sharedRealDebridSeen) }
 
+    /// La nube de aquí ya no da enlaces: su clave no vale, o su cuenta venció o es gratuita. Sin respuesta no se sabe: no.
+    static func stopped(_ health: DebridHealth, now: Date) -> Bool {
+        switch health {
+        case .invalidToken: return true
+        case .status(let status):
+            switch status.state(now: now) { case .expired, .free: return true; case .active, .expiringSoon: return false }
+        case .noKey, .unreachable: return false
+        }
+    }
+
     static func sameAccount(_ a: DebridStatus?, _ b: DebridStatus) -> Bool {
         guard let a else { return false }
         if let x = a.userID, let y = b.userID { return x == y }
@@ -98,9 +108,16 @@ extension DebridAccount {
         if local == shared.key { markSharedSeen(shared.key); return .none }
         if !local.isEmpty, sharedSeen == shared.key { return .none }
         guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: nada que ofrecer
+        // 22 nov 2026 (Fernando: puso TorBox en el iPhone y la Mac seguía con «Tu Real-Debrid venció», «¿por qué no se mandó de
+        // manera automática?»): si la nube de aquí ya no sirve (venció, quedó gratuita o su clave ya no vale) y tus aparatos
+        // tienen una que sí, se toma sola, sea de la nube que sea. Nada que funcione cambia sin preguntar; sin clave aquí, se ofrece.
+        let here: DebridHealth = hasToken ? await checkNow() : .noKey
+        if theirs.isPremium, Self.stopped(here, now: now()) {
+            return save(token: shared.key, status: theirs, share: false, service: cloud) ? .adopted(from: who) : .none
+        }
         guard !local.isEmpty else { return theirs.isPremium ? .offer(from: who, account: theirs) : .none }
         guard cloud == service else { return .none }   // tienes otra clave de esa nube, pero no la usas ahora: no se pregunta
-        switch await checkNow() {
+        switch here {
         case .status(let mine):
             if Self.sameAccount(mine, theirs) { markSharedSeen(shared.key); return .none }   // la misma cuenta y las dos sirven
             return .differs(from: who, shared: theirs, local: mine)

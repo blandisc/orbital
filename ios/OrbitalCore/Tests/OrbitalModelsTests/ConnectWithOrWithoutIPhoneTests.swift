@@ -24,6 +24,9 @@ private final class FakeHouse: HTTPClient, @unchecked Sendable {
             if request.url.host == "api.real-debrid.com" {
                 let token = request.headers["Authorization"] ?? ""
                 if token.contains("REVOKED") { return json(["error": "bad_token"], 401) }
+                if token.contains("EXPIRED") {   // la cuenta sigue, pero su Premium ya venció
+                    return json(["id": 1, "username": "fer", "type": "free", "premium": 0, "expiration": "2026-11-01T12:00:00.000Z"])
+                }
                 let ana = token.contains("ANA")
                 return json(["id": .int(ana ? 2 : 1), "username": .string(ana ? "ana" : "fer"), "type": "premium", "premium": 3_000_000])
             }
@@ -150,6 +153,32 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertEqual(mac.debrid.service, .torBox)
         XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
         XCTAssertNil(local.get(AddonKeys.realDebridToken), "nunca se guarda como de Real-Debrid")
+    }
+
+    /// 22 nov 2026 (Fernando: puso TorBox en el iPhone y la Mac seguía con «Tu Real-Debrid venció», «¿por qué no se mandó de
+    /// manera automática?»): la nube de aquí ya no sirve y la de tus aparatos sí → se toma sola, con su nube. Una que funciona
+    /// nunca se cambia sin preguntar.
+    func testAStoppedCloudHereTakesTheWorkingOneFromYourDevicesByItself() async throws {
+        let cloud = InMemorySecrets()
+        let (iphone, _, _) = rig("iphone", shared: cloud)
+        let key = "tb-" + String(repeating: "a1b2", count: 8)
+        await iphone.debrid.save(token: key, status: try await iphone.debrid.verify(key, service: .torBox), service: .torBox)
+        let expired = String(repeating: "EXPIRED", count: 7)
+        let (mac, local, _) = rig("mac", shared: cloud, allows: false)
+        local.set(AddonKeys.realDebridToken, expired)
+        let found = await mac.debrid.checkShared()
+        XCTAssertEqual(found, .adopted(from: "iphone"), "la Mac con su Real-Debrid vencido toma sola el TorBox de tu iPhone")
+        XCTAssertEqual(mac.debrid.service, .torBox)
+        XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
+        XCTAssertEqual(SharedDebridKey.decode(cloud.get(SecretKey.sharedRealDebrid))?.key, key, "la copia de tus aparatos no se pisa")
+        let again = await mac.debrid.checkShared()
+        XCTAssertEqual(again, .none, "ya es la misma: no se vuelve a hacer nada")
+
+        let (ipad, local2, _) = rig("ipad", shared: cloud)
+        local2.set(AddonKeys.realDebridToken, fer1)   // un Real-Debrid que sí funciona
+        guard case .offer = await ipad.debrid.checkShared() else { return XCTFail("una nube que funciona no cambia sola: solo se ofrece") }
+        XCTAssertEqual(ipad.debrid.service, .realDebrid)
+        XCTAssertNil(local2.get(DebridService.torBox.keyStore))
     }
 
     func testAKeyFromBeforeIsSharedOnTheFirstCheck() async {
