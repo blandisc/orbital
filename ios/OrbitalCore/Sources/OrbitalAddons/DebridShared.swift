@@ -59,9 +59,11 @@ extension DebridAccount {
     /// La copia compartida (nil si no hay o si el llavero de iCloud todavía no la trae).
     public nonisolated var sharedKey: SharedDebridKey? { SharedDebridKey.decode(vaultRef.secret(AddonKeys.sharedRealDebridToken)) }
 
-    nonisolated func publishShared(_ key: String, service cloud: DebridService) {
+    /// `at`: cuándo se puso esa clave; sin decirlo, ahora.
+    nonisolated func publishShared(_ key: String, service cloud: DebridService, at: Date? = nil) {
         guard !key.isEmpty else { return }
-        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName(), service: cloud, at: clock()).encoded)
+        let copy = SharedDebridKey(key: key, from: platform, name: deviceName(), service: cloud, at: at ?? clock())
+        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, copy.encoded)
     }
 
     nonisolated func retireShared(_ key: String) {
@@ -111,23 +113,29 @@ extension DebridAccount {
         // el default es el último que agregué en un aparato»): la clave más reciente de tus aparatos Apple es la que usan todos,
         // aunque la de aquí todavía sirva. La de antes queda en este aparato para «Volver a la clave anterior».
         if cloud == service, local == shared.key { markSharedSeen(shared.key); return .none }   // ya es la de aquí
-        if sharedSeen == shared.key { return .none }   // aquí ya se decidió: volviste a la anterior o la quitaste solo de aquí
-        // La de aquí se puso después que la copia (iCloud aún trae la de antes): se queda la de aquí.
-        if let at = shared.at, let mine = savedAt, mine >= at { return .none }
         let current = vaultRef.debridToken(service)
-        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: se queda la de aquí
+        // La de aquí se puso después que la copia (iCloud trae una de antes): se queda la de aquí y se vuelve a dejar, con su fecha.
+        if let current, let at = shared.at, let mine = savedAt, mine >= at {
+            publishShared(current, service: service, at: Date(timeIntervalSince1970: mine))
+            return .none
+        }
         // 22 nov 2026 · una copia sin fecha es de antes (p. ej. tu Real-Debrid de hace semanas, si pusiste TorBox en una versión
         // que todavía no la compartía): no se sabe si es la más reciente. Si la de aquí funciona, se queda y se comparte con fecha
-        // (así tus otros aparatos la toman); solo se toma la de antes si la de aquí ya no sirve y la de antes sí.
+        // (así tus otros aparatos la toman); solo se toma la de antes si la de aquí ya no sirve y la de antes sí. Va antes de
+        // «aquí ya se decidió»: el iPhone de Fernando ya había visto esa copia vieja y por eso nunca compartía su TorBox.
+        var stoppedHere = false
         if shared.at == nil, let current {
             switch await checkNow() {
             case .status(let mine) where !Self.stopped(mine, now: now()):
-                publishShared(current, service: service)
+                publishShared(current, service: service, at: savedAt.map { Date(timeIntervalSince1970: $0) })
                 return .none
             case .unreachable, .noKey: return .none
-            case .status, .invalidToken: guard theirs.isPremium else { return .none }
+            case .status, .invalidToken: stoppedHere = true
             }
         }
+        if sharedSeen == shared.key { return .none }   // aquí ya se decidió: volviste a la anterior o la quitaste solo de aquí
+        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: se queda la de aquí
+        if stoppedHere, !theirs.isPremium { return .none }
         let before = current.map { SharedDebridKey(key: $0, from: platform, service: service) }
         guard save(token: shared.key, status: theirs, share: false, service: cloud, savedAt: shared.at) else { return .none }
         if let before, before.key != shared.key || before.cloud != cloud { storePrevious(before) }

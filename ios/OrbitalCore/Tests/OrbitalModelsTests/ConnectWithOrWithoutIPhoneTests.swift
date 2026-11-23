@@ -204,6 +204,7 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         let key = "tb-" + String(repeating: "a1b2", count: 8)
         await iphone.debrid.save(token: key, status: try await iphone.debrid.verify(key, service: .torBox), share: false, service: .torBox)
         iLocal.set(AddonKeys.debridSavedAt, nil)   // la pusiste con una versión de antes: sin fecha
+        iLocal.set(AddonKeys.sharedRealDebridSeen, expired)   // y este iPhone ya había visto esa copia vieja (así estaba el de Fernando)
         let onIPhone = await iphone.debrid.checkShared()
         XCTAssertEqual(onIPhone, .none, "el iPhone se queda con su TorBox")
         XCTAssertEqual(iphone.debrid.service, .torBox)
