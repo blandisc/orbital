@@ -1,0 +1,190 @@
+<title>Explorar dinámico</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Hoja de decisión: el problema con capturas reales, tres teléfonos lado a lado y la recomendación. Oscura como Orbital. */
+:root{
+  --ink:#0b0f17; --panel:#131a26; --panel-2:#1a2332; --line:#26324a;
+  --fg:#e9eef7; --muted:#9aa7bd; --teal:#3fd4c4; --amber:#f2b84b; --rose:#f07a8f; --ok:#5fd18b;
+  --scr:#141a28; --tile:#222b3d; --tile-2:#2c3750;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --ink:#f5f7fb; --panel:#ffffff; --panel-2:#eef2f8; --line:#d5dceb;
+  --fg:#111827; --muted:#56627a; --teal:#0f8f84; --amber:#a86a00; --rose:#c23a55; --ok:#1d8a4c; color-scheme:light; } }
+:root[data-theme="light"]{
+  --ink:#f5f7fb; --panel:#ffffff; --panel-2:#eef2f8; --line:#d5dceb;
+  --fg:#111827; --muted:#56627a; --teal:#0f8f84; --amber:#a86a00; --rose:#c23a55; --ok:#1d8a4c; color-scheme:light; }
+body{background:var(--ink);color:var(--fg);font:15px/1.55 var(--body)}
+.wrap{max-width:1080px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,42px)} h2{font-size:24px} h3{font-size:18px}
+p{margin:0;max-width:68ch} .muted{color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.why{color:var(--teal);font-weight:600}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+.shots{display:flex;gap:16px;flex-wrap:wrap}
+.shots figure{margin:0;display:flex;flex-direction:column;gap:8px;width:220px;max-width:100%}
+.shots img{border-radius:22px;border:1px solid var(--line)}
+figcaption{font-size:13px;color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.opt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.opt.rec{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+.opt header{display:flex;flex-direction:column;gap:4px}
+.code{font-family:var(--display);font-weight:700;color:var(--teal);font-size:22px;letter-spacing:.02em}
+.badge{align-self:flex-start;font-size:12px;font-weight:700;color:var(--teal);border:1px solid var(--teal);border-radius:99px;padding:1px 9px}
+.gl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px}
+.gl b{font-weight:700} .plus{color:var(--ok)} .minus{color:var(--rose)}
+/* El teléfono dibujado: oscuro siempre, porque Orbital es oscura. */
+.phone{align-self:center;width:230px;max-width:100%;aspect-ratio:9/18.5;background:var(--scr);border:6px solid #05070c;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;gap:9px;padding:14px 10px;color:#e9eef7;font-size:10px}
+.bar{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-weight:700;font-size:15px}
+.dots{width:30px;height:16px;border-radius:9px;background:var(--tile-2)}
+.head{display:flex;align-items:center;gap:5px;color:#b9c4d6;font-weight:600}
+.head .ln{flex:1;height:1px;background:#2c3750}
+.head .n{color:#7f8ba0;font-weight:500}
+.head .all{color:#3fd4c4;font-weight:700}
+.row{display:flex;gap:6px;overflow:hidden}
+.card{flex:0 0 auto;border-radius:9px;background:linear-gradient(160deg,var(--c1),var(--c2));position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;font-weight:700;font-size:8.5px}
+.card::before{content:"";position:absolute;top:9%;left:30%;width:40%;height:52%;border-radius:4px;background:rgba(255,255,255,.22)}
+.big{width:150px;height:150px} .small{width:64px;height:76px}
+.r{--c1:#5c1520;--c2:#2a0d14} .b{--c1:#1c2f66;--c2:#0f1733} .g{--c1:#1d4a33;--c2:#0e2219} .y{--c1:#5e4a12;--c2:#2a210a} .v{--c1:#3d2466;--c2:#1a1030} .k{--c1:#333c50;--c2:#1b2130}
+.strip{display:flex;gap:4px;justify-content:space-between;background:#1b2232;border-radius:12px;padding:6px 5px}
+.strip span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:7.5px;color:#8f9bb0;flex:1}
+.strip i{width:18px;height:18px;border-radius:6px;background:#2c3750;display:block}
+.strip .on{color:#e9eef7} .strip .on i{background:#3fd4c4}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tile{aspect-ratio:3/4;border-radius:9px;background:linear-gradient(160deg,var(--c1),var(--c2));display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;padding-bottom:6px;font-weight:700;font-size:8px}
+.tile i{width:16px;height:16px;border-radius:5px;background:rgba(255,255,255,.3);display:block}
+.tabbar{margin-top:auto;height:26px;border-radius:14px;background:#232b3c}
+.rec-box{background:var(--panel);border:1px solid var(--teal);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.say{font-family:var(--display);font-size:20px;font-weight:700}
+.say code{font-family:inherit;color:var(--teal)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);background:var(--panel-2);letter-spacing:.04em}
+</style>
+<div class="wrap">
+  <section>
+    <p class="why">Orbital · iPhone y TV · 23 nov 2026 · solo análisis, nada construido</p>
+    <h1>Un Explorar que cambia, como Netflix</h1>
+    <p>Quieres que Explorar no sea siempre igual: los especiales de Halloween de Los Simpsons en octubre, lo de Navidad en
+    diciembre, «las 20 mejores según Wired», las listas famosas de la web. Esto es lo que ya hay, de dónde saldrían las listas
+    nuevas, quién las elige, cuánto cuesta y qué se puede hacer ya.</p>
+  </section>
+
+  <section>
+    <h2>Lo que ya hay</h2>
+    <ul>
+      <li><b>Temporadas con fecha:</b> Halloween (25 sep a 31 oct), Día de Muertos (1 a 10 nov), Navidad (25 nov a 6 ene),
+      San Valentín y Verano. La próxima sale arriba («La temporada · en 2 días»). Las arma TMDB, la base de datos de cine, con
+      palabras clave como «halloween».</li>
+      <li><b>Listas famosas fijas:</b> Criterion, IMDb Top 250 y las dos del New York Times, en Colecciones.</li>
+      <li><b>Lo que falta:</b> que esas listas roten y que haya listas que nadie en internet ha hecho todavía, como los
+      especiales de Halloween de Los Simpsons. Hoy, cambiar cualquiera pide una versión nueva de la app.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>De dónde saldrían las listas</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Fuente</th><th>Qué da</th><th>Costo</th><th>Cuidado</th></tr></thead>
+      <tbody>
+        <tr><td><b>TMDB</b> (ya la usamos)</td><td>Películas por tema y fecha (Halloween, Navidad) y sagas completas.</td><td>Gratis.</td><td>Para cobrar en la App Store pide un acuerdo por escrito. No trae los especiales de Halloween de Los Simpsons como grupo.</td></tr>
+        <tr><td><b>Trakt</b> (ya la usamos)</td><td>Miles de listas públicas hechas por personas: Sight &amp; Sound, AFI 100, IMDb Top 250.</td><td>Gratis; 1000 lecturas cada 5 min sobran.</td><td>Una lista de una persona puede borrarse o tener algo inapropiado: se eligen a mano.</td></tr>
+        <tr><td><b>MDBList</b> (ya la usamos)</td><td>Copias al día de las listas famosas y listas armadas por reglas.</td><td>Gratis hasta 1000 consultas al día; de 1 a 5 € al mes si hiciera falta.</td><td>Igual que Trakt: elegir a mano.</td></tr>
+        <tr><td><b>Letterboxd</b></td><td>Las listas más famosas de cine.</td><td>Su acceso es solo por solicitud.</td><td>Hoy no; sus listas más famosas tienen copia en Trakt o MDBList.</td></tr>
+        <tr><td><b>Revistas</b> (Wired y otras)</td><td>«Las 20 mejores según…».</td><td>No tienen versión que una app pueda leer; no encontré copia de Wired.</td><td>Copiar su página a máquina está prohibido: se arman a mano (ED-C).</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Cuatro formas</h2>
+    <div class="opts">
+      <article class="opt rec">
+        <header><span class="badge">Ya</span><span class="code">ED-A</span><h3>Calendario más largo</h3></header>
+        <div class="phone" aria-hidden="true">
+          <div class="bar">Explorar <span class="dots"></span></div>
+          <div class="head">La temporada · en 2 días<span class="ln"></span></div>
+          <div class="row"><div class="card big g">Navidad</div><div class="card big y">Año Nuevo</div></div>
+          <div class="head">Temporadas<span class="ln"></span></div>
+          <div class="row"><div class="card small v">Óscar</div><div class="card small r">Día del Niño</div><div class="card small b">Mes patrio</div></div>
+          <div class="tabbar"></div>
+        </div>
+        <p>Sumar fechas a las cinco que ya hay: temporada de premios y Óscar (enero a marzo), Año Nuevo, Día del Niño, Día de las
+        Madres, regreso a clases, Mes patrio con cine mexicano y Orgullo en junio.</p>
+        <div class="gl"><b class="plus">Gana</b><span>Casi todo el año hay algo de temporada arriba. Sin cuentas nuevas ni costo.</span>
+        <b class="minus">Pierde</b><span>Sigue saliendo solo con versión nueva de la app, y la TV tiene su propia lista de fechas que hay que cambiar igual.</span></div>
+      </article>
+
+      <article class="opt rec">
+        <header><span class="badge">Después</span><span class="code">ED-B</span><h3>Listas famosas que rotan</h3></header>
+        <div class="phone" aria-hidden="true">
+          <div class="bar">Explorar <span class="dots"></span></div>
+          <div class="head">Esta semana<span class="ln"></span><span class="all">Ver todo ›</span></div>
+          <div class="row"><div class="card big k">Sight &amp; Sound</div><div class="card big r">AFI 100</div></div>
+          <div class="head">Colecciones<span class="ln"></span></div>
+          <div class="row"><div class="card small b">Criterion</div><div class="card small y">IMDb 250</div><div class="card small k">NYT</div></div>
+          <div class="tabbar"></div>
+        </div>
+        <p>Una tabla de 10 a 15 listas famosas elegidas a mano, guardada en internet y no dentro de la app. Cada semana salen 3 o 4
+        distintas. Orbital guarda una copia de cada una por si la original se borra.</p>
+        <div class="gl"><b class="plus">Gana</b><span>Explorar cambia cada semana, y cambiar la tabla no pide instalar nada. Es la continuación de «Listas famosas», que ya estaba pendiente.</span>
+        <b class="minus">Pierde</b><span>Alguien elige las listas (tú o un agente cada mes). Unos días de trabajo.</span></div>
+      </article>
+
+      <article class="opt">
+        <header><span class="badge">Probar</span><span class="code">ED-C</span><h3>Listas hechas por Orbital</h3></header>
+        <div class="phone" aria-hidden="true">
+          <div class="bar">Explorar <span class="dots"></span></div>
+          <div class="head">La temporada · Halloween<span class="ln"></span></div>
+          <div class="row"><div class="card big y">Simpsons: Treehouse</div><div class="card big v">Sustos</div></div>
+          <div class="head">Según Wired<span class="ln"></span></div>
+          <div class="row"><div class="card small k">#1</div><div class="card small r">#2</div><div class="card small b">#3</div></div>
+          <div class="tabbar"></div>
+        </div>
+        <p>Una cuenta de Trakt de Orbital con listas armadas a mano: los especiales de Halloween de Los Simpsons, sus especiales
+        de Navidad, «las 20 mejores según Wired». Salen en su fecha con la tabla de ED-B.</p>
+        <div class="gl"><b class="plus">Gana</b><span>Lo que nadie más tiene, justo lo que pediste. Cada lista cuesta poco.</span>
+        <b class="minus">Pierde</b><span>Cada una se arma a mano y alguien la tiene que mantener. Copiar una lista de revista es nombrar los títulos, no copiar su texto.</span></div>
+      </article>
+
+      <article class="opt">
+        <header><span class="badge">No ahora</span><span class="code">ED-D</span><h3>Todo automático</h3></header>
+        <p>Que Orbital tome solas las listas en tendencia de Trakt y arme filas a tu gusto, como Netflix de verdad.</p>
+        <div class="gl"><b class="plus">Gana</b><span>Lo más vivo: cambia cada día sin que nadie haga nada.</span>
+        <b class="minus">Pierde</b><span>Sin una persona que elija, se cuelan listas raras o inapropiadas, y una vez que crece no hay forma de revisarlo. Mucho trabajo.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quién elige y cómo se cambia</h2>
+    <ul>
+      <li><b>Hoy:</b> las fechas y las listas viven dentro de la app; cambiarlas es una versión nueva.</li>
+      <li><b>Con ED-B:</b> una sola tabla en el repositorio de Orbital en GitHub (nombre, fuente, fechas). La app y la TV la leen
+      una vez al día. Para cambiar una lista, se edita la tabla: lo puedes pedir en una frase («quita AFI, pon Sight &amp; Sound»).</li>
+      <li><b>Si una lista se borra o falla:</b> sale la copia guardada; si no hay copia, la fila no sale. Nunca una fila vacía.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Por versión de Orbital</h2>
+    <ul>
+      <li><b>Ultra y Plus</b> (tuyas y de prueba): todo lo de arriba se puede.</li>
+      <li><b>App Store:</b> antes de cobrar hay que pedir a TMDB su acuerdo y revisar las condiciones de Trakt y MDBList. No
+      frena nada de hoy, pero hay que hacerlo antes de esa versión.</li>
+    </ul>
+  </section>
+
+  <section class="rec-box">
+    <h2>Mi recomendación: ED-A ya, luego ED-B, y ED-C como prueba en Halloween</h2>
+    <p>ED-A es casi gratis y llena el año. ED-B es la que hace sentir a Explorar vivo de verdad, y deja la tabla lista para que
+    ED-C (los Simpsons, Wired) salga sin instalar nada. ED-D no, porque sin alguien que elija se cuela lo que no quieres ver.
+    Lo que se haga va igual en el iPhone y en la TV.</p>
+    <p class="say">Para elegir, dicta: <code>ED-A</code>, <code>ED-A y ED-B</code>, <code>ED-A, ED-B y ED-C</code> o <code>ED-D</code>.</p>
+  </section>
+</div>
