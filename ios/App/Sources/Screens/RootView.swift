@@ -165,6 +165,9 @@ struct RootView: View {
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
+        // Tu nube de tus otros aparatos, también al arrancar: en la Mac la app nace ya activa y `onChange(of: scenePhase)` no
+        // corre, así que tu TorBox del iPhone no llegaba hasta abrir la página de tu nube (23 nov 2026).
+        .task(priority: .utility) { await env.services.refreshSharedDebrid() }
         // Tus pedidos a Real-Debrid: mientras la app está abierta y algo baja, cada 20 s (R10); al volver, en cuanto se abre.
         .task(id: scenePhase == .active) { if scenePhase == .active { await env.services.debridRequests.follow(every: DS.Timing.debridPoll) } }
         // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.

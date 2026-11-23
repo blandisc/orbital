@@ -66,8 +66,11 @@ extension DS {
         static let topScrim: CGFloat = 120
         /// DK (Fernando, 22 nov 2026: «hacer el dock de arriba un poquito más grande»): las pestañas, «Buscar» y tu foto, un
         /// paso más grandes en la Mac y en el iPad ancho (la letra de un nombre en tarjeta y más aire arriba y abajo).
-        static let topBarText = TextRecipe.cardTitle
-        static let topBarPadV = Space.s2 + Space.s1 / 2
+        /// Otro paso el 23 nov 2026 («arriba donde dice Orbital y el dock, un poquito más grande»): la letra de una subsección
+        /// (antes la de un nombre en tarjeta), más aire y el logo `markScale` (antes crecía como la letra, 1.25).
+        static let topBarText = TextRecipe.sectionQuiet
+        static let topBarPadV = Space.s2 + Space.s1
+        static let markScale: CGFloat = 1.45
         /// La lista de Ajustes (MA1), como Ajustes del Sistema: desde AJ-A (22 nov 2026) una barra lateral angosta, un renglón
         /// por página sin su valor; la página de la derecha llena lo demás hasta `settingsPageWidth`.
         static let settingsListWidth: CGFloat = 340, settingsPageWidth: CGFloat = 1200

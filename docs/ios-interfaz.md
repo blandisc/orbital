@@ -1251,6 +1251,10 @@ serie armaba dos en cada dibujo y, al girar el iPhone (también con el reproduct
 tres opciones a la vista) y `SettingsRow`, cada uno con `symbol:` y `tint:`. Un `Toggle`/`Picker` suelto se veía crudo y su
 texto empezaba más a la izquierda. `testEverySettingsRowHasItsIcon` lo cuida.
 
+**Lo que llega de iCloud se lee también al arrancar (23 nov 2026).** En la Mac la app nace activa y `onChange(of: scenePhase)`
+no corre al abrir: lo que depende de «al volver a la app» se pide además en un `.task` del arranque (tu nube compartida:
+el TorBox del iPhone no llegaba a la Mac hasta abrir su página). `testSharedCloudIsReadAtLaunch` lo cuida.
+
 **Girar el iPhone no cierra la ficha (23 nov 2026).** La 2480 se volvió a cerrar al girar con el reproductor encima: la ficha de
 abajo se rearmaba dentro de la pila del giro y SwiftUI se acababa la pila resolviendo el tipo enorme de su cuerpo. Cada forma de
 la ficha (ancha y de una columna) va en su propia vista con el tipo borrado (`TitleLayoutHost { AnyView(...) }`), así se arma en

@@ -17,7 +17,7 @@ struct AppMark: View {
         // La Mac en una ventana angosta: solo el planeta (con la palabra, el logo, «Buscar», las pestañas y tu foto no cabían y
         // la barra se salía por los dos lados; 17 nov 2026).
         let markOnly = ThisDevice.isMac && WindowMetrics.column.width < DS.Mac.markOnlyBelow
-        OrbitalWordmark(size: ThisDevice.isMac ? DS.Mac.sized(DS.Size.headerWordmark) : compact || small ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark,
+        OrbitalWordmark(size: ThisDevice.isMac ? DS.Size.headerWordmark * DS.Mac.markScale : compact || small ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark,
                         animated: true, showsMark: !compact, showsWord: !markOnly)   // la Mac: el logo de la barra crece con la letra (17 nov 2026)
             .foregroundStyle(DS.text).fixedSize()
             // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).

@@ -12,3 +12,13 @@ extension DesignRulesTests {
                        "Llamar las formas directo en el cuerpo de TitleView vuelve a gastar la pila al girar")
     }
 }
+
+/// Tu nube de tus otros aparatos se lee también al arrancar, no solo al volver a la app: en la Mac la app nace activa y
+/// `onChange(of: scenePhase)` no corre, así que el TorBox del iPhone no llegaba (Fernando, 23 nov 2026).
+extension DesignRulesTests {
+    func testSharedCloudIsReadAtLaunch() throws {
+        let root = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "RootView.swift" })
+        XCTAssertTrue(root.lines.contains { $0.contains(".task(priority: .utility) { await env.services.refreshSharedDebrid() }") },
+                      "RootView lee tu nube compartida al arrancar")
+    }
+}
