@@ -4,10 +4,10 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, platforms, studios, seasons, genres, awards, years, yourYear, trakt, addons
+    case forYou, weekly, platforms, studios, seasons, genres, awards, years, yourYear, trakt, addons
     var title: Text {
         switch self {
-        case .forYou: Text("Lo que se ve hoy"); case .trakt: Text("Tus listas"); case .addons: Text("Complementos")  // edición: la sección solo sale con complementos (instantStreams)
+        case .forYou: Text("Lo que se ve hoy"); case .weekly: Text("Esta semana"); case .trakt: Text("Tus listas"); case .addons: Text("Complementos")  // edición: la sección solo sale con complementos (instantStreams)
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Años")
         case .seasons: Text("Temporadas"); case .genres: Text("Géneros")
         case .yourYear: Text("Lo que ves")
@@ -18,7 +18,7 @@ enum CollectionSection: CaseIterable, Hashable {
     /// Un ícono por sección en el índice de arriba (más fácil de encontrar de un vistazo).
     var symbol: String {
         switch self {
-        case .forYou: "flame.fill"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
+        case .forYou: "flame.fill"; case .weekly: "sparkles.rectangle.stack"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
         case .seasons: "leaf"; case .genres: "theatermasks"
         case .years: "calendar"; case .trakt: "list.bullet.rectangle"; case .addons: "puzzlepiece.extension"
         case .yourYear: DS.Symbol.whatYouWatch

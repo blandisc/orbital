@@ -10,6 +10,9 @@ public final class RepisaModel: ObservableModel {
     public private(set) var loaded = false { didSet { changed() } }
     /// Las listas famosas que no llegaron (sin red, MDBList caído) y no hay copia guardada: la pantalla ofrece «Reintentar».
     public private(set) var failedLists: Set<String> = [] { didSet { changed() } }
+    /// «Esta semana» en Explorar (`ExploreTable`): las listas que tocan hoy, en orden, y sus títulos.
+    public private(set) var weekly: [CanonCollection] = [] { didSet { changed() } }
+    public private(set) var weeklyLists: [ExploreList] = [] { didSet { changed() } }
 
     /// Cuánto se guarda una lista famosa antes de volver a pedirla (cambian poco).
     public nonisolated static let listTTL: TimeInterval = 7 * 86400
@@ -26,9 +29,62 @@ public final class RepisaModel: ObservableModel {
         collections = Canon.awards() + Canon.lists.map { CanonCollection(id: $0.id, family: .list, grouping: $0.grouping, items: [], total: $0.total) }
         super.init()
         for list in Canon.lists { if let items = cached(list.id, fresh: false) { replace(list.id, items) } }
+        if let table = savedTable(fresh: false) { arrange(table) }
     }
 
-    public func collection(_ id: String) -> CanonCollection? { collections.first { $0.id == id } }
+    public func collection(_ id: String) -> CanonCollection? { collections.first { $0.id == id } ?? weekly.first { $0.id == id } }
+    public func weeklyList(_ id: String) -> ExploreList? { weeklyLists.first { $0.id == id } }
+
+    /// Cuánto vale la tabla de «Esta semana» antes de volver a pedirla.
+    public nonisolated static let tableTTL: TimeInterval = 86400
+    static let tableKey = "explore-table"
+    private struct SavedTable: Codable { var at: Date; var table: ExploreTable }
+
+    /// La tabla (guardada un día; sin red, la última que llegó) y las listas que tocan esta semana, con sus títulos.
+    public func loadWeekly() async {
+        var table = savedTable(fresh: true)
+        if table == nil, let response = try? await services.http.send(HTTPRequest(url: ExploreTable.url, headers: ["User-Agent": "Orbital"], timeout: 15)),
+           response.status == 200, let fetched = ExploreTable.parse(response.data) {
+            table = fetched
+            let saved = SavedTable(at: clock(), table: fetched)
+            services.caches.set(Self.tableKey) { try? JSONEncoder().encode(saved) }
+        }
+        guard let table = table ?? savedTable(fresh: false) else { return }
+        arrange(table)
+        await withTaskGroup(of: (String, [CanonCollection.Item]?).self) { group in
+            for list in weeklyLists where list.items == nil && cached(list.id, fresh: true) == nil {
+                group.addTask { [http = services.http, trakt = services.trakt] in
+                    let parts = (list.mdblist ?? list.trakt ?? "").split(separator: "/").map(String.init)
+                    guard parts.count == 2 else { return (list.id, nil) }
+                    if list.mdblist != nil { return (list.id, try? await Canon.list(http: http, user: parts[0], slug: parts[1])) }
+                    guard let trakt else { return (list.id, nil) }
+                    return (list.id, try? await Canon.list(trakt: trakt, user: parts[0], slug: parts[1]))
+                }
+            }
+            for await (id, items) in group {
+                guard let items, !items.isEmpty else { continue }
+                save(id, items)
+                if let i = weekly.firstIndex(where: { $0.id == id }) { weekly[i].items = items; weekly[i].total = items.count }
+            }
+        }
+        // Nunca una tarjeta vacía: la que no llegó y no tiene copia guardada no sale.
+        weekly.removeAll { $0.items.isEmpty }
+    }
+
+    /// Las de esta semana con lo que ya se tiene (escritas en la tabla o guardadas).
+    private func arrange(_ table: ExploreTable) {
+        weeklyLists = table.thisWeek(clock())
+        weekly = weeklyLists.map { list in
+            let items = list.written ?? cached(list.id, fresh: false) ?? []
+            return CanonCollection(id: list.id, family: .list, grouping: .rank, items: items)
+        }
+    }
+
+    private func savedTable(fresh: Bool) -> ExploreTable? {
+        guard let data = services.caches.data(Self.tableKey), let saved = try? JSONDecoder().decode(SavedTable.self, from: data) else { return nil }
+        if fresh, clock().timeIntervalSince(saved.at) > Self.tableTTL { return nil }
+        return saved.table
+    }
 
     /// Cuántos títulos distintos del canon ya viste (uno que está en tres colecciones cuenta una vez).
     public var seenTotal: Int { Set(collections.flatMap(\.items).map(\.imdb)).intersection(watched).count }

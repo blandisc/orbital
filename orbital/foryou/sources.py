@@ -13,8 +13,8 @@ from ..library import letterboxd as letterboxd_api
 from ..library import mdblist as mdblist_api
 from ..library import stremio_api
 from ..library import tmdb as tmdb_api
-from ..net import NET_FAILURES, read_json, request, urlopen
-from . import pools
+from ..net import NET_FAILURES, http_json, read_json, request, urlopen
+from . import pools, weekly
 from .base import (
     CANON,
     CANON_TTL,
@@ -379,11 +379,29 @@ class _Sources(_Mine):
         return marked
 
     # --- Colecciones (como la repisa del iPhone) --------------------------------------------------------------------
+    def _weekly(self) -> list[dict]:
+        """«Esta semana» (`weekly.py`): la tabla del repositorio (un día guardada; sin red, la de esta copia de Orbital)."""
+        def fetch() -> dict:
+            status, data = http_json(weekly.TABLE_URL, timeout=10)
+            return data if status == 200 and isinstance(data, dict) else weekly.local_table()
+        try:
+            table = self.cache.get("explore-table", weekly.TABLE_TTL, fetch, stale=True)
+        except NET_FAILURES:
+            table = weekly.local_table()
+        return weekly.this_week(table, date.today())
+
     def _canon(self, canon_id: str) -> list[dict]:
         """Los títulos de una lista famosa, en su orden (una semana guardada). KeyError si no existe."""
         found = next((c for c in CANON if c[0] == canon_id), None)
         if found is None:
-            raise KeyError(canon_id)
+            entry = next((e for e in self._weekly() if e.get("id") == canon_id), None)
+            if entry is None:
+                raise KeyError(canon_id)
+            if entry.get("items") is not None:
+                return weekly.written(entry)
+            if entry.get("mdblist"):
+                return self.cache.get(f"canon:{canon_id}", CANON_TTL, lambda: self.mdblist.list_items(entry["mdblist"], limit=1000))
+            return []  # de Trakt: aún no en la TV
         _, _, ref, total = found
         if ref:
             return self.cache.get(f"canon:{canon_id}", CANON_TTL, lambda: self.mdblist.list_items(ref, limit=total))

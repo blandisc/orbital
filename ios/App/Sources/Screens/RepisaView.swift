@@ -23,13 +23,14 @@ struct CollectionsCardLoader: View {
     }
 }
 
-/// Los nombres de cada colección del canon.
-enum CanonNames {
+/// Los nombres de cada colección del canon (y de las de «Esta semana», que vienen con su nombre en la tabla).
+@MainActor enum CanonNames {
+    private static func weekly(_ id: String) -> ExploreList? { AppEnvironment.shared.repisa.weeklyList(id) }
     static func title(_ id: String) -> Text {
         switch id {
         case "palm": Text("Palma de Oro"); case "criterion": Text(verbatim: "Criterion"); case "top250": Text("Top 250")
         case "nyt-movies": Text("NYT · Películas"); case "nyt-series": Text("NYT · Series")
-        default: AwardNames.title(id)
+        default: weekly(id).map { Text(verbatim: $0.title) } ?? AwardNames.title(id)
         }
     }
     /// El nombre completo de una colección: el premio con su categoría o la lista con su autor.
@@ -39,7 +40,7 @@ enum CanonNames {
         case "bafta": Text("BAFTA a Mejor película"); case "emmy": Text("Emmy a Mejor serie de drama"); case "palm": Text("Palma de Oro de Cannes")
         case "ariel": Text("Ariel a Mejor película"); case "criterion": Text("Colección Criterion"); case "top250": Text("Top 250 de IMDb")
         case "nyt-movies": Text("Las 100 mejores películas del siglo"); case "nyt-series": Text("Las 100 mejores series del siglo")
-        default: title(id)
+        default: weekly(id).map { Text(verbatim: $0.full) } ?? title(id)
         }
     }
     /// Qué trae: «Todas las ganadoras desde 2000» (premios) o de dónde sale la lista.
@@ -48,7 +49,7 @@ enum CanonNames {
         case "criterion": Text("Clásicos y cine de autor restaurados por Criterion")
         case "top250": Text("Las mejor calificadas por el público de IMDb")
         case "nyt-movies", "nyt-series": Text("Según The New York Times, votadas por más de 500 creadores")
-        default: year.map { Text("Todas las ganadoras desde \(String($0))") } ?? Text("Todas las ganadoras")
+        default: weekly(id).map { Text(verbatim: $0.about) } ?? (year.map { Text("Todas las ganadoras desde \(String($0))") } ?? Text("Todas las ganadoras"))
         }
     }
 }
@@ -243,7 +244,7 @@ struct RepisaCollectionView: View {
         HStack(alignment: .bottom, spacing: DS.Space.s2) {
             ForEach(items) { item in
                 Button { picked = item } label: {
-                    CanonPoster(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind), label: label(item, c), seen: model.watched.contains(item.imdb),
+                    CanonPoster(url: item.poster, title: name(item), label: label(item, c), seen: model.watched.contains(item.imdb),
                                 favorite: (env.ratings.stars(item.imdb) ?? 0) >= 5, rank: c.grouping == .rank ? item.rank : nil)
                 }
                 .buttonStyle(.plain)
@@ -253,7 +254,21 @@ struct RepisaCollectionView: View {
         }
     }
 
+    /// Un capítulo se llama por su nombre («Especial de Navidad»), no por el de su serie.
+    private func name(_ item: CanonCollection.Item) -> String {
+        item.episode == nil ? titleName(item.title, id: item.imdb, kind: item.kind) : item.title
+    }
+
+    /// «Ver»: una película o serie se reproduce; un capítulo abre su serie con «Versión» ya en ese capítulo.
+    private func watch(_ item: CanonCollection.Item) {
+        if item.episode != nil { onOpenTitle(route(item)) } else { Task { await env.play(suggestion(item)) } }
+    }
+
     private func label(_ item: CanonCollection.Item, _ c: CanonCollection) -> String {
+        if let video = item.episode?.video {   // «T7 · E11»: los capítulos comparten póster, el número los distingue
+            let n = video.split(separator: ":").dropFirst()
+            if n.count == 2 { return "T\(n.first!) · E\(n.last!)" }
+        }
         guard let year = item.year else { return "" }
         if let last = item.lastYear, last != year { return String(format: "%d–%02d", year, last % 100) }
         return String(year)
@@ -269,14 +284,14 @@ struct RepisaCollectionView: View {
 
     private func nextBar(_ item: CanonCollection.Item, _ c: CanonCollection) -> some View {
         HStack(spacing: DS.Space.s2) {
-            PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind)).frame(width: DS.Repisa.nextPoster)
+            PosterView(url: item.poster, title: name(item)).frame(width: DS.Repisa.nextPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 why(c, item).recipe(.badge, color: DS.eyebrow)
-                Text(verbatim: titleName(item.title, id: item.imdb, kind: item.kind)).recipe(.cardTitle).lineLimit(1)
+                Text(verbatim: name(item)).recipe(.cardTitle).lineLimit(1)
             }
             Spacer(minLength: 0)
             // «Ver» la reproduce; tocar el resto del renglón abre su ficha (Fernando, 31 oct 2026).
-            Button { Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
+            Button { watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
                 .dsSolidPrimaryButton(shape: .capsule)   // en línea, dentro de un renglón: cápsula
         }
         .contentShape(Rectangle())
@@ -295,9 +310,9 @@ struct RepisaCollectionView: View {
             // El póster y el título abren su ficha (Fernando, 31 oct 2026: antes solo se podía ver o marcar como vista).
             Button { picked = nil; onOpenTitle(route(item)) } label: {
             HStack(alignment: .top, spacing: DS.Space.s4) {
-                PosterView(url: item.poster, title: titleName(item.title, id: item.imdb, kind: item.kind)).frame(width: DS.Filter.resultWidth)
+                PosterView(url: item.poster, title: name(item)).frame(width: DS.Filter.resultWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text(verbatim: titleName(item.title, id: item.imdb, kind: item.kind)).recipe(.title).lineLimit(3)
+                    Text(verbatim: name(item)).recipe(.title).lineLimit(3)
                     Text(verbatim: label(item, c)).recipe(.footnote, color: DS.textMuted)
                     if !others.isEmpty {
                         Text("También en \(Text(verbatim: others.map { Self.plainName($0) }.joined(separator: ", ")))").recipe(.footnote, color: DS.textMuted)
@@ -313,9 +328,9 @@ struct RepisaCollectionView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("repisa-open-title")
             HStack(spacing: DS.Space.s2) {
-                Button { picked = nil; Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
+                Button { picked = nil; watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
                     .dsSolidPrimaryButton().dsControlSize(.large)
-                if !seen {
+                if !seen, item.episode == nil {   // un capítulo no se marca desde aquí: aún no se cuenta su avance
                     Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
                         .dsGlassButton().buttonBorderShape(.capsule).dsControlSize(.large)
                         .accessibilityIdentifier("repisa-seen")
@@ -344,14 +359,18 @@ struct RepisaCollectionView: View {
         let missing = group.map { g in g.items.filter { !model.watched.contains($0.imdb) }.count } ?? 0
         // Solo el logro («Completaste Los 2010»); lo que falta ya no se dice (Fernando, 31 oct 2026).
         let next: Text? = group.flatMap { g in missing == 0 ? Text("Completaste \(g.title)") : nil }   // no-es-título: un grupo de la colección
-        return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: titleName(item.title, id: item.imdb, kind: item.kind), emblem: c.id,
+        return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: name(item), emblem: c.id,
                            seen: c.seen(model.watched), total: max(c.total, c.items.count), next: next, completed: group != nil && missing == 0) {
             if placed?.id == item.id { placed = nil }
         }
         .accessibilityIdentifier("repisa-moment")
     }
 
-    private func route(_ item: CanonCollection.Item) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.imdb, title: item.title, poster: item.poster) }
+    private func route(_ item: CanonCollection.Item) -> TitleRoute {
+        // Un capítulo (los especiales de Los Simpson): la ficha de su serie, ya con «Versión» abierta en ese capítulo.
+        if let episode = item.episode { return TitleRoute(kind: "series", metaID: episode.show, title: item.title, poster: item.poster, versionsFor: episode.video) }
+        return TitleRoute(kind: item.kind, metaID: item.imdb, title: item.title, poster: item.poster)
+    }
 
     static func plainName(_ id: String) -> String {
         switch id {

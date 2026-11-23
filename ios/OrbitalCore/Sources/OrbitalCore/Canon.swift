@@ -14,7 +14,8 @@ public struct CanonCollection: Sendable, Equatable, Identifiable {
         public var year: Int?, lastYear: Int?
         public var rank: Int?
         public var id: String { imdb }
-        public var poster: String { String(format: ForYou.metahubPoster, imdb) }
+        /// Un capítulo («serie:temporada:episodio», `ExploreList`) lleva el póster de su serie.
+        public var poster: String { String(format: ForYou.metahubPoster, String(imdb.split(separator: ":").first ?? Substring(imdb))) }
         public init(imdb: String, kind: String, title: String, year: Int?, lastYear: Int? = nil, rank: Int? = nil) {
             self.imdb = imdb; self.kind = kind; self.title = title; self.year = year; self.lastYear = lastYear; self.rank = rank
         }

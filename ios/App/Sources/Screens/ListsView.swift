@@ -245,6 +245,7 @@ struct ListsView: View {
         .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
         .navigationDestination(item: $demoCollection) { route in CollectionGridView(collections: collections, route: route) }
         .task { await collections.model.loadMyList() }
+        .task { await env.repisa.loadWeekly() }   // «Esta semana» (la tabla, una vez al día)
         .navigationDestination(for: PopularRoute.self) { _ in PopularGridView(model: catalog.model) }
         .task { if catalog.model.popular.isEmpty, !catalog.model.isLoading { await catalog.model.load() } }   // casi siempre ya llegó
         .navigationDestination(for: ShelfRoute.self) { route in
@@ -276,6 +277,8 @@ struct ListsView: View {
     /// propia: cada grupo es hijo directo de la lista perezosa (el mismo aire entre ellos), para que el índice de arriba salte a
     /// uno que aún no se ha armado (dentro de una caja, `scrollTo` no lo encontraba y «Temporadas» no bajaba).
     @ViewBuilder private var rest: some View {
+                    // «Esta semana»: listas famosas que rotan y especiales de temporada (ED-B y ED-C, Fernando, 23 nov 2026).
+                    if !env.repisa.weekly.isEmpty { ExploreWeekly().modifier(SectionSpy(section: .weekly, tracker: activeSection)) }
                     if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, tracker: activeSection)) }
                     if collections.model.tmdbReady {
                         studiosSection.modifier(SectionSpy(section: .studios, tracker: activeSection))
@@ -351,6 +354,7 @@ struct ListsView: View {
     private func isShown(_ section: CollectionSection) -> Bool {
         switch section {
         case .forYou: true
+        case .weekly: !env.repisa.weekly.isEmpty
         case .trakt: !traktLists.isEmpty || collections.model.traktLinked
         case .addons: !addonCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty

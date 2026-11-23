@@ -48,6 +48,21 @@ extension DemoHTTPClient {
             return .object(fields)
         }
         func json(_ value: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: value.serialized()) }
+        // «Esta semana» (`ExploreTable`): Navidad de Los Simpson en temporada todo el año (así se ve en la demo) y tres famosas.
+        if url.host == "raw.githubusercontent.com", url.path.hasSuffix("/listas/explorar.json") {
+            let xmas: [JSON] = [("1:1", "Especial de Navidad", 1989), ("7:11", "El bebé de mamá", 1995), ("9:10", "Milagro en la avenida Siempreviva", 1997)]
+                .map { ["id": .string("tt0096697:\($0.0)"), "kind": "episode", "title": .string($0.1), "year": .int($0.2)] }
+            func famous(_ id: String, _ title: String, _ about: String) -> JSON {
+                ["id": .string(id), "title": .string(title), "full": .string(title), "about": .string(about), "mdblist": .string("demo/\(id)")]
+            }
+            return json(["rotate": 3, "lists": [
+                ["id": "simpsons-navidad", "title": "Navidad Simpson", "full": "Los Simpson en Navidad", "about": "Los capítulos de Navidad, desde el primero de todos",
+                 "from": "01-01", "to": "12-31", "items": .array(xmas)],
+                famous("sight-sound", "Sight & Sound", "La encuesta de 1,639 críticos del BFI, 2022"),
+                famous("letterboxd-250", "Letterboxd 250", "Las mejor calificadas por la comunidad de Letterboxd"),
+                famous("afi-100", "AFI 100", "Las grandes del cine estadounidense, edición 2007"),
+            ]])
+        }
         if url.host == "mdblist.com" {
             return json(.array(titles.filter { $0.kind == "movie" }.map { ["imdb_id": .string($0.imdb), "title": .string($0.title), "mediatype": "movie", "release_year": .int($0.year)] }))
         }

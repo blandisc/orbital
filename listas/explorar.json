@@ -1,0 +1,407 @@
+{
+ "_": "Las listas de «Esta semana» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/.",
+ "rotate": 4,
+ "lists": [
+  {
+   "id": "simpsons-halloween",
+   "title": "Casita del horror",
+   "full": "Los Simpson: La casita del horror",
+   "about": "Todos los especiales de Halloween, del primero al más nuevo",
+   "from": "10-01",
+   "to": "10-31",
+   "items": [
+    {
+     "id": "tt0096697:2:3",
+     "kind": "episode",
+     "title": "La casita del horror I",
+     "year": 1990
+    },
+    {
+     "id": "tt0096697:3:7",
+     "kind": "episode",
+     "title": "La casita del horror II",
+     "year": 1991
+    },
+    {
+     "id": "tt0096697:4:5",
+     "kind": "episode",
+     "title": "La casita del horror III",
+     "year": 1992
+    },
+    {
+     "id": "tt0096697:5:5",
+     "kind": "episode",
+     "title": "La casita del horror IV",
+     "year": 1993
+    },
+    {
+     "id": "tt0096697:6:6",
+     "kind": "episode",
+     "title": "La casita del horror V",
+     "year": 1994
+    },
+    {
+     "id": "tt0096697:7:6",
+     "kind": "episode",
+     "title": "La casita del horror VI",
+     "year": 1995
+    },
+    {
+     "id": "tt0096697:8:1",
+     "kind": "episode",
+     "title": "La casita del horror VII",
+     "year": 1996
+    },
+    {
+     "id": "tt0096697:9:4",
+     "kind": "episode",
+     "title": "La casita del horror VIII",
+     "year": 1997
+    },
+    {
+     "id": "tt0096697:10:4",
+     "kind": "episode",
+     "title": "La casita del horror IX",
+     "year": 1998
+    },
+    {
+     "id": "tt0096697:11:4",
+     "kind": "episode",
+     "title": "La casita del horror X",
+     "year": 1999
+    },
+    {
+     "id": "tt0096697:12:1",
+     "kind": "episode",
+     "title": "La casita del horror XI",
+     "year": 2000
+    },
+    {
+     "id": "tt0096697:13:1",
+     "kind": "episode",
+     "title": "La casita del horror XII",
+     "year": 2001
+    },
+    {
+     "id": "tt0096697:14:1",
+     "kind": "episode",
+     "title": "La casita del horror XIII",
+     "year": 2002
+    },
+    {
+     "id": "tt0096697:15:1",
+     "kind": "episode",
+     "title": "La casita del horror XIV",
+     "year": 2003
+    },
+    {
+     "id": "tt0096697:16:1",
+     "kind": "episode",
+     "title": "La casita del horror XV",
+     "year": 2004
+    },
+    {
+     "id": "tt0096697:17:4",
+     "kind": "episode",
+     "title": "La casita del horror XVI",
+     "year": 2005
+    },
+    {
+     "id": "tt0096697:18:4",
+     "kind": "episode",
+     "title": "La casita del horror XVII",
+     "year": 2006
+    },
+    {
+     "id": "tt0096697:19:5",
+     "kind": "episode",
+     "title": "La casita del horror XVIII",
+     "year": 2007
+    },
+    {
+     "id": "tt0096697:20:4",
+     "kind": "episode",
+     "title": "La casita del horror XIX",
+     "year": 2008
+    },
+    {
+     "id": "tt0096697:21:4",
+     "kind": "episode",
+     "title": "La casita del horror XX",
+     "year": 2009
+    },
+    {
+     "id": "tt0096697:22:4",
+     "kind": "episode",
+     "title": "La casita del horror XXI",
+     "year": 2010
+    },
+    {
+     "id": "tt0096697:23:3",
+     "kind": "episode",
+     "title": "La casita del horror XXII",
+     "year": 2011
+    },
+    {
+     "id": "tt0096697:24:2",
+     "kind": "episode",
+     "title": "La casita del horror XXIII",
+     "year": 2012
+    },
+    {
+     "id": "tt0096697:25:2",
+     "kind": "episode",
+     "title": "La casita del horror XXIV",
+     "year": 2013
+    },
+    {
+     "id": "tt0096697:26:4",
+     "kind": "episode",
+     "title": "La casita del horror XXV",
+     "year": 2014
+    },
+    {
+     "id": "tt0096697:27:5",
+     "kind": "episode",
+     "title": "La casita del horror XXVI",
+     "year": 2015
+    },
+    {
+     "id": "tt0096697:28:4",
+     "kind": "episode",
+     "title": "La casita del horror XXVII",
+     "year": 2016
+    },
+    {
+     "id": "tt0096697:29:4",
+     "kind": "episode",
+     "title": "La casita del horror XXVIII",
+     "year": 2017
+    },
+    {
+     "id": "tt0096697:30:4",
+     "kind": "episode",
+     "title": "La casita del horror XXIX",
+     "year": 2018
+    },
+    {
+     "id": "tt0096697:31:4",
+     "kind": "episode",
+     "title": "La casita del horror XXX",
+     "year": 2019
+    },
+    {
+     "id": "tt0096697:32:4",
+     "kind": "episode",
+     "title": "La casita del horror XXXI",
+     "year": 2020
+    },
+    {
+     "id": "tt0096697:33:3",
+     "kind": "episode",
+     "title": "La casita del horror XXXII",
+     "year": 2021
+    },
+    {
+     "id": "tt0096697:34:6",
+     "kind": "episode",
+     "title": "La casita del horror XXXIII",
+     "year": 2022
+    },
+    {
+     "id": "tt0096697:35:5",
+     "kind": "episode",
+     "title": "La casita del horror XXXIV",
+     "year": 2023
+    },
+    {
+     "id": "tt0096697:36:5",
+     "kind": "episode",
+     "title": "La casita del horror XXXV",
+     "year": 2024
+    },
+    {
+     "id": "tt0096697:36:7",
+     "kind": "episode",
+     "title": "La casita del horror presenta: Los malvados Simpson vienen por aquí",
+     "year": 2024
+    }
+   ]
+  },
+  {
+   "id": "simpsons-navidad",
+   "title": "Navidad Simpson",
+   "full": "Los Simpson en Navidad",
+   "about": "Los capítulos de Navidad, desde el primero de todos",
+   "from": "12-01",
+   "to": "01-06",
+   "items": [
+    {
+     "id": "tt0096697:1:1",
+     "kind": "episode",
+     "title": "Especial de Navidad",
+     "year": 1989
+    },
+    {
+     "id": "tt0096697:7:11",
+     "kind": "episode",
+     "title": "El bebé de mamá",
+     "year": 1995
+    },
+    {
+     "id": "tt0096697:9:10",
+     "kind": "episode",
+     "title": "Milagro en la avenida Siempreviva",
+     "year": 1997
+    },
+    {
+     "id": "tt0096697:11:9",
+     "kind": "episode",
+     "title": "Un gran embaucador",
+     "year": 1999
+    },
+    {
+     "id": "tt0096697:12:8",
+     "kind": "episode",
+     "title": "Skinner cubierto por la nieve",
+     "year": 2000
+    },
+    {
+     "id": "tt0096697:15:7",
+     "kind": "episode",
+     "title": "La decimoquinta temporada",
+     "year": 2003
+    },
+    {
+     "id": "tt0096697:17:9",
+     "kind": "episode",
+     "title": "Historias de Navidad de Los Simpson",
+     "year": 2005
+    },
+    {
+     "id": "tt0096697:18:9",
+     "kind": "episode",
+     "title": "Maten a Gil, volúmenes 1 y 2",
+     "year": 2006
+    },
+    {
+     "id": "tt0096697:22:8",
+     "kind": "episode",
+     "title": "El pleito antes de Navidad",
+     "year": 2010
+    },
+    {
+     "id": "tt0096697:23:9",
+     "kind": "episode",
+     "title": "Fiestas de un futuro pasado",
+     "year": 2011
+    },
+    {
+     "id": "tt0096697:25:8",
+     "kind": "episode",
+     "title": "El blues de la blanca Navidad",
+     "year": 2013
+    },
+    {
+     "id": "tt0096697:26:9",
+     "kind": "episode",
+     "title": "No estaré en casa en Navidad",
+     "year": 2014
+    },
+    {
+     "id": "tt0096697:30:10",
+     "kind": "episode",
+     "title": "Es la 30.ª temporada",
+     "year": 2018
+    },
+    {
+     "id": "tt0096697:32:10",
+     "kind": "episode",
+     "title": "Una Navidad de verano en Springfield",
+     "year": 2020
+    }
+   ]
+  },
+  {
+   "id": "terror-letterboxd",
+   "title": "Las 100 de terror",
+   "full": "Las 100 mejores de terror",
+   "about": "Lo mejor del género según Letterboxd",
+   "from": "10-01",
+   "to": "10-31",
+   "mdblist": "smccrack/letterboxd-100-best-horror-movies"
+  },
+  {
+   "id": "navidad-100",
+   "title": "Las 100 de Navidad",
+   "full": "Las 100 mejores de Navidad",
+   "about": "Clásicos navideños según la crítica",
+   "from": "12-01",
+   "to": "01-06",
+   "mdblist": "hthighway/movie-100-best-christmas-films"
+  },
+  {
+   "id": "sight-sound",
+   "title": "Sight & Sound",
+   "full": "Las mejores según Sight & Sound",
+   "about": "La encuesta de 1,639 críticos del BFI, 2022",
+   "mdblist": "smccrack/ss-greatest-films-of-all-time"
+  },
+  {
+   "id": "sight-sound-directores",
+   "title": "Las de los directores",
+   "full": "Las favoritas de los directores",
+   "about": "Sight & Sound 2022: votan los cineastas",
+   "mdblist": "smccrack/directors-top-100-mt57lv8s6l"
+  },
+  {
+   "id": "tspdt-1000",
+   "title": "Las 1,000",
+   "full": "Las 1,000 más grandes del cine",
+   "about": "El canon de They Shoot Pictures, Don't They",
+   "mdblist": "motorrecon/tspdt-1000-greatest-films"
+  },
+  {
+   "id": "tspdt-siglo-xxi",
+   "title": "Siglo XXI",
+   "full": "Lo más aclamado del siglo XXI",
+   "about": "Según la crítica, de They Shoot Pictures, Don't They",
+   "mdblist": "skerr1q/tspdts-21st-centurys-most-acclaimed-films"
+  },
+  {
+   "id": "letterboxd-250",
+   "title": "Letterboxd 250",
+   "full": "Top 250 de Letterboxd",
+   "about": "Las mejor calificadas por la comunidad de Letterboxd",
+   "mdblist": "smccrack/letterboxed-best-250"
+  },
+  {
+   "id": "cahiers",
+   "title": "Cahiers du Cinéma",
+   "full": "Los top 10 de Cahiers du Cinéma",
+   "about": "Lo mejor de cada año según la revista francesa",
+   "mdblist": "dinkysniff/cahiers-du-cinema-all-year-end-top-10s-movies"
+  },
+  {
+   "id": "1001-peliculas",
+   "title": "1001 películas",
+   "full": "1001 películas que ver antes de morir",
+   "about": "El libro de Steven Jay Schneider, todas sus ediciones",
+   "mdblist": "treb118/1001-movies-you-must-see-before-you-die"
+  },
+  {
+   "id": "afi-100",
+   "title": "AFI 100",
+   "full": "Las 100 de AFI",
+   "about": "Las grandes del cine estadounidense, edición 2007",
+   "mdblist": "vsoral/afi-100"
+  },
+  {
+   "id": "rolling-stone-tv",
+   "title": "Rolling Stone",
+   "full": "Las 100 series de Rolling Stone",
+   "about": "Las mejores series de la historia según la revista",
+   "mdblist": "skerr1q/rolling-stones-100-greatest-tv-shows-of-all-time"
+  }
+ ]
+}
