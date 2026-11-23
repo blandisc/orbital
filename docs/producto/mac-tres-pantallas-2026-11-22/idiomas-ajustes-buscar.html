@@ -1,0 +1,280 @@
+<title>Idiomas, Ajustes y Buscar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Una hoja de decisiones de Orbital: el fondo de la sala oscura, turquesa solo como voz (lo elegido), cada propuesta con su código dictable. */
+:root {
+  --bg: #0d0f1a; --panel: #161a2a; --raised: #20263a; --line: #2c3350;
+  --fg: #ece8de; --muted: #9aa0b8; --moon: #5fd4c8; --warn: #f2b35b;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+main { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1 { font-family: var(--display); font-size: 2.2rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 1.5rem; margin: 0; text-wrap: balance; }
+h3 { font-size: 1.05rem; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 20px; }
+.code { font-family: var(--display); font-weight: 700; color: var(--bg); background: var(--fg); border-radius: 8px; padding: 2px 10px; font-size: .95rem; }
+.head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.opt { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.opt.rec { border-color: var(--moon); }
+.tag { font-size: .8rem; color: var(--moon); font-weight: 600; letter-spacing: .02em; }
+ul.pros { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+ul.pros li { color: var(--muted); }
+ul.pros li b { color: var(--fg); font-weight: 600; }
+.rec-box { border-left: 3px solid var(--moon); padding: 4px 0 4px 16px; }
+/* Maquetas */
+.phone { width: 100%; max-width: 300px; margin: 0 auto; background: var(--bg); border: 1px solid var(--line); border-radius: 28px; padding: 18px 14px; display: flex; flex-direction: column; gap: 10px; font-size: .82rem; }
+.mac { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: .78rem; }
+.mac .bar { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-bottom: 1px solid var(--line); position: relative; }
+.mac .bar .dots { position: absolute; left: 10px; display: flex; gap: 5px; }
+.mac .bar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: block; }
+.ttl { font-weight: 700; font-size: 1rem; }
+.grp { color: var(--muted); font-size: .72rem; margin-top: 4px; }
+.card { background: var(--panel); border-radius: 12px; display: flex; flex-direction: column; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--line); min-width: 0; }
+.row:first-child { border-top: 0; }
+.row .v { color: var(--muted); white-space: nowrap; }
+.seg { display: flex; background: var(--raised); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg span { flex: 1; text-align: center; padding: 5px 8px; border-radius: 7px; color: var(--muted); white-space: nowrap; }
+.seg span.on { background: var(--fg); color: var(--bg); font-weight: 600; }
+.num { color: var(--muted); width: 16px; display: inline-block; }
+.plus { color: var(--moon); }
+.side { display: grid; grid-template-columns: 34% 1fr; min-height: 250px; }
+.side .l { border-right: 1px solid var(--line); padding: 12px; display: flex; flex-direction: column; gap: 3px; }
+.side .l div { padding: 6px 9px; border-radius: 8px; color: var(--muted); }
+.side .l div.on { background: var(--raised); color: var(--fg); font-weight: 600; }
+.side .r { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 14px; }
+.tile { background: var(--panel); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; min-height: 74px; }
+.tile b { font-size: .82rem; }
+.tile span { color: var(--muted); font-size: .7rem; }
+.field { background: var(--raised); border-radius: 10px; padding: 9px 12px; color: var(--muted); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
+.wall { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+.wall i { aspect-ratio: 2/3; border-radius: 4px; background: linear-gradient(160deg, var(--raised), var(--line)); display: block; }
+.pill { display: inline-flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.pill span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+.pill span.on { background: var(--fg); color: var(--bg); }
+.pill.big span { padding: 6px 16px; font-size: .9rem; }
+.stack { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+td, th { text-align: left; padding: 8px 10px; border-top: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+.tbl { overflow-x: auto; }
+</style>
+
+<main>
+  <header style="display:flex;flex-direction:column;gap:12px">
+    <h1>Idiomas, Ajustes y Buscar</h1>
+    <p class="lead">Lo que pediste el 22 de noviembre: los idiomas en un solo lugar (iPhone, iPad y Mac), Ajustes y Buscar replanteados en la Mac, y la barra de arriba un poco más grande. Cada decisión tiene un código para dictar; mi recomendación va marcada.</p>
+  </header>
+
+  <!-- 1 · IDIOMAS -->
+  <section>
+    <div class="head"><h2>1 · Los idiomas en un solo lugar</h2></div>
+    <p>Hoy están repartidos: «Tus idiomas» (el audio), «Subtítulos», «Letra de los subtítulos», «Idioma de la app» (que además decide en qué idioma salen los títulos y las sinopsis) y el país, escondido en «Avanzado». «Idioma de la app» abre su propia pantalla para escoger entre solo dos opciones.</p>
+    <div class="opts">
+      <div class="opt rec">
+        <div class="head"><span class="code">ID-A</span><h3>Una página «Idiomas» con tres partes</h3></div>
+        <span class="tag">Recomendada</span>
+        <div class="phone">
+          <div class="ttl">Idiomas</div>
+          <div class="grp">La app (menús y botones)</div>
+          <div class="seg"><span class="on">Español</span><span>English</span></div>
+          <div class="grp">Títulos y sinopsis</div>
+          <div class="seg"><span class="on">Español</span><span>English</span></div>
+          <div class="grp">Lo que ves (audio, en este orden)</div>
+          <div class="card">
+            <div class="row"><span><span class="num">1</span>Latino</span><span class="v">≡</span></div>
+            <div class="row"><span><span class="num">2</span>Idioma original</span><span class="v">≡</span></div>
+            <div class="row"><span><span class="num">3</span>Inglés</span><span class="v">≡</span></div>
+            <div class="row"><span class="plus">＋ Agregar idioma</span><span></span></div>
+          </div>
+          <div class="grp">Subtítulos (aparte del audio)</div>
+          <div class="card">
+            <div class="row"><span>Cuáles salen</span><span class="v">Español ›</span></div>
+            <div class="row"><span>Buscar en internet</span><span class="v">●</span></div>
+            <div class="row"><span>Letra</span><span class="v">Normal ›</span></div>
+          </div>
+          <div class="grp">País (lo popular en plataformas)</div>
+          <div class="card"><div class="row"><span>México</span><span class="v">›</span></div></div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> todo lo de idioma, y el país, en una pantalla; puedes tener la app en inglés con títulos y sinopsis en español (o al revés). Los widgets siguen a los títulos; «T2 E5» y los menús, a la app.</li>
+          <li><b>Ganas:</b> con dos opciones, botones a la vista en vez de otra pantalla.</li>
+          <li><b>Nada cambia al llegar:</b> los dos arrancan en el idioma que ya tienes.</li>
+          <li><b>Pierdes:</b> un ajuste nuevo; casi todo pasa por una sola pieza que traduce, así que son uno o dos días con sus pruebas.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="head"><span class="code">ID-B</span><h3>Una página, sin separar las fichas</h3></div>
+        <div class="phone">
+          <div class="ttl">Idiomas</div>
+          <div class="grp">La app y las fichas</div>
+          <div class="seg"><span class="on">Español</span><span>English</span></div>
+          <div class="grp">Lo que ves (audio, en este orden)</div>
+          <div class="card">
+            <div class="row"><span><span class="num">1</span>Latino</span><span class="v">≡</span></div>
+            <div class="row"><span><span class="num">2</span>Idioma original</span><span class="v">≡</span></div>
+            <div class="row"><span class="plus">＋ Agregar idioma</span><span></span></div>
+          </div>
+          <div class="grp">Subtítulos (aparte del audio)</div>
+          <div class="card">
+            <div class="row"><span>Cuáles salen</span><span class="v">Español ›</span></div>
+            <div class="row"><span>Buscar en internet</span><span class="v">●</span></div>
+            <div class="row"><span>Letra</span><span class="v">Normal ›</span></div>
+          </div>
+          <div class="grp">País (lo popular en plataformas)</div>
+          <div class="card"><div class="row"><span>México</span><span class="v">›</span></div></div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> el mismo lugar único, el país incluido, y botones a la vista; sale en unas horas.</li>
+          <li><b>Pierdes:</b> la app y las fichas siguen yendo juntas: si pones la app en inglés, los títulos también salen en inglés.</li>
+        </ul>
+      </div>
+    </div>
+    <p>En las dos, la lista de Ajustes queda con un solo renglón: <b>Idiomas · Español · Latino, original +1</b>, igual en iPhone, iPad y Mac. «Cuáles salen» guarda lo de hoy: el idioma de siempre o «Apagados», «Solo forzados», al regresar 10 s y «Carteles si el audio es otro»; «Letra» guarda su vista previa. «＋ Agregar idioma» ofrece los mismos idiomas que hoy. En la TV no cambia nada todavía: entra al registro de paridad.</p>
+  </section>
+
+  <!-- 2 · AJUSTES EN LA MAC -->
+  <section>
+    <div class="head"><h2>2 · Ajustes en la Mac</h2></div>
+    <p>Hoy: una columna angosta a la izquierda, el detalle angosto y al centro, mucho espacio vacío y letra chica para una pantalla grande.</p>
+    <div class="opts">
+      <div class="opt rec">
+        <div class="head"><span class="code">AJ-A</span><h3>Barra lateral y detalle a lo ancho</h3></div>
+        <span class="tag">Recomendada</span>
+        <div class="mac">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span>Ajustes</span></div>
+          <div class="side">
+            <div class="l">
+              <div>Fer · Trakt</div>
+              <div class="on">Idiomas</div>
+              <div>Apariencia</div>
+              <div>Reproducción</div>
+              <div>Avisos</div>
+              <div>Descargas</div>
+              <div>Cuentas</div>
+              <div>Complementos</div>
+              <div>OneDrive</div>
+              <div>Tu Orbital · Voz</div>
+              <div>Avanzado</div>
+              <div>Aprende</div>
+            </div>
+            <div class="r">
+              <div class="ttl">Idiomas</div>
+              <div class="grp">La app</div>
+              <div class="seg" style="max-width:260px"><span class="on">Español</span><span>English</span></div>
+              <div class="grp">Lo que ves</div>
+              <div class="card">
+                <div class="row"><span>1 · Latino</span><span class="v">≡</span></div>
+                <div class="row"><span>2 · Idioma original</span><span class="v">≡</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> se usa como los Ajustes de la Mac: a la izquierda un renglón por tema, sin grupos ni valores, y a la derecha su página llenando el ancho, con letra de Mac.</li>
+          <li><b>Ganas:</b> cambias de tema con un clic, sin volver atrás.</li>
+          <li><b>Pierdes:</b> el resumen de cada ajuste deja de verse en la lista (se ve al abrirlo).</li>
+          <li><b>En el iPad:</b> lo mismo cuando la ventana es ancha (acostado); angosto, la lista de siempre, como el iPhone.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="head"><span class="code">AJ-B</span><h3>Mosaicos por tema</h3></div>
+        <div class="mac">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span>Ajustes</span></div>
+          <div class="tiles">
+            <div class="tile"><b>Idiomas</b><span>Español · Latino, original</span></div>
+            <div class="tile"><b>Reproducción</b><span>1080p</span></div>
+            <div class="tile"><b>Avisos</b><span>Apagados</span></div>
+            <div class="tile"><b>Descargas</b><span>Solo con Wi-Fi</span></div>
+            <div class="tile"><b>Cuentas</b><span>TorBox</span></div>
+            <div class="tile"><b>Complementos</b><span>2 prendidos</span></div>
+          </div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> llena la ventana y se ve todo de un vistazo, con su resumen.</li>
+          <li><b>Pierdes:</b> cada tema abre otra pantalla y hay que regresar para ir al siguiente; se parece menos a la Mac.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · BUSCAR EN LA MAC -->
+  <section>
+    <div class="head"><h2>3 · Buscar en la Mac</h2></div>
+    <p>Hoy: el campo al centro y más angosto que la cuadrícula de abajo, seis mosaicos de «Búsqueda avanzada» que ocupan un renglón entero y los nombres bajo los pósters muy chicos.</p>
+    <div class="opts">
+      <div class="opt rec">
+        <div class="head"><span class="code">BU-A</span><h3>Campo a todo lo ancho, filtros en una fila</h3></div>
+        <span class="tag">Recomendada</span>
+        <div class="mac">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="pill"><span>Inicio</span><span>Explorar</span><span>Biblioteca</span></span></div>
+          <div class="stack">
+            <div class="field">🔍 Películas, series, actores…</div>
+            <div class="chips"><span>🎭 Género</span><span>📅 Época</span><span>⏱ Duración</span><span>⭐ Calificación</span><span>👥 Fama</span><span>📺 Dónde verla</span></div>
+            <div class="grp">Lo más popular hoy</div>
+            <div class="wall"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> el campo y la cuadrícula empiezan y terminan en el mismo margen; los filtros pasan a una fila de chips y los pósters suben.</li>
+          <li><b>Ganas:</b> los nombres bajo los pósters con letra de Mac.</li>
+          <li><b>Igual que hoy:</b> cada uno lleva su ícono y abre el mismo selector que el mosaico de ahora.</li>
+          <li><b>Pierdes:</b> los mosaicos grandes, que se notan más; la Búsqueda avanzada queda como una fila.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="head"><span class="code">BU-B</span><h3>El campo vive en la barra de arriba</h3></div>
+        <div class="mac">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="pill"><span>Inicio</span><span>Explorar</span><span>Biblioteca</span></span><span class="field" style="padding:3px 10px;margin-left:8px">🔍 Buscar</span></div>
+          <div class="stack">
+            <div class="chips"><span>Recientes: The Bear</span><span>Coraline</span><span>Ghibli</span></div>
+            <div class="grp">Lo más popular hoy</div>
+            <div class="wall"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="wall"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <ul class="pros">
+          <li><b>Ganas:</b> buscas desde cualquier pestaña sin cambiar de pantalla, como Spotlight.</li>
+          <li><b>Pierdes:</b> la Búsqueda avanzada se va a un botón y se descubre menos; es más trabajo (la barra cambia en todas las pantallas y compite con hacerla más grande).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · LA BARRA -->
+  <section>
+    <div class="head"><span class="code">DK</span><h2>4 · La barra de arriba, un poco más grande</h2></div>
+    <p>Sin opciones: lo hago en la siguiente entrega. Las pestañas, «Buscar» y tu foto crecen juntos, en la Mac y en el iPad ancho (donde va la misma barra).</p>
+    <div class="opts">
+      <div class="opt"><span class="tag" style="color:var(--muted)">Hoy</span><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="pill"><span>🔍 Buscar</span></span><span class="pill"><span class="on">Inicio</span><span>Explorar</span><span>Biblioteca</span></span><span class="pill"><span>Fer</span></span></div></div>
+      <div class="opt"><span class="tag">Después</span><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="pill big"><span>🔍 Buscar</span></span><span class="pill big"><span class="on">Inicio</span><span>Explorar</span><span>Biblioteca</span></span><span class="pill big"><span>Fer</span></span></div></div>
+    </div>
+  </section>
+
+  <!-- 5 · LO QUE SE VUELVE REGLA -->
+  <section>
+    <h2>5 · Lo que se vuelve regla</h2>
+    <div class="tbl"><table>
+      <tr><th>Regla</th><th>Dónde aplica</th></tr>
+      <tr><td>Con dos o tres opciones cortas, botones a la vista; una lista que abre otra pantalla, solo con más (por ejemplo, si un día hay portugués, el idioma pasa a lista).</td><td>Toda la app (iPhone, iPad, Mac), con su prueba. Ya lo cumplen Tamaño, Fondo y Posición de la letra.</td></tr>
+      <tr><td>Todo lo de idioma vive en «Idiomas».</td><td>Ajustes en iPhone, iPad y Mac; la TV queda en el registro.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="rec-box">
+    <h2>Mi recomendación</h2>
+    <p><b>ID-A · AJ-A · BU-A</b>, y DK de una vez. ID-A es lo que pediste (cada idioma por su lado) a cambio de uno o dos días; AJ-A y BU-A son medio día cada uno sobre lo que ya existe. Para empezar me basta con que me dictes los códigos, por ejemplo «ID-A, AJ-A, BU-A».</p>
+  </section>
+</main>
