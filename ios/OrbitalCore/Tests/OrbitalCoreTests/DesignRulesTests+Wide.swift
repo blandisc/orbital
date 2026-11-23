@@ -147,6 +147,20 @@ extension DesignRulesTests {
         // El puesto es el de lo que ves: con el del ranking mezclado, al quedarse con las series brincaba del 4 al 6.
         XCTAssertTrue(try code("HomeTopTen.swift").contains("RankedPosterCard(rank: i + 1,"), "El Top 10 se numera dentro de lo que ves")
         XCTAssertTrue(try code("ParaTiB.swift").contains("struct DecideStrip: View"), "La entrada de «Decide por mí» se asoma en la Mac")
+        // «Ver todas» solo cuando ya no caben (Fernando, 22 nov 2026: «hay más espacio y todavía sale ver todas»): la repisa de
+        // Colecciones cuenta los lugares a lo ancho y no se desliza.
+        let repisa = try code("Repisa.swift")
+        let showcase = try XCTUnwrap(repisa.range(of: "struct CollectionsShowcase<")).upperBound
+        XCTAssertTrue(repisa[showcase...].prefix(2000).contains("if shown.count < entries.count {"), "«Ver todas» solo si sobran colecciones")
+        XCTAssertFalse(repisa[showcase...].prefix(2000).contains("ScrollView(.horizontal"), "La repisa de Colecciones no se desliza: caben las que caben")
+        // Un solo «+» de crear algo en toda la app (`DSAddTile`): nadie más dibuja su círculo con el +.
+        let plusCircles = files.filter { $0.name != "Buttons.swift" }.filter { f in
+            f.lines.indices.contains { i in f.lines[i].contains("systemName: \"plus\"") && f.lines[i...min(i + 2, f.lines.count - 1)].contains { $0.contains("Circle()") } }
+        }.map(\.name)
+        XCTAssertEqual(plusCircles, [], "El «+» de crear es `DSAddTile`")
+        let channels = try code("HomeChannels.swift"), savedTabs = try code("SavedTabs.swift")
+        XCTAssertTrue(channels.contains("DSAddTile(label: \"Añadir canal\")") && savedTabs.contains("DSAddTile(label: \"Nueva lista\""),
+                      "«Añadir canal» y «Nueva lista» usan el mismo «+»")
         XCTAssertTrue(try code("BrowseView.swift").contains("if WindowMetrics.roomy, !model.popular.isEmpty { popularWall(model) }"), "Buscar vacío en la Mac y el iPad ancho: un muro de lo popular")
         // Sobre el mosaico de Explorar las pestañas se perdían entre los pósters.
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(height: DS.Mac.topScrim)"), "Una sombra bajo la barra de la Mac")

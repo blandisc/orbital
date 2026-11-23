@@ -597,7 +597,9 @@ private struct SideTitle: ViewModifier {
     @Binding var item: TitleRoute?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func body(content: Content) -> some View {
-        content.overlay(alignment: .trailing) {
+        // Con la ficha abierta, lo de atrás se ve pero no se toca: tampoco con VoiceOver o el teclado (el toque a «Guardar»
+        // le llegaba a «Decide por mí», que estaba detrás).
+        content.accessibilityHidden(item != nil).overlay(alignment: .trailing) {
             if let route = item {
                 ZStack(alignment: .trailing) {
                     DS.scrim.ignoresSafeArea().onTapGesture { item = nil }.accessibilityHidden(true)

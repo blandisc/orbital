@@ -26,20 +26,14 @@ struct SavedListTile: View {
     }
 }
 
-/// «Nueva lista» como un mosaico más (GD2): la misma portada con un solo «+» y su nombre. El único «+» de la pestaña. Sin
-/// internet se ve apagada y dice por qué (antes, gris sin explicar).
+/// «Nueva lista» como un mosaico más (GD2): del tamaño de una portada, con el «+» de toda la app (`DSAddTile`) en vez de un
+/// cuadro gris que parecía una imagen que no cargó. Sin internet se ve apagada y dice por qué.
 struct SavedNewListTile: View {
     var online = true
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            SavedCover(posters: [], symbol: "plus")
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("Nueva lista").recipe(.cardTitle, color: DS.accent).lineLimit(2)
-                if !online { Text("Necesita internet").recipe(.footnote, color: DS.textMuted).lineLimit(2) }   // como las listas: solo el nombre
-            }
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        Color.clear
+            .aspectRatio(DS.Saved.coverAspect, contentMode: .fit)
+            .overlay { DSAddTile(label: "Nueva lista", note: online ? nil : "Necesita internet", enabled: online) }
     }
 }
 

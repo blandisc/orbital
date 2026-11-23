@@ -17,7 +17,10 @@ struct ListsView: View {
     /// solo se lee, sin otra petición.
     @State private var catalog = ModelObserver(AppEnvironment.shared.catalog)
     /// El grupo que estás viendo (el índice de arriba lo marca).
-    @State private var activeSection: CollectionSection = .forYou
+    /// La sección que cruza la parte de arriba: vive en su caja y solo la lee el menú (`SectionMenu`). Como estado de la
+    /// pantalla, cada vez que cambiaba se volvía a armar todo Explorar, lo de abajo se recorría, otra sección cruzaba la línea
+    /// y así sin parar: la Mac al 98 % y la app sin responder al desplazarse (22 nov 2026).
+    @State private var activeSection = SectionTracker()
     /// Para saltar a un grupo desde el índice: con la lista perezosa, `ScrollViewReader.scrollTo` no encontraba uno que aún
     /// no se armaba (el menú no bajaba a «Temporadas»); la posición del `ScrollView` sí lo encuentra.
     @State private var position = ScrollPosition()
@@ -200,7 +203,7 @@ struct ListsView: View {
                     }
                     if model.needsSources { sourcesFallback }
                 }
-                .modifier(SectionSpy(section: .forYou, active: $activeSection))
+                .modifier(SectionSpy(section: .forYou, tracker: activeSection))
                 // Las colecciones (con su carácter: en carrusel y con peso), justo después de lo general.
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas.
                 // Cada colección es una sección: 40 entre rótulos (decisión 2, 31 oct 2026).
@@ -273,13 +276,13 @@ struct ListsView: View {
     /// propia: cada grupo es hijo directo de la lista perezosa (el mismo aire entre ellos), para que el índice de arriba salte a
     /// uno que aún no se ha armado (dentro de una caja, `scrollTo` no lo encontraba y «Temporadas» no bajaba).
     @ViewBuilder private var rest: some View {
-                    if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
+                    if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, tracker: activeSection)) }
                     if collections.model.tmdbReady {
-                        studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection))
-                        seasonsSection.modifier(SectionSpy(section: .seasons, active: $activeSection))
-                        genresSection.modifier(SectionSpy(section: .genres, active: $activeSection))
+                        studiosSection.modifier(SectionSpy(section: .studios, tracker: activeSection))
+                        seasonsSection.modifier(SectionSpy(section: .seasons, tracker: activeSection))
+                        genresSection.modifier(SectionSpy(section: .genres, tracker: activeSection))
                     }
-                    awards.modifier(SectionSpy(section: .awards, active: $activeSection))
+                    awards.modifier(SectionSpy(section: .awards, tracker: activeSection))
                     // Colecciones (la repisa del canon), entre Premios y Años (Fernando, 31 oct 2026), con el mismo rótulo.
                     if collections.model.traktLinked {
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -287,22 +290,22 @@ struct ListsView: View {
                             CollectionsCardLoader()   // su fila trae su margen: con otro aquí, empezaba más adentro que todo lo demás (22 nov 2026)
                         }
                     }
-                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, tracker: activeSection)) }
                     // La puerta de «Lo que ves», al final, justo antes de tus listas (Fernando, 31 oct 2026).
                     if collections.model.traktLinked {
                         WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
                             .padding(.horizontal, DS.Space.gutter)
-                            .modifier(SectionSpy(section: .yourYear, active: $activeSection))
+                            .modifier(SectionSpy(section: .yourYear, tracker: activeSection))
                     }
                     // Las listas: las tuyas de Trakt y las de tus complementos, con el mismo rótulo.
                     if !traktLists.isEmpty || collections.model.traktLinked {
                         listRows(label: CollectionSection.trakt.title, symbol: CollectionSection.trakt.symbol, cards: traktLists,
                                  create: collections.model.traktLinked ? { naming = true } : nil)
-                            .modifier(SectionSpy(section: .trakt, active: $activeSection))
+                            .modifier(SectionSpy(section: .trakt, tracker: activeSection))
                     }
                     if !addonCards.isEmpty {
                         listRows(label: CollectionSection.addons.title, symbol: CollectionSection.addons.symbol, cards: addonCards)
-                            .modifier(SectionSpy(section: .addons, active: $activeSection))
+                            .modifier(SectionSpy(section: .addons, tracker: activeSection))
                     }
     }
 
@@ -332,25 +335,16 @@ struct ListsView: View {
     /// El índice de arriba: salta a cada grupo.
     /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
-        Menu {
-            ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
-                Button {
-                    activeSection = section
-                    jumps += 1
-                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
-                    else {
-                        // Lo de abajo aún no estaba armado: primero se arma y en el siguiente cuadro se salta.
-                        restReady = true
-                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
-                    }
-                } label: {
-                    // Cada sección con su ícono; la que ves, con la palomita (`DS.Symbol.current`) al lado.
-                    Label { activeSection == section ? Text("\(section.title)  \(Image(systemName: DS.Symbol.current))") : section.title } icon: { Image(systemName: section.symbol) }
-                }
+        SectionMenu(tracker: activeSection, sections: CollectionSection.allCases.filter(isShown)) { section in
+            activeSection.active = section
+            jumps += 1
+            if restReady { withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
+            else {
+                // Lo de abajo aún no estaba armado: primero se arma y en el siguiente cuadro se salta.
+                restReady = true
+                Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
             }
-        } label: { Image(systemName: "list.bullet.indent") }
-        .accessibilityLabel(Text("Ir a una sección"))
-        .accessibilityIdentifier("paraTi-sections")
+        }
         .dsFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)
     }
 
@@ -464,7 +458,7 @@ struct ListsView: View {
                 LazyHStack(alignment: .top, spacing: DS.Space.s4) {
                     if let create {
                         Button(action: create) { SavedNewListTile() }
-                            .buttonStyle(.plain).pointerHover(.lift)
+                            .buttonStyle(.plain)
                             .frame(width: DS.Saved.listTileRow)
                             .accessibilityIdentifier("list-create")
                     }
@@ -611,5 +605,29 @@ struct ShelfStack<Content: View>: View {
     var body: some View {
         if lazy { LazyVStack(alignment: .leading, spacing: spacing, content: content) }
         else { VStack(alignment: .leading, spacing: spacing, content: content) }
+    }
+}
+
+/// Qué sección cruza la parte de arriba de Explorar (la escribe `SectionSpy`, la lee solo `SectionMenu`).
+@Observable @MainActor final class SectionTracker {
+    var active: CollectionSection = .forYou
+}
+
+/// Ir a una sección: cada una con su ícono; la que ves, con la palomita (`DS.Symbol.current`) al lado.
+private struct SectionMenu: View {
+    let tracker: SectionTracker
+    let sections: [CollectionSection]
+    let pick: (CollectionSection) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(sections, id: \.self) { section in
+                Button { pick(section) } label: {
+                    Label { tracker.active == section ? Text("\(section.title)  \(Image(systemName: DS.Symbol.current))") : section.title } icon: { Image(systemName: section.symbol) }
+                }
+            }
+        } label: { Image(systemName: "list.bullet.indent") }
+        .accessibilityLabel(Text("Ir a una sección"))
+        .accessibilityIdentifier("paraTi-sections")
     }
 }

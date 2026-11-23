@@ -38,5 +38,11 @@ extension DesignRulesTests {
         XCTAssertTrue(app.contains(#"forKey: "AppleLanguages")"#), "OrbitalApp ya no pone el idioma de Orbital como preferido de la app")
         let env = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/AppEnvironment.swift"), encoding: .utf8)
         XCTAssertTrue(env.contains("? Locale.current : Locale(identifier: language)"), "uiLocale debe ser Locale.current cuando ya habla el idioma de Orbital")
+
+        // 3 · Desplazarse no vuelve a armar la pantalla: lo que se anota al pasar (qué sección ves en Explorar) va a una caja
+        // que lee solo quien lo enseña. Como estado de la pantalla entraba en un ciclo (98 % sin tocar nada, 22 nov 2026).
+        let spy = try XCTUnwrap(files.first { $0.name == "CollectionsView.swift" })
+        let body = spy.lines.drop { !$0.contains("struct SectionSpy") }.prefix(14)
+        XCTAssertFalse(body.contains { $0.contains("@Binding") }, "SectionSpy no escribe un estado de la pantalla: usa SectionTracker")
     }
 }

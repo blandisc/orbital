@@ -140,7 +140,7 @@ struct CanonPoster: View {
 /// La entrada a Colecciones en Para ti (Fernando, 31 oct 2026): las listas famosas (Criterion, IMDb Top 250…), cada una
 /// con sus primeros pósters en abanico y su nombre; sin las estatuillas, que ya salen arriba en Premios.
 /// La vitrina de Colecciones en Para ti (decisión 5A, 31 oct 2026): los objetos de cada colección sobre su repisa, cada uno
-/// con su nombre y una barra de cuánto llevas («5/26»); al final «Ver todas». Debajo, la frase de la más cercana a completarse.
+/// con su nombre y una barra de cuánto llevas («5/26»); las que quepan a lo ancho y, si sobran, «Ver todas». Debajo, la frase de la más cercana a completarse.
 /// A dónde lleva cada uno lo dice quien la usa (`route` por colección, `all` para la repisa completa).
 struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
     struct Entry: Identifiable { let id: String; let name: Text; let seen: Int; let total: Int }
@@ -149,19 +149,29 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
     let route: (String) -> Route
     let all: AllRoute
 
+    /// Cuántos lugares caben a lo ancho (Fernando, 22 nov 2026: «hay más espacio y todavía sale ver todas… si reduzco la
+    /// ventana, se empiezan a comer y aparezca ver todas»): caben todas → sin «Ver todas»; si no, las que quepan y el último
+    /// lugar es «Ver todas». Nunca se desliza ni corta una a la mitad.
+    @State private var slots = 0
+
+    private var shown: ArraySlice<Entry> { entries.count <= slots ? entries[...] : entries.prefix(max(slots - 1, 0)) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: DS.Space.s4) {
-                    ForEach(entries) { e in
-                        NavigationLink(value: route(e.id)) { item(e) }.buttonStyle(.plain).accessibilityIdentifier("showcase-\(e.id)")
-                    }
+            HStack(alignment: .bottom, spacing: DS.Space.s4) {
+                ForEach(shown) { e in
+                    NavigationLink(value: route(e.id)) { item(e) }.buttonStyle(.plain).accessibilityIdentifier("showcase-\(e.id)")
+                }
+                if shown.count < entries.count {
                     NavigationLink(value: all) { seeAll }.buttonStyle(.plain).accessibilityIdentifier("showcase-all")
                 }
-                .padding(.top, DS.Space.s2)
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowEdge(.bleeds)
+            .padding(.top, DS.Space.s2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DS.Space.gutter)
+            .onGeometryChange(for: Int.self) { proxy in
+                Int((proxy.size.width - 2 * DS.Space.gutter + DS.Space.s4) / (DS.Repisa.showcaseWidth + DS.Space.s4))
+            } action: { slots = $0 }
             if let hint { hint.recipe(.footnote, color: DS.textMuted).padding(.horizontal, DS.Space.gutter) }
         }
     }

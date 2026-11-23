@@ -55,6 +55,11 @@ extension DS {
 
     /// Canales: el ancho de cada canal, su logo, el velo, cada cuánto se recalcula, el acercamiento lento de la imagen del
     /// capítulo (el «cachito») y la hoja para elegir.
+    /// El «+» de crear algo nuevo (`DSAddTile`): el círculo, sin caja detrás.
+    enum AddTile {
+        static let circle: CGFloat = 64
+    }
+
     enum HomeChannels {
         static let width: CGFloat = 268, addWidth: CGFloat = 150
         /// En la Mac los canales crecen hasta llenar el renglón (con 268 quedaba un hueco a la derecha; Fernando, 16 nov 2026),
@@ -65,8 +70,6 @@ extension DS {
             return min(macMax, max(width, row / CGFloat(count)))
         }
         static let macMax: CGFloat = 420
-        /// «Añadir canal»: el círculo del +, sin caja detrás.
-        static let addCircle: CGFloat = 64
         static let logoWidth: CGFloat = 96, logoHeight: CGFloat = 30
         static let veilStart: Double = 0.4
         static let tick: TimeInterval = 30

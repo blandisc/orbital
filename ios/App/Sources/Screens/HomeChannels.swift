@@ -136,14 +136,8 @@ struct HomeChannels: View {
         // Sin la caja gris (Fernando, 17 nov 2026: «quítale la cajita esta gris de atrás»): un círculo con el + en turquesa y su
         // nombre debajo, al centro del alto de los canales.
         Button { choosing = true } label: {
-            VStack(spacing: DS.Space.s2) {
-                Image(systemName: "plus").font(DS.TextRecipe.section.font).foregroundStyle(DS.brandMoon)
-                    .frame(width: DS.HomeChannels.addCircle, height: DS.HomeChannels.addCircle)
-                    .background(DS.fill, in: Circle())   // el turquesa es voz: solo el +, nunca el fondo ni la orilla
-                Text("Añadir canal").recipe(.labelLarge, color: DS.textMuted)
-            }
-            .frame(width: DS.HomeChannels.addWidth, height: cardWidth / DS.Poster.stillAspect)
-            .contentShape(Rectangle())
+            DSAddTile(label: "Añadir canal")
+                .frame(width: DS.HomeChannels.addWidth, height: cardWidth / DS.Poster.stillAspect)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("home-channels-add")

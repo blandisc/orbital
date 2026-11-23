@@ -299,7 +299,10 @@ extension DS {
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
     enum Editorial {
         /// La tarjeta de un pendiente de tu watchlist (dos renglones que se deslizan juntos).
-        static let watchlistWidth: CGFloat = 300, watchlistPoster: CGFloat = 64, watchlistRow: CGFloat = 112, watchlistInRow = 20
+        /// En la Mac crecen como la letra (la revisión del 22 nov: tarjetas de iPhone apretadas, con el título cortado).
+        static var watchlistWidth: CGFloat { Mac.sized(300) }
+        static var watchlistPoster: CGFloat { Mac.sized(64) }
+        static let watchlistRow: CGFloat = 112, watchlistInRow = 20
         static let coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
 
         /// Hasta dónde crece el logo en la portada y en la pieza panorámica.

@@ -69,7 +69,11 @@ comprobarlo en pantalla) o **falta**.
 |---|--------|--------|
 | N1 | «Decide por mí» se sale de la tarjeta de la derecha | hecho (2469): la parte de arriba cede su alto |
 | N2 | «Guardar en…» sale como una tarjeta rara | falta: no se puede abrir sin guardar de verdad en Trakt; Fer manda captura |
-| N3 | TorBox puesto en el iPhone y la Mac dice «Tu Real-Debrid venció» | en su propia sesión |
+| N3 | TorBox puesto en el iPhone y la Mac dice «Tu Real-Debrid venció» | en su propia sesión (00d029c2: la nube que sí sirve en otro aparato se toma sola) |
+| N4 | Colecciones: «Ver todas» con espacio de sobra; que se coman al achicar la ventana | en 2471: caben las que caben y «Ver todas» solo si sobran |
+| N5 | Tus listas más pulidas y el «+» igual en todos lados | en 2471: «Nueva lista» y «Añadir canal» con el mismo «+» (`DSAddTile`), sin el cuadro gris |
+| N6 | Mi lista en Inicio: tarjetas chicas con sinopsis en inglés | en 2471: crecen en la Mac y sin la sinopsis de Trakt (viene en inglés) fuera del inglés |
+| N7 | Crítico de pantallas (22 nov): la letra de la Mac se ve chica junto a pósters grandes; Ajustes angosto; filas cortas en Explorar (Próximas temporadas, Premios, Estudios); Colecciones repite los premios | falta: decidir con Fer el tamaño de letra de la Mac (cambia toda la app) |
 
 ## 7. Al terminar
 

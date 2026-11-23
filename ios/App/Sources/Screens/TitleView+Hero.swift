@@ -18,7 +18,9 @@ extension TitleView {
                  fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false, raised: extra) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero, centered: true)
-                    .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }   // ds-exception: el logo, parte del ancho del arte de la ficha
+                    // Parte del ancho de la ficha (`contentWidth`), no del contenedor: en el panel de la Mac el contenedor era la
+                    // ventana, el logo crecía y tapaba la línea de datos (22 nov 2026).
+                    .frame(width: contentWidth > 0 ? contentWidth * DS.TitleAction.logoWidth : nil)
                 if let tagline = model.extras?.tagline {
                     Text(verbatim: tagline).font(DS.TextRecipe.secondary.font.italic()).foregroundStyle(DS.onArtSecondary)
                         .multilineTextAlignment(.center).lineLimit(2)

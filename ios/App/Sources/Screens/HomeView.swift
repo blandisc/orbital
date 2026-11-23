@@ -507,8 +507,9 @@ struct HomeView: View {
                 LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s2), count: items.count < 3 ? 1 : 2), spacing: DS.Space.s2) {
                     ForEach(items.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
+                        // La sinopsis de Trakt viene en inglés: en otro idioma, sin ella (salía en inglés en Inicio, 22 nov 2026).
                         TitleNavigationLink(route: s.route) {
-                            WatchlistCard(title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
+                            WatchlistCard(title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, facts: facts, overview: language == "en" ? s.overview : "").titleZoomSource(s.route)
                         }
                         .buttonStyle(.plain)
                         .contextMenu { listActions(s, in: .myList) }

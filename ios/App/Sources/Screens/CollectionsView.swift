@@ -29,14 +29,14 @@ enum CollectionSection: CaseIterable, Hashable {
 /// Marca el grupo que cruza la parte de arriba de la pantalla (el menú lo palomea) y le da su id para saltar a él.
 struct SectionSpy: ViewModifier {
     let section: CollectionSection
-    @Binding var active: CollectionSection
+    let tracker: SectionTracker
 
     func body(content: Content) -> some View {
         content
             .onGeometryChange(for: Bool.self) { proxy in
                 let frame = proxy.frame(in: .scrollView)
                 return frame.minY <= DS.Collections.spyLine && frame.maxY > DS.Collections.spyLine
-            } action: { inside in if inside { active = section } }
+            } action: { inside in if inside, tracker.active != section { tracker.active = section } }
             .id(section)   // por fuera de todo: una lista perezosa solo encuentra (para saltar) el `id` de afuera
     }
 }

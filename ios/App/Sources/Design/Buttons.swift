@@ -255,3 +255,27 @@ struct DSToggleRow: View {
         }
     }
 }
+
+/// El «+» de crear algo nuevo, igual en toda la app (Fernando, 22 nov 2026: «que el elemento de más agregar sea el mismo en
+/// todos lados»): un círculo con el + en turquesa y su nombre debajo, sin caja detrás, centrado en el alto que le den. Lo usan
+/// «Añadir canal» y «Nueva lista»; `DesignRulesTests+Speed` cuida que nadie dibuje otro círculo de +.
+struct DSAddTile: View {
+    let label: LocalizedStringKey
+    /// Sin internet (o sin poder crear): apagado y dice por qué.
+    var note: LocalizedStringKey?
+    var enabled = true
+
+    var body: some View {
+        VStack(spacing: DS.Space.s2) {
+            Image(systemName: "plus").font(DS.TextRecipe.section.font).foregroundStyle(enabled ? DS.brandMoon : DS.textMuted)
+                .frame(width: DS.AddTile.circle, height: DS.AddTile.circle)
+                .background(DS.fill, in: Circle())   // el turquesa es voz: solo el +, nunca el fondo ni la orilla
+            Text(label).recipe(.labelLarge, color: DS.textMuted).lineLimit(1)
+            if let note { Text(note).recipe(.footnote, color: DS.textMuted).lineLimit(2).multilineTextAlignment(.center) }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .pointerHover(.lift)
+        .accessibilityElement(children: .combine)
+    }
+}
