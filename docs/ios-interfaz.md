@@ -1275,6 +1275,14 @@ Parado no hay zoom: ni «Imagen» en el «⋯» ni pellizco. Acostado sí, y el 
 *It's Always Sunny* T4 salía parado con dos rayas a los lados, y llenar parado recortaba tres cuartas partes de la imagen.
 `DesignRulesTests+VideoFrame` falla si el motor recibe otro zoom que `engineZoom` o si vuelve un zoom en vertical.
 
+### Un aviso arriba a la vez (23 nov 2026)
+
+En el reproductor nunca se ven dos avisos de texto arriba al mismo tiempo. Comparten un solo lugar y `topNotice` elige cuál:
+primero la guía del pellizco mientras tienes los dedos puestos, luego el aviso con botones, luego el resultado de lo que
+acabas de hacer (el zoom) y al final lo que solo informa (subtítulos, «Orbital ajustó la imagen»). Cada uno conserva su
+forma. *Por qué:* al pellizcar, «Suelta para llenar la pantalla» salía encima de otro aviso y chocaban.
+`DesignRulesTests+TopNotice` falla si un aviso de arriba vuelve a pintarse por su cuenta o con otra píldora.
+
 ### Pegar es el botón del sistema (22 nov 2026)
 
 Para pegar se usa `PasteButton`, nunca `UIPasteboard.general.string` leído por código; al pegar se quitan los espacios y los

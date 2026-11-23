@@ -234,7 +234,11 @@ extension PlayerScreen {
         if ipod != nil, drag.dragAxis == .horizontal, let target = drag.seekPreview, let start = drag.seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
-        if let notice = notices.notice, !padlock.lockNoticeVisible {
+        // Los avisos de texto de arriba comparten un solo lugar y salen de uno en uno (`PlayerTopNotice`): antes cada uno se
+        // pintaba por su lado y al pellizcar «Suelta para llenar la pantalla» chocaba con el de subtítulos o el de la versión
+        // (Fernando, 23 nov 2026). Cada uno conserva su forma; solo se decide cuál se ve.
+        switch topNotice {
+        case .notice(let notice)?:
             VStack {
                 Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
                       actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : notice.opensNotificationSettings ? "Ajustes"
@@ -251,41 +255,23 @@ extension PlayerScreen {
             // Bajo la barra de arriba con aire (antes quedaba pegado a ella).
             .padding(.top, DS.Space.s16 + DS.Space.s4)
             .transition(.move(edge: .top).combined(with: .opacity))
-        }
-        if let subtitleToast = notices.subtitleToast, !padlock.lockNoticeVisible {
-            VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s16)
-                .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
-        }
-        if framing.pinching, !padlock.lockNoticeVisible {
+        case .pinch?:
             // Mientras pellizcas: qué pasa si sueltas ahora, o hacia dónde mover los dedos.
-            VStack {
-                Group {
-                    if let target = framing.pinchPreview, target != zoom {
-                        DSToastPill(text: target == .fill ? "Suelta para llenar la pantalla" : "Suelta para verla completa")
-                    } else {
-                        DSToastPill(text: zoom == .fit ? "Abre los dedos para llenar la pantalla" : "Cierra los dedos para verla completa")
-                    }
-                }
-                Spacer()
+            if let target = framing.pinchPreview, target != zoom {
+                topPill(target == .fill ? "Suelta para llenar la pantalla" : "Suelta para verla completa")
+            } else {
+                topPill(zoom == .fit ? "Abre los dedos para llenar la pantalla" : "Cierra los dedos para verla completa")
             }
-            .padding(.top, DS.Space.s16)
-            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
-        } else if framing.framedToast, !padlock.lockNoticeVisible {
-            VStack {
-                DSToastPill(text: "Orbital ajustó la imagen", detail: Text("Este video traía franjas negras a los lados"))
-                Spacer()
-            }
-            .padding(.top, DS.Space.s16)
-            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
-        } else if let zoomToast = framing.zoomToast, !padlock.lockNoticeVisible {
+        case .zoom(let shown)?:
             // Los avisos de texto, todos en el mismo lugar (arriba, como el de subtítulos); antes el del zoom en vertical salía al
             // centro del video. Al centro del video solo van los glifos de los gestos.
-            VStack {
-                DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: Text(LocalizedStringKey(zoomToast.explanation)))
-                Spacer()
-            }
-            .padding(.top, DS.Space.s16)
-            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+            topPill(LocalizedStringKey(shown.title), detail: Text(LocalizedStringKey(shown.explanation)))
+        case .subtitle(let text)?:
+            topPill(LocalizedStringKey(text))
+        case .framed?:
+            topPill("Orbital ajustó la imagen", detail: Text("Este video traía franjas negras a los lados"))
+        case nil:
+            EmptyView()
         }
         if let flashSymbol = notices.flashSymbol, !controlsVisible {
             // Al centro del video (donde va el botón grande), no de la pantalla: en vertical quedaba debajo de la imagen.
