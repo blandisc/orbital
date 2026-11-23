@@ -83,62 +83,68 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertFalse(copy.description.contains(fer1), "la clave nunca al imprimir")
     }
 
-    func testAKeyFromAnotherAccountAsksAndKeepingTheLocalOneStopsAsking() async throws {
+    /// 22 nov 2026 (Fernando: «si yo cambio de clave en iPhone, automáticamente debería de cambiarse allá… no preguntar… el
+    /// default es el último que agregué en un aparato»): la más reciente se usa sola aunque la de aquí sirva, y se puede volver.
+    func testTheNewestKeyIsUsedByItselfAndYouCanGoBackToThePreviousOne() async throws {
         let cloud = InMemorySecrets()
         let (ipad, local, _) = rig("ipad", shared: cloud)
-        local.set(AddonKeys.realDebridToken, fer1)
+        local.set(AddonKeys.realDebridToken, fer1)   // la de aquí sirve
         cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: ana, from: "iphone").encoded)
-        guard case .differs(let from, let theirs, _) = await ipad.debrid.checkShared() else { return XCTFail("debía preguntar") }
-        XCTAssertEqual(from, "iphone"); XCTAssertEqual(theirs.username, "ana")
-        XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1, "nada cambia solo")
-        ipad.debrid.keepLocal()
+        let found = await ipad.debrid.checkShared()
+        XCTAssertEqual(found, .adopted(from: "iphone"), "sin preguntar")
+        XCTAssertEqual(local.get(AddonKeys.realDebridToken), ana)
+        XCTAssertEqual(ipad.debrid.previousKey?.key, fer1, "la de antes queda a mano")
+        XCTAssertNil(cloud.get(AddonKeys.previousDebridToken), "la anterior nunca va a iCloud")
+        _ = try await ipad.debrid.usePrevious()
+        XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1, "«Volver a la clave anterior»")
+        XCTAssertEqual(ipad.debrid.previousKey?.key, ana, "y se puede volver a la más reciente")
         let again = await ipad.debrid.checkShared()
-        XCTAssertEqual(again, .none)
+        XCTAssertEqual(again, .none, "volviste a la anterior: no se vuelve a cambiar sola")
+        XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1)
+        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: fer2, from: "mac").encoded)   // pones otra en otro aparato
+        let newer = await ipad.debrid.checkShared()
+        XCTAssertEqual(newer, .adopted(from: "mac"), "una más nueva sí se toma")
     }
 
-    /// IOS-11 · la copia dice quién la puso por su nombre («iPhone de Ana»), para no leer «Tu iPad cambió la clave» en el iPad.
+    /// IOS-11 · la copia dice quién la puso por su nombre («iPad de Ana»), no solo su tipo.
     func testTheSharedCopyCarriesTheNameOfWhoPutIt() async throws {
         let cloud = InMemorySecrets()
         let (ipad, local, _) = rig("ipad", shared: cloud)
         local.set(AddonKeys.realDebridToken, fer1)
         cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: ana, from: "ipad", name: "iPad de Ana").encoded)
-        guard case .differs(let from, _, _) = await ipad.debrid.checkShared() else { return XCTFail("debía preguntar") }
-        XCTAssertEqual(from, "iPad de Ana")
+        let found = await ipad.debrid.checkShared()
+        XCTAssertEqual(found, .adopted(from: "iPad de Ana"))
         XCTAssertNil(SharedDebridKey.decode(#"{"key":"X","from":"iphone"}"#)?.name, "una copia de antes se sigue leyendo")
     }
 
-    func testSameAccountWithBothKeysWorkingDoesNotAskAndARevokedLocalOneTakesTheNew() async throws {
+
+    func testAKeyThatDoesNotWorkIsNeverTaken() async throws {
         let cloud = InMemorySecrets()
         let (mac, local, _) = rig("mac", shared: cloud, allows: false)
         local.set(AddonKeys.realDebridToken, fer1)
-        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: fer2, from: "iphone").encoded)
-        let same = await mac.debrid.checkShared()
-        XCTAssertEqual(same, .none, "misma cuenta: se queda la que funciona")
-        let (other, local2, _) = rig("ipad", shared: cloud)
-        local2.set(AddonKeys.realDebridToken, revoked)
-        await other.debrid.save(token: revoked, status: DebridStatus(service: "Real-Debrid", username: "fer", isPremium: true, expires: nil, checkedAt: Date(), userID: "1"), share: false)
-        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: fer2, from: "iphone").encoded)
-        let adopted = await other.debrid.checkShared()
-        XCTAssertEqual(adopted, .adopted(from: "iphone"))
-        XCTAssertEqual(local2.get(AddonKeys.realDebridToken), fer2)
+        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: revoked, from: "iphone").encoded)
+        let found = await mac.debrid.checkShared()
+        XCTAssertEqual(found, .none, "la copia no sirve: se queda la de aquí")
+        XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1)
+        XCTAssertNil(mac.debrid.previousKey)
     }
 
-    func testADeviceWithoutAKeyIsOfferedTheSharedOneAndUsingItSavesItHere() async throws {
+
+    func testADeviceWithoutAKeyTakesTheSharedOneWithItsCloud() async throws {
         let cloud = InMemorySecrets()
         cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: fer1, from: "ipad").encoded)
         let (mac, local, _) = rig("mac", shared: cloud, allows: false)
-        guard case .offer(let from, let account) = await mac.debrid.checkShared() else { return XCTFail() }
-        XCTAssertEqual(from, "ipad", "no se promete «tu iPhone» si vino del iPad (UX-19)"); XCTAssertEqual(account.username, "fer")
-        XCTAssertNil(local.get(AddonKeys.realDebridToken), "solo se ofrece: no se toma sola")
-        await mac.debrid.use(.torBox)   // DN1: la oferta quedó a la vista y ya cambiaste de nube
-        _ = try await mac.debrid.useShared()
+        await mac.debrid.use(.torBox)   // DN1: esta Mac tenía elegida otra nube, sin clave
+        let found = await mac.debrid.checkShared()
+        XCTAssertEqual(found, .adopted(from: "ipad"), "no se promete «tu iPhone» si vino del iPad (UX-19)")
         XCTAssertEqual(local.get(AddonKeys.realDebridToken), fer1)
-        XCTAssertEqual(mac.debrid.service, .realDebrid, "la copia compartida es de Real-Debrid: nunca se prueba ni se guarda en TorBox")
+        XCTAssertEqual(mac.debrid.service, .realDebrid, "la copia es de Real-Debrid: nunca se guarda en TorBox")
         XCTAssertNil(local.get(DebridService.torBox.keyStore))
+        XCTAssertNil(mac.debrid.previousKey, "no había clave antes")
     }
 
-    /// 21 nov 2026 (Fernando: «que la que yo usé en mi iPhone se sincronice vía iCloud con Mac y iPad»): la copia ya no es solo
-    /// de Real-Debrid. La de TorBox viaja con su nube; la Mac sin clave la ofrece y, al usarla, TorBox queda como su nube.
+    /// 21 nov 2026 (Fernando: «que la que yo usé en mi iPhone se sincronice vía iCloud con Mac y iPad»): la de TorBox viaja con
+    /// su nube y, desde el 22 nov, se usa sola.
     func testATorBoxKeyTravelsWithItsCloud() async throws {
         let cloud = InMemorySecrets()
         let (iphone, _, _) = rig("iphone", shared: cloud)
@@ -147,18 +153,15 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         let copy = try XCTUnwrap(SharedDebridKey.decode(cloud.get(SecretKey.sharedRealDebrid)))
         XCTAssertEqual(copy.cloud, .torBox, "la copia dice de qué nube es")
         let (mac, local, _) = rig("mac", shared: cloud, allows: false)
-        guard case .offer(_, let account) = await mac.debrid.checkShared() else { return XCTFail("la Mac sin clave la ofrece") }
-        XCTAssertEqual(account.username, "fer@torbox")
-        _ = try await mac.debrid.useShared()
+        let found = await mac.debrid.checkShared()
+        XCTAssertEqual(found, .adopted(from: "iphone"))
         XCTAssertEqual(mac.debrid.service, .torBox)
         XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
         XCTAssertNil(local.get(AddonKeys.realDebridToken), "nunca se guarda como de Real-Debrid")
     }
 
-    /// 22 nov 2026 (Fernando: puso TorBox en el iPhone y la Mac seguía con «Tu Real-Debrid venció», «¿por qué no se mandó de
-    /// manera automática?»): la nube de aquí ya no sirve y la de tus aparatos sí → se toma sola, con su nube. Una que funciona
-    /// nunca se cambia sin preguntar.
-    func testAStoppedCloudHereTakesTheWorkingOneFromYourDevicesByItself() async throws {
+    /// 22 nov 2026: lo que le pasó a Fernando. TorBox en el iPhone; la Mac con su Real-Debrid vencido lo toma sola y puede volver.
+    func testTheMacWithAnExpiredRealDebridTakesTheTorBoxFromTheIPhone() async throws {
         let cloud = InMemorySecrets()
         let (iphone, _, _) = rig("iphone", shared: cloud)
         let key = "tb-" + String(repeating: "a1b2", count: 8)
@@ -167,18 +170,27 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         let (mac, local, _) = rig("mac", shared: cloud, allows: false)
         local.set(AddonKeys.realDebridToken, expired)
         let found = await mac.debrid.checkShared()
-        XCTAssertEqual(found, .adopted(from: "iphone"), "la Mac con su Real-Debrid vencido toma sola el TorBox de tu iPhone")
+        XCTAssertEqual(found, .adopted(from: "iphone"))
         XCTAssertEqual(mac.debrid.service, .torBox)
         XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
+        XCTAssertEqual(mac.debrid.previousKey?.cloud, .realDebrid, "Volver a la clave anterior: el Real-Debrid de antes")
         XCTAssertEqual(SharedDebridKey.decode(cloud.get(SecretKey.sharedRealDebrid))?.key, key, "la copia de tus aparatos no se pisa")
         let again = await mac.debrid.checkShared()
         XCTAssertEqual(again, .none, "ya es la misma: no se vuelve a hacer nada")
+    }
 
-        let (ipad, local2, _) = rig("ipad", shared: cloud)
-        local2.set(AddonKeys.realDebridToken, fer1)   // un Real-Debrid que sí funciona
-        guard case .offer = await ipad.debrid.checkShared() else { return XCTFail("una nube que funciona no cambia sola: solo se ofrece") }
-        XCTAssertEqual(ipad.debrid.service, .realDebrid)
-        XCTAssertNil(local2.get(DebridService.torBox.keyStore))
+    /// «Quitar solo de este aparato» (de cualquier nube): no se vuelve a tomar sola al abrir Orbital.
+    func testRemovingOnlyHereIsNotUndoneByTheSharedCopy() async throws {
+        let cloud = InMemorySecrets()
+        let key = "tb-" + String(repeating: "a1b2", count: 8)
+        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: key, from: "iphone", service: .torBox).encoded)
+        let (mac, local, _) = rig("mac", shared: cloud, allows: false)
+        _ = await mac.debrid.checkShared()
+        XCTAssertEqual(local.get(DebridService.torBox.keyStore), key)
+        await mac.debrid.remove(everywhere: false)
+        let after = await mac.debrid.checkShared()
+        XCTAssertEqual(after, .none)
+        XCTAssertNil(local.get(DebridService.torBox.keyStore), "la quitaste aquí: se queda quitada")
     }
 
     func testAKeyFromBeforeIsSharedOnTheFirstCheck() async {

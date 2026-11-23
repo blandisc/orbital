@@ -27,6 +27,9 @@ public enum AddonKeys {
     public static let sharedRealDebridToken = "realdebrid_token.shared"
     /// CX2-A · la copia compartida que este aparato ya vio y decidió («Seguir con la de este iPhone»): no se pregunta otra vez.
     public static let sharedRealDebridSeen = "realdebrid_token.shared.seen"
+    /// 22 nov 2026 · la clave que este aparato usaba antes de tomar la más reciente de tus aparatos Apple (`SharedDebridKey`,
+    /// con su nube): «Volver a la clave anterior». Solo de este aparato.
+    public static let previousDebridToken = "debrid_token.previous"
     /// La URL completa de un complemento pegado o importado (en el llavero: puede llevar tu clave adentro).
     public static func addonURL(_ id: String) -> String { "addon_url.\(id)" }
     static let installed = "addons-installed"

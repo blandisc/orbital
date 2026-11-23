@@ -350,11 +350,10 @@ public actor DebridAccount {
     /// «Quitar»: se olvida la clave, su estado y los avisos. `everywhere` (CX3-A, «De todos tus aparatos Apple»): también la
     /// copia compartida, y tus otros aparatos que usaban esa misma clave la quitan al abrir Orbital.
     public func remove(everywhere: Bool = false) {
-        if service == .realDebrid {
-            let old = vault.secret(AddonKeys.realDebridToken) ?? ""
-            if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
-            vault.setSecret(AddonKeys.realDebridOAuth, nil)
-        }
+        // Solo de aquí: la copia de tus aparatos Apple no se vuelve a tomar sola (de cualquier nube, no solo Real-Debrid).
+        let old = vault.secret(service.keyStore) ?? ""
+        if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
+        if service == .realDebrid { vault.setSecret(AddonKeys.realDebridOAuth, nil) }
         vault.setSecret(service.keyStore, nil)
         vault.setData(service.statusStore, nil)
         vault.setData(AddonKeys.reminders, nil)

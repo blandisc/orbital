@@ -44,6 +44,22 @@ extension DebridModel {
         catch { check = .failed(DebridError.unexpected.description) }
     }
 
+    /// La clave que este aparato usaba antes de tomar la más reciente de tus aparatos Apple (nil si no hay).
+    public var previous: SharedDebridKey? { services.debrid.previousKey }
+
+    /// «Volver a la clave anterior»: la de antes vuelve a ser la de este aparato (y la que se deja queda como anterior).
+    public func usePrevious() async {
+        check = .checking
+        do {
+            let found = try await services.debrid.usePrevious()
+            guard found.isPremium else { check = .free(found); return }
+            await services.resetAccountCaches()
+            status = found; keyCheck = .confirmed; check = .ok(found)
+            announceAccountChange()
+        } catch let error as DebridError { check = .failed(error.description) }
+        catch { check = .failed(DebridError.unexpected.description) }
+    }
+
     /// «Seguir con la de este iPhone»: no se vuelve a preguntar por esa copia.
     public func keepLocal() {
         services.debrid.keepLocal()

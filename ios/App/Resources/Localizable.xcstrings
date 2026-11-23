@@ -48446,6 +48446,28 @@
           }
         }
       }
+    },
+    "Volver a la clave anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back to the previous key"
+          }
+        }
+      }
+    },
+    "De %@ · tus aparatos usan la más reciente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %@ · your devices use the most recent one"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

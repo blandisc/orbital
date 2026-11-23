@@ -3,8 +3,8 @@ import OrbitalCore
 import OrbitalAddons
 import OrbitalModels
 
-/// CX2-A · tu clave entre tus aparatos Apple, arriba de la página de tu nube (la de la copia: Real-Debrid, TorBox o AllDebrid). Otra cuenta en la copia compartida: «Tu iPad
-/// cambió la clave de Real-Debrid · Usar la nueva / Seguir con la de este iPhone». Nunca cambia sola.
+/// CX2-A · tu clave entre tus aparatos Apple, arriba de la página de tu nube. Desde el 22 nov 2026 la más reciente que pusiste
+/// en cualquiera se usa sola en todos («el default es el último que agregué»); aquí queda «Volver a la clave anterior».
 struct DebridSharedPrompt: View {
     @State private var debrid: ModelObserver<DebridModel>
     @Environment(AppEnvironment.self) private var env
@@ -26,6 +26,17 @@ struct DebridSharedPrompt: View {
                         .accessibilityIdentifier("debrid-shared-keep")
                 }
                 .accessibilityIdentifier("debrid-shared-differs")
+            }
+            .listRowBackground(DS.surface)
+        }
+        if let previous = model.previous {
+            Section {
+                Button { Task { await model.usePrevious() } } label: {
+                    TorrentioRowLabel(title: Text("Volver a la clave anterior"),
+                                      detail: Text("De \(previous.cloud.name) · tus aparatos usan la más reciente"), action: true)   // no-es-título: el nombre de tu nube
+                }
+                .disabled(model.check == .checking)
+                .accessibilityIdentifier("debrid-previous-use")
             }
             .listRowBackground(DS.surface)
         }

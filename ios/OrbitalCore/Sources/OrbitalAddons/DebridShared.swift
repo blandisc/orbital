@@ -63,23 +63,14 @@ extension DebridAccount {
 
     nonisolated func retireShared(_ key: String) {
         guard let shared = sharedKey else { return }
-        let mark = SharedDebridKey(key: "", from: platform, removed: SharedDebridKey.fingerprint(shared.key.isEmpty ? key : shared.key), name: deviceName())
+        let mark = SharedDebridKey(key: "", from: platform, removed: SharedDebridKey.fingerprint(shared.key.isEmpty ? key : shared.key), name: deviceName(),
+                                   service: shared.key.isEmpty ? service : shared.cloud)   // la marca dice de qué nube es la clave quitada
         _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, mark.encoded)
         markSharedSeen(mark.encoded)
     }
 
     nonisolated func markSharedSeen(_ value: String) { _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridSeen, value) }
     nonisolated var sharedSeen: String? { vaultRef.secret(AddonKeys.sharedRealDebridSeen) }
-
-    /// La nube de aquí ya no da enlaces: su clave no vale, o su cuenta venció o es gratuita. Sin respuesta no se sabe: no.
-    static func stopped(_ health: DebridHealth, now: Date) -> Bool {
-        switch health {
-        case .invalidToken: return true
-        case .status(let status):
-            switch status.state(now: now) { case .expired, .free: return true; case .active, .expiringSoon: return false }
-        case .noKey, .unreachable: return false
-        }
-    }
 
     static func sameAccount(_ a: DebridStatus?, _ b: DebridStatus) -> Bool {
         guard let a else { return false }
@@ -105,30 +96,35 @@ extension DebridAccount {
         }
         // IOS-11: quién la puso, con su nombre si lo trae («iPad de Fernando»); si no, su tipo («ipad»).
         let who = shared.name.flatMap { $0.isEmpty ? nil : $0 } ?? shared.from
-        if local == shared.key { markSharedSeen(shared.key); return .none }
-        if !local.isEmpty, sharedSeen == shared.key { return .none }
-        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: nada que ofrecer
-        // 22 nov 2026 (Fernando: puso TorBox en el iPhone y la Mac seguía con «Tu Real-Debrid venció», «¿por qué no se mandó de
-        // manera automática?»): si la nube de aquí ya no sirve (venció, quedó gratuita o su clave ya no vale) y tus aparatos
-        // tienen una que sí, se toma sola, sea de la nube que sea. Nada que funcione cambia sin preguntar; sin clave aquí, se ofrece.
-        let here: DebridHealth = hasToken ? await checkNow() : .noKey
-        if theirs.isPremium, Self.stopped(here, now: now()) {
-            return save(token: shared.key, status: theirs, share: false, service: cloud) ? .adopted(from: who) : .none
-        }
-        guard !local.isEmpty else { return theirs.isPremium ? .offer(from: who, account: theirs) : .none }
-        guard cloud == service else { return .none }   // tienes otra clave de esa nube, pero no la usas ahora: no se pregunta
-        switch here {
-        case .status(let mine):
-            if Self.sameAccount(mine, theirs) { markSharedSeen(shared.key); return .none }   // la misma cuenta y las dos sirven
-            return .differs(from: who, shared: theirs, local: mine)
-        case .invalidToken:
-            if Self.sameAccount(saved, theirs) {
-                save(token: shared.key, status: theirs, share: false, service: cloud)
-                return .adopted(from: who)
-            }
-            return .differs(from: who, shared: theirs, local: nil)
-        case .unreachable, .noKey: return .none
-        }
+        // 22 nov 2026 (Fernando: «si yo cambio de clave en iPhone, automáticamente debería de cambiarse allá… no preguntar…
+        // el default es el último que agregué en un aparato»): la clave más reciente de tus aparatos Apple es la que usan todos,
+        // aunque la de aquí todavía sirva. La de antes queda en este aparato para «Volver a la clave anterior».
+        if cloud == service, local == shared.key { markSharedSeen(shared.key); return .none }   // ya es la de aquí
+        if sharedSeen == shared.key { return .none }   // aquí ya se decidió: volviste a la anterior o la quitaste solo de aquí
+        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: se queda la de aquí
+        let before = vaultRef.debridToken(service).map { SharedDebridKey(key: $0, from: platform, service: service) }
+        guard save(token: shared.key, status: theirs, share: false, service: cloud) else { return .none }
+        if let before, before.key != shared.key || before.cloud != cloud { storePrevious(before) }
+        return .adopted(from: who)
+    }
+
+    /// La clave que este aparato usaba antes de tomar la de tus aparatos Apple (solo de este aparato, nunca en iCloud).
+    public nonisolated var previousKey: SharedDebridKey? {
+        SharedDebridKey.decode(vaultRef.secret(AddonKeys.previousDebridToken)).flatMap { $0.key.isEmpty ? nil : $0 }
+    }
+
+    nonisolated func storePrevious(_ key: SharedDebridKey?) { _ = vaultRef.storeSecret(AddonKeys.previousDebridToken, key?.encoded) }
+
+    /// «Volver a la clave anterior»: se comprueba, se usa aquí y la que se dejó queda como la anterior (se puede ir y volver).
+    /// La copia de tus aparatos Apple no cambia y este aparato no la vuelve a tomar hasta que pongas otra en alguno.
+    public func usePrevious() async throws -> DebridStatus {
+        guard let previous = previousKey else { throw DebridError.unexpected }
+        let status = try await providers(previous.cloud).status(token: previous.key)
+        let current = vaultRef.debridToken(service).map { SharedDebridKey(key: $0, from: platform, service: service) }
+        guard save(token: previous.key, status: status, share: false, service: previous.cloud) else { throw DebridError.unexpected }
+        if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
+        storePrevious(current)
+        return status
     }
 
     /// «Usar la nueva» / «Usar la clave de tus aparatos Apple»: se comprueba y se guarda en este aparato.
