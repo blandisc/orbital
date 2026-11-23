@@ -71,7 +71,7 @@ final class PosterSourceTests: XCTestCase {
     }
 }
 
-private actor PosterCalls {
+actor PosterCalls {
     var n = 0, now = 0, peak = 0
     func add() { n += 1 }
     func start() { n += 1; now += 1; peak = max(peak, now) }

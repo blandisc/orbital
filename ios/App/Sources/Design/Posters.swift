@@ -29,6 +29,9 @@ struct PosterView: View {
     /// marco del puntero, sin buscar al sujeto ni nombre para VoiceOver. Son cientos a la vez y cada pieza de más se pagaba
     /// al abrir la pantalla (Explorar trababa ~0.5 s; 17 nov 2026).
     var decorative = false
+    /// Aún no se sabe qué imagen va (el destacado decide entre su póster alto y su fondo): el marco quieto, no el nombre sobre
+    /// color. Sin esto, el destacado de Inicio enseñaba el nombre hasta 1.5 s y luego brincaba a la imagen (23 nov 2026).
+    var waiting = false
     @State private var primaryFailed = false
 
     private var shownURL: String? { primaryFailed ? fallback : url }
@@ -62,7 +65,7 @@ struct PosterView: View {
                         default: Color.clear   // mientras llega, el marco quieto (sin nombre que luego brinca a la imagen)
                         }
                     }
-                } else { PosterStandIn(title: title) }
+                } else if !waiting { PosterStandIn(title: title) }
             }
     }
 

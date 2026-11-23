@@ -915,6 +915,13 @@ pintan el arte de la TV y, si no llega o no carga, el póster de metahub del tí
 Activity vuelve a intentarlo en el siguiente sondeo y, mientras, enseña el ícono de la tele (nunca la flecha de descarga).
 `testNowPlayingArtFallsBackToThePoster` y `testNowPlayingAlwaysHasAPoster` lo cuidan.
 
+**Una imagen que falta busca otra antes de enseñar el nombre.** Ningún póster se queda en el nombre sobre color si el título
+tiene imagen en algún lado: se prueba TMDB, luego metahub y al final IMDb (`ImdbPoster`); una portada hecha del fondo que no
+carga pasa al póster. Mientras se decide qué imagen va, el marco espera quieto: nunca el nombre que luego brinca a la imagen
+(23 nov 2026: 13 % de los resultados de Buscar no tenían nada en metahub ni en TMDB, e IMDb tenía 8 de cada 10; el destacado
+de Inicio enseñaba el nombre hasta 1.5 s). `testPosterTriesEverySourceBeforeTheName`, `testWideArtFallsBackToThePoster` y
+`testArtWaitsQuietlyWhileDeciding` lo cuidan.
+
 **La marca es una sola en toda la app.** El Centro de control y la Live Activity usan el símbolo `orbital.mark`, que sale
 del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si
 cambia la marca (`DS.Brand`), se corre el script. `testBrandSymbolMatchesTheMark` compara su firma con `Tokens.swift`.

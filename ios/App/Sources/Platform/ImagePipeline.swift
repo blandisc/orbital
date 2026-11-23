@@ -172,11 +172,20 @@ final class ImagePipeline: @unchecked Sendable {
     /// no lo tiene o falla, el de metahub. La llave de memoria sigue siendo la URL de metahub: las pantallas no cambian.
     private var posters: PosterSource?
     func setPosterSource(_ source: PosterSource?) { lock.withLock { posters = source } }
+    /// El último respaldo antes del nombre sobre color: la imagen de IMDb (`ImdbPoster`, 23 nov 2026: 13 % de los resultados
+    /// de Buscar daban 404 en metahub y TMDB no tenía ninguno; IMDb, casi 8 de cada 10).
+    private var imdb: ImdbPoster?
+    func setImdbPoster(_ source: ImdbPoster?) { lock.withLock { imdb = source } }
 
+    /// El póster en orden: TMDB, metahub, IMDb. Lo que ya se sabe que solo IMDb tiene va directo.
     private func posterData(_ url: URL, urgent: Bool) async -> Data? {
-        if let posters = lock.withLock({ posters }), let tmdb = await posters.resolve(url.absoluteString),
+        let (posters, imdb) = lock.withLock { (posters, imdb) }
+        if let known = imdb?.remembered(url.absoluteString), let data = await data(known, urgent: urgent), !data.isEmpty { return data }
+        if let posters, let tmdb = await posters.resolve(url.absoluteString),
            let data = await data(tmdb, urgent: urgent), !data.isEmpty { return data }
-        return await data(url, urgent: urgent)
+        if let data = await data(url, urgent: urgent), !data.isEmpty { return data }
+        guard !Task.isCancelled, let imdb, let rescue = await imdb.resolve(url.absoluteString) else { return nil }
+        return await data(rescue, urgent: urgent)
     }
 
     /// Tu Orbital (dirección y token): sus imágenes (logos de canales, arte de juegos) piden el token como el resto de su
