@@ -1,0 +1,236 @@
+<title>Orbital en cuatro pantallas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Hoja de decisiones: un renglón por función y una tarjeta por hueco, con maquetas lado a lado. Oscura como Orbital. */
+:root{
+  --ink:#0b0f17; --panel:#131a26; --panel-2:#1a2332; --line:#26324a;
+  --fg:#e9eef7; --muted:#9aa7bd; --teal:#3fd4c4; --amber:#f2b84b; --rose:#f07a8f; --ok:#5fd18b;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --ink:#f5f7fb; --panel:#ffffff; --panel-2:#eef2f8; --line:#d5dceb;
+  --fg:#111827; --muted:#56627a; --teal:#0f8f84; --amber:#a86a00; --rose:#c23a55; --ok:#1d8a4c; color-scheme:light; } }
+:root[data-theme="light"]{
+  --ink:#f5f7fb; --panel:#ffffff; --panel-2:#eef2f8; --line:#d5dceb;
+  --fg:#111827; --muted:#56627a; --teal:#0f8f84; --amber:#a86a00; --rose:#c23a55; --ok:#1d8a4c; color-scheme:light; }
+body{background:var(--ink);color:var(--fg);font:15px/1.55 var(--body)}
+.wrap{max-width:1080px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,42px)} h2{font-size:24px} h3{font-size:18px}
+p{margin:0;max-width:68ch} .muted{color:var(--muted)}
+.lead{display:flex;flex-direction:column;gap:12px}
+.why{color:var(--teal);font-weight:600}
+section{display:flex;flex-direction:column;gap:16px}
+.keys{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.m{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:6px;font-weight:700;font-size:13px}
+.y{color:var(--ok)} .p{color:var(--amber)} .x{color:var(--rose)} .n{color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.04em;background:var(--panel-2);position:sticky;top:0}
+td.c{text-align:center;width:72px;font-weight:700}
+tr.grp td{background:var(--panel-2);font-weight:700;color:var(--teal);font-size:12px;letter-spacing:.05em}
+td small{color:var(--muted);display:block;font-size:12.5px}
+.cards{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.card header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline}
+.code{font-family:var(--display);font-weight:700;color:var(--teal);font-size:15px}
+.impact{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.hi{color:var(--rose)} .mid{color:var(--amber)} .lo{color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.opt{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--panel-2);min-width:0}
+.opt.rec{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+.opt b.oc{font-family:var(--display);font-size:16px}
+.tag{font-size:11.5px;font-weight:700;color:var(--teal)}
+.gl{font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+.gl span::before{content:"＋ ";color:var(--ok)} .gl span.l::before{content:"－ ";color:var(--rose)}
+.rec-line{border-left:3px solid var(--teal);padding-left:12px}
+/* maquetas */
+.mock{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.mock .t{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.row{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border-radius:6px;background:var(--panel)}
+.row.h{background:none;color:var(--muted);font-size:11px;padding:4px 2px 0}
+.row.new{outline:1px dashed var(--teal)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}.tabs i{font-style:normal;padding:3px 9px;border-radius:99px;background:var(--panel)}.tabs i.on{background:var(--teal);color:var(--ink)}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px} li{max-width:75ch}
+.ok-list li::marker{color:var(--ok)}
+footer{font-size:13px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <div class="lead">
+    <h1>Orbital en cuatro pantallas</h1>
+    <p>Fer, lo que pediste: «no tiene que todo verse igual, pero que la experiencia sea similar. Que todos tengan las mismas características». Revisé el código del iPhone, el iPad, la Mac y la TV (no la memoria) y el registro de paridad.</p>
+    <p class="why">En corto: casi todo ya existe en las cuatro y se llama igual. Los huecos que sí notarías son cinco: Ajustes con otro orden, Aprende que no está en la TV, la búsqueda avanzada con dos nombres, mejoras del iPhone que no llegan a la TV y la duda de si el iPad se conecta a la TV.</p>
+  </div>
+
+  <section>
+    <h2>Qué hay en cada una</h2>
+    <div class="keys"><span><b class="m y">✓</b> está</span><span><b class="m p">◐</b> está, pero con otro nombre, en otro lugar o a medias</span><span><b class="m x">✗</b> falta (hueco real)</span><span><b class="m n">—</b> no está a propósito</span></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Función</th><th>iPhone</th><th>iPad</th><th>Mac</th><th>TV</th></tr></thead>
+      <tbody>
+      <tr class="grp"><td colspan="5">DESCUBRIR</td></tr>
+      <tr><td>Inicio: Destacado, Seguir viendo, Lo nuevo de lo tuyo, Porque viste, Top 10, Mi lista<small>En la TV esto vive en «Películas y series»; su Inicio mezcla juegos (decidido)</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Explorar con el mosaico<small>En la TV, Explorar es el mosaico y también el protector de pantalla</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Plataformas, Premios, Estudios, Temporadas, Años, Colecciones</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Decide por mí: «Tres que caben» y «Una por una»<small>La TV tiene menos filtros («Qué tan buena», «De dónde»: solo Apple, decidido)</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c p">◐</td></tr>
+      <tr><td>Tus canales</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Buscar, con «Mejor resultado» arriba</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c x">✗<small>sin «Mejor resultado»</small></td></tr>
+      <tr><td>Búsqueda avanzada<small>La TV la llama «Filtro avanzado» y vive en Películas y series, no en Buscar</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c p">◐</td></tr>
+      <tr><td>Calendario de estrenos de tus series</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr class="grp"><td colspan="5">LO TUYO</td></tr>
+      <tr><td>Guardado: Mi lista · Viendo · Vistas · Listas, «Nueva lista», historial</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Calificar, «¿Cuándo la viste?», Las dejé</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Lo que ves y tu Wrapped</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c n">—<small>decidido 1 nov</small></td></tr>
+      <tr><td>Letterboxd</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c p">◐<small>solo leer, decidido</small></td></tr>
+      <tr><td>Series que sigues y avisos de estreno</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c p">◐<small>solo el interruptor en cada serie</small></td></tr>
+      <tr><td>Descargas para ver sin internet<small>La TV baja a la carpeta de la consola (el registro todavía dice que no descarga)</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Mi media (OneDrive)</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr class="grp"><td colspan="5">LA FICHA Y EL REPRODUCTOR</td></tr>
+      <tr><td>Ficha: Ver o Continuar con su versión, Guardar, Vista, Tráiler, Reparto y equipo, Más como esto, La saga, Detalles, página de la persona<small>El iPad ancho dice «Reparto» y «Parecidas»</small></td><td class="c y">✓</td><td class="c p">◐</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Audio y subtítulos, Sincronía, Versión, Saltar intro, Siguiente episodio, ¿Sigues viendo?</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Ventana pequeña (PiP o «En pequeño»)</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>Marcar los sustos en la barra</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c x">✗</td></tr>
+      <tr><td>Gestos de brillo y volumen, modo iPod</td><td class="c y">✓</td><td class="c y">✓</td><td class="c n">—</td><td class="c n">—</td></tr>
+      <tr><td>Tu Real-Debrid deja de saltar de versión en versión cuando venció</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c x">✗</td></tr>
+      <tr class="grp"><td colspan="5">CUENTAS Y AJUSTES</td></tr>
+      <tr><td>Trakt, Tu nube (Real-Debrid, TorBox, AllDebrid), pedir a la nube, OpenSubtitles, Complementos</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+      <tr><td>«Idiomas» en un solo lugar, con idioma de títulos aparte</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c x">✗<small>en «Ver»</small></td></tr>
+      <tr><td>Ajustes con el mismo orden y nombres</td><td class="c p" colspan="3">◐ Idiomas · Apariencia · Reproducción · Avisos · Descargas · Cuentas · Complementos · OneDrive · Avanzado · Aprende</td><td class="c p">◐<small>Resumen · Ver · Complementos · Jugar · Tele y voz · Pantalla y sonido · Cuentas · Sistema</small></td></tr>
+      <tr><td>Aprende: las 5 lecciones (Tu nube, En tu idioma, ¿Qué veo hoy?, Lo tuyo al día, Tu TV)<small>La TV tiene otra guía de 5 pantallas, del mando y los juegos</small></td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c x">✗</td></tr>
+      <tr><td>Diagnóstico (qué falla y cómo se arregla)</td><td class="c x">✗</td><td class="c x">✗</td><td class="c x">✗</td><td class="c y">✓</td></tr>
+      <tr><td>Resumen de lo que falta por configurar<small>Apple lo dice en tu perfil y en «Termina de preparar Orbital»</small></td><td class="c p">◐</td><td class="c p">◐</td><td class="c p">◐</td><td class="c y">✓</td></tr>
+      <tr class="grp"><td colspan="5">LO DE CADA APARATO</td></tr>
+      <tr><td>Control de la TV y voz hacia la consola</td><td class="c y">✓</td><td class="c p">◐<small>existe, pero el 18 nov dijiste que el iPad no se conecta</small></td><td class="c n">—</td><td class="c n">—</td></tr>
+      <tr><td>Siri y atajos, widgets, actividad en vivo</td><td class="c y">✓</td><td class="c y">✓</td><td class="c p">◐<small>sin actividad en vivo</small></td><td class="c n">—</td></tr>
+      <tr><td>Modo claro, ícono de la app</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c n">—</td></tr>
+      <tr><td>Juegos, TV en vivo, mando, Alexa, protector de pantalla</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c y">✓</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Lo que ya se siente igual</h2>
+    <ul class="ok-list">
+      <li>Los nombres de las cosas de todos los días coinciden: Seguir viendo, Mi lista, Guardado, Viendo, Vistas, Las dejé, Decide por mí, Colecciones, Tus canales, Pedir a la nube, Tu nube, Elegir versión.</li>
+      <li>Los caminos a lo más usado son los mismos: un póster abre la ficha, la ficha tiene Ver o Continuar con la versión al lado, y la versión se cambia desde ahí o desde el reproductor.</li>
+      <li>Lo que cambia por la pantalla está decidido y anotado: la ficha a la derecha en la Mac, el tablero en el iPad acostado, el mosaico como Explorar en la TV, las listas en Películas y series de la TV.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Los huecos, del que más notarías al que menos</h2>
+    <p class="muted">Cada uno trae opciones con su código para dictar. La recomendada lleva el borde turquesa.</p>
+    <div class="cards">
+
+      <article class="card">
+        <header><span class="code">PA1</span><h3>Ajustes con el mismo orden en todas</h3><span class="impact hi">Lo notas mucho</span></header>
+        <p>Hoy lo mismo vive en lugares distintos. Los idiomas están en «Idiomas» en Apple y en «Ver» en la TV. La calidad está en «Reproducción» en Apple y en «Ver» en la TV. OneDrive tiene su propio renglón en Apple y en la TV está en Cuentas. La clave de TMDB está en «Avanzado» en Apple y en «Cuentas › Claves de Explorar» en la TV. Si aprendiste dónde está algo en un aparato, en el otro lo tienes que buscar.</p>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA1-A · El mismo esqueleto</b>
+            <div class="pair">
+              <div class="mock"><span class="t">iPhone · iPad · Mac</span><div class="row">Idiomas</div><div class="row">Reproducción</div><div class="row">Avisos</div><div class="row">Cuentas <span class="muted">+ OneDrive</span></div><div class="row">Complementos</div><div class="row h">En este aparato</div><div class="row">Apariencia</div><div class="row">Descargas</div><div class="row">Tu Orbital</div><div class="row">Aprende</div></div>
+              <div class="mock"><span class="t">TV</span><div class="row">Resumen</div><div class="row new">Idiomas</div><div class="row new">Reproducción</div><div class="row new">Avisos</div><div class="row">Cuentas</div><div class="row">Complementos</div><div class="row h">En esta consola</div><div class="row">Jugar</div><div class="row">Tele y voz</div><div class="row">Pantalla y sonido</div><div class="row">Sistema</div></div>
+            </div>
+            <div class="gl"><span>Lo que se usa en las dos va primero y en el mismo orden. Lo de cada aparato va abajo, bajo «En este aparato».</span><span>De paso cierra lo pendiente de «Idiomas» en la TV (ID-A).</span><span class="l">Hay que mover renglones en las dos apps.</span></div></div>
+          <div class="opt"><b class="oc">PA1-B · Solo los nombres</b>
+            <div class="mock"><span class="t">TV</span><div class="row">Resumen</div><div class="row new">Idiomas y reproducción <span class="muted">(antes «Ver»)</span></div><div class="row">Complementos</div><div class="row">Jugar</div><div class="row">…</div></div>
+            <div class="gl"><span>Menos trabajo: solo cambia el nombre de «Ver».</span><span class="l">El orden sigue distinto y OneDrive y la clave de TMDB siguen en lugares diferentes.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA1-A.</b> Ajustes es donde menos quieres pensar. Con el mismo orden, lo que aprendiste en el iPhone sirve en la TV.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA2</span><h3>Aprende también en la TV</h3><span class="impact hi">Lo nota quien empieza</span></header>
+        <p>En Apple hay 5 lecciones: Tu nube, En tu idioma, ¿Qué veo hoy?, Lo tuyo al día y Tu TV. La TV tiene otra guía de 5 pantallas que enseña el mando y los juegos, pero no cómo pedir a la nube, cómo elegir idioma o cómo funciona Lo tuyo. Quien solo usa la TV se queda sin esas explicaciones.</p>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA2-A · Las mismas lecciones</b>
+            <div class="mock"><span class="t">TV · Ajustes › Aprende</span><div class="row new">El mando <span class="muted">(la guía de hoy)</span></div><div class="row new">Tu nube</div><div class="row new">En tu idioma</div><div class="row new">¿Qué veo hoy?</div><div class="row new">Lo tuyo, al día</div></div>
+            <div class="gl"><span>Las mismas palabras y el mismo orden que en el iPhone, contadas con el mando.</span><span class="l">Hay que rehacer cinco escenas para verse de lejos.</span></div></div>
+          <div class="opt"><b class="oc">PA2-B · Mandarlas al iPhone</b>
+            <div class="mock"><span class="t">TV · Ajustes › Aprende</span><div class="row">El mando</div><div class="row new">Aprende más en tu iPhone <span class="muted">· código QR</span></div></div>
+            <div class="gl"><span>Casi no cuesta.</span><span class="l">Si no tienes iPhone a la mano, no aprendes nada en la TV.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA2-A.</b> La TV es la pantalla donde más se ve. Lo que tarda más en entenderse (pedir a la nube, el idioma) tiene que explicarse ahí también.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA3</span><h3>La búsqueda avanzada con un nombre y un lugar</h3><span class="impact mid">Lo notas al buscar</span></header>
+        <p>En Apple se llama «Búsqueda avanzada» y está en Buscar. En la TV se llama «Filtro avanzado» y está en los botones de Películas y series; en Buscar no aparece. Apple además filtra por duración («Tiempo») y deja «Ocultar lo que ya vi». La TV no.</p>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA3-A · «Búsqueda avanzada» en Buscar, en las dos</b>
+            <div class="mock"><span class="t">TV · Buscar, sin escribir</span><div class="row new">Búsqueda avanzada ›</div><div class="row">Buscaste hace poco</div><div class="row h">Películas y series</div><div class="tabs"><i>Decide por mí</i><i>Guardado</i><i>Colecciones</i><i class="on">Búsqueda avanzada</i></div></div>
+            <div class="gl"><span>Se busca donde buscas, y se llama igual que en el iPhone.</span><span>Suma «Tiempo» y «Ocultar lo que ya vi».</span><span class="l">Cambia un nombre que ya conoces en la TV.</span></div></div>
+          <div class="opt"><b class="oc">PA3-B · «Filtro avanzado» en las dos</b>
+            <div class="mock"><span class="t">iPhone · Buscar</span><div class="row new">Filtro avanzado ›</div><div class="row">Buscaste hace poco</div></div>
+            <div class="gl"><span>El iPhone cambia una palabra y listo.</span><span class="l">La TV sigue sin la puerta en Buscar.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA3-A.</b> Quien quiere «comedias de los 90 en Netflix» va a Buscar. Ahí tiene que estar la puerta en los dos aparatos.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA4</span><h3>Lo que ya mejoró en el iPhone y no ha llegado a la TV</h3><span class="impact mid">Lo notas de vez en cuando</span></header>
+        <p>Ya están anotados en el registro, pero siguen abiertos. En orden de cuánto molestan:</p>
+        <ul>
+          <li>Con tu Real-Debrid vencido, la TV salta de versión en versión en vez de decir «Tu Real-Debrid venció · Renovar» (21 nov).</li>
+          <li>Buscar no pone arriba «Mejor resultado» (S1-A): «matrix» puede dar la serie antes que la película.</li>
+          <li>«Quitar de Seguir viendo» no deja «Deshacer» (16 nov).</li>
+          <li>Prime Video puede salir vacío si cambia el país (16 nov). Trakt no dice «Esperando a que lo apruebes…» (17 nov).</li>
+          <li>Los pósters sin imagen tienen un solo color por tipo, no uno por título (23 nov).</li>
+        </ul>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA4-A · Una tanda para ponerse al día</b><div class="gl"><span>Una sola entrega con las cinco, en ese orden, y el registro queda limpio.</span><span class="l">Es una entrega entera de la TV sin cosas nuevas.</span></div></div>
+          <div class="opt"><b class="oc">PA4-B · Solo la del Real-Debrid vencido ahora</b><div class="gl"><span>Arregla lo que más molesta hoy.</span><span class="l">Las demás siguen esperando.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA4-A.</b> Son arreglos que ya están hechos y probados en el iPhone. En la TV es copiar la misma idea, no inventarla.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA5</span><h3>¿El iPad se conecta a la TV?</h3><span class="impact mid">Lo decides tú</span></header>
+        <p>El 18 nov dijiste que iPad y Mac nunca se conectan a la TV. Pero el iPad todavía tiene el control de la TV como panel a la derecha (CT2, 11 nov), la tarjeta de invitación y la voz. La Mac no tiene nada de eso.</p>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA5-A · Como dijiste: el iPad sin TV</b>
+            <div class="mock"><span class="t">iPad · Ajustes</span><div class="row">Idiomas</div><div class="row">Cuentas</div><div class="row l" style="text-decoration:line-through;color:var(--muted)">Orbital en la TV</div></div>
+            <div class="gl"><span>El iPad queda igual que la Mac: una app para ver, sin cosas que no sirven sin consola.</span><span class="l">Pierdes el control grande de la TV en el iPad.</span></div></div>
+          <div class="opt"><b class="oc">PA5-B · El iPad sí es control de la TV</b>
+            <div class="mock"><span class="t">iPad · acostado</span><div class="pair"><div class="row">Inicio…</div><div class="row">Control de la TV</div></div></div>
+            <div class="gl"><span>Si en casa usas el iPad de control, se queda.</span><span class="l">Hay que cambiar la decisión del 18 nov y mantener ese panel.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA5-A</b>, porque es lo que ya decidiste. Si sí usas el iPad de control en casa, dicta PA5-B.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA6</span><h3>Diagnóstico en el iPhone, el iPad y la Mac</h3><span class="impact lo">Cuando algo falla</span></header>
+        <p>La TV tiene Ajustes › Sistema › Diagnóstico, que dice qué falla y cómo se arregla. En Apple lo mismo está repartido en varios lugares: «Probar la velocidad», «N cosas no se pudieron guardar en Trakt» y «Último scrobble». No hay una sola página.</p>
+        <div class="opts">
+          <div class="opt rec"><span class="tag">RECOMENDADA</span><b class="oc">PA6-A · Una página «Diagnóstico»</b>
+            <div class="mock"><span class="t">Ajustes › Avanzado › Diagnóstico</span><div class="row">Trakt <span class="y">al día</span></div><div class="row">Tu nube <span class="p">vence en 3 días</span></div><div class="row">Complementos <span class="x">Torrentio no contesta</span></div><div class="row">Velocidad</div></div>
+            <div class="gl"><span>Un solo lugar para ver por qué algo no abre, igual que en la TV.</span><span class="l">Es una pantalla nueva.</span></div></div>
+          <div class="opt"><b class="oc">PA6-B · Dejarlo repartido</b><div class="gl"><span>No cuesta nada.</span><span class="l">Cuando algo falla, buscas en tres lugares.</span></div></div>
+        </div>
+        <p class="rec-line"><b>Recomiendo PA6-A</b>, pero después de PA1 a PA4.</p>
+      </article>
+
+      <article class="card">
+        <header><span class="code">PA7</span><h3>Dos detalles chicos</h3><span class="impact lo">Casi no se nota</span></header>
+        <ul>
+          <li><b>PA7-A · Nombres de la ficha en el iPad ancho:</b> sus pestañas dicen «Reparto» y «Parecidas». El iPhone y la TV dicen «Reparto y equipo» y «Más como esto». Recomiendo usar los nombres largos también en el iPad.</li>
+          <li><b>PA7-B · Marcar los sustos en la TV:</b> en Apple la barra del video marca los sustos. En la TV no. Recomiendo llevarlo a la TV cuando se haga PA4.</li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Para dictar</h2>
+    <p>Mi recomendación completa: <b>PA1-A, PA2-A, PA3-A, PA4-A, PA5-A, PA6-A, PA7-A y PA7-B.</b> Para hacerla en orden de impacto: primero PA4 (ya probado en el iPhone), luego PA1 con PA3, luego PA2, y al final PA6 y PA7.</p>
+  </section>
+
+  <footer>Análisis del 23 nov 2026 hecho con el código y el registro de paridad. No abrí capturas: el camino y los nombres salen del código. También queda anotado en docs/producto/paridad-registro.md, sección «Análisis de paridad de las cuatro pantallas». Cosas de la casa que encontré de paso: el registro dice que la TV no descarga (sí descarga) y tiene ocho renglones que dicen «pendiente» en un lugar y «hecho» en otro.</footer>
+</div>

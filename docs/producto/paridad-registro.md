@@ -283,3 +283,25 @@ iPhone e ink-900 en la TV.
 | La ficha a la derecha en la Mac (FI-B, Fernando, 22 nov 2026: «que yo le pique y salga a la derecha»): con ventana ancha, tocar un póster abre la ficha en un panel de cerca de 40 % sobre la pantalla oscurecida; clic afuera, ✕ o Esc la cierran. Y una imagen que falla se vuelve a pedir sola mientras siga en pantalla | Panel: solo la Mac (el iPad sigue con la ficha completa, FE1; el iPhone no cambia). Reintento de imágenes: iPhone, iPad y Mac | Distinto a propósito: la ficha de la TV ocupa la pantalla (se ve de lejos y con mando) |
 | Idiomas en un solo lugar (ID-A, Fernando 22 nov): Ajustes › «Idiomas» con la app, los títulos y sinopsis (idioma aparte, por omisión el de la app), lo que ves, los subtítulos y el país; dos opciones a la vista | Ya (2474: iPhone, iPad y Mac; el país salió de Avanzado; los widgets usan el idioma de los títulos) | Pendiente: la TV tiene el idioma de la app y Tus idiomas en Ajustes › Ver; falta el idioma de títulos aparte y juntar todo en «Idiomas» |
 | Un título sin póster (Fernando, 23 nov 2026: «un fondo más bonito… cuando hacemos búsquedas y encontramos cosas raras»): su nombre completo y legible sobre un resplandor de color (uno de los tintes de la app, siempre el mismo para el mismo título) con una película tenue, como la tarjeta sin arte de la TV; mientras la imagen llega, el marco quieto sin nombre | Ya (`PosterStandIn`) | Ya tiene resplandor (`.card--no-art`), de un solo color por tipo. **Pendiente**: el color por título, como el iPhone |
+
+## Análisis de paridad de las cuatro pantallas (23 nov 2026)
+
+Fernando: «no tiene que todo verse igual, pero que la experiencia sea similar. Que todos tengan las mismas
+características». Inventario sacado del código de iPhone, iPad, Mac y TV. Canvas con la tabla completa y las opciones:
+https://claude.ai/artifact/PMGhjUZBDfyButxnySU1dQ (copia en `docs/producto/paridad-plataformas-2026-11-23/canvas.html`).
+Recomendación: PA1-A, PA2-A, PA3-A, PA4-A, PA5-A, PA6-A, PA7-A y PA7-B. **Ninguna está decidida todavía.**
+
+| Hueco | iPhone · iPad · Mac | TV |
+|---|---|---|
+| PA1 · Ajustes con el mismo esqueleto: lo que se usa en las dos (Idiomas · Reproducción · Avisos · Cuentas · Complementos) primero y en el mismo orden; lo de cada aparato abajo. Hoy la calidad vive en «Reproducción» (Apple) y en «Ver» (TV); OneDrive tiene renglón propio en Apple y en la TV está en Cuentas; la clave de TMDB está en «Avanzado» (Apple) y en «Cuentas › Claves de Explorar» (TV) | Pendiente (PA1-A): OneDrive dentro de Cuentas, las claves en el mismo lugar que la TV | Pendiente (PA1-A): partir «Ver» en «Idiomas» y «Reproducción», agregar «Avisos»; cierra también ID-A |
+| PA2 · Aprende en la TV: las 5 lecciones de Apple (Tu nube, En tu idioma, ¿Qué veo hoy?, Lo tuyo al día, Tu TV). La TV solo tiene la guía del mando y los juegos | Ya | Pendiente (PA2-A): Ajustes › Aprende con «El mando» (la guía de hoy) y las mismas lecciones |
+| PA3 · La búsqueda avanzada con un nombre y un lugar: Apple dice «Búsqueda avanzada» y vive en Buscar; la TV dice «Filtro avanzado» y vive en los botones de Películas y series. Apple además tiene «Tiempo» y «Ocultar lo que ya vi» | Ya | Pendiente (PA3-A): «Búsqueda avanzada» en Buscar (y en los botones de Películas y series), con Tiempo y «Ocultar lo que ya vi». Premios y Estudios siguen fuera (decidido) |
+| PA4 · Ponerse al día en la TV, en este orden: Real-Debrid vencido sin saltar de versión en versión (21 nov), «Mejor resultado» en Buscar (S1-A), «Quitar de Seguir viendo» con «Deshacer» (16 nov), Prime Video «prv»/«amp» y Trakt «Esperando a que lo apruebes…» (16–17 nov), color por título en los pósters sin imagen (23 nov) | Ya | Pendiente (PA4-A): una tanda con las cinco |
+| PA5 · ¿El iPad se conecta a la TV? El 18 nov Fernando dijo que iPad y Mac nunca se conectan, pero el iPad conserva el control en panel (CT2), la tarjeta de invitación y la voz (`ThisDevice.talksToOrbital` solo excluye la Mac) | Pendiente que Fernando elija: PA5-A quitarle al iPad lo de la consola (recomendada, es su decisión del 18 nov) o PA5-B dejarlo | No aplica |
+| PA6 · Diagnóstico en Apple: la TV tiene Ajustes › Sistema › Diagnóstico; en Apple está repartido («Probar la velocidad», lo que no se guardó en Trakt, «Último scrobble») | Pendiente (PA6-A): Ajustes › Avanzado › Diagnóstico con Trakt, tu nube, complementos y velocidad | Ya |
+| PA7 · Detalles: (A) las pestañas de la ficha del iPad ancho dicen «Reparto» y «Parecidas», el iPhone y la TV «Reparto y equipo» y «Más como esto» (`TitleView+WideTab.swift`); (B) «Marcar los sustos» solo existe en Apple | Pendiente (PA7-A): los nombres largos en el iPad | Pendiente (PA7-B): marcar los sustos en la barra del reproductor |
+
+Notas del análisis, sin propuesta: la TV **sí descarga** (`orbital/downloads.py`, fila «Descargas», botón Descargar), así que
+«Descargas» ya no es solo del teléfono como dice el primer párrafo de «Distinto a propósito». Y hay ocho renglones que dicen
+«pendiente» en un lugar y «hecho» en otro (líneas 38, 39, 41, 99, 108, 117, 150 y 192 de este archivo, contadas antes de
+esta sección); falta revisarlos uno por uno.
