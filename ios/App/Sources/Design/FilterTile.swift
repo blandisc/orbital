@@ -92,7 +92,9 @@ struct FilterChip: View {
                 page.title.recipe(.cardTitle)
                 if let value { value.recipe(.secondary, color: DS.textMuted).lineLimit(1) }
             }
-            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+            .padding(.horizontal, DS.Space.s1)
+            // En la Mac el alto lo pone el botón (como las cápsulas de la barra de arriba); en touch, a tamaño de dedo.
+            .padding(.vertical, ThisDevice.isMac ? 0 : DS.Space.s1)
         }
         .dsSecondaryButton()   // el botón secundario de la app (cápsula con borde), no uno armado a mano
         .dsSelectionRing(value != nil, in: Capsule())

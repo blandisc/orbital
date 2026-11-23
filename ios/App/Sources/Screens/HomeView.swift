@@ -413,7 +413,7 @@ struct HomeView: View {
         // Al cambiar el tamaño de la ventana el carrusel se quedaba a medio camino entre dos portadas (se asomaba el «Ver» de
         // la siguiente junto al panel, Mac, 22 nov 2026): ya quieta la ventana, vuelve a acomodarse en la que estabas.
         .task(id: WindowMetrics.column.width) {
-            guard let slot = heroSlot, (try? await Task.sleep(for: .milliseconds(120))) != nil else { return }
+            guard let slot = heroSlot, (try? await Task.sleep(for: DS.HomeHero.resizeSettle)) != nil else { return }
             heroSlot = nil
             await Task.yield()
             heroSlot = slot

@@ -27,6 +27,7 @@ extension SettingsView {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .listSectionSpacing(DS.Mac.settingsSectionGap)   // cada grupo con su aire: su explicación no se pega al siguiente
                 }
                 .environment(\.settingsSubPane, SettingsSubPane { title, make in macStack.append(SettingsSubPage(title: title, make: make)) })
                 .environment(\.readableWidth, DS.Mac.settingsPageWidth)   // AJ-A: la página llena el ancho, no una columna de 720

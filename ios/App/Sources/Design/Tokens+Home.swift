@@ -7,6 +7,8 @@ extension DS {
     enum HomeHero {
         /// Ancho entre alto del arte: casi un póster en el iPhone; más bajo en pantallas cortas (el SE) y apaisado en ventana
         /// ancha (iPad, Mac), donde un póster quedaría altísimo.
+        /// Cuánto espera el carrusel a que la ventana deje de cambiar de tamaño antes de volver a acomodarse en su portada.
+        static let resizeSettle: Duration = .milliseconds(120)
         static let aspect: CGFloat = 0.78, aspectShort: CGFloat = 1.25, shortScreen: CGFloat = 700, aspectWide: CGFloat = 1.9
         /// Desde qué ancho la ventana es «ancha» (el iPad mini de pie mide 744: antes el umbral era 800 y le tocaba la portada
         /// del iPhone, de casi toda la pantalla). En ventana ancha y de pie (iPad vertical) la portada es menos apaisada que

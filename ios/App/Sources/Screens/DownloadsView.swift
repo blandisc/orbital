@@ -151,7 +151,7 @@ struct DownloadsView: View {
 
     /// Biblioteca en filas (BI-A): en la Mac y en el iPad ancho. Fernando, 22 nov 2026: «esta pantalla también me gusta para el
     /// iPad». En el iPhone (y el iPad angosto, en pantalla dividida) siguen las pestañas de arriba.
-    static var rows: Bool { ThisDevice.isMac || (UIDevice.current.userInterfaceIdiom == .pad && WindowMetrics.roomy) }
+    @MainActor static var rows: Bool { ThisDevice.isMac || (ThisDevice.platform == "ipad" && WindowMetrics.roomy) }
 
     @ViewBuilder private func macSplit(_ content: some View) -> some View {
         if Self.rows {

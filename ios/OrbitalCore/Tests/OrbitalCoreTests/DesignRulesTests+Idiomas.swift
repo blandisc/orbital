@@ -18,4 +18,13 @@ extension DesignRulesTests {
         let settings = try XCTUnwrap(files.first { $0.name == "SettingsView.swift" }).lines.joined(separator: "\n")
         XCTAssertFalse(settings.contains("Picker(\"País"), "El país va en «Idiomas»")
     }
+
+    /// Un ajuste de pocas opciones se lee en un renglón: su nombre (y qué cambia) a la izquierda y el selector a la derecha
+    /// (`SettingsChoiceRow`). Solo en su tarjeta, con el nombre arriba y la explicación abajo, en la Mac quedaba medio renglón
+    /// vacío y la explicación se pegaba al grupo de abajo (Fernando, 23 nov 2026: «una pulida con ojo experto»).
+    func testSettingsChoicesSitInARowWithTheirName() throws {
+        let pages = try sources(["Screens"]).filter { $0.name.hasPrefix("SettingsView") }
+        let lone = pages.flatMap { file in file.lines.filter { $0.contains("DSSelector(") }.map { "\(file.name): \($0.trimmingCharacters(in: .whitespaces))" } }
+        XCTAssertEqual(lone, [], "En Ajustes un selector va en SettingsChoiceRow, con su nombre a la izquierda")
+    }
 }

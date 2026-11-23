@@ -26,15 +26,15 @@ extension SettingsView {
     /// La página «Idiomas»: cada idioma por su lado. Con dos opciones, botones a la vista (no otra pantalla con una lista).
     @ViewBuilder func languagesPage(_ model: SettingsModel) -> some View {
         let s = model.settings
+        // Los dos idiomas de Orbital en una tarjeta: cada renglón dice qué cambia y lleva su selector a la derecha.
         Section {
-            DSSelector(options: languageChoices, selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
+            SettingsChoiceRow(title: "La app", detail: "Menús, botones y avisos", options: languageChoices,
+                              selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
                 .accessibilityIdentifier("languages-app")
-        } header: { Text("La app") } footer: { Text("Menús, botones y avisos.") }
-        .listRowBackground(DS.surface)
-        Section {
-            DSSelector(options: languageChoices, selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
+            SettingsChoiceRow(title: "Títulos y sinopsis", detail: "Cómo se llaman las películas y series y de qué tratan", options: languageChoices,
+                              selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
                 .accessibilityIdentifier("languages-titles")
-        } header: { Text("Títulos y sinopsis") } footer: { Text("Cómo se llaman las películas y series y de qué tratan.") }
+        } header: { Text("Lo que lees") }
         .listRowBackground(DS.surface)
         YourLanguagesView(settings: settings, embedded: true)
         Section {
@@ -56,7 +56,7 @@ extension SettingsView {
                 ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
             }
             .accessibilityIdentifier("languages-region")
-        } header: { Text("País") } footer: { Text("Para lo popular en Netflix, Disney+ y HBO Max de tu país.") }
+        } footer: { Text("Para lo popular en Netflix, Disney+ y HBO Max de tu país.") }   // sin encabezado: el renglón ya dice «País»
         .listRowBackground(DS.surface)
     }
 

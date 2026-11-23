@@ -59,7 +59,7 @@ struct HomeBoardPanel<Rows: View, News: View, Decide: View>: View {
             }
             // `minHeight: 0`: lo de arriba cede su alto a «Decide por mí»; sin él, los renglones empujaban la tarjeta fuera del
             // panel (22 nov 2026) y `free` medía de más.
-            .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)   // ds-exception: 0 no es una medida, es «puede encogerse»
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { free = $0 }
             .clipped()
             decide().layoutPriority(1)

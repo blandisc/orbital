@@ -183,6 +183,7 @@ targets:
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
       - path: Sources/Design/Tokens+Player.swift
       - path: Sources/Design/Tokens+Screens.swift   # `Brand.swift` usa DS.Splash
+      - path: Sources/Design/Tokens+Tints.swift     # lo que salió de Tokens+Screens (colores de lista, avatar…)
       - path: Sources/Design/Tokens+Simpsons.swift   # el widget de la dona usa DS.Simpsons
       - path: Sources/Design/Tokens+Home.swift      # «Lo nuevo de lo tuyo» usa los de la línea de Inicio (DS.HomeTimeline)
       - path: Sources/Design/Tokens+Mac.swift       # `DS.styled`, que usan las recetas de letra de Tokens.swift

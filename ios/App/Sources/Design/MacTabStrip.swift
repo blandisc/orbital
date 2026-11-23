@@ -230,9 +230,9 @@ struct MacSearchField: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Image(systemName: "magnifyingglass").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
+            Image(systemName: "magnifyingglass").font(DS.Mac.searchFieldText.font).foregroundStyle(DS.textMuted)
             TextField("Películas y series", text: $text)
-                .textFieldStyle(.plain).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
+                .textFieldStyle(.plain).font(DS.Mac.searchFieldText.font).foregroundStyle(DS.text)
                 .focused(focused).submitLabel(.search).autocorrectionDisabled()
             if !text.isEmpty {
                 DSIconButton(symbol: DS.Symbol.remove, label: "Borrar la búsqueda", size: .regular) { text = "" }

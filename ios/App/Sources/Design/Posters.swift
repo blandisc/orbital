@@ -57,11 +57,12 @@ struct PosterView: View {
                     RemoteImage(url: u, maxPoints: maxPoints) { phase, source in
                         switch phase {
                         case .success(let image): filled(image, source: source, key: url)
-                        case .failure where !primaryFailed && fallback != nil: placeholder.onAppear { primaryFailed = true }
-                        default: placeholder
+                        case .failure where !primaryFailed && fallback != nil: Color.clear.onAppear { primaryFailed = true }
+                        case .failure: PosterStandIn(title: title)
+                        default: Color.clear   // mientras llega, el marco quieto (sin nombre que luego brinca a la imagen)
                         }
                     }
-                } else { placeholder }
+                } else { PosterStandIn(title: title) }
             }
     }
 
@@ -129,9 +130,33 @@ struct PosterView: View {
         if let aspect { fill.aspectRatio(aspect, contentMode: .fit) } else { fill }
     }
 
-    private var placeholder: some View {
-        Text(title).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
+}
+
+/// El póster de un título sin imagen: el resplandor de su color, la película tenue y su nombre completo abajo, legible.
+struct PosterStandIn: View {
+    let title: String
+
+    var body: some View {
+        let hue = DS.Poster.missingHue(title)
+        GeometryReader { box in
+            ZStack(alignment: .bottomLeading) {
+                EllipticalGradient(colors: [hue.opacity(DS.Poster.missingGlow), hue.opacity(DS.Poster.missingBase)],
+                                   center: UnitPoint(x: 0.25, y: 0.15), startRadiusFraction: 0, endRadiusFraction: 1)
+                Image(systemName: "film")
+                    .resizable().scaledToFit()
+                    .frame(width: box.size.width * DS.Poster.missingIconShare)
+                    .foregroundStyle(DS.text.opacity(DS.Opacity.faint))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .padding(.bottom, box.size.height * DS.Poster.missingIconShare)
+                Text(title)
+                    .recipe(.cardTitle, color: DS.text)
+                    .lineLimit(4).minimumScaleFactor(DS.Poster.missingTextShrink)
+                    .multilineTextAlignment(.leading)
+                    .padding(DS.Space.s2)
+            }
+        }
+        .background(DS.surface)
+        .accessibilityHidden(true)   // el póster ya dice su nombre a VoiceOver
     }
 }
 

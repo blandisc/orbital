@@ -263,3 +263,38 @@ struct SettingsLink<Destination: View, Label: View>: View {
         }
     }
 }
+
+/// Un ajuste de pocas opciones a la vista (Español / English): su nombre y lo que cambia a la izquierda, el selector a la
+/// derecha, en un solo renglón como `DSToggleRow`. Si no cabe (iPhone angosto, letra grande), el selector baja a lo ancho.
+/// Antes el selector iba solo en su tarjeta con el nombre arriba y la explicación abajo, sueltos: en la pantalla ancha de la
+/// Mac se veía medio renglón vacío y no se sabía de qué grupo era cada texto (Fernando, 23 nov 2026: «una pulida con ojo
+/// experto»).
+struct SettingsChoiceRow<ID: Hashable>: View {
+    let title: LocalizedStringKey
+    var detail: LocalizedStringKey?
+    let options: [DSSelector<ID>.Option]
+    @Binding var selection: ID
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s4) {
+                label
+                Spacer(minLength: DS.Space.s2)
+                DSSelector(options: options, selection: $selection, adapts: false).fixedSize()
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                label
+                DSSelector(options: options, selection: $selection)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var label: some View {
+        VStack(alignment: .leading, spacing: 0) {   // como `DSToggleRow`
+            Text(title).foregroundStyle(DS.text)
+            if let detail { Text(detail).recipe(.footnote, color: DS.textMuted) }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}

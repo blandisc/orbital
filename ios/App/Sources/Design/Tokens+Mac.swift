@@ -70,12 +70,18 @@ extension DS {
         static let topBarPadV = Space.s2 + Space.s1 / 2
         /// La lista de Ajustes (MA1), como Ajustes del Sistema: desde AJ-A (22 nov 2026) una barra lateral angosta, un renglón
         /// por página sin su valor; la página de la derecha llena lo demás hasta `settingsPageWidth`.
-        static let settingsListWidth: CGFloat = 300, settingsPageWidth: CGFloat = 1200
+        static let settingsListWidth: CGFloat = 340, settingsPageWidth: CGFloat = 1200
+        /// Entre grupos de una página de Ajustes en la Mac: con el espacio de iOS, la explicación de un grupo quedaba pegada al
+        /// nombre del siguiente y no se sabía de cuál era (23 nov 2026). Con 300 de barra, «Conectado a Trakt, Real-De…» se cortaba.
+        static let settingsSectionGap = Space.s8
         /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
         static let tabSwitchQuiet: Double = 0.4
         /// El campo de Buscar en la Mac (MS1): grande, no la rayita de la barra; desde BU-A (22 nov 2026), a lo ancho de la
-        /// cuadrícula.
-        static let searchFieldHeight: CGFloat = 88
+        /// cuadrícula. Un paso más alto que las cápsulas de la barra y de las puertas, con la letra de un nombre en tarjeta
+        /// (Fernando, 23 nov 2026: «se ven demasiado grandes los botones respecto a los otros»; con 88 y la letra de título
+        /// pesaba más que todo lo demás de la pantalla).
+        static let searchFieldHeight: CGFloat = 64
+        static let searchFieldText = TextRecipe.section   // el campo de texto del sistema no crece con la letra de la Mac: con `cardTitle` salía más chica que la de las puertas
         /// RF2: las reseñas de la ficha en la Mac, en columnas a lo ancho (como la tele, no una tira angosta a la izquierda).
         static let reviewColumns = 3
         /// RP2: el póster bajo el puntero crece un poco y lleva el marco crema del foco de la TV.

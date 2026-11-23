@@ -318,9 +318,10 @@ struct SettingsView: View {
 
     // MARK: páginas
     @ViewBuilder private func appearance(_ model: SettingsModel) -> some View {
-        Section("Modo") {
-            DSSelector(choices: [("system", "Como el iPhone"), ("light", "Claro"), ("dark", "Oscuro")],
-                        selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
+        Section {   // un renglón con su nombre y el selector a la derecha (`SettingsChoiceRow`), como «Idiomas»
+            SettingsChoiceRow(title: "Modo", options: [.init(id: "system", title: Text("Como el iPhone")), .init(id: "light", title: Text("Claro")),
+                                                       .init(id: "dark", title: Text("Oscuro"))],
+                              selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
         }
         .listRowBackground(DS.surface)
         Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)

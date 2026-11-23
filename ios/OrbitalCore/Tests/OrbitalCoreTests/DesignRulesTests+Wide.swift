@@ -178,7 +178,7 @@ extension DesignRulesTests {
         // BU-A (22 nov 2026) reemplazó los seis mosaicos grandes de MS1: un renglón de cápsulas con ícono y el campo a lo ancho.
         XCTAssertTrue(try code("Filtro.swift").contains("FilterChip(page: page, context: context) { open(page) }"), "Buscar en la Mac: las puertas en un renglón de cápsulas (BU-A)")
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(maxWidth: .infinity, minHeight: DS.Mac.searchFieldHeight)"), "El campo de Buscar en la Mac va a lo ancho (BU-A)")
-        XCTAssertTrue(try code("MacTabStrip.swift").contains(".textFieldStyle(.plain).font(DS.TextRecipe.title.font)"), "El campo de Buscar en la Mac lleva letra grande")
+        XCTAssertTrue(try code("MacTabStrip.swift").contains(".textFieldStyle(.plain).font(DS.Mac.searchFieldText.font)"), "El campo de Buscar en la Mac lleva la letra de su token (un paso arriba de las puertas)")
         XCTAssertTrue(try code("MacTabStrip.swift").contains("UIView.setAnimationsEnabled(false)"), "En la Mac la pestaña cambia al momento")
         // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).
         for token in ["static var wideColumn: CGFloat { Mac.sized(", "static var wideLogoWidth: CGFloat { Mac.sized(", "static var readable: CGFloat { Mac.sized("] {
