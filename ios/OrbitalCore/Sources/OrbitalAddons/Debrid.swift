@@ -169,7 +169,7 @@ public actor DebridAccount {
     /// La nube que usas (Ajustes › Cuentas › Tu nube).
     public nonisolated var service: DebridService { vault.debridService }
     private let vault: AddonVault
-    private let clock: @Sendable () -> Date
+    let clock: @Sendable () -> Date
 
     /// Quién es este aparato («iphone», «ipad», «mac»): se anota en la copia compartida de tu clave (CX2-A).
     public nonisolated let platform: String
@@ -332,10 +332,12 @@ public actor DebridAccount {
     /// recomendados se rearman solos con ella. false si el llavero no la aceptó: entonces nada cambia (TEC-5).
     @discardableResult
     /// `service` (DN1): la clave es de esa nube y esa queda como la tuya; sin decirlo, la que usas.
-    public func save(token: String, status: DebridStatus, share: Bool = true, service cloud: DebridService? = nil) -> Bool {
+    /// `savedAt`: cuándo se puso (la fecha de la copia de tus aparatos, si se tomó de ahí); sin decirlo, ahora.
+    public func save(token: String, status: DebridStatus, share: Bool = true, service cloud: DebridService? = nil, savedAt: Double? = nil) -> Bool {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         let cloud = cloud ?? service
         guard vault.storeSecret(cloud.keyStore, clean) else { return false }
+        vault.setData(AddonKeys.debridSavedAt, Data(String(savedAt ?? clock().timeIntervalSince1970).utf8))
         vault.setDebridService(cloud)
         vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
         lastTrouble = nil

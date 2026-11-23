@@ -18,10 +18,13 @@ public struct SharedDebridKey: Codable, Equatable, Sendable, CustomStringConvert
     /// De qué nube es («torbox»); nil en una copia de antes (era de Real-Debrid).
     public var service: String?
     public var cloud: DebridService { service.flatMap { DebridService(rawValue: $0) } ?? .realDebrid }
+    /// Cuándo la pusiste (segundos desde 1970); nil en una copia de antes del 22 nov 2026: no se sabe si es la más reciente.
+    public var at: Double?
 
-    public init(key: String, from: String, removed: String? = nil, name: String? = nil, service: DebridService = .realDebrid) {
+    public init(key: String, from: String, removed: String? = nil, name: String? = nil, service: DebridService = .realDebrid, at: Date? = nil) {
         self.key = key; self.from = from; self.removed = removed; self.name = name
         self.service = service == .realDebrid ? nil : service.rawValue
+        self.at = at?.timeIntervalSince1970
     }
     public var description: String { "sharedDebridKey(from: \(from), key: •••, removed: \(removed != nil))" }
 
@@ -58,7 +61,7 @@ extension DebridAccount {
 
     nonisolated func publishShared(_ key: String, service cloud: DebridService) {
         guard !key.isEmpty else { return }
-        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName(), service: cloud).encoded)
+        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName(), service: cloud, at: clock()).encoded)
     }
 
     nonisolated func retireShared(_ key: String) {
@@ -71,6 +74,14 @@ extension DebridAccount {
 
     nonisolated func markSharedSeen(_ value: String) { _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridSeen, value) }
     nonisolated var sharedSeen: String? { vaultRef.secret(AddonKeys.sharedRealDebridSeen) }
+
+    /// La cuenta de aquí ya no da enlaces: venció o es gratuita.
+    static func stopped(_ status: DebridStatus, now: Date) -> Bool {
+        switch status.state(now: now) { case .expired, .free: true; case .active, .expiringSoon: false }
+    }
+
+    /// Cuándo se puso la clave de este aparato (pegada aquí o tomada de tus aparatos); nil si es de antes del 22 nov 2026.
+    nonisolated var savedAt: Double? { vaultRef.data(AddonKeys.debridSavedAt).flatMap { Double(String(decoding: $0, as: UTF8.self)) } }
 
     static func sameAccount(_ a: DebridStatus?, _ b: DebridStatus) -> Bool {
         guard let a else { return false }
@@ -101,9 +112,24 @@ extension DebridAccount {
         // aunque la de aquí todavía sirva. La de antes queda en este aparato para «Volver a la clave anterior».
         if cloud == service, local == shared.key { markSharedSeen(shared.key); return .none }   // ya es la de aquí
         if sharedSeen == shared.key { return .none }   // aquí ya se decidió: volviste a la anterior o la quitaste solo de aquí
+        // La de aquí se puso después que la copia (iCloud aún trae la de antes): se queda la de aquí.
+        if let at = shared.at, let mine = savedAt, mine >= at { return .none }
+        let current = vaultRef.debridToken(service)
         guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: se queda la de aquí
-        let before = vaultRef.debridToken(service).map { SharedDebridKey(key: $0, from: platform, service: service) }
-        guard save(token: shared.key, status: theirs, share: false, service: cloud) else { return .none }
+        // 22 nov 2026 · una copia sin fecha es de antes (p. ej. tu Real-Debrid de hace semanas, si pusiste TorBox en una versión
+        // que todavía no la compartía): no se sabe si es la más reciente. Si la de aquí funciona, se queda y se comparte con fecha
+        // (así tus otros aparatos la toman); solo se toma la de antes si la de aquí ya no sirve y la de antes sí.
+        if shared.at == nil, let current {
+            switch await checkNow() {
+            case .status(let mine) where !Self.stopped(mine, now: now()):
+                publishShared(current, service: service)
+                return .none
+            case .unreachable, .noKey: return .none
+            case .status, .invalidToken: guard theirs.isPremium else { return .none }
+            }
+        }
+        let before = current.map { SharedDebridKey(key: $0, from: platform, service: service) }
+        guard save(token: shared.key, status: theirs, share: false, service: cloud, savedAt: shared.at) else { return .none }
         if let before, before.key != shared.key || before.cloud != cloud { storePrevious(before) }
         return .adopted(from: who)
     }
