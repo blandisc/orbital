@@ -7,7 +7,7 @@ import XCTest
 extension DesignRulesTests {
     func testSwitchingScreensRereadsNothingAndRepaintsOnlyWhatChanged() throws {
         // 1 · Lo que viaja por el entorno lleva solo datos; lo que hace vive aparte (V9, como `RemoteOpener`). La tira de
-        // pestañas de la Mac (`MacTabs`) se queda: la leen solo sus renglones de arriba y cambia con la pestaña de todos modos.
+        // pestañas de la Mac (`MacTabs`) es una caja que no cambia: ver la parte 7.
         // Tampoco cuentan los que pone una sola pantalla para lo suyo (Ajustes, una historia, el reproductor): no los lee
         // cada póster de las cuatro pestañas.
         let files = try sources(["Design", "Screens"])
@@ -66,6 +66,14 @@ extension DesignRulesTests {
             }
         }
         XCTAssertEqual(comparing, [], "Un diccionario de listas no se compara entero en su didSet: escríbelo con put(&cache, llave, valor)")
+
+        // 7 · Cambiar de pestaña no cambia el entorno de toda la app: la pestaña en que estás va en una caja (`MacTabs`, una
+        // clase observable que la raíz crea una vez) que leen solo la tira y «Buscar». Como valor, cada clic hacía que SwiftUI
+        // revisara las cuatro pestañas enteras (22 nov 2026).
+        let strip = try XCTUnwrap(try sources(["Design"]).first { $0.name == "MacTabStrip.swift" })
+        XCTAssertTrue(strip.lines.contains { $0.contains("@Observable @MainActor final class MacTabs") }, "MacTabs es una caja, no un valor que cambia")
+        let root = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "RootView.swift" })
+        XCTAssertFalse(root.lines.contains { $0.contains("MacTabs(current:") }, "La raíz no arma una MacTabs nueva en cada pasada")
 
         // 6 · Lo que señala un aviso de la guía viaja solo (uno a la vez): un diccionario que arma cada vista de la pantalla
         // costaba 0.2 s de la primera visita a Explorar en la Mac.

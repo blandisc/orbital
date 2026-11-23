@@ -246,7 +246,7 @@ struct MainTabs: View {
     @State private var showGame = false
     /// La hoja del control estirada (el control completo) o corta.
     @State private var remoteLarge = false
-    @State private var tab: Int
+    @State private var tab: Int; @State private var macTabs = MacTabs()   // la tira de la Mac: una caja por ventana
     /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
     @State private var pendingDownloads = 0
     /// RX1-A · lo que baja en la nube también cuenta en la pestaña Descargas (ahí vive).
@@ -405,10 +405,10 @@ struct MainTabs: View {
 
     /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
     private func wired(_ selection: Binding<Int>) -> some View {
-        shell(selection)
-        .environment(\.macTabs, TopRow.tabsInLogoRow ? MacTabs(current: tab, select: { selection.wrappedValue = $0 },
-                                                          libraryBadge: env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending,
-                                                          focusSearch: { [env] in env.ui.focusSearch = true }) : nil)
+        macTabs.select = { selection.wrappedValue = $0 }; macTabs.focusSearch = { [env] in env.ui.focusSearch = true }   // sin observar
+        return shell(selection)
+        .environment(\.macTabs, TopRow.tabsInLogoRow ? macTabs : nil)   // la misma caja siempre: el entorno no cambia al cambiar de pestaña
+        .onChange(of: [tab, env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending], initial: true) { _, now in macTabs.sync(tab: now[0], badge: now[1]) }
         .environment(\.posterQuick, ThisDevice.isMac ? .app(env) : nil)
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)

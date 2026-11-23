@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import os
 
 /// CX2-A · tu clave de tu nube entre tus aparatos Apple (Real-Debrid y, desde el 21 nov 2026, también TorBox o AllDebrid:
 /// Fernando, «que la que yo usé en mi iPhone se sincronice vía iCloud con Mac y iPad»). Cada aparato usa SU clave (la del llavero de este aparato) y
@@ -56,6 +57,9 @@ public enum SharedDebrid: Equatable, Sendable {
 }
 
 extension DebridAccount {
+    /// Qué decidió este aparato con la copia de tus aparatos Apple (en Consola, `mx.iracheta.orbital` · debrid); nunca la clave.
+    nonisolated static let log = Logger(subsystem: "mx.iracheta.orbital", category: "debrid")
+
     /// La copia compartida (nil si no hay o si el llavero de iCloud todavía no la trae).
     public nonisolated var sharedKey: SharedDebridKey? { SharedDebridKey.decode(vaultRef.secret(AddonKeys.sharedRealDebridToken)) }
 
@@ -96,11 +100,13 @@ extension DebridAccount {
         guard let shared = sharedKey else {
             // Lo de antes de CX2-A (migración): la clave de este aparato se queda y, además, se deja la copia compartida.
             if let mine = vaultRef.debridToken(service) { publishShared(mine, service: service) }
+            Self.log.notice("tu nube compartida: iCloud no trae copia; aquí \(self.service.rawValue, privacy: .public)")
             return .none
         }
         // La copia es de la nube que la puso; aquí se compara con la clave de esa misma nube.
         let cloud = shared.cloud
         let local = vaultRef.debridToken(cloud) ?? ""
+        Self.log.notice("tu nube compartida: copia de \(shared.from, privacy: .public) (\(shared.cloud.rawValue, privacy: .public), con fecha: \(shared.at != nil)); aquí \(self.service.rawValue, privacy: .public)")
         if let removed = shared.removed {
             guard cloud == service, !local.isEmpty, SharedDebridKey.fingerprint(local) == removed, sharedSeen != shared.encoded else { return .none }
             remove()
@@ -114,30 +120,38 @@ extension DebridAccount {
         // aunque la de aquí todavía sirva. La de antes queda en este aparato para «Volver a la clave anterior».
         if cloud == service, local == shared.key { markSharedSeen(shared.key); return .none }   // ya es la de aquí
         let current = vaultRef.debridToken(service)
-        // La de aquí se puso después que la copia (iCloud trae una de antes): se queda la de aquí y se vuelve a dejar, con su fecha.
-        if let current, let at = shared.at, let mine = savedAt, mine >= at {
-            publishShared(current, service: service, at: Date(timeIntervalSince1970: mine))
-            return .none
-        }
-        // 22 nov 2026 · una copia sin fecha es de antes (p. ej. tu Real-Debrid de hace semanas, si pusiste TorBox en una versión
-        // que todavía no la compartía): no se sabe si es la más reciente. Si la de aquí funciona, se queda y se comparte con fecha
-        // (así tus otros aparatos la toman); solo se toma la de antes si la de aquí ya no sirve y la de antes sí. Va antes de
-        // «aquí ya se decidió»: el iPhone de Fernando ya había visto esa copia vieja y por eso nunca compartía su TorBox.
-        var stoppedHere = false
-        if shared.at == nil, let current {
+        // ¿La de aquí da videos? Sin clave o vencida, no; si no contestó, no se decide nada (se vuelve a ver al volver).
+        let here: Bool
+        if current == nil { here = false } else {
             switch await checkNow() {
-            case .status(let mine) where !Self.stopped(mine, now: now()):
+            case .status(let mine): here = !Self.stopped(mine, now: now())
+            case .noKey, .invalidToken: here = false
+            case .unreachable: Self.log.notice("tu nube compartida: la de aquí no contestó; nada cambia"); return .none
+            }
+        }
+        if here, let current {
+            // 22 nov 2026 · una copia sin fecha es de antes (p. ej. tu Real-Debrid de hace semanas): no se sabe si es la más
+            // reciente, y la de aquí funciona: se queda y se comparte con fecha (así tus otros aparatos la toman). Igual si la de
+            // aquí se puso después que la copia (iCloud trae una de antes).
+            if shared.at == nil || (savedAt ?? 0) >= (shared.at ?? 0) {
                 publishShared(current, service: service, at: savedAt.map { Date(timeIntervalSince1970: $0) })
+                Self.log.notice("tu nube compartida: se queda la de aquí (\(self.service.rawValue, privacy: .public)) y se comparte")
                 return .none
-            case .unreachable, .noKey: return .none
-            case .status, .invalidToken: stoppedHere = true
             }
         }
         if sharedSeen == shared.key { return .none }   // aquí ya se decidió: volviste a la anterior o la quitaste solo de aquí
-        guard let theirs = try? await providers(cloud).status(token: shared.key) else { return .none }   // no sirve o no contestó: se queda la de aquí
-        if stoppedHere, !theirs.isPremium { return .none }
+        // 22 nov 2026 (Fernando: «me sigue mostrando que no tengo cuenta premium… no está jalando TorBox»): una clave que ya no
+        // da videos nunca se comparte ni le gana a una que sí. Antes, la Real-Debrid gratuita de la Mac, «más reciente», se
+        // quedaba y se volvía a compartir encima del TorBox del iPhone. Se toma la de tus aparatos solo si da videos.
+        guard let theirs = try? await providers(cloud).status(token: shared.key), !Self.stopped(theirs, now: now()) else {
+            // La de aquí sí da videos: vuelve a ser la de tus aparatos, para que el que compartió una que no sirve tome esta.
+            if here, let current { publishShared(current, service: service, at: savedAt.map { Date(timeIntervalSince1970: $0) }) }
+            Self.log.notice("tu nube compartida: la copia (\(cloud.rawValue, privacy: .public)) no da videos; se queda la de aquí")
+            return .none
+        }
         let before = current.map { SharedDebridKey(key: $0, from: platform, service: service) }
         guard save(token: shared.key, status: theirs, share: false, service: cloud, savedAt: shared.at) else { return .none }
+        Self.log.notice("tu nube compartida: se tomó la de \(who, privacy: .public) (\(cloud.rawValue, privacy: .public))")
         if let before, before.key != shared.key || before.cloud != cloud { storePrevious(before) }
         return .adopted(from: who)
     }

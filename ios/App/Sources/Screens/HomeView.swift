@@ -121,7 +121,9 @@ struct HomeView: View {
         let continuing = model.continueWatching.filter { fits($0.kind) }
         let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
-        return VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+        // Perezosa: al volver a Inicio se acomoda solo lo que se ve, no la página entera (cada vuelta costaba 0.7 s en la Mac;
+        // Fernando, 22 nov 2026: «le sigo picando y todavía se tarda»).
+        return LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
             topCards(model)
             if board, !model.spotlight.isEmpty { boardTop(model, continuing: continuing, kind: kind) } else { cinema(model, continuing: continuing) }
             lowerRows(model, kind: kind, picks: picks, pending: pending)
@@ -369,7 +371,22 @@ struct HomeView: View {
     /// su borde entra «Seguir viendo». El fondo toma el color del que está al frente.
     private func spotlightCarousel(_ model: HomeModel) -> some View {
         let items = spotlightItems(model)
-        return ScrollView(.horizontal, showsIndicators: false) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
+        let index = min(heroSlot ?? 0, max(0, items.count - 1))
+        // Con puntero (Mac, iPad ancho) los puntos van en su renglón bajo la portada, con ‹ ›, y cada uno lleva a la suya:
+        // encima de la portada, el clic se lo quedaba ella y abría la ficha (Fernando, 22 nov 2026: «el selector de
+        // diferentes películas en la principal no funciona… los puntitos que vienen abajo»). En el iPhone se desliza con el
+        // dedo y los puntos solo cuentan, encima.
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
+            heroScroller(items, index: index)
+            if WindowMetrics.roomy {
+                PageDots(count: items.count, index: index) { i in withAnimation(DS.Motion.smooth(reduceMotion)) { heroSlot = i } }
+                    .padding(.leading, DS.Space.gutter * (scheme == .dark || board ? 1 : 2) - DS.Space.s2)   // la orilla del texto (la flecha trae su aire)
+            }
+        }
+    }
+
+    private func heroScroller(_ items: [Suggestion], index: Int) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
             LazyHStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
                     HomeHeroSlide(s: s, aspect: heroAspect, overlap: heroOverlap, tile: board) { openTitle = $0 }.containerRelativeFrame(.horizontal).id(i)   // ds-exception: mide el carrusel (ya del ancho de la página). Mantener y mover: se inclina
@@ -379,13 +396,12 @@ struct HomeView: View {
         }
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $heroSlot)
-        // En ventana ancha (Mac, iPad) los puntos van bajo el texto, en su misma orilla: al centro quedaban sueltos a media
-        // portada, lejos de lo que cuentan (pulida de Inicio, 17 nov 2026). En el iPhone, al centro.
-        .overlay(alignment: WindowMetrics.roomy ? .bottomLeading : .bottom) {
-            PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
-                .padding(.leading, WindowMetrics.roomy ? DS.Space.gutter * (scheme == .dark || board ? 1 : 2) : 0)   // la orilla del texto (en claro, también la de la tarjeta)
-                .padding(.bottom, heroOverlap + DS.Space.s2)
-                .allowsHitTesting(false)   // tocar los puntos no abre la ficha
+        .overlay(alignment: .bottom) {
+            if !WindowMetrics.roomy {
+                PageDots(count: items.count, index: index)
+                    .padding(.bottom, heroOverlap + DS.Space.s2)
+                    .allowsHitTesting(false)   // tocar los puntos no abre la ficha
+            }
         }
         // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
         .ignoresSafeArea(edges: scheme == .dark && !board ? .top : [])

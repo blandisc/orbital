@@ -47,6 +47,9 @@ struct BleedArt<Content: View>: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     /// Desde cuándo respira (nil: quieto). Ver `Breathing`.
     @State private var breathFrom: Date?
+    /// De qué arte es la respiración en curso: volver a la pantalla no la empieza otra vez (22 nov 2026: al volver a Inicio
+    /// se reiniciaba y eran 16 s de pasos que hacían lento el cambio de pestaña).
+    @State private var breathedURL: String?
 
     /// «Reducir movimiento» o «Reducir transparencia»: al recogerse, solo se desvanece (sin desenfoque ni estirarse).
     private var quiet: Bool { reduceMotion || reduceTransparency }
@@ -107,7 +110,8 @@ struct BleedArt<Content: View>: View {
             }
         }
             .task(id: url) {
-                breathFrom = nil
+                if breathFrom != nil, breathedURL == url { return }
+                breathFrom = nil; breathedURL = url
                 guard breathes, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
                 #if DEBUG
                 if Demo.noIdle || MacSelfCheck.off.contains("breath") { return }   // las pruebas de interfaz esperan a que la app esté quieta

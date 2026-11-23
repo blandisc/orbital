@@ -105,26 +105,59 @@ struct StillCard: View {
     }
 }
 
-/// Los puntos de un carrusel: dónde estás (una gota alargada que brinca de punto a punto) y cuántas hay.
+/// Los puntos de un carrusel: dónde estás (una gota alargada que brinca de punto a punto) y cuántas hay. Con `select`, cada
+/// punto lleva a su página y, con puntero (Mac, iPad con trackpad), ‹ › a los lados pasan a la anterior o la siguiente (Fernando,
+/// 22 nov 2026: «el selector de diferentes películas en la principal no funciona… los puntitos que vienen abajo»; en la Mac
+/// no había cómo pasar de portada sin trackpad).
 struct PageDots: View {
     let count: Int
     let index: Int
+    var select: ((Int) -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if count > 1 {
-            // El activo es una gota alargada (como el de la TV) que brinca de punto a punto con un resorte: se estira al
-            // salir y se asienta al llegar.
-            HStack(spacing: DS.Space.s2) {
-                ForEach(0..<count, id: \.self) { i in
-                    Capsule().fill(i == index ? DS.text : DS.fillStrong)
-                        .frame(width: i == index ? DS.Size.pageDot * DS.Size.pageDotStretch : DS.Size.pageDot, height: DS.Size.pageDot)
+            HStack(spacing: DS.Space.s1) {
+                if let select, WindowMetrics.roomy {
+                    DSIconButton(symbol: "chevron.left", label: "Ver el anterior", size: .small, steady: true) { select((index - 1 + count) % count) }
+                        .accessibilityIdentifier("dots-back")
+                }
+                // El activo es una gota alargada (como el de la TV) que brinca de punto a punto con un resorte: se estira al
+                // salir y se asienta al llegar.
+                HStack(spacing: select == nil ? DS.Space.s2 : 0) {
+                    ForEach(0..<count, id: \.self) { i in
+                        let dot = Capsule().fill(i == index ? DS.text : DS.fillStrong)
+                            .frame(width: i == index ? DS.Size.pageDot * DS.Size.pageDotStretch : DS.Size.pageDot, height: DS.Size.pageDot)
+                        if let select {
+                            Button { select(i) } label: {
+                                dot.padding(.horizontal, DS.Space.s1)
+                                    .frame(minHeight: DS.Size.touchTarget).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .pointerHover(.highlight)
+                            .accessibilityLabel(Text("\(i + 1) de \(count)"))
+                            .accessibilityAddTraits(i == index ? .isSelected : [])
+                        } else { dot }
+                    }
+                }
+                .animation(DS.Motion.spring(reduceMotion), value: index)
+                if let select, WindowMetrics.roomy {
+                    DSIconButton(symbol: "chevron.right", label: "Ver el siguiente", size: .small, steady: true) { select((index + 1) % count) }
+                        .accessibilityIdentifier("dots-next")
                 }
             }
-            .animation(DS.Motion.spring(reduceMotion), value: index)
-            .accessibilityElement(children: .ignore)
+            .accessibilityElement(children: select == nil ? .ignore : .contain)
             .accessibilityLabel(Text("\(index + 1) de \(count)"))
+            .accessibilityIdentifier("page-dots")
+            .accessibilityAdjustableAction { direction in
+                guard let select else { return }
+                switch direction {
+                case .increment: select(min(count - 1, index + 1))
+                case .decrement: select(max(0, index - 1))
+                @unknown default: break
+                }
+            }
         }
     }
 }

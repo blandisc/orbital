@@ -33,7 +33,7 @@ struct HomeHeroSlide: View {
             // SE con letra grande). Crece hasta xxxLarge, como las piezas del mosaico; el visor de contenido grande lo amplía.
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .accessibilityShowsLargeContentViewer()
-            .padding(.bottom, overlap + DS.Space.s6)   // los puntos y, en oscuro, lo que se encima
+            .padding(.bottom, overlap + (WindowMetrics.roomy ? DS.Space.s4 : DS.Space.s6))   // los puntos (en ventana ancha van debajo) y, en oscuro, lo que se encima
         }
         .contentShape(Rectangle())
         .onTapGesture { open(s.route) }

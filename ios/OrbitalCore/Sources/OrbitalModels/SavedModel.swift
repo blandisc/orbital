@@ -63,6 +63,7 @@ public final class SavedModel: ObservableModel {
     /// Mi lista (o la que elegiste), tus listas y lo que viste, a la vez. `list`: la que se ve desde ya (Guardado abre en Mi
     /// lista aunque la última vez vieras otra).
     public func load(list: String? = nil) async {
+        lastLoad = services.now()
         if let list, list != selected { select(list); items = cached[list] ?? [] }
         defer { boardReady = true }
         guard traktLinked, let trakt = services.trakt else { items = []; lists = [SavedList(id: Self.watchlist, name: "")]; loadedOnce = true; return }
@@ -83,6 +84,15 @@ public final class SavedModel: ObservableModel {
         if let found = await owned { privacies = Dictionary(found.map { ("list:\($0.id)", $0.privacy) }, uniquingKeysWith: { a, _ in a }) }
         await loadListPreviews()
     }
+
+    /// Al volver a la pestaña: solo si lo último es de hace más de un minuto (como Inicio). Recargar al entrar cada vez
+    /// cambiaba media docena de cosas del modelo y cada una volvía a revisar toda la app: cambiar a Biblioteca y de vuelta
+    /// se sentía lento (Fernando, 22 nov 2026: «le sigo picando y todavía se tarda»).
+    public func loadIfStale(list: String? = nil, maxAge: TimeInterval = 60) async {
+        if let last = lastLoad, services.now().timeIntervalSince(last) < maxAge, list == nil || list == selected { return }
+        await load(list: list)
+    }
+    private var lastLoad: Date?
 
     /// Los pósters y la cifra de cada una de tus listas, a la vez (salen de la misma caché que Para ti).
     private func loadListPreviews() async {

@@ -26,7 +26,7 @@ struct LibraryHome: View {
                                 hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
         let ready = model.boardReady
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+            LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {   // al volver, se acomoda solo lo que se ve (como Inicio)
                 places   // arriba: lo que bajaste y tu nube, a la mano (Fernando, 22 nov 2026)
                 if model.traktLinked {
                     row(Text("Viendo"), eyebrow: Text("Lo que tienes a medias"), tab: .watching, items: board.watching, ready: ready, progress: true)
@@ -42,9 +42,9 @@ struct LibraryHome: View {
         .contentMargins(.bottom, env.ui.ratingReminderHeight, for: .scrollContent)
         .orbitalRefreshable { [model] in await model.load(list: SavedModel.watchlist) }
         .perfTag("library")
-        .task {
-            await model.load(list: SavedModel.watchlist)
-            if follow.available { await follow.loadSeries() }
+        .task {   // de vuelta a la pestaña no lo vuelve a pedir todo (`loadIfStale`); jalar hacia abajo sí
+            await model.loadIfStale(list: SavedModel.watchlist)
+            if follow.available, follow.seriesStale() { await follow.loadSeries() }
         }
         .onAppear { model.refreshProgress() }
     }

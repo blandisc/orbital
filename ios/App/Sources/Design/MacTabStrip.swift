@@ -4,15 +4,22 @@ import SwiftUI
 /// como otro carril artificial arriba de orbital y el selector»). En la Mac no hay barra de pestañas del sistema ni barra
 /// lateral (la lateral salía vacía, tapaba el contenido y ahí tronaba): cada pantalla de arriba lleva estas pestañas en su
 /// propio renglón, junto al logo, como la barra de la tele. iPhone y iPad no cambian: siguen con la barra del sistema.
-struct MacTabs: Equatable {
-    let current: Int
-    let select: (Int) -> Void
+///
+/// Una caja que no cambia (la pone `RootView` una vez): lo que cambia (la pestaña, el numerito) lo leen solo la tira y
+/// «Buscar». Antes iba como valor y cada cambio de pestaña cambiaba el entorno de toda la app: SwiftUI revisaba las cuatro
+/// pestañas enteras en cada clic (Fernando, 22 nov 2026: «le sigo picando y todavía se tarda»).
+@Observable @MainActor final class MacTabs {
+    var current = 0
     /// Lo que baja (descargas y pedidos a la nube): el numerito de Biblioteca.
-    let libraryBadge: Int
+    var libraryBadge = 0
+    @ObservationIgnored var select: (Int) -> Void = { _ in }
     /// RN2: «Buscar» junto al logo pone el cursor en el campo (lo hace la raíz: la pieza no toca el estado de la app).
-    var focusSearch: () -> Void = {}
-    /// Sin la acción (cambia en cada pasada): así la tira solo se repinta si cambia la pestaña o el numerito.
-    static func == (a: MacTabs, b: MacTabs) -> Bool { a.current == b.current && a.libraryBadge == b.libraryBadge }
+    @ObservationIgnored var focusSearch: () -> Void = {}
+    /// Solo lo que cambió (escribir lo mismo también repintaría la tira).
+    func sync(tab: Int, badge: Int) {
+        if current != tab { current = tab }
+        if libraryBadge != badge { libraryBadge = badge }
+    }
 }
 
 extension EnvironmentValues {

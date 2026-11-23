@@ -45,6 +45,28 @@
         }
       }
     },
+    "Ver el anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the previous one"
+          }
+        }
+      }
+    },
+    "Ver el siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the next one"
+          }
+        }
+      }
+    },
     "Ya está en Mi lista": {
       "extractionState": "manual",
       "localizations": {

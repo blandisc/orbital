@@ -42,8 +42,17 @@ public final class FollowModel: ObservableModel {
 
     /// Las series que has visto, para elegir cuáles sigues (Fernando, 2 nov 2026: «editar dentro de la aplicación qué series
     /// sigues y qué no, porque me llegan notificaciones de series que ya no me interesan»).
+    /// Al volver a Biblioteca: se piden otra vez solo si lo último es de hace más de un minuto (como Inicio). Cada vuelta las
+    /// pedía y movía tres cosas del modelo (22 nov 2026: cambiar de pestaña en la Mac se sentía lento).
+    public func seriesStale(maxAge: TimeInterval = 60) -> Bool {
+        guard let last = seriesLoadedAt else { return true }
+        return services.now().timeIntervalSince(last) >= maxAge
+    }
+    private var seriesLoadedAt: Date?
+
     public func loadSeries() async {
         guard let trakt = services.trakt, trakt.linked else { series = []; return }
+        seriesLoadedAt = services.now()
         loadingSeries = true
         defer { loadingSeries = false }
         async let hiddenNow = try? trakt.hiddenShows()

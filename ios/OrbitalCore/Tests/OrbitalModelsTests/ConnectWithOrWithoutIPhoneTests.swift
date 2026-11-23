@@ -179,6 +179,27 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertEqual(again, .none, "ya es la misma: no se vuelve a hacer nada")
     }
 
+    /// 22 nov 2026 (Fernando: «me sigue mostrando que no tengo cuenta premium… no está jalando TorBox»): la Mac dejó su
+    /// Real-Debrid vencido, «más reciente», encima del TorBox del iPhone. Una clave que no da videos nunca le gana a una que sí:
+    /// el iPhone vuelve a dejar su TorBox y la Mac lo toma.
+    func testAKeyThatGivesNoVideosNeverWinsOverOneThatDoes() async throws {
+        let cloud = InMemorySecrets()
+        let (iphone, _, _) = rig("iphone", shared: cloud)
+        let key = "tb-" + String(repeating: "a1b2", count: 8)
+        await iphone.debrid.save(token: key, status: try await iphone.debrid.verify(key, service: .torBox), service: .torBox)
+        let expired = String(repeating: "EXPIRED", count: 7)
+        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: expired, from: "mac", at: Date().addingTimeInterval(3600)).encoded)
+        let found = await iphone.debrid.checkShared()
+        XCTAssertEqual(found, .none, "el iPhone no toma un Real-Debrid vencido")
+        XCTAssertEqual(iphone.debrid.service, .torBox)
+        XCTAssertEqual(SharedDebridKey.decode(cloud.get(SecretKey.sharedRealDebrid))?.key, key, "y vuelve a dejar su TorBox, que sí da videos")
+        let (mac, local, _) = rig("mac", shared: cloud, allows: false)
+        local.set(AddonKeys.realDebridToken, expired)
+        let taken = await mac.debrid.checkShared()
+        XCTAssertEqual(taken, .adopted(from: "iphone"))
+        XCTAssertEqual(mac.debrid.service, .torBox)
+    }
+
     /// «Quitar solo de este aparato» (de cualquier nube): no se vuelve a tomar sola al abrir Orbital.
     func testRemovingOnlyHereIsNotUndoneByTheSharedCopy() async throws {
         let cloud = InMemorySecrets()
