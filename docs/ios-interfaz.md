@@ -1246,6 +1246,16 @@ Nunca un `ISO8601DateFormatter()` nuevo por llamada: se usa `ISODates.parse`, `I
 serie armaba dos en cada dibujo y, al girar el iPhone (también con el reproductor encima), la 2436 se cerró por pila agotada.
 `ISODatesRuleTests` falla si vuelve a aparecer fuera de `ISODates.swift` y de la demostración.
 
+**Cada renglón de Ajustes lleva su ícono (23 nov 2026).** También los interruptores y selectores de las subpáginas
+(Subtítulos, Letra, Reproducción, Descargas, Avisos, País): `DSToggleRow`, `SettingsMenuRow` (menú), `SettingsChoiceRow` (dos o
+tres opciones a la vista) y `SettingsRow`, cada uno con `symbol:` y `tint:`. Un `Toggle`/`Picker` suelto se veía crudo y su
+texto empezaba más a la izquierda. `testEverySettingsRowHasItsIcon` lo cuida.
+
+**Girar el iPhone no cierra la ficha (23 nov 2026).** La 2480 se volvió a cerrar al girar con el reproductor encima: la ficha de
+abajo se rearmaba dentro de la pila del giro y SwiftUI se acababa la pila resolviendo el tipo enorme de su cuerpo. Cada forma de
+la ficha (ancha y de una columna) va en su propia vista con el tipo borrado (`TitleLayoutHost { AnyView(...) }`), así se arma en
+su turno y no dentro del cuerpo de `TitleView`. `testTitleLayoutsBuildInTheirOwnView` falla si se vuelve a llamar directo.
+
 ### El video, del tamaño de su imagen (21 nov 2026)
 
 Parado, el recuadro del video toma la forma de la imagen de verdad: si el archivo trae rayas negras pintadas a los lados (un 4:3

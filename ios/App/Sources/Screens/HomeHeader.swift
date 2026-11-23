@@ -90,7 +90,7 @@ struct HomeHeader: View {
                     .opacity(kindOpen ? 0 : 1)
                     .frame(width: kindOpen ? 0 : nil, alignment: .leading)
                     .clipped()
-                    .padding(.trailing, kindOpen ? 0 : DS.Space.s4)
+                    .padding(.trailing, kindOpen ? 0 : DS.Space.s6)   // aire entre el control y tu foto (23 nov 2026: con s4 se veían pegados)
                     .accessibilityHidden(kindOpen)
             }
             ProfileButton(avatar: avatar)

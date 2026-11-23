@@ -17,6 +17,20 @@ extension DesignRulesTests {
         XCTAssertEqual(offenders, [], "un interruptor en un grupo con íconos lleva symbol: y tint:, como SettingsRow")
     }
 
+    /// Cada renglón de Ajustes lleva su ícono en su color, también los interruptores y selectores de las subpáginas (Fernando,
+    /// 23 nov 2026: «muy crudo»): un `Toggle("…")`, `Picker("…")` o `LabeledContent("…")` suelto empieza más a la izquierda que
+    /// los demás y sin color. Se usan `DSToggleRow`, `SettingsMenuRow`, `SettingsChoiceRow` y `SettingsRow`.
+    func testEverySettingsRowHasItsIcon() throws {
+        let bare = try NSRegularExpression(pattern: #"\b(Toggle|Picker|LabeledContent)\(""#)
+        var offenders: [String] = []
+        for file in try sources(["Screens"]) where file.name.hasPrefix("SettingsView") {
+            for line in file.lines where bare.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) != nil {
+                offenders.append("\(file.name): \(line.trimmingCharacters(in: .whitespaces).prefix(80))")
+            }
+        }
+        XCTAssertEqual(offenders, [], "un renglón de Ajustes sin ícono: usa DSToggleRow, SettingsMenuRow o SettingsChoiceRow")
+    }
+
     /// El destello (SF «sparkles») es de Explorar y de lo que se descubre; no se usa para otra cosa (Aprende lo usaba y se veía
     /// igual que la pestaña Explorar de abajo). Un archivo nuevo que lo use entra aquí con su porqué.
     func testSparklesOnlyMeansDiscover() throws {

@@ -269,9 +269,30 @@ struct SettingsLink<Destination: View, Label: View>: View {
 /// Antes el selector iba solo en su tarjeta con el nombre arriba y la explicación abajo, sueltos: en la pantalla ancha de la
 /// Mac se veía medio renglón vacío y no se sabía de qué grupo era cada texto (Fernando, 23 nov 2026: «una pulida con ojo
 /// experto»).
+/// Un selector de menú de Ajustes (más de tres opciones o nombres largos) con su ícono y su color, como los demás renglones
+/// (Fernando, 23 nov 2026: «muy crudo»; los `Picker` sueltos empezaban más a la izquierda y sin color).
+struct SettingsMenuRow<ID: Hashable, Options: View>: View {
+    let title: LocalizedStringKey
+    let symbol: String
+    let tint: Color
+    @Binding var selection: ID
+    @ViewBuilder let options: () -> Options
+
+    var body: some View {
+        Picker(selection: $selection, content: options) {
+            Label { Text(title).foregroundStyle(DS.text) } icon: {
+                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
+            }
+        }
+    }
+}
+
 struct SettingsChoiceRow<ID: Hashable>: View {
     let title: LocalizedStringKey
     var detail: LocalizedStringKey?
+    /// Su ícono en su color, como `SettingsRow` y `DSToggleRow`: en una tarjeta con otros renglones quedan alineados.
+    var symbol: String?
+    var tint: Color = DS.textMuted
     let options: [DSSelector<ID>.Option]
     @Binding var selection: ID
 
@@ -290,11 +311,21 @@ struct SettingsChoiceRow<ID: Hashable>: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var label: some View {
+    /// Un `Label` como `SettingsRow` y `DSToggleRow`: con un `HStack` propio el nombre empezaba más a la derecha que el de los
+    /// renglones de al lado (23 nov 2026, «Fondo» y «Posición» bajo «Tamaño»).
+    @ViewBuilder private var label: some View {
+        if let symbol {
+            Label { name } icon: {
+                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        } else { name.fixedSize(horizontal: false, vertical: true) }
+    }
+
+    private var name: some View {
         VStack(alignment: .leading, spacing: 0) {   // como `DSToggleRow`
             Text(title).foregroundStyle(DS.text)
             if let detail { Text(detail).recipe(.footnote, color: DS.textMuted) }
         }
-        .fixedSize(horizontal: false, vertical: true)
     }
 }

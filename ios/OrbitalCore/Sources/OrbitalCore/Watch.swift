@@ -3,7 +3,10 @@ import Foundation
 /// Constantes de reproducción (las mismas que `playback.py`).
 public enum PlaybackRules {
     public static let startupTimeout: TimeInterval = 45      // s sin imagen: esa fuente no sirve, se prueba otra
-    public static let saveEvery: TimeInterval = 60           // s entre guardados del avance en Stremio
+    /// Cada cuánto se guarda en el teléfono lo que llevas (a Trakt sigue yendo cada 5 min, `TraktProgressRule.backupEvery`).
+    /// Era cada minuto: si la app se cerraba antes (Fernando, 23 nov 2026, al girar el iPhone), lo visto no llegaba a
+    /// «Seguir viendo».
+    public static let saveEvery: TimeInterval = 15
     public static let rememberChoiceAfter: Double = 60       // s vistos: desde ahí se recuerda la fuente y las pistas (como la TV)
     /// Al abrir: lo más que se espera a tu Orbital para saber con qué lo viste en otro aparato (sin respuesta, lo de aquí).
     public static let resumeSyncTimeout: Double = 1.5

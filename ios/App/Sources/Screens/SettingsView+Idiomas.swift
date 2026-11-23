@@ -28,10 +28,10 @@ extension SettingsView {
         let s = model.settings
         // Los dos idiomas de Orbital en una tarjeta: cada renglón dice qué cambia y lleva su selector a la derecha.
         Section {
-            SettingsChoiceRow(title: "La app", detail: "Menús, botones y avisos", options: languageChoices,
+            SettingsChoiceRow(title: "La app", detail: "Menús, botones y avisos", symbol: "character.bubble", tint: DS.ListTint.series, options: languageChoices,
                               selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
                 .accessibilityIdentifier("languages-app")
-            SettingsChoiceRow(title: "Títulos y sinopsis", detail: "Cómo se llaman las películas y series y de qué tratan", options: languageChoices,
+            SettingsChoiceRow(title: "Títulos y sinopsis", detail: "Cómo se llaman las películas y series y de qué tratan", symbol: "text.quote", tint: DS.ListTint.calendar, options: languageChoices,
                               selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
                 .accessibilityIdentifier("languages-titles")
         } header: { Text("Lo que lees") }
@@ -52,7 +52,8 @@ extension SettingsView {
         } header: { Text("Subtítulos") } footer: { Text("Van aparte del audio: puedes oírla en inglés y leerla en español.") }
         .listRowBackground(DS.surface)
         Section {
-            Picker("País", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v; $0.regionChosen = true } })) {
+            SettingsMenuRow(title: "País", symbol: "mappin.and.ellipse", tint: DS.ListTint.trend,
+                            selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v; $0.regionChosen = true } })) {
                 ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
             }
             .accessibilityIdentifier("languages-region")
@@ -79,16 +80,22 @@ extension SettingsView {
     @ViewBuilder func subtitles(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Picker("Idioma de siempre", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
-            Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
-            Toggle("Mostrarlos al regresar 10 s", isOn: Binding(get: { s.subtitlesOnSkipBack }, set: { v in model.update { $0.subtitlesOnSkipBack = v } }))
-            Toggle("Carteles en tu idioma si el audio es otro", isOn: Binding(get: { s.forcedForForeignAudio }, set: { v in model.update { $0.forcedForForeignAudio = v } }))
+            SettingsMenuRow(title: "Idioma de siempre", symbol: "captions.bubble", tint: DS.ListTint.library,
+                            selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
+            DSToggleRow("Solo subtítulos forzados", symbol: "exclamationmark.bubble", tint: DS.ListTint.calendar,
+                        isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
+            DSToggleRow("Mostrarlos al regresar 10 s", symbol: "gobackward.10", tint: DS.ListTint.series,
+                        isOn: Binding(get: { s.subtitlesOnSkipBack }, set: { v in model.update { $0.subtitlesOnSkipBack = v } }))
+            DSToggleRow("Carteles en tu idioma si el audio es otro", symbol: "signpost.right", tint: DS.ListTint.spark,
+                        isOn: Binding(get: { s.forcedForForeignAudio }, set: { v in model.update { $0.forcedForForeignAudio = v } }))
         } footer: {
             Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película.")
         }
         .listRowBackground(DS.surface)
         Section {
-            PaneLink(Text("Lo que recuerda cada título")) { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
+            PaneLink(Text("Lo que recuerda cada título")) { RememberedTitlesView() } label: {
+                SettingsRow(title: "Lo que recuerda cada título", symbol: "clock.arrow.circlepath", tint: DS.ListTint.bookmark)
+            }
                 .accessibilityIdentifier("settings-remembered")
         }
         .listRowBackground(DS.surface)
@@ -99,17 +106,20 @@ extension SettingsView {
         let s = model.settings
         Section {
             SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s2, leading: DS.Space.s4, bottom: DS.Space.s2, trailing: DS.Space.s4))
-            Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
+            SettingsMenuRow(title: "Tamaño", symbol: "textformat.size", tint: DS.ListTint.spark,
+                            selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
                 ForEach(AppSettings.subtitleSizes, id: \.self) { sizeName($0).tag($0) }
             }
-            Picker("Fondo", selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } })) {
-                Text("Contorno").tag("outline"); Text("Caja oscura").tag("box"); Text("Translúcido").tag("translucent")
-            }
+            SettingsChoiceRow(title: "Fondo", symbol: "character.textbox", tint: DS.ListTint.library,
+                              options: [.init(id: "outline", title: Text("Contorno")), .init(id: "box", title: Text("Caja oscura")),
+                                        .init(id: "translucent", title: Text("Translúcido"))],
+                              selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } }))
             .disabled(s.subtitleSystemStyle)
-            Picker("Posición", selection: Binding(get: { s.subtitlePosition }, set: { v in model.update { $0.subtitlePosition = v } })) {
-                Text("Normal").tag("normal"); Text("Más arriba").tag("raised")
-            }
-            Toggle("Usar el estilo del iPhone", isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
+            SettingsChoiceRow(title: "Posición", symbol: "arrow.up.to.line", tint: DS.ListTint.series,
+                              options: [.init(id: "normal", title: Text("Normal")), .init(id: "raised", title: Text("Más arriba"))],
+                              selection: Binding(get: { s.subtitlePosition }, set: { v in model.update { $0.subtitlePosition = v } }))
+            DSToggleRow("Usar el estilo del iPhone", symbol: "accessibility", tint: DS.ListTint.chart,
+                        isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
         } footer: {
             Text("El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
         }

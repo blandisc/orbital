@@ -81,7 +81,8 @@ public actor WatchService {
         var outcome = ReportOutcome()
         let final: Bool = { if case .stopped = phase { return true }; return false }()
         // Se abrió y se cerró sin ver nada: no se toca lo tuyo (salvo que se haya dicho que se terminó).
-        let trivial = final && !event.finished && event.watched < PlaybackRules.minWatchedToSave && event.position < PlaybackRules.minPositionToSave
+        // Un guardado de cada 15 s con casi nada visto tampoco (`saveEvery`): si no, abrirlo un momento ya lo metía.
+        let trivial = (final || phase == .tick) && !event.finished && event.watched < PlaybackRules.minWatchedToSave && event.position < PlaybackRules.minPositionToSave
         // Primero el teléfono (así Trakt, al contestar, ya encuentra el título y lo marca como «mandado desde aquí»).
         if phase != .started && !trivial { await saveLocally(event); outcome.saved = true; await savedLocally(event) }
         if scrobbleToTrakt { await scrobble(event, phase) }

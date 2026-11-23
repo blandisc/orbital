@@ -319,7 +319,7 @@ struct SettingsView: View {
     // MARK: páginas
     @ViewBuilder private func appearance(_ model: SettingsModel) -> some View {
         Section {   // un renglón con su nombre y el selector a la derecha (`SettingsChoiceRow`), como «Idiomas»
-            SettingsChoiceRow(title: "Modo", options: [.init(id: "system", title: Text("Como el iPhone")), .init(id: "light", title: Text("Claro")),
+            SettingsChoiceRow(title: "Modo", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, options: [.init(id: "system", title: Text("Como el iPhone")), .init(id: "light", title: Text("Claro")),
                                                        .init(id: "dark", title: Text("Oscuro"))],
                               selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
         }
@@ -330,14 +330,18 @@ struct SettingsView: View {
     @ViewBuilder private func playback(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section("Calidad") {
-            Picker("Con Wi‑Fi", selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } })) { qualityOptions }
-            Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
+            SettingsChoiceRow(title: "Con Wi‑Fi", symbol: "wifi", tint: DS.ListTint.series, options: qualityChoices,
+                              selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } }))
+            SettingsChoiceRow(title: "Con datos móviles", symbol: "antenna.radiowaves.left.and.right", tint: DS.ListTint.trend, options: qualityChoices,
+                              selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } }))
         }
         .listRowBackground(DS.surface)
         Section {
-            LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
-            Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
-            Toggle("Marcar los sustos en la barra", isOn: $scareMarks)
+            SettingsRow(title: "Motor", symbol: "cpu", tint: DS.ListTint.chart,
+                        value: Text(verbatim: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer"), linked: false)
+            DSToggleRow("Abrir siempre en Infuse", symbol: "arrow.up.forward.app", tint: DS.ListTint.calendar,
+                        isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
+            DSToggleRow("Marcar los sustos en la barra", symbol: "bolt.heart", tint: DS.ListTint.flame, isOn: $scareMarks)
                 .accessibilityIdentifier("settings-scare-marks")
         } header: { Text("Reproductor") } footer: {
             Text("En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.")
@@ -347,7 +351,7 @@ struct SettingsView: View {
         // Solo donde hay nube (D1-B: Orbital, de la App Store, no pide a Real-Debrid).
         if env.services.capabilities.instantStreams { Section {
             DSToggleRow("Pedir solo el siguiente episodio", detail: "Si la nube aún no lo tiene, se lo pide 3 min antes del final del que ves.",
-                        isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
+                        symbol: "forward.end", tint: DS.ListTint.series, isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
                 .accessibilityIdentifier("settings-auto-request-next")
         } header: { Text(verbatim: env.services.debrid.service.name) }   // edición: solo con instantStreams
         .listRowBackground(DS.surface) }
@@ -357,15 +361,16 @@ struct SettingsView: View {
         let s = model.settings
         Section {
             // Los mismos tres interruptores que Descargas › Descarga inteligente, con los mismos nombres.
-            DSToggleRow("Solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
-            DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
-            Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
+            DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", tint: DS.ListTint.series, isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
+            DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", symbol: "arrow.down.circle", tint: DS.ListTint.trend, isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
+            DSToggleRow("Borrar al terminar de verlo", symbol: "trash", tint: DS.ListTint.flame,
+                        isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
         // La prueba mide a Real-Debrid: solo donde hay nube (D1-B).
         if env.services.capabilities.instantStreams {
             Section {
-                PaneLink(Text("Probar la velocidad")) { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
+                PaneLink(Text("Probar la velocidad")) { DownloadSpeedTestView() } label: { SettingsRow(title: "Probar la velocidad", symbol: "speedometer", tint: DS.ListTint.chart) }
                     .accessibilityIdentifier("speed-test")
             } footer: {
                 Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.", cloud: env.services.debrid.service, locale: env.uiLocale)   // edición: solo con instantStreams
@@ -378,7 +383,7 @@ struct SettingsView: View {
     @ViewBuilder private func alerts(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Toggle("Cuando sale un estreno", isOn: Binding(get: { s.releaseAlerts }, set: { v in
+            DSToggleRow("Cuando sale un estreno", symbol: "bell.badge", tint: DS.ListTint.flame, isOn: Binding(get: { s.releaseAlerts }, set: { v in
                 model.update { $0.releaseAlerts = v }
                 guard v else { return }
                 Task {
@@ -431,8 +436,8 @@ struct SettingsView: View {
         (Text("\(Text.flag("es"))\(Text("Español"))")).tag("es"); (Text("\(Text.flag("en"))\(Text("English"))")).tag("en")
     }
 
-    @ViewBuilder private var qualityOptions: some View {
-        Text("4K").tag("4K"); Text("1080p").tag("1080p"); Text("720p").tag("720p")
+    private var qualityChoices: [DSSelector<String>.Option] {
+        ["4K", "1080p", "720p"].map { .init(id: $0, title: Text(verbatim: $0)) }
     }
 
     // MARK: Trakt

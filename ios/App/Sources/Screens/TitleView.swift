@@ -68,7 +68,10 @@ struct TitleView: View {
     private func framed(_ model: TitleModel) -> some View {
         Group {
             // iPad y Mac (Fernando, 4 nov 2026, FE1): la ficha de la TV como esqueleto; el iPhone sigue en una columna.
-            if sizeClass == .regular { wideLayout(model) } else { oneColumnLayout(model) }
+            // Cada forma en su propia vista y con su tipo borrado (`TitleLayoutHost`): al girar el iPhone con el reproductor
+            // abierto, la ficha de abajo se volvía a armar dentro de la pila del giro y se acababa la pila (EXC_BAD_ACCESS,
+            // Fernando, 23 nov 2026; el mismo cierre que el del 11 nov). Su propia vista se arma aparte, con su pila.
+            if sizeClass == .regular { TitleLayoutHost { AnyView(wideLayout(model)) } } else { TitleLayoutHost { AnyView(oneColumnLayout(model)) } }
         }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
@@ -582,4 +585,11 @@ private struct DismissWhen: ViewModifier {
     func body(content: Content) -> some View {
         content.onChange(of: closing) { _, close in if close { dismiss() } }
     }
+}
+
+/// Lo de adentro de la ficha en su propia vista: SwiftUI lo arma en su turno y no dentro del cuerpo de `TitleView`, que es
+/// grande y se copia en cada cierre (ver `framed`).
+private struct TitleLayoutHost: View {
+    let make: () -> AnyView
+    var body: some View { make() }
 }
