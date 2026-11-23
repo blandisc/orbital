@@ -190,8 +190,17 @@ public final class SavedModel: ObservableModel {
 
     /// Lo tuyo por estado; `hidden`: las series que dejaste (`FollowModel`).
     public func board(hidden: Set<String>, hiddenNames: [String: String] = [:]) -> SavedBoard {
-        SavedBoard.build(watchlist: watchlist, watched: watched, hidden: hidden, hiddenNames: hiddenNames)
+        // Se arma de nuevo solo si cambió lo que lo forma (o el día): Biblioteca lo pedía en cada repintada y ordenar todo tu
+        // Trakt costaba ~20 ms cada vez en la Mac (22 nov 2026).
+        let day = Calendar.current.startOfDay(for: Date())
+        if let last = boardCache, last.watchlist == watchlist, last.watched == watched, last.hidden == hidden,
+           last.hiddenNames == hiddenNames, last.day == day { return last.board }
+        let board = SavedBoard.build(watchlist: watchlist, watched: watched, hidden: hidden, hiddenNames: hiddenNames)
+        boardCache = (watchlist, watched, hidden, hiddenNames, day, board)
+        return board
     }
+    private var boardCache: (watchlist: [Suggestion], watched: TraktWatchedState, hidden: Set<String>,
+                                                 hiddenNames: [String: String], day: Date, board: SavedBoard)?
 
     // MARK: editar la lista (quitar y agregar)
     /// La lista que ves se puede editar: Mi lista y tus listas de Trakt, todas tuyas (con Trakt conectado).

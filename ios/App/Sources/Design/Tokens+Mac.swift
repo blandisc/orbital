@@ -64,15 +64,18 @@ extension DS {
         static let searchRowsMin = 2, searchTop: CGFloat = 520, searchCaption: CGFloat = 52
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
         static let topScrim: CGFloat = 120
-        /// La lista de Ajustes (MA1), como Ajustes del Sistema.
-        static let settingsListWidth: CGFloat = 560
+        /// DK (Fernando, 22 nov 2026: «hacer el dock de arriba un poquito más grande»): las pestañas, «Buscar» y tu foto, un
+        /// paso más grandes en la Mac y en el iPad ancho (la letra de un nombre en tarjeta y más aire arriba y abajo).
+        static let topBarText = TextRecipe.cardTitle
+        static let topBarPadV = Space.s2 + Space.s1 / 2
+        /// La lista de Ajustes (MA1), como Ajustes del Sistema: desde AJ-A (22 nov 2026) una barra lateral angosta, un renglón
+        /// por página sin su valor; la página de la derecha llena lo demás hasta `settingsPageWidth`.
+        static let settingsListWidth: CGFloat = 300, settingsPageWidth: CGFloat = 1200
         /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
         static let tabSwitchQuiet: Double = 0.4
-        /// El campo de Buscar en la Mac (MS1): grande y al centro, no la rayita de la barra.
-        static let searchFieldWidth: CGFloat = 1100, searchFieldHeight: CGFloat = 88
-        /// Los seis mosaicos de la búsqueda avanzada en la Mac (MS1): con 76 pt de alto y 360 de ancho eran franjas que se
-        /// leían como botones de formulario; así son mosaicos, con su dibujo grande (Fernando, 16 nov 2026).
-        static let doorTileHeight: CGFloat = 150, doorArtHeight: CGFloat = 52
+        /// El campo de Buscar en la Mac (MS1): grande, no la rayita de la barra; desde BU-A (22 nov 2026), a lo ancho de la
+        /// cuadrícula.
+        static let searchFieldHeight: CGFloat = 88
         /// RF2: las reseñas de la ficha en la Mac, en columnas a lo ancho (como la tele, no una tira angosta a la izquierda).
         static let reviewColumns = 3
         /// RP2: el póster bajo el puntero crece un poco y lleva el marco crema del foco de la TV.

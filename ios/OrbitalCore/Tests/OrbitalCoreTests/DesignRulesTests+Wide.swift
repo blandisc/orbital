@@ -175,9 +175,9 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("DownloadsView.swift").contains("LibraryHome(saved: saved"), "Biblioteca en la Mac: filas como Inicio (BI-A)")
         XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
         XCTAssertTrue(try code("BrowseView.swift").contains("if TopRow.tabsInLogoRow { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac (y el iPad con espacio, C1): el campo grande")
-        XCTAssertTrue(try code("Filtro.swift").contains("count: mac ? FilterPage.main.count :"), "Buscar en la Mac: los seis mosaicos en una fila")
-        // Con 76 pt de alto en una ventana de Mac eran franjas de formulario (Fernando, 16 nov 2026): mosaicos grandes y campo alto.
-        XCTAssertTrue(try code("Filtro.swift").contains("minHeight: big ? DS.Mac.doorTileHeight"), "Los mosaicos de Buscar en la Mac son grandes")
+        // BU-A (22 nov 2026) reemplazó los seis mosaicos grandes de MS1: un renglón de cápsulas con ícono y el campo a lo ancho.
+        XCTAssertTrue(try code("Filtro.swift").contains("FilterChip(page: page, context: context) { open(page) }"), "Buscar en la Mac: las puertas en un renglón de cápsulas (BU-A)")
+        XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(maxWidth: .infinity, minHeight: DS.Mac.searchFieldHeight)"), "El campo de Buscar en la Mac va a lo ancho (BU-A)")
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".textFieldStyle(.plain).font(DS.TextRecipe.title.font)"), "El campo de Buscar en la Mac lleva letra grande")
         XCTAssertTrue(try code("MacTabStrip.swift").contains("UIView.setAnimationsEnabled(false)"), "En la Mac la pestaña cambia al momento")
         // La ficha y los tutoriales crecen como la letra (si no, los botones grandes de la Mac iban apretados).

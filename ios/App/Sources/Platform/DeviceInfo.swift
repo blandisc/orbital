@@ -7,22 +7,35 @@ import SwiftUI
 
 /// Espacio libre para lo que importa (descargas), según iOS.
 enum DiskSpace {
-    /// Se pregunta al disco a lo más cada `fresh` segundos: cuesta 10–25 ms en la Mac y Descargas lo pedía en cada repintada
-    /// (al abrir Biblioteca y en cada avance de una descarga), en el hilo de la pantalla (17 nov 2026).
+    /// Nunca espera al disco en la pantalla: da lo último que se supo y, si ya es viejo (más de `fresh` segundos), lo vuelve a
+    /// preguntar por detrás. Preguntar cuesta 10–125 ms en la Mac (CacheDelete recorre los volúmenes); Descargas lo pedía en
+    /// cada repintada (17 nov 2026) y la ficha de una serie, al pintar su menú de descargas (22 nov 2026: 125 ms al abrirla).
     static func freeBytes() -> Int64 {
-        let now = Date()
-        if let last = cache.withLock({ $0 }), now.timeIntervalSince(last.at) < fresh { return last.bytes }
+        let last = cache.withLock { $0 }
+        guard let last else { return measure() }   // la primera vez (casi siempre ya la midió `warm()` al abrir la app)
+        if Date().timeIntervalSince(last.at) >= fresh { warm() }
+        return last.bytes
+    }
+
+    /// Lo mide por detrás (al abrir la app y cuando lo que se sabe ya es viejo).
+    static func warm() {
+        guard refreshing.withLock({ busy in defer { busy = true }; return !busy }) else { return }
+        Task.detached(priority: .utility) { _ = measure(); refreshing.withLock { $0 = false } }
+    }
+
+    private static func measure() -> Int64 {
         let url = URL(fileURLWithPath: NSHomeDirectory())
         let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         let bytes = values?.volumeAvailableCapacityForImportantUsage ?? 0
-        cache.withLock { $0 = (now, bytes) }
+        cache.withLock { $0 = (Date(), bytes) }
         return bytes
     }
     private static let fresh: TimeInterval = 5
     private static let cache = OSAllocatedUnfairLock<(at: Date, bytes: Int64)?>(initialState: nil)
+    private static let refreshing = OSAllocatedUnfairLock(initialState: false)
 
     /// La capacidad del iPhone (para la barra de espacio de Descargas): no cambia, se pregunta una vez.
-    static func totalBytes() -> Int64 { total }
+    static func totalBytes() -> Int64 { total }   // la primera vez la pide Descargas; no vuelve a preguntar
     private static let total: Int64 = {
         let values = try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: [.volumeTotalCapacityKey])
         return Int64(values?.volumeTotalCapacity ?? 0)

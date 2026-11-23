@@ -12,8 +12,11 @@ struct SettingsRow: View {
     /// Lleva a otra página (con flecha). Sin ella, el valor se corre para quedar en la misma columna.
     var linked = true
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// En la barra lateral de Ajustes (Mac y iPad ancho, AJ-A) cada renglón es solo su nombre: el valor lo dice la página.
+    @Environment(\.settingsPane) private var pane
 
     var body: some View {
+        let value = pane == nil ? value : nil
         LabeledContent {
             // Hasta dos renglones; con letra grande el valor baja bajo el nombre, completo y a la izquierda («Latino, Idioma ori…»
             // se cortaba, revisión 2).
@@ -134,17 +137,14 @@ struct SettingsPane {
 
 /// Las páginas de Ajustes que se abren desde la lista.
 enum SettingsPage: String, CaseIterable {
-    case languages, subtitles, lettering, appearance, appLanguage, playback, alerts, downloads, accounts, addons, oneDrive
+    case languages, appearance, playback, alerts, downloads, accounts, addons, oneDrive
     case orbital, voice, advanced, learn
 
     /// El nombre de la página, el mismo del renglón: en la Mac va arriba de la página, a la derecha (MA2).
     var title: Text {
         switch self {
-        case .languages: Text("Tus idiomas")
-        case .subtitles: Text("Subtítulos")
-        case .lettering: Text("Letra de los subtítulos")
+        case .languages: Text("Idiomas")
         case .appearance: Text("Apariencia")
-        case .appLanguage: Text("Idioma de la app")
         case .playback: Text("Reproducción")
         case .alerts: Text("Avisos")
         case .downloads: Text("Descargas")
@@ -212,6 +212,7 @@ struct PaneLink<Destination: View, Label: View>: View {
 struct SettingsPaneHeader: View {
     let title: Text
     let back: (() -> Void)?
+    @Environment(\.readableWidth) private var width   // alineado con la página de abajo (AJ-A)
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
@@ -227,7 +228,7 @@ struct SettingsPaneHeader: View {
             title.recipe(.section, color: DS.text).lineLimit(1)
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: DS.TitleAction.readableWidth, alignment: .leading)
+        .frame(maxWidth: width, alignment: .leading)
         .padding(.horizontal, DS.Space.gutter)
         .padding(.top, DS.Space.s4)
         .frame(maxWidth: .infinity)

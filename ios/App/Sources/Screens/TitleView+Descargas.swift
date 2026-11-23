@@ -74,7 +74,7 @@ extension TitleView {
         let next = model.nextEpisodeIDs(DS.Size.downloadNext)
         let season = model.selectedSeason, inSeason = model.seasonEpisodeIDs(season)
         let seasonMissing = model.notDownloaded(inSeason), all = model.allEpisodeIDs, allMissing = model.notDownloaded(all)
-        let free = (try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?.volumeAvailableCapacityForImportantUsage
+        let free: Int64? = DiskSpace.freeBytes()   // lo último que se supo: preguntarle al disco aquí costaba 125 ms al abrir la ficha
         let size = { (what: Text, bytes: Int64?) in Self.size(what, bytes: bytes, free: free, locale: env.uiLocale) }
         if episode, let target = model.downloadTarget {
             Button { Task { await downloadRecommended(model) } } label: {

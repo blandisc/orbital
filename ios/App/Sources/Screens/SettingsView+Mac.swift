@@ -5,10 +5,11 @@ import OrbitalModels
 /// MA1 (Fernando, 16 nov 2026): en la Mac, Ajustes es lista y detalle, como Ajustes del Sistema. La lista a la izquierda y la
 /// página elegida a la derecha: cambias varias cosas sin ir y volver (antes, una columna angosta al centro con dos tercios
 /// vacíos). Lo que se abre desde una página (Probar la velocidad, Lo que recuerda cada título…) se empuja como siempre.
-/// iPhone y iPad no cambian.
+/// AJ-A (22 nov 2026): la lista es una barra lateral angosta (un renglón por página, sin su valor) y la página llena lo
+/// demás; igual en el iPad ancho (donde la barra de arriba también va en el renglón del logo). iPhone e iPad angosto, la lista.
 extension SettingsView {
     @ViewBuilder func macSplit(_ list: some View, _ model: SettingsModel) -> some View {
-        if ThisDevice.isMac {
+        if TopRow.tabsInLogoRow {
             HStack(spacing: 0) {
                 list
                     .frame(width: DS.Mac.settingsListWidth)
@@ -28,6 +29,7 @@ extension SettingsView {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .environment(\.settingsSubPane, SettingsSubPane { title, make in macStack.append(SettingsSubPage(title: title, make: make)) })
+                .environment(\.readableWidth, DS.Mac.settingsPageWidth)   // AJ-A: la página llena el ancho, no una columna de 720
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Backdrop())

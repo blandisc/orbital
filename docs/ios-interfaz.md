@@ -967,7 +967,7 @@ nuevos tamaños»):
     - Los botones de vidrio se leen: su letra va del color del texto (en la Mac salía oscura sobre fondo oscuro), y un aviso de «vacío» dentro de una lista no se estira a toda la pantalla (se cortaba y escondía su botón). `testGlassButtonsGoThroughTheCatalog`, `testEmptyStatesInAListDoNotFillTheScreen`.
     - Una fila de tarjetas no repite los pósters de la de al lado (Acción, Aventura y Animación enseñaban los mismos). `CoverSpreadTests`.
     - Cambiar de pestaña no traba: lo que tiene imágenes o renglones cuenta cuántos caben con el espacio medido, no arma varias versiones para ver cuál cabe (el panel de Inicio armaba doce y la Mac se trababa al ir de Inicio a Explorar). `testOnlyTextTriesManyVersionsToFit`.
-    - Cambiar de pantalla no relee nada ni repinta lo que no cambió: el idioma de Orbital es el preferido de la app (con otro `Locale`, cada texto releía `Localizable.strings` del disco: 16 % del cambio de pestaña) y lo que va por el entorno para toda la app lleva solo datos, no acciones (`PosterQuick`, `TallArtLookup`). Desplazarse tampoco: lo que se anota al pasar (qué sección ves) va a una caja que lee solo quien lo enseña (`SectionTracker`), nunca al estado de la pantalla. `testSwitchingScreensRereadsNothingAndRepaintsOnlyWhatChanged`.
+    - Cambiar de pantalla no relee nada ni repinta lo que no cambió: el idioma de Orbital es el preferido de la app (con otro `Locale`, cada texto releía `Localizable.strings` del disco: 16 % del cambio de pestaña) y lo que va por el entorno para toda la app lleva solo datos, no acciones (`PosterQuick`, `TallArtLookup`). Desplazarse tampoco: lo que se anota al pasar (qué sección ves) va a una caja que lee solo quien lo enseña (`SectionTracker`), nunca al estado de la pantalla. Y nada que se pinta le pregunta al disco (el espacio libre lo sabe `DiskSpace`, medido por detrás: abrir una serie tardaba 125 ms por esa pregunta). `testSwitchingScreensRereadsNothingAndRepaintsOnlyWhatChanged`.
     - Una fila que muestra «Ver todas» cuenta antes cuántas caben: si caben todas, no sale; si no, el último lugar es «Ver todas» y las demás se esconden al achicar la ventana, sin deslizarse ni cortar una a la mitad (la repisa de Colecciones). Y el «+» de crear algo es uno solo en toda la app (`DSAddTile`: círculo con el + turquesa y su nombre debajo, sin caja). `testMacRowsFillTheWindow`.
     - Una imagen que falla se vuelve a pedir sola mientras siga en pantalla (antes se quedaba vacía hasta salir y volver a entrar). `testRemoteImageLoadsEvenWhenItsContentIsEmpty`.
   - Explorar en ventana ancha (22 nov 2026): «Tus listas» en mosaicos que se deslizan con «Nueva lista» como el primero; «Lo que ves» como puerta grande (`ListRow(large:)`); el mosaico con columnas de 210 y su entrada animada; el muro de la portada cubre también la cuña de la izquierda (`coverTiltSlack`).
@@ -1203,6 +1203,13 @@ En una escena de Aprende, una pieza puesta con `sceneAt` crece o gira con `.scal
 `sceneAt`; después, crece alrededor de la esquina del lienzo y se sale de su lugar (los tres pósters de «Junta filtros» se
 salían de la cuadrícula). `scenePut` con escala o giro, solo en piezas que vuelan con `dx`/`dy`.
 `DesignRulesTests.testScaledScenePiecesScaleBeforeTheirPlace` lo vigila.
+
+### Idiomas en un solo lugar (22 nov 2026, ID-A)
+
+Todo lo de idioma vive en un renglón de Ajustes, «Idiomas», igual en iPhone, iPad y Mac: la app (menús), los títulos y
+sinopsis (aparte; si nunca lo elegiste, el mismo de la app), lo que ves (el audio, en orden), los subtítulos y el país. Dos o
+tres opciones cortas se eligen a la vista con `DSSelector`, nunca con una lista que abre otra pantalla.
+`testLanguagesLiveInOnePlace` y `testOneSelectorEverywhere`.
 
 ## 4b. Bilingüe
 

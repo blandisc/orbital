@@ -89,3 +89,19 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(followed.region, AppSettings.phoneRegion)
     }
 }
+
+/// ID-A: el idioma de los títulos y sinopsis es aparte del de la app; si nunca lo elegiste, es el mismo (nada cambia al
+/// actualizar).
+final class TitleLanguageTests: XCTestCase {
+    func testTitleLanguageFollowsTheAppUntilChosen() throws {
+        var s = AppSettings()
+        s.uiLanguage = "en"
+        XCTAssertEqual(s.titleLanguage, "en")
+        s.metadataLanguage = "es"
+        XCTAssertEqual(s.titleLanguage, "es")
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"uiLanguage":"en"}"#.utf8))
+        XCTAssertNil(old.metadataLanguage); XCTAssertEqual(old.titleLanguage, "en")
+        let again = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(again.metadataLanguage, "es")
+    }
+}

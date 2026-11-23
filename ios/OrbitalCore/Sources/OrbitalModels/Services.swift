@@ -64,7 +64,7 @@ public final class Services: ObservableModel {
     public private(set) var localizer: Localizer { didSet { notify() } }
     /// La puerta única del nombre de un título en tu idioma (revisión 2, 11 nov): la usan todas las vistas.
     public private(set) lazy var titleNames: TitleNames = TitleNames(
-        language: { [settings] in Localizer.tmdbLanguage(settings.value.uiLanguage) },
+        language: { [settings] in Localizer.tmdbLanguage(settings.value.titleLanguage) },
         lookup: titleLookup(), known: titleKnown())
     private func titleLookup() -> TitleNames.Lookup { let l = localizer; return { kind, imdb in await l.title(kind: kind, imdb: imdb) } }
     private func titleKnown() -> TitleNames.Known { let l = localizer; return { await l.allKnownTitles() } }
@@ -268,7 +268,7 @@ public final class Services: ObservableModel {
                                   openSubtitles: Services.makeOpenSubtitles(http: http, secrets: secrets, settings: settings), clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
-        let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
+        let localizer = Localizer(tmdb: tmdb, language: { settings.value.titleLanguage }, clock: clock, store: kv)
         self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate) }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
         let debrid = self.debrid
@@ -515,7 +515,7 @@ public final class Services: ObservableModel {
         let s = settings.value
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let settings = settings, secrets = secrets
-        localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
+        localizer = Localizer(tmdb: tmdb, language: { settings.value.titleLanguage }, clock: clock, store: kv)
         titleNames.reset(lookup: titleLookup(), known: titleKnown())
         self.tmdb = tmdb
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)

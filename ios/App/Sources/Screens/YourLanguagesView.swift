@@ -11,12 +11,27 @@ struct YourLanguagesView: View {
     let settings: ModelObserver<SettingsModel>
     @FocusState private var focused: String?
 
+    /// Dentro de la página «Idiomas» (ID-A): solo su grupo, sin su propio formulario ni título.
+    var embedded = false
+
     var body: some View {
+        if embedded { audioSection } else {
+            Form { audioSection }
+                .tint(DS.accent)
+                .scrollContentBackground(.hidden).background(Backdrop())
+                .navigationTitle("Tus idiomas").navigationBarTitleDisplayMode(.inline)
+                .readableListWidth()
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("your-languages")
+        }
+    }
+
+    /// El audio, en orden: con cuál arranca y cuál prueba después.
+    @ViewBuilder private var audioSection: some View {
         let model = settings.model
         let list = model.settings.yourLanguages
         let ui = model.settings.uiLanguage
-        Form {
-            Section {
+        Section {
                 ForEach(Array(list.enumerated()), id: \.element) { index, code in
                     row(code, index: index, list: list, ui: ui, model: model)
                 }
@@ -31,17 +46,12 @@ struct YourLanguagesView: View {
                     }
                     .accessibilityIdentifier("languages-add")
                 }
+            } header: {
+                if embedded { Text("Lo que ves (el audio, en este orden)") }
             } footer: {
                 Text("En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.")
             }
             .listRowBackground(DS.surface)
-        }
-        .tint(DS.accent)
-        .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Tus idiomas").navigationBarTitleDisplayMode(.inline)
-        .readableListWidth()
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("your-languages")
     }
 
     /// Un idioma: su lugar, su nombre (el primero dice «Tu idioma») y su menú.

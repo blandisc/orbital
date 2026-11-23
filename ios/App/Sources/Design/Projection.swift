@@ -465,6 +465,11 @@ extension View {
     }
 }
 
+extension EnvironmentValues {
+    /// El ancho de lectura de las listas (`readableListWidth`): el de la ficha, salvo donde una pantalla pide otro.
+    @Entry var readableWidth: CGFloat = DS.TitleAction.readableWidth
+}
+
 /// Listas y formularios a un ancho de lectura en ventanas anchas (iPad, Mac): el contenido al centro, el fondo y la barra
 /// de desplazamiento a todo lo ancho. Solo actúa cuando la pantalla mide más que el ancho de lectura de la ficha
 /// (`DS.TitleAction.readableWidth`): en el iPhone nunca se activa y quedan los márgenes de siempre.
@@ -472,15 +477,21 @@ private struct ReadableListWidth: ViewModifier {
     /// El ancho visible y lo que tapa la barra lateral del iPad (en horizontal se dibuja encima: cuenta como área segura).
     @State private var visible: CGFloat = 0
     @State private var sidebar: CGFloat = 0
+    /// El ancho de lectura de aquí (AJ-A: la página de Ajustes de la Mac llena lo que deja la barra lateral).
+    @Environment(\.readableWidth) private var width
 
     func body(content: Content) -> some View {
-        let margin = (visible - DS.TitleAction.readableWidth) / 2
+        let margin = (visible - width) / 2
         Group {
             // El margen de la izquierda no se suma al de la barra lateral (queda el mayor): se le agrega a mano para que
             // la lista quede al centro de lo visible y no cargada a un lado.
             if margin > 0 {
                 content.contentMargins(.leading, sidebar + margin, for: .scrollContent)
                     .contentMargins(.trailing, margin, for: .scrollContent)
+            } else if width != DS.TitleAction.readableWidth {
+                // Una página que pide más ancho (Ajustes en la Mac, AJ-A): sus orillas a mano; si no, el formulario de iOS
+                // se queda en su propio ancho de lectura y la página se veía como una columna angosta.
+                content.contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             } else { content }
         }
         .onGeometryChange(for: CGSize.self) { CGSize(width: $0.size.width, height: $0.safeAreaInsets.leading) } action: {

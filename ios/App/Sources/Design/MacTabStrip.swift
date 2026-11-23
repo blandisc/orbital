@@ -62,11 +62,12 @@ struct MacSearchChip: View {
                 MacTabSwitch.go(tabs, 2)
                 tabs.focusSearch()
             } label: {
-                Label("Buscar", systemImage: "magnifyingglass").recipe(.labelLarge, color: tabs.current == 2 ? DS.bg : DS.text)
+                Label("Buscar", systemImage: "magnifyingglass").recipe(DS.Mac.topBarText, color: tabs.current == 2 ? DS.bg : DS.text)
                     .macTabLabel(compact: compact)
                     // Tan alto como la cápsula de las pestañas (su aire de adentro más el de su orilla) y más ancho: antes se veía
                     // más chico que ellas (Fernando, 22 nov 2026: «buscar lo haría un poquito más grande»).
-                    .padding(.horizontal, compact ? DS.Space.s6 : DS.Space.s8).padding(.vertical, DS.Space.s2 + DS.Space.s1)
+                    // DK (22 nov 2026: «el dock de arriba un poquito más grande»): crece junto con las pestañas y tu foto.
+                    .padding(.horizontal, compact ? DS.Space.s6 : DS.Space.s8).padding(.vertical, DS.Mac.topBarPadV + DS.Space.s1)
                     .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
                     .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
             }
@@ -98,9 +99,9 @@ private struct MacTabButton: View {
     var body: some View {
         Button(action: action) {
             Label { title } icon: { Image(systemName: symbol) }
-                .recipe(.labelLarge, color: on ? DS.bg : DS.textMuted)
+                .recipe(DS.Mac.topBarText, color: on ? DS.bg : DS.textMuted)
                 .macTabLabel(compact: compact)
-                .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
+                .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Mac.topBarPadV)
                 // La elegida, llena del color del texto con la letra del fondo: crema y oscura en modo oscuro (el foco de la tele), oscura
                 // y clara en modo claro (crema sobre la cápsula casi blanca no se distinguía).
                 .background { if on { Capsule().fill(DS.text) } }
@@ -231,7 +232,7 @@ struct MacSearchField: View {
             }
         }
         .padding(.horizontal, DS.Space.s6)
-        .frame(maxWidth: DS.Mac.searchFieldWidth, minHeight: DS.Mac.searchFieldHeight)
+        .frame(maxWidth: .infinity, minHeight: DS.Mac.searchFieldHeight)   // BU-A: de orilla a orilla, alineado con la cuadrícula
         .background(DS.surfaceRaised, in: Capsule())
         .overlay(Capsule().strokeBorder(focused.wrappedValue ? DS.accent : DS.hairline, lineWidth: focused.wrappedValue ? DS.Stroke.selected : DS.Stroke.hairline))
         .frame(maxWidth: .infinity)

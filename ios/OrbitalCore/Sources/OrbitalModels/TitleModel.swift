@@ -219,7 +219,7 @@ public final class TitleModel: ObservableModel {
     /// Lo de la ficha rica: TMDB (elenco, saga, tráiler…; la clasificación en la escala de `uiLanguage`) y la de Trakt, a la vez.
     public func loadExtras() async {
         guard metaID.hasPrefix("tt") else { return }
-        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region, language = services.appSettings.uiLanguage
+        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region, language = services.appSettings.titleLanguage
         // La calificación de Trakt: la misma que ya se enseñó en Inicio o en una lista (`TraktRatings`); solo se pide si no hay.
         let known = TraktRatings.known(metaID)
         if let known { traktRating = known }

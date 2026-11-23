@@ -77,7 +77,7 @@ public final class SettingsModel: ObservableModel {
             services.secrets.set(SecretKey.traktClientID, settings.traktClientID.isEmpty ? nil : settings.traktClientID)
         }
         // Un solo aviso a la app: rearmar los servicios ya avisa (antes eran dos pasadas seguidas, B7).
-        if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
+        if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.titleLanguage != settings.titleLanguage || before.region != settings.region {
             services.reconfigure()
             trakt = computeTraktState()
         } else {

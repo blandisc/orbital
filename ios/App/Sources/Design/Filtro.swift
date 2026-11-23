@@ -165,12 +165,12 @@ enum FilterText {
 struct FilterArt: View {
     let page: FilterPage
     let context: FilterContext
-    var mini = false, big = false   // big: la puerta de Buscar en la Mac (MS1)
+    var mini = false
 
     var body: some View {
         let f = context.filter
-        let height = big ? DS.Mac.doorArtHeight : mini ? DS.Filter.miniArtHeight : DS.Filter.artHeight
-        let symbolFont = big ? DS.TextRecipe.display.font : mini ? DS.TextRecipe.secondary.font : DS.TextRecipe.title.font
+        let height = mini ? DS.Filter.miniArtHeight : DS.Filter.artHeight
+        let symbolFont = mini ? DS.TextRecipe.secondary.font : DS.TextRecipe.title.font
         Group {
             switch page {
             case .era where f.years != nil || f.spread:
@@ -223,7 +223,7 @@ struct FilterArt: View {
 struct FilterTile: View {
     let page: FilterPage
     let context: FilterContext
-    var mini = false, big = false   // big: en la Mac, la puerta de Buscar en mosaicos grandes (Fernando, 16 nov 2026)
+    var mini = false
     var open = false
     let action: () -> Void
 
@@ -244,9 +244,9 @@ struct FilterTile: View {
         Button(action: action) {
             // Centrado (Fernando, 31 oct 2026): el dibujo, el nombre y lo elegido al centro del mosaico.
             VStack(spacing: mini ? DS.Space.s1 / 2 : DS.Space.s1) {
-                if art.isEmpty { FilterArt(page: page, context: context, mini: mini, big: big) } else { Spacer(minLength: 0) }
+                if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
-                page.title.recipe(mini ? .badge : big ? .cardTitle : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                page.title.recipe(mini ? .badge : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 if page == .rating, value != nil {
                     // De dónde sale el número de arriba (el logo de TMDB o el de Letterboxd) y, con las dos, las estrellas.
                     let f = context.filter, stars = f.format == .series ? nil : f.minLetterboxd
@@ -264,7 +264,7 @@ struct FilterTile: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s2)
             .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s2)
-            .frame(maxWidth: .infinity, minHeight: big ? DS.Mac.doorTileHeight : compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
+            .frame(maxWidth: .infinity, minHeight: compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
             .background {
                 ZStack {
                     open || mini ? DS.surfaceRaised : DS.surface
@@ -289,6 +289,31 @@ struct FilterTile: View {
         // El valor entra con el resorte de la app y el mosaico crece suave (sin movimiento con Reducir movimiento).
         .animation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade, value: on)
         .animation(DS.Motion.smooth(reduceMotion), value: compact)
+    }
+}
+
+/// Una puerta de la búsqueda avanzada en la Mac (BU-A): cápsula con el ícono de su color, su nombre y, si está puesto, lo
+/// elegido. Puesta, con el anillo de selección (como el mosaico).
+struct FilterChip: View {
+    let page: FilterPage
+    let context: FilterContext
+    let action: () -> Void
+
+    var body: some View {
+        let value = FilterText.value(page, context)
+        Button(action: action) {
+            HStack(spacing: DS.Space.s2) {
+                Image(systemName: page.symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(page.hue)
+                page.title.recipe(.cardTitle)
+                if let value { value.recipe(.secondary, color: DS.textMuted).lineLimit(1) }
+            }
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+        }
+        .dsSecondaryButton()   // el botón secundario de la app (cápsula con borde), no uno armado a mano
+        .dsSelectionRing(value != nil, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(value != nil ? .isSelected : [])
+        .accessibilityValue(value ?? Text("Cualquiera"))
     }
 }
 
@@ -428,11 +453,22 @@ struct FilterDoor: View {
             }
             // Dos columnas con letra de accesibilidad: en tres el dibujo se encimaba con el nombre («Cu…»).
             // MS1: en la Mac, los seis en una fila y en grande (con su dibujo), como mosaicos y no como botones planos.
-            let mac = ThisDevice.isMac
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: mac ? FilterPage.main.count : typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
-                ForEach(FilterPage.main) { page in
-                    FilterTile(page: page, context: context, mini: !mac, big: mac) { open(page) }
-                        .accessibilityIdentifier("browse-filter-\(page.rawValue)")
+            // BU-A (Fernando, 22 nov 2026): en la Mac, un renglón de cápsulas con su ícono (los seis mosaicos grandes ocupaban
+            // media pantalla antes de cualquier resultado); cada una abre lo mismo que su mosaico.
+            if ThisDevice.isMac {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(FilterPage.main) { page in
+                        FilterChip(page: page, context: context) { open(page) }
+                            .accessibilityIdentifier("browse-filter-\(page.rawValue)")
+                    }
+                    Spacer(minLength: 0)
+                }
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
+                    ForEach(FilterPage.main) { page in
+                        FilterTile(page: page, context: context, mini: true) { open(page) }
+                            .accessibilityIdentifier("browse-filter-\(page.rawValue)")
+                    }
                 }
             }
         }

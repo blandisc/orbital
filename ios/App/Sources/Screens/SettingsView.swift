@@ -38,7 +38,7 @@ struct SettingsView: View {
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
-    /// La página abierta a la derecha en la Mac (MA1); de entrada, «Tus idiomas», el primer renglón.
+    /// La página abierta a la derecha en la Mac (MA1); de entrada, «Idiomas», el primer renglón.
     @State var macPage: SettingsPage = .languages
     /// MA2: lo que se abrió desde la página de la derecha en la Mac (Trakt, Real-Debrid…), arriba de ella.
     @State var macStack: [SettingsSubPage] = []
@@ -86,9 +86,6 @@ struct SettingsView: View {
             SettingsLink(.appearance) { destination(.appearance, model) } label: {
                 SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
             }
-            SettingsLink(.appLanguage) { destination(.appLanguage, model) } label: {
-                SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
-            }
             SettingsLink(.playback) { destination(.playback, model) } label: {
                 SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
             }
@@ -129,7 +126,7 @@ struct SettingsView: View {
         // Lo que casi no se toca: complementos, la clave de TMDB y el país.
         Section {
             SettingsLink(.advanced) { destination(.advanced, model) } label: {
-                SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
+                SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text(verbatim: "TMDB"))
             }
             // «Aprende»: una sola entrada con las historias, la guía otra vez, los avisos desde cero y lo que se puede hacer con
             // la TV (revisión del 11 nov: eran cuatro renglones casi iguales, dos con el mismo destello).
@@ -260,11 +257,8 @@ struct SettingsView: View {
 
     @ViewBuilder private func pageContent(_ page: SettingsPage, _ model: SettingsModel) -> some View {
         switch page {
-        case .languages: YourLanguagesView(settings: settings)
-        case .subtitles: self.page("Subtítulos") { subtitles(model) }
-        case .lettering: self.page("Letra de los subtítulos") { lettering(model) }
+        case .languages: self.page("Idiomas") { languagesPage(model) }
         case .appearance: self.page("Apariencia") { appearance(model) }
-        case .appLanguage: self.page("Idioma de la app") { appLanguage(model) }
         case .playback: self.page("Reproducción") { playback(model) }
         case .alerts: self.page("Avisos") { alerts(model) }
         case .downloads: self.page("Descargas") { downloads(model) }
@@ -422,9 +416,6 @@ struct SettingsView: View {
     @ViewBuilder private func suggestions(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v; $0.regionChosen = true } })) {
-                ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
-            }
             SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
             if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
         } footer: {

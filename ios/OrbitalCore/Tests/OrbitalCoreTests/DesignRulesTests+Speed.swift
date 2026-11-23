@@ -44,5 +44,12 @@ extension DesignRulesTests {
         let spy = try XCTUnwrap(files.first { $0.name == "CollectionsView.swift" })
         let body = spy.lines.drop { !$0.contains("struct SectionSpy") }.prefix(14)
         XCTAssertFalse(body.contains { $0.contains("@Binding") }, "SectionSpy no escribe un estado de la pantalla: usa SectionTracker")
+
+        // 4 · Nada que se pinta le pregunta al disco cuánto espacio queda: lo sabe `DiskSpace`, que lo mide por detrás (abrir la
+        // ficha de una serie tardaba 125 ms en la Mac por esa pregunta en su menú de descargas, 22 nov 2026).
+        let asking = try sources(["Design", "Screens", "App", "Platform"]).filter { file in
+            file.name != "DeviceInfo.swift" && file.lines.contains { $0.contains(".volumeAvailableCapacity") }
+        }.map(\.name)
+        XCTAssertEqual(asking, [], "Pide el espacio libre con DiskSpace.freeBytes(): no le preguntes al disco al pintar")
     }
 }

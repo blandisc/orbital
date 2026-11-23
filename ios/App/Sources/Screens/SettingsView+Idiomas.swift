@@ -2,31 +2,67 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Ajustes › «Idiomas y subtítulos» (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»): arriba
-/// y juntos, los mismos cuatro que la TV en Ajustes › Ver: Tus idiomas, Subtítulos, Buscar subtítulos en internet y Letra de
-/// los subtítulos. El idioma de la app va aparte («Idioma de la app»).
+/// Ajustes › «Idiomas» (ID-A, Fernando, 22 nov 2026: «consolidar los idiomas en un solo lugar… el idioma que quieres en el
+/// contenido, el idioma del app y el idioma de los metadatos»): un solo renglón en la lista y, adentro, la app, los títulos y
+/// sinopsis, el audio en orden, los subtítulos y el país. Igual en iPhone, iPad y Mac (ahí, a la derecha de la barra).
 extension SettingsView {
     @ViewBuilder func languagesSection(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
             SettingsLink(.languages) { destination(.languages, model) } label: {
-                SettingsRow(title: "Tus idiomas", symbol: "globe", tint: DS.ListTint.chart, value: Text(verbatim: YourLanguagesView.summary(s.yourLanguages, s.uiLanguage)))
+                SettingsRow(title: "Idiomas", symbol: "globe", tint: DS.ListTint.chart, value: languagesValue(s))
             }
             .accessibilityIdentifier("settings-languages")
-            SettingsLink(.subtitles) { destination(.subtitles, model) } label: {
-                SettingsRow(title: "Subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: subtitlesValue(s))
+        }
+        .listRowBackground(DS.surface)
+    }
+
+    /// «Español · Latino, original +2»: el de la app y, después, el audio.
+    private func languagesValue(_ s: AppSettings) -> Text {
+        let app = s.uiLanguage == "en" ? "English" : "Español"
+        return Text(verbatim: app + " · " + YourLanguagesView.summary(s.yourLanguages, s.uiLanguage))
+    }
+
+    /// La página «Idiomas»: cada idioma por su lado. Con dos opciones, botones a la vista (no otra pantalla con una lista).
+    @ViewBuilder func languagesPage(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            DSSelector(options: languageChoices, selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
+                .accessibilityIdentifier("languages-app")
+        } header: { Text("La app") } footer: { Text("Menús, botones y avisos.") }
+        .listRowBackground(DS.surface)
+        Section {
+            DSSelector(options: languageChoices, selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
+                .accessibilityIdentifier("languages-titles")
+        } header: { Text("Títulos y sinopsis") } footer: { Text("Cómo se llaman las películas y series y de qué tratan.") }
+        .listRowBackground(DS.surface)
+        YourLanguagesView(settings: settings, embedded: true)
+        Section {
+            PaneLink(Text("Subtítulos")) { page("Subtítulos") { subtitles(model) } } label: {
+                SettingsRow(title: "Cuáles salen", symbol: "captions.bubble", tint: DS.ListTint.library, value: subtitlesValue(s))
             }
             .accessibilityIdentifier("settings-subtitles")
-            // Con ícono, como los otros tres del grupo (AJ-A: era el único sin él y su texto empezaba más a la izquierda).
             DSToggleRow("Buscar subtítulos en internet", detail: "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.",
                         symbol: "text.magnifyingglass", tint: DS.ListTint.list, isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
                 .accessibilityIdentifier("settings-internet-subtitles")
-            SettingsLink(.lettering) { destination(.lettering, model) } label: {
-                SettingsRow(title: "Letra de los subtítulos", symbol: "textformat.size", tint: DS.ListTint.spark, value: sizeName(s.subtitleSize))
+            PaneLink(Text("Letra de los subtítulos")) { page("Letra de los subtítulos") { lettering(model) } } label: {
+                SettingsRow(title: "Letra", symbol: "textformat.size", tint: DS.ListTint.spark, value: sizeName(s.subtitleSize))
             }
             .accessibilityIdentifier("settings-subtitle-letter")
-        } header: { Text("Idiomas y subtítulos") }
+        } header: { Text("Subtítulos") } footer: { Text("Van aparte del audio: puedes oírla en inglés y leerla en español.") }
         .listRowBackground(DS.surface)
+        Section {
+            Picker("País", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v; $0.regionChosen = true } })) {
+                ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
+            }
+            .accessibilityIdentifier("languages-region")
+        } header: { Text("País") } footer: { Text("Para lo popular en Netflix, Disney+ y HBO Max de tu país.") }
+        .listRowBackground(DS.surface)
+    }
+
+    /// Cada idioma con su propio nombre (así lo encuentra quien no lee el otro).
+    private var languageChoices: [DSSelector<String>.Option] {
+        [.init(id: "es", title: Text(verbatim: "Español")), .init(id: "en", title: Text(verbatim: "English"))]
     }
 
     private func subtitlesValue(_ s: AppSettings) -> Text {
@@ -37,17 +73,6 @@ extension SettingsView {
     private func sizeName(_ size: String) -> Text {
         // Los mismos cuatro nombres que la TV (PT19): «Normal», no «Mediano».
         switch size { case "small": Text("Pequeño"); case "large": Text("Grande"); case "xlarge": Text("Muy grande"); default: Text("Normal") }
-    }
-
-    /// «Idioma de la app»: el de los menús y las fichas (el del audio está en «Tus idiomas»).
-    @ViewBuilder func appLanguage(_ model: SettingsModel) -> some View {
-        let s = model.settings
-        Section {
-            Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
-                Text("Español").tag("es"); Text("English").tag("en")
-            }
-        } footer: { Text("El audio de las películas y series se elige en Tus idiomas.") }
-        .listRowBackground(DS.surface)
     }
 
     /// Subtítulos: cuáles salen solos y cuándo.
