@@ -214,9 +214,10 @@ def router(d: Deps) -> APIRouter:
     @r.get("/filter")
     @slow
     def filter_titles(kind: str = "movie", genre: str = "", decade: str = "", rating: str = "", fame: str = "",
-                      platform: str = "", country: str = "", count: bool = False) -> dict:
-        """El filtro avanzado (como el del iPhone): cuántos hay y, si no es solo contar, los primeros 20."""
-        f = {"genre": genre[:30], "decade": decade[:6], "rating": rating[:2], "fame": fame[:10], "platform": platform[:20], "country": country[:2]}
+                      platform: str = "", country: str = "", length: str = "", unseen: str = "", count: bool = False) -> dict:
+        """La búsqueda avanzada (como la del iPhone): cuántos hay y, si no es solo contar, los primeros 20."""
+        f = {"genre": genre[:30], "decade": decade[:6], "rating": rating[:2], "fame": fame[:10], "platform": platform[:20],
+             "country": country[:2], "length": length[:10], "unseen": unseen[:6]}
         try:
             return foryou.filtered(kind, f, count_only=count)
         except tmdb.TmdbError as exc:
@@ -412,6 +413,11 @@ def router(d: Deps) -> APIRouter:
         _trakt_call(lambda: foryou.gestor.rate_season(body.id[:20], body.season, body.stars),
                     "No pude guardar tu calificación en Trakt. Revisa tu conexión e inténtalo de nuevo.")
         return {"ok": True}
+
+    @r.get("/followed")
+    def followed() -> dict:
+        """Ajustes › Avisos › «Series que sigues»: las series que has visto, cada una con su campana."""
+        return {"series": _trakt_call(foryou.followed_series, "No pude leer tus series de Trakt. Revisa tu conexión e inténtalo de nuevo.")}
 
     @r.post("/follow")
     def follow(body: FollowRequest) -> dict:

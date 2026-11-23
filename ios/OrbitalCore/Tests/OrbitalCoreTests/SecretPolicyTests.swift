@@ -41,8 +41,8 @@ private final class FakeKeychain: @unchecked Sendable {
 
 final class SecretPolicyTests: XCTestCase {
     /// Si alguien agrega algo a lo que viaja por iCloud, esta prueba lo dice: la lista blanca es exactamente esta.
-    func testOnlyTheSharedRealDebridCopyAndTheIPadInviteAreSynchronizable() {
-        XCTAssertEqual(SecretKey.synchronizable, ["realdebrid_token.shared", "orbital_invite"])
+    func testOnlyTheSharedRealDebridCopyIsSynchronizable() {
+        XCTAssertEqual(SecretKey.synchronizable, ["realdebrid_token.shared"])   // PA5-A: sin la invitación del iPad
         let local = [SecretKey.orbitalDeviceKey, SecretKey.orbitalToken, SecretKey.orbitalAddress, SecretKey.orbitalTVID, SecretKey.traktTokens,
                      SecretKey.traktClientID, SecretKey.traktClientSecret, SecretKey.oneDriveTokens, SecretKey.stremioAuth, SecretKey.ownAddons,
                      SecretKey.tmdbKey, SecretKey.sharedRealDebridSeen, AddonKeys.realDebridToken, AddonKeys.addonURL("torrentio")]

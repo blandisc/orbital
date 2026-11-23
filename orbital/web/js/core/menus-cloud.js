@@ -337,7 +337,7 @@ const EXPLAINERS = {
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["trophy", "trophy", "Vienen con Orbital o los agregaste tú", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
+    ["trophy", "trophy", "Vienen con Orbital o los agregaste tú", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas."],
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
@@ -547,7 +547,7 @@ export function addonHealth(health, now = Date.now()) {
 }
 
 /** OpenSubtitles (el de Orbital o el traído de Stremio) ya no es complemento: los subtítulos de internet vienen con Orbital y
- * se prenden en Ajustes › Ver (Fernando, 3 nov 2026; igual que el iPhone). */
+ * se prenden en Ajustes › Idiomas (Fernando, 3 nov 2026; igual que el iPhone). */
 export const isOpenSubtitles = (e) => e.template === "opensubtitles" || /opensubtitles/i.test(e.name || "");
 const shownAddons = (entries) => (entries || []).filter((e) => !isOpenSubtitles(e));
 
@@ -685,9 +685,9 @@ function torrentioWords(entry, languages = [], service) {
     options: [
       entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true,
         command: { type: "rd-connect", service: cloudOf(service) } },
-      // N4-A: Torrentio no tiene lista propia; usa Ajustes › Ver › Tus idiomas.
+      // N4-A: Torrentio no tiene lista propia; usa Ajustes › Idiomas › Tus idiomas.
       // PT17 (Fernando, 4 nov): tus idiomas, no el camino (como el iPhone); A los cambia.
-      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: languagesLine(languages) || "Ajustes › Ver › Tus idiomas",
+      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: languagesLine(languages) || "Ajustes › Idiomas › Tus idiomas",
         command: { type: "languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
       { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",

@@ -276,7 +276,7 @@ struct TitleView: View {
         .background(DS.backdropDeep.ignoresSafeArea())
     }
 
-    /// Bajo el arte, como en la TV: pestañas (Episodios · Reparto · Parecidas · Detalles) y solo lo de la elegida.
+    /// Bajo el arte, como en la TV: pestañas (Episodios · Reparto y equipo · Más como esto · Detalles) y solo lo de la elegida.
     @ViewBuilder private func wideSections(_ model: TitleModel) -> some View {
         if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
         if let error = model.error, !model.isLoading {
@@ -306,7 +306,7 @@ struct TitleView: View {
         details(model)
     }
 
-    /// iPad: pestañas bajo el arte (Episodios · Reparto · Parecidas · Detalles) y solo lo de la elegida.
+    /// iPad: pestañas bajo el arte (Episodios · Reparto y equipo · Más como esto · Detalles) y solo lo de la elegida.
     @ViewBuilder private func tabbedSections(_ model: TitleModel) -> some View {
         let tabs = WideTab.available(series: model.kind == "series", extras: model.extras)
         let current = wideTab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs.first ?? .details

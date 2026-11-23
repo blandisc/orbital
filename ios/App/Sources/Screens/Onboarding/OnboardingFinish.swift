@@ -38,8 +38,6 @@ struct OnboardingTV: View {
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     GuideTVScene(connected: connected, start: start)
                     if connected { done(t) } else { ask(t) }
-                    // IOS-18: en el iPad con la invitación de tu iPhone, su tarjeta aquí mismo (CX4-A).
-                    if !connected, env.services.pendingInvite != nil { IPadInviteCard { connecting = true } }
                 }
             }
         }

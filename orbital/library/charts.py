@@ -69,6 +69,9 @@ JUSTWATCH_PACKAGES: dict[str, tuple[str, str, str]] = {
     "paramount": ("pmp", "Paramount+", "/icon/242706661/s100/paramountplus.png"),
     "crunchyroll": ("cru", "Crunchyroll", "/icon/324213205/s100/crunchyroll.png"),
 }
+# Otro shortName si el primero no trae nada en ese país: Prime Video es «prv» en México y «amp» en Estados Unidos (la Mac
+# en inglés de EE. UU. pedía «prv» y salía en blanco; Fernando, 16 nov 2026). Como `Charts.justWatchAlternates` del iPhone.
+JUSTWATCH_ALTERNATES: dict[str, str] = {"prv": "amp"}
 
 
 def justwatch_logo(brand: str) -> str | None:
@@ -243,8 +246,13 @@ def fetch_justwatch_chart(brand: str, region: str, kind: str, *,
     pkg = JUSTWATCH_PACKAGES.get(brand)
     if not pkg:
         return []
-    short_name = pkg[0]
-    send = post or http_json
+    out = _justwatch_chart(brand, pkg[0], region, kind, post or http_json)
+    if not out and (other := JUSTWATCH_ALTERNATES.get(pkg[0])):
+        out = _justwatch_chart(brand, other, region, kind, post or http_json)
+    return out
+
+
+def _justwatch_chart(brand: str, short_name: str, region: str, kind: str, send: Callable[..., tuple[int, Any]]) -> list[dict]:
     body = {
         "operationName": "GetStreamingCharts",
         "variables": {

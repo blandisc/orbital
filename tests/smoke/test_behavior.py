@@ -75,7 +75,7 @@ def test_art_tint_only_reaches_the_pieces_that_use_it(browser, server):  # noqa:
 # --- Lo que salió del menú ☰ tiene camino con mando (antes: menu-paths.test.mjs buscaba expresiones en main.js) ------------
 
 def test_entries_that_left_the_menu_have_a_path_with_the_pad(browser, server):  # noqa: F811
-    """D5-A: Guardado, Colecciones y Filtro avanzado se abren desde los íconos junto a «Todo · Películas · Series» (↑, ▶ y A;
+    """D5-A: Guardado, Colecciones y Búsqueda avanzada se abren desde los íconos junto a «Todo · Películas · Series» (↑, ▶ y A;
     B vuelve al mismo ícono; también con un clic), y «Decide por mí» con «Una por una» desde Explorar (X; ↑ y A abren el mazo
     encima de Decide; B regresa a Decide). Con Trakt conectado en la demo (Guardado vive en Trakt)."""
     import urllib.request
@@ -95,7 +95,7 @@ def paths_from_the_menu(browser, server):  # noqa: F811
             break
         press(page, "ArrowUp", wait=400)
     opened = {}
-    for label, screen in (("Guardado", "section.list-screen"), ("Colecciones", "section.showcase"), ("Filtro avanzado", "section.filter")):
+    for label, screen in (("Guardado", "section.list-screen"), ("Colecciones", "section.showcase"), ("Búsqueda avanzada", "section.filter")):
         for _ in range(8):
             if page.locator(".hero__kinds .pill.is-focused").get_attribute("aria-label") == label:
                 break

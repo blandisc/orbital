@@ -227,7 +227,7 @@ TRANSLATIONS = {
     "El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.": "The iPhone style is changed in Settings › Accessibility › Subtitles.",
     "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.": "If the video doesn't have them in your language, they're searched on OpenSubtitles.",
     "El audio de las películas y series se elige en Tus idiomas.": "The audio of movies and shows is chosen in Your languages.",
-    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas y subtítulos.": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages and subtitles.",
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas.": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages.",
     "Volví a pedir %@": "Requested %@ again", "Ya se liberó un lugar en tu Real-Debrid": "A slot freed up in your Real-Debrid",
     "Guardé tus idiomas": "Saved your languages", "La próxima búsqueda ya los usa": "The next search already uses them",
     "Se usan tus idiomas · Cambiar": "Your languages are used · Change",
@@ -1611,6 +1611,24 @@ TRANSLATIONS = {
     "Cargando la ficha": "Loading the details",
     "Cargando subtítulos": "Loading subtitles",
     "Cargando video": "Loading video",
+    # PA1-A, PA5-A y PA6-A (23 nov 2026): Ajustes con el esqueleto de la TV, Diagnóstico y el iPad sin TV.
+    "%@ cosas que revisar": "%@ things to check",
+    "Diagnóstico": "Diagnostics",
+    "Todo bien": "All good",
+    "1 cosa que revisar": "1 thing to check",
+    "%lld cosas que revisar": "%lld things to check",
+    "Guarda dónde te quedaste y lo que viste. Si algo no llegó, ábrelo para ver qué fue y por qué.": "Keeps where you left off and what you watched. If something didn't get there, open it to see what and why.",
+    "De ahí salen los videos. Te avisamos 14 días antes de que venza.": "That's where the videos come from. We'll let you know 14 days before it expires.",
+    "Sin probar todavía": "Not tried yet",
+    "Ninguno prendido: sin ellos no hay de dónde ver.": "None turned on: without them there's nowhere to watch from.",
+    "Revisar complementos": "Check add-ons",
+    "Cuánto tardó cada uno la última vez desde aquí. El que no contesta se salta solo hasta que vuelva.": "How long each one took last time from here. One that doesn't answer is skipped until it's back.",
+    "Para «Ver en la TV», el control y la voz.": "For “Watch on TV”, the remote and voice.",
+    "OneDrive · tus archivos": "OneDrive · your files",
+    "Tus películas y series de OneDrive salen junto a lo demás.": "Your movies and shows from OneDrive show up with everything else.",
+    "Claves de Explorar": "Explore keys",
+    "En este aparato, Orbital no controla la TV. Usa tu iPhone.": "On this device, Orbital doesn't control the TV. Use your iPhone.",
+    "Falta tu nube": "Your cloud is missing",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
@@ -1689,7 +1707,7 @@ def ui_word(word: str) -> bool:
 # El aparato en los textos: la misma app corre en iPhone, iPad y Mac («Diseñada para iPad»). Un texto que dice «iPhone»
 # lleva una variación por aparato del catálogo (Apple elige la del aparato) y en el iPhone se lee igual que siempre.
 # No se tocan los que nombran algo literal: el menú de la TV y la frase de voz «… en mi iPhone».
-DEVICE_LITERAL = ("› iPhone", "mi iPhone", "en tu iPhone", "Tu iPhone te invita", "Solo tu iPhone")   # CX4-A: el iPad habla de tu iPhone
+DEVICE_LITERAL = ("› iPhone", "mi iPhone", "en tu iPhone", "Tu iPhone te invita", "Solo tu iPhone", "Usa tu iPhone")   # CX4-A: el iPad habla de tu iPhone
 MAC_ES = [("del iPhone", "de la Mac"), ("al iPhone", "a la Mac"), ("este iPhone", "esta Mac"), ("El iPhone", "La Mac"),
           ("el iPhone", "la Mac"), ("iPhone", "Mac")]
 

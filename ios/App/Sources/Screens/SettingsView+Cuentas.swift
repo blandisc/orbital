@@ -3,8 +3,9 @@ import OrbitalModels
 
 /// Ajustes › Cuentas (maqueta 11): cada cuenta con su papel dicho en el título. Tu nube (Real-Debrid, TorBox o AllDebrid,
 /// DN1: de ahí salen los videos),
-/// Trakt · principal (lo tuyo entre aparatos) y Stremio · respaldo (la copia, el único lugar donde dice Stremio). Tu Orbital
-/// vive aparte, en Ajustes › Orbital en la TV.
+/// Trakt · principal (lo tuyo entre aparatos), OneDrive, Letterboxd, OpenSubtitles y las claves de Explorar (TMDB), en el orden
+/// de Ajustes › Cuentas de la TV (PA1-A, 23 nov 2026: OneDrive y la clave de TMDB ya no tienen renglón aparte). Tu Orbital
+/// vive aparte, en «En este aparato».
 extension SettingsView {
     /// Lo que dice el renglón «Cuentas»: cuánto le queda a tu nube, o que falta.
     var debridValue: Text {
@@ -15,7 +16,7 @@ extension SettingsView {
     }
 
     /// «N cosas no se pudieron guardar en Trakt» (revisión del 11 nov 2026): solo si hay algo; abre qué fue, cuándo y por qué.
-    @ViewBuilder private var traktDiscardsRow: some View {
+    @ViewBuilder var traktDiscardsRow: some View {
         let count: Int = discards.model.count
         if count > 0 {
             PaneLink(Text("No llegó a Trakt")) { TraktDiscardsView(model: discards.model) } label: {
@@ -40,6 +41,15 @@ extension SettingsView {
         } header: { Text("Trakt · principal") } footer: { Text("Guarda dónde te quedaste, lo que viste y Mi lista, para todos tus aparatos.") }
         .listRowBackground(DS.surface)
         .onAppear { discards.model.reload() }   // la cola pudo descartar algo mientras tanto
+        // Tus películas y series de OneDrive como una fuente más (como en la TV, que la tiene en Cuentas).
+        Section {
+            PaneLink(Text(verbatim: "OneDrive")) { OneDriveSettings() } label: {
+                SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
+                            value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
+            }
+            .accessibilityIdentifier("settings-onedrive")
+        } header: { Text("OneDrive · tus archivos") } footer: { Text("Tus películas y series de OneDrive salen junto a lo demás.") }
+        .listRowBackground(DS.surface)
         Section {
             PaneLink(Text(verbatim: "Letterboxd")) { LetterboxdSettings() } label: {
                 SettingsRow(title: "Letterboxd", symbol: "star.bubble", tint: DS.Letterboxd.leaf, value: letterboxdValue)
@@ -55,6 +65,21 @@ extension SettingsView {
             } header: { Text("OpenSubtitles · subtítulos") } footer: { Text("Más subtítulos y de tu copia exacta.") }
             .listRowBackground(DS.surface)
         }
+        exploreKeys(model)
+    }
+
+    /// «Claves de Explorar» (así le dice la TV): la de TMDB, antes en Avanzado.
+    @ViewBuilder private func exploreKeys(_ model: SettingsModel) -> some View {
+        Section {
+            SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
+                .accessibilityIdentifier("settings-tmdb-key")
+            if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
+        } header: { Text("Claves de Explorar") } footer: {
+            env.services.usesBuiltInTMDBKey
+                ? Text("Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.")
+                : Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.")
+        }
+        .listRowBackground(DS.surface)
     }
 
     private var openSubtitlesValue: Text {

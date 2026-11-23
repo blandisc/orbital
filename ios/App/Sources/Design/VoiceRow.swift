@@ -319,7 +319,10 @@ struct ConnectionTrail: View {
         }
     }
 
-    private var message: Text {
+    private var message: Text { Self.message(issue) }
+
+    /// Qué tramo falló y cómo se arregla, en una frase: la misma aquí y en Ajustes › Diagnóstico (PA6-A).
+    static func message(_ issue: ConnectionIssue) -> Text {
         switch issue {
         case .noInternet: Text("Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez.")
         case .tunnelDown: Text("Tu TV no contesta: puede estar dormida. «Prende la tele» la despierta.")

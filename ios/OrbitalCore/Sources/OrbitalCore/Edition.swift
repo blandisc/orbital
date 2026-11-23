@@ -23,7 +23,7 @@ public enum Edition: String, Sendable, CaseIterable, Equatable {
 /// tu cuenta (tu clave de Real-Debrid, tu TV emparejada) se sigue preguntando aparte, además de esto.
 public struct Capabilities: Sendable, Equatable {
     /// La consola Orbital de la TV: control, voz, «Ver en la TV», «Desde la TV», Siri de la TV, el acompañante de juegos.
-    /// Tampoco en la Mac (decisión de Fernando, 29 oct 2026), aunque la versión la traiga.
+    /// Solo en el iPhone: ni en la Mac (29 oct 2026) ni en el iPad (PA5-A, 23 nov 2026), aunque la versión la traiga.
     public var console: Bool
     /// Ver al instante: Real-Debrid, los complementos de streams, «Versión», los pedidos a la nube y su parte en Descargas.
     public var instantStreams: Bool
@@ -39,7 +39,7 @@ public struct Capabilities: Sendable, Equatable {
         self.emulation = emulation; self.personal = personal
     }
 
-    /// Lo que trae cada versión. `talksToOrbital`: si este aparato habla con la TV (la Mac no).
+    /// Lo que trae cada versión. `talksToOrbital`: si este aparato habla con la TV (solo el iPhone).
     public init(edition: Edition, talksToOrbital: Bool = true) {
         switch edition {
         case .ultra: self.init(console: talksToOrbital, instantStreams: true, downloads: true, emulation: true, personal: true)
@@ -58,9 +58,10 @@ public struct Capabilities: Sendable, Equatable {
         return true
     }
 
-    /// Lo que contesta Siri (o un atajo guardado) cuando aquí no hay consola. En Ultra es la Mac; Plus y Orbital no tienen
-    /// consola en ningún aparato, así que no se culpa a la Mac ni se habla de la TV (la clave del catálogo de textos).
+    /// Lo que contesta Siri (o un atajo guardado) cuando aquí no hay consola. En Ultra es la Mac o el iPad (PA5-A: solo el
+    /// iPhone habla con la TV); Plus y Orbital no tienen consola en ningún aparato, así que no se habla de la TV (la clave del
+    /// catálogo de textos).
     public static func noTVLine(edition: Edition) -> String {
-        edition == .ultra ? "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad." : "Esta versión de Orbital es para ver aquí mismo."
+        edition == .ultra ? "En este aparato, Orbital no controla la TV. Usa tu iPhone." : "Esta versión de Orbital es para ver aquí mismo."
     }
 }

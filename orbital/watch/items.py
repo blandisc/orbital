@@ -137,6 +137,7 @@ class HeardTracks:
     vez sin volver a abrirla. Un archivo chico en la caché; las más viejas se van."""
 
     LIMIT = 1000
+    FIELD = "audio"
 
     def __init__(self, path: Path | None) -> None:
         self.path = path
@@ -155,13 +156,13 @@ class HeardTracks:
     def get(self, key: str) -> list[dict] | None:
         with self._lock:
             hit = self._load().get(key)
-        return hit.get("audio") if isinstance(hit, dict) and isinstance(hit.get("audio"), list) else None
+        return hit.get(self.FIELD) if isinstance(hit, dict) and isinstance(hit.get(self.FIELD), list) else None
 
     def put(self, key: str, audio: list[dict]) -> None:
         with self._lock:
             data = self._load()
             data.pop(key, None)
-            data[key] = {"audio": audio, "at": int(time.time())}
+            data[key] = {self.FIELD: audio, "at": int(time.time())}
             while len(data) > self.LIMIT:
                 data.pop(next(iter(data)))
             if not self.path:
@@ -170,4 +171,12 @@ class HeardTracks:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 atomic_write(self.path, json.dumps(data, ensure_ascii=False), encoding="utf-8")
             except OSError:
-                log.warning("No pude guardar las pistas que vio el reproductor", exc_info=True)
+                log.warning("No pude guardar %s", self.path.name, exc_info=True)
+
+
+class ScareMaps(HeardTracks):
+    """Los sustos de cada película (Where's The Jump, por su id de IMDb) que ya se buscaron: la segunda vez salen al
+    instante y sin internet. Con tope, como el iPhone (`savedScaresLimit`)."""
+
+    LIMIT = 300
+    FIELD = "scares"

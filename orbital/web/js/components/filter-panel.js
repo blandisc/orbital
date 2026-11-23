@@ -7,8 +7,10 @@ import { DecideBackdrop, DecideHead } from "./decide.js";
 import { Pill } from "./ui.js";
 
 /**
- * El filtro avanzado (FA-1, Fernando, 16 nov 2026: «dale una pulida mucho mayor»), en la misma línea que «Decide por mí»:
- * arriba su encabezado con lo que llevas elegido y el reloj, de fondo el arte del primer resultado. A la izquierda las siete
+ * La búsqueda avanzada (FA-1, Fernando, 16 nov 2026: «dale una pulida mucho mayor»), en la misma línea que «Decide por mí»:
+ * PA3-A (23 nov 2026): se llama como en el iPhone («Búsqueda avanzada», antes «Filtro avanzado»), se abre también desde Buscar
+ * y suma «Tiempo» y «Ocultar lo que ya vi». Premios y Estudios siguen solo en el iPhone (decidido).
+ * arriba su encabezado con lo que llevas elegido y el reloj, de fondo el arte del primer resultado. A la izquierda las nueve
  * preguntas en acordeón —solo la enfocada se abre con sus píldoras; las demás dicen su valor en un renglón, con su color— y a
  * la derecha, en vivo, cuántos hay y los primeros pósters: ves lo que estás armando antes de abrirlo.
  *   ↑↓ pregunta · ◀▶ elige (al instante) · A la siguiente pregunta · Y (o «Ver N títulos») los resultados · X borra · B cierra
@@ -21,6 +23,8 @@ export const FILTERS = [
     ["animacion", "Animación"], ["comedia", "Comedia"], ["crimen", "Crimen"], ["documental", "Documental"], ["drama", "Drama"],
     ["familia", "Familia"], ["fantasia", "Fantasía"], ["terror", "Terror"], ["misterio", "Misterio"], ["romance", "Romance"],
     ["ciencia-ficcion", "Ciencia ficción"], ["suspenso", "Suspenso"]] },
+  // «Tiempo», como el iPhone: en películas, cuánto dura; en series, el capítulo (Cortita ≤ 30 min, Normal 30–50, Para echarse más).
+  { id: "length", label: "Tiempo", icon: "clock", hue: "coral", options: [["", "Cualquiera"], ["short", "Cortita"], ["regular", "Normal"], ["long", "Para echarse"]] },
   { id: "decade", label: "Época", icon: "calendar", hue: "ambar", options: [["", "Cualquiera"], ["2020", "Los 2020"], ["2010", "Los 2010"],
     ["2000", "Los 2000"], ["1990", "Los 90"], ["1980", "Los 80"], ["old", "Antes de 1980"]] },
   { id: "rating", label: "Calificación", icon: "star", hue: "lima", options: [["", "Cualquiera"], ["6", "6 o más"], ["7", "7 o más"], ["8", "8 o más"]] },
@@ -28,9 +32,11 @@ export const FILTERS = [
   { id: "platform", label: "Dónde verla", icon: "tv", hue: "orbital", options: [["", "Donde sea"], ["netflix", "Netflix"], ["disney", "Disney+"], ["hbo", "HBO Max"]] },
   { id: "country", label: "País", icon: "home", hue: "lavanda", options: [["", "Cualquiera"], ["MX", "México"], ["US", "Estados Unidos"],
     ["GB", "Reino Unido"], ["KR", "Corea"], ["JP", "Japón"], ["ES", "España"], ["FR", "Francia"]] },
+  // Con Trakt: lo que ya viste no sale (como «Ocultar lo que ya vi» del iPhone).
+  { id: "unseen", label: "Ocultar lo que ya vi", icon: "hide", hue: "verde", options: [["", "No"], ["hide", "Sí"]] },
 ];
 const KEY = "orbital.filter";
-const EMPTY = { kind: "movie", genre: "", decade: "", rating: "", fame: "", platform: "", country: "" };
+const EMPTY = { kind: "movie", genre: "", length: "", decade: "", rating: "", fame: "", platform: "", country: "", unseen: "" };
 const PREVIEW = 8; // los pósters de la derecha: dos renglones de cuatro (más grandes que diez)
 
 /** Cuántos, al estilo de México: «8,506», «Más de 10,000». */
@@ -41,17 +47,18 @@ export function filterLabel(f) {
   return FILTERS.map((row) => {
     const value = f[row.id] ?? "";
     if (row.id !== "kind" && !value) return null;
+    if (row.id === "unseen") return "Sin lo que ya viste";
     return row.options.find(([v]) => v === value)?.[1] ?? null;
   }).filter(Boolean).join(" · ");
 }
 
 export function createFilterPanel({ preview, onResults, onMove, onClose }) {
   const backdrop = DecideBackdrop({ soft: true });
-  const head = DecideHead(h("span", { class: "filter__spacer" }), { title: "Filtro avanzado", icon: "sliders" });
+  const head = DecideHead(h("span", { class: "filter__spacer" }), { title: "Búsqueda avanzada", icon: "sliders" });
   const rows = h("div", { class: "filter__rows", role: "list" });
   const actions = h("div", { class: "button-row filter__actions" }); // pasada de UX (16 nov): bajo las preguntas, donde ↓ llega
   const side = h("div", { class: "filter__side" });
-  const el = h("section", { class: "filter screen", hidden: true, "aria-label": "Filtro avanzado" },
+  const el = h("section", { class: "filter screen", hidden: true, "aria-label": "Búsqueda avanzada" },
     backdrop.el, head.el, h("div", { class: "filter__body" }, h("div", { class: "filter__main" }, rows, actions), side));
 
   let filter = { ...EMPTY, ...storage.get(KEY, {}) };

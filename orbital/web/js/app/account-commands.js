@@ -1,4 +1,4 @@
-import { CLOUD_ROW, languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
+import { CLOUD_ROW, followedMenu, languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
 import { failure, retry } from "../core/notices.js";
 
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
@@ -183,7 +183,7 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
     "trakt-account": async (command, context) => {
       return openMenu(traktAccountMenu(), nested(context));
     },
-    // Ajustes › Ver › Tus idiomas (N4-A): cada cambio se guarda al hacerlo y regresa a la lista.
+    // Ajustes › Idiomas › Tus idiomas (N4-A): cada cambio se guarda al hacerlo y regresa a la lista.
     "languages": async (command, context) => openMenu(languagesMenu(state.settings?.languages || []), nested(context)),
     "language": async (command, context) => openMenu(languageMenu(state.settings?.languages || [], command.code), nested(context)),
     "language-add": async (command, context) => openMenu(languageAddMenu(state.settings?.languages || []), nested(context)),
@@ -193,6 +193,26 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
       ui.toast.show("Guardé tus idiomas", { detail: "La próxima búsqueda ya los usa" });
       const where = command.back && context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : context;
       return openMenu(languagesMenu(state.settings?.languages || []), where);
+    },
+    // Ajustes › Avisos › «Series que sigues» (PA1-A): A prende o apaga la campana y la lista se queda abierta.
+    "followed-series": async (command, context) => {
+      const res = await api.followed().catch((err) => ({ error: err }));
+      if (res.error) {
+        sound.play("error");
+        return ui.toast.show("No pude leer tus series de Trakt", failure(retry(() => commands["followed-series"](command, context)), { err: res.error }));
+      }
+      return openMenu(followedMenu(res.series || []), nested(context));
+    },
+    "followed-toggle": async (command, context) => {
+      const on = !command.following;
+      try { await api.setFollowing(command.id, on); } catch (err) {
+        sound.play("error");
+        return ui.toast.show("No pude guardarlo en Trakt", failure(retry(() => commands["followed-toggle"](command, context)), { err }));
+      }
+      sound.play("select");
+      ui.toast.show(on ? "Te aviso de episodios nuevos" : "Sin avisos de episodios nuevos", { detail: command.title });
+      const res = await api.followed().catch(() => ({ series: [] }));
+      return openMenu(followedMenu(res.series || []), context);
     },
     "remembered": async (command, context) => {
       return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));

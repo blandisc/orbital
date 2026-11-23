@@ -75,7 +75,7 @@ final class EditionTextsTests: XCTestCase {
         let all = try await everything(.ultra).values.flatMap { $0 }
         XCTAssertTrue(all.contains { $0.contains("Real-Debrid") })
         XCTAssertTrue(all.contains { $0.contains("complementos") })
-        XCTAssertEqual(Capabilities.noTVLine(edition: .ultra), "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad.")
+        XCTAssertEqual(Capabilities.noTVLine(edition: .ultra), "En este aparato, Orbital no controla la TV. Usa tu iPhone.")   // Mac e iPad (PA5-A)
         XCTAssertFalse(Capabilities.noTVLine(edition: .plus).contains("Mac"), "Plus no tiene consola en ningún aparato: no se culpa a la Mac")
     }
 

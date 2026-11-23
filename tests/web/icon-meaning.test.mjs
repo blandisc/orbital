@@ -29,6 +29,8 @@ const EXPLORAR = [
   // La versión recomendada lleva el destello en los dos lados (VR-A, Fernando, 20 nov 2026: se queda); si un día se
   // cambia, se cambia en la TV y en el iPhone a la vez (paridad-registro).
   ["components/sources.js", /ICONS\.spark/],
+  // No es el ícono: el color --tint-spark, uno de los tintes de un título sin póster (como DS.Poster.missingHues).
+  ["core/home.js", /TITLE_TINTS = /],
 ];
 
 test("el destello (spark) solo se usa para Explorar en la TV", () => {

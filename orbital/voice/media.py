@@ -218,7 +218,8 @@ class _Media(_System):
         target = normalize(query)
         movies = self.catalog.cinemeta.search("movie", query)
         series = self.catalog.cinemeta.search("series", query)
-        results = [r for r in cinemeta.search_results(query, movies, series) if kind is None or r["kind"] == kind]
+        ranked = cinemeta.tie_popularity(self.catalog.cinemeta, query, movies, series) if kind is None else {}  # «pon matrix»: la película
+        results = [r for r in cinemeta.search_results(query, movies, series, popularity=ranked) if kind is None or r["kind"] == kind]
         self._candidates = results  # «otro»: la siguiente de esta misma búsqueda
         exact = [r for r in results if normalize(r["title"]) == target]
         if exact:

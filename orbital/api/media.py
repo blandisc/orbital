@@ -201,7 +201,9 @@ def router(d: Deps) -> APIRouter:
             movies = pool.submit(search_kind, "movie", q)
             series = pool.submit(search_kind, "series", q)
             try:
-                return {"results": cinemeta.search_results(q, movies.result(), series.result())}
+                found_movies, found_series = movies.result(), series.result()
+                ranked = cinemeta.tie_popularity(catalog.cinemeta, q, found_movies, found_series)  # S1-A «Mejor resultado»
+                return {"results": cinemeta.search_results(q, found_movies, found_series, popularity=ranked)}
             except cinemeta.CinemetaError:
                 raise HTTPException(502, "Sin conexión con el catálogo de películas y series. Tus juegos siguen aquí.")
 
@@ -451,12 +453,17 @@ def router(d: Deps) -> APIRouter:
 
     @r.post("/dismiss")
     def dismiss(body: dict) -> dict:
-        """Quitar de Seguir viendo."""
+        """Quitar de Seguir viendo (`later`: Trakt lo borra cuando se va el aviso; `undo`: el «Deshacer» de ese aviso)."""
         meta_id = body.get("id").removeprefix("stremio:") if isinstance(body.get("id"), str) else ""
         if not meta_id:
             raise HTTPException(400, "Falta qué quitar")
         try:
-            catalog.watch.dismiss_continue(meta_id)
+            if body.get("undo") is True:  # «Deshacer» del aviso: vuelve como estaba (Trakt aún no lo borraba)
+                catalog.watch.undo_dismiss(meta_id)
+            else:
+                catalog.watch.dismiss_continue(meta_id, later=body.get("later") is True)
+        except LookupError as exc:
+            raise HTTPException(409, str(exc))
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
         except trakt_api.TraktError as exc:

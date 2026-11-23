@@ -41,6 +41,7 @@ from .details import _Details
 from .items import _YOUTUBE_SEEN as _YOUTUBE_SEEN
 from .items import CONTINUE_MIN_PROGRESS as CONTINUE_MIN_PROGRESS
 from .items import HeardTracks as HeardTracks
+from .items import ScareMaps
 from .items import addon_gives as addon_gives
 from .items import enrich_watch_item as enrich_watch_item
 from .items import expired_session as expired_session
@@ -118,6 +119,7 @@ class Watch(_Details):
                                                     lambda value: self.state.set_setting("channel_detours", value))
         self._trakt_busy = threading.Lock()
         self._saving = threading.Lock()
+        self._dismissing: dict = {}  # «Quitar de Seguir viendo» con «Deshacer»: lo que aún no se borra de Trakt (library.py)
         # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).
         self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons,
                                                key=lambda: self.debrid_key(), on_key=self._rd_key_brought,
@@ -152,6 +154,8 @@ class Watch(_Details):
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                   / "pistas-de-audio.json") if config.source else None)
         self.streams.tracks = self.heard.get
+        self.scare_maps = ScareMaps((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
+                                     / "sustos.json") if config.source else None)  # PA7-B (playback.py · _scares_for)
         self.streams.internet_subtitles = lambda: bool(self.setting("internet_subtitles", True))
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,

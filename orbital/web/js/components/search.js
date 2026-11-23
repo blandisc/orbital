@@ -70,7 +70,7 @@ export function rememberSearch(recent, query) {
   return [q, ...recent.filter((r) => r !== q)].slice(0, RECENT_MAX);
 }
 
-export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
+export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
   let picking = null; // { kind, onPick }: «Corregir ficha»
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
@@ -170,24 +170,31 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const kinds = fresh(genres(), 8);
     el.classList.remove("search--searching");
     const groups = [["Seguir viendo", going], ["Tus juegos", mine], ["Por género", kinds]];
-    items = [...recent.map((q) => ({ recent: q })), ...groups.flatMap(([, list]) => list)];
+    // PA3-A (23 nov 2026): la puerta de la búsqueda avanzada va primero, como en Buscar del iPhone («comedias de los 90 en
+    // Netflix» se busca donde buscas). También sigue en los botones de Películas y series.
+    const doors = onAdvanced ? [{ door: "advanced" }] : [];
+    items = [...doors, ...recent.map((q) => ({ recent: q })), ...groups.flatMap(([, list]) => list)];
+    const door = doors.map((_, i) => Pill("Búsqueda avanzada", {
+      tone: "fill", icon: svg(ICONS.sliders), onClick: () => { resultIndex = i; zone = "results"; open(); },
+    }));
     const chips = recent.map((q, i) => Pill(q, {
-      tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
+      tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = doors.length + i; zone = "results"; open(); },
     }));
     // El pie de un póster: el año (con «Película · 2…» recortado no se leía nada).
-    let at = recent.length;
+    let at = doors.length + recent.length;
     const sets = groups.map(([name, list]) => [name, list.map((item) => {
       const i = at++;
       return Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
         caption: !item.label, onPress: () => { zone = "results"; resultIndex = i; open(); },
       });
     })]);
-    focusables = [...chips, ...sets.flatMap(([, nodes]) => nodes)];
+    focusables = [...door, ...chips, ...sets.flatMap(([, nodes]) => nodes)];
     // Como los resultados: cada grupo con su nombre encima y sus portadas en la cuadrícula de una lista.
     const set = (name, nodes, pills = false) => nodes.length > 0 && h("div", { class: ["search__set", pills && "search__set--pills"] },
       groupHead(name), h("div", { class: ["search__set-cards", !pills && "card-grid"] }, nodes));
-    mount(results, [set("Recientes", chips, true), ...sets.map(([name, nodes]) => set(name, nodes))]);
-    results.classList.toggle("search__results--recent", focusables.length === chips.length);
+    mount(results, [door.length > 0 && h("div", { class: ["search__set", "search__set--pills"] }, h("div", { class: "search__set-cards" }, door)),
+      set("Recientes", chips, true), ...sets.map(([name, nodes]) => set(name, nodes))]);
+    results.classList.toggle("search__results--recent", focusables.length === door.length + chips.length);
     if (!items.length && zone === "results") zone = "keys";
     render();
   }
@@ -332,6 +339,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   function open() {
     const item = items[resultIndex];
     if (!item || el.hidden || el.classList.contains("screen--leaving")) return; // un segundo toque mientras se va no abre otra cosa
+    if (item.door === "advanced") { // PA3-A: la búsqueda avanzada, encima de Buscar
+      close();
+      onAdvanced?.();
+      return;
+    }
     if (item.recent) { // repetir una búsqueda reciente
       text = item.recent;
       zone = "keys";

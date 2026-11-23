@@ -9,7 +9,6 @@ import OrbitalAddons
 /// - `remove-choice` (con `-demo-rd premium -demo-settings-page realdebrid`): «¿Quitar tu clave?» con sus dos salidas.
 /// - `explain` (igual): «¿Qué es Real-Debrid?» con sus tres pasos animados.
 /// - `redeem` (igual): la hoja «¿Canjear tus puntos?» (D4); canjear contesta la demo, nada sale a Real-Debrid.
-/// - `invite` · `invite-expired` (en el iPad, con `-demo-no-tv`): la tarjeta «¿Conectar con Orbital de la sala?».
 /// - `upgrade-wait` · `upgrade-ok` · `upgrade-no` (con `-demo-settings-page orbital`): «Darle su propia conexión».
 /// - `unknown-tv`: la TV no conoce este aparato: «Tu TV es nueva: vuelve a escanear su código».
 /// - `ipad-list` (en el iPad): Aparatos conectados, con «Quitar» solo en este iPad.
@@ -23,10 +22,6 @@ extension Demo {
         switch state {
         case "shared-differs": secrets.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: anaToken, from: "ipad", name: "iPad de Ana").encoded)
         case "shared-offer": secrets.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: sharedToken, from: "iphone").encoded)
-        case "invite", "invite-expired":
-            let expires = Date().addingTimeInterval(state == "invite" ? 6 * 86_400 : -3600)
-            secrets.set(SecretKey.orbitalInvite, OrbitalInvite(code: "DEMOinvite", expires: expires, address: "https://tv.demo.invalid",
-                                                               tvName: "Orbital de la sala", tvID: "0123456789abcdef", from: "iPhone de Fernando").encoded)
         case "unknown-tv", "ipad-list":
             secrets.set(SecretKey.orbitalDeviceKey, deviceKey); secrets.set(SecretKey.orbitalToken, nil)
         default: break   // upgrade-*: solo el token de antes

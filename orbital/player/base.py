@@ -245,6 +245,7 @@ class _State(PlayerScreen):
     on_synthetic_failed: Any
     on_synthetic_resync: Any
     on_tracks: Any
+    scares_provider: Any
     pip: Any
     remote: Any
     segment: Segment | None

@@ -172,6 +172,7 @@
   --tint-addon: #c9a1ff;
   --tint-flame: #ff9e0a;
   --tint-trophy: #ffd166;
+  --tint-bookmark: #ff70ad; /* rosa: uno de los tintes de un título sin póster (card.js · titleTint) */
   --color-star: #fff; /* estrellas del fondo y de la pantalla de carga */
   --color-video-bg: #000; /* detrás de un video o una captura: negro de verdad */
   --on-color-fill: rgba(0, 0, 0, .12); /* relleno tenue sobre un fondo de color (opción peligrosa enfocada) */

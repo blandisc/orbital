@@ -93,6 +93,8 @@ GLYPH_SOLID = ass_color(PALETTE["ink-850"])  # --glyph-bg-solid: el disco del gl
 
 NEXT = ass_color(PALETTE["amber-300"])  # «Siguiente» en Y › Episodios (--color-warning: el que sigue, no un error)
 
+DANGER = ass_color(PALETTE["red-400"])  # --color-danger: un susto fuerte en la barra (PA7-B, DS.danger del iPhone)
+
 LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
 
 # Vidrio, como en Orbital (receta «Vidrio» de docs/sistema-de-diseno.md § 0): los mismos números que los tokens de

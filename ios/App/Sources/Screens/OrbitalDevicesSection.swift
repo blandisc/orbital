@@ -5,7 +5,8 @@ import OrbitalModels
 /// K1 · Ajustes › Tu Orbital › «Aparatos conectados» (el mismo nombre en la TV, UX-36). IOS-13, como la TV (`deviceMenu`):
 /// en la lista, cada aparato con su chevron; tocarlo abre su hoja con «Quitar» (pregunta antes; no se deshace). Este aparato
 /// va aparte, al final: «Desconectar este iPhone». CX5: en el iPad, los demás no se tocan (se quitan desde el iPhone o la TV).
-/// En el iPhone, «Conectar tu iPad» (CX4-A). Sin la conexión propia de este aparato no se enseña.
+/// Sin la conexión propia de este aparato no se enseña. (La invitación «Conectar tu iPad» se fue con PA5-A, 23 nov 2026: el
+/// iPad ya no habla con la TV.)
 struct OrbitalDevicesSection: View {
     @Environment(AppEnvironment.self) private var env
     @State private var devices = ModelObserver(OrbitalDevicesModel(AppEnvironment.shared.services))
@@ -28,7 +29,6 @@ struct OrbitalDevicesSection: View {
             } else { DSInlineProgress(text: Text("Buscando tus aparatos…")) }
             if let me { thisDeviceLine(me) }
             if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .warn) }
-            InviteIPadRow()   // CX4-A: solo en el iPhone
         } header: { Text("Aparatos conectados") } footer: {
             env.services.platform == "iphone"
                 ? Text("Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez.")

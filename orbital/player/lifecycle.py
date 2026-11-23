@@ -89,6 +89,7 @@ class _Lifecycle(_Pip):
             if segment.duration and segment.start > 5 and segment.position >= segment.duration - 10:
                 return self._at_end(segment)  # lo que iba al aire ya acabó (duraba menos de lo estimado): el siguiente
             return self._synthetic_started(segment, tracks)
+        self._find_scares(segment)
         if segment.duration and segment.start > 5 and segment.position >= segment.duration - 30:
             # Donde ibas queda más allá del final de este archivo (otra fuente, otra edición): desde el
             # principio, en vez de saltar al final y dar la película por vista.
@@ -110,6 +111,20 @@ class _Lifecycle(_Pip):
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
+
+    def _find_scares(self, segment: Segment) -> None:
+        """PA7-B: los sustos de la película (Where's The Jump), en su hilo (la red no toca el video); llegan a la barra la
+        siguiente vez que se dibuja. Solo una película de verdad: ni series, ni canales, ni tráileres."""
+        provider = self.scares_provider
+        if provider is None or segment.meta.get("kind") != "movie" or segment.meta.get("clip") or segment.scares:
+            return
+
+        def find() -> None:
+            found = self._safe(provider, segment.meta)
+            if isinstance(found, list) and self.segment is segment:
+                segment.scares = found
+
+        threading.Thread(target=find, daemon=True, name="scares").start()
 
     def _pick_dub(self, segment: Segment, tracks: list) -> None:
         """Un archivo con dos pistas en español (latino y castellano, las dos «spa»): la del doblaje que quieres. mpv elige

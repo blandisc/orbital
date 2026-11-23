@@ -25,7 +25,7 @@ from ..sessions import Sessions
 from ..state import State
 from ..store import ItemStore
 from ..trakt_sync import TraktLibrary
-from .items import HeardTracks
+from .items import HeardTracks, ScareMaps
 
 log = logging.getLogger("orbital.watch")  # el mismo nombre de siempre: los avisos y la bitácora no cambian
 
@@ -96,6 +96,7 @@ class _Base:
     trakt_library: TraktLibrary
     _trakt_busy: threading.Lock
     _saving: threading.Lock
+    _dismissing: dict  # meta_id → (temporizador, «dismissed» de antes, libraryItem de Stremio de antes) (library.py)
     # Complementos y Real-Debrid (accounts.py).
     addon_list: addon_list_lib.AddonList
     _removed_addons: dict[str, dict]
@@ -106,6 +107,7 @@ class _Base:
     _rd_status: tuple[float, str | None, dict]
     rd: RdRequests
     heard: HeardTracks
+    scare_maps: ScareMaps
     player: OrbitalPlayer
     scrobbler: TraktScrobbler
 

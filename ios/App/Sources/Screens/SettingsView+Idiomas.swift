@@ -6,15 +6,12 @@ import OrbitalModels
 /// contenido, el idioma del app y el idioma de los metadatos»): un solo renglón en la lista y, adentro, la app, los títulos y
 /// sinopsis, el audio en orden, los subtítulos y el país. Igual en iPhone, iPad y Mac (ahí, a la derecha de la barra).
 extension SettingsView {
-    @ViewBuilder func languagesSection(_ model: SettingsModel) -> some View {
-        let s = model.settings
-        Section {
-            SettingsLink(.languages) { destination(.languages, model) } label: {
-                SettingsRow(title: "Idiomas", symbol: "globe", tint: DS.ListTint.chart, value: languagesValue(s))
-            }
-            .accessibilityIdentifier("settings-languages")
+    /// El renglón «Idiomas», el primero del grupo de lo que vale en las dos apps (PA1-A).
+    @ViewBuilder func languagesRow(_ model: SettingsModel) -> some View {
+        SettingsLink(.languages) { destination(.languages, model) } label: {
+            SettingsRow(title: "Idiomas", symbol: "globe", tint: DS.ListTint.chart, value: languagesValue(model.settings))
         }
-        .listRowBackground(DS.surface)
+        .accessibilityIdentifier("settings-languages")
     }
 
     /// «Español · Latino, original +2»: el de la app y, después, el audio.

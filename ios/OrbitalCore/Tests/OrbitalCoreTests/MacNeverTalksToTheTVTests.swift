@@ -1,8 +1,8 @@
 import XCTest
 
-/// CX1-B (Fernando, 3 nov: «La Mac no se conecta con la TV. La Mac no habla con la TV… para nada»): en la Mac no hay
-/// emparejar, invitación, «Tu Orbital», «Pasar a la TV», «Usar la de la TV», la lista de la TV ni «Ver en la TV». Solo le llega
-/// tu clave de Real-Debrid por iCloud (CX2-A). Lo de dentro lo cuida `ConnectWithOrWithoutIPhoneTests` (con la consola
+/// CX1-B (Fernando, 3 nov: «La Mac no se conecta con la TV. La Mac no habla con la TV… para nada») y PA5-A (23 nov: «El iPad
+/// no se conecta a la TV»): en la Mac y en el iPad no hay emparejar, «Tu Orbital», «Pasar a la TV», «Usar la de la TV», la lista
+/// de la TV, el control, la voz ni «Ver en la TV». Solo les llega tu clave de Real-Debrid por iCloud (CX2-A). Lo de dentro lo cuida `ConnectWithOrWithoutIPhoneTests` (con la consola
 /// apagada en `Capabilities` no sale ni una petición a la TV); esta prueba cuida que la app arme `Services` así en la Mac.
 final class MacNeverTalksToTheTVTests: XCTestCase {
     private func source(_ path: String) throws -> String {
@@ -11,9 +11,12 @@ final class MacNeverTalksToTheTVTests: XCTestCase {
         return try String(contentsOf: url.appendingPathComponent("ios/App/Sources/\(path)"), encoding: .utf8)
     }
 
-    func testTheMacIsTheOnlyDeviceThatDoesNotTalkToTheTV() throws {
+    func testOnlyTheIPhoneTalksToTheTV() throws {
         let device = try source("Platform/DeviceInfo.swift")
-        XCTAssertTrue(device.contains("static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac"), "la Mac no habla con tu TV")
+        XCTAssertTrue(device.contains("static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac && !runsOnIPad"),
+                      "ni la Mac ni el iPad hablan con tu TV")
+        XCTAssertTrue(device.contains(#"return machine.hasPrefix("iPad")"#) && device.contains(#"simulated.hasPrefix("iPad")"#),
+                      "el iPad se reconoce por su modelo (también en el simulador)")
         XCTAssertTrue(device.contains(#"ProcessInfo.processInfo.isiOSAppOnMac ? "mac""#), "la Mac se presenta como «mac», no como iPad")
     }
 
@@ -31,11 +34,14 @@ final class MacNeverTalksToTheTVTests: XCTestCase {
 
     func testTheTVPartsOfSettingsHideOnTheMac() throws {
         let settings = try source("Screens/SettingsView.swift")
-        // IOS-10: la invitación va arriba de Ajustes y «Orbital en la TV» más abajo; cada una con su guardia.
-        XCTAssertTrue(settings.contains("if entries.orbital { IPadInviteCard"), "la invitación del iPhone, solo donde se habla con la TV")
-        XCTAssertTrue(settings.contains("if entries.orbital { orbitalSettings(model) }"), "«Orbital en la TV» y «Tu Orbital», nunca en la Mac")
-        XCTAssertFalse(settings.replacingOccurrences(of: "if entries.orbital { IPadInviteCard", with: "").contains("IPadInviteCard {"),
-                       "la invitación no sale en ningún otro lado de Ajustes sin su guardia")
+        XCTAssertTrue(settings.contains("if entries.orbital { orbitalSettings(model) }"), "«Usar con tu Orbital» y «Tu Orbital», solo en el iPhone")
+        // PA5-A: sin la invitación «Conectar tu iPad» (era para conectar el iPad a la TV).
+        for file in ["Screens/SettingsView.swift", "Screens/OrbitalConnectViews.swift", "Screens/OrbitalDevicesSection.swift",
+                     "Screens/Onboarding/OnboardingFinish.swift", "Screens/RootView.swift"] {
+            let text = try source(file)
+            XCTAssertFalse(text.contains("IPadInviteCard") || text.contains("InviteIPadRow") || text.contains("takeInviteToShow"),
+                           "\(file): la invitación del iPad ya no existe")
+        }
         for (file, gate) in [("App/AppDelegate.swift", "ThisDevice.capabilities.console"), ("Platform/OrbitalIntents.swift", "ThisDevice.capabilities.console"),
                              ("Screens/RootView.swift", "env.services.capabilities.console"), ("Screens/AppCommands.swift", "ThisDevice.capabilities.console")] {
             XCTAssertTrue(try source(file).contains(gate), "\(file): sin su guardia de la Mac")

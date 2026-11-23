@@ -387,6 +387,7 @@ class Segment:
     last_save: float = field(default_factory=time.monotonic)
     last_tick: float = field(default_factory=time.monotonic)
     chapters: list[dict] = field(default_factory=list)  # [{"title", "time"}]
+    scares: list[tuple[float, bool, str]] = field(default_factory=list)  # PA7-B: (segundo, fuerte, qué pasa) de Where's The Jump
     skip_offered: set[int] = field(default_factory=set)
     upnext: dict | bool | None = None  # {"label", "title", "play"}; False = no hay
     upnext_requested: bool = False

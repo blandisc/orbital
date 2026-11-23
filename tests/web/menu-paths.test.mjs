@@ -10,7 +10,7 @@ import { mainMenu } from "../../orbital/web/js/core/menus.js";
 
 test("D5-A: ☰ no lleva lo de ver; sí lo del sistema", () => {
   const labels = mainMenu({ running: null, hiddenCount: 0, alexa: true }).options.map((o) => o.label);
-  for (const gone of ["Decide por mí", "¿Qué vemos hoy?", "Guardado", "Colecciones", "Filtro avanzado"]) assert.ok(!labels.includes(gone), gone);
+  for (const gone of ["Decide por mí", "¿Qué vemos hoy?", "Guardado", "Colecciones", "Filtro avanzado", "Búsqueda avanzada"]) assert.ok(!labels.includes(gone), gone);
   for (const kept of ["Panel rápido", "Jugadores", "Cómo se usa", "Lo que puedes decir", "Ajustes"]) assert.ok(labels.includes(kept), kept);
 });
 

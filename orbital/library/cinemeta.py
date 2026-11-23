@@ -330,21 +330,74 @@ def _without_article(name: str) -> str:
     return name
 
 
-def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18) -> list[dict]:
+def _exact(query: str, name: object) -> bool:
+    return isinstance(name, str) and _without_article(name.strip().lower()) == _without_article(query.strip().lower())
+
+
+def exact_ties(query: str, movies: list[dict], series: list[dict]) -> list[tuple[str, str]]:
+    """Las que se llaman igual a lo buscado cuando hay película Y serie así («matrix»): [(tipo, id)]. Vacío si no hay empate."""
+    movie = [("movie", m["id"]) for m in movies if m.get("id") and _exact(query, m.get("name"))]
+    show = [("series", m["id"]) for m in series if m.get("id") and _exact(query, m.get("name"))]
+    return movie + show if movie and show else []
+
+
+def popularity(meta: dict | None) -> float | None:
+    """Qué tan vista es, según su ficha de Cinemeta (`popularity`; si no, la de Stremio en `popularities`)."""
+    if not isinstance(meta, dict):
+        return None
+    value = meta.get("popularity")
+    if not isinstance(value, (int, float)):
+        value = (meta.get("popularities") or {}).get("stremio") if isinstance(meta.get("popularities"), dict) else None
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
+TIE_LIMIT = 1.5  # segundos: si las fichas tardan más, se queda el orden de Cinemeta
+
+
+def tie_popularity(client: Cinemeta, query: str, movies: list[dict], series: list[dict],
+                   limit: float = TIE_LIMIT) -> dict[str, float]:
+    """S1-A «Mejor resultado» (como el iPhone): si una película y una serie se llaman igual a lo buscado, la popularidad de
+    sus fichas (id → qué tan vista), pedidas a la vez y con tope; lo que no llega a tiempo, sin dato."""
+    ties = exact_ties(query, movies, series)[:4]
+    if not ties:
+        return {}
+    from concurrent.futures import ThreadPoolExecutor, wait
+
+    def one(kind: str, meta_id: str) -> float | None:
+        try:
+            return popularity(client.meta(kind, meta_id, localized=False))
+        except CinemetaError:
+            return None
+
+    pool = ThreadPoolExecutor(max_workers=len(ties))
+    try:
+        jobs = {pool.submit(one, kind, meta_id): meta_id for kind, meta_id in ties}
+        done, _ = wait(jobs, timeout=limit)
+        found = {jobs[job]: job.result() for job in done if not job.exception()}
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    return {meta_id: value for meta_id, value in found.items() if value is not None}
+
+
+def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18,
+                   popularity: dict[str, float] | None = None) -> list[dict]:
     """Une películas y series alternando tipos (para que uno no tape al otro) y respetando el orden de
     Cinemeta, que ya ordena por relevancia y popularidad y tolera errores de dedo. Solo se sube una
-    coincidencia exacta: "subir lo que empieza igual" ponía "Oficer" antes que "The Office" con "ofice"."""
-    q = query.strip().lower()
+    coincidencia exacta: "subir lo que empieza igual" ponía "Oficer" antes que "The Office" con "ofice".
+    `popularity` (id → qué tan vista, de `tie_popularity`): entre las exactas gana la más conocida, no la serie por ir
+    primero (S1-A, 16 nov 2026: «matrix» daba la serie de 1993)."""
     merged: list[tuple[str, dict]] = []
     for pair in zip(series, movies, strict=False):
         merged += [("series", pair[0]), ("movie", pair[1])]
     longer = series if len(series) > len(movies) else movies
     kind_left = "series" if longer is series else "movie"
     merged += [(kind_left, m) for m in longer[min(len(series), len(movies)):]]
-    q = _without_article(q)
-    merged.sort(key=lambda km: _without_article(km[1]["name"].strip().lower()) != q)  # estable: respeta el resto
+    exact = [km for km in merged if _exact(query, km[1].get("name"))]
+    if popularity:  # estable: las que no tienen dato conservan su lugar, después de las que sí
+        exact.sort(key=lambda km: -popularity.get(str(km[1].get("id")), -1.0))
+    rest = [km for km in merged if not _exact(query, km[1].get("name"))]
     seen, results = set(), []
-    for kind, meta in merged:
+    for kind, meta in exact + rest:
         if meta["id"] in seen:
             continue
         seen.add(meta["id"])

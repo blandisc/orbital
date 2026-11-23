@@ -10,9 +10,9 @@ import time
 from dataclasses import replace
 
 from .. import companion, flags, player, player_ui, remote_art
-from ..library import cinemeta, streams, stremio_api
+from ..library import cinemeta, jumpscares, streams, stremio_api
 from ..library import trakt as trakt_api
-from .base import STREMIO_KEY
+from .base import STREMIO_KEY, debrid_causes
 from .progress import _Progress
 from .versions import (
     FALLBACK_TRIES,
@@ -79,6 +79,8 @@ class _Playback(_Progress):
         p.spanish_provider = self._spanish_for
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
+        # PA7-B (como el iPhone): los sustos de la película en la barra; Ajustes › Reproducción › «Marcar los sustos».
+        p.scares_provider = self._scares_for if self.setting("scare_marks", True) else None
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
 
     def _channel_seen(self, meta: dict, position: float, duration: float, watched: float, finished: bool) -> None:
@@ -375,6 +377,12 @@ class _Playback(_Progress):
                     return True
         if alive and meta.get("source") is not None:
             tried = set(meta.get("tried") or [meta["source"]])
+            if (blocked := self._account_stops_retries(meta, first=len(tried) <= 1)) is not None:
+                message, detail = blocked  # «Tu Real-Debrid venció · Renovar…»: ninguna otra va a abrir
+                log.info("%s no abrió y tu %s tiene un problema (%s): no pruebo otra", title, self.debrid_name, message)
+                self.events.publish({"type": "toast", "ok": False, "message": message, "detail": detail})
+                self.player.toast(f"{message} · {detail}", 8)
+                return False
             prefs = self.asked_language(meta)[0]
             try:
                 found = [s for s in self.stream_sources(meta["kind"], meta["video_id"], prefs) if s.index not in tried]
@@ -402,6 +410,40 @@ class _Playback(_Progress):
         if alive:
             self.player.toast(f"No pude reproducir {title} · Prueba otra versión con Y", 6)
         return False
+
+    def _scares_for(self, meta: dict) -> list[tuple[float, bool, str]]:
+        """Los sustos de la película que suena (Where's The Jump): [(segundo, fuerte, qué pasa)], o [] si no hay mapa. Se
+        guardan la primera vez (con tope); el nombre en inglés y el año salen de Cinemeta, como los escribe el sitio."""
+        imdb = str(meta.get("meta_id") or "")
+        if meta.get("kind") != "movie" or not imdb.startswith("tt") or meta.get("clip") or meta.get("synthetic"):
+            return []
+        found = self.scare_maps.get(imdb)
+        if found is None:
+            try:
+                info = self.cinemeta.meta("movie", imdb, localized=False)
+            except cinemeta.CinemetaError:
+                info = {}
+            name = str(info.get("name") or meta.get("title") or "")
+            year = re.match(r"(19|20)\d\d", str(info.get("year") or info.get("releaseInfo") or ""))
+            listed = jumpscares.scares(name, int(year.group()) if year else None, imdb) if name else None
+            found = [s.public() for s in listed or []]
+            if listed is not None:  # sin página (o sin internet) se vuelve a buscar otro día; con página, se guarda
+                self.scare_maps.put(imdb, found)
+        return [(float(s["time"]), bool(s["major"]), str(s["text"])) for s in found]
+
+    def _account_stops_retries(self, meta: dict, first: bool) -> tuple[str, str] | None:
+        """Una versión no abrió: ¿es tu cuenta? Al fallar la primera se le pregunta una vez a tu nube (Real-Debrid, TorBox o
+        AllDebrid); después basta lo guardado. Si venció, no tiene Premium o la clave ya no sirve, ninguna otra va a abrir:
+        (mensaje, detalle) para decirlo en vez de probar la siguiente (Fernando, 21 nov 2026: «lo único que hace es pasar de
+        versión en versión y nunca encuentra»; como `PlayerModel.accountStopsRetries` del iPhone). None: sigue probando."""
+        if meta.get("own") or self.rd.client() is None:
+            return None  # tu carpeta no pasa por la nube; sin clave no hay a quién preguntar
+        try:
+            problem = self.debrid_status(fresh=first).get("problem")
+        except Exception:  # noqa: BLE001 — preguntar nunca debe tumbar el reintento
+            log.exception("No pude preguntarle a tu nube por la cuenta")
+            return None
+        return debrid_causes(self.debrid_service).get(problem or "")
 
     def _title_facts(self, kind: str, video_id: str) -> dict | None:
         """Idioma original y nombres del título (TMDB, recordado un día; también el de Cinemeta) para las fuentes."""

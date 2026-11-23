@@ -27,7 +27,7 @@ private func answer(_ said: String) async -> String {
     return text.isEmpty ? String(localized: "Listo.") : Strings.message(text, language: env.services.appSettings.uiLanguage)
 }
 
-/// Lo que contesta Siri donde no hay consola: en Ultra, la Mac; en Plus y Orbital, en todos lados (y ahí no se habla de la
+/// Lo que contesta Siri donde no hay consola: en Ultra, la Mac y el iPad (PA5-A); en Plus y Orbital, en todos lados (y ahí no se habla de la
 /// TV, D1-B). La clave vive en `Capabilities.noTVLine`.
 private var macNoTV: String { String(localized: String.LocalizationValue(Capabilities.noTVLine(edition: .bundled()))) }
 

@@ -118,6 +118,7 @@ class _Hud(_Cards):
             clip=bool(meta.get("clip")),
             now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
+            scares=list(segment.scares) if segment and self.scares_provider is not None else [],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
             pip=bool(getattr(self, "pip_on_home", False)))
 

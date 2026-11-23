@@ -666,3 +666,46 @@ def test_a_late_title_card_never_renames_what_you_opened_after():
     assert other.title == "la película" and catalog.launcher.current.title == "la película"
     retitle(catalog, "tt0133093", "la película", "Matrix")
     assert other.title == "Matrix" and other.meta["title"] == "Matrix" and catalog.launcher.current.title == "Matrix"
+
+
+def test_best_result_is_the_better_known_when_a_movie_and_a_series_share_the_name():
+    """S1-A (16 nov 2026): «matrix» daba la serie de 1993 por ir primero; gana la más conocida (popularidad de su ficha)."""
+    from orbital.library import cinemeta
+
+    series = [{"id": "tt0106062", "name": "Matrix", "releaseInfo": "1993"}, {"id": "tt5", "name": "Matrix Reloaded Show"}]
+    movies = [{"id": "tt0133093", "name": "The Matrix", "releaseInfo": "1999"}, {"id": "tt0234215", "name": "The Matrix Reloaded"}]
+    assert cinemeta.exact_ties("matrix", movies, series) == [("movie", "tt0133093"), ("series", "tt0106062")]
+    assert cinemeta.search_results("matrix", movies, series)[0]["meta_id"] == "tt0106062"  # sin dato: el orden de antes
+
+    class Fichas:
+        asked: list = []
+
+        def meta(self, kind, meta_id, localized=True):
+            self.asked.append((kind, meta_id, localized))
+            return {"tt0133093": {"popularity": 0.9}, "tt0106062": {"popularities": {"stremio": 0.01}}}[meta_id]
+
+    ranked = cinemeta.tie_popularity(Fichas(), "matrix", movies, series)
+    assert ranked == {"tt0133093": 0.9, "tt0106062": 0.01}
+    results = cinemeta.search_results("matrix", movies, series, popularity=ranked)
+    assert [r["meta_id"] for r in results[:2]] == ["tt0133093", "tt0106062"]
+    # Sin empate (solo una exacta) no se piden fichas.
+    assert cinemeta.tie_popularity(Fichas(), "matrix reloaded", movies, series) == {}
+
+
+def test_best_result_keeps_cinemetas_order_when_the_cards_are_slow_or_missing():
+    import time
+
+    from orbital.library import cinemeta
+
+    series = [{"id": "s1", "name": "Dune"}]
+    movies = [{"id": "m1", "name": "Dune"}]
+
+    class Lenta:
+        def meta(self, kind, meta_id, localized=True):
+            if meta_id == "m1":
+                time.sleep(1)
+                return {"popularity": 5}
+            raise cinemeta.CinemetaError("Título no encontrado")
+
+    assert cinemeta.tie_popularity(Lenta(), "dune", movies, series, limit=.1) == {}
+    assert cinemeta.search_results("dune", movies, series, popularity={})[0]["meta_id"] == "s1"

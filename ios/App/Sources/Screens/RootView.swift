@@ -210,7 +210,6 @@ struct RootView: View {
                     guard decision != .skip else { return }
                     await env.syncChoices()
                     await env.services.addonSync.refresh()   // S6: tu lista y la de tu TV (solo Ultra con TV)
-                    await env.services.renewInviteIfNeeded()   // CX4-A, TEC-16: la invitación para tu iPad no se vence
                     await DebridReminderNotifier.refresh(env.services)
                     await ReleaseNotifier.check(origin: "al-abrir")
                     await AppearNotifier.check()   // R15: lo que nadie tenía, una vez al día
@@ -465,8 +464,6 @@ struct MainTabs: View {
             ui.goBack = false
             if !paths[tab].isEmpty { paths[tab].removeLast() }
         }
-        // IOS-10: la invitación de tu iPhone sale al abrir Orbital en el iPad (una vez por invitación), no escondida en Ajustes.
-        .task { if env.services.takeInviteToShow() { paths[tab].append(SettingsRoute()) } }
         .onChange(of: ui.openSettings) { _, open in
             guard open else { return }
             ui.openSettings = false

@@ -124,6 +124,22 @@ def test_justwatch_broken_schema_is_empty_without_raising(caplog):
     assert charts.fetch_justwatch_chart("disney", "MX", "series", post=broken) == []  # y sigue sin tronar
 
 
+def test_prime_video_asks_the_other_name_when_the_first_brings_nothing():
+    """Prime Video es «prv» en México y «amp» en EE. UU. (16 nov 2026, como `ChartsPrimeTests` del iPhone)."""
+    good = _post_fixture("justwatch-chart-sample.json")
+    asked = []
+
+    def post(url, **kwargs):
+        package = kwargs["body"]["variables"]["filter"]["packages"][0]
+        asked.append(package)
+        return good(url, **kwargs) if package == "amp" else (200, {"data": {"streamingCharts": {"edges": []}}})
+
+    assert [i["title"] for i in charts.fetch_justwatch_chart("prime", "US", "movie", post=post)] == ["Unabomber", "What a Father!"]
+    assert asked == ["prv", "amp"]
+    asked.clear()
+    assert charts.fetch_justwatch_chart("netflix", "US", "movie", post=post) == [] and asked == ["nfx"]  # sin otro nombre
+
+
 def test_justwatch_http_error_raises_charts_error():
     with pytest.raises(charts.ChartsError):
         charts.fetch_justwatch_chart("netflix", "MX", "movie", post=lambda url, **kwargs: (500, None))

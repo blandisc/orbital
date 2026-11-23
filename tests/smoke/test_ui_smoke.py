@@ -308,10 +308,10 @@ def test_no_text_is_cut_in_half(server, width, height, size):
             look("La ficha de un juego")
             page.keyboard.press("Escape")
             page.wait_for_timeout(500)
-            # D5-A: Filtro avanzado y Colecciones son íconos de Películas y series (ya no están en ☰).
+            # D5-A: Búsqueda avanzada y Colecciones son íconos de Películas y series (ya no están en ☰).
             page.keyboard.press("e")  # de Juegos a Películas y series
             page.wait_for_timeout(800)
-            for screen, ready_sel in (("Filtro avanzado", ".filter__row"), ("Colecciones", ".showcase__item, .showcase .empty-state")):
+            for screen, ready_sel in (("Búsqueda avanzada", ".filter__row"), ("Colecciones", ".showcase__item, .showcase .empty-state")):
                 page.locator(f'.hero__kinds .pill[aria-label="{screen}"]').click()  # PS-2: con su nombre, ya no solo ícono
                 page.locator(ready_sel).first.wait_for(timeout=10000)
                 look(screen)

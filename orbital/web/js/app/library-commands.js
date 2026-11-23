@@ -3,7 +3,7 @@
 import { decadeName, MIN_RATINGS, ratingName } from "../components/list-screen.js";
 import { failure, retry } from "../core/notices.js";
 
-export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
+export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, undoable, watch }) {
   const commands = {
     "prefs": async (command, context) => {
       if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
@@ -107,10 +107,14 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
       ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`, { tone: "success" });
       return loadLibrary();
     },
+    // Como el iPhone (16 nov 2026): sale ya de Seguir viendo y Trakt borra tu avance hasta que el aviso se fue.
     "dismiss": async (command, context) => {
-      await api.dismiss(command.id);
+      await api.dismiss(command.id, { later: true });
       sound.play("select");
-      ui.toast.show(`Quité ${command.title} de Seguir viendo`, { tone: "success" });
+      undoable("Quitada de Seguir viendo", command.title, async () => {
+        await api.dismiss(command.id, { undo: true });
+        await loadLibrary({ keepId: command.id });
+      });
       return loadLibrary();
     },
     "own-play": async (command, context) => {

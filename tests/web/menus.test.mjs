@@ -45,7 +45,7 @@ test("menú ☰: solo el sistema (D5-A); lo técnico en Ajustes → Mantenimient
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   // Ajustes: siete categorías en el riel; lo técnico en Sistema, lo de tus juegos en Jugar.
-  assert.deepEqual(SETTINGS_CATEGORIES.map((c) => c.title), ["Resumen", "Ver", "Complementos", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"]);
+  assert.deepEqual(SETTINGS_CATEGORIES.map((c) => c.title), ["Resumen", "Idiomas", "Reproducción", "Avisos", "Cuentas", "Complementos", "Jugar", "Tele y voz", "Pantalla y sonido", "Sistema"]);
   assert.deepEqual(settingsCategory("system", {}).options.map((o) => o.command.type), ["setup", "update-check", "diagnostics", "windows", "power-menu"]);
   assert.deepEqual(settingsCategory("system", {}, { canExit: true }).options.at(-1).command, { type: "confirm-exit" });
   assert.deepEqual(settingsCategory("play", {}).options.filter((o) => o.command && o.command.type !== "setting").map((o) => o.command.type),
@@ -102,15 +102,18 @@ test("confirmar apagar: «Dejarla prendida» primero y aviso si hay un juego abi
 
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
   const languages = ["es-419", "original", "en", "es-ES"];
-  const page = settingsCategory("watch", { languages, subtitles: "forced", quality: "1080p", sub_scale: 1 });
-  // Fernando, 4 nov: idiomas y subtítulos juntos y arriba; «Tus idiomas» es una sola lista en orden (N4-A).
+  const settings = { languages, subtitles: "forced", quality: "1080p", sub_scale: 1 };
+  const page = settingsCategory("languages", settings);
+  // Fernando, 4 nov: idiomas y subtítulos juntos y arriba; «Tus idiomas» es una sola lista en orden (N4-A). PA1-A (23 nov):
+  // «Ver» se partió en «Idiomas» y «Reproducción», como Ajustes del iPhone.
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idiomas y subtítulos", undefined], ["Tus idiomas", "Latino, Idioma original, Inglés, Castellano"],
+    ["Tus idiomas", "Latino, Idioma original, Inglés, Castellano"],
     ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Letra de los subtítulos", "Normal"],
-    ["Imagen y reproducción", undefined], ["Calidad", "1080p"],
-    ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
-  assert.deepEqual(page.options[1].command, { type: "languages" });
-  assert.match(page.options[1].help, /En este orden busca versiones/);
+    ["Lo que recuerda cada título", undefined]]);
+  assert.deepEqual(page.options[0].command, { type: "languages" });
+  assert.match(page.options[0].help, /En este orden busca versiones/);
+  assert.deepEqual(settingsCategory("playback", settings).options.map((o) => [o.label, o.value]), [["Calidad", "1080p"],
+    ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Marcar los sustos en la barra", "—"]]);
   // La lista: subir, bajar, quitar y agregar; «Idioma original» nunca queda primero.
   const list = languagesMenu(languages);
   assert.deepEqual(list.options.map((o) => o.label), ["1. Latino", "2. Idioma original", "3. Inglés", "4. Castellano", "Agregar idioma"]);

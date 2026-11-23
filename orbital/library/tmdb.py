@@ -421,7 +421,9 @@ class Tmdb:
             "title": str(raw.get("title") or raw.get("name") or "").strip(),
             "year": _year(raw.get("release_date") or raw.get("first_air_date")),
             "overview": str(raw.get("overview") or "").strip(),
-            "runtime": _positive(raw.get("runtime")),
+            # En una serie, lo que dura el capítulo (TMDB casi nunca llena `episode_run_time`: el último capítulo lo dice).
+            "runtime": _positive(raw.get("runtime")) if kind != "series" else _positive(
+                next(iter(raw.get("episode_run_time") or []), None) or (raw.get("last_episode_to_air") or {}).get("runtime")),
             "seasons": raw.get("number_of_seasons") if isinstance(raw.get("number_of_seasons"), int) else None,
             "episodes": raw.get("number_of_episodes") if isinstance(raw.get("number_of_episodes"), int) else None,
             "poster": image(raw.get("poster_path")), "backdrop": image(_textless(raw, "backdrops") or raw.get("backdrop_path"), "w1280"),

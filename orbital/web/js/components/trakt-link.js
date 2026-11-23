@@ -20,6 +20,20 @@ const SERVICES = {
   },
 };
 
+/** Lo que dice mientras espera: lo mismo que el iPhone, el iPad y la Mac (`DeviceCodeCard`, 17 nov 2026). */
+export const WAITING_TEXT = "Esperando a que lo apruebes…";
+
+/** «trakt.tv/activate»: la dirección sin «https://» ni la diagonal del final, como se escribe (`DeviceCodeCard.site`). */
+export function siteOf(url, fallback = "") {
+  const text = String(url || fallback).replace(/^https?:\/\//, "");
+  return text.endsWith("/") ? text.slice(0, -1) : text;
+}
+
+/** «Escribe este código en trakt.tv/activate» (con la dirección en negritas), como `DeviceCodeCard` del iPhone. */
+export function whereWords(url, fallback) {
+  return ["Escribe este código en ", siteOf(url, fallback)];
+}
+
 export function createTraktLink({ onMove, onClose }) {
   const code = h("div", { class: "trakt-link__code", "aria-live": "polite" });
   const where = h("p", { class: "trakt-link__step" });
@@ -56,10 +70,11 @@ export function createTraktLink({ onMove, onClose }) {
       if (mine !== attempt) return; // otro código más nuevo (Y), o ya se cerró: este no se muestra
       pending = false;
       waiting = true;
-      mount(where, "En tu celular entra a ", h("strong", {}, res.url || svc.site), " y escribe este código:");
+      const [lead, site] = whereWords(res.url, svc.site);
+      mount(where, lead, h("strong", {}, site));
       mount(code, ...[...String(res.code || "")].map((ch) => h("span", { class: "trakt-link__char" }, ch)));
       qr.hidden = false;
-      show("waiting", "Esperando a que lo confirmes…");
+      show("waiting", WAITING_TEXT);
     } catch (err) {
       if (mine !== attempt) return;
       pending = false;

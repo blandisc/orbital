@@ -206,6 +206,18 @@ class _History(_Lists):
                     found.append(imdb)
         return found
 
+    def watched_shows(self) -> list[dict]:
+        """Las series que has visto, lo último primero (Ajustes › Avisos › «Series que sigues», como el iPhone):
+        [{imdb, title, year, last}]. Sin temporadas: solo importa cuáles y cuándo."""
+        rows = self._get("/sync/watched/shows", extended="noseasons")
+        found: list[dict] = []
+        for row in rows if isinstance(rows, list) else []:
+            show = entry(row.get("show") if isinstance(row, dict) else None, "series")
+            if show:
+                found.append({"imdb": show["imdb"], "title": show["title"], "year": show["year"],
+                              "last": str(row.get("last_watched_at") or "")})
+        return sorted(found, key=lambda s: s["last"], reverse=True)
+
     def related(self, kind: str, imdb: str, limit: int = 15) -> list[dict]:
         """Lo que Trakt relaciona con un título («Porque viste X»), como el iPhone."""
         if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():

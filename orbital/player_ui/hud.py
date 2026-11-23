@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from .. import flags
 from . import canvas
-from .canvas import FLAG_GAP, FLAG_H, MARGIN, MUTED, ON_LIGHT, SHADE, SOFT, TEXT, H, placed, targets
+from .canvas import DANGER, FLAG_GAP, FLAG_H, MARGIN, MUTED, NEXT, ON_LIGHT, SHADE, SOFT, TEXT, H, placed, targets
 from .draw import (
     circle,
     fit,
@@ -49,6 +49,8 @@ class Hud:
     pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
     logo: tuple[float, float] | None = None  # en pausa, el logo del título (ancho, alto en el lienzo) en vez de su nombre
     audio_flag: str | None = None  # la bandera del audio que suena: va en lugar de su nombre (M2/N2, como la ficha y el iPhone)
+    # PA7-B: los sustos de la película (Where's The Jump): (segundo, fuerte, qué pasa). Puntos sobre la barra, como el iPhone.
+    scares: list[tuple[float, bool, str]] = field(default_factory=list)
 
 
 def info_line(hud: Hud) -> str:
@@ -93,6 +95,7 @@ def progress_bar(hud: Hud, y: float = BAR_Y) -> tuple[str, float | None]:
         out.append(rrect(left, y, width, h, h / 2, TEXT, "C8"))  # pista: blanco tenue
         if done is not None and done > a:
             out.append(rrect(left, y, min(width, w * (done - a)), h, h / 2, TEXT))
+    out += _scare_dots(hud, x0, w, y + h / 2)
     knob = None
     if done is not None:
         knob = x0 + w * done
@@ -101,6 +104,38 @@ def progress_bar(hud: Hud, y: float = BAR_Y) -> tuple[str, float | None]:
     if canvas.TOUCH:  # tocar la barra salta a ese punto (una franja alta: el dedo no atina a 8 px)
         targets["hud"].append((x0, y - 28, w, h + 56, ("seek", x0, w)))
     return "\n".join(out), knob
+
+
+SCARE_DOT = 9  # radio del punto de un susto fuerte; los leves miden SCARE_MINOR de eso (DS.PlayerPanel.scareDot…)
+SCARE_MINOR = .7
+SCARE_REACH = .006  # adelantando, a qué tanto de la película un susto «está ahí» y se nombra (DS.PlayerPanel.scareReach)
+
+
+def _scare_dots(hud: Hud, x0: float, w: float, cy: float) -> list[str]:
+    """Los sustos sobre la barra, como los capítulos de YouTube (y el iPhone): rojo los fuertes, ámbar los leves y tenues
+    los que ya pasaron."""
+    if not hud.scares or not hud.duration:
+        return []
+    out = []
+    for when, major, _ in hud.scares:
+        if not 0 <= when <= hud.duration:
+            continue
+        passed = hud.position is not None and when <= hud.position
+        color = MUTED if passed else DANGER if major else NEXT
+        out.append(circle(x0 + w * when / hud.duration, cy, SCARE_DOT * (1 if major else SCARE_MINOR), color))
+    return out
+
+
+def scare_near(hud: Hud) -> str:
+    """Adelantando cerca de un susto: «Susto fuerte · A hand grabs her» (lo que dice la burbuja del iPhone)."""
+    if not hud.scares or not hud.duration or hud.position is None:
+        return ""
+    reach, at = SCARE_REACH * hud.duration, hud.position
+    near = [s for s in hud.scares if abs(s[0] - at) <= reach]
+    if not near:
+        return ""
+    _, major, what = min(near, key=lambda s: abs(s[0] - at))
+    return " · ".join(p for p in ("Susto fuerte" if major else "Susto leve", what) if p)
 
 
 def _times(hud: Hud, y: float) -> str:
@@ -138,8 +173,11 @@ def hud_ass(hud: Hud) -> str:
         lines += [text(left, BAR_Y - 84, when, 44, weight="bold", align=4),
                   glass(left + when_w + 14, BAR_Y - 103, chip_w, 38, 19),
                   text(left + when_w + 28, BAR_Y - 84, esc(hud.seeking), 22, weight="semi", align=4)]
-        chapter = chapter_at(hud)
-        if chapter:
+        chapter, scare = chapter_at(hud), scare_near(hud)
+        if scare:  # un susto ahí: se nombra (en su color), en lugar del capítulo
+            major = scare.startswith("Susto fuerte")
+            lines.append(text(center, BAR_Y - 30, esc(fit(scare, 22, 720, "semi")), 22, DANGER if major else NEXT, weight="semi", align=2))
+        elif chapter:
             lines.append(text(center, BAR_Y - 30, esc(fit(chapter, 22, 600, "semi")), 22, SOFT, weight="semi", align=2))
         lines += [bar, _times(hud, BAR_Y + 28),
                   hints([("◀ ▶", "Mantén: más rápido"), ("A", "Pausa")], 1022, right=canvas.W - MARGIN)]

@@ -42324,13 +42324,13 @@
         }
       }
     },
-    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas y subtítulos.": {
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages and subtitles."
+            "value": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages."
           }
         }
       }
@@ -48487,6 +48487,182 @@
           "stringUnit": {
             "state": "translated",
             "value": "From %@ · your devices use the most recent one"
+          }
+        }
+      }
+    },
+    "Diagnóstico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics"
+          }
+        }
+      }
+    },
+    "Todo bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All good"
+          }
+        }
+      }
+    },
+    "1 cosa que revisar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 thing to check"
+          }
+        }
+      }
+    },
+    "%lld cosas que revisar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld things to check"
+          }
+        }
+      }
+    },
+    "Guarda dónde te quedaste y lo que viste. Si algo no llegó, ábrelo para ver qué fue y por qué.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps where you left off and what you watched. If something didn't get there, open it to see what and why."
+          }
+        }
+      }
+    },
+    "Falta tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cloud is missing"
+          }
+        }
+      }
+    },
+    "De ahí salen los videos. Te avisamos 14 días antes de que venza.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's where the videos come from. We'll let you know 14 days before it expires."
+          }
+        }
+      }
+    },
+    "Sin probar todavía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not tried yet"
+          }
+        }
+      }
+    },
+    "Ninguno prendido: sin ellos no hay de dónde ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None turned on: without them there's nowhere to watch from."
+          }
+        }
+      }
+    },
+    "Revisar complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check add-ons"
+          }
+        }
+      }
+    },
+    "Cuánto tardó cada uno la última vez desde aquí. El que no contesta se salta solo hasta que vuelva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How long each one took last time from here. One that doesn't answer is skipped until it's back."
+          }
+        }
+      }
+    },
+    "Para «Ver en la TV», el control y la voz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For “Watch on TV”, the remote and voice."
+          }
+        }
+      }
+    },
+    "OneDrive · tus archivos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive · your files"
+          }
+        }
+      }
+    },
+    "Tus películas y series de OneDrive salen junto a lo demás.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your movies and shows from OneDrive show up with everything else."
+          }
+        }
+      }
+    },
+    "Claves de Explorar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore keys"
+          }
+        }
+      }
+    },
+    "En este aparato, Orbital no controla la TV. Usa tu iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this device, Orbital doesn't control the TV. Use your iPhone."
           }
         }
       }

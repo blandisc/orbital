@@ -142,7 +142,8 @@ export const api = {
   captures: () => request("/api/captures"),
   openCapture: (path) => post("/api/captures/open", { path }),
   controllers: () => request("/api/controllers"),
-  dismiss: (id) => post("/api/stremio/dismiss", { id }),
+  // «Quitar de Seguir viendo»: `later` (Trakt lo borra cuando se va el aviso) y `undo` (su «Deshacer»).
+  dismiss: (id, { later = false, undo = false } = {}) => post("/api/stremio/dismiss", { id, later, undo }),
   setInLibrary: (kind, id, add) => post("/api/stremio/library", { kind, id, add }),
   // «Guardar en…» (como el iPhone): tu watchlist, tus favoritos y tus listas de Trakt.
   savedIn: (kind, id) => request(`/api/foryou/saved?kind=${kind}&id=${encodeURIComponent(id)}`),
@@ -171,6 +172,7 @@ export const api = {
   rate: (kind, id, stars) => post("/api/foryou/rating", { kind, id, stars }),
   following: (id) => request(`/api/foryou/follow?id=${encodeURIComponent(id)}`),
   setFollowing: (id, following) => post("/api/foryou/follow", { id, following }),
+  followed: () => request("/api/foryou/followed"), // Ajustes › Avisos › «Series que sigues»
   // El gestor tipo Trakt (G1–G4, como el iPhone): «La dejé», el tablero de Guardado, varios a la vez y tus listas.
   setDropped: (kind, id, dropped = true, following = false) => post("/api/foryou/drop", { kind, id, dropped, following }),
   board: () => request("/api/foryou/board", LONG),

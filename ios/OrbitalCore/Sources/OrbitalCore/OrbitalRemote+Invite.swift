@@ -1,36 +1,7 @@
 import Foundation
 
-/// CX4-A y CX8-A · la invitación de tu iPhone para tu iPad y «Darle su propia conexión» a un aparato que entró con el QR de
-/// antes. Formas acordadas con la sesión de la TV (3 nov); la llave nunca se imprime ni se guarda fuera del llavero.
-
-/// La invitación que tu iPhone deja en el llavero de iCloud para tu iPad: un aparato, 7 días, muere si se quita el iPhone.
-public struct OrbitalInvite: Codable, Equatable, Sendable, CustomStringConvertible {
-    public var code: String
-    public var expires: Date
-    /// Dónde está tu TV (la dirección del túnel) y cómo se llama; `tvID` para descartarla si la TV cambió (TEC-30).
-    public var address: String, tvName: String, tvID: String
-    /// Quién invitó («iPhone de Fernando»).
-    public var from: String
-    public init(code: String, expires: Date, address: String, tvName: String, tvID: String, from: String) {
-        self.code = code; self.expires = expires; self.address = address; self.tvName = tvName; self.tvID = tvID; self.from = from
-    }
-    public var description: String { "OrbitalInvite(tv: \(tvName), from: \(from), expires: \(expires), code: •••)" }
-
-    public func isValid(at now: Date) -> Bool { now < expires && !code.isEmpty && OrbitalRemote.normalize(address) != nil }
-    /// TEC-16 · pasada la mitad de su vida, el iPhone la renueva al abrirse.
-    public func needsRenewal(at now: Date, life: TimeInterval = OrbitalInvite.life) -> Bool { expires.timeIntervalSince(now) < life / 2 }
-    public static let life: TimeInterval = 7 * 86_400
-
-    public var encoded: String {
-        let e = JSONEncoder(); e.dateEncodingStrategy = .secondsSince1970
-        return (try? e.encode(self)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
-    }
-    public static func decode(_ raw: String?) -> OrbitalInvite? {
-        guard let data = raw?.data(using: .utf8) else { return nil }
-        let d = JSONDecoder(); d.dateDecodingStrategy = .secondsSince1970
-        return try? d.decode(OrbitalInvite.self, from: data)
-    }
-}
+/// CX8-A · «Darle su propia conexión» a un aparato que entró con el QR de antes. Formas acordadas con la sesión de la TV (3 nov);
+/// la llave nunca se imprime ni se guarda fuera del llavero. (La invitación del iPad, CX4-A, se quitó con PA5-A.)
 
 /// Cómo va «Darle su propia conexión» (CX8-A): la TV pregunta en su pantalla y el aparato espera.
 public enum OrbitalUpgrade: Equatable, Sendable, CustomStringConvertible {
@@ -49,12 +20,13 @@ public enum OrbitalUpgrade: Equatable, Sendable, CustomStringConvertible {
 }
 
 extension OrbitalRemote {
-    /// `POST /api/devices/invite` (con la llave del iPhone) `{platform}` → `{code, expires}`.
+    /// `POST /api/devices/invite` (con la llave del iPhone) `{platform}` → `{code, expires}`. La app ya no lo llama (PA5-A: el
+    /// iPad no se conecta a la TV); se queda porque es parte del contrato con la TV (`ContractFixturesTests`).
     public func invite(platform: String) async throws -> (code: String, expires: Date) {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/devices/invite", method: "POST", body: JSON.object(["platform": .string(platform)]).serialized())
         guard let code = json?["code"]?.nonEmptyString else { throw Failure.refused("Tu TV contestó algo que no entiendo.") }
-        return (code, Self.date(json?["expires"]) ?? Date().addingTimeInterval(OrbitalInvite.life))
+        return (code, Self.date(json?["expires"]) ?? Date().addingTimeInterval(7 * 86_400))
     }
 
     /// `POST /api/devices/upgrade` (con el token de antes, una vez) `{name, platform}` → 202 `{id}`: la TV pregunta en su

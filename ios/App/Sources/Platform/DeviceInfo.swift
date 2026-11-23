@@ -63,10 +63,19 @@ final class Connectivity: @unchecked Sendable {
 /// es iPhone o iPad y su id por instalación. La TV solo acepta `iphone` e `ipad` (`orbital/companion.py`): la Mac
 /// («Diseñada para iPad») se presenta como iPad hasta que la TV conozca `mac` (Etapa 2 de `docs/producto/ipad-y-mac-2026-10.md`).
 enum ThisDevice {
-    /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026; CX1-B, 3 nov: «La Mac no se
-    /// conecta con la TV para nada»). El iPhone y el iPad, sí. Solo recibe tu clave de Real-Debrid por iCloud (CX2-A).
-    /// `MacNeverTalksToTheTVTests` cuida que esto no cambie.
-    static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// Solo el iPhone habla con tu Orbital. La Mac es solo para ver (decisión de Fernando, 29 oct 2026; CX1-B, 3 nov: «La Mac no
+    /// se conecta con la TV para nada») y el iPad también (18 nov, confirmada el 23 nov en PA5-A: «El iPad no se conecta a la
+    /// TV»): sin control, voz, «Ver en la TV», invitación ni acompañante de juegos. Los dos reciben tu clave de Real-Debrid por
+    /// iCloud (CX2-A). `MacNeverTalksToTheTVTests` cuida que esto no cambie.
+    static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac && !runsOnIPad
+    /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal; esto se lee al armar `Services`).
+    private static let runsOnIPad: Bool = {
+        if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
+        var info = utsname()
+        uname(&info)
+        let machine = withUnsafeBytes(of: &info.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+        return machine.hasPrefix("iPad")
+    }()
     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
     static let isMac = ProcessInfo.processInfo.isiOSAppOnMac || macLookForDemo
     /// Adornos que se mueven solos (el cielo, el muro de Explorar, los canales que se deslizan): en la Mac, quietos. Su pantalla
@@ -86,7 +95,7 @@ enum ThisDevice {
     /// vez; sin ella, Ultra) y si este aparato habla con la TV. Lo que no recibe `Services` (Siri, el menú, la actividad en
     /// vivo) pregunta aquí; lo demás, a `services.capabilities`, que se arma con esto mismo.
     static let capabilities = Capabilities(edition: .bundled(), talksToOrbital: talksToOrbital)
-    /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, quién quita a quién (CX5) y quién ve la invitación.
+    /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, y quién quita a quién (CX5).
     @MainActor static var platform: String {
         ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
     }

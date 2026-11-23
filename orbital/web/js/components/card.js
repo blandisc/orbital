@@ -1,10 +1,10 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { logoUrl as titleLogo, rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
-import { SYSTEMS, platformColor, systemColor, systemOf } from "../core/home.js";
+import { SYSTEMS, platformColor, systemColor, systemOf, titleTint } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
-import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
+import { clampRatio, coverRatio, isWatchable, needsInternet } from "../core/library.js";
 import { ArtFit } from "./art-fit.js";
 import { Badge, CornerRibbon, Progress } from "./ui.js";
 
@@ -96,9 +96,11 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
     }
   }
   const icon = appIcon(item);
-  // Sin arte: la tarjeta toma el color de su consola o, si es video, el de las películas y series (card.css · .card--no-art),
-  // no el grafito de siempre (unslop, 2 nov 2026: «un rectángulo negro con un ícono»).
-  const fill = platformColor(item);
+  // Sin arte: la tarjeta toma el color de su consola o, si es video, uno de los tintes de la app, siempre el mismo para el
+  // mismo título, como el iPhone (card.css · .card--no-art; 23 nov 2026), no el grafito de siempre (unslop, 2 nov 2026:
+  // «un rectángulo negro con un ícono»).
+  const tint = isWatchable(item) ? titleTint(item.title) : null;
+  const fill = tint ? null : platformColor(item);
   const fallback = () => (icon
     ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
     : h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)])));
@@ -119,6 +121,7 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
   // Clic: lo que hace (onPress). Clic secundario o mantener el dedo: sus Opciones (lo mismo que Y), como el menú del iPhone.
   if (onPress || onMore) { actions.set(card, { onPress, onMore }); delegate(); }
   if (fill) card.style.setProperty("--fill", fill);
+  if (tint) card.dataset.tint = tint;
   const setRatio = (ratio) => {
     card.dataset.ratio = String(ratio);
     card.style.setProperty("--ratio", String(ratio));

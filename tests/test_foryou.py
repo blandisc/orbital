@@ -1251,6 +1251,24 @@ def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypat
         make_foryou().filtered("movie", {}, count_only=True)
 
 
+def test_advanced_search_length_and_hiding_what_you_saw_like_the_iphone(make_foryou, monkeypatch):
+    """PA3-A (23 nov 2026): «Tiempo» con los minutos del iPhone (en películas lo filtra TMDB; en series, el capítulo con su
+    ficha) y «Ocultar lo que ya vi» con lo visto en Trakt."""
+    fy = make_foryou(tmdb_key="k", linked=True)
+    p = fy.filter_params("movie", {"length": "short"})
+    assert p["with_runtime.gte"] == 60 and p["with_runtime.lte"] == 95
+    assert "with_runtime.lte" not in fy.filter_params("movie", {"length": "long"})
+    assert "with_runtime.gte" not in fy.filter_params("series", {"length": "short"})  # en series TMDB casi no lo sabe
+    rows = [{"id": n} for n in (1, 2, 3, 4)]
+    fichas = {1: ("tt1", 25), 2: ("tt2", 55), 3: ("tt3", None), 4: ("tt4", 20)}
+    monkeypatch.setattr(fy.tmdb, "discover_page", lambda kind, **params: (rows, 4))
+    monkeypatch.setattr(fy.tmdb, "details", lambda kind, n: {"kind": kind, "imdb": fichas[n][0], "title": str(n), "year": 2020,
+                                                              "runtime": fichas[n][1], "overview": "", "poster": None, "backdrop": None})
+    monkeypatch.setattr(fy, "watched_ids", lambda: ["tt4"])
+    got = fy.filtered("series", {"length": "short", "unseen": "hide"})["items"]
+    assert [i["meta_id"] for i in got] == ["tt1", "tt3"]  # tt2 dura 55; tt3 sin dato se queda; tt4 ya la viste
+
+
 def test_the_title_page_gets_letterboxd_with_your_review_from_the_diary(make_foryou, monkeypatch):
     from test_letterboxd import DIARY, FILM
 
@@ -1300,3 +1318,19 @@ def test_the_mosaic_suggests_a_series_never_a_specific_episode():
     assert tile["action"] == "Ver la serie"
     movie = foryou_mod.video_item({"imdb": "tt1375666", "kind": "movie", "title": "El origen", "year": 2010}, "Para ti")
     assert foryou_mod.series_only(movie) is movie
+
+
+def test_followed_series_lists_what_you_watched_with_its_bell_like_the_iphone(make_foryou, net):
+    """Ajustes › Avisos › «Series que sigues» (PA1-A, 23 nov 2026): cada serie que viste en Trakt, lo último primero, con
+    su campana; la que dejaste de seguir sale apagada."""
+    net.on("POST", r"/users/hidden/", (201, {}))
+    net.on("GET", r"/sync/watched/shows", (200, [
+        {"last_watched_at": "2026-10-01T10:00:00.000Z", "show": {"title": "Vieja", "year": 2010, "ids": {"imdb": "tt1"}}},
+        {"last_watched_at": "2026-11-20T10:00:00.000Z", "show": {"title": "Nueva", "year": 2024, "ids": {"imdb": "tt2"}}},
+        {"last_watched_at": "2026-11-01T10:00:00.000Z", "show": {"title": "Sin IMDb", "ids": {}}}]))
+    fy = make_foryou(linked=True)
+    fy.set_following("tt1", False)
+    assert fy.followed_series() == [{"id": "tt2", "title": "Nueva", "year": 2024, "following": True},
+                                    {"id": "tt1", "title": "Vieja", "year": 2010, "following": False}]
+    with pytest.raises(foryou_mod.trakt_api.TraktAuthError):
+        make_foryou(trakt_keys=False).followed_series()  # sin Trakt, «Conectar Trakt»

@@ -209,6 +209,9 @@ class _Home(_Shelves):
 
     FILTER_DECADES = ("2020", "2010", "2000", "1990", "1980", "old")
 
+    # Los minutos de cada «Tiempo», como el iPhone (`AdvancedFilter.runtime`): (película, capítulo de serie), cada uno (mín, máx).
+    FILTER_LENGTHS = {"short": ((60, 95), (None, 30)), "regular": ((96, 130), (30, 50)), "long": ((131, None), (50, None))}
+
     def filter_params(self, kind: str, f: dict) -> dict | None:
         """Lo que pide TMDB para un filtro: {género, década, calificación, fama, plataforma, país}. None si no puede haber
         nada (un género que no existe en series, una plataforma que no está en tu país)."""
@@ -240,6 +243,15 @@ class _Home(_Shelves):
                 return None
             params.update(with_watch_providers=found["id"], watch_region=self.region,
                           with_watch_monetization_types="flatrate|free|ads")  # también lo gratis (ViX, Pluto TV), como el iPhone
+        # «Tiempo» (PA3-A, como el iPhone): en películas lo filtra TMDB, desde 60 min para que «Cortita» no traiga
+        # cortometrajes. En series TMDB casi no sabe cuánto dura el capítulo: se revisa después con su ficha (`filtered`).
+        length = self.FILTER_LENGTHS.get(f.get("length") or "")
+        if length and kind != "series":
+            low, high = length[0]
+            if low:
+                params["with_runtime.gte"] = low
+            if high:
+                params["with_runtime.lte"] = high
         country = f.get("country")
         if country in self.FILTER_COUNTRIES:
             params["with_origin_country"] = country
@@ -268,4 +280,15 @@ class _Home(_Shelves):
         rows, total = self.cache.get(key, RECS_TTL, lambda: self.tmdb.discover_page(kind, **params))
         if count_only:
             return {"total": total}
-        return {"total": total, "items": self._tmdb_items(rows, kind, "Con tu filtro", limit=20)}
+        seen = set(self.watched_ids()) if f.get("unseen") == "hide" and self.trakt.linked else set()  # «Ocultar lo que ya vi»
+        length = self.FILTER_LENGTHS.get(f.get("length") or "")
+        low, high = length[1] if length and kind == "series" else (None, None)
+
+        def keep(d: dict) -> bool:
+            """Lo que ya viste fuera; en series, el capítulo cabe en el «Tiempo» (sin dato, se queda, como el iPhone)."""
+            if d["imdb"] in seen:
+                return False
+            minutes = d.get("runtime")
+            return not isinstance(minutes, int) or ((low is None or minutes >= low) and (high is None or minutes <= high))
+
+        return {"total": total, "items": self._tmdb_items(rows, kind, "Con tu filtro", limit=20, keep=keep)}

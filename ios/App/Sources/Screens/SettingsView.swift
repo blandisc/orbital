@@ -2,8 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
-/// está ahora: lo tuyo (apariencia, Un Simpson al azar, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
+/// Ajustes: tu perfil arriba (el avatar se toca) y los renglones que llevan a su página, cada uno con cómo está ahora. PA1-A
+/// (23 nov 2026): el mismo esqueleto que la TV; primero lo de las dos apps (Idiomas, Reproducción, Avisos, Cuentas,
+/// Complementos) y abajo «En este aparato» (Apariencia, Descargas, tu Orbital en el iPhone, Diagnóstico y Aprende).
 struct SettingsView: View {
     /// Una frase de «Lo que puedes decir» tocada desde Ajustes: va a la TV como si la dijeras en el control, y lo que
     /// contesta sale de aviso (aquí no hay renglón de voz).
@@ -22,7 +23,7 @@ struct SettingsView: View {
     @State var debrid: ModelObserver<DebridModel>
     /// Lo que no llegó a Trakt (Ajustes › Cuentas, solo si hay algo).
     @State var discards: ModelObserver<TraktDiscardsModel>
-    @State private var tmdbKey = ""
+    @State var tmdbKey = ""
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
     @State private var editingAvatar = false
@@ -33,6 +34,7 @@ struct SettingsView: View {
     @State private var showsPlayback = false
     @State private var showsOrbital = false
     @State private var showsDemoPage = false
+    @State private var showsDiagnostics = false
     /// Ajustes › Tus idiomas abierta desde otro lado (`AppUI.openLanguages`: la guía, la página de Torrentio).
     @State var showsLanguages = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
@@ -55,19 +57,16 @@ struct SettingsView: View {
     private func settingsForm(_ model: SettingsModel, _ s: AppSettings) -> some View {
         let entries = env.services.settingsEntries   // D1-B: qué renglones existen en esta versión
         return Form {
-            // CX4-A, IOS-10: la invitación de tu iPhone, lo primero de Ajustes (solo en un iPad sin conectar; nunca en la Mac).
-            if entries.orbital { IPadInviteCard { orbitalSetup = .connect } }
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
                 // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
             }
             .listRowBackground(DS.surface)
-            // Idiomas y subtítulos, arriba y juntos (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los
-            // idiomas»; los mismos cuatro que la TV en Ajustes › Ver).
-            languagesSection(model)
-            preferencesSection(model, s)
-            connectionsSection(model)
-            // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
+            // PA1-A (Fernando, 23 nov 2026): el mismo esqueleto que la TV. Primero lo que se usa en las dos apps, en el orden de la
+            // TV (Idiomas, Reproducción, Avisos, Cuentas, Complementos); abajo, «En este aparato».
+            sharedSection(model, s)
+            deviceSection(model, s)
+            // La app es de una sola pieza: lo de la consola sale solo con esto prendido (solo el iPhone habla con la TV, PA5-A).
             if entries.orbital { orbitalSettings(model) }
             moreSection(model)
         }
@@ -80,30 +79,19 @@ struct SettingsView: View {
         .readableListWidth()   // iPad y Mac: los renglones al centro
     }
 
-    @ViewBuilder private func preferencesSection(_ model: SettingsModel, _ s: AppSettings) -> some View {
-        // Lo tuyo: cómo se ve y cómo se reproduce, con su título (I13: era el único grupo sin nombre).
+    /// Lo que vale en la TV y aquí, en el orden de la TV (PA1-A): Idiomas, Reproducción, Avisos, Cuentas y Complementos.
+    @ViewBuilder private func sharedSection(_ model: SettingsModel, _ s: AppSettings) -> some View {
+        let entries = env.services.settingsEntries
         Section {
-            SettingsLink(.appearance) { destination(.appearance, model) } label: {
-                SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
-            }
+            // Idiomas y subtítulos, arriba (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»).
+            languagesRow(model)
             SettingsLink(.playback) { destination(.playback, model) } label: {
                 SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
             }
             SettingsLink(.alerts) { destination(.alerts, model) } label: {
                 SettingsRow(title: "Avisos", symbol: "bell.badge", tint: DS.ListTint.flame, value: s.releaseAlerts ? Text("Estrenos") : Text("Apagados"))
             }
-            SettingsLink(.downloads) { destination(.downloads, model) } label: {
-                SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
-            }
-        } header: { Text("En este aparato") }   // AJ-A: el grupo dice qué hay adentro (lo que vale solo aquí), no «Preferencias»
-        .listRowBackground(DS.surface)
-    }
-
-    @ViewBuilder private func connectionsSection(_ model: SettingsModel) -> some View {
-        let entries = env.services.settingsEntries
-        // Con qué se conecta.
-        Section {
-            // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
+            // Tu nube, Trakt, OneDrive, Letterboxd, OpenSubtitles y las claves de Explorar, cada una con su papel (como la TV).
             SettingsLink(.accounts) { destination(.accounts, model) } label: {
                 SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: entries.realDebrid ? debridValue : traktValue(model))
             }
@@ -113,21 +101,31 @@ struct SettingsView: View {
                                 value: addonsValue)
                 }
             }
-            // Tus películas y series de OneDrive como una fuente más (como en la TV).
-            SettingsLink(.oneDrive) { destination(.oneDrive, model) } label: {
-                SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
-                            value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
+        }
+        .listRowBackground(DS.surface)
+    }
+
+    /// AJ-A, PA1-A: lo que vale solo aquí (cómo se ve y qué se guarda en este aparato); su título dice qué hay adentro.
+    @ViewBuilder private func deviceSection(_ model: SettingsModel, _ s: AppSettings) -> some View {
+        Section {
+            SettingsLink(.appearance) { destination(.appearance, model) } label: {
+                SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
             }
-        } header: { Text("Conexiones") }
+            SettingsLink(.downloads) { destination(.downloads, model) } label: {
+                SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
+            }
+        } header: { Text("En este aparato") }
         .listRowBackground(DS.surface)
     }
 
     @ViewBuilder private func moreSection(_ model: SettingsModel) -> some View {
-        // Lo que casi no se toca: complementos, la clave de TMDB y el país.
+        // Lo que casi no se toca: qué falla y cómo se arregla (PA6-A, como Ajustes › Sistema › Diagnóstico de la TV) y Aprende.
         Section {
-            SettingsLink(.advanced) { destination(.advanced, model) } label: {
-                SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text(verbatim: "TMDB"))
+            SettingsLink(.diagnostics) { destination(.diagnostics, model) } label: {
+                SettingsRow(title: "Diagnóstico", symbol: "stethoscope", tint: diagnosticsIssues(model) > 0 ? DS.warning : DS.ListTint.series,
+                            value: diagnosticsValue(model))
             }
+            .accessibilityIdentifier("settings-diagnostics")
             // «Aprende»: una sola entrada con las historias, la guía otra vez, los avisos desde cero y lo que se puede hacer con
             // la TV (revisión del 11 nov: eran cuatro renglones casi iguales, dos con el mismo destello).
             SettingsLink(.learn) { destination(.learn, model) } label: {
@@ -210,6 +208,11 @@ struct SettingsView: View {
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "languages" { showsLanguages = true } }   // N4-A
             .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "orbital" { showsOrbital = true } }
+            // `-demo-settings-page diagnostics|accounts`: Diagnóstico (PA6-A) y Cuentas (con OneDrive y TMDB, PA1-A).
+            .navigationDestination(isPresented: $showsDiagnostics) {
+                Demo.value(after: "-demo-settings-page") == "accounts" ? destination(.accounts, model) : destination(.diagnostics, model)
+            }
+            .task { if Demo.isOn, ["diagnostics", "accounts"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDiagnostics = true } }
             // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
             .navigationDestination(isPresented: $showsDemoPage) { DemoSettingsPage(name: Demo.value(after: "-demo-settings-page") ?? "", debrid: debrid.model) }
             .task { if Demo.isOn, ["torrentio", "addons", "realdebrid"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDemoPage = true } }
@@ -240,7 +243,7 @@ struct SettingsView: View {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark, value: Text("Qué puedes decir"))
                 }
             }
-        } header: { Text("Orbital en la TV") } footer: {
+        } footer: {   // PA1-A: dentro de «En este aparato», sin título propio
             on ? Text("Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt.")
                : Text("¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.")   // edición: la sección solo existe con `settingsEntries.orbital` (console)
         }
@@ -264,11 +267,10 @@ struct SettingsView: View {
         case .downloads: self.page("Descargas") { downloads(model) }
         case .accounts: self.page("Cuentas") { accounts(model) }
         case .addons: AddonsSettings()
-        case .oneDrive: OneDriveSettings()
         case .orbital: self.page("Tu Orbital") { orbitalSection(model) }
         // La voz le da órdenes a tu Orbital; tocar una frase la manda a la TV, como en el control.
         case .voice: VoiceGuideView(hints: env.tvNow.hints, nowTitle: env.tvNow.now?.title) { phrase in sayFromSettings(phrase) }
-        case .advanced: self.page("Avanzado") { suggestions(model) }
+        case .diagnostics: self.page("Diagnóstico") { diagnostics(model) }
         case .learn: LearnView(tvTutorial: env.services.settingsEntries.orbital && model.settings.orbitalEnabled ? { orbitalSetup = .tutorial } : nil)
         }
     }
@@ -290,7 +292,7 @@ struct SettingsView: View {
         if env.services.settingsEntries.realDebrid {   // edición: solo con `settingsEntries.realDebrid`
             if debrid.model.hasToken { parts.append(debrid.model.service.name) } else { missing.append(debrid.model.service.name) }
         }
-        if env.services.orbital.isConfigured { parts.append("Orbital") }
+        if env.services.settingsEntries.orbital, env.services.orbital.isConfigured { parts.append("Orbital") }   // PA5-A: solo el iPhone
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         let names = parts.joined(separator: ", ")
         return missing.isEmpty ? Text("Conectado a \(names)") : Text("Conectado a \(names) · falta \(missing.joined(separator: ", "))")
@@ -419,19 +421,6 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder private func suggestions(_ model: SettingsModel) -> some View {
-        let s = model.settings
-        Section {
-            SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
-            if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
-        } footer: {
-            env.services.usesBuiltInTMDBKey
-                ? Text("Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.")
-                : Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.")
-        }
-        .listRowBackground(DS.surface)
-    }
-
     @ViewBuilder var languageOptions: some View {
         (Text("\(Text.flag("es"))\(Text("Español"))")).tag("es"); (Text("\(Text.flag("en"))\(Text("English"))")).tag("en")
     }
@@ -478,7 +467,7 @@ struct SettingsView: View {
 
     /// «Último scrobble»: lo último que se le contó a Trakt (o por qué no se pudo), para comprobarlo en trakt.tv › Historial.
     @ViewBuilder
-    private func scrobbleRow(_ model: SettingsModel) -> some View {
+    func scrobbleRow(_ model: SettingsModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text("Último scrobble").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             if let last = model.scrobble.last {

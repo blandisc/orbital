@@ -185,3 +185,18 @@ test("R2: la serie que sigues en Trakt sale en «A continuación» aunque haya m
   // los juegos de siempre siguen primero, por lo último que usaste
   assert.deepEqual(queue.slice(0, 5), ["hades", "mario", "pikmin", "hollow", "emerald"]);
 });
+
+test("un título sin póster toma uno de los tintes de la app, siempre el mismo, con la cuenta del iPhone (23 nov)", async () => {
+  const { titleTint, TITLE_TINTS } = await import("../../orbital/web/js/core/home.js");
+  // Los mismos que da `DS.Poster.missingHue` del iPhone para esos títulos.
+  assert.equal(titleTint("Matrix"), "library");
+  assert.equal(titleTint("Los Simpson"), "series");
+  assert.equal(titleTint("Ñandú 🎬"), "bookmark");
+  assert.equal(titleTint("Matrix"), titleTint("Matrix")); // siempre el mismo
+  assert.equal(new Set(["Dune", "Matrix", "Coco", "Alien", "Heat", "Up", "Her", "Big"].map(titleTint)).size > 2, true); // no todos iguales
+  assert.deepEqual(TITLE_TINTS, ["spark", "series", "calendar", "trend", "bookmark", "library"]);
+  // Cada tinte tiene su color en card.css (con su token del tema).
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../../orbital/web/styles/components/card.css", import.meta.url), "utf8");
+  for (const name of TITLE_TINTS) assert.ok(css.includes(`.card[data-tint="${name}"] { --fill: var(--tint-${name}); }`), name);
+});

@@ -91,6 +91,18 @@ export const stageKind = (item) => (weakHero(item) && realCover(item) ? "case" :
 /** Variable CSS del color de su consola (el punto y el brillo de la tarjeta). */
 export const systemColor = (system) => `var(--system-${system && /^[\w-]+$/.test(system) ? system : "default"}, var(--system-default))`;
 
+/** Los tintes de la app que puede tomar un título sin póster, en el orden del iPhone (`DS.Poster.missingHues`). */
+export const TITLE_TINTS = ["spark", "series", "calendar", "trend", "bookmark", "library"];
+
+/** El tinte de un título sin póster (su nombre: «library», «spark»…): uno de los de la app, siempre el mismo para el mismo título (23 nov 2026: «un fondo más
+ *  bonito… cuando hacemos búsquedas y encontramos cosas raras»). La misma cuenta que `DS.Poster.missingHue` del iPhone, así
+ *  el mismo título sale del mismo color en la TV y en el iPhone. */
+export function titleTint(title) {
+  let sum = 0;
+  for (const ch of String(title || "")) sum = (sum * 31 + ch.codePointAt(0)) & 0xFFFF;
+  return TITLE_TINTS[sum % TITLE_TINTS.length]; // card.css lo vuelve color: .card--no-art[data-tint=…]
+}
+
 /**
  * El color de su plataforma, para su ícono («Switch», «Steam», «Película»): se reconoce de un vistazo sin leer. Los videos
  * llevan el de streaming; lo que no tiene plataforma conocida, ninguno (null: el ícono queda en gris).

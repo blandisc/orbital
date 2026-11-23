@@ -23,6 +23,7 @@ export const SETTING_VALUES = {
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   rd_auto_request: [[true, "Sí"], [false, "No"]],
+  scare_marks: [[true, "Sí"], [false, "No"]],
   internet_subtitles: [[true, "Sí"], [false, "No"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
@@ -67,7 +68,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "cloudDownload", internet_subtitles: "captions",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "cloudDownload", internet_subtitles: "captions", scare_marks: "warning",
   game_mode: "memory", game_resolution: "hd",
 };
 
@@ -80,6 +81,7 @@ const SETTING_TEXT = {
   internet_subtitles: ["Buscar subtítulos en internet", "Si el video no los trae en tu idioma, se buscan en OpenSubtitles. Viene con Orbital."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
+  scare_marks: ["Marcar los sustos en la barra", "Los sustos de la película (Where's The Jump) como puntos en la barra. Vale desde el siguiente video."],
   rd_auto_request: ["Pedir solo el siguiente episodio", "Si todavía no está en la nube, se lo pide unos minutos antes de que acabe el que ves."],
   game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
   close_previous: ["Abrir algo nuevo cierra lo anterior", "Así no se quedan dos juegos o videos abiertos gastando memoria."],
@@ -197,14 +199,19 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
 export const footerHelp = (o) => (o?.help && o.help !== o.hint && o.help !== o.label ? o.help : "");
 
 /** Las categorías de Ajustes, en el riel (pantalla `settings`). */
+// PA1-A (Fernando, 23 nov 2026: «Vamos con P1, construirlo»): el mismo esqueleto que Ajustes del iPhone, el iPad y la Mac.
+// Primero lo que se usa en las dos apps y en el mismo orden (Idiomas · Reproducción · Avisos · Cuentas · Complementos);
+// después lo de esta consola. «Ver» se partió en «Idiomas» y «Reproducción».
 export const SETTINGS_CATEGORIES = [
   { id: "summary", title: "Resumen", icon: "check" },
-  { id: "watch", title: "Ver", icon: "play" },
+  { id: "languages", title: "Idiomas", icon: "captions" },
+  { id: "playback", title: "Reproducción", icon: "play" },
+  { id: "alerts", title: "Avisos", icon: "bell" },
+  { id: "accounts", title: "Cuentas", icon: "account" },
   { id: "addons", title: "Complementos", icon: "addon" },
   { id: "play", title: "Jugar", icon: "gamepad" },
   { id: "voice", title: "Tele y voz", icon: "tv" },
   { id: "display", title: "Pantalla y sonido", icon: "display" },
-  { id: "accounts", title: "Cuentas", icon: "account" },
   { id: "system", title: "Sistema", icon: "wrench" },
 ];
 
@@ -216,7 +223,9 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
       const n = settingsMissing(settings, { voice, now }).length;
       return n ? `${n} ${n === 1 ? "cosa" : "cosas"} por hacer` : "Todo listo";
     }
-    case "watch": return `${langName((settings.languages || [])[0] || settings.audio)} · ${settingLabel("quality", settings.quality)}`;
+    case "languages": return langName((settings.languages || [])[0] || settings.audio) || "Tus idiomas";
+    case "playback": return `Calidad ${settingLabel("quality", settings.quality)}`;
+    case "alerts": return settings.trakt?.linked ? "Las series que sigues" : "Con Trakt";
     case "addons": return addonsMeta(settings.addons);
     // Corto, para que quepa entero en el riel (revisión 2, 15: «En pausa, se cierran en 1 ho…»).
     case "play": return settings.game_idle_minutes ? `Se cierran tras ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "No se cierran solos";
@@ -240,15 +249,24 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   settings ??= {};
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
-    case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      // Lo de idiomas y subtítulos junto y arriba (Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»).
-      { heading: true, label: "Idiomas y subtítulos" },
+    // Idiomas y subtítulos juntos (Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»), en el orden
+    // de Ajustes › Idiomas del iPhone: lo que oyes, los subtítulos y su letra, lo que recuerda cada título.
+    case "languages": return { title: "Idiomas", lead: "En qué idioma oyes y lees las películas y series.", options: [
       { icon: "sound", label: "Tus idiomas", value: languagesLine(settings.languages), help: LANGUAGES_LEAD,
         command: { type: "languages" } },
       row("subtitles"), row("internet_subtitles"), row("sub_scale"),
-      { heading: true, label: "Imagen y reproducción" },
-      row("quality"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
+    ] };
+    case "playback": return { title: "Reproducción", lead: "Cómo se ven y se cierran los videos.", options: [
+      row("quality"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"), row("scare_marks"),
+    ] };
+    case "alerts": return { title: "Avisos", lead: "Lo nuevo de tus series sale en Inicio y en «Lo nuevo de lo tuyo».", options: [
+      settings.trakt?.linked
+        ? { icon: "bell", label: "Series que sigues", hint: "Elige de cuáles quieres saber cuando salga algo",
+          help: "Apagada, una serie ya no sale en tus estrenos ni en Lo nuevo de lo tuyo. Lo que viste se queda.",
+          command: { type: "followed-series" } }
+        : { icon: "link", mark: "img/ratings/trakt.svg", label: "Conectar Trakt", hint: "Para elegir qué series sigues",
+          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
       row("game_idle_minutes"), row("close_previous"), row("game_mode"), row("game_resolution"),
@@ -557,6 +575,19 @@ export function rememberedMenu(titles = []) {
     options: titles.length
       ? titles.map((t) => ({ icon: "play", label: t.title, value: t.line, command: { type: "remembered-forget", id: t.id, title: t.title } }))
       : [{ icon: "info", label: "Ningún título recuerda nada todavía", hint: "Se llena al elegir audio o subtítulos viendo algo", inert: true }],
+  };
+}
+
+/** Ajustes › Avisos › «Series que sigues» (PA1-A, como el iPhone): cada serie que viste, con su campana. A la cambia. */
+export function followedMenu(series = []) {
+  return {
+    title: "Series que sigues",
+    subtitle: "Apagada, ya no sale en tus estrenos ni en Lo nuevo de lo tuyo. Lo que viste se queda.",
+    options: series.length
+      ? series.map((s) => ({ icon: s.following ? "bell" : "bellOff", label: s.title, hint: s.year ? String(s.year) : undefined,
+        value: s.following ? "Sí" : "No", ok: !!s.following,
+        command: { type: "followed-toggle", id: s.id, title: s.title, following: !!s.following } }))
+      : [{ icon: "info", label: "Todavía no has visto series en Trakt", hint: "Se llena al ver una serie", inert: true }],
   };
 }
 

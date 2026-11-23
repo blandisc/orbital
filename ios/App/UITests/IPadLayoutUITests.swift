@@ -73,7 +73,7 @@ final class IPadLayoutUITests: XCTestCase {
         shot("ficha-h")
     }
 
-    /// «¿Qué vemos?» es una tarjeta de su alto (antes salía cortada a ~70 pt) y el control abre completo.
+    /// «¿Qué vemos?» es una tarjeta de su alto (antes salía cortada a ~70 pt).
     func testSheetsAreFullSizeCards() {
         open(["-demo-tab", "1", "-demo-open", "decide"], .portrait)
         // «Afinar» va al pie de la tarjeta y sale siempre (con sugerencia o con «Nada con…» si un filtro guardado no deja opciones).
@@ -81,10 +81,6 @@ final class IPadLayoutUITests: XCTestCase {
         XCTAssertTrue(filters.waitForExistence(timeout: 40), "Decide por mí no enseña «Afinar»")
         XCTAssertTrue(filters.isHittable, "la tarjeta queda cortada: «Afinar» no se alcanza")
         shot("decidir-v")
-        open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
-        let type = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch
-        XCTAssertTrue(type.waitForExistence(timeout: 30), "el control no abre completo")
-        shot("control-h")
     }
 
     /// Tocar una serie o película abre su ficha en el panel de la derecha (de pie y acostado): lo de atrás sigue a la vista
@@ -99,20 +95,49 @@ final class IPadLayoutUITests: XCTestCase {
         }
     }
 
-    /// El control en horizontal es un panel fijo a la derecha (se navega a la vez); de pie, la tarjeta de siempre.
-    func testRemoteIsAPanelWhenWideAndACardWhenNarrow() {
+    /// PA5-A (Fernando, 23 nov 2026: «El iPad no se conecta a la TV»): ni el control (antes un panel a la derecha, CT2) ni
+    /// nada de la TV en Ajustes; Ajustes abre con el esqueleto de la TV (PA1-A) y su Diagnóstico.
+    func testTheIPadHasNothingOfTheTV() {
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
-        let close = app.buttons["remote-panel-close"]
-        XCTAssertTrue(close.waitForExistence(timeout: 30), "en horizontal el control va en un panel con «Cerrar»")
-        let paraTi = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Explorar")).firstMatch
-        XCTAssertTrue(paraTi.isHittable, "con el panel abierto se sigue navegando")
-        close.tap()
-        XCTAssertFalse(close.waitForExistence(timeout: 3), "«Cerrar» cierra el panel")
-        open(["-demo-tv-now", "-demo-open", "remote"], .portrait)
-        let pause = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch
-        XCTAssertTrue(pause.waitForExistence(timeout: 30), "de pie el control abre completo")
-        XCTAssertFalse(app.buttons["remote-panel-close"].exists, "de pie es tarjeta, no panel")
-        shot("control-v")
+        let inicio = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Inicio")).firstMatch
+        XCTAssertTrue(inicio.waitForExistence(timeout: 30), "la app abre")
+        sleep(3)
+        XCTAssertFalse(app.buttons["remote-panel-close"].exists, "sin el panel del control")
+        let type = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch
+        XCTAssertFalse(type.exists, "sin el control de la TV")
+        open(["-demo-open", "settings"], .portrait)
+        let languages = app.descendants(matching: .any)["settings-languages"]
+        XCTAssertTrue(languages.waitForExistence(timeout: 30), "Ajustes abre")
+        XCTAssertFalse(app.descendants(matching: .any)["settings-orbital"].exists, "sin «Usar con tu Orbital»")
+        XCTAssertFalse(app.staticTexts["Tu Orbital"].exists, "sin «Tu Orbital»")
+        let diagnostics = app.descendants(matching: .any)["settings-diagnostics"]
+        XCTAssertTrue(diagnostics.waitForExistence(timeout: 5), "Diagnóstico en Ajustes")
+        diagnostics.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["diagnostics-trakt"].waitForExistence(timeout: 10), "Diagnóstico abre con Trakt")
+        XCTAssertFalse(app.descendants(matching: .any)["diagnostics-tv"].exists, "Diagnóstico sin la TV en el iPad")
+        shot("diagnostico-v")
+    }
+
+    /// PA7-A: las pestañas de la ficha dicen lo mismo que el iPhone y la TV, caben enteras (con su nombre) y cada una abre.
+    func testTitleTabsUseTheSameNames() throws {
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            open(["-demo-tmdb", "-demo-title", "series:tt0386676"], orientation)
+            let tabs = app.descendants(matching: .any)["title-tabs"]
+            XCTAssertTrue(tabs.waitForExistence(timeout: 30), "\(orientation.rawValue): sin pestañas")
+            for _ in 0..<4 where !tabs.isHittable { app.swipeUp() }
+            // Sin clave de TMDB (el simulador de la Mac) la demo no trae reparto ni parecidas: solo Episodios y Detalles.
+            let cast = app.buttons.matching(NSPredicate(format: "label == %@", "Reparto y equipo")).firstMatch
+            if !cast.waitForExistence(timeout: 10) { throw XCTSkip("la demo no trae reparto ni parecidas (sin clave de TMDB)") }
+            for name in ["Episodios", "Reparto y equipo", "Más como esto", "Detalles"] {
+                let tab = app.buttons.matching(NSPredicate(format: "label == %@", name)).firstMatch
+                XCTAssertTrue(tab.waitForExistence(timeout: 10), "\(orientation.rawValue): falta «\(name)»")
+                XCTAssertTrue(tab.isHittable, "\(orientation.rawValue): «\(name)» no se alcanza")
+                XCTAssertGreaterThanOrEqual(tab.frame.minX, 0); XCTAssertLessThanOrEqual(tab.frame.maxX, app.frame.width, "«\(name)» cortada")
+                tab.tap()
+            }
+            XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "Reparto", "Parecidas")).firstMatch.exists, "sin los nombres cortos")
+            shot("ficha-pestanas-\(orientation == .portrait ? "v" : "h")")
+        }
     }
 
     /// Capturas derechas en horizontal: XCUITest las da giradas, así que la prueba avisa (`ready_<nombre>`) y un guion aparte
@@ -124,7 +149,7 @@ final class IPadLayoutUITests: XCTestCase {
             ("reproductor-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play"]),
             ("subtitulos-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play", "-demo-player", "dock"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
             ("ficha", ["-demo-tmdb", "-demo-title", "series:tt0386676"]), ("buscar", ["-demo-tab", "2"]),
-            ("descargas", ["-demo-tab", "3", "-demo-downloads"]), ("control", ["-demo-tv-now", "-demo-open", "remote"]),
+            ("descargas", ["-demo-tab", "3", "-demo-downloads"]),
             ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
             ("reproductor", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("ajustes", ["-demo-open", "settings"]),
             // Las pantallas que llegaron después del 29 oct (Inicio nuevo, el mazo, Lo que ves, Colecciones, la consola).

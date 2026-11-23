@@ -55,7 +55,7 @@ class StreamFinder:
         # tracks(key) -> las pistas de audio que mpv vio al reproducir esa fuente, o None.
         self.facts: Callable[[str, str], dict | None] = lambda kind, video_id: None
         self.tracks: Callable[[str], list[dict] | None] = lambda key: None
-        # Ajustes › Ver › «Buscar subtítulos en internet»: OpenSubtitles viene con Orbital, ya no es complemento (3 nov 2026).
+        # Ajustes › Idiomas › «Buscar subtítulos en internet»: OpenSubtitles viene con Orbital, ya no es complemento (3 nov 2026).
         self.internet_subtitles: Callable[[], bool] = lambda: True
         # La API oficial de OpenSubtitles (con la clave de la app): muchos más; el complemento queda de respaldo. La pone Watch.
         self.opensubtitles: opensubtitles.OpenSubtitles | None = None
@@ -103,7 +103,7 @@ class StreamFinder:
         return urls
 
     def subtitle_options(self, kind: str, video_id: str, fingerprint: tuple[str, int] | None = None) -> list[dict] | None:
-        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (si está prendido en Ajustes › Ver, como el iPhone), con la copia
+        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (si está prendido en Ajustes › Idiomas, como el iPhone), con la copia
         para la que se hicieron y sus descargas. Con la huella del archivo, los de tu copia exacta salen primero. None si
         nadie contestó (sin internet): así «no hay» y «sin conexión» no se confunden."""
         # OpenSubtitles viene con Orbital: el de la lista o el traído de Stremio no se pregunta dos veces.

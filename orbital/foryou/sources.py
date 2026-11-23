@@ -230,13 +230,14 @@ class _Sources(_Mine):
                            overview=d["overview"], seasons=d.get("seasons"))
                 for d in details if d and d.get("imdb") and d.get("title")]
 
-    def _tmdb_items(self, rows: list[dict], kind: str, why: str, limit: int = 20) -> list[dict]:
-        """Filas de TMDB (discover) → video_item con su IMDb (la ficha y el reproductor lo necesitan)."""
+    def _tmdb_items(self, rows: list[dict], kind: str, why: str, limit: int = 20, keep=None) -> list[dict]:
+        """Filas de TMDB (discover) → video_item con su IMDb (la ficha y el reproductor lo necesitan). `keep(ficha)`: solo
+        las que pasan (el «Tiempo» de una serie se mide con su ficha)."""
         details = pools.DETAILS.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows[:limit], at_most=6)
         _mark_partial(len(details), sum(1 for d in details if d is None))
         return [video_item(d, why, title=d["title"], poster=d["poster"], wide=d["backdrop"], overview=d["overview"],
                            seasons=d.get("seasons"))
-                for d in details if d and d.get("imdb") and d.get("title")]
+                for d in details if d and d.get("imdb") and d.get("title") and (keep is None or keep(d))]
 
     def _fresh(self, kind: str) -> list[dict]:
         """«Nuevo en tus plataformas»: lo nuevo de Netflix, Disney+ y HBO Max, alternados (como el iPhone)."""

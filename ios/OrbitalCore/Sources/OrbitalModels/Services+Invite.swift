@@ -2,9 +2,9 @@ import Foundation
 import OrbitalCore
 import OrbitalAddons
 
-/// CX4-A, CX5, CX7-A, CX8-A y TEC-30: el nombre de este aparato al conectar, la invitación de tu iPhone para tu iPad, quién
-/// puede quitar a quién, «Darle su propia conexión» y «Tu TV es nueva». La Mac nunca habla con tu TV (CX1-B): todo esto se
-/// apaga con `capabilities.console`.
+/// CX5, CX7-A, CX8-A y TEC-30: el nombre de este aparato al conectar, quién puede quitar a quién, «Darle su propia conexión» y
+/// «Tu TV es nueva». Solo el iPhone habla con tu TV (CX1-B, PA5-A): todo esto se apaga con `capabilities.console`. La
+/// invitación de tu iPhone para tu iPad (CX4-A) se quitó el 23 nov 2026 (PA5-A: el iPad no se conecta a la TV).
 extension Services {
     nonisolated static let deviceNameKey = "orbital.device-name"
     static let tvNameKey = "orbital.tv-name"
@@ -78,59 +78,4 @@ extension Services {
         try adopt(paired)
         try await connectOrbital(address: nil, token: nil)
     }
-
-    // MARK: CX4-A · la invitación de tu iPhone para tu iPad
-
-    /// La invitación que llegó por el llavero de iCloud (vencida o no): solo en un iPad que todavía no está conectado.
-    public var pendingInvite: OrbitalInvite? {
-        guard capabilities.console, platform == "ipad", !hasOrbitalDeviceKey else { return nil }
-        return OrbitalInvite.decode(secrets.get(SecretKey.orbitalInvite))
-    }
-
-    static let inviteShownKey = "orbital.invite-shown"
-
-    /// IOS-10 · al abrir la app en el iPad con una invitación vigente: true una sola vez por invitación (la app abre Ajustes,
-    /// donde la tarjeta va primero). Así «La invitación sale al abrir Orbital en el iPad» es verdad.
-    public func takeInviteToShow() -> Bool {
-        guard let invite = pendingInvite, invite.isValid(at: now()) else { return false }
-        let mark = Data(String(invite.expires.timeIntervalSince1970).utf8)
-        guard kv.data(Self.inviteShownKey) != mark else { return false }
-        kv.set(Self.inviteShownKey, data: mark)
-        return true
-    }
-
-    /// «Conectar tu iPad» solo en un iPhone conectado con su propia conexión.
-    public var canInviteIPad: Bool { platform == "iphone" && canShareKeysWithTV }
-
-    /// La invitación que dejó este iPhone (si sigue).
-    public var myInvite: OrbitalInvite? { platform == "iphone" ? OrbitalInvite.decode(secrets.get(SecretKey.orbitalInvite)) : nil }
-
-    /// Pide a la TV una invitación (7 días, un aparato) y la deja en el llavero de iCloud para tu iPad.
-    @discardableResult
-    public func inviteIPad() async throws -> OrbitalInvite {
-        guard canInviteIPad, let base = orbital.base else { throw OrbitalRemote.Failure.notConfigured }
-        let got = try await orbital.invite(platform: "ipad")
-        let invite = OrbitalInvite(code: got.code, expires: got.expires, address: base.absoluteString, tvName: tvName,
-                                   tvID: secrets.get(SecretKey.orbitalTVID) ?? "", from: suggestedDeviceName())
-        guard secrets.store(SecretKey.orbitalInvite, invite.encoded) else { throw OrbitalRemote.Failure.refused(Self.keychainLine) }
-        changed()
-        return invite
-    }
-
-    /// TEC-16 · al abrir: si la invitación de este iPhone va por la mitad (o venció), se renueva sola.
-    public func renewInviteIfNeeded() async {
-        guard let mine = myInvite, mine.needsRenewal(at: now()), canInviteIPad else { return }
-        _ = try? await inviteIPad()
-    }
-
-    /// «Conectar» en el iPad: se canjea la invitación con su propio nombre; ya usada, se borra de iCloud (sirve para uno).
-    public func acceptInvite(name: String?) async throws {
-        guard let invite = pendingInvite else { throw OrbitalRemote.Failure.notConfigured }
-        guard invite.isValid(at: now()) else { throw OrbitalRemote.Failure.refused(Self.inviteExpiredLine) }
-        do { try await pairOrbital(address: invite.address, code: invite.code, name: name) }
-        catch OrbitalRemote.Failure.refused(let why) where why == "Este código ya no sirve" { throw OrbitalRemote.Failure.refused(Self.inviteExpiredLine) }
-        secrets.set(SecretKey.orbitalInvite, nil)
-        changed()
-    }
-    public static let inviteExpiredLine = "Esta invitación ya no sirve. Abre Orbital en tu iPhone o escanea el código de tu TV."
 }

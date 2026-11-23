@@ -289,47 +289,6 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertFalse(cloud.get(SecretKey.sharedRealDebrid)?.contains(fer1) ?? true, "en iCloud solo la huella, nunca la clave")
     }
 
-    // MARK: CX4-A · la invitación
-
-    func testIPhoneInvitesAndTheIPadJoinsWithOneTapAndItsOwnName() async throws {
-        let cloud = InMemorySecrets(), house = FakeHouse()
-        let (iphone, _, _) = rig("iphone", house: house, shared: cloud, key: FakeHouse.key, displayName: "Fernando Iracheta")
-        try await iphone.connectOrbital()
-        XCTAssertTrue(iphone.canInviteIPad)
-        let invite = try await iphone.inviteIPad()
-        XCTAssertEqual(JSON.parse(try XCTUnwrap(house.last("/api/devices/invite")?.body))?["platform"]?.string, "ipad")
-        XCTAssertEqual(invite.from, "iPhone de Fernando")
-        XCTAssertFalse(invite.description.contains("INVITECODE"))
-
-        let (ipad, iLocal, _) = rig("ipad", house: house, shared: cloud)
-        let model = OrbitalInviteModel(ipad)
-        XCTAssertTrue(model.inviteIsValid)
-        model.name = "iPad de la sala"
-        await model.accept()
-        XCTAssertEqual(model.state, .joined)
-        let pair = try XCTUnwrap(JSON.parse(try XCTUnwrap(house.last("/api/devices/pair")?.body)))
-        XCTAssertEqual(pair["code"]?.string, "INVITECODE"); XCTAssertEqual(pair["platform"]?.string, "ipad"); XCTAssertEqual(pair["name"]?.string, "iPad de la sala")
-        XCTAssertEqual(iLocal.get(SecretKey.orbitalDeviceKey), FakeHouse.key)
-        XCTAssertNil(cloud.get(SecretKey.orbitalInvite), "sirve para un aparato")
-        XCTAssertNil(ipad.pendingInvite)
-    }
-
-    func testAnExpiredInviteSaysSoAndTheMacNeverSeesOne() async {
-        let cloud = InMemorySecrets()
-        cloud.set(SecretKey.orbitalInvite, OrbitalInvite(code: "OLD", expires: Date().addingTimeInterval(-60), address: "https://tv.example",
-                                                         tvName: "Sala", tvID: "TV-1", from: "iPhone").encoded)
-        let (ipad, _, house) = rig("ipad", shared: cloud)
-        let model = OrbitalInviteModel(ipad)
-        XCTAssertNotNil(model.invite); XCTAssertFalse(model.inviteIsValid)
-        await model.accept()
-        XCTAssertEqual(model.state, .failed(Services.inviteExpiredLine))
-        XCTAssertNil(house.last("/api/devices/pair"))
-        let (mac, _, _) = rig("mac", shared: cloud, allows: false)
-        XCTAssertNil(mac.pendingInvite)
-        let (iphone, _, _) = rig("iphone", shared: cloud)
-        XCTAssertNil(iphone.pendingInvite, "la tarjeta es solo del iPad")
-    }
-
     // MARK: CX5 · quién quita a quién
 
     func testTheIPhoneRemovesAnyoneAndTheIPadOnlyItself() async {
@@ -420,12 +379,10 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
 
     func testTheMacNeverTalksToTheTVEvenWithEverythingInItsKeychain() async throws {
         let cloud = InMemorySecrets()
-        cloud.set(SecretKey.orbitalInvite, OrbitalInvite(code: "C", expires: Date().addingTimeInterval(3600), address: "https://tv.example",
-                                                         tvName: "Sala", tvID: "", from: "iPhone").encoded)
         let (mac, _, house) = rig("mac", shared: cloud, token: "TOKEN", key: FakeHouse.key, allows: false)
         XCTAssertFalse(mac.orbital.isConfigured)
         XCTAssertFalse(mac.hasOrbitalDeviceKey); XCTAssertFalse(mac.canShareKeysWithTV); XCTAssertFalse(mac.canUpgradeConnection)
-        XCTAssertFalse(mac.canInviteIPad); XCTAssertNil(mac.pendingInvite); XCTAssertFalse(mac.orbitalNeedsRescan)
+        XCTAssertFalse(mac.orbitalNeedsRescan)
         _ = try await mac.connectOrbital(address: "tv.example", token: "T")
         _ = try await mac.pairOrbital(address: "tv.example", code: String(repeating: "c", count: 43))
         XCTAssertEqual(house.count, 0, "ni una petición a la TV")

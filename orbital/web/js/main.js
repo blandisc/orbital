@@ -146,6 +146,7 @@ const ui = {
     // Un género (caja vacía, P4): su lista completa, en lugar de la búsqueda.
     onOpen: (result) => (result.source === "genre" ? (ui.search.close(), openGenre(result))
       : isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
+    onAdvanced: () => openFilter(), // PA3-A: la búsqueda avanzada, también desde Buscar
     localSearch: (query) => searchLibrary(state.allRows, query),
     // T7: con la caja vacía, también lo que jugaste (A continuación y favoritos), sin repetir.
     played: () => {
@@ -307,7 +308,8 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
-  // El filtro avanzado (como el del iPhone): formato, género, época, calificación, fama, dónde verla y país.
+  // La búsqueda avanzada (como la del iPhone, PA3-A): formato, género, tiempo, época, calificación, fama, dónde verla, país y
+  // «Ocultar lo que ya vi». Se abre desde Buscar y desde los botones de Películas y series.
   filter: createFilterPanel({
     preview: (f) => api.forYouFilter(f, false), // FA-1: cuántos y los primeros, en vivo
     onResults: (f, label) => openFilterResults(f, label),
@@ -1079,7 +1081,7 @@ const MEDIA_TOOLS = [
   { id: "decide", icon: "dice", label: "Decide por mí", command: { type: "decide" } },
   { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
   { id: "collections", icon: "stack", label: "Colecciones", command: { type: "collections" } }, // PS-3: pilas, no el trofeo
-  { id: "filter", icon: "sliders", label: "Filtro avanzado", command: { type: "filter" } },
+  { id: "filter", icon: "sliders", label: "Búsqueda avanzada", command: { type: "filter" } },
 ];
 const kindStops = () => MEDIA_KINDS.length + MEDIA_TOOLS.length; // las pestañas y luego los íconos
 /** Lo que hace A donde está el foco de arriba: la pestaña («Mostrar») o el nombre del ícono. */

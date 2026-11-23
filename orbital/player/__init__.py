@@ -160,6 +160,7 @@ class OrbitalPlayer(_Tracks):
         self.logo_provider = None  # (meta) -> PNG del logo del título (en pausa, el título estilizado) | None
         self.still_provider = None  # (url, ancho en px) -> la imagen del cuadro del episodio («Siguiente episodio») | None
         self.on_tracks = None  # (meta, track-list) -> aviso si no trae tu idioma (y lo recuerda: «Comprobado»)
+        self.scares_provider = None  # (meta) -> [(segundo, fuerte, qué pasa)]: los sustos de la película (PA7-B); None: apagado
         self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente

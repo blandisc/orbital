@@ -35,15 +35,13 @@ public enum SecretKey {
     public static let sharedRealDebrid = AddonKeys.sharedRealDebridToken
     /// CX2-A · la última copia compartida que este aparato ya decidió (para no preguntar dos veces). Solo de este aparato.
     public static let sharedRealDebridSeen = AddonKeys.sharedRealDebridSeen
-    /// CX4-A · la invitación de tu iPhone para conectar tu iPad (llavero de iCloud): la TV, su dirección y un código de un uso.
-    public static let orbitalInvite = "orbital_invite"
     /// Tu cuenta de OpenSubtitles (usuario, token y cuota; nunca la contraseña): solo de este aparato.
     public static let openSubtitlesAccount = "opensubtitles_account"
 
     /// TEC-5 · lo ÚNICO que viaja por el llavero de iCloud. Todo lo demás (la llave de este aparato, el token del túnel,
     /// Trakt, OneDrive, las direcciones de complementos, tu clave local de Real-Debrid) se queda en este aparato.
     /// `SecretPolicyTests` falla si esta lista cambia sin que se note.
-    public static let synchronizable: Set<String> = [sharedRealDebrid, orbitalInvite]
+    public static let synchronizable: Set<String> = [sharedRealDebrid]   // la invitación del iPad se quitó con PA5-A
 
     public static func policy(_ key: String) -> SecretPolicy { synchronizable.contains(key) ? .shared : .thisDevice }
 }
@@ -88,7 +86,7 @@ public struct KeychainCalls: Sendable {
 }
 
 /// Keychain de iOS: los secretos no salen del teléfono ni entran en copias de seguridad sin cifrar. Solo los de
-/// `SecretKey.synchronizable` viajan por el llavero de iCloud (CX2-A, CX4-A).
+/// `SecretKey.synchronizable` viajan por el llavero de iCloud (CX2-A).
 public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
     private let service: String
     private let calls: KeychainCalls

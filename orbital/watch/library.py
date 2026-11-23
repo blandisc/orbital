@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from ..atomic import atomic_write
 from ..library import cinemeta, stremio_api
+from ..library import trakt as trakt_api
 from ..library.models import LibraryItem
 from .base import STREMIO_KEY, STREMIO_STALE_SECONDS, _Base
 from .items import enrich_watch_item, returning_item, stremio_item
@@ -21,6 +22,9 @@ _CACHE_LOCK = threading.Lock()
 
 
 RETRY_SECONDS = 1.5  # Cinemeta: espera antes del segundo intento
+# «Quitada de Seguir viendo · Deshacer»: Trakt borra tu avance hasta que el aviso se fue (el aviso dura 8 s, UNDO_MS de
+# main.js; un poco más por si el «Deshacer» llega tarde por la red).
+DISMISS_UNDO_SECONDS = 10.0
 
 
 class _Library(_Base):
@@ -179,17 +183,65 @@ class _Library(_Base):
                     except (TypeError, ValueError, AttributeError) as exc:  # una ficha rara no tumba al resto
                         log.warning("Cinemeta: ficha rara de %s (%s)", item.title, exc)
 
-    def dismiss_continue(self, meta_id: str) -> None:
+    def dismiss_continue(self, meta_id: str, later: bool = False) -> None:
         """"Quitar de Seguir viendo": borra tu avance en Trakt (desaparece también en el iPhone) y en tu cuenta de
-        Stremio (desaparece también en Stremio)."""
+        Stremio (desaparece también en Stremio). Con `later` (el aviso «Quitada de Seguir viendo · Deshacer», 16 nov
+        2026, como el iPhone) sale ya de Seguir viendo, pero Trakt lo borra hasta que el aviso se fue (`undo_dismiss`)."""
         trakt = self.trakt_library.client()
         auth = self.credentials.get(STREMIO_KEY)
         if not auth and trakt is None:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
+        self._dismiss_due(meta_id)  # otro «Quitar» del mismo título que seguía esperando: ya va
+        before = self.state.prefs(f"stremio:{meta_id}").get("dismissed")
         # Una serie al día en Trakt no tiene avance que borrar: la consola recuerda cuándo la quitaste.
         self.state.set_pref(f"stremio:{meta_id}", "dismissed", time.time())
+        raw = self.stremio_client.library_item(auth, meta_id) if auth else None
+        if auth and raw:
+            back = next((i for i in self.stremio_items if i.extra.get("meta_id") == meta_id and i.extra.get("new_episode")), None)
+            self._save_stremio(
+                auth, stremio_api.dismissed(raw, time.time(), back.extra.get("video_id") if back else None))
+        if later and trakt is not None:
+            timer = threading.Timer(DISMISS_UNDO_SECONDS, self._dismiss_due, args=(meta_id,))
+            timer.daemon = True
+            self._dismissing[meta_id] = (timer, before, raw)
+            timer.start()
+            self._publish_videos()  # fuera de Seguir viendo ya, sin esperar a Trakt
+        else:
+            self._forget_progress(meta_id)
+        if auth:
+            self.refresh_stremio()
+        self.events.publish({"type": "library-changed"})
+
+    def undo_dismiss(self, meta_id: str) -> None:
+        """«Deshacer» del aviso: vuelve a Seguir viendo como estaba (Trakt nunca supo). LookupError si ya se borró."""
+        pending = self._dismissing.pop(meta_id, None)  # atómico: o lo toma el temporizador o el «Deshacer», nunca los dos
+        if pending is None:
+            raise LookupError("Ya lo quité de Trakt")
+        timer, before, raw = pending
+        timer.cancel()
+        self.state.set_pref(f"stremio:{meta_id}", "dismissed", before)
+        auth = self.credentials.get(STREMIO_KEY)
+        if auth and raw:
+            self._save_stremio(auth, {**raw, "_mtime": stremio_api._iso(time.time())})
+            self.refresh_stremio()
+        self._publish_videos()
+
+    def _dismiss_due(self, meta_id: str) -> None:
+        """El aviso ya se fue: ahora sí se borra tu avance en Trakt."""
+        pending = self._dismissing.pop(meta_id, None)
+        if pending is None:
+            return
+        pending[0].cancel()
+        try:
+            self._forget_progress(meta_id)
+        except trakt_api.TraktError as exc:
+            log.warning("No pude borrar tu avance de %s en Trakt: %s", meta_id, exc)
+
+    def _forget_progress(self, meta_id: str) -> None:
+        """Lo que se borra de verdad: lo de un canal a medias y tu avance en Trakt."""
         if self.trakt_library.channel is not None:
             self.trakt_library.channel.dismiss(meta_id)  # V2: lo de un canal a medias tampoco se retoma
+        trakt = self.trakt_library.client()
         if trakt is not None:
             playback, _, _, _ = self.trakt_library.snapshot()
             for row in playback:
@@ -197,16 +249,6 @@ class _Library(_Base):
                     trakt.remove_playback(row["id"])
             self.trakt_library.forget("paused")
             self.refresh_trakt()
-        if not auth:
-            self.events.publish({"type": "library-changed"})
-            return
-        raw = self.stremio_client.library_item(auth, meta_id)
-        if raw:
-            back = next((i for i in self.stremio_items if i.extra.get("meta_id") == meta_id and i.extra.get("new_episode")), None)
-            self._save_stremio(
-                auth, stremio_api.dismissed(raw, time.time(), back.extra.get("video_id") if back else None))
-        self.refresh_stremio()
-        self.events.publish({"type": "library-changed"})
 
     def refresh_cinemeta(self, background: bool = False) -> bool:
         """Películas y series populares (catálogo público de Stremio; no necesita cuenta)."""

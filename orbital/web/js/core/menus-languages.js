@@ -1,10 +1,10 @@
 /**
- * Ajustes › Ver › Tus idiomas: la lista en orden y sus menús.
+ * Ajustes › Idiomas › Tus idiomas: la lista en orden y sus menús.
  * Parte de core/menus.js (que los vuelve a exportar todos): menús como datos, puros y probables.
  */
 import { flagFor } from "./flags.js";
 
-/** Ajustes › Ver › Tus idiomas (N4-A, Fernando 4 nov): una sola lista en orden; «Idioma original» es un renglón (el de cada
+/** Ajustes › Idiomas › Tus idiomas (N4-A, Fernando 4 nov): una sola lista en orden; «Idioma original» es un renglón (el de cada
  *  título). De ahí leen «Ver», «Versión», el reproductor y Torrentio. Por omisión: Latino, Idioma original, Inglés, Castellano. */
 export const LANGUAGE_NAMES = { "es-419": "Latino", "es-ES": "Castellano", original: "Idioma original", en: "Inglés", fr: "Francés",
   pt: "Portugués", it: "Italiano", de: "Alemán", ja: "Japonés", ko: "Coreano" };

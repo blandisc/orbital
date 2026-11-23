@@ -9,8 +9,8 @@ enum WideTab: Hashable {
     var title: Text {
         switch self {
         case .episodes: Text("Episodios")
-        case .cast: Text("Reparto")
-        case .similar: Text("Parecidas")
+        case .cast: Text("Reparto y equipo")   // PA7-A: el mismo nombre que el iPhone y la TV
+        case .similar: Text("Más como esto")
         case .details: Text("Detalles")
         }
     }
@@ -24,7 +24,7 @@ enum WideTab: Hashable {
         }
     }
 
-    /// Solo las que tienen algo: Episodios en las series, Reparto y Parecidas si TMDB los trae; Detalles siempre.
+    /// Solo las que tienen algo: Episodios en las series, Reparto y equipo y Más como esto si TMDB los trae; Detalles siempre.
     static func available(series: Bool, extras: TitleExtras?) -> [WideTab] {
         var tabs: [WideTab] = series ? [.episodes] : []
         if let extras, !(extras.crew + extras.cast).isEmpty { tabs.append(.cast) }

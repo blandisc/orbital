@@ -114,6 +114,15 @@ class _Mine(_Base):
         self.cache.clear("trakt:calendar")
         self.publish({"type": "foryou-changed"})
 
+    def followed_series(self) -> list[dict]:
+        """Ajustes › Avisos › «Series que sigues» (PA1-A, como el iPhone): todas las series que has visto en Trakt, cada una
+        con si la sigues. Apagada, ya no sale en tus estrenos ni en Lo nuevo de lo tuyo (lo mismo que la campana de la ficha)."""
+        if not self.trakt.linked:
+            raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para elegir qué series sigues.")
+        gone = self.unfollowed()
+        shows = self.cache.get("trakt:watched-shows", MINE_TTL, self.trakt.watched_shows)
+        return [{"id": s["imdb"], "title": s["title"], "year": s["year"], "following": s["imdb"] not in gone} for s in shows]
+
     def mark_watched(self, kind: str, imdb: str, video_id: str | None, when: str | float) -> None:
         """«¿Cuándo la viste?»: marca vista una película, un episodio o, sin episodio, la serie completa. `when`: «now»,
         «released» (el día que salió), «unknown» (no sabes cuándo) o un momento (segundos)."""
