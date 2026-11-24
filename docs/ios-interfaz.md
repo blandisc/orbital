@@ -1129,7 +1129,9 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
   `.onTabHidden`, y sus atajos de teclado van con `shownKeyboardShortcut`. Lo que antes se apagaba en `onDisappear` (cielo,
   vaivén, «a la vista» de Descargas, cursor de Buscar) se apaga también al esconderse. «Esta semana» no se relee si se armó
   hace menos de diez minutos (`RepisaModel.weeklyMaxAge`). `DesignRulesTests.testMacTabsStayBuilt` y
-  `RepisaWeeklyTests.testVolverAExplorarAlRatoNoVuelveACargar` lo vigilan.
+  `RepisaWeeklyTests.testVolverAExplorarAlRatoNoVuelveACargar` lo vigilan. Con una ficha abierta, el renglón de las
+  pestañas sigue tomando clics y cambiar de pestaña la cierra (antes el velo de la ficha se comía el primer clic: «le pico
+  a Inicio y no cambia»).
 - **Cómo se mide (y cómo no).** La velocidad se mide en la app instalada (Release, la cuenta de Fernando, su ventana) con
   `ios/scripts/medir-clics-mac.sh`, antes y después, la misma secuencia con la app recién abierta. No vale medir solo en Debug ni
   con la demostración (allí se «mejoraba» y en la Mac de Fernando se sentía igual). Tres números por clic: trabajo del hilo
@@ -1137,6 +1139,11 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
 - **Resultado (2495 → 2497, dos rondas cada una):** primera vez a Explorar, congelada 1.1–1.6 s → 0.6 s; cada cambio
   después, congelada 0.5–0.8 s → nada (10 de 10 sin congelarse) y quieta en 0.65–1.8 s → 0.35–0.7 s. Abrir una ficha no
   cambió (1.2–1.7 s de trabajo): sigue pendiente (el acomodo de los botones de la ficha, `SpreadRow`, y dibujarla entera).
+- **Lo que no sirvió (segunda vuelta, 23 nov 2026, medido igual, 2498 → 2500).** Sacar la pestaña, las pilas y la ficha
+  del estado de la raíz a cajas, medir la ficha redondeado y sin animación, acotar la animación del panel y no dejar armadas
+  las pestañas escondidas: ninguna bajó el trabajo por clic (abrir la ficha siguió en 0.9–1.1 s y ~45 acomodos de la raíz).
+  No se quedaron. Sí sirvió: el arte que respira a 4 pasos por segundo en vez de 20 (Inicio quieto: 15 % → 9 % del hilo
+  principal). Ojo al medir: los clics por accesibilidad (computer use) suman 10–20 % de trabajo que el mouse no.
 
 ### La receta de la ficha ancha (17 nov 2026)
 

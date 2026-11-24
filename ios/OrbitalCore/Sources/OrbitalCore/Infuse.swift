@@ -71,15 +71,19 @@ public enum Infuse {
 }
 
 extension CinemetaParsing {
+    /// Armadas una vez: se leía dentro de la ficha al pintarla y cada vez armaba las dos (~11 ms en la Mac, 23 nov 2026).
+    nonisolated(unsafe) private static let hoursPattern = try? NSRegularExpression(pattern: #"(\d+)\s*h"#)
+    nonisolated(unsafe) private static let minutesPattern = try? NSRegularExpression(pattern: #"(\d+)\s*m"#)
+
     /// «22 min», «2h 46min», «1 h 40 min» → segundos (0 si no se entiende).
     public static func runtimeSeconds(_ text: String) -> Double {
         let lower = text.lowercased()
-        func number(_ pattern: String) -> Double {
-            guard let r = try? NSRegularExpression(pattern: pattern), let m = r.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+        func number(_ r: NSRegularExpression?) -> Double {
+            guard let r, let m = r.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
                   let range = Range(m.range(at: 1), in: lower) else { return 0 }
             return Double(lower[range]) ?? 0
         }
-        let hours = number(#"(\d+)\s*h"#), minutes = number(#"(\d+)\s*m"#)
+        let hours = number(hoursPattern), minutes = number(minutesPattern)
         if hours == 0 && minutes == 0, let only = Double(lower.trimmingCharacters(in: .whitespaces)) { return only * 60 }
         return hours * 3600 + minutes * 60
     }

@@ -19,13 +19,21 @@ struct TabBarFirst: ViewModifier {
 struct SideTitle: ViewModifier {
     @Binding var item: TitleRoute?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.macTabs) private var tabs
+    static let space = "side-title"
     func body(content: Content) -> some View {
         // Con la ficha abierta, lo de atrás se ve pero no se toca: tampoco con VoiceOver o el teclado (el toque a «Guardar»
-        // le llegaba a «Decide por mí», que estaba detrás).
+        // le llegaba a «Decide por mí», que estaba detrás). Salvo el renglón de las pestañas: picar Inicio o Explorar cierra
+        // la ficha y cambia de pestaña en un solo clic (antes el velo se comía el primero).
         content.accessibilityHidden(item != nil).overlay(alignment: .trailing) {
             if let route = item {
                 ZStack(alignment: .trailing) {
-                    DS.scrim.ignoresSafeArea().onTapGesture { item = nil }.accessibilityHidden(true)
+                    DS.scrim.ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+                    VStack(spacing: 0) {   // ds-exception: el hueco del renglón de pestañas va pegado a lo que cierra la ficha
+                        Color.clear.frame(height: tabs?.stripBottom ?? 0).allowsHitTesting(false)
+                        Color.clear.contentShape(Rectangle()).onTapGesture { item = nil }
+                    }
+                    .accessibilityHidden(true)
                     TitlePanel(route: route, close: { item = nil })
                         .frame(width: DS.TitleAction.sidePanelWidth)
                         .background(DS.backdropDeep.ignoresSafeArea())
@@ -34,6 +42,8 @@ struct SideTitle: ViewModifier {
                 }
             }
         }
+        .coordinateSpace(.named(Self.space))
         .animation(DS.Motion.spring(reduceMotion), value: item)
+        .onChange(of: tabs?.current) { if item != nil { item = nil } }   // otra pestaña: la ficha se cierra
     }
 }

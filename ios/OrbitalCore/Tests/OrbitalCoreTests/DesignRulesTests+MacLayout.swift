@@ -72,6 +72,14 @@ extension DesignRulesTests {
             XCTAssertTrue(try code(name).contains(".onTabHidden {"), "\(name): en la baraja no vuelve a correr `.task` ni `onDisappear`: `.onTabHidden`")
         }
         XCTAssertTrue(try code("Sky.swift").contains("@TabHidden private var tabHidden"), "el cielo de una pestaña escondida no se mueve")
+        // Con una ficha abierta, el renglón de las pestañas sigue tomando clics (Fernando, 23 nov 2026: «le pico varias veces a
+        // inicio y no cambia»: el velo de la ficha se comía el primer clic) y cambiar de pestaña cierra la ficha.
+        let side = try code("RootView+Parts.swift")
+        XCTAssertTrue(side.contains("tabs?.stripBottom") && side.contains(".onChange(of: tabs?.current)"), "SideTitle deja libre el renglón de las pestañas")
+        let strip = try code("MacTabStrip.swift")
+        XCTAssertTrue(strip.contains("tabs.stripBottom = bottom"), "la tira dice dónde termina")
+        // Cada pantalla marca su propia pestaña: con `tabs.current` la primera vez en Explorar la tira marcaba «Inicio».
+        XCTAssertEqual(strip.components(separatedBy: "cardID ?? tabs.current").count - 1, 2, "la tira y «Buscar» marcan la pestaña de su pantalla")
     }
 
     /// La Mac no tiene sensor de movimiento: crear un `CMMotionManager` ahí y soltarlo al salir de una pantalla con cielo

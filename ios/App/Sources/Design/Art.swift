@@ -124,8 +124,8 @@ struct BleedArt<Content: View>: View {
     }
 }
 
-/// El arte que respira: se acerca a `DS.TitleHero.breatheScale` en `breatheDuration`, parejo, a pasos de `breatheFrame` (20 por
-/// segundo; cada paso mueve menos de un punto: no se nota que va a saltos) y se queda. Solo esta vista se vuelve a pintar, y
+/// El arte que respira: se acerca a `DS.TitleHero.breatheScale` en `breatheDuration`, parejo, a pasos de `breatheFrame` (4 por
+/// segundo; cada paso mueve menos de un cuarto de punto: no se nota que va a saltos) y se queda. Solo esta vista se vuelve a pintar, y
 /// al terminar ya no hay nada corriendo. Sin `from`, quieto. El acercamiento va en el render (`visualEffect`), no en el acomodo.
 struct Breathing<Content: View>: View {
     let from: Date?

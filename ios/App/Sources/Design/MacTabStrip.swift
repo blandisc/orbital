@@ -12,6 +12,9 @@ import SwiftUI
     var current = 0
     /// Lo que baja (descargas y pedidos a la nube): el numerito de Biblioteca.
     var libraryBadge = 0
+    /// Dónde termina el renglón de las pestañas (en el espacio de `SideTitle`): con una ficha abierta, ese renglón sigue
+    /// tomando clics (Fernando, 23 nov 2026: «le pico varias veces a inicio y no cambia»: el velo de la ficha se comía el clic).
+    var stripBottom: CGFloat = 0
     @ObservationIgnored var select: (Int) -> Void = { _ in }
     /// RN2: «Buscar» junto al logo pone el cursor en el campo (lo hace la raíz: la pieza no toca el estado de la app).
     @ObservationIgnored var focusSearch: () -> Void = {}
@@ -34,6 +37,9 @@ struct MacTabStrip: View {
     /// En una ventana angosta va junto al logo y solo con íconos (el nombre lo dice VoiceOver y la ayuda del puntero).
     var compact = false
     @Environment(\.macTabs) private var tabs
+    /// La pestaña de la baraja en la que está esta tira: cada pantalla marca la suya. Con `tabs.current` la primera vez que se
+    /// abría Explorar su tira se quedaba marcando «Inicio» (se armaba antes de que la caja cambiara; 23 nov 2026).
+    @Environment(\.macTabID) private var cardID
 
     /// La ventana alcanza para la cápsula al centro sin encimarse con el logo, «Buscar» y lo de la derecha.
     /// En el iPad (C1) la letra no crece como en la Mac, pero «Buscar» y la cápsula son más anchos que el umbral de la Mac: a
@@ -43,10 +49,11 @@ struct MacTabStrip: View {
     var body: some View {
         if let tabs {
             // En el orden del menú «Ir» (⌘1 Inicio, ⌘2 Explorar, ⌘3 Biblioteca).
+            let current = cardID ?? tabs.current
             HStack(spacing: DS.Space.s1) {
-                MacTabButton(title: Text("Inicio"), symbol: "house", on: tabs.current == 0, compact: compact) { MacTabSwitch.go(tabs, 0) }
-                MacTabButton(title: Text("Explorar"), symbol: "sparkles", on: tabs.current == 1, compact: compact) { MacTabSwitch.go(tabs, 1) }
-                MacTabButton(title: Text("Biblioteca"), symbol: "rectangle.stack", on: tabs.current == 3, badge: tabs.libraryBadge, compact: compact) { MacTabSwitch.go(tabs, 3) }
+                MacTabButton(title: Text("Inicio"), symbol: "house", on: current == 0, compact: compact) { MacTabSwitch.go(tabs, 0) }
+                MacTabButton(title: Text("Explorar"), symbol: "sparkles", on: current == 1, compact: compact) { MacTabSwitch.go(tabs, 1) }
+                MacTabButton(title: Text("Biblioteca"), symbol: "rectangle.stack", on: current == 3, badge: tabs.libraryBadge, compact: compact) { MacTabSwitch.go(tabs, 3) }
             }
             .padding(DS.Space.s1)
             .background(Capsule().fill(DS.surfaceRaised))
@@ -54,6 +61,9 @@ struct MacTabStrip: View {
             .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("mac-tabs")
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(SideTitle.space)).maxY.rounded() } action: { bottom in
+                if bottom > 0, tabs.stripBottom != bottom { tabs.stripBottom = bottom }
+            }
         }
     }
 }
@@ -62,20 +72,22 @@ struct MacTabStrip: View {
 struct MacSearchChip: View {
     var compact = false
     @Environment(\.macTabs) private var tabs
+    @Environment(\.macTabID) private var cardID   // marca la pantalla en la que está (ver `MacTabStrip`)
 
     var body: some View {
         if let tabs {
+            let on = (cardID ?? tabs.current) == 2
             Button {
                 MacTabSwitch.go(tabs, 2)
                 tabs.focusSearch()
             } label: {
-                Label("Buscar", systemImage: "magnifyingglass").recipe(DS.Mac.topBarText, color: tabs.current == 2 ? DS.bg : DS.text)
+                Label("Buscar", systemImage: "magnifyingglass").recipe(DS.Mac.topBarText, color: on ? DS.bg : DS.text)
                     .macTabLabel(compact: compact)
                     // Tan alto como la cápsula de las pestañas (su aire de adentro más el de su orilla) y más ancho: antes se veía
                     // más chico que ellas (Fernando, 22 nov 2026: «buscar lo haría un poquito más grande»).
                     // DK (22 nov 2026: «el dock de arriba un poquito más grande»): crece junto con las pestañas y tu foto.
                     .padding(.horizontal, compact ? DS.Space.s6 : DS.Space.s8).padding(.vertical, DS.Mac.topBarPadV + DS.Space.s1)
-                    .background(Capsule().fill(tabs.current == 2 ? DS.text : DS.surfaceRaised))
+                    .background(Capsule().fill(on ? DS.text : DS.surfaceRaised))
                     .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
             }
             .buttonStyle(.plain)
