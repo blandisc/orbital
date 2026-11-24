@@ -1,6 +1,974 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "%@ en camino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ on the way"
+          }
+        }
+      }
+    },
+    "%@ no contestó. Tu clave sigue guardada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ didn't answer. Your key is still saved."
+          }
+        }
+      }
+    },
+    "A veces una no deja bajar algo que otra sí. Si te pasa seguido, prueba otra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sometimes one won't download something another will. If it happens often, try another."
+          }
+        }
+      }
+    },
+    "Abrir %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open %@"
+          }
+        }
+      }
+    },
+    "Aún no hay versiones de esta película. Prueba más tarde.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No versions of this movie yet. Try again later."
+          }
+        }
+      }
+    },
+    "Aún no hay versiones de este episodio. Prueba más tarde.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No versions of this episode yet. Try again later."
+          }
+        }
+      }
+    },
+    "Baja %@ esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Down %@ this week"
+          }
+        }
+      }
+    },
+    "Borrar la búsqueda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        }
+      }
+    },
+    "Buscando versiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking for versions"
+          }
+        }
+      }
+    },
+    "Cada una deja bajar cosas distintas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each one lets you download different things"
+          }
+        }
+      }
+    },
+    "Cada una se paga en su página": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each one is paid on its own site"
+          }
+        }
+      }
+    },
+    "Clave guardada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key saved"
+          }
+        }
+      }
+    },
+    "Copiar y abrir %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy and open %@"
+          }
+        }
+      }
+    },
+    "Crear una cuenta gratis": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a free account"
+          }
+        }
+      }
+    },
+    "Cuáles salen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which ones show"
+          }
+        }
+      }
+    },
+    "De las series que sigues en Trakt. Te avisa en cuanto sale. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the shows you follow on Trakt. You hear as soon as it's out. From 11 pm to 8 am the alert waits for the morning; each episode gets its own alert."
+          }
+        }
+      }
+    },
+    "De tus listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From your lists"
+          }
+        }
+      }
+    },
+    "Desconectar OpenSubtitles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect OpenSubtitles"
+          }
+        }
+      }
+    },
+    "Elegir otra nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose another cloud"
+          }
+        }
+      }
+    },
+    "Episodios y versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episodes and version"
+          }
+        }
+      }
+    },
+    "Es la que hace que los videos arranquen al instante. Orbital funciona con estas tres; tú pagas la que elijas en su página.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's what makes videos start instantly. Orbital works with these three; you pay for the one you choose on its site."
+          }
+        }
+      }
+    },
+    "Esa cuenta de %@ no tiene Premium: no la guardé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That %@ account doesn't have Premium: I didn't save it."
+          }
+        }
+      }
+    },
+    "Ese subtítulo no se pudo bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That subtitle couldn't be downloaded"
+          }
+        }
+      }
+    },
+    "Favoritos y las que armaste en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorites and the ones you made on Trakt"
+          }
+        }
+      }
+    },
+    "Fuentes de video, servidas por tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video sources, served by your cloud"
+          }
+        }
+      }
+    },
+    "Guardan películas y series en sus servidores: lo que ya tienen arranca al instante y lo que no, se lo pides y lo bajan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They keep movies and shows on their servers: what they have starts instantly, and what they don't, you request and they download."
+          }
+        }
+      }
+    },
+    "Guardar en una lista…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to a list…"
+          }
+        }
+      }
+    },
+    "Hay %@, pero %@ no lo dejó bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's %@, but %@ wouldn't download it"
+          }
+        }
+      }
+    },
+    "Hay %@, pero Real-Debrid no lo dejó bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's %@, but Real-Debrid wouldn't download it"
+          }
+        }
+      }
+    },
+    "La app": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app"
+          }
+        }
+      }
+    },
+    "La búsqueda de versiones no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The version search isn't answering"
+          }
+        }
+      }
+    },
+    "La clave está incompleta. Cópiala completa de %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key is incomplete. Copy all of it from %@."
+          }
+        }
+      }
+    },
+    "La que usas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The one you use"
+          }
+        }
+      }
+    },
+    "Las tres hacen lo mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All three do the same"
+          }
+        }
+      }
+    },
+    "Lo más reciente primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most recent first"
+          }
+        }
+      }
+    },
+    "Lo que bajaste y lo que pediste a la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you downloaded and what you requested from the cloud"
+          }
+        }
+      }
+    },
+    "Lo que lees": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you read"
+          }
+        }
+      }
+    },
+    "Lo que pediste se queda en su nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you requested stays in its cloud"
+          }
+        }
+      }
+    },
+    "Lo que ves (el audio, en este orden)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch (the audio, in this order)"
+          }
+        }
+      }
+    },
+    "Menús, botones y avisos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menus, buttons and alerts"
+          }
+        }
+      }
+    },
+    "Más fuentes de video, también de tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More video sources, also from your cloud"
+          }
+        }
+      }
+    },
+    "Más subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More subtitles"
+          }
+        }
+      }
+    },
+    "Más subtítulos y de tu copia exacta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More subtitles, matched to your exact copy."
+          }
+        }
+      }
+    },
+    "Más subtítulos y de tu copia exacta. Conecta tu cuenta gratuita de OpenSubtitles.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More subtitles, matched to your exact copy. Connect your free OpenSubtitles account."
+          }
+        }
+      }
+    },
+    "Más subtítulos y de tu copia exacta. La cuenta es gratis y da unos 20 subtítulos al día.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More subtitles, matched to your exact copy. The account is free and gives about 20 subtitles a day."
+          }
+        }
+      }
+    },
+    "No pude hablar con %@. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach %@. Check your connection."
+          }
+        }
+      }
+    },
+    "OpenSubtitles conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenSubtitles connected"
+          }
+        }
+      }
+    },
+    "OpenSubtitles · subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenSubtitles · subtitles"
+          }
+        }
+      }
+    },
+    "Para lo popular en Netflix, Disney+ y HBO Max de tu país.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For what's popular on Netflix, Disney+ and HBO Max in your country."
+          }
+        }
+      }
+    },
+    "Para que los videos arranquen al instante, Orbital usa un servicio de pago que guarda películas y series: tu nube. Sirve cualquiera de estos tres.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To make videos start instantly, Orbital uses a paid service that keeps movies and shows: your cloud. Any of these three works."
+          }
+        }
+      }
+    },
+    "Para ver sin internet y en tu nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch offline and in your cloud"
+          }
+        }
+      }
+    },
+    "Pasar a tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to your TV"
+          }
+        }
+      }
+    },
+    "País": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country"
+          }
+        }
+      }
+    },
+    "Primero conecta tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your TV first"
+          }
+        }
+      }
+    },
+    "Real-Debrid en real-debrid.com, TorBox en torbox.app y AllDebrid en alldebrid.com. Orbital no cobra nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid at real-debrid.com, TorBox at torbox.app and AllDebrid at alldebrid.com. Orbital doesn't charge anything."
+          }
+        }
+      }
+    },
+    "Real-Debrid, TorBox o AllDebrid: de ahí salen los videos. Tu cuenta, tu clave y tus pedidos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid, TorBox or AllDebrid: that's where videos come from. Your account, your key and your requests."
+          }
+        }
+      }
+    },
+    "Revisa tu plan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your plan."
+          }
+        }
+      }
+    },
+    "Sale de %@. Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It comes from %@. It's saved on this Mac and, if you use iCloud Keychain, your other Apple devices see it too."
+          }
+        }
+      }
+    },
+    "Sale de %@. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It comes from %@. It's saved on this iPhone and, if you use iCloud Keychain, your other Apple devices see it too."
+          }
+        }
+      }
+    },
+    "Se paga en su página. Cuando tengas tu clave, vuelve aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's paid on its site. When you have your key, come back here."
+          }
+        }
+      }
+    },
+    "Seguir con %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with %@"
+          }
+        }
+      }
+    },
+    "Si te cambias, lo que pediste en la otra sigue allá: lo ves si vuelves a ella.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you switch, what you requested in the other one stays there: you'll see it if you go back."
+          }
+        }
+      }
+    },
+    "Sin clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No key"
+          }
+        }
+      }
+    },
+    "Sin ella no hay versiones hasta que pongas otra. Tu cuenta de %@ no se toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without it there are no versions until you add another. Your %@ account isn't touched."
+          }
+        }
+      }
+    },
+    "Sin tu cuenta, los subtítulos vuelven a salir de los de siempre (menos opciones).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without your account, subtitles come from the usual ones again (fewer options)."
+          }
+        }
+      }
+    },
+    "Sin tu cuenta, los subtítulos vuelven a salir del complemento de siempre (menos opciones).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without your account, subtitles come from the usual add-on again (fewer options)."
+          }
+        }
+      }
+    },
+    "Solo encontré versiones de otra serie con un nombre parecido. Si quieres verlas, están en «Versión».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I only found versions of another show with a similar name. If you want them, they're in “Version”."
+          }
+        }
+      }
+    },
+    "Sube %@ esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up %@ this week"
+          }
+        }
+      }
+    },
+    "T%lld · E%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S%lld · E%lld"
+          }
+        }
+      }
+    },
+    "T1 · E4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S1 · E4"
+          }
+        }
+      }
+    },
+    "T1 · E5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S1 · E5"
+          }
+        }
+      }
+    },
+    "Te avisamos 14 días antes, 3 días antes y el día que vence. Revisa tu plan en %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll remind you 14 days before, 3 days before and the day it expires. Check your plan at %@."
+          }
+        }
+      }
+    },
+    "Todavía no tengo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don't have one yet"
+          }
+        }
+      }
+    },
+    "Tomé tu clave de %@ de tu Torrentio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I took your %@ key from your Torrentio"
+          }
+        }
+      }
+    },
+    "Tu TV no contestó. Intenta de nuevo en un momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV didn't answer. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Tu TV todavía no tiene la clave de su nube.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV doesn't have its cloud key yet."
+          }
+        }
+      }
+    },
+    "Tu TV usa la misma cuenta, sin escribir la contraseña con el control.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV uses the same account, without typing the password with the remote."
+          }
+        }
+      }
+    },
+    "Tu TV ya tiene tu cuenta de OpenSubtitles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV now has your OpenSubtitles account"
+          }
+        }
+      }
+    },
+    "Tu clave ya no sirve. Pega la nueva de %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key no longer works. Paste the new one from %@."
+          }
+        }
+      }
+    },
+    "Tu contraseña": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your password"
+          }
+        }
+      }
+    },
+    "Tus películas y series de OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your movies and shows from OneDrive"
+          }
+        }
+      }
+    },
+    "Títulos y sinopsis": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titles and synopses"
+          }
+        }
+      }
+    },
+    "Van aparte del audio: puedes oírla en inglés y leerla en español.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're separate from the audio: you can hear it in English and read it in Spanish."
+          }
+        }
+      }
+    },
+    "Ver o continuar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch or continue"
+          }
+        }
+      }
+    },
+    "Y los pósters, en ese idioma si los hay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And the posters, in that language when there are"
+          }
+        }
+      }
+    },
+    "Ya salen muchos más subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Many more subtitles now show"
+          }
+        }
+      }
+    },
+    "termina en ••••%@ · %@ ya no la acepta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ends in ••••%@ · %@ no longer accepts it"
+          }
+        }
+      }
+    },
+    "¿Desconectar OpenSubtitles?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect OpenSubtitles?"
+          }
+        }
+      }
+    },
     "Descubre": {
       "extractionState": "manual",
       "localizations": {

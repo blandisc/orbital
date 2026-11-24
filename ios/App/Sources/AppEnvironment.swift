@@ -165,7 +165,13 @@ final class AppEnvironment {
     private let posterTmdb = OSAllocatedUnfairLock<Tmdb?>(initialState: nil)
 
     private func shareConsoleWithImages() {
-        let tmdb = services.tmdb; posterTmdb.withLock { $0 = tmdb }
+        // Los pósters en el idioma de los títulos (24 nov 2026): TMDB los da con el nombre impreso en ese idioma. Al cambiarlo,
+        // lo ya pintado se olvida para que llegue el nuevo.
+        var fresh = services.tmdb
+        fresh.language = Localizer.tmdbLanguage(services.appSettings.titleLanguage) ?? "en-US"
+        let tmdb = fresh
+        let before = posterTmdb.withLock { old -> String? in let was = old?.language; old = tmdb; return was }
+        if let before, before != tmdb.language { ImagePipeline.shared.forgetPainted() }
         let key = services.secrets.get(SecretKey.orbitalDeviceKey).flatMap { OrbitalDeviceKey.isValid($0) ? $0 : nil }
         ImagePipeline.shared.setConsole(services.orbital.base, token: key ?? services.secrets.get(SecretKey.orbitalToken))
     }

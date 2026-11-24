@@ -163,7 +163,7 @@ struct SettingsView: View {
         // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar todo Ajustes de una vez.
         withDemoPages(withDialogs(macSplit(settingsForm(model, s), model), s), model)
         .task { await model.loadTraktName(); await debrid.model.load() }
-        .navigationDestination(isPresented: $showsLanguages) { YourLanguagesView(settings: settings) }
+        .navigationDestination(isPresented: $showsLanguages) { destination(.languages, model) }   // la única página de idiomas (ID-A): la app, los títulos, el audio y los subtítulos
         .onChange(of: env.ui.openLanguages, initial: true) { _, open in
             guard open else { return }
             env.ui.openLanguages = false

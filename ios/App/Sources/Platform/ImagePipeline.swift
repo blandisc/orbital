@@ -172,6 +172,8 @@ final class ImagePipeline: @unchecked Sendable {
     /// no lo tiene o falla, el de metahub. La llave de memoria sigue siendo la URL de metahub: las pantallas no cambian.
     private var posters: PosterSource?
     func setPosterSource(_ source: PosterSource?) { lock.withLock { posters = source } }
+    /// Olvida lo ya pintado y lo bajado hace poco (al cambiar el idioma de los pósters); el disco se queda.
+    func forgetPainted() { memory.removeAllObjects(); recentBytes.removeAllObjects() }
     /// El último respaldo antes del nombre sobre color: la imagen de IMDb (`ImdbPoster`, 23 nov 2026: 13 % de los resultados
     /// de Buscar daban 404 en metahub y TMDB no tenía ninguno; IMDb, casi 8 de cada 10).
     private var imdb: ImdbPoster?

@@ -1,5 +1,5 @@
 {
- "_": "Las listas de «Esta semana» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). «art» es el ícono y el color de su tarjeta (uno de Temporadas o Géneros: halloween, navidad, terror, drama…). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/.",
+ "_": "Las listas de «Descubre» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). «art» es el ícono y el color de su tarjeta (uno de Temporadas o Géneros: halloween, navidad, terror, drama…). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/. «en» lleva el nombre, el completo y el «de qué se trata» en inglés, para quien usa la app en inglés.",
  "rotate": 4,
  "lists": [
   {
@@ -7,6 +7,11 @@
    "title": "Casita del horror",
    "full": "Los Simpson: La casita del horror",
    "about": "Todos los especiales de Halloween, del primero al más nuevo",
+   "en": {
+    "title": "Treehouse of Horror",
+    "full": "The Simpsons: Treehouse of Horror",
+    "about": "Every Halloween special, from the first to the newest"
+   },
    "from": "10-01",
    "to": "10-31",
    "items": [
@@ -234,6 +239,11 @@
    "title": "Navidad Simpson",
    "full": "Los Simpson en Navidad",
    "about": "Los capítulos de Navidad, desde el primero de todos",
+   "en": {
+    "title": "Simpsons Christmas",
+    "full": "The Simpsons at Christmas",
+    "about": "The Christmas episodes, starting with the very first"
+   },
    "from": "12-01",
    "to": "01-06",
    "items": [
@@ -329,6 +339,11 @@
    "title": "Las 100 de terror",
    "full": "Las 100 mejores de terror",
    "about": "Lo mejor del género según Letterboxd",
+   "en": {
+    "title": "Top 100 horror",
+    "full": "The 100 best horror films",
+    "about": "The best of the genre according to Letterboxd"
+   },
    "from": "10-01",
    "to": "10-31",
    "mdblist": "smccrack/letterboxd-100-best-horror-movies",
@@ -339,6 +354,11 @@
    "title": "Las 100 de Navidad",
    "full": "Las 100 mejores de Navidad",
    "about": "Clásicos navideños según la crítica",
+   "en": {
+    "title": "Top 100 Christmas",
+    "full": "The 100 best Christmas films",
+    "about": "Holiday classics according to critics"
+   },
    "from": "12-01",
    "to": "01-06",
    "mdblist": "hthighway/movie-100-best-christmas-films",
@@ -349,6 +369,11 @@
    "title": "Sight & Sound",
    "full": "Las mejores según Sight & Sound",
    "about": "La encuesta de 1,639 críticos del BFI, 2022",
+   "en": {
+    "title": "Sight & Sound",
+    "full": "The greatest according to Sight & Sound",
+    "about": "The BFI poll of 1,639 critics, 2022"
+   },
    "mdblist": "smccrack/ss-greatest-films-of-all-time",
    "art": "drama"
   },
@@ -357,6 +382,11 @@
    "title": "Las de los directores",
    "full": "Las favoritas de los directores",
    "about": "Sight & Sound 2022: votan los cineastas",
+   "en": {
+    "title": "Directors' picks",
+    "full": "The directors' favorites",
+    "about": "Sight & Sound 2022: the filmmakers vote"
+   },
    "mdblist": "smccrack/directors-top-100-mt57lv8s6l",
    "art": "misterio"
   },
@@ -365,6 +395,11 @@
    "title": "Las 1,000",
    "full": "Las 1,000 más grandes del cine",
    "about": "El canon de They Shoot Pictures, Don't They",
+   "en": {
+    "title": "The 1,000",
+    "full": "The 1,000 greatest films",
+    "about": "The canon from They Shoot Pictures, Don't They"
+   },
    "mdblist": "motorrecon/tspdt-1000-greatest-films",
    "art": "fantasia"
   },
@@ -373,6 +408,11 @@
    "title": "Siglo XXI",
    "full": "Lo más aclamado del siglo XXI",
    "about": "Según la crítica, de They Shoot Pictures, Don't They",
+   "en": {
+    "title": "21st century",
+    "full": "The most acclaimed of the 21st century",
+    "about": "According to critics, from They Shoot Pictures, Don't They"
+   },
    "mdblist": "skerr1q/tspdts-21st-centurys-most-acclaimed-films",
    "art": "ciencia-ficcion"
   },
@@ -381,6 +421,11 @@
    "title": "Letterboxd 250",
    "full": "Top 250 de Letterboxd",
    "about": "Las mejor calificadas por la comunidad de Letterboxd",
+   "en": {
+    "title": "Letterboxd 250",
+    "full": "Letterboxd Top 250",
+    "about": "The highest rated by the Letterboxd community"
+   },
    "mdblist": "smccrack/letterboxed-best-250",
    "art": "comedia"
   },
@@ -389,6 +434,11 @@
    "title": "Cahiers du Cinéma",
    "full": "Los top 10 de Cahiers du Cinéma",
    "about": "Lo mejor de cada año según la revista francesa",
+   "en": {
+    "title": "Cahiers du Cinéma",
+    "full": "Cahiers du Cinéma top 10s",
+    "about": "The best of each year according to the French magazine"
+   },
    "mdblist": "dinkysniff/cahiers-du-cinema-all-year-end-top-10s-movies",
    "art": "romance"
   },
@@ -397,6 +447,11 @@
    "title": "1001 películas",
    "full": "1001 películas que ver antes de morir",
    "about": "El libro de Steven Jay Schneider, todas sus ediciones",
+   "en": {
+    "title": "1001 movies",
+    "full": "1001 Movies You Must See Before You Die",
+    "about": "Steven Jay Schneider's book, every edition"
+   },
    "mdblist": "treb118/1001-movies-you-must-see-before-you-die",
    "art": "aventura"
   },
@@ -405,6 +460,11 @@
    "title": "AFI 100",
    "full": "Las 100 de AFI",
    "about": "Las grandes del cine estadounidense, edición 2007",
+   "en": {
+    "title": "AFI 100",
+    "full": "AFI's 100 greatest",
+    "about": "The great American films, 2007 edition"
+   },
    "art": "accion",
    "items": [
     {

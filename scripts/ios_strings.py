@@ -1633,7 +1633,10 @@ TRANSLATIONS = {
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight",
+          # Nombres propios, formatos técnicos y muestras escritas en su idioma (Ajustes › Idiomas): no se traducen.
+          "DD+", "DTS-HD", "Dolby Atmos", "HDR10+", "Shōgun", "Spirited Away", "El viaje de Chihiro", "Home · Search", "Inicio · Buscar",
+          "En\\u{00A0}%@", "Orbital-SWR/poster-source.json", "Trakt %@ %", "Trakt %@\\u{00A0}%", "User-Agent"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
@@ -1767,7 +1770,11 @@ def build() -> dict:
 
 
 def main() -> int:
-    missing = {k: where for k, where in used_literals().items() if k not in TRANSLATIONS}
+    # También vale lo que ya está traducido en el catálogo (las sesiones agregan textos ahí directo, 24 nov 2026: con la app en
+    # inglés seguían en español 102 textos porque la comprobación avisaba de 555 y nadie la corría).
+    catalog = json.loads(OUT.read_text(encoding="utf-8")).get("strings", {}) if OUT.exists() else {}
+    translated = {k for k, e in catalog.items() if "en" in (e.get("localizations") or {})}
+    missing = {k: where for k, where in used_literals().items() if k not in TRANSLATIONS and k not in translated and k not in IGNORE}
     # Algunos literales son nombres de símbolos, ids o formatos de código (no son textos de pantalla).
     # …salvo que sean el texto de un control («Fuentes» en un botón sí es un texto de pantalla).
     ignorable = {k for k in missing if re.fullmatch(r"[A-Za-z0-9_.]+", k) and " " not in k and not ui_word(k)}

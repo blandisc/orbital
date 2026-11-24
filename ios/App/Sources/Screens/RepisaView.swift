@@ -25,7 +25,10 @@ struct CollectionsCardLoader: View {
 
 /// Los nombres de cada colección del canon (y de las de «Esta semana», que vienen con su nombre en la tabla).
 @MainActor enum CanonNames {
-    private static func weekly(_ id: String) -> ExploreList? { AppEnvironment.shared.repisa.weeklyList(id) }
+    private static func weekly(_ id: String) -> ExploreList.Words? {
+        let env = AppEnvironment.shared
+        return env.repisa.weeklyList(id)?.words(env.services.appSettings.uiLanguage)
+    }
     static func title(_ id: String) -> Text {
         switch id {
         case "palm": Text("Palma de Oro"); case "criterion": Text(verbatim: "Criterion"); case "top250": Text("Top 250")

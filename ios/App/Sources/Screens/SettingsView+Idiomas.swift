@@ -23,13 +23,16 @@ extension SettingsView {
     /// La página «Idiomas»: cada idioma por su lado. Con dos opciones, botones a la vista (no otra pantalla con una lista).
     @ViewBuilder func languagesPage(_ model: SettingsModel) -> some View {
         let s = model.settings
-        // Los dos idiomas de Orbital en una tarjeta: cada renglón dice qué cambia y lleva su selector a la derecha.
+        // Los dos idiomas de Orbital (IP-A, 24 nov 2026: «que las hagas más interactivas, más visuales»): cada uno con dos
+        // mosaicos, su bandera y una muestra de cómo se va a ver (los menús de la app, el nombre de una película).
         Section {
-            SettingsChoiceRow(title: "La app", detail: "Menús, botones y avisos", symbol: "character.bubble", tint: DS.ListTint.series, options: languageChoices,
-                              selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
+            languagePick(title: "La app", detail: "Menús, botones y avisos", symbol: "character.bubble", tint: DS.ListTint.series,
+                         sample: { $0 == "en" ? "Home · Search" : "Inicio · Buscar" }, region: s.region,
+                         selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
                 .accessibilityIdentifier("languages-app")
-            SettingsChoiceRow(title: "Títulos y sinopsis", detail: "Cómo se llaman las películas y series y de qué tratan", symbol: "text.quote", tint: DS.ListTint.calendar, options: languageChoices,
-                              selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
+            languagePick(title: "Títulos y sinopsis", detail: "Y los pósters, en ese idioma si los hay", symbol: "text.quote", tint: DS.ListTint.calendar,
+                         sample: { $0 == "en" ? "Spirited Away" : "El viaje de Chihiro" }, region: s.region,
+                         selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
                 .accessibilityIdentifier("languages-titles")
         } header: { Text("Lo que lees") }
         .listRowBackground(DS.surface)
@@ -58,9 +61,40 @@ extension SettingsView {
         .listRowBackground(DS.surface)
     }
 
-    /// Cada idioma con su propio nombre (así lo encuentra quien no lee el otro).
-    private var languageChoices: [DSSelector<String>.Option] {
-        [.init(id: "es", title: Text(verbatim: "Español")), .init(id: "en", title: Text(verbatim: "English"))]
+    /// Un idioma de Orbital: su nombre arriba y los dos mosaicos (cada idioma con su propio nombre, así lo encuentra quien no
+    /// lee el otro), con su bandera y la muestra en ese idioma.
+    private func languagePick(title: LocalizedStringKey, detail: LocalizedStringKey, symbol: String, tint: Color,
+                              sample: @escaping (String) -> String, region: String, selection: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Label {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(title).foregroundStyle(DS.text)
+                    Text(detail).recipe(.footnote, color: DS.textMuted)
+                }
+            } icon: {
+                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
+            }
+            HStack(spacing: DS.Space.s2) {
+                ForEach(["es", "en"], id: \.self) { code in
+                    FilterChoice(symbol: "globe", mark: Self.languageFlag(code, region: region),
+                                 title: Text(verbatim: code == "en" ? "English" : "Español"), detail: Text(verbatim: sample(code)),
+                                 selected: selection.wrappedValue == code) {
+                        withAnimation(DS.Motion.press) { selection.wrappedValue = code }
+                    }
+                    .accessibilityIdentifier("language-choice-\(code)")
+                }
+            }
+        }
+        .padding(.vertical, DS.Space.s1)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// La bandera de un idioma de Orbital: el español con la de tu país si ahí se habla (México, España…); el inglés, la de
+    /// Estados Unidos.
+    static func languageFlag(_ code: String, region: String) -> String {
+        let spanish = ["MX", "ES", "AR", "CO", "CL", "PE"]
+        let country = code == "en" ? "US" : (spanish.contains(region) ? region : "MX")
+        return country.unicodeScalars.compactMap { UnicodeScalar(127397 + $0.value) }.map(String.init).joined()
     }
 
     private func subtitlesValue(_ s: AppSettings) -> Text {

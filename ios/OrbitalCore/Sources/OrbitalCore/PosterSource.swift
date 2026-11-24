@@ -18,6 +18,11 @@ public final class PosterSource: @unchecked Sendable {
     private let save: @Sendable (Data) -> Void
     private let lookup: @Sendable (String) async -> String??   // nil: no se pudo preguntar; .some(nil): no lo tiene
     private let clock: @Sendable () -> Date
+    /// El idioma de los pósters (24 nov 2026: «cuando le cambias el idioma de los metadatos, también deberían de llegar los
+    /// pósters en el idioma que seleccionaste»): cada idioma se recuerda aparte. Vacío, el de siempre (español), con las
+    /// llaves de antes para no volver a preguntar todo.
+    private let scope: @Sendable () -> String
+    private func key(_ imdb: String) -> String { let s = scope(); return s.isEmpty ? imdb : "\(s):\(imdb)" }
     /// Una sola consulta por título aunque lo pidan dos tamaños (o dos pantallas) a la vez.
     private var inflight: [String: Task<String??, Never>] = [:]
     private var saveScheduled = false
@@ -25,8 +30,8 @@ public final class PosterSource: @unchecked Sendable {
 
     /// `load` lee lo guardado (una vez, al crearse) y `save` lo escribe (fuera del hilo principal, con retraso).
     public init(load: () -> Data?, save: @escaping @Sendable (Data) -> Void, clock: @escaping @Sendable () -> Date = { Date() },
-                lookup: @escaping @Sendable (String) async -> String??) {
-        self.save = save; self.lookup = lookup; self.clock = clock
+                scope: @escaping @Sendable () -> String = { "" }, lookup: @escaping @Sendable (String) async -> String??) {
+        self.save = save; self.lookup = lookup; self.clock = clock; self.scope = scope
         map = load().flatMap { try? JSONDecoder().decode([String: Entry].self, from: $0) } ?? [:]
     }
 
@@ -46,6 +51,7 @@ public final class PosterSource: @unchecked Sendable {
     /// Guardado en un archivo (en Caches: iOS puede borrarlo y solo se vuelve a preguntar). Lo que había en `legacy`
     /// (UserDefaults, hasta el 10 nov 2026: el mapa entero se leía y escribía ahí) se pasa al archivo y se borra de ahí.
     public convenience init(file: URL, legacy: KeyValueStore?, tmdb: @escaping @Sendable () -> Tmdb?) {
+        let scope: @Sendable () -> String = { Self.scope(tmdb()?.language) }
         self.init(load: {
             if let data = try? Data(contentsOf: file) { legacy?.set(Self.storeKey, data: nil); return data }
             let old = legacy?.data(Self.storeKey)
@@ -58,7 +64,7 @@ public final class PosterSource: @unchecked Sendable {
         }, save: { data in
             try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             do { try data.write(to: file, options: .atomic) } catch { Log.cache.error("Pósters de TMDB: no se pudo guardar (\(error.localizedDescription, privacy: .public))") }
-        }, lookup: { imdb in
+        }, scope: scope, lookup: { imdb in
             guard let tmdb = tmdb(), tmdb.configured else { return nil }
             do { return .some(try await tmdb.posterPath(imdb: imdb)) } catch { return nil }
         })
@@ -70,6 +76,12 @@ public final class PosterSource: @unchecked Sendable {
             guard let tmdb = tmdb(), tmdb.configured else { return nil }
             do { return .some(try await tmdb.posterPath(imdb: imdb)) } catch { return nil }
         }
+    }
+
+    /// La llave del idioma de TMDB: «» para el español de siempre (es-MX), el código para los demás («en-US»).
+    public static func scope(_ language: String?) -> String {
+        guard let language, !language.isEmpty, language != "es-MX" else { return "" }
+        return language
     }
 
     /// El id de IMDb y el tamaño de un póster de metahub («…/poster/medium/tt0361243/img»). nil: no es un póster de metahub.
@@ -85,7 +97,7 @@ public final class PosterSource: @unchecked Sendable {
 
     /// Lo ya sabido, sin preguntar: la URL de TMDB, o nil (no es de metahub, TMDB no lo tiene o aún no se sabe).
     public func known(_ url: String) -> URL? {
-        guard let (imdb, size) = Self.metahub(url), let entry = lock.withLock({ map[imdb] }),
+        guard let (imdb, size) = Self.metahub(url), let entry = lock.withLock({ map[key(imdb)] }),
               clock().timeIntervalSince(entry.at) < Self.ttl, !entry.path.isEmpty else { return nil }
         return URL(string: "\(Tmdb.images)/\(Self.tmdbSize(size))\(entry.path)")
     }
@@ -93,16 +105,16 @@ public final class PosterSource: @unchecked Sendable {
     /// La URL de TMDB para un póster de metahub; pregunta si hace falta. nil: quedarse con la de metahub.
     public func resolve(_ url: String) async -> URL? {
         guard let (imdb, size) = Self.metahub(url) else { return nil }
-        let now = clock()
+        let now = clock(), k = key(imdb)
         let (cached, task): (Entry?, Task<String??, Never>?) = lock.withLock {
-            if let entry = map[imdb], now.timeIntervalSince(entry.at) < Self.ttl { return (entry, nil) }
-            if let running = inflight[imdb] { return (nil, running) }
+            if let entry = map[k], now.timeIntervalSince(entry.at) < Self.ttl { return (entry, nil) }
+            if let running = inflight[k] { return (nil, running) }
             let task = Task<String??, Never> { [self] in
                 let answer = await gate.run { await self.lookup(imdb) }
-                remember(imdb, answer)
+                remember(k, answer)
                 return answer
             }
-            inflight[imdb] = task
+            inflight[k] = task
             return (nil, task)
         }
         if let cached { return cached.path.isEmpty ? nil : URL(string: "\(Tmdb.images)/\(Self.tmdbSize(size))\(cached.path)") }
@@ -111,12 +123,12 @@ public final class PosterSource: @unchecked Sendable {
     }
 
     /// Se recuerda la respuesta (también «no lo tiene»; «no se pudo preguntar», no) y se agenda la escritura.
-    private func remember(_ imdb: String, _ answer: String??) {
+    private func remember(_ k: String, _ answer: String??) {
         let schedule: Bool = lock.withLock {
-            inflight[imdb] = nil
+            inflight[k] = nil
             guard let answer else { return false }
             let now = clock()
-            map[imdb] = Entry(path: answer ?? "", at: now)
+            map[k] = Entry(path: answer ?? "", at: now)
             if map.count > Self.maxEntries { map = Self.capped(map, at: \.at, now: now) }
             guard !saveScheduled else { return false }
             saveScheduled = true

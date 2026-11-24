@@ -42,7 +42,9 @@ struct YourLanguagesView: View {
                 }
                 if list.count < Services.addableLanguages.count {
                     PaneLink(Text("Agregar idioma")) { YourLanguagesPicker(settings: settings) } label: {
-                        Label("Agregar idioma", systemImage: "plus.circle").foregroundStyle(DS.text)
+                        Label { Text("Agregar idioma").foregroundStyle(DS.text) } icon: {
+                            Image(systemName: "plus.circle.fill").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.SettingsLook.rowIcon)
+                        }
                     }
                     .accessibilityIdentifier("languages-add")
                 }
@@ -61,11 +63,20 @@ struct YourLanguagesView: View {
         let canRemove = list.filter { $0 != "original" && $0 != code }.count > 0
         let move = { (step: Int) in save(model, Self.moved(list, code, by: step)) }
         let remove = { save(model, Self.normalized(list.filter { $0 != code })) }
-        HStack(spacing: DS.Space.s2) {
-            Text(verbatim: "\(index + 1)").font(DS.TextRecipe.footnote.font.monospacedDigit()).foregroundStyle(DS.textMuted)
-                .frame(width: DS.SettingsLook.rowIcon)
+        // IP-B (24 nov 2026, «que también se vea un poquito más pulido»): el lugar en un círculo (el primero, relleno: con
+        // ese arranca), la bandera en su propio lugar y el nombre más fuerte.
+        HStack(spacing: DS.Space.s4) {
+            Text(verbatim: "\(index + 1)").recipe(.label, color: index == 0 ? DS.onSolidPrimary : DS.textMuted).monospacedDigit()
+                .frame(width: DS.SettingsLook.rowIcon, height: DS.SettingsLook.rowIcon)
+                .background(Circle().fill(index == 0 ? DS.solidPrimary : .clear))
+                .overlay(Circle().strokeBorder(index == 0 ? .clear : DS.hairline, lineWidth: DS.Stroke.regular))
+            Group {
+                if let flag = LanguageFlags.flag(code), code != "es" { Text(verbatim: flag) }
+                else { Image(systemName: code == "original" ? "globe" : "character.bubble").foregroundStyle(DS.textMuted) }
+            }
+            .font(DS.TextRecipe.cardTitle.font).frame(width: DS.SettingsLook.rowIcon)
             VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: Self.flag(code) + Self.name(code, ui)).foregroundStyle(DS.text)
+                Text(verbatim: Self.name(code, ui)).recipe(.labelLarge, color: DS.text)
                 if index == 0 { Text("Con este arranca si lo hay").recipe(.footnote, color: DS.textMuted) }
                 else if code == "original" { Text("El de cada película o serie (japonés en un anime)").recipe(.footnote, color: DS.textMuted) }
             }
@@ -103,7 +114,7 @@ struct YourLanguagesView: View {
     /// Guarda y lo dice, como la TV: «Guardé tus idiomas · La próxima búsqueda ya los usa».
     private func save(_ model: SettingsModel, _ list: [String]) {
         let before = model.settings.yourLanguages
-        model.setLanguages(list)
+        withAnimation(DS.Motion.press) { model.setLanguages(list) }
         if model.settings.yourLanguages != before { env.notify(Strings.tr("Guardé tus idiomas", language: model.settings.uiLanguage),
                                                                detail: Strings.tr("La próxima búsqueda ya los usa", language: model.settings.uiLanguage), tone: .success) }
     }

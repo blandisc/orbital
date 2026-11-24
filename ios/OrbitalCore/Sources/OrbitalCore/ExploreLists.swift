@@ -22,6 +22,19 @@ public struct ExploreList: Sendable, Equatable, Codable, Identifiable {
     /// Su ícono y su color en la tarjeta: uno de los de Temporadas y Géneros («halloween», «navidad», «drama»…). Sin él, uno
     /// fijo según su id, para que ninguna tarjeta quede gris.
     public var art: String?
+    /// El nombre, el completo y de qué se trata en inglés, para quien usa la app en inglés (24 nov 2026: «los nombres de las
+    /// listas… deberían de cambiar de idioma»). Sin él, en español.
+    public var en: Words?
+    public struct Words: Sendable, Equatable, Codable {
+        public var title: String, full: String, about: String
+        public init(title: String, full: String, about: String) { self.title = title; self.full = full; self.about = about }
+    }
+
+    /// Sus palabras en el idioma de la app.
+    public func words(_ ui: String) -> Words {
+        if ui == "en", let en { return en }
+        return Words(title: title, full: full, about: about)
+    }
 
     public init(id: String, title: String, full: String? = nil, about: String = "", from: String? = nil, to: String? = nil,
                 mdblist: String? = nil, trakt: String? = nil, items: [Entry]? = nil, art: String? = nil) {
