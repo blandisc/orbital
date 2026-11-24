@@ -1,0 +1,37 @@
+wait 30
+tab 1
+wait 3.5
+tab 3
+wait 3.5
+tab 2
+wait 3.5
+tab 0
+wait 3.5
+tab 1
+wait 3.5
+tab 3
+wait 3.5
+tab 2
+wait 3.5
+tab 0
+wait 3.5
+title movie tt1856101 https://images.metahub.space/poster/small/tt1856101/img Blade_Runner_2049
+wait 4.5
+close
+wait 2.5
+title movie tt0816692 https://images.metahub.space/poster/small/tt0816692/img Interstellar
+wait 4.5
+close
+wait 2.5
+title series tt0903747 https://images.metahub.space/poster/small/tt0903747/img Breaking_Bad
+wait 4.5
+close
+wait 2.5
+title movie tt0083658 https://images.metahub.space/poster/small/tt0083658/img Blade_Runner
+wait 4.5
+close
+wait 2.5
+title movie tt1856101 https://images.metahub.space/poster/small/tt1856101/img Blade_Runner_2049
+wait 4.5
+close
+wait 2.5

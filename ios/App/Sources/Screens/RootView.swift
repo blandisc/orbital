@@ -373,7 +373,9 @@ struct MainTabs: View {
         // el panel abierto, pasa solo a la tarjeta (`remoteAsPanel`).
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
-        .inspector(isPresented: sidePanelShown) { sidePanel.environment(env) }   // como las hojas: la app a mano (Screens/AppSheet.swift)
+        // Lo de adentro se arma solo con el panel abierto: el inspector lo armaba al abrir la app (y lo volvía a pintar con
+        // cada sondeo de la TV) aunque nadie lo viera.
+        .inspector(isPresented: sidePanelShown) { if sidePanelShown.wrappedValue { sidePanel.environment(env) } }   // como las hojas: la app a mano (Screens/AppSheet.swift)
         .modifier(SideTitle(host: titleHost, enabled: titleAsPanel))
         .environment(\.titlePanel, titleOpener)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
@@ -509,6 +511,9 @@ struct MainTabs: View {
         }
         .task {
             forceDemoTab()   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
+            #if MAC_DRIVE
+            MacDrive.start(tabs: macTabs, closeTitle: { [titleHost] in titleHost.hide() })   // solo compilaciones de medición
+            #endif
             #if DEBUG
             // `-demo-open control-simpsons`: como si tocaras «Un Simpson al azar» en el Centro de control (con `-demo-free-tabs`).
             if Demo.isOn, Demo.open == "control-simpsons" { try? await Task.sleep(for: .seconds(2)); OpenSimpsonsIntent.open?() }

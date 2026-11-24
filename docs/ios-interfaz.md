@@ -1186,6 +1186,29 @@ abrir 3.4 s de trabajo con 1 s congelada, Explorar 2 s con 1 s congelada.
   que nada: con el marco casi cuadrado un póster 2:3 pasaba el límite de «completo» y se iba pegado a la derecha, como el
   destacado de Inicio (Fernando, otra vez el mismo día: «no está bien centrado»). `ArtFitTests.testWideArtStaysWholeInTallPanel`.
 
+### Lo que no se ve no se arma (24 nov 2026)
+
+Pedido: bajar al menos 30 % abrir la app, cambiar de pestaña y abrir una ficha en la Mac. Medido con Instruments en la app
+instalada, sin clics (`ios/scripts/medir-mac-sin-manos.sh`: la app sigue unas órdenes en una compilación de medición y
+marca cada una), tres rondas antes (2531) y cuatro después (2533).
+
+- **Regla: lo que no está a la vista no se arma ni avisa.** Un panel cerrado no arma lo de adentro (el `.inspector` de la
+  raíz armaba el panel lateral al abrir la app y lo repintaba con cada sondeo de la TV); lo de abajo de la ficha va
+  perezoso (`LazyVStack`); un valor que se calcula de un modelo en cada pasada se guarda hasta que el modelo cambie
+  (`ObservableModel.revision`, el abanico de «Decide por mí»), y una propiedad publicada que se compara no avisa con el
+  mismo valor (`@Tracked` sin `always`). `DesignRulesTests.testWhatIsNotSeenIsNotBuilt` y
+  `testTrackedValuesCompareBeforeNotifying` lo vigilan.
+- **Resultado (2531 → 2533):** abrir la app, congelada 720–800 ms → 380–640 ms (mediana 750 → 470, −37 %), trabajo de la
+  pantalla en los primeros 5 s 1.8–2.1 s → 1.51–1.70 s (−18 %), lista en 3.45–3.6 s → 3.05–3.45 s (−10 %). Cambiar de pestaña: 50–190 ms
+  de trabajo, igual que antes, pero quieta en 100 ms en vez de 150 ms y sin congelarse nunca. Abrir una ficha: 475–690 ms
+  → 430–650 ms (la serie bajó en dos de tres rondas; las películas, igual).
+- **Por qué la ficha no bajó 30 %.** Lo que cuesta ya no es código de la app (~10 % de las muestras) sino que SwiftUI acomode
+  y dibuje una ficha nueva: ~250 ms el primer acomodo (textos, la barra con sus botones, los íconos, el renglón de acciones)
+  y otros ~250 ms repartidos en cuatro o cinco reacomodos conforme llega cada dato (Cinemeta, lo de abajo, TMDB, Letterboxd,
+  las fuentes). Cambiar de pestaña ya no se congela: lo que queda es dibujar la pantalla que aparece. Para bajar más hay
+  que juntar esas llegadas en un solo acomodo o armar menos ficha de entrada: es un cambio de cómo carga la ficha, no un
+  ajuste.
+
 ### La receta de la ficha ancha (17 nov 2026)
 
 Fernando: «replantea con una receta el cómo se debe de armar… que la imagen que está atrás de manera inteligente se

@@ -34,29 +34,29 @@ public final class TitleModel: ObservableModel {
     public override var observesByProperty: Bool { true }   // V9: cada parte de la ficha se pinta con lo que lee (`@Tracked`)
     public private(set) var kind: String
     public private(set) var metaID: String
-    @Tracked(always: true) public private(set) var title = ""
-    @Tracked(always: true) public private(set) var originalTitle = ""
-    @Tracked(always: true) public private(set) var info = MetaInfo(year: "", rating: "", genres: [], description: "", logo: nil, runtime: "")
-    @Tracked(always: true) public private(set) var credits = Credits(cast: [], directors: [], writers: [], released: "", awards: "", country: "")
-    @Tracked(always: true) public private(set) var poster: String? = nil
-    @Tracked(always: true) public private(set) var background: String? = nil
-    @Tracked(always: true) public private(set) var seasons: [Season] = []
+    @Tracked public private(set) var title = ""
+    @Tracked public private(set) var originalTitle = ""
+    @Tracked public private(set) var info = MetaInfo(year: "", rating: "", genres: [], description: "", logo: nil, runtime: "")
+    @Tracked public private(set) var credits = Credits(cast: [], directors: [], writers: [], released: "", awards: "", country: "")
+    @Tracked public private(set) var poster: String? = nil
+    @Tracked public private(set) var background: String? = nil
+    @Tracked public private(set) var seasons: [Season] = []
     @Tracked public private(set) var selectedSeason = 1
     /// Ya se puso la temporada de entrada (o la elegiste tú): de aquí en adelante no salta sola.
     private var seasonSettled = false
-    @Tracked(always: true) public private(set) var rows: [EpisodeRow] = []
+    @Tracked public private(set) var rows: [EpisodeRow] = []
     /// En Mi lista (el teléfono, al día con tu watchlist de Trakt).
-    @Tracked(always: true) public private(set) var inLibrary = false
+    @Tracked public private(set) var inLibrary = false
     /// Tus listas de Trakt y si este título está en cada una («Guardar en…»); `nil` mientras no se han pedido.
-    @Tracked(always: true) public private(set) var lists: [SavedList]? = nil
-    @Tracked(always: true) public private(set) var loadingLists = false
+    @Tracked public private(set) var lists: [SavedList]? = nil
+    @Tracked public private(set) var loadingLists = false
     /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
     public var isSaved: Bool { inLibrary || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
     /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
-    @Tracked(always: true) public private(set) var inSomeList = false
-    @Tracked(always: true) public private(set) var traktAvailable = false
+    @Tracked public private(set) var inSomeList = false
+    @Tracked public private(set) var traktAvailable = false
     /// Está en tus favoritos de Trakt (el corazón de la ficha). Va aparte de «Guardar»: no cuenta para «Guardada».
-    @Tracked(always: true) public private(set) var isFavorite = false
+    @Tracked public private(set) var isFavorite = false
     /// El corazón solo se enseña con Trakt conectado y un título con IMDb (Trakt no conoce los demás).
     public var canFavorite: Bool { traktAvailable && metaID.hasPrefix("tt") }
     /// Cambios del corazón que aún no contesta Trakt: una lectura que llega mientras tanto no lo regresa a como estaba.
@@ -64,25 +64,25 @@ public final class TitleModel: ObservableModel {
     /// Cuántas veces se ha tocado «Mi lista»: una lectura de lo tuyo que salió antes de un toque trae el valor viejo y no lo
     /// pisa (al abrir la ficha llegaban los episodios de Trakt y «Mi lista» se regresaba sola).
     private var libraryEdits = 0
-    @Tracked(always: true) public private(set) var isLoading = false
-    @Tracked(always: true) public private(set) var error: String? = nil
-    @Tracked(always: true) public private(set) var message: String? = nil
+    @Tracked public private(set) var isLoading = false
+    @Tracked public private(set) var error: String? = nil
+    @Tracked public private(set) var message: String? = nil
     /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
-    @Tracked(always: true) public private(set) var consoleOverview: String? = nil
+    @Tracked public private(set) var consoleOverview: String? = nil
     /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
-    @Tracked(always: true) public private(set) var extras: TitleExtras? = nil
+    @Tracked public private(set) var extras: TitleExtras? = nil
     /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
     /// Lo mejor que hay (para «Disponible: 4K · Dolby Vision» en los detalles).
-    @Tracked(always: true) public private(set) var bestSource: Source? = nil
+    @Tracked public private(set) var bestSource: Source? = nil
     /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
     /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
-    @Tracked(always: true) public private(set) var recommendedSource: Source? = nil
+    @Tracked public private(set) var recommendedSource: Source? = nil
     /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
-    @Tracked(always: true) public private(set) var recommendedLanguage: String? = nil
+    @Tracked public private(set) var recommendedLanguage: String? = nil
     /// N5-A: la de un idioma que va antes en tu orden y no ganó «Ver» porque aquí no se ve bien (la ficha lo dice en una línea).
     @Tracked public private(set) var poorFit: PoorFit? = nil
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
-    @Tracked(always: true) public internal(set) var sourceCheck: SourceCheck = .unknown
+    @Tracked public internal(set) var sourceCheck: SourceCheck = .unknown
     /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
     /// complementos prendidos»…; nil si hay versiones o no se sabe.
     @Tracked public internal(set) var unavailableCause: UnavailableCause? = nil
@@ -93,7 +93,7 @@ public final class TitleModel: ObservableModel {
     /// «Pedir a la nube en latino» con esta versión.
     @Tracked public internal(set) var wantedOffer: DebridOffer? = nil
     /// La calificación de Trakt (0–10), si alguien votó.
-    @Tracked(always: true) public private(set) var traktRating: Double? = nil
+    @Tracked public private(set) var traktRating: Double? = nil
 
     let services: Services
     /// Si Torrentio sin Real-Debrid contestó que no hay ningún torrent (por título): la causa 11.

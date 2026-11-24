@@ -4,17 +4,27 @@ import OrbitalModels
 
 /// Lo que se sugiere, para «Decide por mí», sacado de lo que carga Explorar (`ParaTiModel`). Un solo lugar para las dos
 /// puertas (Explorar e Inicio): antes vivía dentro de `ParaTiView` y por eso Inicio mandaba a Explorar para abrir la hoja.
+/// El último abanico calculado (`decideFan`), con la versión del modelo de la que salió.
+@MainActor private enum DecideFanMemo {
+    static var last: (model: ObjectIdentifier, revision: Int, count: Int, fan: [String])?
+}
+
 extension ParaTiModel {
     /// «Porque viste», el mosaico y cada estante que se ve.
     func decidePool() -> [Suggestion] { (because?.items ?? []) + mosaic + visibleShelves.flatMap { items(for: $0) } }
 
     /// El abanico de la puerta (`DecideDoor`), igual en Inicio y en Explorar: carteles de lo mismo que alimenta la hoja, sin
     /// repetir, saltando los primeros (en Explorar ya son la portada del mosaico) si hay de dónde.
+    /// Guardado hasta que el modelo vuelva a cambiar (`revision`): la puerta de Inicio lo pedía en cada pasada y al abrir la app
+    /// se calculaba decenas de veces con todo lo de Explorar (~60 ms del arranque en la Mac, 24 nov 2026).
     func decideFan(count: Int = DS.ParaTiB.matchFan) -> [String] {
+        if let memo = DecideFanMemo.last, memo.model == ObjectIdentifier(self), memo.revision == revision, memo.count == count { return memo.fan }
         var seen = Set<String>()
         let posters = decidePool().map(\.poster).filter { !$0.isEmpty && seen.insert($0).inserted }
         let skip = posters.count >= DS.ParaTiB.matchFan * 2 ? DS.ParaTiB.matchFan : 0
-        return Array(posters.dropFirst(skip).prefix(count))
+        let fan = Array(posters.dropFirst(skip).prefix(count))
+        DecideFanMemo.last = (ObjectIdentifier(self), revision, count, fan)
+        return fan
     }
 
     /// De dónde («De qué listas»): «Porque viste», lo nuevo en tus plataformas, cada estante que se ve (con su nombre) y todas

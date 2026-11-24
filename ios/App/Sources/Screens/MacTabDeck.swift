@@ -52,7 +52,6 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
                 .opacity(on ? 1 : 0)
                 .allowsHitTesting(on)
                 .accessibilityHidden(!on)
-                .zIndex(on ? 1 : 0)
                 .environment(\.macTabID, id)   // fijo: la carta siempre es la misma pestaña
         }
     }

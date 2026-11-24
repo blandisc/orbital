@@ -17,6 +17,9 @@ open class ObservableModel: Observable {
     private let registrar = ObservationRegistrar()
     /// Cuántas veces ha cambiado: lo único que sigue Observation (cualquier cambio vuelve a pintar a quien lo leyó, como antes).
     private var version = 0
+    /// Cuántas veces ha avisado, sin seguirlo (no vuelve a pintar a quien lo lee): para guardar algo calculado del modelo hasta
+    /// que vuelva a cambiar (`ParaTiModel.decideFan`).
+    public final var revision: Int { version }
     public init() {}
 
     /// Guarda una llave de una caché solo si cambió, sin comparar las demás. Para los diccionarios que se van llenando de a

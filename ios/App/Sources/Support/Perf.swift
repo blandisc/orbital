@@ -1,6 +1,9 @@
 import SwiftUI
 import Darwin
 import OrbitalCore
+#if MAC_DRIVE
+import os
+#endif
 
 /// Cuánto tarda en verse cada cosa (con `-perf`): cada marca se anota una sola vez, en milisegundos desde que arrancó el
 /// proceso (o desde `begin`), como «ORBITAL-PERF home.hero.image 812». Sin `-perf` no hace nada.
@@ -587,6 +590,40 @@ final class MainPing: @unchecked Sendable {
         link?.invalidate(); link = nil
         let span = max(0.001, last - first)
         return Result(worst: worst * 1000, lostPerSecond: lost * 1000 / span, frames: frames)
+    }
+}
+#endif
+
+#if MAC_DRIVE
+/// La Mac sin manos, en Release (24 nov 2026): solo en compilaciones de medición (`OTHER_SWIFT_FLAGS=-DMAC_DRIVE`; la app
+/// normal no lo trae). Las órdenes llegan al abrir (`open Orbital.app --args -macDrive "tab 1|wait 4|…"`) y hace lo mismo que el
+/// clic: `tab <n>` (la tira de pestañas, `MacTabSwitch.go`), `title <kind> <id> [póster] [Nombre_con_guiones]` (un póster: la
+/// ficha en el panel, `ui.titlePanels`), `close` (Esc) y `wait <s>`. Antes de cada orden deja una marca en el registro del
+/// sistema (categoría «drive») para cruzarla con Instruments (`ios/scripts/medir-mac-sin-manos.sh`). Sin clics por
+/// accesibilidad, que suman su propio trabajo (docs/ios-interfaz.md § «Cambiar de pestaña en la Mac»).
+@MainActor enum MacDrive {
+    private static let log = Logger(subsystem: "mx.iracheta.orbital", category: "drive")
+    static func start(tabs: MacTabs, closeTitle: @escaping () -> Void) {
+        guard let script = UserDefaults.standard.string(forKey: "macDrive") else { return }
+        Task { @MainActor in
+            for (i, line) in script.split(separator: "|").enumerated() {
+                let w = line.split(separator: " ").map(String.init)
+                guard let command = w.first else { continue }
+                if command == "wait" { try? await Task.sleep(for: .seconds(Double(w.dropFirst().first ?? "3") ?? 3)); continue }
+                let name = "\(i)-\(command)-\(w.dropFirst().first ?? "")-\(w.count > 2 ? w[2] : "")"
+                log.notice("mark \(name, privacy: .public)")
+                switch command {
+                case "tab": if let id = w.dropFirst().first.flatMap(Int.init) { MacTabSwitch.go(tabs, id) }
+                case "title" where w.count >= 3:
+                    let route = TitleRoute(kind: w[1], metaID: w[2], title: w.count > 4 ? w[4].replacingOccurrences(of: "_", with: " ") : "",
+                                           poster: w.count > 3 ? w[3] : nil)
+                    AppEnvironment.shared.ui.titlePanels.values.first?(route, nil)
+                case "close": closeTitle()
+                default: break
+                }
+            }
+            log.notice("mark listo")
+        }
     }
 }
 #endif
