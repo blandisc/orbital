@@ -148,7 +148,7 @@ struct ListsView: View {
                     // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
                     let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))
                     // MO1: la portada es la puerta del mosaico (su chapa dice cuántas piezas trae); sin piezas no promete nada.
-                    if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall, count: model.mosaic.count, settled: !model.isLoading) { model.mode = .mosaic }.perfTag("paraTi.hero") }
+                    if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall, count: model.mosaic.count, settled: !model.isLoading) { model.mode = .mosaic }.perfTag("paraTi.hero").zIndex(1) }   // MT3: al abrirse tapa lo de abajo
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
                     // «Decide por mí», la única puerta (DE2: antes el dado de la barra y «¿Qué vemos hoy?»). Sin pósters (sin red)
                     // la tarjeta sigue y lo dice (F8); adentro, «Sin conexión · Reintentar».

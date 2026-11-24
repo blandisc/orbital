@@ -277,6 +277,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Refresh {
         static let mark: CGFloat = 34, moon: CGFloat = 6, orbit: CGFloat = 0.5, orbitSquash: CGFloat = 0.4
         static let lap: Double = 1.1, threshold: CGFloat = 80, startScale: CGFloat = 0.6
+        /// Lo menos que gira la luna al actualizar (RF3): una vuelta, aunque la red conteste antes.
+        static let minimumSpin: Duration = .milliseconds(1100)
         /// El hueco que se abre arriba mientras actualiza (la marca y su aire).
         static let slot: CGFloat = 50
     }

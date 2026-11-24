@@ -139,13 +139,14 @@ extension DS {
         static let seasonIcon: CGFloat = 72, seasonHeight: CGFloat = 168, seasonRing: Double = 0.5, seasonStrip = 7
         /// MO1 · la portada es la puerta del mosaico (Fernando, 13 nov 2026). `doorPull`: cuánto se estira la orilla de arriba
         /// para entrar (más allá de «actualizar», `DS.Refresh.threshold`: lo corto actualiza, lo largo entra). Al abrirse el muro
-        /// se endereza, crece `doorGrow` y su velo se aclara `doorUnveil`; el mosaico entra desde `doorEnterScale`, arriba.
+        /// se endereza, crece `doorGrow` y su velo se aclara `doorUnveil`; el muro baja `doorReveal` y el mosaico aparece encima (MT3).
         /// La puerta abre más pausada que un cambio normal (23 nov 2026: «que la transición sea más suave»).
         static let doorSeconds = 0.6
         // MT1/MT2: el muro crece hasta que su póster mide lo que uno del mosaico (~96 → ~130 pt en el iPhone) y el mosaico entra
-        // a ese mismo tamaño (`doorEnterScale` = 1 / (1 + doorGrow)), desde el centro de la portada (`doorAnchor`).
-        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.35, doorUnveil: Double = 0.5, doorEnterScale: CGFloat = 0.74
-        static let doorAnchor = UnitPoint(x: 0.5, y: 0.22)
+        // a ese mismo tamaño.
+        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.35, doorUnveil: Double = 0.5
+        /// MT3: cuánto baja el muro al abrirse la puerta (lo alto de un iPhone grande, sin la portada).
+        static let doorReveal: CGFloat = 640
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
         static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)

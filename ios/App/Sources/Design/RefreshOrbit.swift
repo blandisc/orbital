@@ -150,7 +150,12 @@ private struct OrbitalRefreshable: ViewModifier {
         guard !state.refreshing else { return }
         withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { state.refreshing = true }
         Task {
+            // RF3 (25 nov 2026, «acaba muy rápido el refresh… le das para abajo y se cierra inmediatamente»): la luna da al menos
+            // `minimumSpin`, aunque lo de la red llegue antes; si no, parecía que no había pasado nada.
+            let started = ContinuousClock.now
             await action()
+            let left = DS.Refresh.minimumSpin - (ContinuousClock.now - started)
+            if left > .zero { try? await Task.sleep(for: left) }
             withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { state.refreshing = false }
         }
     }

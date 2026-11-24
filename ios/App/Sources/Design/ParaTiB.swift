@@ -40,6 +40,12 @@ struct MosaicCover: View {
     @AppStorage(MosaicCover.hintKey) private var hintSeen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.perfTag) private var perfTag
+    @Environment(RefreshPull.self) private var pull: RefreshPull?
+    /// MT3: cuánto se abrió la puerta (al tocarla o al jalar): el muro baja hasta tapar la pantalla.
+    private var reach: CGFloat {
+        guard isDoor else { return 0 }
+        return max(opening, (pull?.entering ?? false) ? 1 : (pull?.doorProgress ?? 0))
+    }
     /// Ya se vio que la portada se abre sola (una vez, en los ajustes locales).
     static let hintKey = "mosaic-door-hint-seen"
     /// Se abrió para entrar al mosaico: al volver, la portada sale derecha y se inclina (el camino inverso).
@@ -64,11 +70,11 @@ struct MosaicCover: View {
     /// mosaico entra con el tamaño y la inclinación del muro (sus pósters del mismo ancho que los del muro) y se endereza y
     /// crece a su lugar mientras el muro hace lo mismo y se apaga: a medio camino coinciden.
     static func mosaicTransition(_ reduce: Bool) -> AnyTransition {
-        reduce ? .opacity : .modifier(active: MosaicArrive(progress: 1), identity: MosaicArrive(progress: 0))
+        .opacity   // MT3: el muro ya tapó la pantalla y se enderezó: el mosaico solo aparece encima
     }
     /// Lo que deja el mosaico (Explorar) se apaga y crece tantito, como si entraras: antes se quitaba de golpe.
     static func listsTransition(_ reduce: Bool) -> AnyTransition {
-        reduce ? .opacity : .scale(scale: 1 + (1 - DS.ParaTiB.doorEnterScale), anchor: .top).combined(with: .opacity)
+        .opacity   // MT3: las listas ya quedaron tapadas por el muro
     }
     /// El paso entre Explorar y el mosaico: un resorte suave y pausado.
     static func doorAnimation(_ reduce: Bool) -> Animation { DS.Motion.door(reduce) ?? DS.Motion.fade }
@@ -104,14 +110,18 @@ struct MosaicCover: View {
                 // El arte ocupa más que su marco (arriba y abajo) pero no ensancha la página: se recorta a los lados. Con su
                 // propio alto (no con un margen negativo): la máscara y el recorte medían el marco de 300 y cortaban en seco
                 // todo lo que subía detrás del título y la barra (Fernando, 31 oct 2026: «ahora no se ve bien»).
+                // MT3 (25 nov 2026, «cuando le das para abajo los pósters se empiezan a poner vertical, desaparecen los otros
+                // elementos y quedan esos pósters»): mientras se abre, el muro baja `doorReveal` sobre un fondo propio y tapa
+                // «Decide por mí» y las listas; al soltar, el mosaico aparece en su lugar con un fundido.
                 ZStack {
+                    DS.bg.opacity(Double(reach))
                     moving.modifier(CoverOpening(opening: opening, door: isDoor))
                     veil.modifier(CoverOpening(opening: opening, door: isDoor, unveil: true))
                 }
-                .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown)
+                .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown + DS.ParaTiB.doorReveal * reach)
                 .mask { fade }
                 .clipped()
-                .offset(y: DS.ParaTiB.coverBleedDown)
+                .offset(y: DS.ParaTiB.coverBleedDown + DS.ParaTiB.doorReveal * reach)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             }
@@ -556,17 +566,5 @@ private final class DriftView: UIView {
             let now = layer.convertTime(CACurrentMediaTime(), from: nil)
             (layer.speed, layer.timeOffset) = (0, now)
         }
-    }
-}
-
-
-/// MT2: el mosaico mientras llega: chico e inclinado como el muro (`progress` 1) hasta su lugar (0), desde el centro de la portada.
-private struct MosaicArrive: ViewModifier {
-    let progress: CGFloat
-    func body(content: Content) -> some View {
-        content
-            .rotationEffect(.degrees(DS.ParaTiB.coverTilt * Double(progress)), anchor: DS.ParaTiB.doorAnchor)
-            .scaleEffect(1 - (1 - DS.ParaTiB.doorEnterScale) * progress, anchor: DS.ParaTiB.doorAnchor)
-            .opacity(1 - Double(progress))
     }
 }
