@@ -356,6 +356,11 @@ extension DS {
         static let posterWidth: CGFloat = 64, posterTall: CGFloat = 1.5, step: Double = 0.06
     }
 
+    /// La marca de un idioma (`LanguageMark`): su lado grande (los mosaicos), el relleno y el filo de su color.
+    enum LanguageMarkLook {
+        static let large: CGFloat = 44, wash = 0.18, ring = 0.45
+    }
+
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
         /// Lo que ocupa la flecha de un renglón que lleva a otra página.

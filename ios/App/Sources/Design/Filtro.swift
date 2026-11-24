@@ -479,8 +479,8 @@ struct FilterSummarySquare: View {
 /// Una opción grande con ícono (Cortita · Normal · Para echarse, Estrenos, Joyas ocultas…): se enciende al elegirla.
 struct FilterChoice: View {
     let symbol: String
-    /// En lugar del ícono, una marca de texto (la bandera de un idioma en Ajustes › Idiomas).
-    var mark: String?
+    /// En lugar del ícono, la marca de un idioma (`LanguageMark`, Ajustes › Idiomas).
+    var language: String?
     let title: Text
     var detail: Text?
     /// El color del filtro al que pertenece (su ícono).
@@ -491,7 +491,7 @@ struct FilterChoice: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: DS.Space.s2) {
-                if let mark { Text(verbatim: mark).font(DS.TextRecipe.title.font) }
+                if let language { LanguageMark(code: language, large: true) }
                 else { Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(hue) }
                 title.recipe(.label, color: DS.text).lineLimit(1)
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }

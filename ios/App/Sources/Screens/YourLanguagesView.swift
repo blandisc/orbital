@@ -70,11 +70,7 @@ struct YourLanguagesView: View {
                 .frame(width: DS.SettingsLook.rowIcon, height: DS.SettingsLook.rowIcon)
                 .background(Circle().fill(index == 0 ? DS.solidPrimary : .clear))
                 .overlay(Circle().strokeBorder(index == 0 ? .clear : DS.hairline, lineWidth: DS.Stroke.regular))
-            Group {
-                if let flag = LanguageFlags.flag(code), code != "es" { Text(verbatim: flag) }
-                else { Image(systemName: code == "original" ? "globe" : "character.bubble").foregroundStyle(DS.textMuted) }
-            }
-            .font(DS.TextRecipe.cardTitle.font).frame(width: DS.SettingsLook.rowIcon)
+            LanguageMark(code: code)
             VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: Self.name(code, ui)).recipe(.labelLarge, color: DS.text)
                 if index == 0 { Text("Con este arranca si lo hay").recipe(.footnote, color: DS.textMuted) }
@@ -128,11 +124,6 @@ struct YourLanguagesView: View {
         }
     }
 
-    static func flag(_ code: String) -> String {
-        if code == "original" || code == "es" { return "" }   // «Español (cualquiera)» no es de un país
-        return LanguageFlags.flag(code).map { $0 + " " } ?? ""
-    }
-
     /// «Latino, Idioma original, Inglés…»: para el renglón de Ajustes.
     /// «Latino y original», «Latino, original +2»: corto, para que quepa en el renglón de Ajustes en una línea (AJ-A, 20 nov
     /// 2026: «Latino, Idioma original…» se partía en dos y se cortaba).
@@ -178,7 +169,7 @@ struct YourLanguagesPicker: View {
                         env.notify(Strings.tr("Guardé tus idiomas", language: ui), detail: Strings.tr("La próxima búsqueda ya los usa", language: ui), tone: .success)
                         dismiss()
                     } label: {
-                        Text(verbatim: YourLanguagesView.flag(code) + YourLanguagesView.name(code, ui)).foregroundStyle(DS.text)
+                        Label { Text(verbatim: YourLanguagesView.name(code, ui)).foregroundStyle(DS.text) } icon: { LanguageMark(code: code) }
                     }
                     .accessibilityIdentifier("languages-add-\(code)")
                 }

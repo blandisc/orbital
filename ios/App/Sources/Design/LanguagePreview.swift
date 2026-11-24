@@ -20,8 +20,7 @@ struct LanguagePreview: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(DS.Space.s4)
-        .dsCard()
+        .padding(.top, DS.Space.s2)
         .accessibilityHidden(true)   // es adorno: lo elegido ya lo dicen los mosaicos
         .onChange(of: language) {
             withAnimation(DS.Motion.spring(reduce)) { spin += reduce ? 0 : 360 }
@@ -39,6 +38,7 @@ struct LanguagePreview: View {
                 VStack(spacing: DS.Space.s1) {
                     Image(systemName: symbols[i]).font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(i == 0 ? DS.text : DS.textMuted)
+                        .frame(height: DS.SettingsLook.rowIcon)   // los tres a la misma altura: las palabras quedan alineadas
                         .symbolEffect(.bounce, value: reduce ? "" : language)
                     Text(verbatim: words[i]).recipe(.badge, color: i == 0 ? DS.text : DS.textMuted)
                         .id(words[i])
