@@ -46,7 +46,7 @@ struct VoiceGuideView: View {
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una frase"))
-        .navigationTitle("Lo que puedes decir").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Lo que puedes decir").navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: Ahora
@@ -189,7 +189,7 @@ private struct VoiceTopicsView: View {
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una frase"))
-        .navigationTitle("Más frases, por tema").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Más frases, por tema").navigationBarTitleDisplayMode(.inline)
     }
 
     private var help: some View {

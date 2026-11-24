@@ -370,7 +370,7 @@ private struct DebridChangeKeyPage: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Cambiar la clave").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Cambiar la clave").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .onAppear { model.token = "" }
         .dsFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }

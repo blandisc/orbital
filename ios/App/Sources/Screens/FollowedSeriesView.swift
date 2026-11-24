@@ -43,7 +43,7 @@ struct FollowedSeriesView: View {
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una serie"))
-        .navigationTitle(Text("Series que sigues")).navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Series que sigues").navigationBarTitleDisplayMode(.inline)
         .task { await follow.loadSeries() }
         .orbitalRefreshableList { await follow.loadSeries() }
     }
@@ -108,7 +108,7 @@ struct HiddenSeriesView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Backdrop())
-        .navigationTitle(Text("Escondidas")).navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Escondidas").navigationBarTitleDisplayMode(.inline)
         .orbitalRefreshableList { await follow.loadSeries() }
     }
 }

@@ -191,7 +191,7 @@ struct ViewingsSheet: View {
                 }
             }
             .contentMargins(.top, DS.Space.s2, for: .scrollContent)   // sin el hueco de sección entre la barra y la tarjeta
-            .navigationTitle(Text("Tus vistas")).navigationBarTitleDisplayMode(.inline)
+            .dsNavigationTitle("Tus vistas").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
             .appSheet(item: $editing) { v in
                 ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: v.at) { date in move(v, to: date) }
@@ -295,7 +295,7 @@ struct NoteSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(DS.Space.gutter)
-            .navigationTitle(Text("Tu nota")).navigationBarTitleDisplayMode(.inline)
+            .dsNavigationTitle("Tu nota").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button("Listo") { save(text); dismiss() }.accessibilityIdentifier("note-save") }

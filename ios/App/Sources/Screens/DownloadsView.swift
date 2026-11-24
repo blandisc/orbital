@@ -69,7 +69,7 @@ struct DownloadsView: View {
         .safeAreaBar(edge: .top) {
             if !Self.rows { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
-        .navigationTitle(ThisDevice.isMac ? Text(verbatim: "") : Text("Biblioteca")).toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .dsNavigationTitle(ThisDevice.isMac ? "" : "Biblioteca").toolbarTitleDisplayMode(ThisDevice.isMac ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .macOwnTopRow { ProfileButton() }   // la Mac: el logo, las pestañas y tu perfil en su renglón (MAC-A)
         .learnCoach(.downloads, title: "Biblioteca", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
@@ -87,7 +87,7 @@ struct DownloadsView: View {
             .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
             .navigationDestination(for: LibrarySavedRoute.self) { route in
                 LibrarySavedView(observer: saved, tab: route.tab).scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
-                    .navigationTitle(Text("Guardado")).navigationBarTitleDisplayMode(.inline)
+                    .dsNavigationTitle("Guardado").navigationBarTitleDisplayMode(.inline)
             }
             .navigationDestination(item: $macPart) { part in
                 Group {
@@ -95,12 +95,12 @@ struct DownloadsView: View {
                     else { phoneList(observer.model).readableListWidth() }
                 }
                 .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
-                .navigationTitle(part == .media ? Text("Mi media") : Text("Descargas")).navigationBarTitleDisplayMode(.inline)
+                .dsNavigationTitle(part == .media ? "Mi media" : "Descargas").navigationBarTitleDisplayMode(.inline)
                 .onAppear { seeing(part == .phone) }
                 .onDisappear { seeing(false) }
             }
             .navigationDestination(for: DiaryRoute.self) { _ in
-                HistoryScreen().background(Backdrop()).navigationTitle("Historial").navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
+                HistoryScreen().background(Backdrop()).dsNavigationTitle("Historial").navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
             }
     }
 

@@ -79,7 +79,7 @@ struct RepisaView: View {
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
-        .navigationTitle(Text("Colecciones"))
+        .dsNavigationTitle("Colecciones")
         .navigationDestination(for: String.self) { id in RepisaCollectionView(id: id, onOpenTitle: onOpenTitle) }
         .task { await model.load() }
         .orbitalRefreshable { await model.load() }

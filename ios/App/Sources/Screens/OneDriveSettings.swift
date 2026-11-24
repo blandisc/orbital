@@ -86,7 +86,7 @@ struct OneDriveSettings: View {
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("OneDrive").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("OneDrive").navigationBarTitleDisplayMode(.inline)
         .onAppear { model.refresh() }
         .appSheet(isPresented: $pickingFolder) {
             NavigationStack { OneDriveFolderPicker(path: "", model: model) { pickingFolder = false } }

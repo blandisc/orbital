@@ -99,7 +99,7 @@ struct WatchingView: View {
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas)
         #endif
         .background(Backdrop())
-        .navigationTitle(Text("Lo que ves"))
+        .dsNavigationTitle("Lo que ves")
         .onAppear { pickFirstWithData(model) }   // con lo guardado: sin parpadear en el periodo vacío
         .task { await model.load(full: true); pickFirstWithData(model) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .orbitalRefreshable { await model.load(full: true, force: true) }

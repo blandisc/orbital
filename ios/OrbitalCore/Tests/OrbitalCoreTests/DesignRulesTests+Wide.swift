@@ -67,7 +67,7 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("MacTabStrip.swift").contains("AppMark(small: true, reportsFrame: false)"), "El logo de la barra de la Mac no reporta su lugar")
         // Con el título del sistema, las pestañas de la barra se iban a «More»; en la barra la Mac reporta letra de accesibilidad.
         for (screen, title, mac) in [("DownloadsView.swift", "Biblioteca", "ThisDevice.isMac"), ("BrowseView.swift", "Buscar", "TopRow.tabsInLogoRow")] {
-            XCTAssertTrue(try code(screen).contains(".navigationTitle(\(mac) ? Text(verbatim: \"\") : Text(\"\(title)\"))"), "\(screen): sin título en la Mac")
+            XCTAssertTrue(try code(screen).contains(".dsNavigationTitle(\(mac) ? \"\" : \"\(title)\")"), "\(screen): sin título en la Mac")
         }
         XCTAssertTrue(try code("Filters.swift").contains("tabs(titles: ThisDevice.isMac ||"), "En la Mac las pestañas llevan nombre")
         // La barra le ofrece poco ancho a lo de la izquierda: sin su tamaño propio, los nombres se recortaban hasta desaparecer.

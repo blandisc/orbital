@@ -32,7 +32,17 @@ extension DesignRulesTests {
         let files = try sources()
         XCTAssertTrue(files.allSatisfy { !$0.lines.contains { $0.contains("struct ScreenMark") } }, "Sin título a mano en las pestañas")
         let explore = try XCTUnwrap(files.first { $0.path.hasSuffix("ParaTiView.swift") }).lines.joined(separator: "\n")
-        XCTAssertTrue(explore.contains(".navigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? Text(\"Explorar\")"), "Explorar con su título del sistema")
+        XCTAssertTrue(explore.contains(".dsNavigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? \"Explorar\""), "Explorar con su título del sistema")
         XCTAssertTrue(explore.contains("? .inlineLarge : .inline)"), "Explorar grande arriba y chico al deslizar, como Biblioteca")
+    }
+}
+
+extension DesignRulesTests {
+    /// TN1 (25 nov 2026): el título de arriba de una pantalla sigue al idioma de la app aunque cambie con la pantalla abierta.
+    /// Un título fijo va por `.dsNavigationTitle("…")`; `navigationTitle("…")` o `navigationTitle(Text("…"))` se quedaban en
+    /// el idioma de antes («Idiomas» con la app en inglés).
+    func testNavigationTitlesFollowTheLanguage() throws {
+        let found = hits(#"\.navigationTitle\((Text\()?"[^"\\]*"\)?\)"#, in: try sources(["Design", "Screens", "App"]))
+        XCTAssertEqual(found, [], "usa .dsNavigationTitle(\"…\") para que el título cambie con el idioma")
     }
 }

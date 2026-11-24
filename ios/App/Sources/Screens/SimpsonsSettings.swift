@@ -9,7 +9,7 @@ struct SimpsonsSeasonsPage: View {
         Form { SimpsonsSeasonsSection() }
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
-            .navigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
+            .dsNavigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
     }
 }
 

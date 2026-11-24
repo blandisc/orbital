@@ -74,7 +74,7 @@ struct DecideFilters: View {
             .accessibilityIdentifier("decide-more-done")
         }
         .scrollEdgeEffectStyle(.soft, for: .bottom)
-        .navigationTitle(Text("Filtros")).navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Filtros").navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Discreto y solo cuando hay algo que quitar (antes un botón de vidrio grande, apagado casi siempre).
             if hasFilters(m) {
@@ -335,7 +335,7 @@ struct DecideListPicker: View {
             .accessibilityIdentifier("decide-lists-done")
         }
         .scrollEdgeEffectStyle(.soft, for: .bottom)
-        .navigationTitle(Text("De qué listas")).navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("De qué listas").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Todas") { selection = [] }.disabled(selection.isEmpty) } }
     }
 

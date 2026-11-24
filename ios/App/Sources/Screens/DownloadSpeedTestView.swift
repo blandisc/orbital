@@ -43,6 +43,6 @@ struct DownloadSpeedTestView: View {
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Probar la velocidad").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Probar la velocidad").navigationBarTitleDisplayMode(.inline)
     }
 }

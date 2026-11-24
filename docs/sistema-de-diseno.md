@@ -402,7 +402,9 @@ serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
 **Títulos de navegación.** Las pestañas (Explorar, Biblioteca, Buscar) llevan el título grande en el renglón de los botones
 (`.inlineLarge`): grande arriba y chico al centro al deslizar, siempre el del sistema, nunca uno hecho a mano (HB1, 23 nov
 2026: Explorar llevaba el suyo y no se encogía). Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las
-pantallas con su propio encabezado en grande (Lo que ves, Colecciones). Prueba: `testTabsShareTheSystemHeader`.
+pantallas con su propio encabezado en grande (Lo que ves, Colecciones). Prueba: `testTabsShareTheSystemHeader`. El título
+siempre en el idioma de la app, también si cambia con la pantalla abierta: un título fijo va por `.dsNavigationTitle("…")`
+(TN1, 25 nov 2026: «Idiomas» seguía en español con la app en inglés). Prueba: `testNavigationTitlesFollowTheLanguage`.
 
 **Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
 

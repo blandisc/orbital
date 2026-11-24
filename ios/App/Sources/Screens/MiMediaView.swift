@@ -444,7 +444,7 @@ struct FixMatchSheet: View {
             }
             .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
             .scrollContentBackground(.hidden).background(Backdrop())
-            .navigationTitle("Corregir ficha").navigationBarTitleDisplayMode(.inline)
+            .dsNavigationTitle("Corregir ficha").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } } }
             .task { query = info.title; await search() }
         }

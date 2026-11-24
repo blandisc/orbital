@@ -1637,7 +1637,7 @@ IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB 
           # Nombres propios, formatos técnicos y muestras escritas en su idioma (Ajustes › Idiomas): no se traducen.
           "DD+", "DTS-HD", "Dolby Atmos", "HDR10+", "Shōgun", "Spirited Away", "El viaje de Chihiro", "Home · Search", "Inicio · Buscar",
           "Una niña entra a un mundo de espíritus y tiene que encontrar cómo volver.", "A girl wanders into a world of spirits and must find her way home.",
-          "En\\u{00A0}%@", "Orbital-SWR/poster-source.json", "Trakt %@ %", "Trakt %@\\u{00A0}%", "User-Agent"}  # el nombre de un ícono en el catálogo
+          "En\\u{00A0}%@", "Orbital-SWR/poster-source.json", "Trakt %@ %", "Trakt %@\\u{00A0}%", "User-Agent", "Letterboxd", "OpenSubtitles", "Top", "Extra"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
@@ -1698,13 +1698,13 @@ def used_literals() -> dict[str, str]:
     return found
 
 
-UI_CALL = r'(Text|Button|CommandMenu|Label|Section|Toggle|Picker|TextField|SecureField|Tab|navigationTitle|secondary|DSChip|DSBadge|DSNotice|DSSectionHead|DSIconButton|LabeledContent|DisclosureGroup)\(\s*(text:\s*|title:\s*)?"{}"'
+UI_CALL = r'(SettingsRow|SettingsMenuRow|SettingsChoiceRow|DSToggleRow|page|dsNavigationTitle|PaneLink|Text|Button|CommandMenu|Label|Section|Toggle|Picker|TextField|SecureField|Tab|navigationTitle|secondary|DSChip|DSBadge|DSNotice|DSSectionHead|DSIconButton|LabeledContent|DisclosureGroup)\(\s*(text:\s*|title:\s*)?"{}"'
 
 
 def ui_word(word: str) -> bool:
     """¿La palabra aparece como el texto de un control en alguna pantalla?"""
     pattern = re.compile(UI_CALL.format(re.escape(word)))
-    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift")) + [str(ROOT / f"ios/App/Sources/Design/{n}.swift") for n in ("Projection", "Shelf", "Mosaic")]
+    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Sources/Design/*.swift")) + [str(ROOT / f"ios/App/Sources/Design/{n}.swift") for n in ("Projection", "Shelf", "Mosaic")]
     return any(pattern.search(Path(f).read_text(encoding="utf-8")) for f in files)
 
 

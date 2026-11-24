@@ -33,7 +33,7 @@ struct TorrentioQualities: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Calidades").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Calidades").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .dsFeedback(.selection, trigger: hidden)
     }
@@ -115,7 +115,7 @@ struct TorrentioMoreOptions: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Más opciones").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Más opciones").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
     }
 
@@ -161,7 +161,7 @@ struct TorrentioProviders: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Sitios donde busca").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Sitios donde busca").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
     }
 }

@@ -29,7 +29,9 @@ final class ImagePipeline: @unchecked Sendable {
     /// Descargas a la vez (HTTP/2 las lleva por una sola conexión) y decodificaciones a la vez (más compite por CPU con el desplazamiento).
     /// En la Mac el doble de descargas: su ventana enseña tres o cuatro veces más pósters que el iPhone; con 12 las cuadrículas
     /// se llenaban de a poco (Fernando, 22 nov 2026: «se sigue sintiendo muy lenta»). Esperar la red no ocupa hilos.
-    private static let maxDownloads = ProcessInfo.processInfo.isiOSAppOnMac ? 24 : 12
+    /// En el iPhone, 24 desde el 25 nov 2026 (MP1, Fernando: «se tardan mucho en cargar los pósters del mosaico»): con 12 la
+    /// versión buena de cada póster esperaba turno. `ios/scripts/medir-posters.py` lo mide.
+    private static let maxDownloads = ProcessInfo.processInfo.isiOSAppOnMac ? 32 : 24
     /// Las decodificaciones, 4 también en la Mac: corren en los hilos de Swift, y con 8 podían ocuparlos todos (lo mismo que
     /// atoraba la ficha con Vision, 22 nov 2026).
     private static let maxDecodes = 4

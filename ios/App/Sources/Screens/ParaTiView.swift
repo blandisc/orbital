@@ -98,7 +98,7 @@ struct ParaTiView: View {
         // HB1 (Fernando, 23 nov 2026: «que los tres sean iguales… que también Explorar se haga chiquito en medio»): en el iPhone y
         // el iPad, el título del sistema como Biblioteca y Buscar, grande arriba y chico al centro al deslizar. En la Mac sin
         // título (su lugar es de las pestañas; con él se iban a «More»); en el mosaico tampoco (va la flecha de regresar).
-        .navigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? Text("Explorar") : Text(verbatim: ""))
+        .dsNavigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? "Explorar" : "")
         .toolbarTitleDisplayMode(!TopRow.tabsInLogoRow && m.mode == .lists ? .inlineLarge : .inline)
         // Solo en el mosaico: en las listas no hay pósters que acercar.
         .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.", active: m.mode == .mosaic)

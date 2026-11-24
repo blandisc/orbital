@@ -75,7 +75,7 @@ struct SettingsView: View {
         // Sin el hueco grande de arriba del primer grupo y con aire abajo: el último grupo no queda bajo la barra flotante.
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .contentMargins(.bottom, DS.Space.s12, for: .scrollContent)
-        .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()   // iPad y Mac: los renglones al centro
     }
 
@@ -151,7 +151,7 @@ struct SettingsView: View {
             }
             .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
                 .scrollContentBackground(.hidden).background(Backdrop())
-                .navigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
+                .dsNavigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
         }
         .presentationDetents([.medium])
@@ -276,11 +276,11 @@ struct SettingsView: View {
     }
 
     /// Una página de Ajustes: el mismo formulario y fondo.
-    func page<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+    func page<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         Form { content() }
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
-            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+            .dsNavigationTitle(title).navigationBarTitleDisplayMode(.inline)
             .readableListWidth()
     }
 
@@ -527,7 +527,7 @@ struct RememberedTitlesView: View {
         }
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text("Lo que recuerda cada título"))
+        .dsNavigationTitle("Lo que recuerda cada título")
         .task { reload(); await loadNames() }
     }
 

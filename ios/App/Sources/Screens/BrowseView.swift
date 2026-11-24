@@ -125,7 +125,7 @@ struct BrowseView: View {
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
-        .navigationTitle(TopRow.tabsInLogoRow ? Text(verbatim: "") : Text("Buscar")).toolbarTitleDisplayMode(TopRow.tabsInLogoRow ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .dsNavigationTitle(TopRow.tabsInLogoRow ? "" : "Buscar").toolbarTitleDisplayMode(TopRow.tabsInLogoRow ? .inline : .inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // La Mac: el logo, las pestañas y tu perfil en un renglón propio, como Inicio (en la barra del sistema la cápsula de las
         // pestañas se perdía al entrar a Buscar y al regresar de una ficha, 17 nov 2026).
         .macOwnTopRow { ProfileButton() }
@@ -348,7 +348,7 @@ struct PopularGridView: View {
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
-        .navigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)
     }
 
     static func suggestion(_ item: CatalogItem) -> Suggestion {

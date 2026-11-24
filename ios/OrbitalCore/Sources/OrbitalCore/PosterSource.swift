@@ -7,8 +7,11 @@ public final class PosterSource: @unchecked Sendable {
     static let storeKey = "poster-source"
     public static let ttl: TimeInterval = 30 * 86400
     static let maxEntries = 4000
-    /// Cuántas consultas a TMDB a la vez (A12, 10 nov 2026): una fila, no decenas de golpe al abrir Explorar.
-    static let concurrentLookups = 4
+    /// Cuántas consultas a TMDB a la vez (A12, 10 nov 2026: una fila, no decenas de golpe al abrir Explorar). Eran 4 y el
+    /// mosaico de Explorar (96 pósters) esperaba en fila 24 tandas antes de bajar la última imagen; con 32 todos se ven en
+    /// la mitad del tiempo (MP1, 25 nov 2026: 4.6 s → 2.4 s en `ios/scripts/medir-posters.py`). Sigue habiendo tope: TMDB
+    /// acepta ~50 por segundo.
+    static let concurrentLookups = 32
     /// Lo encontrado se escribe un rato después y de una vez (no un archivo entero por cada póster).
     static let writeDelay: Duration = .seconds(3)
     private struct Entry: Codable { var path: String; var at: Date }   // path vacío: TMDB no lo tiene

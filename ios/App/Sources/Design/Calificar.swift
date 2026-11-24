@@ -223,7 +223,7 @@ struct RatingQueue: View {
             .swipeActions { Button("No calificar", role: .destructive) { onDismiss(row.id) } }
         }
         .overlay { if rows.isEmpty { DSEmptyState(symbol: "star", title: Text("Nada por calificar")) } }
-        .navigationTitle("Por calificar")
+        .dsNavigationTitle("Por calificar")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

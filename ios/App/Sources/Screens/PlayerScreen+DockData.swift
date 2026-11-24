@@ -135,7 +135,7 @@ extension PlayerScreen {
                 .padding(DS.Space.gutter)
             }
             .fittedScrollSheet()   // a la medida de sus pistas; si no caben, se desplaza
-            .navigationTitle(Text("Audio"))
+            .dsNavigationTitle("Audio")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockState.dockAudio = false } } }
         }

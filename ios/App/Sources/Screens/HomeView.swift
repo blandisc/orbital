@@ -301,7 +301,7 @@ struct HomeView: View {
                 .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : Text("Sugerencias para ti"))
+        .dsNavigationTitle(route.id == "watchlist" ? "Mi lista" : "Sugerencias para ti")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -574,7 +574,7 @@ struct HomeView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)
+        .dsNavigationTitle("Seguir viendo").navigationBarTitleDisplayMode(.inline)
         // Ordenar y filtrar, como toda lista abierta desde «Ver todo».
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
