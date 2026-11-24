@@ -343,7 +343,7 @@ struct MainTabs: View {
             // Una sola pestaña (sin barra): así el accesorio «En la TV» y el panel siguen siendo los del sistema.
             TabView {
                 Tab("Orbital", systemImage: "house") {
-                    MacTabDeck(current: selection.wrappedValue, home: homeStack, explore: exploreStack, library: libraryStack, search: searchStack)
+                    MacTabDeck(home: homeStack, explore: exploreStack, library: libraryStack, search: searchStack)
                         .macHidesTabBar()
                 }
             }
@@ -426,10 +426,10 @@ struct MainTabs: View {
 
     /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
     private func wired(_ selection: Binding<Int>) -> some View {
-        macTabs.select = { selection.wrappedValue = $0 }; macTabs.focusSearch = { [env] in env.ui.focusSearch = true }   // sin observar
+        macTabs.select = MacTabDeck<EmptyView, EmptyView, EmptyView, EmptyView>.isOn ? { [macTabs] in macTabs.current = $0 } : { selection.wrappedValue = $0 }; macTabs.focusSearch = { [env] in env.ui.focusSearch = true }   // sin observar
         return shell(selection)
         .environment(\.macTabs, TopRow.tabsInLogoRow ? macTabs : nil)   // la misma caja siempre: el entorno no cambia al cambiar de pestaña
-        .onChange(of: [tab, env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending], initial: true) { _, now in macTabs.sync(tab: now[0], badge: now[1]) }
+        .onChange(of: [tab, env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending], initial: true) { _, now in macTabs.sync(tab: deck ? macTabs.current : now[0], badge: now[1]) }
         .environment(\.posterQuick, ThisDevice.isMac ? .app(env) : nil)
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)
@@ -464,12 +464,21 @@ struct MainTabs: View {
         }
     }
 
+    /// En la Mac la pestaña vive en `macTabs` y solo la baraja la lee (`MacTabDeck`): cambiar de pestaña no vuelve a armar esta
+    /// raíz. Antes cada clic pasaba por `tab` y la raíz entera se recalculaba: SwiftUI volvía a resolver letras y colores de las
+    /// cuatro pantallas y la app se congelaba ~0.5 s en cada cambio, aunque la pestaña ya estuviera armada (24 nov 2026).
+    private var deck: Bool { MacTabDeck<EmptyView, EmptyView, EmptyView, EmptyView>.isOn }
+    private var currentTab: Int { deck ? macTabs.current : tab }
+    private func setTab(_ new: Int) {
+        if deck { macTabs.current = new } else { tab = new }
+    }
+
     var body: some View {
         // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
         let selection = Binding(get: { tab }, set: { new in
             if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
             tab = new
-        })
+        })   // en la Mac la tira no pasa por aquí: le avisa a `macTabs` (ver `setTab`)
         wired(selection)
         .macDefaults()
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
@@ -477,21 +486,21 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         // Un aviso o «Tus pedidos» (RX1-A) abre la pestaña desde su principio: Descargas, no Ajustes encima.
-        .onChange(of: ui.openTab) { _, new in if let new { tab = new; paths[new] = NavigationPath(); env.openTab = nil } }
+        .onChange(of: ui.openTab) { _, new in if let new { setTab(new); paths[new] = NavigationPath(); env.openTab = nil } }
         .onChange(of: ui.goBack) { _, back in
             guard back else { return }
             ui.goBack = false
-            if !paths[tab].isEmpty { paths[tab].removeLast() }
+            if !paths[currentTab].isEmpty { paths[currentTab].removeLast() }
         }
         .onChange(of: ui.openSettings) { _, open in
             guard open else { return }
             ui.openSettings = false
-            paths[tab].append(SettingsRoute())
+            paths[currentTab].append(SettingsRoute())
         }
         // Ajustes › Tus idiomas (N4-A): Ajustes encima y ella abre su página (y apaga la bandera).
-        .onChange(of: ui.openLanguages) { _, open in if open { paths[tab].append(SettingsRoute()) } }
+        .onChange(of: ui.openLanguages) { _, open in if open { paths[currentTab].append(SettingsRoute()) } }
         // «Un Simpson al azar» del Centro de control: a Inicio, que abre la ruleta (y apaga la bandera).
-        .onChange(of: ui.openSimpsons, initial: true) { _, wants in if wants { tab = 0 } }
+        .onChange(of: ui.openSimpsons, initial: true) { _, wants in if wants { setTab(0) } }
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
@@ -499,7 +508,7 @@ struct MainTabs: View {
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
             // Como panel, ⌘R (y el control del Centro de control) lo abre y lo cierra.
             if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { titleHost.hide(); remoteLarge = true; showRemote = true } }
-            else { paths[tab].append(SettingsRoute()) }
+            else { paths[currentTab].append(SettingsRoute()) }
         }
         .task {
             forceDemoTab()   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
@@ -510,10 +519,10 @@ struct MainTabs: View {
             if Demo.isOn, let n = Demo.value(after: "-demo-tab-cycle").flatMap(Int.init) {
                 try? await Task.sleep(for: .seconds(10))   // Demo: que termine de arrancar
                 for i in 1...max(1, n) {
-                    tab = 0
+                    setTab(0)
                     try? await Task.sleep(for: .seconds(3))   // Demo: que Inicio se asiente
                     Perf.begin("xtab"); Perf.cycle("xtab", i); HitchMeter.measure("xtab", seconds: 2)
-                    tab = Demo.value(after: "-demo-tab-cycle-to").flatMap(Int.init) ?? 1   // a otra pestaña, para comparar
+                    setTab(Demo.value(after: "-demo-tab-cycle-to").flatMap(Int.init) ?? 1)   // a otra pestaña, para comparar
                     try? await Task.sleep(for: .seconds(4))   // Demo: lo que tarda en asentarse Explorar
                 }
                 Perf.cycle("done", n)
@@ -524,14 +533,14 @@ struct MainTabs: View {
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
-        .onChange(of: tab) { _, new in if Demo.isOn, !Demo.freeTabs, new != Demo.tab { tab = Demo.tab } }
+        .onChange(of: tab) { _, new in if Demo.isOn, !Demo.freeTabs, new != Demo.tab { setTab(Demo.tab) } }
         #endif
     }
 
     /// Tocar el accesorio «En la TV» abre la ficha de lo que suena (en Inicio).
     private func openNowPlaying(_ now: OrbitalRemote.NowPlaying) {
         guard let metaID = now.metaID else { return }
-        tab = 0
+        setTab(0)
         paths[0].append(TitleRoute(kind: now.kind, metaID: metaID, title: now.title, poster: now.poster))
     }
 
@@ -539,33 +548,33 @@ struct MainTabs: View {
     private func openPendingTitle() {
         guard let route = env.pendingTitle else { return }
         env.pendingTitle = nil
-        tab = 0
+        setTab(0)
         if titleAsPanel { titleHost.show(route) } else { paths[0].append(route) }   // iPad y Mac: flotando a la izquierda
     }
 
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
     private func forceDemoTab() {
         #if DEBUG
-        if Demo.isOn { tab = Demo.tab } else if let start = Demo.startTab { tab = start }
+        if Demo.isOn { setTab(Demo.tab) } else if let start = Demo.startTab { setTab(start) }
         #endif
     }
 
     private func openDemoScreen() {
         #if DEBUG
         guard Demo.isOn else { return }
-        tab = Demo.tab
+        setTab(Demo.tab)
         // `-demo-open settings-avatar` (la hoja del avatar) también vive en Ajustes.
-        if Demo.open?.hasPrefix("settings") == true || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
-        if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
-        if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
+        if Demo.open?.hasPrefix("settings") == true || Demo.open == "year" || Demo.open == "orbital-setup" { paths[currentTab].append(SettingsRoute()) }
+        if Demo.open == "repisa" { setTab(1); paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
+        if Demo.open == "watching" { setTab(1); paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
         // `-demo-open history` / `vistas`: Guardado › Vistas › Historial o Vistas (capturas; la pestaña la elige `LibrarySavedView`).
-        if Demo.open == "history" || Demo.open == "vistas" { tab = AppEnvironment.downloadsTab }
-        if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
+        if Demo.open == "history" || Demo.open == "vistas" { setTab(AppEnvironment.downloadsTab) }
+        if let id = Demo.repisa { setTab(1); paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title {
             let route = TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)
-            if titleAsPanel { titleHost.show(route) } else { paths[tab].append(route) }
+            if titleAsPanel { titleHost.show(route) } else { paths[currentTab].append(route) }
         }
-        if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
+        if let id = Demo.mediaTitle { paths[currentTab].append(MiMediaTitleRoute(id: id)) }
         if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }
         #endif
     }

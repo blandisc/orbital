@@ -372,7 +372,9 @@ struct FilterDoor: View {
                 }
             }
         }
-        .padding(DS.Space.s2)
+        // En la Mac con más aire: el ícono y las cápsulas iban pegados a la orilla de la tarjeta (Fernando, 24 nov 2026: «pulida
+        // de UX UI a la página de buscar»).
+        .padding(ThisDevice.isMac ? DS.Space.s6 : DS.Space.s2)
         // Teñida de turquesa y con orilla: otra cosa que la búsqueda por nombre (Fernando, 31 oct 2026). Excepción decidida a
         // «el turquesa no decora» (2 nov 2026: «déjalo en la tarjeta de búsqueda avanzada»).
         .background(DS.Filter.doorFill, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))

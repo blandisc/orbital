@@ -230,7 +230,7 @@ struct BrowseView: View {
             let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
             TitleNavigationLink(route: route) {
                 CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: titleName(top.title, id: top.metaID, kind: top.kind),
-                          why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
+                          why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: ThisDevice.isMac ? DS.Mac.searchTopHeight : DS.Size.searchTopHeight)
             }
             .perfTag("search.top")
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)

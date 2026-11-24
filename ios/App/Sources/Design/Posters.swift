@@ -32,6 +32,9 @@ struct PosterView: View {
     /// Aún no se sabe qué imagen va (el destacado decide entre su póster alto y su fondo): el marco quieto, no el nombre sobre
     /// color. Sin esto, el destacado de Inicio enseñaba el nombre hasta 1.5 s y luego brincaba a la imagen (23 nov 2026).
     var waiting = false
+    /// En un marco alto, un fondo ancho completo arriba y fundido hacia abajo, no recortado a los lados (`ArtFit.wholeTop`):
+    /// el panel de la ficha en la Mac.
+    var keepsWide = false
     @State private var primaryFailed = false
 
     private var shownURL: String? { primaryFailed ? fallback : url }
@@ -76,7 +79,19 @@ struct PosterView: View {
     /// dos cortes a los lados).
     private func filled(_ image: Image, source: UIImage?, key: String) -> some View {
         GeometryReader { box in
-            if let size = source?.size, ArtFit.choose(image: size, box: box.size) == .whole {
+            let fit = source.map { ArtFit.choose(image: $0.size, box: box.size, keepsWide: keepsWide) } ?? .fill
+            if fit == .wholeTop {
+                ZStack(alignment: .top) {
+                    image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height).clipped()
+                        .blur(radius: DS.Image.wholeBlur, opaque: true).overlay(DS.scrim)
+                    image.resizable().scaledToFit()
+                        .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: DS.Image.wholeTopFade),
+                                                     .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                }
+                .frame(width: box.size.width, height: box.size.height)
+            } else if fit == .fillTop {
+                image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height, alignment: .top).clipped()
+            } else if fit == .whole {
                 ZStack(alignment: bleed ? .trailing : .center) {
                     image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height).clipped()
                         .blur(radius: DS.Image.wholeBlur, opaque: true).overlay(DS.scrim)

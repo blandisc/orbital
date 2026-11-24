@@ -8,6 +8,8 @@ struct ParaTiView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model: ModelObserver<ParaTiModel>
     @State private var tint = ArtTint()
+    /// Escondida en la baraja de la Mac (solo se lee dentro de acciones, no al dibujar: cambiar de pestaña no la repinta).
+    @TabHidden private var tabHidden
     /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
     @State private var focusedArt: String?
     /// La sugerencia enfocada del mosaico (su información va bajo él).
@@ -49,7 +51,7 @@ struct ParaTiView: View {
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s16)
                 // Los avisos («Ya está en tu Orbital») salen encima del pie, no sobre sus botones.
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { env.ui.noticeLift = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !tabHidden { env.ui.noticeLift = $0 } }   // armada escondida (la baraja de la Mac la prepara antes): no mueve los avisos de otra pestaña
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .id(item.imdb)
             }
@@ -62,7 +64,7 @@ struct ParaTiView: View {
     /// Las listas (con la puerta de «Decide por mí»).
     private var listsPart: some View {
         ListsView(observer: model, onDecide: { deciding = true })
-            .onAppear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+            .onAppear { if !tabHidden, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
     }
 
     var body: some View {

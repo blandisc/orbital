@@ -171,7 +171,10 @@ struct HomeView: View {
     /// MI2 · II1 (`HomeBoard`): la portada en dos tercios y, a su derecha, lo tuyo: lo que tienes a medias, lo nuevo de tus series y «Decide por mí».
     private func boardTop(_ model: HomeModel, continuing: [HomeItem], kind: String?) -> some View {
         HStack(alignment: .top, spacing: DS.HomeBoard.gap) {
-            spotlightPart(model).frame(width: HomeBoard.heroWidth, height: HomeBoard.height).clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            // Solo el ancho: el alto lo pone la portada (el del panel, `HomeBoard.heroAspect`) y los puntos van debajo. Con el
+            // alto fijo, los puntos cabían adentro, el arte se encogía y quedaba con ~30 pt de hueco a cada lado: corrido de las
+            // filas de abajo y más bajito que el panel (Fernando, 24 nov 2026: «los pósters están como descentrados»).
+            spotlightPart(model).frame(width: HomeBoard.heroWidth)
             HomeBoardPanel(rows: { limit in boardRows(model, continuing: continuing, limit: limit) }, news: {
                 if kind != "movie", !model.timeline.isEmpty { ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true }, inset: 0) }
             }, decide: { DecideHomeRow(compact: true) { openTitle = $0 } })
@@ -397,6 +400,7 @@ struct HomeView: View {
         }
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $heroSlot)
+        .clipShape(RoundedRectangle(cornerRadius: board ? DS.Radius.xxl : 0, style: .continuous))   // el tablero: la tarjeta al pasar de una a otra
         .overlay(alignment: .bottom) {
             if !WindowMetrics.roomy {
                 PageDots(count: items.count, index: index)

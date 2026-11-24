@@ -14,8 +14,10 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
     /// Solo la Mac: en el iPad y el iPhone siguen las pestañas del sistema (su barra, su animación).
     static var isOn: Bool { ThisDevice.isMac }
 
-    let current: Int
     let home: Home, explore: Explore, library: Library, search: Search
+    /// La pestaña a la vista: la lee solo la baraja (no la raíz), así cambiar de pestaña no vuelve a armar la app (`RootView.setTab`).
+    @Environment(\.macTabs) private var tabs
+    private var current: Int { tabs?.current ?? 0 }
     /// Las pantallas que ya se abrieron (las demás no se arman hasta que las pidas: el arranque no paga Explorar).
     @State private var mounted: Set<Int> = []
 
@@ -28,6 +30,18 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
             card(2, shown) { search }
         }
         .onChange(of: current, initial: true) { _, now in if !mounted.contains(now) { mounted.insert(now) } }
+        .task { await prepareAhead() }
+    }
+
+    /// Biblioteca y Explorar se arman solas poco después de abrir la app, escondidas y una a la vez: el primer clic ya no paga
+    /// armarlas (24 nov 2026: la primera vez a Explorar congelaba ~0.8 s de 2.4 s de trabajo; a Biblioteca, ~1 s). Buscar no:
+    /// al armarse pide el cursor.
+    private func prepareAhead() async {
+        guard (try? await Task.sleep(for: .seconds(DS.Mac.tabPrepareDelay))) != nil else { return }
+        for id in [3, 1] where !mounted.contains(id) {
+            mounted.insert(id)
+            guard (try? await Task.sleep(for: .seconds(DS.Mac.tabPrepareGap))) != nil else { return }
+        }
     }
 
     @ViewBuilder private func card(_ id: Int, _ shown: Set<Int>, @ViewBuilder _ content: () -> some View) -> some View {

@@ -47,4 +47,13 @@ final class ArtFitTests: XCTestCase {
         XCTAssertEqual(ArtFit.choose(image: .zero, box: CGSize(width: 100, height: 100)), .fill)
         XCTAssertEqual(ArtFit.choose(image: poster, box: .zero), .fill)
     }
+
+    /// El panel de la ficha en la Mac: un fondo 16:9 en su marco casi cuadrado va completo arriba, no recortado hacia una orilla.
+    func testWideArtStaysWholeInTallPanel() {
+        let panel = CGSize(width: 478, height: 550)
+        XCTAssertEqual(ArtFit.choose(image: backdrop, box: panel, keepsWide: true), .wholeTop)
+        XCTAssertEqual(ArtFit.choose(image: backdrop, box: panel), .fill, "el iPhone sigue llenando su portada")
+        XCTAssertEqual(ArtFit.choose(image: poster, box: panel, keepsWide: true), .fillTop, "un póster alto llena desde arriba")
+        XCTAssertEqual(ArtFit.choose(image: poster, box: panel), .fill, "fuera del panel, hacia el sujeto como siempre")
+    }
 }

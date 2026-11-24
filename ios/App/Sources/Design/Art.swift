@@ -41,6 +41,9 @@ struct BleedArt<Content: View>: View {
     /// Una tarjeta con esquinas también en oscuro y sin margen propio: la portada del tablero de Inicio (MI2), que va junto al
     /// panel de lo tuyo y no de orilla a orilla.
     var tile = false
+    /// Un fondo ancho en un marco alto va completo arriba, sin recortarse hacia una orilla (`ArtFit.wholeTop`): el panel de la
+    /// ficha en la Mac.
+    var keepsWide = false
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -107,7 +110,7 @@ struct BleedArt<Content: View>: View {
             // 17 nov 2026: «muchos problemas de performance en la Mac»).
             Breathing(from: breathFrom) {
                 PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback,
-                           waiting: art == nil && url != nil)   // decidiendo póster alto o fondo: el marco quieto
+                           waiting: art == nil && url != nil, keepsWide: keepsWide)   // decidiendo póster alto o fondo: el marco quieto
             }
         }
             .task(id: url) {

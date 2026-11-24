@@ -98,7 +98,6 @@ struct HomeHeader: View {
         .buttonStyle(.plain).foregroundStyle(DS.text)
         .padding(.leading, DS.Space.s4).padding(.trailing, DS.Space.s1)   // el control con aire a su izquierda; tu foto, a la misma distancia de la orilla que de arriba
         .frame(height: DS.Size.touchTarget)   // SZ1: del alto de los demás selectores (44), no más
-        .glassEffect(.regular.interactive(), in: Capsule())
-        .macPillBase(Capsule())   // junto al selector de tipo: la misma base en la Mac
+        .macTopGlass(Capsule())   // el vidrio del renglón de arriba, como las pestañas y «Buscar» (en el iPhone, el de siempre)
     }
 }

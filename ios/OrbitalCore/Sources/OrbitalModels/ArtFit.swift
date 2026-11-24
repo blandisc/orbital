@@ -9,6 +9,13 @@ public enum ArtFit: Equatable, Sendable {
     case fill
     /// Completa, sobre su copia difuminada.
     case whole
+    /// Completa a lo ancho, arriba, y fundida hacia abajo en su copia difuminada: un fondo 16:9 en un marco alto (el panel de
+    /// la ficha en la Mac). Llenarlo lo recortaba a menos de la mitad y lo corría hacia el sujeto: si el sujeto estaba en la
+    /// orilla, quedaba pegado al borde y cortado (Fernando, 24 nov 2026: «se ve como descentrado el póster de fondo»).
+    case wholeTop
+    /// Llena el marco anclada arriba (sin buscar al sujeto): un póster alto en el panel de la ficha. Lo de abajo lo tapan el
+    /// título y los datos, y arriba suelen ir las caras; buscando al sujeto bajaba hacia un cuchillo y cortaba la cabeza.
+    case fillTop
 
     /// Cuánto más ancho que la imagen puede ser el marco antes de dejar de recortarla (1.4: un póster 2:3 llena la portada de la
     /// ficha, 0.9, perdiendo un poco de arriba y de abajo; en un marco de 0.93 o más ancho ya va completo).
@@ -18,10 +25,14 @@ public enum ArtFit: Equatable, Sendable {
     /// Desde cuánto recorte (la parte de la imagen que queda fuera, en un eje) vale buscar al sujeto: menos, se recorta al centro.
     public static let focusFrom = 0.15
 
-    public static func choose(image: CGSize, box: CGSize, limit: Double = narrowLimit) -> ArtFit {
+    /// `keepsWide`: en un marco alto, un fondo ancho va completo arriba (`wholeTop`) en vez de recortarse a los lados.
+    public static func choose(image: CGSize, box: CGSize, limit: Double = narrowLimit, keepsWide: Bool = false) -> ArtFit {
         guard image.width > 0, image.height > 0, box.width > 0, box.height > 0 else { return .fill }
         let imageAspect = image.width / image.height, boxAspect = box.width / box.height
-        return boxAspect / imageAspect > limit ? .whole : .fill
+        if boxAspect / imageAspect > limit { return .whole }
+        if keepsWide, imageAspect / boxAspect > limit { return .wholeTop }
+        if keepsWide, imageAspect < boxAspect { return .fillTop }
+        return .fill
     }
 
     /// El tamaño al que se dibuja la imagen para llenar el marco (lo que sobra se recorta).

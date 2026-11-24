@@ -56,8 +56,7 @@ struct MacTabStrip: View {
                 MacTabButton(title: Text("Biblioteca"), symbol: "rectangle.stack", on: current == 3, badge: tabs.libraryBadge, compact: compact) { MacTabSwitch.go(tabs, 3) }
             }
             .padding(DS.Space.s1)
-            .background(Capsule().fill(DS.surfaceRaised))
-            .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+            .macTopGlass(Capsule())
             .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("mac-tabs")
@@ -87,8 +86,8 @@ struct MacSearchChip: View {
                     // más chico que ellas (Fernando, 22 nov 2026: «buscar lo haría un poquito más grande»).
                     // DK (22 nov 2026: «el dock de arriba un poquito más grande»): crece junto con las pestañas y tu foto.
                     .padding(.horizontal, compact ? DS.Space.s6 : DS.Space.s8).padding(.vertical, DS.Mac.topBarPadV + DS.Space.s1)
-                    .background(Capsule().fill(on ? DS.text : DS.surfaceRaised))
-                    .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+                    .background { if on { Capsule().fill(DS.text) } }
+                    .macTopGlass(Capsule())
             }
             .buttonStyle(.plain)
             .help(Text("Buscar"))
@@ -182,8 +181,7 @@ struct MacTopRow<Trailing: View>: View {
             trailing
                 .buttonStyle(.plain).foregroundStyle(DS.text)
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
-                .glassEffect(.regular.interactive(), in: Capsule())
-                .macPillBase(Capsule())
+                .macTopGlass(Capsule())
         }
         // RN2: las pestañas en su cápsula, al centro del renglón (como la tele).
         .overlay { if MacTabStrip.centered { MacTabStrip() } }
@@ -203,6 +201,15 @@ struct TabStyle: ViewModifier {
 }
 
 extension View {
+    /// El vidrio del renglón de arriba (las pestañas, «Buscar» y lo de la derecha): Liquid Glass con un tinte leve del color de
+    /// las tarjetas y su filo de luz, en vez de la cápsula sólida (Fernando, 24 nov 2026: «un look más liquid glass a los 3
+    /// elementos de arriba y a buscar»). Lo de atrás se asoma al deslizar; el tinte basta para que se lea sobre el fondo oscuro
+    /// (el vidrio solo no se veía: por eso los demás controles de la Mac llevan `macPillBase`).
+    /// En el iPhone y el iPad, el vidrio de siempre (ahí va sobre la barra del sistema y ya se lee).
+    func macTopGlass(_ shape: some Shape) -> some View {
+        glassEffect(ThisDevice.isMac ? .regular.tint(DS.Mac.topGlassTint).interactive() : .regular.interactive(), in: shape)
+    }
+
     /// En la Mac, una sombra bajo la barra de arriba: sobre el mosaico de Explorar o la portada de Inicio las pestañas se
     /// perdían entre los pósters. En iPhone y iPad, nada (ahí la barra del sistema ya tiene su desvanecido).
     @ViewBuilder func macTopShade() -> some View {
@@ -252,8 +259,9 @@ struct MacSearchField: View {
         }
         .padding(.horizontal, DS.Space.s6)
         .frame(maxWidth: .infinity, minHeight: DS.Mac.searchFieldHeight)   // BU-A: de orilla a orilla, alineado con la cuadrícula
-        .background(DS.surfaceRaised, in: Capsule())
-        .overlay(Capsule().strokeBorder(focused.wrappedValue ? DS.accent : DS.hairline, lineWidth: focused.wrappedValue ? DS.Stroke.selected : DS.Stroke.hairline))
+        // De vidrio, como el renglón de arriba (`macTopGlass`); escribiendo, su filo de color.
+        .macTopGlass(Capsule())
+        .overlay { if focused.wrappedValue { Capsule().strokeBorder(DS.accent, lineWidth: DS.Stroke.selected) } }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mac-search-field")

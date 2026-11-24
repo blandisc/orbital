@@ -15,7 +15,7 @@ extension TitleView {
         let aspect = contentWidth > 0 && extra > 0 ? contentWidth / (contentWidth / heroAspect + extra) : heroAspect
         return BleedArt(url: model.background ?? model.poster, title: titleName(model.title, id: model.metaID, kind: model.kind),
                  aspect: aspect, collapses: true, zoom: PlayerZoomID(metaID: model.metaID, slot: "title"),   // «Ver» hace crecer el video desde el arte
-                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false, raised: extra) {
+                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false, raised: extra, keepsWide: inPanel) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.logo, title: titleName(model.title, id: model.metaID, kind: model.kind), size: .hero, centered: true)
                     // Parte del ancho de la ficha (`contentWidth`), no del contenedor: en el panel de la Mac el contenedor era la

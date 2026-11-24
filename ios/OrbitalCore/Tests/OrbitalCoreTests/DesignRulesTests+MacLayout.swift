@@ -54,8 +54,14 @@ extension DesignRulesTests {
             let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
             return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
         }
-        XCTAssertTrue(try code("RootView.swift").contains("MacTabDeck(current: selection.wrappedValue"), "las pestañas de la Mac van en la baraja")
+        let root = try code("RootView.swift")
+        XCTAssertTrue(root.contains("MacTabDeck(home:"), "las pestañas de la Mac van en la baraja")
+        // Cambiar de pestaña no vuelve a armar la raíz: la pestaña vive en `macTabs` y solo la baraja la lee (24 nov 2026: cada
+        // clic congelaba ~0.5 s porque la raíz se recalculaba y con ella las letras y colores de las cuatro pantallas).
+        XCTAssertTrue(root.contains("if deck { macTabs.current = new }") && root.contains("{ [macTabs] in macTabs.current = $0 }"),
+                      "en la Mac la tira y `setTab` cambian `macTabs`, no el estado de la raíz")
         let deck = try code("MacTabDeck.swift")
+        XCTAssertTrue(deck.contains("@Environment(\\.macTabs) private var tabs") && !deck.contains("let current: Int"), "la baraja lee la pestaña ella misma")
         XCTAssertTrue(deck.contains(".opacity(on ? 1 : 0)") && deck.contains(".allowsHitTesting(on)"), "la escondida solo se esconde")
         let perCard = deck.components(separatedBy: "\n").filter { $0.contains(".environment(") }
         XCTAssertEqual(perCard.map { $0.trimmingCharacters(in: .whitespaces) }, [".environment(\\.macTabID, id)   // fijo: la carta siempre es la misma pestaña"],

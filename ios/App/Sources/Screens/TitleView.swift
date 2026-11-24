@@ -18,7 +18,7 @@ struct TitleView: View {
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
     @Environment(\.horizontalSizeClass) private var windowSizeClass
-    @Environment(\.titleInPanel) private var inPanel
+    @Environment(\.titleInPanel) var inPanel
     /// En el panel de la derecha de la Mac (FI-B), siempre la ficha de una columna. No basta con poner `.compact` en el entorno:
     /// la pila de navegación del panel lo vuelve a tomar de la ventana, y la ficha ancha en un panel angosto se medía sin fin
     /// (la app se trabó al abrir una ficha, 22 nov 2026).
@@ -53,6 +53,9 @@ struct TitleView: View {
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
+    /// Lo de abajo de la ficha (episodios, reparto, detalles) se arma cuando la ficha ya llegó, no en el mismo cuadro del
+    /// toque: así el toque responde al momento (en la Mac armar todo junto congelaba 250–400 ms al abrir; 24 nov 2026).
+    @State private var belowFold = false
     /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
     @State var topInset: CGFloat = 0
 
@@ -113,6 +116,10 @@ struct TitleView: View {
             letterboxdInfo = await Letterboxd(http: env.services.http, kv: env.services.kv).info(imdb: model.metaID)
         }
         .task { await model.loadConsoleDetails() }
+        .task {   // lo de abajo, cuando la ficha ya llegó (ver `belowFold`)
+            guard (try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))) != nil else { return }
+            belowFold = true
+        }
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .modifier(RewatchCard(row: $rewatch, version: rewatchVersion(model), again: { startEpisode(model, videoID: $0) }, versions: openVersions, unwatch: { id in Task { await model.unmarkWatched(id) } }))
@@ -351,6 +358,11 @@ struct TitleView: View {
         if let info = letterboxdInfo, !info.reviews.isEmpty {
             LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
         }
+        if belowFold { belowTheFold(model) }
+    }
+
+    /// Lo de más abajo de la ficha: se arma después de que la ficha llegó (`belowFold`).
+    @ViewBuilder private func belowTheFold(_ model: TitleModel) -> some View {
         if model.kind == "series" { episodes(model) }
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).

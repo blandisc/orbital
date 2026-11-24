@@ -529,6 +529,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let widePhone: CGFloat = 420
         /// El desenfoque de la copia que rellena el marco cuando la imagen va completa (`ArtFit.whole`).
         static let wholeBlur: CGFloat = 28
+        /// Hasta dónde se ve nítido un fondo ancho completo arriba (`ArtFit.wholeTop`) antes de fundirse en su copia difuminada.
+        static let wholeTopFade: CGFloat = 0.7
         /// Basta una miniatura para sacar el color medio del fondo.
         static let tintPixels: CGFloat = 48
         /// La imagen de un aviso («Ya está para ver»): el lado más largo y la calidad del JPEG.

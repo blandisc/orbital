@@ -64,6 +64,15 @@ extension DS {
         static let searchRowsMin = 2, searchTop: CGFloat = 520, searchCaption: CGFloat = 52
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
         static let topScrim: CGFloat = 120
+        /// «Mejor resultado» en Buscar: en la Mac la ventana es tan ancha que con el alto del iPhone quedaba una franja delgada y
+        /// el arte casi no se veía (24 nov 2026).
+        static let searchTopHeight: CGFloat = 320
+        /// Cuánto después de abrir la app se arman, escondidas, Biblioteca y Explorar (`MacTabDeck`), y cuánto entre una y otra:
+        /// primero que Inicio se asiente; luego una a la vez, para no trabar lo que estés haciendo.
+        static let tabPrepareDelay: Double = 4, tabPrepareGap: Double = 2.5
+        /// El tinte del vidrio del renglón de arriba (`macTopGlass`): lo justo para que se lea sobre el fondo oscuro sin volverse
+        /// una cápsula sólida.
+        static let topGlassTint = DS.surfaceRaised.opacity(0.45)
         /// DK (Fernando, 22 nov 2026: «hacer el dock de arriba un poquito más grande»): las pestañas, «Buscar» y tu foto, un
         /// paso más grandes en la Mac y en el iPad ancho (la letra de un nombre en tarjeta y más aire arriba y abajo).
         /// Otro paso el 23 nov 2026 («arriba donde dice Orbital y el dock, un poquito más grande»): la letra de una subsección

@@ -1003,7 +1003,9 @@ nuevos tamaños»):
 - **El vidrio lleva base en la Mac:** el selector Todo · Películas · Series, «Filtros» y la cápsula de arriba de Inicio van
   sobre `macPillBase` (el color de las tarjetas y su filo). Sobre el fondo oscuro de la Mac el vidrio solo no se veía y el
   selector parecía íconos sueltos. En la Mac los íconos del tipo van de línea (`KindGlyph.variant`): el rollo de película
-  relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video.
+  relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video. El renglón de arriba (las
+  pestañas, «Buscar», tu foto y el campo de Buscar) va de vidrio con un tinte leve en vez de base (`macTopGlass`, 24 nov
+  2026: «un look más liquid glass a los 3 elementos de arriba y a buscar»): ahí el tinte basta para que se lea.
 - **El reproductor en la Mac** (revisión del 16 nov 2026, «revisa muy bien el reproductor»):
   - **Toda pantalla completa y toda hoja recibe la app a mano:** cada `fullScreenCover` lleva `.environment(env)` en lo que
     muestra y toda hoja se abre con `.appSheet(` (nunca `.sheet(` suelto), que se la pone. En la Mac la cubierta o la hoja lee
@@ -1132,6 +1134,13 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
   `RepisaWeeklyTests.testVolverAExplorarAlRatoNoVuelveACargar` lo vigilan. Con una ficha abierta, el renglón de las
   pestañas sigue tomando clics y cambiar de pestaña la cierra (antes el velo de la ficha se comía el primer clic: «le pico
   a Inicio y no cambia»).
+- **Cambiar de pestaña no toca la raíz (24 nov 2026).** En la Mac la pestaña vive en `macTabs` y solo la baraja la lee
+  (`RootView.setTab`); antes cada clic pasaba por el estado de la raíz, que se recalculaba y con ella las letras y colores
+  de las cuatro pantallas: ~0.5 s congelada en cada cambio, aunque la pestaña ya estuviera armada. Además Biblioteca y
+  Explorar se arman solas, escondidas y una a la vez, unos segundos después de abrir la app (`DS.Mac.tabPrepareDelay`): el
+  primer clic ya no paga armarlas. Lo que se arma escondido no actúa sobre otra pestaña (lee `@TabHidden` en sus acciones).
+  Medido (2516 → 2518): cambiar entre pestañas ya vistas, 450–550 ms congelada → nada (150–350 ms de trabajo); primera vez
+  a Explorar, 2.4 s con 0.8 s congelada → 1.2 s sin congelarse; Biblioteca, 1 s → 0.6 s.
 - **Cómo se mide (y cómo no).** La velocidad se mide en la app instalada (Release, la cuenta de Fernando, su ventana) con
   `ios/scripts/medir-clics-mac.sh`, antes y después, la misma secuencia con la app recién abierta. No vale medir solo en Debug ni
   con la demostración (allí se «mejoraba» y en la Mac de Fernando se sentía igual). Tres números por clic: trabajo del hilo
@@ -1162,6 +1171,14 @@ abrir 3.4 s de trabajo con 1 s congelada, Explorar 2 s con 1 s congelada.
   película, 450–550 ms congelada → 250–400 ms. Lo que queda es armar la ficha nueva (textos, dibujarla): siguiente paso.
 - **Ojo al medir:** otras sesiones compilando suben la carga de la Mac a 20–80 y los números se inflan al doble; medir
   con carga < 6. Los clics de computer use pasan por accesibilidad y suman su propio trabajo.
+- **Primero lo que se ve (24 nov 2026).** Los episodios, el reparto y los detalles de la ficha se arman un instante
+  después de que llegó (`TitleView.belowFold`), no en el mismo cuadro del clic: abrir otra película, 808 → 760 ms de
+  trabajo y el congelamiento más largo de ~400 a ~300 ms.
+- **El arte del panel no se recorta hacia una orilla (24 nov 2026).** Fernando: «se ve como descentrado el póster de
+  fondo». El marco del panel es casi cuadrado: un fondo 16:9 se recortaba a menos de la mitad y se corría hacia el sujeto
+  (si estaba en la orilla, quedaba pegado al borde y cortado), y un póster alto se corría hacia un cuchillo y cortaba la
+  cabeza. En el panel (`keepsWide`), el fondo ancho va completo arriba y se funde en su copia difuminada
+  (`ArtFit.wholeTop`) y el póster alto se ancla arriba (`ArtFit.fillTop`). `ArtFitTests.testWideArtStaysWholeInTallPanel`.
 
 ### La receta de la ficha ancha (17 nov 2026)
 

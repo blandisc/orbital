@@ -202,6 +202,10 @@ extension DesignRulesTests {
                 XCTAssertTrue(next.contains(".macPillBase("), "\(file.name):\(i + 1): un control de vidrio sin su base en la Mac")
             }
         }
+        // El renglón de arriba (pestañas, «Buscar», tu foto, el campo de Buscar) es de vidrio con tinte en vez de base (24 nov 2026).
+        let strip = try XCTUnwrap(files.first { $0.name == "MacTabStrip.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(strip.contains(".regular.tint(DS.Mac.topGlassTint)"), "el vidrio de arriba lleva su tinte en la Mac")
+        XCTAssertGreaterThanOrEqual(strip.components(separatedBy: ".macTopGlass(Capsule())").count - 1, 4, "pestañas, «Buscar», lo de la derecha y el campo van de vidrio")
         let filters = try XCTUnwrap(files.first { $0.name == "Filters.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(filters.contains("static var variant: SymbolVariants { ThisDevice.isMac ? .none : .fill }"), "En la Mac los íconos del tipo van de línea")
     }

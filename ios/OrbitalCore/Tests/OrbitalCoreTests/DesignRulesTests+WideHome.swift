@@ -33,5 +33,9 @@ extension DesignRulesTests {
         let home = try XCTUnwrap(files.first { $0.name == "HomeView.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(home.contains("HomeBoard.isOn(typeSize)"), "Inicio pregunta a `HomeBoard.isOn` si va el tablero")
         XCTAssertFalse(home.contains("DS.HomeBoard.from"), "el ancho del tablero no se compara a mano en Inicio")
+        // La portada llena su ancho, alineada con las filas de abajo: con el alto fijo los puntos cabían adentro y el arte se
+        // encogía al centro, con hueco a los lados (24 nov 2026: «los pósters están como descentrados»).
+        XCTAssertTrue(home.contains("spotlightPart(model).frame(width: HomeBoard.heroWidth)\n") || home.contains("spotlightPart(model).frame(width: HomeBoard.heroWidth)\r"),
+                      "la portada del tablero lleva solo su ancho; su alto lo da su proporción")
     }
 }
