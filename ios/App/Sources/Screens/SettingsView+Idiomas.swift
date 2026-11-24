@@ -27,11 +27,11 @@ extension SettingsView {
         // mosaicos, su bandera y una muestra de cómo se va a ver (los menús de la app, el nombre de una película).
         Section {
             languagePick(title: "La app", detail: "Menús, botones y avisos", symbol: "character.bubble", tint: DS.ListTint.series,
-                         sample: { $0 == "en" ? "Home · Search" : "Inicio · Buscar" }, region: s.region,
+                         sample: { $0 == "en" ? "Home · Search" : "Inicio · Buscar" }, preview: .app, region: s.region,
                          selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
                 .accessibilityIdentifier("languages-app")
             languagePick(title: "Títulos y sinopsis", detail: "Y los pósters, en ese idioma si los hay", symbol: "text.quote", tint: DS.ListTint.calendar,
-                         sample: { $0 == "en" ? "Spirited Away" : "El viaje de Chihiro" }, region: s.region,
+                         sample: { $0 == "en" ? "Spirited Away" : "El viaje de Chihiro" }, preview: .poster, region: s.region,
                          selection: Binding(get: { s.titleLanguage }, set: { v in model.update { $0.metadataLanguage = v } }))
                 .accessibilityIdentifier("languages-titles")
         } header: { Text("Lo que lees") }
@@ -64,7 +64,7 @@ extension SettingsView {
     /// Un idioma de Orbital: su nombre arriba y los dos mosaicos (cada idioma con su propio nombre, así lo encuentra quien no
     /// lee el otro), con su bandera y la muestra en ese idioma.
     private func languagePick(title: LocalizedStringKey, detail: LocalizedStringKey, symbol: String, tint: Color,
-                              sample: @escaping (String) -> String, region: String, selection: Binding<String>) -> some View {
+                              sample: @escaping (String) -> String, preview: LanguagePreview.Kind, region: String, selection: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Label {
                 VStack(alignment: .leading, spacing: 0) {
@@ -84,6 +84,8 @@ extension SettingsView {
                     .accessibilityIdentifier("language-choice-\(code)")
                 }
             }
+            // IP-C: la muestra que cambia al tocar (la barra de pestañas o el póster de mentira).
+            LanguagePreview(kind: preview, language: selection.wrappedValue)
         }
         .padding(.vertical, DS.Space.s1)
         .accessibilityElement(children: .contain)

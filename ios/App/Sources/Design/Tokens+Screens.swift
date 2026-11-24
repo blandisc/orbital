@@ -350,6 +350,12 @@ extension DS {
     }
 
     /// Ajustes: los renglones con su ícono de color.
+    /// La muestra viva de Ajustes › Idiomas (`LanguagePreview`): el ancho del póster de mentira, su alto (en veces el ancho)
+    /// y cuánto espera cada palabra de la barra de juguete tras la anterior.
+    enum LanguagePreview {
+        static let posterWidth: CGFloat = 64, posterTall: CGFloat = 1.5, step: Double = 0.06
+    }
+
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
         /// Lo que ocupa la flecha de un renglón que lleva a otra página.

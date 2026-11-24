@@ -1636,6 +1636,7 @@ IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB 
           "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight",
           # Nombres propios, formatos técnicos y muestras escritas en su idioma (Ajustes › Idiomas): no se traducen.
           "DD+", "DTS-HD", "Dolby Atmos", "HDR10+", "Shōgun", "Spirited Away", "El viaje de Chihiro", "Home · Search", "Inicio · Buscar",
+          "Una niña entra a un mundo de espíritus y tiene que encontrar cómo volver.", "A girl wanders into a world of spirits and must find her way home.",
           "En\\u{00A0}%@", "Orbital-SWR/poster-source.json", "Trakt %@ %", "Trakt %@\\u{00A0}%", "User-Agent"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}

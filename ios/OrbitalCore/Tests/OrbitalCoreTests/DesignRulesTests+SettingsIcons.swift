@@ -43,6 +43,7 @@ extension DesignRulesTests {
             "LessonCatalog.swift": "la lección «¿Qué veo hoy?»",
             "SourcesSheet.swift": "la leyenda de la versión recomendada",
             "OnboardingWin.swift": "el mosaico de Explorar en la bienvenida",
+            "LanguagePreview.swift": "la pestaña Explorar en la barra de juguete de Idiomas",
         ]
         let hits = hits("\"sparkles\"", in: try sources()).filter { hit in !allowed.keys.contains { hit.contains("/\($0):") } }
         XCTAssertEqual(hits, [], "el destello es de Explorar y de descubrir; para otra cosa, otro ícono")
