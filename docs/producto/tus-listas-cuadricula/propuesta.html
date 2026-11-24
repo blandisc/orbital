@@ -1,0 +1,74 @@
+<title>Tus listas en cuadrícula</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: cuatro teléfonos lado a lado (hoy, A, B, C); cada uno con «Tus listas» de Explorar dibujado al tamaño del 17 Pro. */
+:root{
+  --bg:#f3f4f7; --fg:#15171c; --muted:#5d6370; --card:#ffffff; --line:#dfe2e8;
+  --phone:#0b0d12; --phoneText:#f2f3f5; --phoneMuted:#9aa0ab; --moon:#3fd6c8; --rec:#0f8f84;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0e1015;--fg:#eef0f3;--muted:#9aa0ab;--card:#171a21;--line:#272b34;--rec:#3fd6c8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1015;--fg:#eef0f3;--muted:#9aa0ab;--card:#171a21;--line:#272b34;--rec:#3fd6c8;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 56px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-family:var(--display);font-size:30px;margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.opt.rec{border:2px solid var(--rec)}
+.code{font-family:var(--display);font-weight:700;font-size:20px}
+.tag{font-size:12px;font-weight:600;color:var(--rec);letter-spacing:.04em}
+.opt h2{font-size:16px;margin:0}
+.opt p{margin:0;color:var(--muted);font-size:14px}
+.pros{margin:0;padding-left:18px;font-size:14px}
+.pros li.minus{color:var(--muted)}
+/* teléfono */
+.phone{background:var(--phone);color:var(--phoneText);border-radius:28px;padding:14px 12px 18px;aspect-ratio:402/640;max-width:100%;overflow:hidden;display:flex;flex-direction:column;gap:10px}
+.head{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.head .dot{width:8px;height:8px;border-radius:50%;background:var(--moon)}
+.head .rule{flex:1;height:1px;background:#2a2e37}
+.tile{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cover{aspect-ratio:4/3;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;background:#1b1f27}
+.cover i{display:block}
+.name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.count{font-size:10px;color:var(--phoneMuted)}
+.new .cover{display:flex;align-items:center;justify-content:center;border:1.5px dashed #3a3f4a;background:transparent;font-size:20px;color:var(--phoneMuted)}
+.row{display:flex;gap:10px;overflow:hidden}
+.row .tile{flex:0 0 46%}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px 8px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 6px}
+.g3 .cover{aspect-ratio:1/1;grid-template-columns:1fr 1fr}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bento .big{grid-column:1/-1}
+.bento .big .cover{aspect-ratio:2/1;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr}
+.note{font-size:10px;color:var(--phoneMuted);margin-top:auto}
+.foot{color:var(--muted);font-size:14px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Tus listas: cómo verlas todas a la vez</h1>
+    <p class="lead">Hoy en Explorar tus listas van en una fila que se desliza de lado: ves dos y media y las demás quedan escondidas. Las cuatro maquetas usan las mismas nueve listas, al tamaño del iPhone 17 Pro. Dime el código que prefieres.</p>
+  </header>
+  <div class="grid" id="opts"></div>
+  <p class="foot">Mi recomendación es <b>TL-A</b>: con nueve listas cabe todo en una pantalla sin deslizar, cada portada sigue mostrando cuatro pósters que se distinguen, y «Nueva lista» queda como una tarjeta más. TL-B se ve más editorial, pero el tamaño depende de cuál va primero. TL-C mete más listas, aunque los nombres se cortan y los pósters se vuelven muy chicos para el dedo.</p>
+</div>
+
+<script>
+const lists=[["Mi lista",42],["Favoritas",18],["Para ver con Ana",9],["Terror de los 80",14],["Anime",11],["Oscar 2026",10],["Domingo",7],["Series cortas",12],["Ya vistas",63]];
+const hues=[[205,60],[340,55],[25,70],[0,0],[280,45],[45,75],[160,45],[220,30],[120,35]];
+function poster(h,s,k){return `<i style="background:linear-gradient(${150+k*40}deg,hsl(${h+k*18} ${s}% ${22+k*6}%),hsl(${h+k*18+30} ${Math.max(s-15,0)}% ${12+k*4}%))"></i>`}
+function tile(i,n){const [name,c]=lists[i],[h,s]=hues[i];let p="";for(let k=0;k<n;k++)p+=poster(h,s,k);return `<div class="tile"><div class="cover">${p}</div><div class="name">${name}</div><div class="count">${c} títulos</div></div>`}
+const add=`<div class="tile new"><div class="cover">+</div><div class="name">Nueva lista</div><div class="count">&nbsp;</div></div>`;
+const head=`<div class="head"><span class="dot"></span>Tus listas<span class="rule"></span></div>`;
+const all=(n)=>lists.map((_,i)=>tile(i,n)).join("");
+const opts=[
+ {code:"Hoy",title:"Fila que se desliza",desc:"Lo que tienes ahora.",phone:`${head}<div class="row">${add}${tile(0,4)}${tile(1,4)}</div><div class="note">Las otras siete, deslizando a la derecha.</div>`,pros:["Ocupa poco alto en Explorar."],cons:["Solo ves dos listas y media.","Hay que adivinar cuántas hay."]},
+ {code:"TL-A",rec:true,title:"Cuadrícula de dos",desc:"Todas a la vez, dos por renglón, rectángulos 4:3.",phone:`${head}<div class="g2">${all(4)}${add}</div>`,pros:["Ves las nueve sin deslizar.","Portadas grandes: cuatro pósters que se reconocen.","«Nueva lista» al final, como una más."],cons:["Explorar crece hacia abajo cuando tienes muchas."]},
+ {code:"TL-B",title:"Mosaico con destacada",desc:"Mi lista a lo ancho y el resto en dos columnas.",phone:`${head}<div class="bento"><div class="big">${tile(0,4)}</div>${lists.slice(1,7).map((_,i)=>tile(i+1,4)).join("")}</div><div class="note">+ 2 más y «Nueva lista» abajo.</div>`,pros:["Se ve más editorial.","Tu lista principal resalta."],cons:["Una lista pesa más que las demás.","Ocupa más alto que TL-A."]},
+ {code:"TL-C",title:"Cuadrícula de tres",desc:"Cuadros más chicos, tres por renglón.",phone:`${head}<div class="g3">${all(4)}</div><div class="note">«Nueva lista» en el renglón de abajo.</div>`,pros:["Cabe lo más posible.","Lo más compacto."],cons:["Nombres que se cortan.","Pósters muy chicos para tocar."]}
+];
+document.getElementById("opts").innerHTML=opts.map(o=>`<section class="opt${o.rec?" rec":""}"><div><div class="code">${o.code}</div>${o.rec?'<div class="tag">RECOMENDADA</div>':""}</div><h2>${o.title}</h2><p>${o.desc}</p><div class="phone">${o.phone}</div><ul class="pros">${o.pros.map(x=>`<li>${x}</li>`).join("")}${o.cons.map(x=>`<li class="minus">${x}</li>`).join("")}</ul></section>`).join("");
+</script>

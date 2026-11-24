@@ -12,10 +12,12 @@ struct SavedListTile: View {
     let posters: [String]
     /// El ícono de la portada vacía (y la marca de Favoritos).
     var symbol = "rectangle.portrait.on.rectangle.portrait.fill"
+    /// La forma de la portada: cuadrada en Biblioteca; en la cuadrícula de Explorar, un rectángulo (TL-A).
+    var aspect = DS.Saved.coverAspect
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            SavedCover(posters: posters, symbol: symbol)
+            SavedCover(posters: posters, symbol: symbol, aspect: aspect)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 name.recipe(.cardTitle).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 if let detail { detail.recipe(.footnote, color: DS.textMuted).lineLimit(1) }
@@ -30,9 +32,10 @@ struct SavedListTile: View {
 /// cuadro gris que parecía una imagen que no cargó. Sin internet se ve apagada y dice por qué.
 struct SavedNewListTile: View {
     var online = true
+    var aspect = DS.Saved.coverAspect
     var body: some View {
         Color.clear
-            .aspectRatio(DS.Saved.coverAspect, contentMode: .fit)
+            .aspectRatio(aspect, contentMode: .fit)
             .overlay { DSAddTile(label: "Nueva lista", note: online ? nil : "Necesita internet", enabled: online) }
     }
 }
@@ -41,10 +44,11 @@ struct SavedNewListTile: View {
 private struct SavedCover: View {
     let posters: [String]
     let symbol: String
+    let aspect: CGFloat
 
     var body: some View {
         Color.clear
-            .aspectRatio(DS.Saved.coverAspect, contentMode: .fit)
+            .aspectRatio(aspect, contentMode: .fit)
             .overlay {
                 if posters.count >= DS.Saved.coverPosters {
                     Grid(horizontalSpacing: DS.Size.hairline, verticalSpacing: DS.Size.hairline) {

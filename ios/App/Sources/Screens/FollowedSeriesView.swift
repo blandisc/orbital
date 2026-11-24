@@ -45,7 +45,7 @@ struct FollowedSeriesView: View {
         .searchable(text: $query, prompt: Text("Buscar una serie"))
         .navigationTitle(Text("Series que sigues")).navigationBarTitleDisplayMode(.inline)
         .task { await follow.loadSeries() }
-        .refreshable { await follow.loadSeries() }
+        .orbitalRefreshableList { await follow.loadSeries() }
     }
 
     private func row(_ follow: FollowModel, _ show: TraktWatchedTitle) -> some View {
@@ -109,7 +109,7 @@ struct HiddenSeriesView: View {
         .scrollContentBackground(.hidden)
         .background(Backdrop())
         .navigationTitle(Text("Escondidas")).navigationBarTitleDisplayMode(.inline)
-        .refreshable { await follow.loadSeries() }
+        .orbitalRefreshableList { await follow.loadSeries() }
     }
 }
 

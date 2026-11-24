@@ -127,8 +127,9 @@ extension DS {
         /// Tus listas en mosaico: dos columnas en el iPhone; en ventana ancha (iPad, Mac), las que quepan de `listTileMin`.
         static let listColumns = 2
         static let listTileMin: CGFloat = 180
-        /// Tus listas en una fila que se desliza (Explorar en la Mac y el iPad): del ancho de las tarjetas de Años y Géneros.
-        static var listTileRow: CGFloat { DS.PlatformFan.width }
+        /// TL-A (Fernando, 23 nov 2026): en Explorar, todas tus listas a la vez en cuadrícula, con portadas en rectángulo 4:3
+        /// (aprovechan el ancho sin que dos columnas llenen la pantalla).
+        static let gridAspect: CGFloat = 4 / 3
         static func listColumns(forWidth width: CGFloat) -> Int {
             max(listColumns, Int((width - DS.Space.gutter * 2 + DS.Space.s2) / (listTileMin + DS.Space.s2)))
         }

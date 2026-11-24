@@ -20,7 +20,7 @@ extension DesignRulesTests {
         // Un control de tamaño fijo con ícono crece como la letra en la Mac: el selector Todo · Películas · Series se veía con
         // el ícono llenando su círculo (Fernando, 16 nov 2026: «dale una pulida a los selectores»).
         let learn = try XCTUnwrap(design.first { $0.name == "Tokens+Learn.swift" }).lines.joined(separator: "\n")
-        for size in ["closed", "open", "dense"] {
+        for size in ["cell"] {   // SZ1: un solo tamaño
             XCTAssertTrue(learn.contains("static var \(size): CGFloat { Mac.sized("), "DS.KindPill.\(size) crece en la Mac")
         }
         // El arte a sangre se pide al ancho de la ventana solo en la Mac (si no, la portada se ve pixeleada); en iPhone y iPad,

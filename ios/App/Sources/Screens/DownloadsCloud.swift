@@ -125,7 +125,7 @@ struct CloudSheetsHost: ViewModifier {
     func body(content: Content) -> some View {
         let model = env.services.debridRequests
         content
-            .refreshable { if active { await model.refresh() } }
+            .orbitalRefreshableList { if active { await model.refresh() } }
             .task(id: active) {
                 guard active else { return }
                 _ = await DebridRequestNotifier.permission(); await model.refresh(); await model.loadActiveCount()

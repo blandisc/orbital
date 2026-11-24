@@ -30,7 +30,7 @@ struct HomeTopTen: View {
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
             layout {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
-                              eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"), quiet: true)
+                              eyebrow: service.weekly ? Text("Lo más visto esta semana") : Text("Lo más visto hoy"), quiet: true)   // la misma frase en todos (23 nov 2026: «te cambia el texto»)
                     .lineLimit(typeSize.isAccessibilitySize ? nil : 1).minimumScaleFactor(DS.Size.titleShrink)
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio

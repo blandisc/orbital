@@ -111,9 +111,12 @@ struct DSMoreMenu<Content: View>: View {
 struct DSIconButton: View {
     enum Size {
         case small, regular, large
-        var control: ControlSize { switch self { case .small: .small; case .regular: .regular; case .large: .large } }
+        /// SZ1 (23 nov 2026): junto al título de una sección (calendario, Canales), el círculo de 44 de los selectores, del
+        /// mismo vidrio y tamaño que la pastilla de tipo (el nativo `large` salía de 57 y `regular` se veía chico).
+        case selector
+        var control: ControlSize { switch self { case .small: .small; case .regular: .regular; case .large, .selector: .large } }
         /// El lado de un dibujo del catálogo en este tamaño (`asset:`).
-        var assetGlyph: CGFloat { switch self { case .small: DS.IconButton.assetSmall; case .regular: DS.IconButton.assetRegular; case .large: DS.IconButton.assetLarge } }
+        var assetGlyph: CGFloat { switch self { case .small: DS.IconButton.assetSmall; case .regular, .selector: DS.IconButton.assetRegular; case .large: DS.IconButton.assetLarge } }
     }
     let symbol: String
     let label: LocalizedStringKey
@@ -162,7 +165,13 @@ struct DSIconButton: View {
 
     var body: some View {
         Group {
-            if prominent { Button(action: action) { glyph }.dsPrimaryButton() }
+            if size == .selector {
+                Button(action: action) { glyph.font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Circle()) }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .macPillBase(Circle())
+            }
+            else if prominent { Button(action: action) { glyph }.dsPrimaryButton() }
             else { Button(action: action) { glyph }.dsIconButtonLook() }
         }
         .buttonRepeatBehavior(repeats ? .enabled : .automatic)
@@ -195,9 +204,14 @@ struct ConfirmIconButton: View {
                 Image(systemName: symbol)
                 if asking { Text(prompt).lineLimit(1).fixedSize().transition(.opacity.combined(with: .move(edge: .leading))) }
             }
+            .font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
+            .padding(.horizontal, asking ? DS.Space.s4 : 0)
+            .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)   // SZ1: 44, como los demás selectores
+            .contentShape(Capsule())
         }
-        .dsIconButtonLook()
-        .buttonBorderShape(asking ? .capsule : .circle).dsControlSize(.large)
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: Capsule())
+        .macPillBase(Capsule())
         .accessibilityLabel(Text(label))
         .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))
         .dsFeedback(.selection, trigger: asking)

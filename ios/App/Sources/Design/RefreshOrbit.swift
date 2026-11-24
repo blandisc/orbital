@@ -43,6 +43,8 @@ struct RefreshOrbit: View {
     var pull: CGFloat = 0
     var distance: CGFloat = 0
     var refreshing = false
+    /// Lo que tapa la barra de arriba (en una `List` la luna se pinta en la lista misma, debajo de esa barra).
+    var top: CGFloat = 0
     /// MO1: cuánto más hay que jalar para pasar de «actualizar» a una puerta (la portada de Explorar abre el mosaico), y si ya
     /// se pasó con el dedo puesto (al soltar entra en vez de actualizar). Sin puerta, nil.
     var beyond: CGFloat?
@@ -78,6 +80,23 @@ private struct RefreshOrbitHost: ViewModifier {
     }
 }
 
+private struct RefreshOrbitListHost: ViewModifier {
+    @Environment(RefreshPull.self) private var state: RefreshPull?
+
+    func body(content: Content) -> some View {
+        let refreshing = state?.refreshing ?? false
+        content
+            .contentMargins(.top, refreshing ? DS.Refresh.slot : 0, for: .scrollContent)
+            .background(alignment: .top) {
+                if let state, state.pull > 0 || refreshing {
+                    RefreshOrbit(pull: state.pull, refreshing: refreshing)
+                        .offset(y: state.top + (refreshing ? DS.Space.s2 : (state.distance - DS.Refresh.mark) / 2))
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+
 private struct OrbitalRefreshable: ViewModifier {
     let action: @Sendable () async -> Void
     /// MO1: la puerta más allá de «actualizar» (cuánto hay que jalar y qué abre). Sin ella, solo actualiza.
@@ -92,6 +111,7 @@ private struct OrbitalRefreshable: ViewModifier {
         content
             .environment(state)
             // Cuánto se jala por encima del inicio (en puntos), sin contar la barra de arriba.
+            .onScrollGeometryChange(for: CGFloat.self) { geo in geo.contentInsets.top } action: { _, top in state.top = top }
             .onScrollGeometryChange(for: CGFloat.self) { geo in max(0, -(geo.contentOffset.y + geo.contentInsets.top)) } action: { _, distance in
                 state.distance = distance
                 state.pull = min(1, distance / DS.Refresh.threshold)
@@ -140,4 +160,9 @@ extension View {
     }
     /// Donde se pinta la luna de `orbitalRefreshable`: el contenido de la lista (lo de adentro del `ScrollView`).
     func refreshOrbitHost() -> some View { modifier(RefreshOrbitHost()) }
+    /// Lo mismo en una `List` (Descargas, Historial, Series que sigues): la luna detrás de la lista y, mientras actualiza, la
+    /// lista baja su hueco. Una sola carga en toda la app (Fernando, 23 nov 2026: en Descargas salía la ruedita del sistema).
+    func orbitalRefreshableList(_ action: @escaping @Sendable () async -> Void) -> some View {
+        modifier(RefreshOrbitListHost()).orbitalRefreshable(action)
+    }
 }

@@ -83,20 +83,21 @@ struct HomeHeader: View {
                 // se quitaba y, apagándose, quedaba un instante encima de tu foto.
                 // OI-1: el aire de la cápsula alrededor del ícono también es el botón (sin mover el dibujo), para atinarle con el dedo.
                 Button(action: remote) {
-                    Image(systemName: "av.remote").font(DS.TextRecipe.section.font)
-                        .padding(DS.Space.s2).contentShape(Rectangle()).padding(-DS.Space.s2)   // ds-exception: crece el toque, no el dibujo
+                    Image(systemName: "av.remote").font(DS.TextRecipe.title.font)   // 23 nov 2026: un paso más grande, para atinarle
+                        .padding(DS.Space.s4).contentShape(Rectangle()).padding(-DS.Space.s4)   // ds-exception: crece el toque, no el dibujo
                 }
                     .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                     .opacity(kindOpen ? 0 : 1)
                     .frame(width: kindOpen ? 0 : nil, alignment: .leading)
                     .clipped()
-                    .padding(.trailing, kindOpen ? 0 : DS.Space.s6)   // aire entre el control y tu foto (23 nov 2026: con s4 se veían pegados)
+                    .padding(.trailing, kindOpen ? 0 : DS.Space.s8)   // aire entre el control y tu foto (23 nov 2026: con s4 pegados; con s6 todavía cerca)
                     .accessibilityHidden(kindOpen)
             }
             ProfileButton(avatar: avatar)
         }
         .buttonStyle(.plain).foregroundStyle(DS.text)
-        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2)
+        .frame(height: DS.Size.touchTarget)   // SZ1: del alto de los demás selectores (44), no más
         .glassEffect(.regular.interactive(), in: Capsule())
         .macPillBase(Capsule())   // junto al selector de tipo: la misma base en la Mac
     }

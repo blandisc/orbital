@@ -285,7 +285,7 @@ struct KindPill: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var mark
     private var cell: CGFloat {
-        open ? (chapter ? DS.KindPill.chapter : dense ? DS.KindPill.dense : DS.KindPill.open) : DS.KindPill.closed
+        DS.KindPill.cell   // SZ1: un solo tamaño, abierta o cerrada, en cualquier pantalla
     }
     /// El cierre que espera a que el círculo llegue: otro toque lo cancela (nunca se cierra encima de lo que acabas de hacer).
     @State private var folding: Task<Void, Never>?
@@ -305,17 +305,14 @@ struct KindPill: View {
                 Button { choose(option.0) } label: {
                     HStack(spacing: 0) {
                         Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(KindGlyph.variant)   // el mismo dibujo abierta y cerrada
-                            .font(chapter ? DS.TextRecipe.cardTitle.font : DS.TextRecipe.section.font)   // EX-A: cabe holgado en su círculo de 32
+                            .font(DS.TextRecipe.section.font)
                             .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
                             // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                             .frame(width: cell, height: cell)
                     }
                     .foregroundStyle(on && open ? DS.bg : DS.text)
                     .matchedGeometryEffect(id: option.0, in: mark)   // dónde va el círculo cuando es lo elegido
-                    // EX-A: 36 a la vista y 44 al dedo (crece arriba y abajo sin mover nada).
-                    .padding(.vertical, chapter ? DS.KindPill.chapterReach : 0)
-                    .contentShape(chapter ? AnyShape(Rectangle()) : AnyShape(Capsule()))
-                    .padding(.vertical, chapter ? -DS.KindPill.chapterReach : 0)
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(KindPillPress())
                 .help(Text(option.1))
@@ -439,7 +436,7 @@ private struct KindName: ViewModifier {
             .foregroundStyle(DS.text)
             .lineLimit(1).fixedSize()
             .padding(.horizontal, DS.KindPill.nameInset / 2)   // aire igual a los dos lados: el nombre queda centrado en su lugar
-            .padding(.leading, ThisDevice.isMac ? DS.KindPill.nameInset / 2 : 0)   // en la Mac la pastilla es más redonda: el nombre se pegaba a la curva
+            .padding(.leading, DS.KindPill.nameInset / 2)   // la orilla es curva: el nombre se pegaba a ella (Mac 16 nov; iPhone 23 nov, «Películas» en Explorar)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("kind-name")
     }
@@ -462,7 +459,7 @@ struct DSFiltersButton: View {
             Image(systemName: DS.Symbol.refine).font(DS.TextRecipe.section.font)
                 .foregroundStyle(on ? DS.DecideLive.onTint : DS.text)
                 .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? 0 : count)
-                .frame(width: DS.KindPill.open, height: DS.KindPill.open)
+                .frame(width: DS.KindPill.cell, height: DS.KindPill.cell)
                 .background {
                     Circle().fill(tint)
                         .scaleEffect(on || reduceMotion ? 1 : DS.DecideLive.fillFrom)

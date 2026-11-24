@@ -88,7 +88,7 @@ struct HistoryScreen: View {
         .listHeadRows()
         .scrollContentBackground(.hidden)   // el cielo lo pone la Biblioteca, el mismo en todo Guardado
         .environment(\.editMode, $editMode)
-        .refreshable { await model.reload() }
+        .orbitalRefreshableList { await model.reload() }
         .task { await model.loadIfNeeded() }
         .onChange(of: language) { model.monthName = Self.monthName(env.services) }   // los meses en el idioma nuevo
         .appSheet(item: $editing) { e in

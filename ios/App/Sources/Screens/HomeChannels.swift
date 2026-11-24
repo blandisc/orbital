@@ -29,7 +29,7 @@ struct HomeChannels: View {
                 DSSectionHead(title: Text("Canales"), eyebrow: Text("Siempre hay un episodio al aire"))
                 Spacer(minLength: DS.Space.s2)
                 if let simpsons, let simpsonsZoom {
-                    DSIconButton(asset: "Glyphs/donut", label: "Un Simpson al azar", action: simpsons)
+                    DSIconButton(asset: "Glyphs/donut", label: "Un Simpson al azar", size: .selector, action: simpsons)
                         .help(Text("Un Simpson al azar"))   // con el puntero, dice qué hace
                         .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }

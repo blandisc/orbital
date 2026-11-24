@@ -17,4 +17,12 @@ extension DesignRulesTests {
         }
         XCTAssertEqual(missing, [], "Se mueven solos sin preguntar por ThisDevice.ambientMotion (en la Mac, quietos)")
     }
+
+    /// Cargar se ve igual en toda la app (Fernando, 23 nov 2026: en Descargas salía la ruedita del sistema y en Inicio la luna
+    /// de Orbital): tirar para actualizar es siempre `orbitalRefreshable` (o `orbitalRefreshableList` en una lista), nunca
+    /// `.refreshable` del sistema.
+    func testPullToRefreshIsAlwaysTheOrbit() throws {
+        let used = try sources().filter { !$0.path.contains("RefreshOrbit") }.flatMap { f in f.lines.filter { $0.contains(".refreshable {") || $0.contains(".refreshable{") }.map { "\(f.path): \($0)" } }
+        XCTAssertEqual(used, [], "Tirar para actualizar con la ruedita del sistema: usa orbitalRefreshable / orbitalRefreshableList")
+    }
 }

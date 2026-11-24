@@ -305,6 +305,7 @@ struct ListsView: View {
                         listRows(label: CollectionSection.trakt.title, symbol: CollectionSection.trakt.symbol, cards: traktLists,
                                  create: collections.model.traktLinked ? { naming = true } : nil)
                             .modifier(SectionSpy(section: .trakt, tracker: activeSection))
+                            .id("your-lists")   // `-demo-shelf your-lists` baja hasta aquí
                     }
                     if !addonCards.isEmpty {
                         listRows(label: CollectionSection.addons.title, symbol: CollectionSection.addons.symbol, cards: addonCards)
@@ -450,39 +451,29 @@ struct ListsView: View {
         listTiles(label: label, symbol: symbol, cards: cards, create: create)
     }
 
-    /// Tus listas en mosaicos que se deslizan, como en Biblioteca, y «Nueva lista» como el primer mosaico (Fernando, 22 nov 2026:
-    /// «replantear cómo presentamos tus listas… y el botón de crear una lista», primero en la Mac y el iPad; el 23 nov también en
-    /// el iPhone: «solo quiero que se mejore la forma en la que las presentamos»). Antes eran renglones a todo lo ancho, al pie
-    /// de Explorar, con un botón suelto «Crear una lista» al final.
+    /// TL-A (Fernando, 23 nov 2026: «ya no puedo ver todas al mismo tiempo… que se vea como un cuadriculado»): todas tus
+    /// listas a la vez, en la cuadrícula de Biblioteca (dos columnas en el iPhone, las que quepan con espacio) con portadas en
+    /// rectángulo, y «Nueva lista» al final como una más. Antes, una fila que se deslizaba (se veían dos y media).
     private func listTiles(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)?) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
+        let columns = DS.Saved.listColumns(forWidth: WindowMetrics.column.width)
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: label, symbol: symbol)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s4) {
-                    if let create {
-                        Button(action: create) { SavedNewListTile() }
-                            .buttonStyle(.plain)
-                            .frame(width: DS.Saved.listTileRow)
-                            .fixedSize(horizontal: false, vertical: true)   // la portada, del ancho del mosaico (sin esto, más angosta y centrada)
-                            .accessibilityIdentifier("list-create")
-                    }
-                    ForEach(cards) { c in
-                        if let shelf = c.shelf {
-                            NavigationLink(value: shelf) { SavedListTile(name: Text(verbatim: c.name), posters: c.posters) }
-                                .buttonStyle(.plain).pointerHover(.lift)
-                                .frame(width: DS.Saved.listTileRow)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("list-\(c.id)")
-                        }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: columns),
+                      alignment: .leading, spacing: DS.Space.s4) {
+                ForEach(cards) { c in
+                    if let shelf = c.shelf {
+                        NavigationLink(value: shelf) { SavedListTile(name: Text(verbatim: c.name), posters: c.posters, aspect: DS.Saved.gridAspect) }
+                            .buttonStyle(.plain).pointerHover(.lift)
+                            .accessibilityIdentifier("list-\(c.id)")
                     }
                 }
-                .scrollTargetLayout()
+                if let create {
+                    Button(action: create) { SavedNewListTile(aspect: DS.Saved.gridAspect) }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("list-create")
+                }
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
-            .rowEdge(.bleeds)
-            .pagingArrows()
-            .edgeBump()
+            .padding(.horizontal, DS.Space.gutter)
         }
     }
 

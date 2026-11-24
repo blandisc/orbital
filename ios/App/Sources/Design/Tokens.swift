@@ -304,6 +304,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Un resorte sin rebote, para lo que cambia de alto y de forma a la vez (el control al estirarse o encogerse, los
         /// sustos al abrirse): sigue a la hoja en lugar de ir por su lado.
         static func smooth(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.slow) }
+        /// La puerta entre Explorar y el mosaico: el mismo resorte suave, más pausado (23 nov 2026: «más suave»).
+        static func door(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DS.ParaTiB.doorSeconds) }
         /// Lo que crece desde donde está y lo que viaja a su lugar (la pastilla de tipo, su círculo blanco): resorte que se
         /// asienta casi sin pasarse, más lento que `fold`. «Lo que crece no choca» (13 nov 2026; antes `morph` rebotaba).
         static func grow(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: growDuration, bounce: growBounce) }

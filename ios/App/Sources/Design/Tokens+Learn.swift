@@ -111,16 +111,12 @@ extension DS.Coach {
 extension DS {
     /// SX1: el selector de Inicio. Cerrado, cada ícono mide `closed`; abierto crece a `open` para tocarlo fácil.
     enum KindPill {
-        /// En la Mac crecen como la letra (`DS.Mac.typeScale`): el ícono ya crecía y llenaba su círculo (16 nov 2026).
-        static var closed: CGFloat { Mac.sized(34) }
-        static var open: CGFloat { Mac.sized(42) }
-        /// En el renglón de controles de una lista (R1): cabe con el nombre de lo elegido (KT1).
-        static var dense: CGFloat { Mac.sized(38) }
-        /// EX-A (Fernando, 19 nov 2026): en el renglón de un capítulo («Lo que se ve hoy» de Explorar) mide 36 con su borde,
-        /// como los demás botones redondos, y no le gana al rótulo. Al dedo cada ícono crece `chapterReach` arriba y abajo
-        /// (44, `DS.Size.touchTarget`); en el renglón se asoma `chapterBleed` sobre el aire, que se mide al rótulo.
-        static var chapter: CGFloat { Mac.sized(32) }
-        static let chapterReach: CGFloat = 6, chapterBleed: CGFloat = 9
+        /// SZ1 (Fernando, 23 nov 2026: «que todos los selectores sean del mismo tamaño»): cada ícono mide `cell` en todas
+        /// partes (Inicio, Explorar, el Top 10, una lista); con su orilla, la pastilla mide 44, como el calendario, «Ver en la
+        /// TV» y la cápsula del control y tu foto. En la Mac crece como la letra. Antes eran cuatro: 34, 42, 38 y 32.
+        static var cell: CGFloat { Mac.sized(40) }
+        /// En el renglón de un capítulo («Lo que se ve hoy» de Explorar) se asoma `chapterBleed` sobre el aire del rótulo.
+        static let chapterBleed: CGFloat = 9
         /// Lo que llega nace de este tamaño junto a lo que ves (nunca de la nada: antes 0.4, un brinco); al apretar un ícono se
         /// hunde a `pressed` (tantito: es respuesta al dedo, no un golpe).
         static let enterScale: CGFloat = 0.8, pressed: CGFloat = 0.92   // ds-exception: escalas

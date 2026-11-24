@@ -63,6 +63,12 @@ struct MosaicCover: View {
     static func mosaicTransition(_ reduce: Bool) -> AnyTransition {
         reduce ? .opacity : .scale(scale: DS.ParaTiB.doorEnterScale, anchor: .top).combined(with: .opacity)
     }
+    /// Lo que deja el mosaico (Explorar) se apaga y crece tantito, como si entraras: antes se quitaba de golpe.
+    static func listsTransition(_ reduce: Bool) -> AnyTransition {
+        reduce ? .opacity : .scale(scale: 1 + (1 - DS.ParaTiB.doorEnterScale), anchor: .top).combined(with: .opacity)
+    }
+    /// El paso entre Explorar y el mosaico: un resorte suave y pausado.
+    static func doorAnimation(_ reduce: Bool) -> Animation { DS.Motion.door(reduce) ?? DS.Motion.fade }
 
     var body: some View {
         Group {

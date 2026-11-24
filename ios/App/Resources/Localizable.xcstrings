@@ -18362,17 +18362,6 @@
         }
       }
     },
-    "Esta semana en tu país": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This week in your country"
-          }
-        }
-      }
-    },
     "Esta versión no tiene un enlace para descargar.": {
       "extractionState": "manual",
       "localizations": {
@@ -21305,13 +21294,13 @@
         }
       }
     },
-    "Lo más visto hoy · JustWatch": {
+    "Lo más visto hoy": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Most watched today · JustWatch"
+            "value": "Most watched today"
           }
         }
       }

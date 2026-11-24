@@ -40,7 +40,7 @@ struct ReleaseTimeline: View {
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // El calendario es un ícono redondo, como el «+» de Canales (Fernando, 2 nov 2026, B3: sin la cápsula «Noviembre»;
                 // el mes ya se ve al abrirlo).
-                DSIconButton(symbol: "calendar", label: "Calendario del mes", size: .regular, action: onCalendar)
+                DSIconButton(symbol: "calendar", label: "Calendario del mes", size: .selector, action: onCalendar)   // SZ1: del tamaño de los demás selectores
                     .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
                     .accessibilityIdentifier("release-calendar")
             }
