@@ -1145,6 +1145,24 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
   No se quedaron. Sí sirvió: el arte que respira a 4 pasos por segundo en vez de 20 (Inicio quieto: 15 % → 9 % del hilo
   principal). Ojo al medir: los clics por accesibilidad (computer use) suman 10–20 % de trabajo que el mouse no.
 
+### La ficha de la Mac va en su propia capa (24 nov 2026)
+
+Fernando: «picarle a una película es lento… tuve que hacer un force quit». Medido con Instruments en la app instalada: con
+la ficha vacía (solo el título) abrirla o cerrarla congelaba la pantalla igual (~200 ms; 1 s la primera vez). El costo no
+era la ficha: ponerla como `overlay` de la raíz hacía que SwiftUI volviera a acomodar y pintar todo lo de atrás (las
+cuatro pestañas armadas). La versión del 21 nov (antes de la ficha a la derecha y de la baraja) era más lenta en todo:
+abrir 3.4 s de trabajo con 1 s congelada, Explorar 2 s con 1 s congelada.
+
+- **Regla: lo que flota encima de toda la pantalla de la Mac no se mete en la pantalla de SwiftUI.** La ficha vive en su
+  propia capa de UIKit (`MacTitleHost`), una por ventana: la pantalla de atrás no se entera de que se abrió. Hereda lo que
+  la raíz le pone a todo uno por uno (`SideTitle`); el entorno entero (`\.self`) no, porque escondía la ficha a VoiceOver.
+  Lo de atrás se esconde a VoiceOver solo si VoiceOver está prendido (esconderlo rearma la accesibilidad de todas las
+  pestañas: ~250 ms con un cliente de accesibilidad). `DesignRulesTests.testMacTabsStayBuilt` lo vigila.
+- **Resultado (2504 → 2514, la misma secuencia, Mac con poca carga):** cerrar, 200 ms congelada → nada; abrir otra
+  película, 450–550 ms congelada → 250–400 ms. Lo que queda es armar la ficha nueva (textos, dibujarla): siguiente paso.
+- **Ojo al medir:** otras sesiones compilando suben la carga de la Mac a 20–80 y los números se inflan al doble; medir
+  con carga < 6. Los clics de computer use pasan por accesibilidad y suman su propio trabajo.
+
 ### La receta de la ficha ancha (17 nov 2026)
 
 Fernando: «replantea con una receta el cómo se debe de armar… que la imagen que está atrás de manera inteligente se

@@ -15,35 +15,56 @@ struct TabBarFirst: ViewModifier {
 }
 
 /// La ficha en la Mac (FI-B): entra por la derecha, cerca de 40 % del ancho, sobre la pantalla oscurecida que sigue ahí.
-/// Tocar afuera, la ✕ o Esc la cierran; tocar otro póster la cambia. Adentro, la ficha del iPhone (una columna).
+/// Tocar afuera, la ✕ o Esc la cierran; tocar otro póster la cambia; picar Inicio o Explorar la cierra y cambia de pestaña
+/// en un solo clic. Vive en su propia capa (`MacTitleHost`), no encima de esta pantalla: así abrirla no vuelve a acomodar
+/// lo de atrás. Aquí solo se le dice en qué ventana vive, qué entorno hereda y cuándo cerrarse.
 struct SideTitle: ViewModifier {
-    @Binding var item: TitleRoute?
+    let host: MacTitleHost
+    /// Ventana ancha en la Mac: si se angosta con la ficha abierta, se cierra (la ficha pasa a abrirse a pantalla completa).
+    let enabled: Bool
+    // Lo que la ficha hereda de la pantalla (lo que la app y la raíz le ponen a todo lo de adentro).
+    @Environment(AppEnvironment.self) private var app
+    @Environment(\.locale) private var locale
+    @Environment(\.debridTVNotices) private var debridTVNotices
+    @Environment(\.shelfWeeklyArt) private var shelfWeeklyArt
+    @Environment(\.titleName) private var titleName
+    @Environment(\.playerZoom) private var playerZoom
+    @Environment(\.posterQuick) private var posterQuick
+    @Environment(\.openRemote) private var openRemote
+    @Environment(\.tallArt) private var tallArt
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.macTabs) private var tabs
-    static let space = "side-title"
+
     func body(content: Content) -> some View {
-        // Con la ficha abierta, lo de atrás se ve pero no se toca: tampoco con VoiceOver o el teclado (el toque a «Guardar»
-        // le llegaba a «Decide por mí», que estaba detrás). Salvo el renglón de las pestañas: picar Inicio o Explorar cierra
-        // la ficha y cambia de pestaña en un solo clic (antes el velo se comía el primero).
-        content.accessibilityHidden(item != nil).overlay(alignment: .trailing) {
-            if let route = item {
-                ZStack(alignment: .trailing) {
-                    DS.scrim.ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
-                    VStack(spacing: 0) {   // ds-exception: el hueco del renglón de pestañas va pegado a lo que cierra la ficha
-                        Color.clear.frame(height: tabs?.stripBottom ?? 0).allowsHitTesting(false)
-                        Color.clear.contentShape(Rectangle()).onTapGesture { item = nil }
-                    }
-                    .accessibilityHidden(true)
-                    TitlePanel(route: route, close: { item = nil })
-                        .frame(width: DS.TitleAction.sidePanelWidth)
-                        .background(DS.backdropDeep.ignoresSafeArea())
-                        .shadow(DS.Elevation.medium)
-                        .transition(.move(edge: .trailing))
-                }
-            }
+        host.inherit = { [app, locale, debridTVNotices, shelfWeeklyArt, titleName, playerZoom, posterQuick, openRemote, tallArt] panel in
+            AnyView(panel.environment(app).environment(\.locale, locale).environment(\.debridTVNotices, debridTVNotices)
+                .environment(\.shelfWeeklyArt, shelfWeeklyArt).environment(\.titleName, titleName).environment(\.playerZoom, playerZoom)
+                .environment(\.posterQuick, posterQuick).environment(\.openRemote, openRemote).environment(\.tallArt, tallArt)
+                .tint(DS.primary))
         }
-        .coordinateSpace(.named(Self.space))
-        .animation(DS.Motion.spring(reduceMotion), value: item)
-        .onChange(of: tabs?.current) { if item != nil { item = nil } }   // otra pestaña: la ficha se cierra
+        host.reduceMotion = reduceMotion
+        host.stripBottom = tabs?.stripBottom ?? 0
+        return content
+            // Con VoiceOver, lo de atrás se esconde mientras la ficha está abierta. Solo con VoiceOver: esconderlo rearma la
+            // accesibilidad de todas las pestañas (~250 ms con un cliente de accesibilidad, medido el 24 nov 2026).
+            .accessibilityHidden(voiceOver && host.isOpen)
+            .background(WindowProbe { host.attach($0) })
+            .onChange(of: tabs?.current) { host.hide() }   // otra pestaña: la ficha se cierra
+            .onChange(of: enabled) { if !enabled { host.hide() } }
+    }
+}
+
+/// Dice en qué ventana está la pantalla (para poner la ficha de la Mac en la suya).
+private struct WindowProbe: UIViewRepresentable {
+    let found: (UIWindow?) -> Void
+    func makeUIView(context: Context) -> Probe { Probe(found: found) }
+    func updateUIView(_ probe: Probe, context: Context) { probe.found = found }
+
+    final class Probe: UIView {
+        var found: (UIWindow?) -> Void
+        init(found: @escaping (UIWindow?) -> Void) { self.found = found; super.init(frame: .zero); isUserInteractionEnabled = false }
+        required init?(coder: NSCoder) { nil }
+        override func didMoveToWindow() { super.didMoveToWindow(); found(window) }
     }
 }

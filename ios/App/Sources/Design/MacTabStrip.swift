@@ -61,7 +61,7 @@ struct MacTabStrip: View {
             .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("mac-tabs")
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(SideTitle.space)).maxY.rounded() } action: { bottom in
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY.rounded() } action: { bottom in
                 if bottom > 0, tabs.stripBottom != bottom { tabs.stripBottom = bottom }
             }
         }

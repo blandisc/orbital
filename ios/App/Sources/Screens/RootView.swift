@@ -258,8 +258,9 @@ struct MainTabs: View {
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
     /// Ventana ancha (iPad, Mac): las hojas son tarjetas sin alturas que estirar, así que el control abre completo.
     @Environment(\.horizontalSizeClass) private var sizeClass
-    /// La ficha abierta en el panel de la derecha (iPad, Mac): tocar una serie o película la abre ahí, sobre lo que veías.
-    @State private var panelTitle: TitleRoute?
+    /// La ficha de la Mac a la derecha, en su propia capa (`MacTitleHost`): tocar una serie o película la abre ahí, sobre lo
+    /// que veías, sin volver a acomodar lo de atrás.
+    @State private var titleHost = MacTitleHost()
     /// El póster que vuela hacia el panel al abrir una ficha (`PosterFlight`).
     @State private var flight: PosterFlight?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -281,7 +282,7 @@ struct MainTabs: View {
         guard tvNow.model.isConfigured else { return nil }
         ui.remoteButtons[window] = {
             if remoteAsPanel && showRemote { showRemote = false; return }
-            if remoteAsPanel { panelTitle = nil }   // un solo panel a la derecha: el control reemplaza a la ficha
+            if remoteAsPanel { titleHost.hide() }   // un solo panel a la derecha: el control reemplaza a la ficha
             remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true
         }
         return RemoteOpener(wide: remoteAsPanel || sizeClass == .regular, window: window)
@@ -300,7 +301,7 @@ struct MainTabs: View {
     /// ¿Hay algo en el panel de la derecha? (El control en ventana ancha o una ficha.)
     private var sidePanelShown: Binding<Bool> {
         Binding(get: { showRemote && remoteAsPanel },
-                set: { if !$0 { showRemote = false; panelTitle = nil } })
+                set: { if !$0 { showRemote = false; titleHost.hide() } })
     }
 
     /// El panel de la derecha: el control de la TV. La ficha ya no va aquí: flota a la izquierda, del tamaño del iPhone.
@@ -315,7 +316,7 @@ struct MainTabs: View {
         guard titleAsPanel else { return nil }
         ui.titlePanels[window] = { route, _ in
             if remoteAsPanel { showRemote = false }
-            panelTitle = route
+            titleHost.show(route)
         }
         return TitlePanelOpener(window: window)
     }
@@ -375,7 +376,7 @@ struct MainTabs: View {
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
         .inspector(isPresented: sidePanelShown) { sidePanel.environment(env) }   // como las hojas: la app a mano (Screens/AppSheet.swift)
-        .modifier(SideTitle(item: Binding(get: { titleAsPanel ? panelTitle : nil }, set: { panelTitle = $0 })))
+        .modifier(SideTitle(host: titleHost, enabled: titleAsPanel))
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
@@ -497,7 +498,7 @@ struct MainTabs: View {
             guard env.services.capabilities.console else { return }   // la Mac no tiene control de la TV (ni manda a Ajustes a conectarla)
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
             // Como panel, ⌘R (y el control del Centro de control) lo abre y lo cierra.
-            if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { panelTitle = nil; remoteLarge = true; showRemote = true } }
+            if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { titleHost.hide(); remoteLarge = true; showRemote = true } }
             else { paths[tab].append(SettingsRoute()) }
         }
         .task {
@@ -539,7 +540,7 @@ struct MainTabs: View {
         guard let route = env.pendingTitle else { return }
         env.pendingTitle = nil
         tab = 0
-        if titleAsPanel { panelTitle = route } else { paths[0].append(route) }   // iPad y Mac: flotando a la izquierda
+        if titleAsPanel { titleHost.show(route) } else { paths[0].append(route) }   // iPad y Mac: flotando a la izquierda
     }
 
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
@@ -562,7 +563,7 @@ struct MainTabs: View {
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title {
             let route = TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)
-            if titleAsPanel { panelTitle = route } else { paths[tab].append(route) }
+            if titleAsPanel { titleHost.show(route) } else { paths[tab].append(route) }
         }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
         if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }

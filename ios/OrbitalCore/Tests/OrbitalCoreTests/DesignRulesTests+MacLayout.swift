@@ -75,7 +75,15 @@ extension DesignRulesTests {
         // Con una ficha abierta, el renglón de las pestañas sigue tomando clics (Fernando, 23 nov 2026: «le pico varias veces a
         // inicio y no cambia»: el velo de la ficha se comía el primer clic) y cambiar de pestaña cierra la ficha.
         let side = try code("RootView+Parts.swift")
-        XCTAssertTrue(side.contains("tabs?.stripBottom") && side.contains(".onChange(of: tabs?.current)"), "SideTitle deja libre el renglón de las pestañas")
+        XCTAssertTrue(side.contains("host.stripBottom = tabs?.stripBottom") && side.contains(".onChange(of: tabs?.current)"), "SideTitle deja libre el renglón de las pestañas")
+        // La ficha de la Mac vive en su propia capa (`MacTitleHost`), nunca encima de la pantalla de SwiftUI: como `overlay` de
+        // la raíz, abrirla o cerrarla congelaba 200–550 ms aunque estuviera vacía (24 nov 2026, medido con Instruments).
+        let opensPanel = files.filter { $0.name != "MacTitleHost.swift" && $0.name != "TitlePanel.swift" }
+            .filter { $0.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined().contains("TitlePanel(") }
+        XCTAssertEqual(opensPanel.map(\.name), [], "la ficha de la Mac se abre con `MacTitleHost`, no encima de la pantalla")
+        let host = try code("MacTitleHost.swift")
+        XCTAssertTrue(host.contains("layer.install(in: root.view)"), "la ficha va en su propia capa")
+        XCTAssertFalse(host.contains("environment(\\.self") || side.contains("environment(\\.self"), "el entorno se pasa uno por uno: entero escondía la ficha a VoiceOver")
         let strip = try code("MacTabStrip.swift")
         XCTAssertTrue(strip.contains("tabs.stripBottom = bottom"), "la tira dice dónde termina")
         // Cada pantalla marca su propia pestaña: con `tabs.current` la primera vez en Explorar la tira marcaba «Inicio».
