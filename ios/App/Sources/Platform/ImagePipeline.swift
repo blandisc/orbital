@@ -180,10 +180,10 @@ final class ImagePipeline: @unchecked Sendable {
     /// El póster en orden: TMDB, metahub, IMDb. Lo que ya se sabe que solo IMDb tiene va directo.
     private func posterData(_ url: URL, urgent: Bool) async -> Data? {
         let (posters, imdb) = lock.withLock { (posters, imdb) }
-        if let known = imdb?.remembered(url.absoluteString), let data = await data(known, urgent: urgent), !data.isEmpty { return data }
+        if let known = imdb?.remembered(url.absoluteString), let bytes = await data(known, urgent: urgent), !bytes.isEmpty { return bytes }
         if let posters, let tmdb = await posters.resolve(url.absoluteString),
-           let data = await data(tmdb, urgent: urgent), !data.isEmpty { return data }
-        if let data = await data(url, urgent: urgent), !data.isEmpty { return data }
+           let bytes = await data(tmdb, urgent: urgent), !bytes.isEmpty { return bytes }
+        if let bytes = await data(url, urgent: urgent), !bytes.isEmpty { return bytes }
         guard !Task.isCancelled, let imdb, let rescue = await imdb.resolve(url.absoluteString) else { return nil }
         return await data(rescue, urgent: urgent)
     }

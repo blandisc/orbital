@@ -4,11 +4,18 @@ import OrbitalCore
 // Piezas de Colecciones, la repisa (docs/producto/muvy-busqueda-premios/prototipo-repisa.html): la estatuilla o el objeto de
 // cada colección, la repisa (una línea fina con su sombra) y el póster que está en gris hasta que lo ves.
 
+extension EnvironmentValues {
+    /// Para cada colección, el ícono de su lista de «Esta semana» si lo es (nil: es un premio o una lista famosa).
+    @Entry var shelfWeeklyArt: (String) -> String? = { _ in nil }
+}
+
 /// La estatuilla de un premio (Óscar, Palma, Ariel…) completa, o el objeto de una lista famosa (el disco de Criterion, la
 /// placa del Top 250). Con una luz tenue encima, como en una vitrina.
 struct ShelfEmblem: View {
     let id: String
     var height: CGFloat = DS.Repisa.emblem
+    /// El ícono de una lista de «Esta semana» (lo pone la app desde arriba: la pieza no lee el estado de la app).
+    @Environment(\.shelfWeeklyArt) private var weeklyArt
 
     var body: some View {
         Group {
@@ -21,8 +28,7 @@ struct ShelfEmblem: View {
                     .shadow(DS.Elevation.high)
             default:
                 // Una lista de «Esta semana»: su ícono con el halo de su color (no tiene estatuilla; antes quedaba el hueco).
-                if let list = AppEnvironment.shared.repisa.weeklyList(id) {
-                    let art = DS.Collections.art(list.art, id: id)
+                if let art = weeklyArt(id) {
                     Image("Collections/" + art).resizable().scaledToFit().glow(DS.Collections.artTint(art), .strong)
                 } else {
                     Image("Awards/" + id).resizable().scaledToFit()

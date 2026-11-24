@@ -223,7 +223,7 @@ class _Base:
     def _title_language(self) -> str:
         """El de Ajustes › Idiomas › «Títulos y sinopsis» (ID-A); español si Watch no lo sabe (pruebas)."""
         read = getattr(self.services.watch, "title_language", None)
-        return read() if callable(read) else "es"
+        return str(read()) if callable(read) else "es"
 
     def key(self, name: str) -> str:
         """La clave vigente (la escrita en la TV o la de config.yaml): también se la lleva la app del iPhone."""

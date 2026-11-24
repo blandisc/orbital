@@ -31,6 +31,7 @@ struct OrbitalApp: App {
                 .environment(env)
                 .environment(\.locale, env.uiLocale)
                 .environment(\.debridTVNotices, env.services.debridRequests.notifiesTVRequests)   // R14-B: «¿Qué es esto?» lo dice
+                .environment(\.shelfWeeklyArt, { [env] id in env.repisa.weeklyList(id).map { DS.Collections.art($0.art, id: id) } })   // los íconos de «Esta semana» en la repisa
                 .environment(\.titleName, TitleDoor(names: env.services.titleNames))   // un solo nombre por título
                 .onAppear { env.applyAppearance() }   // Ajustes › Apariencia (por omisión, la del iPhone), en la ventana
                 .tint(DS.primary)
