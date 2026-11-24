@@ -1119,6 +1119,25 @@ mientras corre `sample`: detiene la app y ensucia el desplazamiento.
 
 `DesignRulesTests+MacLayout.testMacPerformanceAndWideWindows` lo vigila.
 
+### Cambiar de pestaña en la Mac (23 nov 2026)
+
+Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser instantáneo… primero quiero evidencia».
+
+- **Regla: cambiar de pestaña muestra lo que ya estaba armado.** En la Mac las pestañas son una baraja (`MacTabDeck`): cada
+  pantalla se arma la primera vez y después solo se esconde. Lo escondido no cambia ningún valor del entorno (SwiftUI volvería
+  a resolver cada texto y color: la primera versión lo hacía y seguía costando ~0.4 s); se pregunta con `@TabHidden` o
+  `.onTabHidden`, y sus atajos de teclado van con `shownKeyboardShortcut`. Lo que antes se apagaba en `onDisappear` (cielo,
+  vaivén, «a la vista» de Descargas, cursor de Buscar) se apaga también al esconderse. «Esta semana» no se relee si se armó
+  hace menos de diez minutos (`RepisaModel.weeklyMaxAge`). `DesignRulesTests.testMacTabsStayBuilt` y
+  `RepisaWeeklyTests.testVolverAExplorarAlRatoNoVuelveACargar` lo vigilan.
+- **Cómo se mide (y cómo no).** La velocidad se mide en la app instalada (Release, la cuenta de Fernando, su ventana) con
+  `ios/scripts/medir-clics-mac.sh`, antes y después, la misma secuencia con la app recién abierta. No vale medir solo en Debug ni
+  con la demostración (allí se «mejoraba» y en la Mac de Fernando se sentía igual). Tres números por clic: trabajo del hilo
+  de la pantalla, cuándo quedó quieta y el congelamiento más largo (Apple: >250 ms se siente, >500 ms es «Hang»).
+- **Resultado (2495 → 2497, dos rondas cada una):** primera vez a Explorar, congelada 1.1–1.6 s → 0.6 s; cada cambio
+  después, congelada 0.5–0.8 s → nada (10 de 10 sin congelarse) y quieta en 0.65–1.8 s → 0.35–0.7 s. Abrir una ficha no
+  cambió (1.2–1.7 s de trabajo): sigue pendiente (el acomodo de los botones de la ficha, `SpreadRow`, y dibujarla entera).
+
 ### La receta de la ficha ancha (17 nov 2026)
 
 Fernando: «replantea con una receta el cómo se debe de armar… que la imagen que está atrás de manera inteligente se

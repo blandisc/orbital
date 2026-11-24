@@ -272,12 +272,13 @@ private struct ChannelDrift: ViewModifier {
     let running: Bool
     @State private var visible = false
     @State private var start = Date()
+    @TabHidden private var tabHidden   // Inicio escondido en la baraja de la Mac: quieto
 
     func body(content: Content) -> some View {
         #if DEBUG
-        let on = running && visible && ThisDevice.ambientMotion && !MacSelfCheck.off.contains("drift")
+        let on = running && visible && !tabHidden && ThisDevice.ambientMotion && !MacSelfCheck.off.contains("drift")
         #else
-        let on = running && visible && ThisDevice.ambientMotion
+        let on = running && visible && !tabHidden && ThisDevice.ambientMotion
         #endif
         TimelineView(.animation(minimumInterval: DS.HomeChannels.driftFrame, paused: !on)) { context in
             content.scaleEffect(on ? Self.scale(after: context.date.timeIntervalSince(start)) : 1)

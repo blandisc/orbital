@@ -56,6 +56,7 @@ struct ParaTiView: View {
         }
         .onChange(of: focused == nil) { _, none in if none, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
         .onDisappear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+        .onTabHidden { hidden in if hidden, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
     }
 
     /// Las listas (con la puerta de «Decide por mí»).
@@ -128,6 +129,8 @@ struct ParaTiView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
         .onChange(of: env.ui.returnedToApp) { Task { await m.loadIfStale() } }   // de vuelta a la app: al día
+        // La baraja de la Mac no vuelve a correr `.task` al regresar a la pestaña: aquí, lo mismo que hacía (solo si ya caducó).
+        .onTabHidden { hidden in if !hidden { Task { await m.loadIfStale() } } }
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }

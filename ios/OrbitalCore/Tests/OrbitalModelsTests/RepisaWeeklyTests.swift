@@ -37,6 +37,27 @@ final class RepisaWeeklyTests: XCTestCase {
         XCTAssertEqual(again.weekly.map(\.id), ["escrita", "famosa"])
     }
 
+    /// Volver a Explorar al rato no vuelve a leer ni a pedir nada (cada visita congelaba la Mac ~0.2 s, 23 nov 2026); pasados
+    /// diez minutos, sí.
+    func testVolverAExplorarAlRatoNoVuelveACargar() async throws {
+        let rig = try ServicesRig()
+        try stock(rig)
+        let clock = rig.clock
+        let model = RepisaModel(rig.services, watched: { [] }, clock: { clock.now })
+        await model.loadWeekly()
+        let asked = rig.http.calls.count
+        var changes = 0
+        let watch = model.onChange { changes += 1 }
+        clock.now = clock.now.addingTimeInterval(RepisaModel.weeklyMaxAge - 60)
+        await model.loadWeekly()
+        XCTAssertEqual(rig.http.calls.count, asked, "nada a la red")
+        XCTAssertEqual(changes, 0, "ni repinta Explorar")
+        clock.now = clock.now.addingTimeInterval(120)
+        await model.loadWeekly()
+        XCTAssertGreaterThan(changes, 0, "ya caducó: se vuelve a armar")
+        watch.cancel()
+    }
+
     /// Un capítulo que ya viste (tu avance en Trakt) cuenta como visto en su lista, igual que una película.
     func testLosCapitulosQueYaVisteCuentan() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")

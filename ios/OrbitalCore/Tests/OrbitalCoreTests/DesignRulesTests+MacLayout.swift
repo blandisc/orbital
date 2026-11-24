@@ -43,6 +43,37 @@ extension DesignRulesTests {
         XCTAssertFalse(feedback.contains("WindowMetrics.size.height * DS.Mac.emptyShare"), "RB2: no con el alto de la ventana (en una hoja se salía)")
     }
 
+    /// Cambiar de pestaña en la Mac no rearma la pantalla (23 nov 2026, Fernando: «le pico explorar y se tarda como 2 segundos»).
+    /// Con las pestañas del sistema cada clic desarmaba y rearmaba la pantalla (0.5–0.8 s congelada, medido en la app
+    /// instalada); la baraja (`MacTabDeck`) solo esconde. Lo escondido no cambia el entorno (volvería a resolver cada texto),
+    /// sus atajos no cuentan y lo que se detenía al desaparecer se detiene al esconderse. Regla en `docs/ios-interfaz.md`
+    /// § «Cambiar de pestaña en la Mac».
+    func testMacTabsStayBuilt() throws {
+        let files = try sources(["Design", "Screens", "App"])
+        func code(_ name: String) throws -> String {
+            let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
+            return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        }
+        XCTAssertTrue(try code("RootView.swift").contains("MacTabDeck(current: selection.wrappedValue"), "las pestañas de la Mac van en la baraja")
+        let deck = try code("MacTabDeck.swift")
+        XCTAssertTrue(deck.contains(".opacity(on ? 1 : 0)") && deck.contains(".allowsHitTesting(on)"), "la escondida solo se esconde")
+        let perCard = deck.components(separatedBy: "\n").filter { $0.contains(".environment(") }
+        XCTAssertEqual(perCard.map { $0.trimmingCharacters(in: .whitespaces) }, [".environment(\\.macTabID, id)   // fijo: la carta siempre es la misma pestaña"],
+                       "en la baraja ningún valor del entorno cambia con la pestaña: SwiftUI volvería a resolver cada texto y color (~0.4 s)")
+        // Atajos: dentro de una pestaña, solo si se ve (la barra de menús, el panel de la ficha y las hojas van aparte).
+        let outside: Set<String> = ["AppCommands.swift", "TitlePanel.swift", "Projection.swift", "MacTabDeck.swift"]
+        for file in files where !outside.contains(file.name) {
+            let text = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            XCTAssertFalse(text.replacingOccurrences(of: "shownKeyboardShortcut(", with: "").contains(".keyboardShortcut("),
+                           "\(file.name): un atajo dentro de una pestaña va con `shownKeyboardShortcut` (escondida en la baraja, su ⌘N le ganaba al de la pestaña que ves)")
+        }
+        // Lo que se apagaba al desaparecer, en las pantallas de arriba de cada pestaña, también se apaga al esconderse.
+        for name in ["HomeView.swift", "ParaTiView.swift", "DownloadsView.swift", "BrowseView.swift"] {
+            XCTAssertTrue(try code(name).contains(".onTabHidden {"), "\(name): en la baraja no vuelve a correr `.task` ni `onDisappear`: `.onTabHidden`")
+        }
+        XCTAssertTrue(try code("Sky.swift").contains("@TabHidden private var tabHidden"), "el cielo de una pestaña escondida no se mueve")
+    }
+
     /// La Mac no tiene sensor de movimiento: crear un `CMMotionManager` ahí y soltarlo al salir de una pantalla con cielo
     /// (Ajustes) trababa la app para siempre (17 nov 2026). Todo sensor de CoreMotion se pide solo fuera de la Mac.
     func testNoMotionSensorOnTheMac() throws {

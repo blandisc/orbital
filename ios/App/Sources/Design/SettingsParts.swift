@@ -222,7 +222,7 @@ struct SettingsPaneHeader: View {
                     .glassEffect(.regular.interactive(), in: Circle())
                     .macPillBase(Circle())
                     .accessibilityLabel(Text("Volver"))
-                    .keyboardShortcut("[", modifiers: .command)
+                    .shownKeyboardShortcut("[", modifiers: .command)
             }
             title.recipe(DS.Mac.settingsPaneTitle, color: DS.text).lineLimit(1)
             Spacer(minLength: 0)

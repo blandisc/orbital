@@ -42,8 +42,16 @@ public final class RepisaModel: ObservableModel {
     static let tableKey = "explore-table"
     private struct SavedTable: Codable { var at: Date; var table: ExploreTable }
 
+    /// Cuánto vale lo de «Esta semana» ya armado antes de volver a revisarlo al regresar a Explorar.
+    public nonisolated static let weeklyMaxAge: TimeInterval = 600
+    private var weeklyAt: Date?
+
     /// La tabla (guardada un día; sin red, la última que llegó) y las listas que tocan esta semana, con sus títulos.
+    /// Con lo de hace menos de diez minutos no hace nada: antes cada visita a Explorar volvía a leer la tabla y cada lista del
+    /// disco en el hilo de la pantalla, las volvía a poner (repintando Explorar) y le pedía a Trakt tu avance (~0.2 s de
+    /// pantalla congelada en cada visita en la Mac, 23 nov 2026).
     public func loadWeekly() async {
+        if let weeklyAt, clock().timeIntervalSince(weeklyAt) < Self.weeklyMaxAge, !weekly.isEmpty { return }
         var table = savedTable(fresh: true)
         if table == nil, let response = try? await services.http.send(HTTPRequest(url: ExploreTable.url, headers: ["User-Agent": "Orbital"], timeout: 15)),
            response.status == 200, let fetched = ExploreTable.parse(response.data) {
@@ -71,6 +79,7 @@ public final class RepisaModel: ObservableModel {
         }
         // Nunca una tarjeta vacía: la que no llegó y no tiene copia guardada no sale.
         weekly.removeAll { $0.items.isEmpty }
+        weeklyAt = clock()
         await loadEpisodesSeen()
     }
 

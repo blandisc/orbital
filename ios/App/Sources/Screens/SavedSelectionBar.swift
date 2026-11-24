@@ -45,7 +45,7 @@ struct SavedSelectionBar: View {
                     Button { run { await resume() } } label: { DSSelectionBarLabel(title: "Viendo", symbol: "play.circle") }.disabled(none)
                 case .remove:
                     Button(role: .destructive) { run { await remove() } } label: { DSSelectionBarLabel(title: "Quitar", symbol: "trash", destructive: true) }
-                        .keyboardShortcut(.delete, modifiers: [])
+                        .shownKeyboardShortcut(.delete, modifiers: [])
                         .disabled(none)
                 }
             }

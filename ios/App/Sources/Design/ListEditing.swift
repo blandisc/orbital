@@ -96,12 +96,12 @@ struct ListEditToolbar: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button(action: add) { Label("Agregar", systemImage: "plus") }
-                .keyboardShortcut("n", modifiers: .command)
+                .shownKeyboardShortcut("n", modifiers: .command)
                 .accessibilityIdentifier("list-add")
             Button { withAnimation(DS.Motion.base(reduceMotion)) { editing.toggle() } } label: {
                 Text(editing ? "Listo" : "Editar").fontWeight(editing ? .semibold : .regular)
             }
-            .keyboardShortcut("e", modifiers: .command)
+            .shownKeyboardShortcut("e", modifiers: .command)
             .accessibilityIdentifier("list-edit")
         }
     }

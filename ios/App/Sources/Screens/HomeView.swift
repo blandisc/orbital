@@ -277,6 +277,7 @@ struct HomeView: View {
             appeared = true
             await reload(ifStale: true)
         }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
+        .onTabHidden { hidden in if !hidden { Task { await reload(ifStale: true) } } }   // la baraja de la Mac no vuelve a correr `.task`
         .onChange(of: env.watchedSomething) { Task { await reload() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload(ifStale: true) } } }   // al volver a la app
     }

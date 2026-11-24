@@ -67,7 +67,7 @@ struct SavedListsContent: View {
             Button { newListName = ""; naming = true } label: { ListBarIcon(symbol: "plus") }
                 .buttonStyle(.plain)
                 .disabled(!env.isOnline)
-                .keyboardShortcut("n", modifiers: .command)
+                .shownKeyboardShortcut("n", modifiers: .command)
                 .accessibilityLabel(Text("Nueva lista"))
                 .accessibilityHint(env.isOnline ? Text(verbatim: "") : Text("Necesita internet"))
                 .accessibilityIdentifier("saved-new-list")

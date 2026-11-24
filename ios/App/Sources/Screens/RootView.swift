@@ -320,25 +320,43 @@ struct MainTabs: View {
         return TitlePanelOpener(window: window)
     }
 
-    /// Las cuatro pestañas, cada una con su pila de navegación.
-    private func tabs(_ selection: Binding<Int>) -> some View {
-        TabView(selection: selection) {
-            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar() }
-            Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) {   // antes «Para ti» (Fernando, 31 oct 2026)
-                NavigationStack(path: $paths[1]) {
-                    // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
-                    ParaTiView()
-                        .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
-                        .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
-                        .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
-                }.tint(DS.primary).macHidesTabBar()
+    /// Las cuatro pilas de navegación, una por pestaña.
+    private var homeStack: some View { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar() }
+    private var exploreStack: some View {
+        NavigationStack(path: $paths[1]) {
+            // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
+            ParaTiView()
+                .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
+                .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
+                .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
+        }.tint(DS.primary).macHidesTabBar()
+    }
+    private var libraryStack: some View { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar() }
+    private var searchStack: some View { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar() }
+
+    /// Las cuatro pestañas, cada una con su pila de navegación. En la Mac, una baraja (`MacTabDeck`): las pantallas ya
+    /// abiertas se quedan armadas y solo se esconden; con las pestañas del sistema cada clic las desarmaba y rearmaba
+    /// (0.6–1.1 s con la app congelada, medido el 23 nov 2026).
+    @ViewBuilder private func tabs(_ selection: Binding<Int>) -> some View {
+        if MacTabDeck<EmptyView, EmptyView, EmptyView, EmptyView>.isOn {
+            // Una sola pestaña (sin barra): así el accesorio «En la TV» y el panel siguen siendo los del sistema.
+            TabView {
+                Tab("Orbital", systemImage: "house") {
+                    MacTabDeck(current: selection.wrappedValue, home: homeStack, explore: exploreStack, library: libraryStack, search: searchStack)
+                        .macHidesTabBar()
+                }
             }
-            // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas». Su ícono, una pila
-            // de tarjetas (tu colección), del mismo trazo que la casa y la lupa; los libros parecían de lectura (4 nov, la 1774).
-            Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar() }
-                .badge(env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending)   // viéndola, sin marca
-            // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
-            Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar() }
+        } else {
+            TabView(selection: selection) {
+                Tab("Inicio", systemImage: "house", value: 0) { homeStack }
+                Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) { exploreStack }   // antes «Para ti» (Fernando, 31 oct 2026)
+                // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas». Su ícono, una pila
+                // de tarjetas (tu colección), del mismo trazo que la casa y la lupa; los libros parecían de lectura (4 nov, la 1774).
+                Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { libraryStack }
+                    .badge(env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending)   // viéndola, sin marca
+                // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
+                Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { searchStack }
+            }
         }
     }
 

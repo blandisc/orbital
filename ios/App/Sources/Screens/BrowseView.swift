@@ -132,6 +132,7 @@ struct BrowseView: View {
         // Siempre a la vista (revisión del 11 nov): con `.automatic`, en iOS 27 el campo solo salía al jalar hacia abajo y,
         // ya con texto, no se veía qué buscaste. Al bajar por los resultados se va con la barra de arriba y vuelve al subir.
         .systemSearch($query, isPresented: $searching, focused: $typing)
+        .onTabHidden { hidden in if hidden, typing { typing = false } }   // la baraja de la Mac: escondida suelta el cursor (lo que escribes en otra pestaña caía aquí)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
             ui.focusSearch = false

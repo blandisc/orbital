@@ -107,7 +107,7 @@ struct ListSelectButtons: View {
             if let add, !selection.editing {
                 Button(action: add) { ListBarIcon(symbol: "plus") }
                     .buttonStyle(.plain)
-                    .keyboardShortcut("n", modifiers: .command)
+                    .shownKeyboardShortcut("n", modifiers: .command)
                     .accessibilityLabel(Text("Agregar"))
                     .accessibilityIdentifier("list-add")
             }
@@ -115,15 +115,15 @@ struct ListSelectButtons: View {
                 ListBarIcon(symbol: selection.editing ? DS.Symbol.done : "checklist", on: selection.editing)
             }
             .buttonStyle(.plain)
-            .keyboardShortcut("e", modifiers: .command)
+            .shownKeyboardShortcut("e", modifiers: .command)
             .accessibilityLabel(selection.editing ? Text("Listo") : Text("Editar"))
             .accessibilityHint(selection.editing ? Text(verbatim: "") : Text("Elegir varios"))
             .accessibilityIdentifier("list-edit")
             .background {
                 if selection.editing {
                     // ds-exception: atajos de teclado sin botón propio (⌘A, Esc); invisibles a propósito
-                    Button("Elegir todas") { selection.set(Set(all)) }.keyboardShortcut("a", modifiers: .command).opacity(0).accessibilityHidden(true)   // ds-exception: atajo ⌘A sin botón visible
-                    Button("Listo") { selection.editing = false }.keyboardShortcut(.cancelAction).opacity(0).accessibilityHidden(true)   // ds-exception: Esc sale de elegir
+                    Button("Elegir todas") { selection.set(Set(all)) }.shownKeyboardShortcut("a", modifiers: .command).opacity(0).accessibilityHidden(true)   // ds-exception: atajo ⌘A sin botón visible
+                    Button("Listo") { selection.editing = false }.shownKeyboardShortcut(.cancelAction).opacity(0).accessibilityHidden(true)   // ds-exception: Esc sale de elegir
                 }
             }
         }

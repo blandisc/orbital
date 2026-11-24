@@ -130,6 +130,7 @@ struct DownloadsView: View {
         .onAppear { seeing(!Self.rows && part == .phone) }
         .onDisappear { seeing(false) }
         .onChange(of: part) { _, new in seeing(!Self.rows && new == .phone) }
+        .onTabHidden { hidden in seeing(!hidden && (Self.rows ? macPart == .phone : part == .phone)) }   // la baraja de la Mac: escondida ya no está «a la vista»
         .task {
             let requests = env.services.debridRequests
             cloudActive = requests.active.count

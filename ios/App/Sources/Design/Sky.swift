@@ -25,8 +25,10 @@ struct SkyField: View {
     }
     /// Solo se mueve con la app al frente y en pantalla: las otras pestañas y la pantalla debajo de una ficha también tienen
     /// su cielo, y seguían pintando estrellas (y leyendo el giroscopio) sin que se vieran.
-    private var moving: Bool { !still && scenePhase == .active && onScreen }
+    private var moving: Bool { !still && scenePhase == .active && onScreen && !tabHidden }
     @State private var onScreen = false
+    /// En la baraja de la Mac la pestaña escondida sigue armada (`MacTabDeck`): su cielo se queda quieto.
+    @TabHidden private var tabHidden
 
     var body: some View {
         let dark = scheme == .dark

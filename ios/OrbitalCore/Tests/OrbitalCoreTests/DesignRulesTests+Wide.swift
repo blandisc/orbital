@@ -59,7 +59,7 @@ extension DesignRulesTests {
         }
         XCTAssertTrue(try code("MacTabStrip.swift").contains("toolbarVisibility(.hidden, for: .navigationBar)"), "El renglón propio de la Mac esconde la barra del sistema")
         let root = try code("RootView.swift")
-        XCTAssertEqual(root.components(separatedBy: ".macHidesTabBar()").count - 1, 4, "Las cuatro pestañas esconden la barra del sistema en la Mac")
+        XCTAssertEqual(root.components(separatedBy: ".macHidesTabBar()").count - 1, 5, "Las cuatro pestañas y la baraja de la Mac (`MacTabDeck`) esconden la barra del sistema")
         let mac = try code("MacTabStrip.swift")
         XCTAssertTrue(root.contains(".modifier(TabStyle())") && mac.contains("content.tabViewStyle(.tabBarOnly)"),
                       "En la Mac no hay barra lateral (salía vacía y tapaba el contenido)")
