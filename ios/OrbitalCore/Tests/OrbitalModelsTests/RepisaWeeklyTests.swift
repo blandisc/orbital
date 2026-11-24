@@ -36,4 +36,19 @@ final class RepisaWeeklyTests: XCTestCase {
         await again.loadWeekly()
         XCTAssertEqual(again.weekly.map(\.id), ["escrita", "famosa"])
     }
+
+    /// Un capítulo que ya viste (tu avance en Trakt) cuenta como visto en su lista, igual que una película.
+    func testLosCapitulosQueYaVisteCuentan() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        try stock(rig)
+        rig.http.json["https://api.trakt.tv/shows/tt0096697/progress/watched?hidden=false&specials=false"] =
+            ["seasons": [["number": 2, "episodes": [["number": 3, "completed": true]]]]]
+        let clock = rig.clock
+        let model = RepisaModel(rig.services, watched: { [] }, clock: { clock.now })
+        await model.loadWeekly()
+        XCTAssertTrue(model.watched.contains("tt0096697:2:3"))
+        XCTAssertEqual(model.collection("escrita").map { $0.seen(model.watched) }, 1)
+        await model.load()
+        XCTAssertTrue(model.watched.contains("tt0096697:2:3"), "al volver a leer lo visto no se pierde")
+    }
 }

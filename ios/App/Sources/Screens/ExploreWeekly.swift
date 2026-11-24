@@ -17,9 +17,13 @@ struct ExploreWeekly: View {
             CenteredCarousel(items: model.weekly, id: \.id, cardWidth: DS.PlatformFan.width) { collection in
                 let list = model.weeklyList(collection.id)
                 let name = list?.title ?? collection.id
+                let art = DS.Collections.art(list?.art, id: collection.id), tint = DS.Collections.artTint(art)
                 NavigationLink(value: RepisaCollectionRoute(id: collection.id)) {
+                    // Con el color y el ícono de su tema, como Temporadas y Géneros (antes todas en gris).
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: list?.about ?? ""), name: name,
-                                   posters: Self.covers(collection), tint: DS.Collections.genre(collection.id)) { EmptyView() }
+                                   posters: Self.covers(collection), tint: tint) {
+                        CollectionIconEmblem(slug: art, name: name, glow: tint)
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("weekly-\(collection.id)")

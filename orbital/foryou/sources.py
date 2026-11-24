@@ -419,3 +419,28 @@ class _Sources(_Mine):
             return [e for e in self.trakt.list_items(row["id"]) if e.get("kind") == "movie"] if row else []
 
         return self.cache.get(f"canon:{canon_id}", CANON_TTL, mine)
+
+    def _canon_item(self, e: dict, why: str) -> dict:
+        """Un título de una colección. Un capítulo («tt0096697:7:11») abre la ficha de su serie en ese capítulo, con su nombre
+        («Especial de Navidad») y «T7 E11» debajo, como en el iPhone."""
+        ep = weekly.episode(e["imdb"])
+        if ep is None:
+            return video_item({"imdb": e["imdb"], "kind": e["kind"], "title": e["title"], "year": e.get("year")}, why)
+        show, season, number = ep
+        item = video_item({"imdb": show, "kind": "series", "title": e["title"], "year": e.get("year"),
+                           "next": {"season": season, "episode": number}}, why)
+        return {**item, "key": f"video:{e['imdb']}", "detail": f"T{season} E{number}"}
+
+    def _episodes_seen(self, items: list[dict]) -> set[str]:
+        """Los capítulos de una lista que ya viste («tt0096697:7:11»), según tu avance en Trakt (una llamada por serie)."""
+        shows = {ep[0] for ep in (weekly.episode(e["imdb"]) for e in items) if ep}
+        if not shows or not self.trakt.linked:
+            return set()
+        seen: set[str] = set()
+        for show in shows:
+            try:
+                progress = self.cache.get(f"trakt:progress:{show}", MINE_TTL, lambda show=show: self.trakt.show_progress(show) or {})
+            except SERVICE_ERRORS:
+                continue
+            seen |= {f"{show}:{s}:{n}" for s, n in progress.get("watched") or ()}
+        return seen

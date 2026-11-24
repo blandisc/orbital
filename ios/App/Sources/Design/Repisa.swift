@@ -20,8 +20,14 @@ struct ShelfEmblem: View {
                 Image("shelf-" + id).resizable().scaledToFit()
                     .shadow(DS.Elevation.high)
             default:
-                Image("Awards/" + id).resizable().scaledToFit()
-                    .shadow(DS.Elevation.high)
+                // Una lista de «Esta semana»: su ícono con el halo de su color (no tiene estatuilla; antes quedaba el hueco).
+                if let list = AppEnvironment.shared.repisa.weeklyList(id) {
+                    let art = DS.Collections.art(list.art, id: id)
+                    Image("Collections/" + art).resizable().scaledToFit().glow(DS.Collections.artTint(art), .strong)
+                } else {
+                    Image("Awards/" + id).resizable().scaledToFit()
+                        .shadow(DS.Elevation.high)
+                }
             }
         }
         .frame(height: height, alignment: .bottom)

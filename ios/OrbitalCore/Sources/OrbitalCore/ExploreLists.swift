@@ -19,11 +19,14 @@ public struct ExploreList: Sendable, Equatable, Codable, Identifiable {
     /// De dónde sale: MDBList («usuario/lista»), Trakt («usuario/lista») o escrita en la tabla.
     public var mdblist: String?, trakt: String?
     public var items: [Entry]?
+    /// Su ícono y su color en la tarjeta: uno de los de Temporadas y Géneros («halloween», «navidad», «drama»…). Sin él, uno
+    /// fijo según su id, para que ninguna tarjeta quede gris.
+    public var art: String?
 
     public init(id: String, title: String, full: String? = nil, about: String = "", from: String? = nil, to: String? = nil,
-                mdblist: String? = nil, trakt: String? = nil, items: [Entry]? = nil) {
+                mdblist: String? = nil, trakt: String? = nil, items: [Entry]? = nil, art: String? = nil) {
         self.id = id; self.title = title; self.full = full ?? title; self.about = about; self.from = from; self.to = to
-        self.mdblist = mdblist; self.trakt = trakt; self.items = items
+        self.mdblist = mdblist; self.trakt = trakt; self.items = items; self.art = art
     }
 
     public var dated: Bool { from != nil && to != nil }

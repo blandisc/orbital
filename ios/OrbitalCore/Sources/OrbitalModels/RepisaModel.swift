@@ -13,6 +13,8 @@ public final class RepisaModel: ObservableModel {
     /// «Esta semana» en Explorar (`ExploreTable`): las listas que tocan hoy, en orden, y sus títulos.
     public private(set) var weekly: [CanonCollection] = [] { didSet { changed() } }
     public private(set) var weeklyLists: [ExploreList] = [] { didSet { changed() } }
+    /// Los capítulos de las listas de capítulos que ya viste («tt0096697:7:11»), según tu avance en Trakt: cuentan como vistos.
+    private var episodesSeen: Set<String> = []
 
     /// Cuánto se guarda una lista famosa antes de volver a pedirla (cambian poco).
     public nonisolated static let listTTL: TimeInterval = 7 * 86400
@@ -69,6 +71,23 @@ public final class RepisaModel: ObservableModel {
         }
         // Nunca una tarjeta vacía: la que no llegó y no tiene copia guardada no sale.
         weekly.removeAll { $0.items.isEmpty }
+        await loadEpisodesSeen()
+    }
+
+    /// Tu avance en cada serie de las listas de capítulos (una llamada por serie): lo visto se pinta y cuenta como en una película.
+    private func loadEpisodesSeen() async {
+        guard let trakt = services.trakt else { return }
+        let shows = Set(weekly.flatMap(\.items).compactMap { $0.episode?.show })
+        guard !shows.isEmpty else { return }
+        var seen = Set<String>()
+        await withTaskGroup(of: [String].self) { group in
+            for show in shows {
+                group.addTask { (try? await trakt.showProgress(show, imdb: show)).map { p in p.completed.map(p.videoID) } ?? [] }
+            }
+            for await ids in group { seen.formUnion(ids) }
+        }
+        episodesSeen = seen
+        watched.formUnion(seen)
     }
 
     /// Las de esta semana con lo que ya se tiene (escritas en la tabla o guardadas).
@@ -120,7 +139,7 @@ public final class RepisaModel: ObservableModel {
                 save(id, items)
             }
         }
-        watched = await watchedSource()
+        watched = await watchedSource().union(episodesSeen)
         loaded = true
     }
 

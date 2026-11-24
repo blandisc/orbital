@@ -40,7 +40,17 @@ def test_igual_que_el_iphone_el_lunes_23_nov():
     assert [e["id"] for e in weekly.this_week(table, date(2026, 11, 23))] == ["l4", "l5", "l0", "l1"]
 
 
-def test_los_capitulos_no_salen_en_la_tv():
-    entry = {"items": [{"id": "tt0096697:2:3", "kind": "episode", "title": "La casita del horror I"},
+def test_los_capitulos_salen_y_abren_su_serie_en_ese_capitulo():
+    entry = {"items": [{"id": "tt0096697:7:11", "kind": "episode", "title": "El bebé de mamá", "year": 1995},
                        {"id": "tt0099785", "kind": "movie", "title": "Mi pobre angelito", "year": 1990}]}
-    assert [e["imdb"] for e in weekly.written(entry)] == ["tt0099785"]
+    items = weekly.written(entry)
+    assert [(e["imdb"], e["kind"]) for e in items] == [("tt0096697:7:11", "episode"), ("tt0099785", "movie")]
+    assert weekly.episode("tt0096697:7:11") == ("tt0096697", 7, 11)
+    assert weekly.episode("tt0099785") is None
+
+
+def test_la_tabla_tiene_icono_en_cada_lista_y_la_afi_en_orden():
+    table = weekly.local_table()
+    assert all(e.get("art") for e in table["lists"])
+    afi = next(e for e in table["lists"] if e["id"] == "afi-100")["items"]
+    assert (afi[0]["title"], afi[-1]["title"], len(afi)) == ("Citizen Kane", "Ben-Hur", 100)

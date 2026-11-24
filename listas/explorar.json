@@ -1,5 +1,5 @@
 {
- "_": "Las listas de «Esta semana» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/.",
+ "_": "Las listas de «Esta semana» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). «art» es el ícono y el color de su tarjeta (uno de Temporadas o Géneros: halloween, navidad, terror, drama…). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/.",
  "rotate": 4,
  "lists": [
   {
@@ -226,7 +226,8 @@
      "title": "La casita del horror presenta: Los malvados Simpson vienen por aquí",
      "year": 2024
     }
-   ]
+   ],
+   "art": "halloween"
   },
   {
    "id": "simpsons-navidad",
@@ -320,7 +321,8 @@
      "title": "Una Navidad de verano en Springfield",
      "year": 2020
     }
-   ]
+   ],
+   "art": "navidad"
   },
   {
    "id": "terror-letterboxd",
@@ -329,7 +331,8 @@
    "about": "Lo mejor del género según Letterboxd",
    "from": "10-01",
    "to": "10-31",
-   "mdblist": "smccrack/letterboxd-100-best-horror-movies"
+   "mdblist": "smccrack/letterboxd-100-best-horror-movies",
+   "art": "terror"
   },
   {
    "id": "navidad-100",
@@ -338,70 +341,673 @@
    "about": "Clásicos navideños según la crítica",
    "from": "12-01",
    "to": "01-06",
-   "mdblist": "hthighway/movie-100-best-christmas-films"
+   "mdblist": "hthighway/movie-100-best-christmas-films",
+   "art": "familia"
   },
   {
    "id": "sight-sound",
    "title": "Sight & Sound",
    "full": "Las mejores según Sight & Sound",
    "about": "La encuesta de 1,639 críticos del BFI, 2022",
-   "mdblist": "smccrack/ss-greatest-films-of-all-time"
+   "mdblist": "smccrack/ss-greatest-films-of-all-time",
+   "art": "drama"
   },
   {
    "id": "sight-sound-directores",
    "title": "Las de los directores",
    "full": "Las favoritas de los directores",
    "about": "Sight & Sound 2022: votan los cineastas",
-   "mdblist": "smccrack/directors-top-100-mt57lv8s6l"
+   "mdblist": "smccrack/directors-top-100-mt57lv8s6l",
+   "art": "misterio"
   },
   {
    "id": "tspdt-1000",
    "title": "Las 1,000",
    "full": "Las 1,000 más grandes del cine",
    "about": "El canon de They Shoot Pictures, Don't They",
-   "mdblist": "motorrecon/tspdt-1000-greatest-films"
+   "mdblist": "motorrecon/tspdt-1000-greatest-films",
+   "art": "fantasia"
   },
   {
    "id": "tspdt-siglo-xxi",
    "title": "Siglo XXI",
    "full": "Lo más aclamado del siglo XXI",
    "about": "Según la crítica, de They Shoot Pictures, Don't They",
-   "mdblist": "skerr1q/tspdts-21st-centurys-most-acclaimed-films"
+   "mdblist": "skerr1q/tspdts-21st-centurys-most-acclaimed-films",
+   "art": "ciencia-ficcion"
   },
   {
    "id": "letterboxd-250",
    "title": "Letterboxd 250",
    "full": "Top 250 de Letterboxd",
    "about": "Las mejor calificadas por la comunidad de Letterboxd",
-   "mdblist": "smccrack/letterboxed-best-250"
+   "mdblist": "smccrack/letterboxed-best-250",
+   "art": "comedia"
   },
   {
    "id": "cahiers",
    "title": "Cahiers du Cinéma",
    "full": "Los top 10 de Cahiers du Cinéma",
    "about": "Lo mejor de cada año según la revista francesa",
-   "mdblist": "dinkysniff/cahiers-du-cinema-all-year-end-top-10s-movies"
+   "mdblist": "dinkysniff/cahiers-du-cinema-all-year-end-top-10s-movies",
+   "art": "romance"
   },
   {
    "id": "1001-peliculas",
    "title": "1001 películas",
    "full": "1001 películas que ver antes de morir",
    "about": "El libro de Steven Jay Schneider, todas sus ediciones",
-   "mdblist": "treb118/1001-movies-you-must-see-before-you-die"
+   "mdblist": "treb118/1001-movies-you-must-see-before-you-die",
+   "art": "aventura"
   },
   {
    "id": "afi-100",
    "title": "AFI 100",
    "full": "Las 100 de AFI",
    "about": "Las grandes del cine estadounidense, edición 2007",
-   "mdblist": "vsoral/afi-100"
-  },
-  {
-   "id": "rolling-stone-tv",
-   "title": "Rolling Stone",
-   "full": "Las 100 series de Rolling Stone",
-   "about": "Las mejores series de la historia según la revista",
-   "mdblist": "skerr1q/rolling-stones-100-greatest-tv-shows-of-all-time"
+   "art": "accion",
+   "items": [
+    {
+     "id": "tt0033467",
+     "kind": "movie",
+     "title": "Citizen Kane",
+     "year": 1941
+    },
+    {
+     "id": "tt0068646",
+     "kind": "movie",
+     "title": "The Godfather",
+     "year": 1972
+    },
+    {
+     "id": "tt0034583",
+     "kind": "movie",
+     "title": "Casablanca",
+     "year": 1942
+    },
+    {
+     "id": "tt0081398",
+     "kind": "movie",
+     "title": "Raging Bull",
+     "year": 1980
+    },
+    {
+     "id": "tt0045152",
+     "kind": "movie",
+     "title": "Singin' in the Rain",
+     "year": 1952
+    },
+    {
+     "id": "tt0031381",
+     "kind": "movie",
+     "title": "Gone with the Wind",
+     "year": 1939
+    },
+    {
+     "id": "tt0056172",
+     "kind": "movie",
+     "title": "Lawrence of Arabia",
+     "year": 1962
+    },
+    {
+     "id": "tt0108052",
+     "kind": "movie",
+     "title": "Schindler's List",
+     "year": 1993
+    },
+    {
+     "id": "tt0052357",
+     "kind": "movie",
+     "title": "Vertigo",
+     "year": 1958
+    },
+    {
+     "id": "tt0032138",
+     "kind": "movie",
+     "title": "The Wizard of Oz",
+     "year": 1939
+    },
+    {
+     "id": "tt0021749",
+     "kind": "movie",
+     "title": "City Lights",
+     "year": 1931
+    },
+    {
+     "id": "tt0049730",
+     "kind": "movie",
+     "title": "The Searchers",
+     "year": 1956
+    },
+    {
+     "id": "tt0076759",
+     "kind": "movie",
+     "title": "Star Wars",
+     "year": 1977
+    },
+    {
+     "id": "tt0054215",
+     "kind": "movie",
+     "title": "Psycho",
+     "year": 1960
+    },
+    {
+     "id": "tt0062622",
+     "kind": "movie",
+     "title": "2001: A Space Odyssey",
+     "year": 1968
+    },
+    {
+     "id": "tt0043014",
+     "kind": "movie",
+     "title": "Sunset Boulevard",
+     "year": 1950
+    },
+    {
+     "id": "tt0061722",
+     "kind": "movie",
+     "title": "The Graduate",
+     "year": 1967
+    },
+    {
+     "id": "tt0017925",
+     "kind": "movie",
+     "title": "The General",
+     "year": 1926
+    },
+    {
+     "id": "tt0047296",
+     "kind": "movie",
+     "title": "On the Waterfront",
+     "year": 1954
+    },
+    {
+     "id": "tt0038650",
+     "kind": "movie",
+     "title": "It's a Wonderful Life",
+     "year": 1946
+    },
+    {
+     "id": "tt0071315",
+     "kind": "movie",
+     "title": "Chinatown",
+     "year": 1974
+    },
+    {
+     "id": "tt0053291",
+     "kind": "movie",
+     "title": "Some Like It Hot",
+     "year": 1959
+    },
+    {
+     "id": "tt0032551",
+     "kind": "movie",
+     "title": "The Grapes of Wrath",
+     "year": 1940
+    },
+    {
+     "id": "tt0083866",
+     "kind": "movie",
+     "title": "E.T. the Extra-Terrestrial",
+     "year": 1982
+    },
+    {
+     "id": "tt0056592",
+     "kind": "movie",
+     "title": "To Kill a Mockingbird",
+     "year": 1962
+    },
+    {
+     "id": "tt0031679",
+     "kind": "movie",
+     "title": "Mr. Smith Goes to Washington",
+     "year": 1939
+    },
+    {
+     "id": "tt0044706",
+     "kind": "movie",
+     "title": "High Noon",
+     "year": 1952
+    },
+    {
+     "id": "tt0042192",
+     "kind": "movie",
+     "title": "All About Eve",
+     "year": 1950
+    },
+    {
+     "id": "tt0036775",
+     "kind": "movie",
+     "title": "Double Indemnity",
+     "year": 1944
+    },
+    {
+     "id": "tt0078788",
+     "kind": "movie",
+     "title": "Apocalypse Now",
+     "year": 1979
+    },
+    {
+     "id": "tt0033870",
+     "kind": "movie",
+     "title": "The Maltese Falcon",
+     "year": 1941
+    },
+    {
+     "id": "tt0071562",
+     "kind": "movie",
+     "title": "The Godfather Part II",
+     "year": 1974
+    },
+    {
+     "id": "tt0073486",
+     "kind": "movie",
+     "title": "One Flew Over the Cuckoo's Nest",
+     "year": 1975
+    },
+    {
+     "id": "tt0029583",
+     "kind": "movie",
+     "title": "Snow White and the Seven Dwarfs",
+     "year": 1937
+    },
+    {
+     "id": "tt0075686",
+     "kind": "movie",
+     "title": "Annie Hall",
+     "year": 1977
+    },
+    {
+     "id": "tt0050212",
+     "kind": "movie",
+     "title": "The Bridge on the River Kwai",
+     "year": 1957
+    },
+    {
+     "id": "tt0036868",
+     "kind": "movie",
+     "title": "The Best Years of Our Lives",
+     "year": 1946
+    },
+    {
+     "id": "tt0040897",
+     "kind": "movie",
+     "title": "The Treasure of the Sierra Madre",
+     "year": 1948
+    },
+    {
+     "id": "tt0057012",
+     "kind": "movie",
+     "title": "Dr. Strangelove",
+     "year": 1964
+    },
+    {
+     "id": "tt0059742",
+     "kind": "movie",
+     "title": "The Sound of Music",
+     "year": 1965
+    },
+    {
+     "id": "tt0024216",
+     "kind": "movie",
+     "title": "King Kong",
+     "year": 1933
+    },
+    {
+     "id": "tt0061418",
+     "kind": "movie",
+     "title": "Bonnie and Clyde",
+     "year": 1967
+    },
+    {
+     "id": "tt0064665",
+     "kind": "movie",
+     "title": "Midnight Cowboy",
+     "year": 1969
+    },
+    {
+     "id": "tt0032904",
+     "kind": "movie",
+     "title": "The Philadelphia Story",
+     "year": 1940
+    },
+    {
+     "id": "tt0046303",
+     "kind": "movie",
+     "title": "Shane",
+     "year": 1953
+    },
+    {
+     "id": "tt0025316",
+     "kind": "movie",
+     "title": "It Happened One Night",
+     "year": 1934
+    },
+    {
+     "id": "tt0044081",
+     "kind": "movie",
+     "title": "A Streetcar Named Desire",
+     "year": 1951
+    },
+    {
+     "id": "tt0047396",
+     "kind": "movie",
+     "title": "Rear Window",
+     "year": 1954
+    },
+    {
+     "id": "tt0006864",
+     "kind": "movie",
+     "title": "Intolerance",
+     "year": 1916
+    },
+    {
+     "id": "tt0120737",
+     "kind": "movie",
+     "title": "The Lord of the Rings: The Fellowship of the Ring",
+     "year": 2001
+    },
+    {
+     "id": "tt0055614",
+     "kind": "movie",
+     "title": "West Side Story",
+     "year": 1961
+    },
+    {
+     "id": "tt0075314",
+     "kind": "movie",
+     "title": "Taxi Driver",
+     "year": 1976
+    },
+    {
+     "id": "tt0077416",
+     "kind": "movie",
+     "title": "The Deer Hunter",
+     "year": 1978
+    },
+    {
+     "id": "tt0066026",
+     "kind": "movie",
+     "title": "M*A*S*H",
+     "year": 1970
+    },
+    {
+     "id": "tt0053125",
+     "kind": "movie",
+     "title": "North by Northwest",
+     "year": 1959
+    },
+    {
+     "id": "tt0073195",
+     "kind": "movie",
+     "title": "Jaws",
+     "year": 1975
+    },
+    {
+     "id": "tt0075148",
+     "kind": "movie",
+     "title": "Rocky",
+     "year": 1976
+    },
+    {
+     "id": "tt0015864",
+     "kind": "movie",
+     "title": "The Gold Rush",
+     "year": 1925
+    },
+    {
+     "id": "tt0073440",
+     "kind": "movie",
+     "title": "Nashville",
+     "year": 1975
+    },
+    {
+     "id": "tt0023969",
+     "kind": "movie",
+     "title": "Duck Soup",
+     "year": 1933
+    },
+    {
+     "id": "tt0034240",
+     "kind": "movie",
+     "title": "Sullivan's Travels",
+     "year": 1941
+    },
+    {
+     "id": "tt0069704",
+     "kind": "movie",
+     "title": "American Graffiti",
+     "year": 1973
+    },
+    {
+     "id": "tt0068327",
+     "kind": "movie",
+     "title": "Cabaret",
+     "year": 1972
+    },
+    {
+     "id": "tt0074958",
+     "kind": "movie",
+     "title": "Network",
+     "year": 1976
+    },
+    {
+     "id": "tt0043265",
+     "kind": "movie",
+     "title": "The African Queen",
+     "year": 1951
+    },
+    {
+     "id": "tt0082971",
+     "kind": "movie",
+     "title": "Raiders of the Lost Ark",
+     "year": 1981
+    },
+    {
+     "id": "tt0061184",
+     "kind": "movie",
+     "title": "Who's Afraid of Virginia Woolf?",
+     "year": 1966
+    },
+    {
+     "id": "tt0105695",
+     "kind": "movie",
+     "title": "Unforgiven",
+     "year": 1992
+    },
+    {
+     "id": "tt0084805",
+     "kind": "movie",
+     "title": "Tootsie",
+     "year": 1982
+    },
+    {
+     "id": "tt0066921",
+     "kind": "movie",
+     "title": "A Clockwork Orange",
+     "year": 1971
+    },
+    {
+     "id": "tt0120815",
+     "kind": "movie",
+     "title": "Saving Private Ryan",
+     "year": 1998
+    },
+    {
+     "id": "tt0111161",
+     "kind": "movie",
+     "title": "The Shawshank Redemption",
+     "year": 1994
+    },
+    {
+     "id": "tt0064115",
+     "kind": "movie",
+     "title": "Butch Cassidy and the Sundance Kid",
+     "year": 1969
+    },
+    {
+     "id": "tt0102926",
+     "kind": "movie",
+     "title": "The Silence of the Lambs",
+     "year": 1991
+    },
+    {
+     "id": "tt0061811",
+     "kind": "movie",
+     "title": "In the Heat of the Night",
+     "year": 1967
+    },
+    {
+     "id": "tt0109830",
+     "kind": "movie",
+     "title": "Forrest Gump",
+     "year": 1994
+    },
+    {
+     "id": "tt0074119",
+     "kind": "movie",
+     "title": "All the President's Men",
+     "year": 1976
+    },
+    {
+     "id": "tt0027977",
+     "kind": "movie",
+     "title": "Modern Times",
+     "year": 1936
+    },
+    {
+     "id": "tt0065214",
+     "kind": "movie",
+     "title": "The Wild Bunch",
+     "year": 1969
+    },
+    {
+     "id": "tt0053604",
+     "kind": "movie",
+     "title": "The Apartment",
+     "year": 1960
+    },
+    {
+     "id": "tt0054331",
+     "kind": "movie",
+     "title": "Spartacus",
+     "year": 1960
+    },
+    {
+     "id": "tt0018455",
+     "kind": "movie",
+     "title": "Sunrise: A Song of Two Humans",
+     "year": 1927
+    },
+    {
+     "id": "tt0120338",
+     "kind": "movie",
+     "title": "Titanic",
+     "year": 1997
+    },
+    {
+     "id": "tt0064276",
+     "kind": "movie",
+     "title": "Easy Rider",
+     "year": 1969
+    },
+    {
+     "id": "tt0026778",
+     "kind": "movie",
+     "title": "A Night at the Opera",
+     "year": 1935
+    },
+    {
+     "id": "tt0091763",
+     "kind": "movie",
+     "title": "Platoon",
+     "year": 1986
+    },
+    {
+     "id": "tt0050083",
+     "kind": "movie",
+     "title": "12 Angry Men",
+     "year": 1957
+    },
+    {
+     "id": "tt0029947",
+     "kind": "movie",
+     "title": "Bringing Up Baby",
+     "year": 1938
+    },
+    {
+     "id": "tt0167404",
+     "kind": "movie",
+     "title": "The Sixth Sense",
+     "year": 1999
+    },
+    {
+     "id": "tt0028333",
+     "kind": "movie",
+     "title": "Swing Time",
+     "year": 1936
+    },
+    {
+     "id": "tt0084707",
+     "kind": "movie",
+     "title": "Sophie's Choice",
+     "year": 1982
+    },
+    {
+     "id": "tt0099685",
+     "kind": "movie",
+     "title": "Goodfellas",
+     "year": 1990
+    },
+    {
+     "id": "tt0067116",
+     "kind": "movie",
+     "title": "The French Connection",
+     "year": 1971
+    },
+    {
+     "id": "tt0110912",
+     "kind": "movie",
+     "title": "Pulp Fiction",
+     "year": 1994
+    },
+    {
+     "id": "tt0067328",
+     "kind": "movie",
+     "title": "The Last Picture Show",
+     "year": 1971
+    },
+    {
+     "id": "tt0097216",
+     "kind": "movie",
+     "title": "Do the Right Thing",
+     "year": 1989
+    },
+    {
+     "id": "tt0083658",
+     "kind": "movie",
+     "title": "Blade Runner",
+     "year": 1982
+    },
+    {
+     "id": "tt0035575",
+     "kind": "movie",
+     "title": "Yankee Doodle Dandy",
+     "year": 1942
+    },
+    {
+     "id": "tt0114709",
+     "kind": "movie",
+     "title": "Toy Story",
+     "year": 1995
+    },
+    {
+     "id": "tt0052618",
+     "kind": "movie",
+     "title": "Ben-Hur",
+     "year": 1959
+    }
+   ]
   }
  ]
 }

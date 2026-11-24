@@ -52,15 +52,15 @@ extension DemoHTTPClient {
         if url.host == "raw.githubusercontent.com", url.path.hasSuffix("/listas/explorar.json") {
             let xmas: [JSON] = [("1:1", "Especial de Navidad", 1989), ("7:11", "El bebé de mamá", 1995), ("9:10", "Milagro en la avenida Siempreviva", 1997)]
                 .map { ["id": .string("tt0096697:\($0.0)"), "kind": "episode", "title": .string($0.1), "year": .int($0.2)] }
-            func famous(_ id: String, _ title: String, _ about: String) -> JSON {
-                ["id": .string(id), "title": .string(title), "full": .string(title), "about": .string(about), "mdblist": .string("demo/\(id)")]
+            func famous(_ id: String, _ title: String, _ about: String, _ art: String) -> JSON {
+                ["id": .string(id), "title": .string(title), "full": .string(title), "about": .string(about), "mdblist": .string("demo/\(id)"), "art": .string(art)]
             }
             return json(["rotate": 3, "lists": [
                 ["id": "simpsons-navidad", "title": "Navidad Simpson", "full": "Los Simpson en Navidad", "about": "Los capítulos de Navidad, desde el primero de todos",
-                 "from": "01-01", "to": "12-31", "items": .array(xmas)],
-                famous("sight-sound", "Sight & Sound", "La encuesta de 1,639 críticos del BFI, 2022"),
-                famous("letterboxd-250", "Letterboxd 250", "Las mejor calificadas por la comunidad de Letterboxd"),
-                famous("afi-100", "AFI 100", "Las grandes del cine estadounidense, edición 2007"),
+                 "from": "01-01", "to": "12-31", "items": .array(xmas), "art": "navidad"],
+                famous("sight-sound", "Sight & Sound", "La encuesta de 1,639 críticos del BFI, 2022", "drama"),
+                famous("letterboxd-250", "Letterboxd 250", "Las mejor calificadas por la comunidad de Letterboxd", "comedia"),
+                famous("afi-100", "AFI 100", "Las grandes del cine estadounidense, edición 2007", "accion"),
             ]])
         }
         if url.host == "mdblist.com" {
@@ -68,6 +68,10 @@ extension DemoHTTPClient {
         }
         guard url.host == "api.trakt.tv" else { return nil }
         let path = url.path, kind = path.hasPrefix("/movies/") ? "movie" : "series", key = kind == "movie" ? "movie" : "show"
+        // Tu avance en Los Simpson: el especial de Navidad de 1989 ya lo viste («Esta semana» lo cuenta).
+        if path == "/shows/tt0096697/progress/watched" {
+            return json(["seasons": [["number": 1, "episodes": [["number": 1, "completed": true]]]]])
+        }
         if path.hasSuffix("/trending") { return json(.array(titles.filter { $0.kind == kind }.map { ["watchers": 120, key: item($0)] })) }
         if path.hasSuffix("/popular") { return json(.array(titles.filter { $0.kind == kind }.reversed().map(item))) }
         if path.hasPrefix("/users/truckclancy/lists/") { return json(.array(titles.filter { $0.kind == "series" }.map { ["type": "show", "show": item($0)] })) }

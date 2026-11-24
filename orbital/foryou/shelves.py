@@ -249,8 +249,7 @@ class _Shelves(_Agenda):
         if list_id == "fresh":
             return self.cache.get(f"tmdb:fresh:{kind}", POPULAR_TTL, lambda: self._fresh(kind), whole=True)
         if list_id.startswith("canon:"):
-            return [video_item({"imdb": e["imdb"], "kind": e["kind"], "title": e["title"], "year": e.get("year")}, f"N.º {n} de la lista")
-                    for n, e in enumerate(self._canon(list_id.removeprefix("canon:")), start=1)]
+            return [self._canon_item(e, f"N.º {n} de la lista") for n, e in enumerate(self._canon(list_id.removeprefix("canon:")), start=1)]
         if list_id.startswith("award:"):
             award = next((a for a in load_awards() if a["id"] == list_id.removeprefix("award:")), None)
             if not award:

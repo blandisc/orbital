@@ -140,7 +140,7 @@ class ForYou(_Home):
                 ids = {e["imdb"] for e in items}
                 out.append({"id": f"canon:{canon_id}", "title": title, "meta": "", "family": "list", "total": len(ids),
                             "seen": len(ids & watched) if counts else None})
-        # «Esta semana» (weekly.py): las de temporada y las que rotan, después de las fijas (las de capítulos, aún no).
+        # «Esta semana» (weekly.py): las de temporada y las que rotan, después de las fijas. Los capítulos cuentan con tu avance.
         for entry in self._weekly():
             try:
                 items = self._canon(entry["id"])
@@ -148,6 +148,7 @@ class ForYou(_Home):
                 continue
             if items:
                 ids = {e["imdb"] for e in items}
+                seen = len(ids & (watched | self._episodes_seen(items))) if counts else None
                 out.append({"id": f"canon:{entry['id']}", "title": entry.get("title") or entry["id"], "meta": entry.get("about") or "",
-                            "family": "list", "total": len(ids), "seen": len(ids & watched) if counts else None})
+                            "family": "list", "total": len(ids), "seen": seen})
         return out

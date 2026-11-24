@@ -462,5 +462,16 @@ extension DS {
         static func genre(_ slug: String) -> Color {
             genreHex[slug].map { Color(red: $0.0, green: $0.1, blue: $0.2) } ?? studio
         }
+        /// Los íconos de Temporadas y Géneros que hay en `Assets.xcassets/Collections` (los que puede llevar una lista de «Esta semana»).
+        static let artSlugs = ["accion", "animacion", "aventura", "ciencia-ficcion", "comedia", "crimen", "documental", "drama", "familia",
+                               "fantasia", "halloween", "misterio", "muertos", "navidad", "romance", "sanvalentin", "suspenso", "terror", "verano"]
+        /// El ícono de una lista de «Esta semana» (Fernando, 23 nov 2026: «ponle un color… se ven todos grises»): el que dice la
+        /// tabla o, sin él, uno fijo según su id (siempre el mismo para la misma lista).
+        static func art(_ slug: String?, id: String) -> String {
+            if let slug, artSlugs.contains(slug) { return slug }
+            return artSlugs[id.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF } % artSlugs.count]
+        }
+        /// Su color: el de su temporada o su género.
+        static func artTint(_ slug: String) -> Color { season(slug) == studio ? genre(slug) : season(slug) }
     }
 }

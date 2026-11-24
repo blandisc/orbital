@@ -1221,11 +1221,33 @@ def test_collections_count_what_you_watched(make_foryou, net, monkeypatch):
                                                             "winners": [{"imdb": "tt1", "title": "A", "award_year": 2020}, {"imdb": "tt2", "title": "B", "award_year": 2021}]}])
     fy = make_foryou(linked=True)
     monkeypatch.setattr(fy, "watched_ids", lambda: ["tt1", "tt7"])
+    monkeypatch.setattr(fy, "_weekly", list)  # «Esta semana» rota con la fecha: su prueba va aparte
     monkeypatch.setattr(fy.mdblist, "list_items", lambda ref, limit=60: [{"imdb": "tt7", "kind": "movie", "title": "C"}, {"imdb": "tt8", "kind": "movie", "title": "D"}] if "criterion" in ref else (_ for _ in ()).throw(foryou_mod.mdblist_api.MdbListError("no")))
     net.on("GET", r"/users/me/lists$", (200, []))
     got = {c["id"]: (c["seen"], c["total"]) for c in fy.collections()}
     assert got == {"award:oscar": (1, 2), "canon:criterion": (1, 2)}
     assert [i["meta_id"] for i in fy.list_items("canon:criterion", None)] == ["tt7", "tt8"]
+
+
+def test_weekly_episode_lists_open_their_series_and_count_progress(make_foryou, net, monkeypatch):
+    """«Esta semana» en la TV: una lista de capítulos (los especiales de Los Simpson) sale en Colecciones, cuenta los que ya
+    viste según tu avance en Trakt y cada capítulo abre la ficha de su serie en ese capítulo («T7 E11»), como en el iPhone."""
+    from orbital import foryou as foryou_mod
+
+    monkeypatch.setattr(foryou_mod, "load_awards", list)
+    fy = make_foryou(linked=True)
+    monkeypatch.setattr(fy, "watched_ids", list)
+    monkeypatch.setattr(fy, "_canon", lambda cid: [] if cid != "simpsons-navidad" else [
+        {"imdb": "tt0096697:1:1", "kind": "episode", "title": "Especial de Navidad", "year": 1989},
+        {"imdb": "tt0096697:7:11", "kind": "episode", "title": "El bebé de mamá", "year": 1995}])
+    monkeypatch.setattr(fy, "_weekly", lambda: [{"id": "simpsons-navidad", "title": "Navidad Simpson", "about": "x"}])
+    monkeypatch.setattr(fy.trakt, "show_progress", lambda imdb: {"watched": {(1, 1)}, "next": None, "last_watched": None})
+    got = {c["id"]: (c["seen"], c["total"]) for c in fy.collections()}
+    assert got["canon:simpsons-navidad"] == (1, 2)
+    items = fy.list_items("canon:simpsons-navidad", None)
+    assert [(i["meta_id"], i["video_id"], i["title"], i["detail"]) for i in items] == [
+        ("tt0096697", "tt0096697:1:1", "Especial de Navidad", "T1 E1"), ("tt0096697", "tt0096697:7:11", "El bebé de mamá", "T7 E11")]
+    assert len({i["key"] for i in items}) == 2  # dos capítulos de la misma serie no se confunden
 
 
 def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypatch):

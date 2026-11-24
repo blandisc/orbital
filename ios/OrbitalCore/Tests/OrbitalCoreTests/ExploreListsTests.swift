@@ -43,6 +43,27 @@ final class ExploreListsTests: XCTestCase {
         XCTAssertTrue(table.lists.contains { !$0.dated }, "hay listas que rotan")
     }
 
+    /// Ninguna tarjeta gris (Fernando, 23 nov 2026): cada lista dice su ícono y su color, y ese ícono existe en la app.
+    func testCadaListaTieneSuIconoYExiste() throws {
+        var root = URL(fileURLWithPath: #filePath)
+        while root.path != "/" && !FileManager.default.fileExists(atPath: root.appendingPathComponent("listas/explorar.json").path) { root.deleteLastPathComponent() }
+        let assets = root.appendingPathComponent("ios/App/Resources/Assets.xcassets/Collections")
+        for list in try repoTable().lists {
+            let art = try XCTUnwrap(list.art, "\(list.id): sin «art»")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: assets.appendingPathComponent("\(art).imageset").path), "\(list.id): no hay ícono «\(art)»")
+        }
+    }
+
+    /// Una lista con orden («la n.º 1») va en el orden de la fuente: la AFI empieza con Citizen Kane y acaba con Ben-Hur (en
+    /// MDBList venía al revés; por eso va escrita en la tabla).
+    func testLaAFIVaEnSuOrden() throws {
+        let afi = try XCTUnwrap(try repoTable().lists.first { $0.id == "afi-100" }?.items)
+        XCTAssertEqual(afi.count, 100)
+        XCTAssertEqual(afi.first?.title, "Citizen Kane")
+        XCTAssertEqual(afi.last?.title, "Ben-Hur")
+        XCTAssertEqual(Set(afi.map(\.id)).count, 100)
+    }
+
     func testLasDeTemporadaSalenEnSuTemporadaYPrimero() throws {
         let table = try repoTable()
         let october = table.thisWeek(day("2026-10-15"), calendar: utc).map(\.id)

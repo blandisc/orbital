@@ -1,8 +1,8 @@
 """«Esta semana» (Fernando, 23 nov 2026, ED-B y ED-C): la tabla `listas/explorar.json` del repositorio, la misma que lee el
 iPhone (`ExploreTable` en OrbitalCore). Las listas con fechas salen en su temporada y van primero; las demás rotan cada lunes.
 
-En la TV salen en Colecciones (☰), junto a Criterion y el Top 250. Las listas de capítulos (los especiales de Los Simpson)
-todavía no: la vitrina de la TV abre títulos, no capítulos (pendiente en docs/producto/paridad-registro.md).
+En la TV salen en Colecciones (☰), junto a Criterion y el Top 250. Un capítulo (los especiales de Los Simpson) abre la ficha
+de su serie en ese capítulo, como en el iPhone.
 """
 
 from __future__ import annotations
@@ -57,13 +57,22 @@ def this_week(table: dict, today: date) -> list[dict]:
 
 
 def written(entry: dict) -> list[dict]:
-    """Los títulos escritos en la tabla, sin los capítulos (la TV aún no los abre desde aquí)."""
+    """Los títulos escritos en la tabla. Un capítulo va con su id completo («tt0096697:7:11») y kind «episode»."""
     out = []
     for e in entry.get("items") or []:
-        if not isinstance(e, dict) or _EPISODE.fullmatch(str(e.get("id") or "")) or e.get("kind") == "episode":
+        if not isinstance(e, dict) or not e.get("id"):
             continue
-        out.append({"imdb": e["id"], "kind": e.get("kind") or "movie", "title": e.get("title") or "", "year": e.get("year")})
+        kind = "episode" if _EPISODE.fullmatch(str(e["id"])) else (e.get("kind") or "movie")
+        out.append({"imdb": e["id"], "kind": kind, "title": e.get("title") or "", "year": e.get("year")})
     return out
+
+
+def episode(imdb: str) -> tuple[str, int, int] | None:
+    """«tt0096697:7:11» → (serie, temporada, capítulo); None si es una película o una serie."""
+    if not _EPISODE.fullmatch(str(imdb or "")):
+        return None
+    show, season, number = imdb.split(":")
+    return show, int(season), int(number)
 
 
 def local_table() -> dict:
