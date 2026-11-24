@@ -18,6 +18,8 @@ import SwiftUI
     @ObservationIgnored var select: (Int) -> Void = { _ in }
     /// RN2: «Buscar» junto al logo pone el cursor en el campo (lo hace la raíz: la pieza no toca el estado de la app).
     @ObservationIgnored var focusSearch: () -> Void = {}
+    /// Dónde quedó la pestaña Biblioteca (en la ventana): ahí aterriza el póster de una descarga (lo guarda la raíz).
+    @ObservationIgnored var libraryMoved: (CGPoint) -> Void = { _ in }
     /// Solo lo que cambió (escribir lo mismo también repintaría la tira).
     func sync(tab: Int, badge: Int) {
         if current != tab { current = tab }
@@ -54,6 +56,8 @@ struct MacTabStrip: View {
                 MacTabButton(title: Text("Inicio"), symbol: "house", on: current == 0, compact: compact) { MacTabSwitch.go(tabs, 0) }
                 MacTabButton(title: Text("Explorar"), symbol: "sparkles", on: current == 1, compact: compact) { MacTabSwitch.go(tabs, 1) }
                 MacTabButton(title: Text("Biblioteca"), symbol: "rectangle.stack", on: current == 3, badge: tabs.libraryBadge, compact: compact) { MacTabSwitch.go(tabs, 3) }
+                    // La descarga vuela aquí (antes, en la Mac, a donde iría la barra de abajo del iPhone; 24 nov 2026).
+                    .onGeometryChange(for: CGPoint.self) { let f = $0.frame(in: .global); return CGPoint(x: f.midX.rounded(), y: f.midY.rounded()) } action: { tabs.libraryMoved($0) }
             }
             .padding(DS.Space.s1)
             .macTopGlass(Capsule())

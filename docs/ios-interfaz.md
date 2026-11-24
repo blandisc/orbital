@@ -1138,7 +1138,11 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
   (`RootView.setTab`); antes cada clic pasaba por el estado de la raíz, que se recalculaba y con ella las letras y colores
   de las cuatro pantallas: ~0.5 s congelada en cada cambio, aunque la pestaña ya estuviera armada. Además Biblioteca y
   Explorar se arman solas, escondidas y una a la vez, unos segundos después de abrir la app (`DS.Mac.tabPrepareDelay`): el
-  primer clic ya no paga armarlas. Lo que se arma escondido no actúa sobre otra pestaña (lee `@TabHidden` en sus acciones).
+  primer clic ya no paga armarlas (también Buscar, sin quitarle el cursor a nadie). Lo que se arma escondido no actúa sobre
+  otra pestaña ni le habla a quien la usa: lee `@TabHidden` en sus acciones, y los consejos de Aprende esperan a que su
+  pestaña esté a la vista (antes uno podía salir en Biblioteca mientras se veía Inicio). Lo que vuela hacia una pestaña (el
+  póster de una descarga) llega a donde está el botón de verdad (`AppUI.libraryTabCenter`, arriba en la Mac), no a un lugar
+  calculado.
   Medido (2516 → 2518): cambiar entre pestañas ya vistas, 450–550 ms congelada → nada (150–350 ms de trabajo); primera vez
   a Explorar, 2.4 s con 0.8 s congelada → 1.2 s sin congelarse; Biblioteca, 1 s → 0.6 s.
 - **Cómo se mide (y cómo no).** La velocidad se mide en la app instalada (Release, la cuenta de Fernando, su ventana) con

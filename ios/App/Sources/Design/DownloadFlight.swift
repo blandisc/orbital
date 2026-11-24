@@ -10,6 +10,8 @@ struct DownloadFlight: Equatable {
 
 struct DownloadFlightLayer: View {
     let flight: DownloadFlight?
+    /// En la Mac, la pestaña Biblioteca de arriba (`AppUI.libraryTabCenter`); nil: la barra de abajo.
+    var libraryCenter: () -> CGPoint? = { nil }
     @State private var shown: DownloadFlight?
     @State private var arrived = false
     @State private var landed = 0
@@ -19,7 +21,7 @@ struct DownloadFlightLayer: View {
         GeometryReader { geo in
             if let shown, let url = shown.poster.flatMap(URL.init(string:)) {
                 let start = CGPoint(x: geo.size.width / 2, y: geo.size.height * DS.Flight.startShare)
-                let end = Self.libraryTab(in: geo.size)
+                let end = libraryCenter().map { CGPoint(x: $0.x - geo.frame(in: .global).minX, y: $0.y - geo.frame(in: .global).minY) } ?? Self.libraryTab(in: geo.size)
                 RemoteImage(url: url, maxPoints: DS.Flight.poster) { phase in
                     if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fillStrong }
                 }

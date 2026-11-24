@@ -13,6 +13,9 @@ struct LearnCoach: ViewModifier {
     var active = true
     @State private var showing = false
     @Environment(AppEnvironment.self) private var env
+    /// Escondida en la baraja de la Mac (armada antes o detrás de otra pestaña): el aviso espera a que la veas; si no, salía
+    /// donde no se ve y se gastaba el de esta vez (24 nov 2026).
+    @TabHidden private var hidden
 
     func body(content: Content) -> some View {
         content
@@ -20,10 +23,9 @@ struct LearnCoach: ViewModifier {
                        story: LearnModel.lesson(forStory: id.story) == nil ? nil : { showing = false; env.ui.openLesson(forStory: id.story) },
                        done: { showing = false },
                        skipAll: { LearnModel(env.services).skipAllCoach(); showing = false })
-            .task(id: active) {
-                guard active else { return }
-                try? await Task.sleep(for: DS.Coach.wait)
-                guard !Task.isCancelled else { return }
+            .task(id: active && !hidden) {
+                guard active, !hidden else { return }
+                guard (try? await Task.sleep(for: DS.Coach.wait)) != nil else { return }
                 let learn = LearnModel(env.services)
                 guard learn.shouldCoach(id.rawValue, used: used) else { return }
                 learn.coached(id.rawValue)

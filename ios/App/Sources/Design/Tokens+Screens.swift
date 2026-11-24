@@ -81,9 +81,6 @@ extension DS {
         static var wideReading: CGFloat { Mac.sized(readableWidth) }
         /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
         static let wideSide = DS.Space.s12
-        /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
-        /// tanto rebota el resorte al llegar.
-        static let panelArtTop: CGFloat = 70
         /// La ficha a la derecha en la Mac (FI-B): cerca de 40 % de la ventana, nunca más angosta que un iPhone grande ni tan
         /// ancha que la ficha de una columna se estire.
         static var sidePanelWidth: CGFloat { min(max(WindowMetrics.size.width * sidePanelShare, sidePanelMin), sidePanelMax) }   // ds-exception: la ficha flota sobre la ventana entera

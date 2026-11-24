@@ -75,7 +75,7 @@ struct RootView: View {
         withPrompts(withCovers(MainTabs().onAppear { Perf.mark("app.tabs") }
         .environment(\.playerZoom, playerZoom)
         .background(DS.bg.ignoresSafeArea())
-        .overlay { DownloadFlightLayer(flight: ui.downloadFlight).ignoresSafeArea() }
+        .overlay { DownloadFlightLayer(flight: ui.downloadFlight, libraryCenter: { [ui] in ui.libraryTabCenter }).ignoresSafeArea() }
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }))
     }
 
@@ -261,8 +261,6 @@ struct MainTabs: View {
     /// La ficha de la Mac a la derecha, en su propia capa (`MacTitleHost`): tocar una serie o película la abre ahí, sobre lo
     /// que veías, sin volver a acomodar lo de atrás.
     @State private var titleHost = MacTitleHost()
-    /// El póster que vuela hacia el panel al abrir una ficha (`PosterFlight`).
-    @State private var flight: PosterFlight?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
@@ -378,7 +376,6 @@ struct MainTabs: View {
         .inspector(isPresented: sidePanelShown) { sidePanel.environment(env) }   // como las hojas: la app a mano (Screens/AppSheet.swift)
         .modifier(SideTitle(host: titleHost, enabled: titleAsPanel))
         .environment(\.titlePanel, titleOpener)
-        .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
         // (Fernando, 2 nov 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»).
         .tabBarMinimizeBehavior(.never)
@@ -426,7 +423,7 @@ struct MainTabs: View {
 
     /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
     private func wired(_ selection: Binding<Int>) -> some View {
-        macTabs.select = MacTabDeck<EmptyView, EmptyView, EmptyView, EmptyView>.isOn ? { [macTabs] in macTabs.current = $0 } : { selection.wrappedValue = $0 }; macTabs.focusSearch = { [env] in env.ui.focusSearch = true }   // sin observar
+        macTabs.select = MacTabDeck<EmptyView, EmptyView, EmptyView, EmptyView>.isOn ? { [macTabs] in macTabs.current = $0 } : { selection.wrappedValue = $0 }; macTabs.focusSearch = { [env] in env.ui.focusSearch = true }; macTabs.libraryMoved = { [env] in env.ui.libraryTabCenter = $0 }   // sin observar
         return shell(selection)
         .environment(\.macTabs, TopRow.tabsInLogoRow ? macTabs : nil)   // la misma caja siempre: el entorno no cambia al cambiar de pestaña
         .onChange(of: [tab, env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending], initial: true) { _, now in macTabs.sync(tab: deck ? macTabs.current : now[0], badge: now[1]) }

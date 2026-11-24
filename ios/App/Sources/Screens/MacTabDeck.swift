@@ -33,12 +33,13 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
         .task { await prepareAhead() }
     }
 
-    /// Biblioteca y Explorar se arman solas poco después de abrir la app, escondidas y una a la vez: el primer clic ya no paga
-    /// armarlas (24 nov 2026: la primera vez a Explorar congelaba ~0.8 s de 2.4 s de trabajo; a Biblioteca, ~1 s). Buscar no:
-    /// al armarse pide el cursor.
+    /// Biblioteca, Explorar y Buscar se arman solas poco después de abrir la app, escondidas y una a la vez: el primer clic ya
+    /// no paga armarlas (24 nov 2026: la primera vez a Explorar congelaba ~0.8 s de 2.4 s de trabajo; a Biblioteca, ~1 s; a
+    /// Buscar, ~0.7 s). Armadas escondidas no actúan: el cursor de Buscar solo lo pide «Buscar» y los avisos de «Aprende»
+    /// esperan a que la pestaña se vea (`@TabHidden`).
     private func prepareAhead() async {
         guard (try? await Task.sleep(for: .seconds(DS.Mac.tabPrepareDelay))) != nil else { return }
-        for id in [3, 1] where !mounted.contains(id) {
+        for id in [3, 1, 2] where !mounted.contains(id) {
             mounted.insert(id)
             guard (try? await Task.sleep(for: .seconds(DS.Mac.tabPrepareGap))) != nil else { return }
         }

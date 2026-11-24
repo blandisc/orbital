@@ -34,6 +34,9 @@ final class AppUI {
     var openCloudRequest: String?
     /// N1: una descarga que empezó: su póster vuela a la pestaña Biblioteca (`DownloadFlightLayer`).
     var downloadFlight: DownloadFlight?
+    /// Dónde está la pestaña Biblioteca en la ventana de la Mac (en la cápsula de arriba): ahí aterriza el póster de
+    /// `downloadFlight`. nil fuera de la Mac (va a la barra de abajo). Sin observar: cambia al acomodar la ventana.
+    @ObservationIgnored var libraryTabCenter: CGPoint?
     /// «Otra fecha» del aviso de «Vista» (gestor ola 3): la vista que se acaba de marcar y que pasa a otro día.
     var redate: RedateRequest?
     /// Biblioteca › Descargas está a la vista: la marca de la pestaña no sale (ya lo estás viendo).

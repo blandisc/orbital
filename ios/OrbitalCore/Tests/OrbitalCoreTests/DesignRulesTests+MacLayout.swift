@@ -60,6 +60,11 @@ extension DesignRulesTests {
         // clic congelaba ~0.5 s porque la raíz se recalculaba y con ella las letras y colores de las cuatro pantallas).
         XCTAssertTrue(root.contains("if deck { macTabs.current = new }") && root.contains("{ [macTabs] in macTabs.current = $0 }"),
                       "en la Mac la tira y `setTab` cambian `macTabs`, no el estado de la raíz")
+        // La descarga vuela a la pestaña Biblioteca de verdad (arriba, en la cápsula), no a la barra de abajo del iPhone.
+        XCTAssertTrue(try code("MacTabStrip.swift").contains("tabs.libraryMoved($0)") && root.contains("libraryCenter: { [ui] in ui.libraryTabCenter }"),
+                      "en la Mac el póster de una descarga aterriza en la pestaña Biblioteca de arriba")
+        // Las pestañas se arman escondidas: un consejo de Aprende espera a que la suya esté a la vista.
+        XCTAssertTrue(try code("LearnCoach.swift").contains(".task(id: active && !hidden)"), "un consejo no sale en una pestaña escondida")
         let deck = try code("MacTabDeck.swift")
         XCTAssertTrue(deck.contains("@Environment(\\.macTabs) private var tabs") && !deck.contains("let current: Int"), "la baraja lee la pestaña ella misma")
         XCTAssertTrue(deck.contains(".opacity(on ? 1 : 0)") && deck.contains(".allowsHitTesting(on)"), "la escondida solo se esconde")
