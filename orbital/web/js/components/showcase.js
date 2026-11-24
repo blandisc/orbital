@@ -1,6 +1,7 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
+import { artEmblem, artHalo } from "./collection-card.js";
 import { EmptyState, Progress, ScreenHead } from "./ui.js";
 
 /**
@@ -9,7 +10,10 @@ import { EmptyState, Progress, ScreenHead } from "./ui.js";
  *
  * CO-3 (16 nov 2026): primero sale sin contar (load({ counts: false }), al instante) y la cuenta llega después.
  *
- * load({ counts }) → { collections: [{ id, title, meta, family: "award" | "list", tint?, total, seen }], trakt } · onOpen(collection)
+ * Una lista de «Esta semana» trae `art` (el slug de un género o una temporada): su ícono a color y su color, como en el
+ * iPhone (Fernando, 23 nov 2026: «se ven todos grises»).
+ *
+ * load({ counts }) → { collections: [{ id, title, meta, family: "award" | "list", tint?, art?, total, seen }], trakt } · onOpen(collection)
  */
 export function createShowcase({ load, onOpen, onMove, onClose }) {
   const head = h("div");
@@ -53,11 +57,13 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
   function render({ keep = false } = {}) {
     if (!keep) focusId = "col:0";
     mount(grid, items.map((c, i) => h("div", {
-      class: ["tile", "showcase__item", `showcase__item--${c.family}`], role: "button", tabindex: "-1", "data-focus-id": `col:${i}`,
-      "data-tint": c.tint || null, "aria-label": c.seen == null ? `${c.title}: ${c.total} títulos` : `${c.title}: ${c.seen} de ${c.total}`,
+      class: ["tile", "showcase__item", `showcase__item--${c.family}`, artEmblem(c.art) && "showcase__item--art"], role: "button",
+      tabindex: "-1", "data-focus-id": `col:${i}`, "data-tint": c.tint || null, style: artHalo(c.art) ? { "--halo": artHalo(c.art) } : null, "aria-label": c.seen == null ? `${c.title}: ${c.total} títulos` : `${c.title}: ${c.seen} de ${c.total}`,
       onClick: () => (focusId === `col:${i}` ? onOpen?.(c) : (focusId = `col:${i}`, paint(), onMove?.())),
     },
-    h("span", { class: "showcase__icon", "aria-hidden": "true" }, svg(ICONS[c.family === "award" ? "trophy" : "list"])),
+    h("span", { class: "showcase__icon", "aria-hidden": "true" }, artEmblem(c.art)
+      ? h("img", { class: "showcase__emblem", src: artEmblem(c.art), alt: "", decoding: "async" })
+      : svg(ICONS[c.family === "award" ? "trophy" : "list"])),
     h("span", { class: "showcase__text" }, h("strong", { class: "showcase__name" }, c.title), c.meta && h("span", { class: "showcase__meta" }, c.meta)),
     // Sin contar todavía: cuántos títulos tiene; la barra llega con la cuenta.
     h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : `${c.seen} de ${c.total}`),

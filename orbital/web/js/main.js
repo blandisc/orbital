@@ -2,6 +2,7 @@
  * Controlador de la app: une estado, API, entrada y componentes.
  * Los componentes solo pintan; aquí vive el "qué pasa cuando…".
  */
+import { artEmblem, artHalo } from "./components/collection-card.js";
 import { api } from "./core/api.js";
 import { markFocus } from "./core/focus-mark.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
@@ -1525,8 +1526,8 @@ function openShowcase() {
 function openShowcaseItem(c) {
   const cached = (id) => (mediaItems[keyOf(id, null)] ? Promise.resolve(mediaItems[keyOf(id, null)]) : fetchList(id, null));
   sound.play("open");
-  ui.listScreen.open({ id: c.id, title: c.title, meta: [c.meta, c.total ? `${c.seen} de ${c.total} vistas` : ""].filter(Boolean).join(" · "),
-    source: "orbital", media: {}, metal: c.family === "award" ? c.tint || "gold" : null,
+  ui.listScreen.open({ id: c.id, title: c.title, meta: [c.meta, c.total && c.seen != null ? `${c.seen} de ${c.total} vistas` : ""].filter(Boolean).join(" · "),
+    source: "orbital", media: artEmblem(c.art) ? { emblem: artEmblem(c.art), halo: artHalo(c.art) } : {}, metal: c.family === "award" ? c.tint || "gold" : null,
     tabs: [{ id: "all", label: "", ranked: c.family === "list", load: () => cached(c.id).then((items) => items.map(curatedItem)) }] });
   renderHints();
 }

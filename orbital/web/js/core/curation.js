@@ -15,18 +15,21 @@ export function curatedItem(item, { rowTitle = null } = {}) {
   const kind = item.kind === "series" ? "series" : "movie";
   const fold = (text) => String(text || "").toLowerCase().split(" · ")[0].trim();
   const why = item.why && !(rowTitle && fold(rowTitle).startsWith(fold(item.why))) ? item.why : undefined;
+  // Un capítulo (los especiales de Los Simpson de «Esta semana»): su nombre y «T7 E11», no el de la serie ni «Serie · 1995»,
+  // y su ficha abre en ese capítulo (`extra.video_id`), como el iPhone.
+  const episode = item.video_id && item.video_id !== item.meta_id ? item.video_id : null;
   return {
     // R3-8: el nombre que trajo la ficha, si ya se sabe (core/title-names.js): el mismo en la fila y en la ficha.
-    id: `cinemeta:${kind}:${item.meta_id}`, title: knownName(item.meta_id) || item.title, source: "cinemeta", kind, meta_id: item.meta_id,
+    id: `cinemeta:${kind}:${item.meta_id}`, title: (!episode && knownName(item.meta_id)) || item.title, source: "cinemeta", kind, meta_id: item.meta_id,
     image: item.image, hero: item.hero, rank: item.rank ?? undefined, trend: item.trend ?? undefined,
     // Para ordenar y filtrar una lista abierta (list-screen), y la placa del año del premio o el día del estreno.
     year: item.year ?? undefined, rating: item.rating ?? undefined, genres: item.genres ?? undefined,
     award_year: item.award_year ?? undefined, day_label: item.day_label ?? undefined,
-    subtitle: [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
+    subtitle: episode ? item.episode || item.detail || "" : [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
     // El destacado no pone el nombre de una lista de Trakt o de un complemento («En «RT: Certified Fresh»»), como el iPhone;
     // «N.º 1 en Netflix», «Recomendada» y «En tendencia» sí se quedan.
     // El héroe dice solo el año (Fernando, 11 nov 2026: deshace T10, que ponía Trakt, géneros y duración).
-    extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo,
+    extra: { kind, meta_id: item.meta_id, ...(episode ? { video_id: episode } : {}), year: item.year, description: item.overview || "", logo: item.logo,
       eyebrow: item.in_list ? undefined : why },
   };
 }

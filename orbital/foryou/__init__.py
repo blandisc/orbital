@@ -35,6 +35,7 @@ from ..library import charts as charts_api
 from ..library import mdblist as mdblist_api  # noqa: F401  (foryou.mdblist_api)
 from ..library import tmdb as tmdb_api  # noqa: F401  (foryou.tmdb_api)
 from ..library import trakt as trakt_api
+from . import weekly
 from .base import AWARD_ORDER as AWARD_ORDER
 from .base import AWARD_TINTS as AWARD_TINTS
 from .base import AWARDS_FILE as AWARDS_FILE
@@ -150,5 +151,5 @@ class ForYou(_Home):
                 ids = {e["imdb"] for e in items}
                 seen = len(ids & (watched | self._episodes_seen(items))) if counts else None
                 out.append({"id": f"canon:{entry['id']}", "title": entry.get("title") or entry["id"], "meta": entry.get("about") or "",
-                            "family": "list", "total": len(ids), "seen": seen})
+                            "family": "list", "art": weekly.art(entry), "total": len(ids), "seen": seen})
         return out

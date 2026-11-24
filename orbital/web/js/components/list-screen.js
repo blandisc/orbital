@@ -102,7 +102,9 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   const ranked = () => !!current()?.ranked && (loaded.get(tab) || []).some((item) => rankOf(item) != null);
 
   function paintHead() {
-    mount(media, list.media?.statue ? h("img", { class: "list-screen__statue", src: list.media.statue, alt: "" })
+    // Una lista de «Esta semana»: su ícono a color con el resplandor de su color, como el iPhone.
+    mount(media, list.media?.emblem ? h("img", { class: "list-screen__emblem", src: list.media.emblem, alt: "", style: list.media.halo ? { "--halo": list.media.halo } : null })
+      : list.media?.statue ? h("img", { class: "list-screen__statue", src: list.media.statue, alt: "" })
       : list.media?.logo ? h("img", { class: ["list-screen__logo", list.media.mono && "list-screen__logo--mono"], src: list.media.logo, alt: "" }) : null);
     media.hidden = !media.firstChild;
     title.textContent = list.title;

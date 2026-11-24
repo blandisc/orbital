@@ -43,3 +43,23 @@ test("el héroe de Películas y series dice solo el año: sin Trakt, géneros ni
   assert.match(hero, /item\.source === "cinemeta" \? \[extra\.episode, extra\.year\]/);
   assert.doesNotMatch(hero, /traktScore|firstSentence/);
 });
+
+test("un capítulo de una lista («Navidad Simpson») dice su nombre y «T7 E11», y su ficha abre en ese capítulo", async () => {
+  const { curatedItem } = await import("../../orbital/web/js/core/curation.js");
+  const ep = curatedItem({ meta_id: "tt0096697", kind: "series", title: "El bebé de mamá", year: 1995, video_id: "tt0096697:7:11", detail: "T7 E11" });
+  assert.deepEqual([ep.title, ep.subtitle, ep.extra.video_id], ["El bebé de mamá", "T7 E11", "tt0096697:7:11"]);
+  const show = curatedItem({ meta_id: "tt0096697", kind: "series", title: "Los Simpson", year: 1989 });
+  assert.equal(show.subtitle, "Serie · 1989");
+  assert.equal(show.extra.video_id, undefined);
+});
+
+test("ninguna lista de «Esta semana» va en gris en la TV: cada una tiene su ícono y su color", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { artEmblem, artHalo } = await import("../../orbital/web/js/components/collection-card.js");
+  const table = JSON.parse(readFileSync(new URL("../../listas/explorar.json", import.meta.url), "utf8"));
+  for (const list of table.lists) {
+    assert.ok(artEmblem(list.art), `${list.id}: sin ícono («${list.art}»)`);
+    assert.ok(existsSync(new URL(`../../orbital/web/${artEmblem(list.art)}`, import.meta.url)), `${list.id}: falta ${artEmblem(list.art)}`);
+    assert.match(artHalo(list.art) || "", /^var\(--color-(genre|season)-/, `${list.id}: sin color`);
+  }
+});

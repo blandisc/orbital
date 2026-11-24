@@ -31,6 +31,18 @@ const HALO = {
   "season-verano": "var(--color-season-verano)",
 };
 
+/** El color de cada género y cada temporada por su slug (como DS.Collections.artTint del iPhone): las tarjetas de género y
+ *  las listas de «Esta semana», que llevan uno de estos íconos (Fernando, 23 nov 2026: «se ven todos grises»). */
+const ART_HALO = {
+  accion: "var(--color-genre-accion)", aventura: "var(--color-genre-aventura)", animacion: "var(--color-genre-animacion)",
+  comedia: "var(--color-genre-comedia)", crimen: "var(--color-genre-crimen)", documental: "var(--color-genre-documental)",
+  drama: "var(--color-genre-drama)", familia: "var(--color-genre-familia)", fantasia: "var(--color-genre-fantasia)",
+  terror: "var(--color-genre-terror)", misterio: "var(--color-genre-misterio)", romance: "var(--color-genre-romance)",
+  "ciencia-ficcion": "var(--color-genre-ciencia-ficcion)", suspenso: "var(--color-genre-suspenso)",
+  halloween: HALO["season-halloween"], muertos: HALO["season-muertos"], navidad: HALO["season-navidad"],
+  sanvalentin: HALO["season-sanvalentin"], verano: HALO["season-verano"],
+};
+
 /** «season:halloween» → «season-halloween»: su halo, si es temporada. */
 const iconOf = (c) => String(c.list?.id || "").replace(":", "-");
 
@@ -38,10 +50,12 @@ const iconOf = (c) => String(c.list?.id || "").replace(":", "-");
  *  rama del iPhone): img/collections/<slug>.png, con los slugs de GENRES y SEASONS de orbital/library/tmdb.py. */
 const EMBLEMS = new Set(["accion", "aventura", "animacion", "comedia", "crimen", "documental", "drama", "familia", "fantasia",
   "terror", "misterio", "romance", "ciencia-ficcion", "suspenso", "halloween", "muertos", "navidad", "sanvalentin", "verano"]);
-const emblemOf = (c) => {
-  const slug = String(c.list?.id || "").split(":")[1] || "";
-  return EMBLEMS.has(slug) ? `img/collections/${slug}.png` : null;
-};
+const emblemOf = (c) => artEmblem(String(c.list?.id || "").split(":")[1] || "");
+
+/** El ícono a color de un género o una temporada (su slug), o null si no hay. */
+export const artEmblem = (slug) => (EMBLEMS.has(slug) ? `img/collections/${slug}.png` : null);
+/** Su color (un token), o null. */
+export const artHalo = (slug) => ART_HALO[slug] ?? null;
 
 /** El nombre de un premio estilizado, como el logo de un título: con remate, en mayúsculas y con el degradado de su metal
  *  (oro, plata para el Emmy, bronce para el BAFTA y el Ariel). En la tarjeta, arriba en el héroe y en su lista. */
@@ -137,6 +151,7 @@ const TYPE_CLASS = {
 export function CollectionCard(item, { onPress } = {}) {
   const c = item.collection;
   const halo = HALO[c.brand] || HALO[c.tint] || (c.type === "season" && HALO[iconOf(c)])
+    || (c.type === "genre" && artHalo(String(c.list?.id || "").split(":")[1] || ""))
     || (c.type === "studio" || c.type === "genre" || c.type === "season" ? HALO.studio : null);
   const card = h("button", {
     class: ["card", "card--has-art", TYPE_CLASS[c.type]], type: "button", "aria-label": c.label || item.title, onClick: onPress,

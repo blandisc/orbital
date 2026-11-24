@@ -54,3 +54,15 @@ def test_la_tabla_tiene_icono_en_cada_lista_y_la_afi_en_orden():
     assert all(e.get("art") for e in table["lists"])
     afi = next(e for e in table["lists"] if e["id"] == "afi-100")["items"]
     assert (afi[0]["title"], afi[-1]["title"], len(afi)) == ("Citizen Kane", "Ben-Hur", 100)
+
+
+def test_cada_lista_lleva_su_icono_como_en_el_iphone():
+    # La de la tabla y, sin ella, la misma cuenta que DS.Collections.art del iPhone (siempre la misma para la misma lista).
+    assert weekly.art({"id": "afi-100", "art": "accion"}) == "accion"
+    assert weekly.art({"id": "x", "art": "no-existe"}) in weekly.ART_SLUGS
+    assert weekly.art({"id": "nueva"}) == weekly.art({"id": "nueva"})
+    n = 0
+    for ch in "nueva":
+        n = (n * 31 + ord(ch)) & 0xFFFF
+    assert weekly.art({"id": "nueva"}) == weekly.ART_SLUGS[n % 19]
+    assert all(weekly.art(e) == e["art"] for e in weekly.local_table()["lists"])

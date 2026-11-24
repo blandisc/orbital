@@ -22,6 +22,11 @@
 .showcase__item[data-tint="gold"] .showcase__icon { color: var(--color-award-gold); }
 .showcase__item[data-tint="silver"] .showcase__icon { color: var(--color-award-silver); }
 .showcase__item[data-tint="bronze"] .showcase__icon { color: var(--color-award-bronze); }
+/* Una lista de «Esta semana»: su ícono a color sobre un disco de su color (--halo, el de su género o temporada). */
+.showcase__item--art .showcase__icon { background: color-mix(in oklab, var(--halo) 30%, var(--color-surface-raised));
+  box-shadow: var(--edge-glass-hairline), 0 0 1.2rem -.2rem color-mix(in oklab, var(--halo) 60%, transparent); }
+.showcase__emblem { width: 78%; height: 78%; object-fit: contain; }
+.showcase__item--art .showcase__progress .progress__fill { background: var(--halo); }
 .showcase__text { display: grid; gap: var(--space-1); min-width: 0; }
 .showcase__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
 .showcase__meta { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }

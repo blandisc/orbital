@@ -773,14 +773,17 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
       // Al ponerse al día, sigues en el episodio que tenías enfocado (si aún existe).
-      const resumeId = (keepEpisode && seasons().some((s) => s.episodes.some((e) => e.id === keepEpisode)))
-        ? keepEpisode : data.resume?.video_id;
+      // Abierta desde un capítulo de una lista (`extra.video_id`, «Navidad Simpson»): en ese capítulo, no en el que ibas.
+      const opening = !quiet && item.extra?.video_id && item.extra.video_id !== id ? item.extra.video_id : null;
+      const wanted = keepEpisode || opening;
+      const resumeId = (wanted && seasons().some((s) => s.episodes.some((e) => e.id === wanted)))
+        ? wanted : data.resume?.video_id;
       // Si el que ibas no está en la lista, la primera temporada normal (no Especiales).
       const at = seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId));
       season = at >= 0 ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
       // Una serie abre en «Continuar T1 E3» (R2-8); sin episodio que siga, en la lista.
-      if (!quiet && led()) zone = data.resume?.video_id ? "actions" : "episodes";
+      if (!quiet && led()) zone = data.resume?.video_id || opening ? "actions" : "episodes";
       status.hidden = true;
       if (kind === "series" && !seasons().length) {
         status.textContent = "Esta serie todavía no tiene episodios.";

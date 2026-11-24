@@ -75,6 +75,23 @@ def episode(imdb: str) -> tuple[str, int, int] | None:
     return show, int(season), int(number)
 
 
+# Los íconos de Temporadas y Géneros (web/img/collections; los mismos que `DS.Collections.artSlugs` del iPhone, en su orden).
+ART_SLUGS = ("accion", "animacion", "aventura", "ciencia-ficcion", "comedia", "crimen", "documental", "drama", "familia",
+             "fantasia", "halloween", "misterio", "muertos", "navidad", "romance", "sanvalentin", "suspenso", "terror", "verano")
+
+
+def art(entry: dict) -> str:
+    """El ícono y el color de una lista (Fernando, 23 nov 2026: «se ven todos grises»): el que dice la tabla o, sin él, uno
+    fijo según su id, con la misma cuenta que `DS.Collections.art` del iPhone (así sale igual en las dos)."""
+    slug = entry.get("art")
+    if slug in ART_SLUGS:
+        return slug
+    n = 0
+    for ch in str(entry.get("id") or ""):
+        n = (n * 31 + ord(ch)) & 0xFFFF
+    return ART_SLUGS[n % len(ART_SLUGS)]
+
+
 def local_table() -> dict:
     try:
         return json.loads(LOCAL_TABLE.read_text(encoding="utf-8"))

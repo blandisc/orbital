@@ -132,7 +132,7 @@ que llega después de abrir) y cortaba una semana a la mitad en la orilla.
 - **Regla: lo que se desplaza a lo ancho abre mostrando lo importante completo, y dice que hay más.** Lo importante es lo de
   hoy (o lo elegido); «completo» es sin una columna o tarjeta a medias en la orilla de la columna; «dice que hay más» es un
   desvanecido en la orilla de lo que queda atrás (o la tarjeta que se asoma en un carrusel de orilla a orilla).
-- **Regla: ninguna tarjeta de Explorar va en gris** (23 nov 2026, «Esta semana»: «se ven todos grises en comparación a los demás»). Toda tarjeta de colección lleva el color y el ícono de su tema, como Temporadas y Géneros; una lista de «Esta semana» lo dice en la tabla («art») y, si falta, toma uno fijo según su id. Lo vigila `testCadaListaTieneSuIconoYExiste`.
+- **Regla: ninguna tarjeta de Explorar va en gris** (23 nov 2026, «Esta semana»: «se ven todos grises en comparación a los demás»). Toda tarjeta de colección lleva el color y el ícono de su tema, como Temporadas y Géneros; una lista de «Esta semana» lo dice en la tabla («art») y, si falta, toma uno fijo según su id. Lo vigila `testCadaListaTieneSuIconoYExiste`; en la TV, `tests/web/curation.test.mjs` («ninguna lista de «Esta semana» va en gris»).
 - **Regla: lo que va dentro de una tarjeta no se sale de ella** (22 nov 2026, en la Mac: «Lo nuevo de lo tuyo» se salía del
   panel por los dos lados y los pósters de «Por lo que viste» pasaban la orilla de su tarjeta). Cada fila dice hasta dónde
   llega: `.rowEdge(.bleeds)` la suelta, que en el iPhone llega a la orilla de la pantalla y en ventana ancha (iPad, Mac) termina en

@@ -1240,10 +1240,10 @@ def test_weekly_episode_lists_open_their_series_and_count_progress(make_foryou, 
     monkeypatch.setattr(fy, "_canon", lambda cid: [] if cid != "simpsons-navidad" else [
         {"imdb": "tt0096697:1:1", "kind": "episode", "title": "Especial de Navidad", "year": 1989},
         {"imdb": "tt0096697:7:11", "kind": "episode", "title": "El bebé de mamá", "year": 1995}])
-    monkeypatch.setattr(fy, "_weekly", lambda: [{"id": "simpsons-navidad", "title": "Navidad Simpson", "about": "x"}])
+    monkeypatch.setattr(fy, "_weekly", lambda: [{"id": "simpsons-navidad", "title": "Navidad Simpson", "about": "x", "art": "navidad"}])
     monkeypatch.setattr(fy.trakt, "show_progress", lambda imdb: {"watched": {(1, 1)}, "next": None, "last_watched": None})
-    got = {c["id"]: (c["seen"], c["total"]) for c in fy.collections()}
-    assert got["canon:simpsons-navidad"] == (1, 2)
+    got = {c["id"]: (c["seen"], c["total"], c.get("art")) for c in fy.collections()}
+    assert got["canon:simpsons-navidad"] == (1, 2, "navidad")  # con su ícono y su color (ninguna tarjeta gris)
     items = fy.list_items("canon:simpsons-navidad", None)
     assert [(i["meta_id"], i["video_id"], i["title"], i["detail"]) for i in items] == [
         ("tt0096697", "tt0096697:1:1", "Especial de Navidad", "T1 E1"), ("tt0096697", "tt0096697:7:11", "El bebé de mamá", "T7 E11")]

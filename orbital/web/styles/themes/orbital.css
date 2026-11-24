@@ -107,13 +107,29 @@
   --color-award-silver: #c7c2b8;
   --color-award-bronze: #b87342;
   /* Tu año: el mapa día por día, los colores del iPhone (DS.YearMap): películas, series y las dos el mismo día. */
-  --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores (y cada género) */
+  --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores */
   /* Temporadas: el halo de cada una (los tonos de la propuesta del iPhone, más claros para que se vean en la TV). */
   --color-season-halloween: #e8742a;
   --color-season-muertos: #e0457b; /* rosa mexicano */
   --color-season-navidad: #3fa66a;
   --color-season-sanvalentin: #e0526e;
   --color-season-verano: #f2b33d;
+  /* Géneros: el color de cada uno (los mismos del iPhone, DS.Collections.genreHex: Acción rojo, Terror sangre, Romance
+     rosa…). También pintan las listas de «Esta semana», que llevan el ícono de un género o una temporada. */
+  --color-genre-accion: #ed5438;
+  --color-genre-aventura: #4cad5c;
+  --color-genre-animacion: #fa992e;
+  --color-genre-comedia: #facc33;
+  --color-genre-crimen: #5c739e;
+  --color-genre-documental: #c7a873;
+  --color-genre-drama: #8c5cbf;
+  --color-genre-familia: #8ccc61;
+  --color-genre-fantasia: #9e6bf2;
+  --color-genre-terror: #b21a24;
+  --color-genre-misterio: #5952bf;
+  --color-genre-romance: #ed669e;
+  --color-genre-ciencia-ficcion: #33b8db;
+  --color-genre-suspenso: #2e858c;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);
