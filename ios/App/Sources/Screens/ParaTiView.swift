@@ -95,8 +95,11 @@ struct ParaTiView: View {
         // El mismo encabezado que Inicio (Fernando, 31 oct 2026): «Para ti» a la izquierda, donde va el logo, y los pósters debajo.
         // En el iPad y la Mac, el título del sistema como Biblioteca: de pie la barra de pestañas va en ese renglón y iOS lo
         // oculta; con el título a mano quedaba encimado a la hora y a la barra (4 nov 2026).
-        .navigationTitle(ThisDevice.platform == "ipad" ? Text("Explorar") : Text(verbatim: ""))   // en la Mac sin título: su lugar es de las pestañas (con él, se iban a «More»)
-        .toolbarTitleDisplayMode(ThisDevice.platform == "ipad" ? .inlineLarge : .inline)   // en la Mac, chico: su lugar es del logo y las pestañas
+        // HB1 (Fernando, 23 nov 2026: «que los tres sean iguales… que también Explorar se haga chiquito en medio»): en el iPhone y
+        // el iPad, el título del sistema como Biblioteca y Buscar, grande arriba y chico al centro al deslizar. En la Mac sin
+        // título (su lugar es de las pestañas; con él se iban a «More»); en el mosaico tampoco (va la flecha de regresar).
+        .navigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? Text("Explorar") : Text(verbatim: ""))
+        .toolbarTitleDisplayMode(!TopRow.tabsInLogoRow && m.mode == .lists ? .inlineLarge : .inline)
         // Solo en el mosaico: en las listas no hay pósters que acercar.
         .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.", active: m.mode == .mosaic)
         .toolbar {
@@ -104,9 +107,6 @@ struct ParaTiView: View {
             // en las listas, el logo.
             if m.mode == .mosaic, ThisDevice.platform == "iphone" {
                 ToolbarItem(placement: .topBarLeading) { mosaicBack(m) }
-            } else if m.mode == .lists, ThisDevice.platform == "iphone" {
-                ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Explorar")) }
-                    .sharedBackgroundVisibility(.hidden)
             }
             // «Decide por mí» ya no está en la barra: tiene una sola puerta, en Listas y en Inicio (DE2, 13 nov 2026).
             // Sin botón de mosaico ↔ listas (Fernando, 31 oct 2026): al mosaico se entra con «Pasear por el mosaico» de la

@@ -25,4 +25,14 @@ extension DesignRulesTests {
         let used = try sources().filter { !$0.path.contains("RefreshOrbit") }.flatMap { f in f.lines.filter { $0.contains(".refreshable {") || $0.contains(".refreshable{") }.map { "\(f.path): \($0)" } }
         XCTAssertEqual(used, [], "Tirar para actualizar con la ruedita del sistema: usa orbitalRefreshable / orbitalRefreshableList")
     }
+
+    /// Las pestañas llevan el mismo encabezado (HB1, Fernando, 23 nov 2026: «Explorar es diferente a Biblioteca y Buscar…
+    /// que los tres sean iguales»): el título del sistema, grande arriba y chico al centro al deslizar, nunca uno hecho a mano.
+    func testTabsShareTheSystemHeader() throws {
+        let files = try sources()
+        XCTAssertTrue(files.allSatisfy { !$0.lines.contains { $0.contains("struct ScreenMark") } }, "Sin título a mano en las pestañas")
+        let explore = try XCTUnwrap(files.first { $0.path.hasSuffix("ParaTiView.swift") }).lines.joined(separator: "\n")
+        XCTAssertTrue(explore.contains(".navigationTitle(!TopRow.tabsInLogoRow && m.mode == .lists ? Text(\"Explorar\")"), "Explorar con su título del sistema")
+        XCTAssertTrue(explore.contains("? .inlineLarge : .inline)"), "Explorar grande arriba y chico al deslizar, como Biblioteca")
+    }
 }
