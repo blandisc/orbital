@@ -9,6 +9,8 @@ import OrbitalAddons
 @MainActor
 @Observable
 final class DownloadSpeedTest {
+    /// El idioma de la app: lo que arma la prueba con datos se dice ya traducido.
+    private var ui: String { AppEnvironment.shared.services.appSettings.uiLanguage }
     struct Row: Identifiable, Equatable {
         enum Kind: String, CaseIterable { case internet, single, eight, background }
         let kind: Kind
@@ -66,7 +68,7 @@ final class DownloadSpeedTest {
         let sources = await Self.within(Self.searchLimit) { (try? await finder.find(kind: "movie", videoID: Self.testTitle, prefs: prefs, purpose: .download)) ?? [] } ?? []
         // Las primeras fuentes se prueban a la vez (una por una, con su espera cada una, parecía trabado); gana la mejor que sirva.
         let tries = Array(sources.prefix(Self.maxTries))
-        if !tries.isEmpty { status = "Probando \(tries.count) fuentes…" }
+        if !tries.isEmpty { status = String(format: Strings.tr("Probando %lld fuentes…", language: ui), tries.count) }
         let resolved = await withTaskGroup(of: (Int, (url: URL, total: Int64)?).self) { group in
             for (i, source) in tries.enumerated() {
                 group.addTask { (i, await source.playbackURL.asyncMap { await Self.resolve($0) } ?? nil) }
@@ -79,13 +81,14 @@ final class DownloadSpeedTest {
         let skipped = resolved.keys.min() ?? tries.count
         let picked = resolved.keys.min().flatMap { i in resolved[i].map { (tries[i], $0) } }
         guard let (source, target) = picked else {
-            problem = sources.isEmpty ? "No encontré fuentes para probar." : "Ninguna de \(min(sources.count, Self.maxTries)) fuentes dio el archivo (Torrentio o Real-Debrid mandaron un aviso en vez del video)."
+            problem = sources.isEmpty ? "No encontré fuentes para probar."
+                : String(format: Strings.tr("Ninguna de %lld fuentes dio el archivo (Torrentio o Real-Debrid mandaron un aviso en vez del video).", language: ui), min(sources.count, Self.maxTries))
             for kind in [Row.Kind.single, .eight, .background] { set(kind) { $0.failed = "Sin enlace" } }
             return
         }
-        sourceName = [source.resolution, source.cached ? "Al instante" : "No está al instante",
-                      ByteSize.text(target.total, language: AppEnvironment.shared.services.appSettings.uiLanguage), target.url.host ?? "",
-                      skipped > 0 ? "\(skipped) sin archivo antes" : nil].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+        sourceName = [source.resolution, Strings.tr(source.cached ? "Al instante" : "No está al instante", language: ui),
+                      ByteSize.text(target.total, language: ui), target.url.host ?? "",
+                      skipped > 0 ? String(format: Strings.tr("%lld sin archivo antes", language: ui), skipped) : nil].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
         await measure(.single) { await Self.parallel(url: target.url, connections: 1, total: target.total) }
         await measure(.eight) { await Self.parallel(url: target.url, connections: 8, total: target.total) }
         await measure(.background) { await BackgroundMeter().run(url: target.url, total: target.total, parts: BackgroundDownloadTransport.parts) }
@@ -93,11 +96,11 @@ final class DownloadSpeedTest {
 
     /// El texto para copiar y mandar.
     var report: String {
-        var lines = ["Prueba de velocidad de Orbital"]
-        if let sourceName { lines.append("Fuente: \(sourceName)") }
+        var lines = [Strings.tr("Prueba de velocidad de Orbital", language: ui)]
+        if let sourceName { lines.append(String(format: Strings.tr("Fuente: %@", language: ui), sourceName)) }
         for row in rows {
-            let value = row.bytesPerSecond.map { Self.format($0) } ?? (row.failed ?? "—")
-            lines.append("\(cloud.spoken(Self.title(row.kind))): \(value)")
+            let value = row.bytesPerSecond.map { Self.format($0) } ?? row.failed.map { Strings.tr($0, language: ui) } ?? "—"
+            lines.append("\(cloud.spoken(Strings.tr(Self.title(row.kind), language: ui))): \(value)")
         }
         return lines.joined(separator: "\n")
     }

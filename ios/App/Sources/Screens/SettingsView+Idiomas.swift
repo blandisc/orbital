@@ -16,8 +16,12 @@ extension SettingsView {
 
     /// «Español · Latino, original +2»: el de la app y, después, el audio.
     private func languagesValue(_ s: AppSettings) -> Text {
-        let app = s.uiLanguage == "en" ? "English" : "Español"
-        return Text(verbatim: app + " · " + YourLanguagesView.summary(s.yourLanguages, s.uiLanguage))
+        // Corto (ID1, 25 nov 2026: «English, Latin American Spanish and English… es muy largo»): las letras de la app y del
+        // primer audio, como en sus marcas (`LanguageMark`), y cuántos más hay en la fila. «EN · LAT +1».
+        let audio = s.yourLanguages
+        let first = audio.first.map { $0 == "original" ? "VO" : LanguageMark.letters($0) }
+        let more = audio.count > 1 ? " +\(audio.count - 1)" : ""
+        return Text(verbatim: LanguageMark.letters(s.uiLanguage) + (first.map { " · " + $0 + more } ?? ""))
     }
 
     /// La página «Idiomas»: cada idioma por su lado. Con dos opciones, botones a la vista (no otra pantalla con una lista).

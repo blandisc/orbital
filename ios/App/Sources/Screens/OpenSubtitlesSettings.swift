@@ -70,6 +70,7 @@ struct OpenSubtitlesConnected: View {
 
 /// Usuario, contraseña y «Conectar» (Ajustes y la bienvenida usan el mismo).
 struct OpenSubtitlesForm: View {
+    @Environment(AppEnvironment.self) private var env
     let model: OpenSubtitlesModel
     var connected: () -> Void = {}
     @State private var user = ""
@@ -88,7 +89,7 @@ struct OpenSubtitlesForm: View {
         }
         .disabled(user.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty || model.loading)
         .accessibilityIdentifier("opensubtitles-connect")
-        if let error = model.error { Text(verbatim: error).recipe(.footnote, color: DS.danger) }
+        if let error = model.error { Text(verbatim: env.message(error)).recipe(.footnote, color: DS.danger) }
         Link(destination: OpenSubtitlesAPI.signUp) { Label("Crear una cuenta gratis", systemImage: "arrow.up.right") }
     }
 

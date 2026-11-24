@@ -139,17 +139,19 @@ func badgeSymbol(_ badge: PosterBadge) -> String? {
 @MainActor func shelfName(_ plan: ShelfPlan) -> String {
     let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
     let brand = plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.list.brand
+    let language = AppEnvironment.shared.services.appSettings.uiLanguage
+    func tr(_ key: String) -> String { Strings.tr(key, language: language) }   // en el idioma de la app, no en el del sistema
     func known() -> String? {
-        if plan.id.hasPrefix("chart:") { return brand.map { String(localized: "Top 10 en \($0)") } }
-        if plan.id.hasPrefix("jw:") { return brand.map { String(localized: "Tendencias en \($0)") } }
+        if plan.id.hasPrefix("chart:") { return brand.map { String(format: tr("Top 10 en %@"), $0) } }
+        if plan.id.hasPrefix("jw:") { return brand.map { String(format: tr("Tendencias en %@"), $0) } }
         switch plan.id {
-        case "mine": return String(localized: "Tus series")
-        case "watchlist": return String(localized: "Mi lista")
-        case ForYou.favoritesList: return String(localized: "Favoritos")
-        case "recs": return String(localized: "Recomendadas")
-        case "trend": return String(localized: "En tendencia")
-        case "popular": return String(localized: "Lo más popular")
-        case "critics": return String(localized: "Aprobadas por la crítica")
+        case "mine": return tr("Tus series")
+        case "watchlist": return tr("Mi lista")
+        case ForYou.favoritesList: return tr("Favoritos")
+        case "recs": return tr("Recomendadas")
+        case "trend": return tr("En tendencia")
+        case "popular": return tr("Lo más popular")
+        case "critics": return tr("Aprobadas por la crítica")
         default: return nil
         }
     }

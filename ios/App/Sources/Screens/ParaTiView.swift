@@ -149,6 +149,9 @@ struct ParaTiView: View {
             await m.loadIfStale()
         }
         // El widget «Mosaico de una lista»: tus listas de Explorar con sus pósters (cuando cambian los estantes que se ven).
+        // MP3 (25 nov 2026, «el mosaico se sigue tardando mucho»): sus pósters se piden en cuanto llega la lista, todos a la vez,
+        // no columna por columna mientras se arma el muro (`coverColumnStep`). Misma imagen y mismo tamaño que pinta el mosaico.
+        .task(id: m.mosaic.count) { ImagePipeline.shared.prefetchPosters(m.mosaic.map(\.poster), maxPoints: DS.Image.mosaic) }
         .task(id: m.visibleShelves.map { "\($0.id):\(m.items(for: $0).count)" }) {
             let lists = WidgetListsPublisher.lists(from: m)
             if lists.contains(where: { !$0.posters.isEmpty }) { WidgetListsPublisher.publish(lists) }

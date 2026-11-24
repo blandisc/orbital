@@ -23,7 +23,7 @@ struct TorrentioSettings: View {
             // P3-B: si con tus filtros no verías nada, se dice arriba (donde se ve) con su arreglo; si todo va bien, nada cambia.
             if case .result(.nothing(let fixes)) = model.probe {
                 Section {
-                    TorrentioNothingProblem(sample: TorrentioProbe.sample.name, fixes: fixes) { fix in model.apply(fix) }
+                    TorrentioNothingProblem(sample: TorrentioProbe.screenName, fixes: fixes) { fix in model.apply(fix) }
                 }
                 .listRowBackground(DS.surface)
             }
@@ -62,7 +62,7 @@ struct TorrentioSettings: View {
             // T9: se prueba sola al cambiar algo; si no quedaría nada, el arreglo está aquí mismo.
             if model.probe != .idle, !model.probe.isNothing {
                 Section {
-                    TorrentioProbeRow(probe: model.probe, sample: TorrentioProbe.sample.name) { fix in model.apply(fix) }
+                    TorrentioProbeRow(probe: model.probe, sample: TorrentioProbe.screenName) { fix in model.apply(fix) }
                 } footer: {
                     if !model.hasKey { Text("Sin tu clave de Real-Debrid no se sabe cuáles arrancan al instante.", cloud: env.services.debrid.service, locale: env.uiLocale) }
                 }
@@ -126,5 +126,12 @@ struct TorrentioRowLabel: View {
             title.foregroundStyle(action ? DS.accent : DS.text)
             detail.recipe(.footnote, color: DS.textMuted)
         }
+    }
+}
+
+extension TorrentioProbe {
+    /// El título de prueba en el idioma de la app: «The Office · T1 E1» / «The Office · S1 E1».
+    @MainActor static var screenName: String {
+        TorrentioProbe.sample.name.components(separatedBy: " · ")[0] + " · " + Strings.episode(season: 1, episode: 1, language: AppEnvironment.shared.services.appSettings.uiLanguage)
     }
 }

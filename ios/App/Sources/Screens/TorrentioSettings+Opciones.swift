@@ -27,7 +27,7 @@ struct TorrentioQualities: View {
             } header: { Text("Esconder") } footer: { Text("Si marcas de más, la prueba con un título te avisa.") }
             .listRowBackground(DS.surface)
             if torrentio.probe != .idle {
-                Section { TorrentioProbeRow(probe: torrentio.probe, sample: TorrentioProbe.sample.name) { torrentio.apply($0) } }
+                Section { TorrentioProbeRow(probe: torrentio.probe, sample: TorrentioProbe.screenName) { torrentio.apply($0) } }
                     .listRowBackground(DS.surface)
             }
         }
@@ -109,7 +109,7 @@ struct TorrentioMoreOptions: View {
             }
             .listRowBackground(DS.surface)
             if torrentio.probe != .idle {
-                Section { TorrentioProbeRow(probe: torrentio.probe, sample: TorrentioProbe.sample.name) { torrentio.apply($0) } }
+                Section { TorrentioProbeRow(probe: torrentio.probe, sample: TorrentioProbe.screenName) { torrentio.apply($0) } }
                     .listRowBackground(DS.surface)
             }
         }

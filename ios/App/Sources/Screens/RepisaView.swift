@@ -157,7 +157,7 @@ struct RepisaCollectionView: View {
                     ForEach(shown.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             HStack(alignment: .firstTextBaseline) {
-                                Text(verbatim: group.title).recipe(.cardTitle)   // no-es-título: un grupo de la colección
+                                Text(verbatim: Self.groupTitle(group.title, language: env.services.appSettings.uiLanguage)).recipe(.cardTitle)   // no-es-título: un grupo de la colección
                                 Spacer()
                                 Text(verbatim: "\(group.items.filter { model.watched.contains($0.imdb) }.count) / \(group.items.count)").recipe(.caption, color: DS.textMuted).monospacedDigit()
                             }
@@ -267,10 +267,17 @@ struct RepisaCollectionView: View {
         if item.episode != nil { onOpenTitle(route(item)) } else { Task { await env.play(suggestion(item)) } }
     }
 
+    /// «Los 2010» / «Los 90» (década) en inglés es «2010s» / «90s»; «1 – 10» (lugares) queda igual.
+    static func groupTitle(_ title: String, language: String) -> String {
+        let parts = title.split(separator: " ", maxSplits: 1)
+        guard language.hasPrefix("en"), parts.count == 2, Int(parts[1]) != nil else { return title }
+        return String(parts[1]) + "s"
+    }
+
     private func label(_ item: CanonCollection.Item, _ c: CanonCollection) -> String {
         if let video = item.episode?.video {   // «T7 · E11»: los capítulos comparten póster, el número los distingue
             let n = video.split(separator: ":").dropFirst()
-            if n.count == 2 { return "T\(n.first!) · E\(n.last!)" }
+            if n.count == 2, let season = Int(n.first!), let episode = Int(n.last!) { return String(format: Strings.tr("T%lld · E%lld", language: env.services.appSettings.uiLanguage), season, episode) }
         }
         guard let year = item.year else { return "" }
         if let last = item.lastYear, last != year { return String(format: "%d–%02d", year, last % 100) }
@@ -318,7 +325,7 @@ struct RepisaCollectionView: View {
                     Text(verbatim: name(item)).recipe(.title).lineLimit(3)
                     Text(verbatim: label(item, c)).recipe(.footnote, color: DS.textMuted)
                     if !others.isEmpty {
-                        Text("También en \(Text(verbatim: others.map { Self.plainName($0) }.joined(separator: ", ")))").recipe(.footnote, color: DS.textMuted)
+                        Text("También en \(Text(verbatim: others.map { Strings.tr(Self.plainName($0), language: env.services.appSettings.uiLanguage) }.joined(separator: ", ")))").recipe(.footnote, color: DS.textMuted)
                     }
                     if seen, let stars = env.ratings.stars(item.imdb) { RatingStars(value: stars, size: DS.Rating.starInline) { _ in } .allowsHitTesting(false) }
                     HStack(spacing: DS.Space.s1) { Text("Ver la ficha"); Image(systemName: "chevron.forward") }

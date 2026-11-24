@@ -46,3 +46,17 @@ extension DesignRulesTests {
         XCTAssertEqual(found, [], "usa .dsNavigationTitle(\"…\") para que el título cambie con el idioma")
     }
 }
+
+extension DesignRulesTests {
+    /// P4 (25 nov 2026): un póster en un marco alto va centrado; correrlo a la derecha es solo del marco ancho (el destacado).
+    func testTallPostersStayCentered() throws {
+        let posters = try XCTUnwrap(try sources(["Design"]).first { $0.path.hasSuffix("Posters.swift") }).lines.joined(separator: "\n")
+        XCTAssertTrue(posters.contains("bleed && box.size.width > box.size.height"), "a la derecha solo en un marco ancho")
+    }
+
+    /// DO1 (25 nov 2026): tocar una película en una hoja abre su ficha cuando la hoja ya se cerró, no a la vez (se perdía).
+    func testSheetsOpenTitlesAfterClosing() throws {
+        let found = hits(#"dismiss\(\);\s*(env\.)?open\("#, in: try sources(["Design", "Screens"]))
+        XCTAssertEqual(found, [], "cierra la hoja y abre después (como `go` en DecideView)")
+    }
+}

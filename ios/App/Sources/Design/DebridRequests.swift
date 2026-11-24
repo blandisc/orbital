@@ -191,7 +191,7 @@ struct DebridRequestSheet: View {
         // Quien la abre la mide (`fittedSheet`): sin el margen de abajo, que ya pone la barra de inicio (dejaba un hueco al pie;
         // Fernando, 4 nov 2026, la 1774).
         .dsSheetContent(bottom: false)
-        .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished, service: service) { cancel?() }
+        .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished, service: service, locale: locale) { cancel?() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-request-sheet")
     }

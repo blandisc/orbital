@@ -144,6 +144,13 @@ struct DecideView: View {
         return .offset(x: tab == .deck ? DS.DecideLive.tabShift : -DS.DecideLive.tabShift).combined(with: .opacity)
     }
 
+    /// Abre la ficha cuando la hoja ya se cerró (DO1, 25 nov 2026, «cuando aparezca una película y le piques, se vea esa
+    /// película»): abrirla mientras la hoja se iba se perdía y solo quedaba Explorar.
+    private func go(_ route: TitleRoute) {
+        dismiss()
+        Task { try? await Task.sleep(for: DS.Motion.tabSettle); open(route) }
+    }
+
     // MARK: «Una por una»
     /// El mazo con los mismos filtros (DE2): el tipo y «Filtros» arriba (en su hoja, solo lo que le aplica); el tiempo y el
     /// ánimo son de «Tres que caben». Al cambiar un filtro, el mazo se vuelve a barajar con lo que queda.
@@ -152,11 +159,11 @@ struct DecideView: View {
         return MatchDeckScreen(model: $deckModel, lead: heroID, hero: reduceMotion ? nil : hero, pool: pool, poolKey: m.deckKey, filtered: m.moreFilters > 0 || m.kind != nil || m.minRating > 0 || m.minLetterboxd > 0,
                                reload: reload.map { load in { let fresh = await load(); await m.retry(pool: fresh.pool, sources: fresh.sources); return m.deckPool() } },
                                onCount: { deckCount = $0 },
-                               onOpenTitle: { dismiss(); open($0) },
+                               onOpenTitle: { go($0) },
                                onPlay: { route in
                                    // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
                                    dismiss()
-                                   if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } } else { open(route) }
+                                   if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } } else { go(route) }
                                })
             .padding(.bottom, DS.Space.s4)
     }
@@ -260,7 +267,7 @@ struct DecideView: View {
                     // (`grow`); la que deja de serlo se recoge (`fold`). Sin marco ni las otras apagadas (pulido de DE2).
                     // Se hunde tantito al apretarlo (`DSPressStyle`). Al barajar sale encogiéndose y la nueva entra subiendo, una
                     // tras otra (`DecideTrioLayout.shuffle`).
-                    Button { if chosen { dismiss(); open(option.route) } else { m.select(option) } } label: {
+                    Button { if chosen { go(option.route) } else { m.select(option) } } label: {
                         PosterView(url: option.poster, title: option.title)
                             .matchedGeometryEffect(id: DecideView.heroKey(option.imdb), in: hero, isSource: true)
                             .shadow(chosen ? DS.Elevation.high : DS.Elevation.high.color(.clear))
@@ -293,7 +300,7 @@ struct DecideView: View {
             .contentTransition(.opacity)
             .animation(DS.Motion.fade, value: s.imdb)
             .contentShape(Rectangle())
-            .onTapGesture { dismiss(); open(s.route) }
+            .onTapGesture { go(s.route) }
             actions(m, s)
         } else if let empty = m.empty {
             nothing(m, empty)
@@ -339,7 +346,7 @@ struct DecideView: View {
             DSMoreMenu {
                 Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { remove(m, s, dismissed: true) }
                 Button("Hoy no", systemImage: "moon.zzz") { remove(m, s, dismissed: false) }
-                Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
+                Button("Ver la ficha", systemImage: "info.circle") { go(s.route) }
             }
             .accessibilityIdentifier("decide-more")
         }

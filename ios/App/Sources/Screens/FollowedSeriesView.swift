@@ -22,7 +22,7 @@ struct FollowedSeriesView: View {
         List {
             if follow.series.isEmpty && hiddenCount == 0 {
                 if follow.loadingSeries { DSLoadingState().listRowBackground(Color.clear) }
-                else if let problem = follow.seriesProblem { Text(problem).recipe(.footnote).listRowBackground(Color.clear) }
+                else if let problem = follow.seriesProblem { Text(verbatim: env.message(problem)).recipe(.footnote).listRowBackground(Color.clear) }
                 else { Text("Todavía no has visto series en Trakt.").recipe(.footnote).listRowBackground(Color.clear) }
             } else {
                 Section {

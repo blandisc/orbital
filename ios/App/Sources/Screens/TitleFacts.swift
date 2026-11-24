@@ -31,6 +31,7 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     case .watching: "Sigues viéndola"
     case .inWatchlist: "En Mi lista"   // tu watchlist de Trakt: en el iPhone se llama «Mi lista» en todos lados (glosario)
     case .inList(let name) where name == ForYou.favoritesName: "En tus favoritos"   // con su traducción (antes «In “Favoritos”»)
+    case .inList(let name) where name == "Mi lista": "En Mi lista"   // lo guardado en el iPhone la nombra así (Inicio y colecciones): sin esto, en inglés salía «In “Mi lista”»
     case .inList(let name): name.isEmpty ? "En una de tus listas" : "En «\(name)»"
     case .trending: "En tendencia"
     case .popular: "Popular"

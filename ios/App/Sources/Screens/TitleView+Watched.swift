@@ -126,6 +126,6 @@ struct TitleWatchedWhen: ViewModifier {
     /// «T2 E5» de un video «tt…:2:5».
     private func code(_ id: String) -> String {
         let p = id.split(separator: ":").compactMap { Int($0) }
-        return p.count >= 2 ? "T\(p[p.count - 2]) E\(p[p.count - 1])" : ""
+        return p.count >= 2 ? Strings.episode(season: p[p.count - 2], episode: p[p.count - 1], language: env.services.appSettings.uiLanguage) : ""
     }
 }

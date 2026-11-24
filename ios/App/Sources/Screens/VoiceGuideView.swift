@@ -160,7 +160,7 @@ private struct VoiceTopicsView: View {
                         .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                         // Cómo decirlo: empezar con Alexa, la rutina para prender todo, y que se puede hablar con naturalidad.
                         VoiceTopic(title: Text("Cómo pedirlo"), meta: Text("No hace falta decirlo exacto.")) {
-                            ForEach(guide.how) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note)) }
+                            ForEach(guide.how) { PhraseRow(say: $0.say, note: Text(verbatim: VoiceGuideText.words($0.note))) }
                         }
                         .id("how")
                         VoiceTopic(title: Text("Solo en el iPhone"), meta: Text("Descargar funciona aunque estés fuera de casa.")) {
@@ -168,9 +168,9 @@ private struct VoiceTopicsView: View {
                         }
                         .id("phone")
                         ForEach(guide.groups) { group in
-                            VoiceTopic(title: Text(verbatim: group.title)) {   // no-es-título: un grupo de comandos
+                            VoiceTopic(title: Text(verbatim: VoiceGuideText.words(group.title))) {   // no-es-título: un grupo de comandos
                                 ForEach(group.commands) {
-                                    PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty, onSay: onSay)
+                                    PhraseRow(say: $0.say, note: Text(verbatim: VoiceGuideText.words($0.note)), noteEmpty: $0.note.isEmpty, onSay: onSay)
                                 }
                             }
                             .id(group.id)
@@ -211,7 +211,7 @@ private struct VoiceTopicsView: View {
 
     private func topicChip(_ title: String, id: String, proxy: ScrollViewProxy, verbatim: Bool = false) -> some View {
         Button { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } } label: {
-            (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
+            (verbatim ? Text(verbatim: VoiceGuideText.words(title)) : Text(LocalizedStringKey(title))).lineLimit(1)
         }
         .dsSecondaryButton().dsControlSize(.small)
     }
@@ -240,12 +240,12 @@ private struct VoiceGuideResults: View {
             DSEmptyState(symbol: "magnifyingglass", title: Text("Nada con \(query)"))
         }
         ForEach(groups) { group in
-            VoiceTopic(title: Text(verbatim: group.title)) {   // no-es-título: un grupo de comandos
-                ForEach(group.commands) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty, onSay: onSay) }
+            VoiceTopic(title: Text(verbatim: VoiceGuideText.words(group.title))) {   // no-es-título: un grupo de comandos
+                ForEach(group.commands) { PhraseRow(say: $0.say, note: Text(verbatim: VoiceGuideText.words($0.note)), noteEmpty: $0.note.isEmpty, onSay: onSay) }
             }
         }
         if !how.isEmpty {
-            VoiceTopic(title: Text("Cómo pedirlo")) { ForEach(how) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note)) } }
+            VoiceTopic(title: Text("Cómo pedirlo")) { ForEach(how) { PhraseRow(say: $0.say, note: Text(verbatim: VoiceGuideText.words($0.note))) } }
         }
         if !phone.isEmpty {
             VoiceTopic(title: Text("Solo en el iPhone")) { ForEach(phone, id: \.say) { PhraseRow(say: $0.say, note: $0.note) } }
@@ -268,6 +268,11 @@ private enum VoiceGuideText {
         text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).trimmingCharacters(in: .whitespaces)
     }
     static func same(_ a: String, _ b: String) -> Bool { fold(a) == fold(b) }
+    /// Una nota o un tema de la guía (vienen en español de `AlexaCommands.json`) en el idioma de la app. Las frases que se dicen
+    /// no pasan por aquí: la consola las entiende en español.
+    static func words(_ text: String) -> String {
+        MainActor.assumeIsolated { Strings.tr(text, language: AppEnvironment.shared.services.appSettings.uiLanguage) }   // solo se llama al pintar
+    }
     static func contains(_ text: String, _ query: String) -> Bool {
         let q = fold(query)
         return q.isEmpty || fold(text).contains(q)
@@ -320,12 +325,12 @@ private struct PhraseCard: View {
             .buttonStyle(.plain)   // se atenúa al tocarla: el resaltado
             .pointerHover(.lift)
             .contextMenu {
-                if !phrase.note.isEmpty { Text(verbatim: phrase.note) }
+                if !phrase.note.isEmpty { Text(verbatim: VoiceGuideText.words(phrase.note)) }
                 if let onSay { Button("Mandar a la tele", systemImage: "tv.and.mediabox") { onSay(phrase.say) } }
                 Button("Copiar", systemImage: "doc.on.doc") { UIPasteboard.general.string = phrase.say }
             }
             .accessibilityLabel(Text(verbatim: "«\(phrase.say)»"))
-            .accessibilityHint(Text(verbatim: phrase.note))
+            .accessibilityHint(Text(verbatim: VoiceGuideText.words(phrase.note)))
     }
 
     private var tint: Color { style == .now ? DS.ListTint.calendar : DS.accent }
@@ -340,7 +345,7 @@ private struct PhraseCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             if style == .essential, !phrase.note.isEmpty {
                 // Una línea; con letra muy grande, completa (la tarjeta crece).
-                Text(verbatim: phrase.note).recipe(.footnote).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                Text(verbatim: VoiceGuideText.words(phrase.note)).recipe(.footnote).lineLimit(typeSize.isAccessibilitySize ? nil : 1)
             }
         }
         .padding(DS.Space.s2)

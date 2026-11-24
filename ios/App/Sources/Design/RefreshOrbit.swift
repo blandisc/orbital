@@ -62,21 +62,28 @@ struct RefreshOrbit: View {
 /// a iOS esconder la barra de búsqueda al desplazar). Mientras jalas, la luna va al centro del espacio que se abre arriba; mientras
 /// actualiza, el contenido baja un poco y la luna gira en ese hueco.
 private struct RefreshOrbitHost: ViewModifier {
+    /// RF1 (25 nov 2026): al frente cuando arriba hay una portada que la taparía (Inicio); la luna no recibe toques.
+    var front = false
     @Environment(RefreshPull.self) private var state: RefreshPull?
 
     func body(content: Content) -> some View {
         let refreshing = state?.refreshing ?? false
+        // El hueco mientras actualiza se abre corriendo el contenido, no cambiando su alto: así, al regresar, la página no se
+        // vuelve a acomodar entera (en Inicio se trababa el regreso, Fernando, 25 nov 2026).
         content
-            .padding(.top, refreshing ? DS.Refresh.slot : 0)
-            // Detrás del contenido (una capa encima, aunque vacía, se comía el arrastre de las filas de Inicio).
-            .background(alignment: .top) {
-                if let state, state.pull > 0 || refreshing {
-                    RefreshOrbit(pull: state.pull, refreshing: refreshing)
-                        .opacity(refreshing ? 1 : 1 - state.doorProgress)   // más allá, la luna cede a la puerta
-                        .offset(y: refreshing ? DS.Space.s2 : -(state.distance + DS.Refresh.mark) / 2)
-                        .allowsHitTesting(false)
-                }
-            }
+            .offset(y: refreshing ? DS.Refresh.slot : 0)
+            .background(alignment: .top) { if !front { moon } }
+            .overlay(alignment: .top) { if front { moon } }
+    }
+
+    @ViewBuilder private var moon: some View {
+        let refreshing = state?.refreshing ?? false
+        if let state, state.pull > 0 || refreshing {
+            RefreshOrbit(pull: state.pull, refreshing: refreshing)
+                .opacity(refreshing ? 1 : 1 - state.doorProgress)   // más allá, la luna cede a la puerta
+                .offset(y: refreshing ? DS.Space.s2 : -(state.distance + DS.Refresh.mark) / 2)
+                .allowsHitTesting(false)
+        }
     }
 }
 
@@ -159,7 +166,7 @@ extension View {
         modifier(OrbitalRefreshable(action: action, beyond: beyond, onBeyond: onBeyond))
     }
     /// Donde se pinta la luna de `orbitalRefreshable`: el contenido de la lista (lo de adentro del `ScrollView`).
-    func refreshOrbitHost() -> some View { modifier(RefreshOrbitHost()) }
+    func refreshOrbitHost(front: Bool = false) -> some View { modifier(RefreshOrbitHost(front: front)) }
     /// Lo mismo en una `List` (Descargas, Historial, Series que sigues): la luna detrás de la lista y, mientras actualiza, la
     /// lista baja su hueco. Una sola carga en toda la app (Fernando, 23 nov 2026: en Descargas salía la ruedita del sistema).
     func orbitalRefreshableList(_ action: @escaping @Sendable () async -> Void) -> some View {

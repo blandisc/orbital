@@ -92,11 +92,14 @@ struct PosterView: View {
             } else if fit == .fillTop {
                 image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height, alignment: .top).clipped()
             } else if fit == .whole {
-                ZStack(alignment: bleed ? .trailing : .center) {
+                // A la derecha solo en un marco ancho (ahí va el texto); en uno alto (el mazo de «Decide por mí», el mosaico)
+                // va al centro: corrido se veía chueco (P4, 25 nov 2026).
+                let side = bleed && box.size.width > box.size.height
+                ZStack(alignment: side ? .trailing : .center) {
                     image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height).clipped()
                         .blur(radius: DS.Image.wholeBlur, opaque: true).overlay(DS.scrim)
                     image.resizable().scaledToFit()
-                        .mask(LinearGradient(stops: [.init(color: bleed ? .clear : .black, location: 0), .init(color: .black, location: bleed ? DS.HomeHero.sideFade : 0)],
+                        .mask(LinearGradient(stops: [.init(color: side ? .clear : .black, location: 0), .init(color: .black, location: side ? DS.HomeHero.sideFade : 0)],
                                              startPoint: .leading, endPoint: .trailing))
                 }
                 .frame(width: box.size.width, height: box.size.height)

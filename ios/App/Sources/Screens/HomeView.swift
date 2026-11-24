@@ -132,7 +132,7 @@ struct HomeView: View {
         // El ancho es el de la columna (I2, `WindowMetrics.column`): si una fila pide más (letra grande, el SE), no empuja la página.
         // Ni `containerRelativeFrame` ni medir el ScrollView: con el control abierto los dos cuentan el panel (docs/ios-interfaz.md).
         .frame(width: WindowMetrics.column.width, alignment: .leading)
-        .refreshOrbitHost()   // la luna de tirar para actualizar
+        .refreshOrbitHost(front: true)   // la luna de tirar para actualizar, delante de la portada (RF1)
         .padding(.top, DS.Space.s2)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
         // La barra de pestañas de abajo ya deja su espacio: más aquí era aire muerto al final. Con las pestañas arriba (C1, Mac
         // e iPad ancho) no hay barra abajo y la última fila se pegaba a la orilla.

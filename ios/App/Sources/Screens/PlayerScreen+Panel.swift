@@ -261,7 +261,7 @@ extension PlayerScreen {
         if v.saved != nil { return (title, Text("Guardado con la descarga")) }
         let source = VersionText.copyWords(v.traits.source, env.services.appSettings.uiLanguage)
         if v.matchesCopy { return (title, source.map { Text("\($0) · coincide con tu copia") } ?? Text("Coincide con tu copia")) }
-        if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName))) descargas")) }
+        if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName).locale(env.uiLocale))) descargas")) }
         return (title, Text("De internet"))
     }
 

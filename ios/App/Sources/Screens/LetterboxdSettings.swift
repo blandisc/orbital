@@ -35,7 +35,7 @@ struct LetterboxdSettings: View {
                     .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty || model.loading)
                     .accessibilityIdentifier("letterboxd-connect")
                 }
-                if let problem { Text(verbatim: problem).recipe(.footnote, color: DS.danger) }
+                if let problem { Text(verbatim: env.message(problem)).recipe(.footnote, color: DS.danger) }
             } header: { Text("Tu usuario") } footer: {
                 Text("Solo tu usuario: Letterboxd publica tu diario. No pide contraseña y no cambia nada en tu cuenta.")
             }

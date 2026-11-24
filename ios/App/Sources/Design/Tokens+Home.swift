@@ -142,7 +142,7 @@ extension DS {
         /// se endereza, crece `doorGrow` y su velo se aclara `doorUnveil`; el mosaico entra desde `doorEnterScale`, arriba.
         /// La puerta abre más pausada que un cambio normal (23 nov 2026: «que la transición sea más suave»).
         static let doorSeconds = 0.6
-        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.1, doorUnveil: Double = 0.5, doorEnterScale: CGFloat = 0.96
+        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.3, doorUnveil: Double = 0.5, doorEnterScale: CGFloat = 0.9   // MT1 (25 nov 2026): cada póster crece casi a su tamaño del mosaico y el mosaico sale a su encuentro
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
         static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)
