@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from datetime import date
 from typing import NamedTuple
 from urllib.parse import urlencode
@@ -254,10 +255,18 @@ def credit_people(raw: dict) -> list[dict]:
 
 
 class Tmdb:
-    def __init__(self, key: str, language: str = "es-MX", timeout: float = 10) -> None:
+    def __init__(self, key: str, language: str | Callable[[], str] = "es-MX", timeout: float = 10) -> None:
         self.key = key
-        self.language = language
+        self._language = language  # ID-A: «Títulos y sinopsis» de Ajustes › Idiomas (una función: se lee al pedir)
         self.timeout = timeout
+
+    @property
+    def language(self) -> str:
+        return self._language() if callable(self._language) else self._language
+
+    @language.setter
+    def language(self, value: str | Callable[[], str]) -> None:
+        self._language = value
 
     @property
     def configured(self) -> bool:

@@ -24,6 +24,7 @@ export const SETTING_VALUES = {
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   rd_auto_request: [[true, "Sí"], [false, "No"]],
   scare_marks: [[true, "Sí"], [false, "No"]],
+  title_language: [["es", "Español"], ["en", "English"]],
   internet_subtitles: [[true, "Sí"], [false, "No"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
@@ -68,7 +69,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "cloudDownload", internet_subtitles: "captions", scare_marks: "warning",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "cloudDownload", internet_subtitles: "captions", scare_marks: "warning", title_language: "text",
   game_mode: "memory", game_resolution: "hd",
 };
 
@@ -81,6 +82,8 @@ const SETTING_TEXT = {
   internet_subtitles: ["Buscar subtítulos en internet", "Si el video no los trae en tu idioma, se buscan en OpenSubtitles. Viene con Orbital."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
+  // ID-A (Fernando, 22 nov): como «Títulos y sinopsis» del iPhone; los menús de la TV siguen en español.
+  title_language: ["Títulos y sinopsis", "Cómo se llaman las películas y series y de qué tratan. Los menús siguen en español."],
   scare_marks: ["Marcar los sustos en la barra", "Los sustos de la película (Where's The Jump) como puntos en la barra. Vale desde el siguiente video."],
   rd_auto_request: ["Pedir solo el siguiente episodio", "Si todavía no está en la nube, se lo pide unos minutos antes de que acabe el que ves."],
   game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
@@ -252,6 +255,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
     // Idiomas y subtítulos juntos (Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»), en el orden
     // de Ajustes › Idiomas del iPhone: lo que oyes, los subtítulos y su letra, lo que recuerda cada título.
     case "languages": return { title: "Idiomas", lead: "En qué idioma oyes y lees las películas y series.", options: [
+      settingRow("title_language", { title_language: "es", ...settings }, id),  // sin el dato aún: español, como la app
       { icon: "sound", label: "Tus idiomas", value: languagesLine(settings.languages), help: LANGUAGES_LEAD,
         command: { type: "languages" } },
       row("subtitles"), row("internet_subtitles"), row("sub_scale"),
@@ -717,8 +721,7 @@ export function phoneRows(settings, now = Date.now()) {
     const rows = paired.map((device) => {
       const row = phoneRow(device.seen, now, device.live);
       return { ...row, label: device.name || PLATFORM_NAMES[device.platform] || "iPhone", value: row.ok ? row.value : "",
-        hint: device.invited_by && !row.ok ? `Invitado por ${device.invited_by}`
-          : row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia conexión" : row.hint,
+        hint: row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia conexión" : row.hint,
         command: { type: "device-menu", id: device.device_id } };
     });
     return [{ heading: true, label: "Aparatos conectados" }, ...rows, CONNECT_DEVICE];

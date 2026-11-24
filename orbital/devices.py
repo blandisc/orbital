@@ -21,8 +21,7 @@ CREDENTIAL = "devices"  # en Credentials (DPAPI), junto a las otras claves
 REMOVED = "devices_removed"  # los ids quitados (sin huella): «Esta TV te quitó» contra «Tu TV es nueva» (TEC-30)
 TV_ID = "tv_id"  # quién es esta consola: una TV reinstalada tiene otro (TEC-30)
 MAX_REMOVED = 50
-INVITES = "devices_invites"  # las invitaciones de un toque, por su huella (CX4-A)
-INVITE_TTL = 7 * 86400  # s: lo que vive una invitación (viaja por iCloud al iPad)
+INVITES = "devices_invites"  # las invitaciones del iPad de antes (CX4-A, quitada con PA5-A): se borran al arrancar
 UPGRADE_TTL = 180  # s: lo que espera el sí de la TV un iPhone que pasa del token a su llave (CX8-A)
 CODE_TTL = 600  # s: lo que vive el código del QR
 MAX_DEVICES = 10
@@ -76,6 +75,8 @@ class Devices:
         self._uses: dict[tuple[str, str], list[float]] = {}
         self._cache: dict | None = None
         self._upgrade: dict | None = None
+        if credentials.get(INVITES):  # PA5-A (23 nov): el iPad ya no se conecta a la TV; sus invitaciones se van
+            credentials.set(INVITES, None)
 
     # --- lo guardado ------------------------------------------------------------------------------------------------
     def _all(self) -> dict:
@@ -120,8 +121,7 @@ class Devices:
             saved = self._all()
             out = [{"device_id": k, "name": v.get("name") or NAMES.get(v.get("platform"), "iPhone"),
                     "platform": v.get("platform") or "iphone", "paired_at": v.get("paired_at"),
-                    "seen": v.get("seen") or v.get("paired_at"), "this": k == this,
-                    **({"invited_by": (saved.get(v["invited_by"]) or {}).get("name")} if v.get("invited_by") else {})}
+                    "seen": v.get("seen") or v.get("paired_at"), "this": k == this}
                    for k, v in saved.items()]
         return sorted(out, key=lambda d: float(d["seen"] or 0), reverse=True)
 
@@ -148,24 +148,18 @@ class Devices:
         with self._lock:
             now = self.clock()
             current = self._code
-            invited_by = None
-            if (isinstance(code, str) and current is not None and current[1] > now
+            if not (isinstance(code, str) and current is not None and current[1] > now
                     and hmac.compare_digest(code.encode("utf-8", "surrogatepass"), current[0].encode())):
-                self._check_room(mine)
-                self._code = None  # de una sola vez
-            else:  # CX4-A: la invitación de un toque del iPhone, solo para un iPad
-                invited_by = self._invite_of(code, now) if kind == "ipad" else None
-                if invited_by is None:
-                    raise PairError(404, "Este código ya no sirve. Vuelve a abrir «Conectar iPhone» en la TV.")
-                self._check_room(mine)
-                self._drop_invites(lambda v: v.get("by") == invited_by)
-            return self._issue(name, kind, now, mine, invited_by)
+                raise PairError(404, "Este código ya no sirve. Vuelve a abrir «Conectar iPhone» en la TV.")
+            self._check_room(mine)
+            self._code = None  # de una sola vez
+            return self._issue(name, kind, now, mine)
 
     def _check_room(self, mine: str | None) -> None:
         if mine is None and len(self._all()) >= MAX_DEVICES:
             raise PairError(409, "Ya hay 10 aparatos. Quita uno en Ajustes › Cuentas de la TV.")
 
-    def _issue(self, name: object, kind: str, now: float, mine: str | None = None, invited_by: str | None = None) -> dict:
+    def _issue(self, name: object, kind: str, now: float, mine: str | None = None) -> dict:
         """Una llave nueva (con el lock tomado). Con `mine`, el mismo renglón con otro secreto."""
         saved = dict(self._all())
         device_id = mine if mine in saved else secrets.token_hex(16)
@@ -173,44 +167,9 @@ class Devices:
         before = saved.get(device_id) or {}
         saved[device_id] = {"name": clean_name(name, kind), "platform": kind, "hash": _hash(secret),
                             "paired_at": before.get("paired_at") or now, "seen": now}
-        by = saved.get(invited_by or "") or {}
-        if invited_by:
-            saved[device_id]["invited_by"] = invited_by
         self._save(saved)
         return {"device_id": device_id, "key": f"{PREFIX}.{device_id}.{secret}", "name": saved[device_id]["name"],
-                "platform": kind, "invited_by": by.get("name") if invited_by else None}
-
-    # --- la invitación de un toque (CX4-A): el iPhone la pide con su llave; viaja por iCloud; un iPad la usa -------
-    def _invites(self) -> dict:
-        try:
-            raw = json.loads(self.credentials.get(INVITES) or "{}")
-        except ValueError:
-            raw = {}
-        return {k: v for k, v in raw.items() if isinstance(v, dict)} if isinstance(raw, dict) else {}
-
-    def _drop_invites(self, which) -> None:
-        kept = {k: v for k, v in self._invites().items() if not which(v)}
-        self.credentials.set(INVITES, json.dumps(kept) if kept else None)
-
-    def _invite_of(self, code: object, now: float) -> str | None:
-        """Quién invitó con este código (si sigue vivo y su iPhone sigue emparejado)."""
-        if not isinstance(code, str) or not code:
-            return None
-        found = self._invites().get(_hash(code))
-        if not found or float(found.get("expires") or 0) <= now or found.get("by") not in self._all():
-            return None
-        return str(found["by"])
-
-    def invite(self, by: str) -> dict:
-        """Un código de una sola vez, de 7 días, para un iPad. Uno vivo por iPhone: pedir otro anula el anterior."""
-        with self._lock:
-            now = self.clock()
-            self._drop_invites(lambda v: v.get("by") == by or float(v.get("expires") or 0) <= now)
-            code = secrets.token_urlsafe(32)
-            invites = self._invites()
-            invites[_hash(code)] = {"by": by, "expires": now + INVITE_TTL}
-            self.credentials.set(INVITES, json.dumps(invites))
-            return {"code": code, "expires": now + INVITE_TTL, "platform": "ipad"}
+                "platform": kind}
 
     # --- de token del túnel a llave (CX8-A): una vez, con el sí en la pantalla de la TV ------------------------------
     def ask_upgrade(self, name: object, platform: object) -> str:
@@ -297,7 +256,6 @@ class Devices:
             if saved.pop(device_id, None) is None:
                 return False
             self._save(saved)
-            self._drop_invites(lambda v: v.get("by") == device_id)  # su invitación muere con él
             removed = [r for r in self._removed() if r != device_id] + [device_id]
             self.credentials.set(REMOVED, json.dumps(removed[-MAX_REMOVED:]))
         with self._lock:

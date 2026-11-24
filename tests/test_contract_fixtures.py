@@ -210,7 +210,6 @@ def test_device_shapes(apps):
     check("devices_pair", record, tmp)
     key = {"Authorization": f"Bearer {paired['key']}"}
     call(public, "devices", "GET", "/api/devices", tmp, headers=key)
-    call(public, "devices_invite", "POST", "/api/devices/invite", tmp, headers=key, body={"platform": "ipad"})
     call(public, "realdebrid", "GET", "/api/realdebrid", tmp, headers=key)
     call(public, "realdebrid_requests", "GET", "/api/realdebrid/requests", tmp, headers=key)
     call(public, "addons", "GET", "/api/addons", tmp, headers=key)

@@ -137,8 +137,9 @@ class Watch(_Details):
             if config.source else None)
         self.cinemeta.registry = self.addons
         # Las fichas en el idioma de Orbital (TMDB traduce lo que Cinemeta da en inglés).
-        self.localizer = localize.Localizer(tmdb_api.Tmdb(config.para_ti.tmdb_key, timeout=5),
-                                            lambda: self.setting("language", config.ui.language))
+        # ID-A (Fernando, 22 nov): «Títulos y sinopsis» va aparte del idioma de la app, como en el iPhone.
+        self.title_language = lambda: str(self.setting("title_language") or self.setting("language", config.ui.language) or "es")
+        self.localizer = localize.Localizer(tmdb_api.Tmdb(config.para_ti.tmdb_key, timeout=5), self.title_language)
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
         # Más subtítulos: la API de OpenSubtitles (clave de la app y tu cuenta en secrets.json; Ajustes › Cuentas).

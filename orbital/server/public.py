@@ -341,8 +341,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             return JSONResponse({"detail": exc.detail}, status_code=exc.status)
         bus = getattr(main_app.state, "bus", None)
         if bus is not None:
-            bus.publish_threadsafe({"type": "phone-linked", "name": got["name"], "platform": got["platform"],
-                                    "invited_by": got.get("invited_by")})
+            bus.publish_threadsafe({"type": "phone-linked", "name": got["name"], "platform": got["platform"]})
             bus.publish_threadsafe({"type": "settings-changed"})
         log.info("Aparato emparejado: %s (%s)", got["name"], got["platform"])
         return JSONResponse({"device_id": got["device_id"], "key": got["key"], "tv_name": "Orbital",
@@ -366,16 +365,6 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         if not forget_device(main_app, device_id):
             raise HTTPException(404, "Ese aparato ya no está")
         return {"devices": main_app.state.devices.listing(this=mine["device_id"])}
-
-    @public.post("/api/devices/invite")
-    def companion_device_invite(request: Request) -> JSONResponse:
-        """CX4-A: la invitación de un toque para un iPad (viaja por iCloud). Solo la pide un iPhone, con su llave."""
-        mine = device_of(request)
-        if mine is None:
-            raise KeyRequired()
-        if mine["platform"] != "iphone":
-            raise HTTPException(403, "Solo tu iPhone puede invitar a tu iPad.")
-        return JSONResponse(main_app.state.devices.invite(mine["device_id"]), headers={"Cache-Control": "no-store"})
 
     @public.post("/api/devices/upgrade")
     async def companion_device_upgrade(request: Request) -> JSONResponse:

@@ -262,28 +262,33 @@ def test_the_mac_never_pairs(apps):
     assert mac.status_code == 422 and "iCloud" in mac.json()["detail"]
 
 
-def test_the_iphone_invites_one_ipad_and_only_the_iphone_removes_others(apps):
+def test_only_the_iphone_removes_others_and_there_is_no_invite_for_the_ipad(apps):
+    """CX5: un iPad solo se quita a sí mismo. PA5-A (23 nov): el iPad ya no se conecta a la TV; la invitación se fue."""
     local, public, main = apps
     phone, phone_key = pair(local, public, main)
-    events = []
-    main.state.bus.publish_threadsafe = events.append
-    invite = public.post("/api/devices/invite", headers=phone_key).json()
-    assert invite["platform"] == "ipad"
-    as_iphone = public.post("/api/devices/pair", json={"code": invite["code"], "name": "Otro", "platform": "iphone"})
-    assert as_iphone.status_code == 404  # la invitación es para un iPad
-    pad = public.post("/api/devices/pair", json={"code": invite["code"], "name": "iPad", "platform": "ipad"})
-    assert pad.status_code == 200
-    assert {"type": "phone-linked", "name": "iPad", "platform": "ipad", "invited_by": "iPhone de Fernando"} in events
-    assert public.post("/api/devices/pair", json={"code": invite["code"], "name": "iPad 2", "platform": "ipad"}).status_code == 404
-    pad_key = {"Authorization": f"Bearer {pad.json()['key']}"}
-    assert public.post("/api/devices/invite", headers=pad_key).status_code == 403  # solo el iPhone invita
-    listed = {d["name"]: d for d in local.get("/api/devices").json()["devices"]}
-    assert listed["iPad"]["invited_by"] == "iPhone de Fernando"
+    pad, pad_key = pair(local, public, main, name="iPad", platform="ipad")
+    assert public.post("/api/devices/invite", headers=phone_key).status_code in (404, 405)
     assert public.delete(f"/api/devices/{phone['device_id']}", headers=pad_key).status_code == 403  # CX5
-    second = public.post("/api/devices/invite", headers=phone_key).json()
-    assert public.delete(f"/api/devices/{pad.json()['device_id']}", headers=phone_key).status_code == 200
-    local.delete(f"/api/devices/{phone['device_id']}")
-    assert public.post("/api/devices/pair", json={"code": second["code"], "name": "iPad", "platform": "ipad"}).status_code == 404
+    assert public.delete(f"/api/devices/{pad['device_id']}", headers=phone_key).status_code == 200
+    assert all("invited_by" not in d for d in local.get("/api/devices").json()["devices"])
+
+
+def test_old_invites_are_wiped_when_the_tv_starts():
+    from orbital.devices import INVITES, Devices
+
+    class Box(dict):
+        def get(self, key, default=None):
+            return super().get(key, default)
+
+        def set(self, key, value):
+            if value is None:
+                self.pop(key, None)
+            else:
+                self[key] = value
+
+    box = Box({INVITES: '{"abc": {"by": "x", "expires": 9e12}}'})
+    Devices(box)
+    assert INVITES not in box
 
 
 def test_the_old_token_becomes_a_key_only_with_the_tv_saying_yes(apps):

@@ -102,6 +102,7 @@ class _Base:
     _removed_addons: dict[str, dict]
     addons: addons_lib.AddonRegistry
     localizer: localize.Localizer
+    title_language: Callable[[], str]  # ID-A: el idioma de los títulos y sinopsis (Ajustes › Idiomas)
     streams: streams_lib.StreamFinder
     opensubtitles: opensubtitles_lib.OpenSubtitles
     _rd_status: tuple[float, str | None, dict]

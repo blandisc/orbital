@@ -50,7 +50,7 @@ public struct TVContract: Sendable, Equatable {
         "api/companion/now": "now_playing", "api/companion/input": "remote_input", "api/companion/text": "remote_text",
         "api/companion/player": "player_control", "api/companion/game": "game_control", "api/companion/console": "console_state",
         "api/companion/choices": "choices_sync", "api/companion/resume": "resume_sync", "api/companion/inbox/ack": "inbox",
-        "api/devices": "device_keys", "api/devices/invite": "device_invite", "api/realdebrid": "realdebrid_share",
+        "api/devices": "device_keys", "api/realdebrid": "realdebrid_share",
         "api/realdebrid/requests": "realdebrid_requests", "api/opensubtitles": "opensubtitles_share", "api/addons": "addons",
     ]
     /// En orden: lo más largo primero.

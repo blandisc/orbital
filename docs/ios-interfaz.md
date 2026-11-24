@@ -1136,8 +1136,11 @@ centre». La ficha del iPad y la Mac se arma así (`WideStage`, en OrbitalModels
 5. **Acciones de la Mac (A1).** Guardar · Descargar · Vista · Tráiler son círculos con su nombre chico debajo, siempre
    visible (el nombre dice el estado: «Guardada», «45 %»); en iPhone e iPad, mosaicos para el dedo
    (`\.roundActionTiles`, `ActionTileLabel.roundBody`).
-6. **Vertical (I1).** Con el iPad parado, la columna va al centro y lo de abajo (pestañas, reparto) arranca en su orilla.
-   Reabre los botones al centro (FE2-A, descartado el 4 nov) solo para esa posición; acostado sigue a la izquierda.
+6. **Vertical (I1).** Con el iPad parado, la columna (logo, «Ver», acciones, sinopsis) va al centro. Reabre los botones al
+   centro (FE2-A, descartado el 4 nov) solo para esa posición; acostado sigue a la izquierda.
+7. **Lo de abajo usa todo el ancho (23 nov 2026).** Con el iPad parado, las pestañas, los episodios, el reparto y las
+   filas arrancan en el margen de la pantalla, no en la orilla de la columna centrada: así dejaban un hueco a la
+   izquierda (Fernando: «estás desperdiciando ahí espacio»). `WideStageTests.testPortraitRowsUseTheWholeWidth`.
 
 No se arregla la ficha moviendo márgenes sueltos: se cambia la receta y sus números. Canvas de la decisión:
 `docs/producto/ficha-ancha-2026-11-18/propuesta.html`.

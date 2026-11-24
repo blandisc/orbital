@@ -17,9 +17,9 @@ from typing import TYPE_CHECKING, Any
 
 from ..library import charts as charts_api
 from ..library import letterboxd as letterboxd_api
+from ..library import localize, stremio_api
 from ..library import mdblist as mdblist_api
 from ..library import rawg as rawg_api
-from ..library import stremio_api
 from ..library import tmdb as tmdb_api
 from ..library import trakt as trakt_api
 from ..net import NET_FAILURES
@@ -220,13 +220,20 @@ class _Base:
     def _key(self, name: str) -> str:
         return (self.services.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
 
+    def _title_language(self) -> str:
+        """El de Ajustes › Idiomas › «Títulos y sinopsis» (ID-A); español si Watch no lo sabe (pruebas)."""
+        read = getattr(self.services.watch, "title_language", None)
+        return read() if callable(read) else "es"
+
     def key(self, name: str) -> str:
         """La clave vigente (la escrita en la TV o la de config.yaml): también se la lleva la app del iPhone."""
         return self._key(name)
 
     def _build(self) -> None:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.services.credentials)
-        self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
+        # ID-A: las filas de TMDB en el idioma de «Títulos y sinopsis» (en inglés, en-US: TMDB no traduce).
+        self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"),
+                                  language=lambda: localize.tmdb_language(self._title_language()) or "en-US")
         self._posters_down_until = 0.0
         self._imdb_down_until = 0.0
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))

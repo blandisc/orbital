@@ -40,7 +40,6 @@ CAPABILITIES: dict[str, tuple[tuple[str, str], ...]] = {
     "resume_sync": (("POST", "/api/companion/resume"),),
     "inbox": (("POST", "/api/companion/inbox/ack"),),
     "device_keys": (("POST", "/api/devices/pair"), ("GET", "/api/devices"), ("DELETE", "/api/devices/{device_id}")),
-    "device_invite": (("POST", "/api/devices/invite"),),
     "device_upgrade": (("POST", "/api/devices/upgrade"), ("GET", "/api/devices/upgrade/{ident}")),
     "realdebrid_share": (("GET", "/api/realdebrid"), ("PUT", "/api/realdebrid")),
     "realdebrid_requests": (("GET", "/api/realdebrid/requests"), ("POST", "/api/realdebrid/requests")),

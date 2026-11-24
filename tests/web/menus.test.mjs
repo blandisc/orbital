@@ -106,12 +106,17 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const page = settingsCategory("languages", settings);
   // Fernando, 4 nov: idiomas y subtítulos juntos y arriba; «Tus idiomas» es una sola lista en orden (N4-A). PA1-A (23 nov):
   // «Ver» se partió en «Idiomas» y «Reproducción», como Ajustes del iPhone.
+  // ID-A (22 nov): «Títulos y sinopsis» aparte, como el iPhone; sin el dato, español.
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
+    ["Títulos y sinopsis", "Español"],
     ["Tus idiomas", "Latino, Idioma original, Inglés, Castellano"],
     ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Letra de los subtítulos", "Normal"],
     ["Lo que recuerda cada título", undefined]]);
-  assert.deepEqual(page.options[0].command, { type: "languages" });
-  assert.match(page.options[0].help, /En este orden busca versiones/);
+  assert.deepEqual(page.options[1].command, { type: "languages" });
+  assert.match(page.options[1].help, /En este orden busca versiones/);
+  const english = settingsCategory("languages", { ...settings, title_language: "en" }).options[0];
+  assert.equal(english.value, "English");
+  assert.deepEqual(english.command, { type: "setting", key: "title_language", value: "es", page: "languages" });
   assert.deepEqual(settingsCategory("playback", settings).options.map((o) => [o.label, o.value]), [["Calidad", "1080p"],
     ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Marcar los sustos en la barra", "—"]]);
   // La lista: subir, bajar, quitar y agregar; «Idioma original» nunca queda primero.

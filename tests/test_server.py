@@ -260,6 +260,33 @@ def test_auto_close_times_can_be_changed_from_orbital(make_client, library):
     assert sessions.video_idle_minutes == library.config.sessions.video_idle_minutes  # lo demás, de config.yaml
 
 
+def test_title_language_goes_apart_from_the_app(make_client, library):
+    """ID-A (Fernando, 22 nov): Ajustes › Idiomas › «Títulos y sinopsis» en español o en inglés, como el iPhone. Las fichas
+    y las filas de «Para ti» lo leen al pedir; al cambiarlo, las filas guardadas se vuelven a pedir."""
+    from orbital.library.localize import tmdb_language
+
+    with make_client() as c:
+        assert c.get("/api/settings").json()["title_language"] == "es"  # sin elegir: el de la app
+        library.foryou.cache._put("trakt:lists", 0, ["guardada"])
+        assert c.post("/api/settings", json={"title_language": "fr"}).status_code == 422
+        assert c.post("/api/settings", json={"title_language": "en"}).json()["title_language"] == "en"
+    assert library.watch.title_language() == "en"
+    assert library.foryou.cache.peek("trakt:lists") is None
+    assert library.watch.localizer.language() == "en" and tmdb_language("en") is None  # en inglés no se traduce
+    assert library.foryou.tmdb.language == "en-US"
+
+
+def test_tmdb_reads_its_language_when_it_asks():
+    from orbital.library.tmdb import Tmdb
+
+    chosen = ["es-MX"]
+    tmdb = Tmdb("k", language=lambda: chosen[0])
+    assert tmdb.language == "es-MX"
+    chosen[0] = "en-US"
+    assert tmdb.language == "en-US"
+    assert Tmdb("k").language == "es-MX"
+
+
 def test_folders_lists_each_emulator(make_client):
     with make_client() as c:
         snes = next(e for e in c.get("/api/folders").json()["emulators"] if e["name"] == "Super Nintendo")

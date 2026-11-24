@@ -28,6 +28,7 @@ SETTINGS = {
     "video_home": {"pip", "pause"},  # Home durante un video: en pequeño en una esquina, o pausa
     "rd_auto_request": {True, False},  # el siguiente episodio que Real-Debrid no tiene se le pide solo (RD-6)
     "internet_subtitles": {True, False},  # OpenSubtitles viene con Orbital, ya no es complemento (Fernando, 3 nov 2026)
+    "title_language": {"es", "en"},  # ID-A: títulos y sinopsis en español o en inglés (aparte de la app, como el iPhone)
     "scare_marks": {True, False},  # PA7-B: los sustos de la película marcados en la barra del reproductor (Where's The Jump)
     "stremio_copy": {True, False},  # corte S5: Stremio sigue recibiendo copia de tu avance y de Mi lista
     "stremio_role": {"both", "backup"},  # corte S5: «backup» = ya no se lee (Trakt manda); se pone al traer lo tuyo
@@ -123,7 +124,7 @@ def router(d: Deps) -> APIRouter:
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
                 "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", "rd_auto_request": True, "internet_subtitles": True, "scare_marks": True, "stremio_copy": True, "stremio_role": "both", "game_mode": "heavy",
-                "game_resolution": "lower",
+                "game_resolution": "lower", "title_language": catalog.watch.title_language(),
                 **catalog.state.settings(),
                 "languages": catalog.watch.languages,  # N4-A: Ajustes › Tus idiomas
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
@@ -155,7 +156,10 @@ def router(d: Deps) -> APIRouter:
             if key == "languages":
                 catalog.watch.set_languages(value)  # también Torrentio y el «Idioma» de antes
             else:
+                changed = key == "title_language" and value != catalog.watch.title_language()
                 catalog.state.set_setting(key, value)
+                if changed:  # ID-A: las filas de «Para ti» se vuelven a pedir en el idioma nuevo
+                    catalog.foryou.cache.clear()
         return get_settings()
 
     ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})

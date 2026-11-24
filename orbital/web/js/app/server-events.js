@@ -161,12 +161,6 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
       return;
     },
     "phone-linked": (event) => {
-      if (event.invited_by) { // CX4-A: el iPad entró con la invitación del iPhone, sin QR a la vista
-        sound.play("select");
-        ui.toast.show(`Se unió ${event.name || "iPad"} · invitado por ${event.invited_by}`, { tone: "success" });
-        api.settings().then(applySettings).catch(() => {});
-        return;
-      }
       if (!ui.phoneLink.isOpen) return; // la app también pregunta al abrirse: solo se celebra con el QR a la vista
       if (phoneFrom()) phoneFrom().done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
       ui.phoneLink.close();

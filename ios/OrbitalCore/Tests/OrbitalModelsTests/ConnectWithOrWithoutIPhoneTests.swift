@@ -42,7 +42,6 @@ private final class FakeHouse: HTTPClient, @unchecked Sendable {
             switch path {
             case "/api/ping": return json(["ok": true])
             case "/api/companion": return json(["pairing": 2, "tv_id": .string(tvID)])
-            case "/api/devices/invite": return json(["code": "INVITECODE", "expires": .double(Date().addingTimeInterval(7 * 86_400).timeIntervalSince1970)])
             case _ where path.hasPrefix("/api/devices/") && request.method == "DELETE": return json(["detail": "no"], deleteStatus)
             default: return json([:], 404)
             }

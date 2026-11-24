@@ -53,12 +53,12 @@ final class ContractFixturesTests: XCTestCase {
         let covered: Set<String> = [
             "addons", "art", "art_missing", "companion", "companion_choices", "companion_console", "companion_game_409", "companion_inbox_ack", "companion_input",
             "companion_now", "companion_now_episode", "companion_now_movie", "companion_player_409", "companion_player_toggle",
-            "companion_resume", "companion_text", "devices", "devices_invite", "devices_key_required", "devices_pair", "devices_upgrade",
+            "companion_resume", "companion_text", "devices", "devices_key_required", "devices_pair", "devices_upgrade",
             "devices_upgrade_denied", "devices_upgrade_gone", "devices_upgrade_ok", "devices_upgrade_waiting", "foryou",
             "foryou_details", "foryou_dismiss", "foryou_list", "foryou_list_continue", "ping", "realdebrid", "realdebrid_requests",
             "stremio_play", "voice", "voice_hints",
         ]
-        XCTAssertEqual(names.count, 36)
+        XCTAssertEqual(names.count, 35)
         XCTAssertEqual(names, covered, "ejemplo nuevo o quitado en tests/fixtures/contract: súmale (o quítale) su prueba")
     }
 
@@ -73,7 +73,7 @@ final class ContractFixturesTests: XCTestCase {
         // Cada ruta del iPhone apunta a una capacidad que la TV anuncia con ese mismo nombre.
         let paths = ["api/stremio/play", "api/voice", "api/voice/hints", "api/companion/now", "api/companion/input", "api/companion/text",
                      "api/companion/player", "api/companion/game", "api/companion/console", "api/companion/choices", "api/companion/resume",
-                     "api/companion/inbox/ack", "api/devices", "api/devices/abc", "api/devices/invite", "api/devices/upgrade",
+                     "api/companion/inbox/ack", "api/devices", "api/devices/abc", "api/devices/upgrade",
                      "api/devices/upgrade/x", "api/realdebrid", "api/realdebrid/requests", "api/opensubtitles", "api/addons", "api/foryou",
                      "api/foryou/list", "api/foryou/details", "api/foryou/dismiss", "api/art/tt1"]
         for path in paths {
@@ -239,9 +239,6 @@ final class ContractFixturesTests: XCTestCase {
         XCTAssertEqual(devices.first?.platform, "iphone")
         XCTAssertEqual(devices.first?.isThis, true)
         XCTAssertEqual(devices.first?.pairedAt, Date(timeIntervalSince1970: 1_700_000_000))
-        let invite = try await remote(try FixtureTV("devices_invite")).invite(platform: "ipad")
-        XCTAssertEqual(invite.code, "<code>")
-        XCTAssertEqual(invite.expires, Date(timeIntervalSince1970: 1_700_000_000))
         // La llave viaja normalizada («<key>»): se pone una con la forma acordada para que el iPhone la acepte.
         let pair = try await remote(try FixtureTV("devices_pair", replacing: ["<key>": Self.key, "<device_id>": Self.deviceID]), key: nil)
             .pair(code: "<code>", name: "iPhone de Fernando", platform: "iphone")

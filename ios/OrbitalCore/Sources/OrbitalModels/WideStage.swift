@@ -23,9 +23,10 @@ public struct WideStage: Equatable, Sendable {
     /// El ancho de la columna centrada (vertical): lo de abajo arranca en su orilla, no en el margen de la ventana.
     public let column: CGFloat
     let windowWidth: CGFloat
-    /// Dónde empieza la columna y lo de abajo, desde la orilla de la ventana. Vertical: la orilla de la columna centrada (I1;
-    /// antes las pestañas arrancaban más a la izquierda que «Ver»).
-    public var leading: CGFloat { portrait ? max(margin, ((windowWidth - column) / 2).rounded()) : x + margin }
+    /// Dónde empieza lo de abajo (pestañas, episodios, filas), desde la orilla de la ventana. Vertical: el margen de la
+    /// pantalla, no la orilla de la columna centrada (Fernando, 23 nov 2026: «deberían de empezar más hacia la izquierda;
+    /// estás desperdiciando ahí espacio»; antes, I1, arrancaban a ~157 pt en un iPad de 834). Lo de arriba sigue centrado.
+    public var leading: CGFloat { portrait ? margin : x + margin }
     /// Si sobra ventana a los lados (hace falta el arte difuminado).
     public var hasSides: Bool { x > 0.5 }
 

@@ -31,9 +31,15 @@ final class WideStageTests: XCTestCase {
 }
 
 extension WideStageTests {
-    func testPortraitRowsStartAtTheCenteredColumn() {
-        let s = WideStage(window: CGSize(width: 1032, height: 1376), heroHeight: 1100, stageAspect: 2.4, portraitBelow: 1.15,
-                          marginShare: 0.05, minMargin: 40, column: 520)
-        XCTAssertEqual(s.leading, 256, "parado, lo de abajo arranca en la orilla de la columna centrada")
+    /// Fernando, 23 nov 2026: parado, los episodios desperdiciaban la izquierda. Lo de abajo usa todo el ancho: arranca en el
+    /// margen de la pantalla, en cualquier iPad (mini, 11 y 13), nunca en la orilla de la columna centrada.
+    func testPortraitRowsUseTheWholeWidth() {
+        for (w, h) in [(744.0, 1133.0), (834.0, 1194.0), (1032.0, 1376.0)] {
+            let s = WideStage(window: CGSize(width: w, height: h), heroHeight: h * 0.8, stageAspect: 2.4, portraitBelow: 1.15,
+                              marginShare: 0.05, minMargin: 48, column: 520)
+            XCTAssertTrue(s.portrait)
+            XCTAssertEqual(s.leading, s.margin, "\(w) pt: lo de abajo arranca en el margen")
+            XCTAssertLessThanOrEqual(s.leading, 52, "\(w) pt: sin hueco a la izquierda")
+        }
     }
 }

@@ -121,13 +121,13 @@ final class IPadLayoutUITests: XCTestCase {
     /// PA7-A: las pestañas de la ficha dicen lo mismo que el iPhone y la TV, caben enteras (con su nombre) y cada una abre.
     func testTitleTabsUseTheSameNames() throws {
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
-            open(["-demo-tmdb", "-demo-title", "series:tt0386676"], orientation)
+            // The Bear: con el TMDB de mentira trae reparto y parecidas (The Office es de `demoSpanish` y llega sin ellas).
+            open(["-demo-tmdb", "-demo-title", "series:tt14452776"], orientation)
             let tabs = app.descendants(matching: .any)["title-tabs"]
             XCTAssertTrue(tabs.waitForExistence(timeout: 30), "\(orientation.rawValue): sin pestañas")
             for _ in 0..<4 where !tabs.isHittable { app.swipeUp() }
-            // Sin clave de TMDB (el simulador de la Mac) la demo no trae reparto ni parecidas: solo Episodios y Detalles.
-            let cast = app.buttons.matching(NSPredicate(format: "label == %@", "Reparto y equipo")).firstMatch
-            if !cast.waitForExistence(timeout: 10) { throw XCTSkip("la demo no trae reparto ni parecidas (sin clave de TMDB)") }
+            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Reparto y equipo")).firstMatch.waitForExistence(timeout: 10),
+                          "\(orientation.rawValue): la demo no trajo reparto")
             for name in ["Episodios", "Reparto y equipo", "Más como esto", "Detalles"] {
                 let tab = app.buttons.matching(NSPredicate(format: "label == %@", name)).firstMatch
                 XCTAssertTrue(tab.waitForExistence(timeout: 10), "\(orientation.rawValue): falta «\(name)»")

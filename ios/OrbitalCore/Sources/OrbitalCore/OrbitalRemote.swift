@@ -582,7 +582,6 @@ public struct OrbitalRemote: Sendable {
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
         case 403 where method == "DELETE" && path.hasPrefix("api/devices/"): throw Failure.refused(Self.removeOthersLine)   // CX5
-        case 403 where path == "api/devices/invite": throw Failure.refused(Self.inviteOnlyIPhoneLine)   // CX4-A
         case 401, 403: throw authFailure(response)
         case 429: throw Failure.refused(Self.waitLine)
         case 404 where Self.padPaths.contains(path):

@@ -20,15 +20,6 @@ public enum OrbitalUpgrade: Equatable, Sendable, CustomStringConvertible {
 }
 
 extension OrbitalRemote {
-    /// `POST /api/devices/invite` (con la llave del iPhone) `{platform}` → `{code, expires}`. La app ya no lo llama (PA5-A: el
-    /// iPad no se conecta a la TV); se queda porque es parte del contrato con la TV (`ContractFixturesTests`).
-    public func invite(platform: String) async throws -> (code: String, expires: Date) {
-        guard hasDeviceKey else { throw Failure.needsKey }
-        let json = try await send("api/devices/invite", method: "POST", body: JSON.object(["platform": .string(platform)]).serialized())
-        guard let code = json?["code"]?.nonEmptyString else { throw Failure.refused("Tu TV contestó algo que no entiendo.") }
-        return (code, Self.date(json?["expires"]) ?? Date().addingTimeInterval(7 * 86_400))
-    }
-
     /// `POST /api/devices/upgrade` (con el token de antes, una vez) `{name, platform}` → 202 `{id}`: la TV pregunta en su
     /// pantalla y espera hasta 3 min. 409 si este aparato ya tiene llave.
     public func upgrade(name: String, platform: String) async throws -> OrbitalUpgrade {

@@ -88,7 +88,6 @@ struct OrbitalDevicesSection: View {
     private func detail(_ device: OrbitalPairedDevice) -> Text {
         let locale = AppEnvironment.shared.uiLocale
         if device.isThis { return Text("Este aparato") }
-        if let by = device.invitedBy { return Text("Invitado por \(by)") }   // CX4-A
         if let seen = device.seen { return Text("Lo usaste \(seen.formatted(.relative(presentation: .named).locale(locale)))") }
         return Text("Sin usarse todavía")
     }

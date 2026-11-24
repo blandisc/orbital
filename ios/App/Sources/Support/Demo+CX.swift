@@ -62,12 +62,9 @@ enum DemoCX {
             default: return json(["id": "demo"], 202)
             }
         }
-        if path == "/api/devices/invite" {
-            return json(["code": "DEMOinvite", "expires": .double(Date().addingTimeInterval(7 * 86_400).timeIntervalSince1970), "platform": "ipad"])
-        }
         if path == "/api/devices", request.method == "GET", state == "ipad-list", keyed {
             let now = Date().timeIntervalSince1970
-            return json([["device_id": .string(Demo.deviceKeyID), "name": "iPad de la sala", "platform": "ipad", "seen": .double(now), "this": true, "invited_by": "iPhone de Fernando"],
+            return json([["device_id": .string(Demo.deviceKeyID), "name": "iPad de la sala", "platform": "ipad", "seen": .double(now), "this": true],
                          ["device_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1", "name": "iPhone de Fernando", "platform": "iphone", "seen": .double(now - 3600), "this": false],
                          ["device_id": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2", "name": "iPhone de Ana", "platform": "iphone", "seen": .double(now - 86_400), "this": false]])
         }

@@ -41,18 +41,15 @@ public struct OrbitalPairedDevice: Sendable, Equatable, Identifiable {
     public var pairedAt: Date?, seen: Date?
     /// Es este iPhone.
     public var isThis: Bool
-    /// CX4-A · quién lo invitó («iPhone de Fernando»), si entró con una invitación.
-    public var invitedBy: String?
-    public init(id: String, name: String, platform: String, pairedAt: Date? = nil, seen: Date? = nil, isThis: Bool = false, invitedBy: String? = nil) {
+    public init(id: String, name: String, platform: String, pairedAt: Date? = nil, seen: Date? = nil, isThis: Bool = false) {
         self.id = id; self.name = name; self.platform = platform; self.pairedAt = pairedAt; self.seen = seen; self.isThis = isThis
-        self.invitedBy = invitedBy
     }
 
     static func parse(_ json: JSON) -> OrbitalPairedDevice? {
         guard let id = json["device_id"]?.nonEmptyString else { return nil }
         return OrbitalPairedDevice(id: id, name: json["name"]?.nonEmptyString ?? id, platform: json["platform"]?.string ?? "",
                                    pairedAt: OrbitalRemote.date(json["paired_at"]), seen: OrbitalRemote.date(json["seen"]),
-                                   isThis: json["this"]?.bool ?? false, invitedBy: json["invited_by"]?.nonEmptyString)
+                                   isThis: json["this"]?.bool ?? false)
     }
 }
 
@@ -81,8 +78,6 @@ extension OrbitalRemote {
     public static let newTVLine = "Tu TV es nueva: vuelve a escanear su código"
     /// CX5 · 403 al quitar otro aparato desde uno que no es el iPhone.
     public static let removeOthersLine = "Solo tu iPhone o la TV pueden quitar otro aparato."   // las palabras del contrato
-    /// CX4-A · 403 al pedir una invitación desde algo que no es un iPhone.
-    public static let inviteOnlyIPhoneLine = "Solo tu iPhone puede invitar a tu iPad."
     /// 429: la TV pidió esperar (tope por hora). En palabras, no una pantalla de error.
     public static let waitLine = "Tu Orbital pidió esperar un poco: demasiados intentos."
 
