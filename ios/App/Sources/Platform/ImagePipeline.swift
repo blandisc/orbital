@@ -179,7 +179,9 @@ final class ImagePipeline: @unchecked Sendable {
 
     /// El póster en orden: TMDB, metahub, IMDb. Lo que ya se sabe que solo IMDb tiene va directo.
     private func posterData(_ url: URL, urgent: Bool) async -> Data? {
-        let (posters, imdb) = lock.withLock { (posters, imdb) }
+        // Uno por uno y con su tipo: el par sin tipo no compilaba en Xcode 26.3 (el de GitHub).
+        let posters: PosterSource? = lock.withLock { self.posters }
+        let imdb: ImdbPoster? = lock.withLock { self.imdb }
         if let known = imdb?.remembered(url.absoluteString), let bytes = await data(known, urgent: urgent), !bytes.isEmpty { return bytes }
         if let posters, let tmdb = await posters.resolve(url.absoluteString),
            let bytes = await data(tmdb, urgent: urgent), !bytes.isEmpty { return bytes }
