@@ -44,4 +44,15 @@ extension DesignRulesTests {
         let posters = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Posters.swift" })
         XCTAssertTrue(posters.lines.contains { $0.contains("else if !waiting { PosterStandIn(") }, "`PosterView` no pinta el nombre mientras espera")
     }
+
+    /// Un episodio sin imagen (23 nov 2026, Fernando: «no aparece centrado, no se ve bien»): en una caja ancha el respaldo es
+    /// la película centrada, sin el nombre (va al lado o abajo); el de póster vertical la subía y dejaba el número en la esquina.
+    func testAWideStandInIsCentered() throws {
+        let posters = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Posters.swift" })
+        let text = posters.lines.joined(separator: "\n")
+        let wide = try XCTUnwrap(text.range(of: "if box.size.width > box.size.height {"), "`PosterStandIn` distingue la caja ancha")
+        let branch = String(text[wide.upperBound...].prefix(while: { $0 != "}" }))
+        XCTAssertTrue(branch.contains("missingWideIconShare") && branch.contains("alignment: .center"), "ancha: la película centrada")
+        XCTAssertFalse(branch.contains("Text(") || branch.contains(".padding(.bottom"), "ancha: sin nombre y sin subirla")
+    }
 }

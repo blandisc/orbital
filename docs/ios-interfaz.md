@@ -921,7 +921,7 @@ tiene imagen en algún lado: se prueba TMDB, luego metahub y al final IMDb (`Imd
 carga pasa al póster. Mientras se decide qué imagen va, el marco espera quieto: nunca el nombre que luego brinca a la imagen
 (23 nov 2026: 13 % de los resultados de Buscar no tenían nada en metahub ni en TMDB, e IMDb tenía 8 de cada 10; el destacado
 de Inicio enseñaba el nombre hasta 1.5 s). `testPosterTriesEverySourceBeforeTheName`, `testWideArtFallsBackToThePoster` y
-`testArtWaitsQuietlyWhileDeciding` lo cuidan.
+`testArtWaitsQuietlyWhileDeciding` lo cuidan. En una caja ancha (un episodio, «Seguir viendo», un tráiler) el nombre sobre color es solo la película, centrada: su nombre ya va al lado o abajo (`testAWideStandInIsCentered`).
 
 **La marca es una sola en toda la app.** El Centro de control y la Live Activity usan el símbolo `orbital.mark`, que sale
 del mismo dibujo que `OrbitalMark` y el ícono (`scripts/orbital_symbol.py`, que llama a `scripts/orbital_mark_path.swift`). Si

@@ -10,6 +10,9 @@ extension DS.Poster {
     static let missingGlow = 0.45, missingBase = 0.14
     /// El dibujo de película, tenue, en la parte de arriba (ancho del póster).
     static let missingIconShare: CGFloat = 0.36
+    /// En una caja ancha (un episodio, «Seguir viendo», un tráiler) el dibujo solo, centrado, de este alto de la caja: su nombre
+    /// ya va al lado o abajo (23 nov 2026: el de póster vertical quedaba subido, con el número suelto en la esquina).
+    static let missingWideIconShare: CGFloat = 0.42
     /// El nombre se achica hasta aquí antes de cortarse (cuatro renglones).
     static let missingTextShrink: CGFloat = 0.7
 
