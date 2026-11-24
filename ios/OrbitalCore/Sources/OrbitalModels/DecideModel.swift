@@ -47,6 +47,8 @@ public final class DecideModel: ObservableModel {
     public internal(set) var pick: Suggestion? { didSet { changed() } }
     /// Las tres que se proponen a la vez (carteles lado a lado); `pick` es la elegida de ellas.
     public internal(set) var picks: [Suggestion] = [] { didSet { changed() } }
+    /// El póster que se veía en la tarjeta de afuera: la primera propuesta al abrir (DL1). Se usa una vez.
+    public var lead: String?
     public static let trio = 3
     /// Por qué esta: la duración y lo que coincide («58 min · ligera»).
     public internal(set) var minutes: Int? { didSet { changed() } }

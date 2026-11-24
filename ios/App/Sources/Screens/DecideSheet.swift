@@ -58,7 +58,8 @@ struct DecideSheet: View {
         Group {
             if m.hasLoaded || !m.decidePool().isEmpty {
                 DecideView(pool: m.decidePool(), sources: m.decideSources(language: language),
-                           reload: { await m.refresh(); return (m.decidePool(), m.decideSources(language: language)) }, open: open)
+                           reload: { await m.refresh(); return (m.decidePool(), m.decideSources(language: language)) },
+                           lead: m.decidePool().first { $0.poster == m.decideFan(count: DS.ParaTiB.doorFan).first }?.imdb, open: open)   // DL1: el del frente de la tarjeta
             } else {
                 // Lo que se sugiere aún no llega (Inicio antes de pasar por Explorar): la hoja con su título y el cargando.
                 VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {

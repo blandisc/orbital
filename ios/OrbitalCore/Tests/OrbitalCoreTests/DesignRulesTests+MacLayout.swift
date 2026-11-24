@@ -151,7 +151,7 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("Tokens+Sky.swift").contains("isiOSAppOnMac ? 1.0 / 2"), "el cielo de la Mac, lento")
         // Ultrawide: la portada de Inicio sin tope de ancho en la Mac y el arte a la derecha, fundido (no un cuadro al centro).
         XCTAssertTrue(try code("Tokens+Home.swift").contains("isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)"), "Inicio: en la Mac la portada no se topa a lo ancho")
-        XCTAssertTrue(try code("Posters.swift").contains("ZStack(alignment: bleed ? .trailing : .center)"), "arte de portada en ventana muy ancha: a la derecha, fundido")
+        XCTAssertTrue(try code("Posters.swift").contains("ZStack(alignment: side ? .trailing : .center)"), "arte de portada en ventana muy ancha: a la derecha, fundido (P4: solo en marco ancho)")
         // Las tarjetas a lo ancho llenan la fila como las demás (con tope unas seguían y otras no; Fernando, 17 nov 2026):
         // «Porque viste…» pone el encabezado al lado en ventanas anchas y «Decide por mí» llena su tira.
         XCTAssertFalse(try code("ParaTiB.swift").contains(".macCardWidth()"), "«Decide por mí» a todo lo ancho, como las otras filas")

@@ -60,8 +60,11 @@ struct MosaicCover: View {
 
     /// Cómo entra y sale el mosaico: crece desde arriba (donde estaba la portada) con un fundido; con «Reducir movimiento»,
     /// solo el fundido.
+    /// MT2 (25 nov 2026, «ánclala a los pósters… seamless entre los pósters que están en pantalla y los del mosaico»): el
+    /// mosaico entra con el tamaño y la inclinación del muro (sus pósters del mismo ancho que los del muro) y se endereza y
+    /// crece a su lugar mientras el muro hace lo mismo y se apaga: a medio camino coinciden.
     static func mosaicTransition(_ reduce: Bool) -> AnyTransition {
-        reduce ? .opacity : .scale(scale: DS.ParaTiB.doorEnterScale, anchor: .top).combined(with: .opacity)
+        reduce ? .opacity : .modifier(active: MosaicArrive(progress: 1), identity: MosaicArrive(progress: 0))
     }
     /// Lo que deja el mosaico (Explorar) se apaga y crece tantito, como si entraras: antes se quitaba de golpe.
     static func listsTransition(_ reduce: Bool) -> AnyTransition {
@@ -553,5 +556,17 @@ private final class DriftView: UIView {
             let now = layer.convertTime(CACurrentMediaTime(), from: nil)
             (layer.speed, layer.timeOffset) = (0, now)
         }
+    }
+}
+
+
+/// MT2: el mosaico mientras llega: chico e inclinado como el muro (`progress` 1) hasta su lugar (0), desde el centro de la portada.
+private struct MosaicArrive: ViewModifier {
+    let progress: CGFloat
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(DS.ParaTiB.coverTilt * Double(progress)), anchor: DS.ParaTiB.doorAnchor)
+            .scaleEffect(1 - (1 - DS.ParaTiB.doorEnterScale) * progress, anchor: DS.ParaTiB.doorAnchor)
+            .opacity(1 - Double(progress))
     }
 }

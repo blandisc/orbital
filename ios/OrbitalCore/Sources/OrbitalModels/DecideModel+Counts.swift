@@ -141,6 +141,12 @@ extension DecideModel {
             isLoading = true
             found = await trio(waitForPosters: true, briefly: waitForPosters)
         }
+        // DL1 (25 nov 2026, «cuando te aparece un póster en la pantalla principal, tiene que aparecer cuando abras el feature»):
+        // al abrir, el del frente de la tarjeta va primero y elegido.
+        if let lead, let s = pool.first(where: { $0.imdb == lead }) {
+            self.lead = nil
+            found = [s] + found.filter { $0.imdb != lead }.prefix(max(0, found.count - 1))
+        }
         coalescing {   // los tres nuevos y la elegida en un solo aviso
             isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
             picks = found

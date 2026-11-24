@@ -228,7 +228,16 @@ struct HomeView: View {
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
         #endif
-        .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital (también en Release: A2, 10 nov)
+        // RF2 (25 nov 2026, «sigue quedándose un brinco cuando le das refresh en Inicio»): la luna espera solo a la página; el
+        // tono del fondo y «Por lo que viste» llegan después de que la página regresó, no mientras regresa.
+        .orbitalRefreshable {   // tirar para actualizar, con la luna de Orbital (también en Release: A2, 10 nov)
+            await home.model.refresh()
+            Task { @MainActor in
+                try? await Task.sleep(for: DS.Motion.tabSettle)   // lo que dura el regreso
+                await because.model.load()
+                await tint.load(currentHero?.wide)
+            }
+        }
         .background(Backdrop(tint: tint.colors))
         // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
         .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)

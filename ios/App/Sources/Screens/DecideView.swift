@@ -58,8 +58,10 @@ struct DecideView: View {
     var reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))?
 
     init(pool: [Suggestion], sources: [DecideModel.Source] = [], reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))? = nil,
-         open: @escaping (TitleRoute) -> Void) {
-        _observer = State(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
+         lead: String? = nil, open: @escaping (TitleRoute) -> Void) {
+        let model = DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)
+        model.lead = lead
+        _observer = State(wrappedValue: ModelObserver(model))
         self.reload = reload
         self.open = open
     }
