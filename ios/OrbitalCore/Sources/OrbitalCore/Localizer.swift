@@ -173,6 +173,7 @@ public actor Localizer {
     /// la siguiente. Sin funciones anidadas que toquen el grupo: así, en la versión optimizada, la lista que regresaba salía
     /// dañada y la app se cerraba al abrir Inicio.
     public func catalog(kind: String, metas: [JSON]) async -> [JSON] {
+        PosterSource.warm(metas.compactMap { $0["poster"]?.string })   // MP2: los pósters, mientras se traducen los títulos
         guard let lang = active else { return metas }
         return await withTaskGroup(of: (Int, JSON).self, returning: [JSON].self) { group in
             var out = metas

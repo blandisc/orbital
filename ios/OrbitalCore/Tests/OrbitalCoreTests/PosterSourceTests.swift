@@ -9,6 +9,20 @@ final class PosterSourceTests: XCTestCase {
         XCTAssertNil(PosterSource.metahub("https://image.tmdb.org/t/p/w500/a.jpg"))
     }
 
+    /// MP2: la consulta empieza cuando llega la lista; al pintar el póster ya se sabe, sin volver a preguntar.
+    func testListsWarmTheirPostersAhead() async throws {
+        let calls = PosterCalls()
+        let source = PosterSource(store: InMemoryKeyValueStore()) { _ in await calls.add(); return .some("/warm.jpg") }
+        source.activate()
+        let url = "https://images.metahub.space/poster/medium/tt0111161/img"
+        PosterSource.warm([url, "https://image.tmdb.org/t/p/w500/x.jpg"])
+        for _ in 0..<50 where source.known(url) == nil { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertEqual(source.known(url)?.absoluteString, "https://image.tmdb.org/t/p/w500/warm.jpg")
+        _ = await source.resolve(url)
+        let n = await calls.n
+        XCTAssertEqual(n, 1, "una sola consulta: la del arranque")
+    }
+
     func testPrefersTMDBAndRemembers() async {
         let store = InMemoryKeyValueStore()
         let calls = PosterCalls()

@@ -1631,7 +1631,7 @@ TRANSLATIONS = {
     "Falta tu nube": "Your cloud is missing",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {")) Aquí, al instante", ")) Listas al instante", ")) se queda en este iPhone", ")) solo filtra películas", "play The Office · pause · next episode", "—See it? Here it comes.", "The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
           "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight",
           # Nombres propios, formatos técnicos y muestras escritas en su idioma (Ajustes › Idiomas): no se traducen.
@@ -1686,8 +1686,11 @@ def used_literals() -> dict[str, str]:
                 text = m.group(1)
                 # Con mayúscula, o una frase en minúsculas que empieza con texto o con un número («\\(n) por delante»): las dos
                 # salen en pantalla (antes las de minúscula se saltaban y se quedaban sin inglés).
-                sentence = re.match(r"^(\\\([^)]*\)\s)?[a-záéíóúñ]+ [a-záéíóúñ]", text) is not None and "Text(" in line
-                if len(text) < 3 or (not re.match(r"^[A-ZÁÉÍÓÚÑ¿]", text) and not sentence) or text in IGNORE:
+                # Cualquier frase dentro de un Text(…), también tras un `\\(…)` con paréntesis adentro o con números («en 1 mes»,
+                # «de 10», «\\(sample) daría 0 versiones»): T2, 25 nov 2026, se quedaban en español con la app en inglés.
+                bare = re.sub(r"\\\((?:[^()]|\([^()]*(?:\([^()]*\))*[^()]*\))*\)", "X", text)
+                sentence = re.search(r"(^|\s)[a-záéíóúñ]{2,} [a-záéíóúñ0-9★]", bare) is not None and "Text(" in line
+                if len(text) < 3 or (not re.match(r"^[A-ZÁÉÍÓÚÑ¿¡]", text) and not sentence) or text in IGNORE:
                     continue
                 if re.fullmatch(r"[A-Z0-9_ ]+", text) and len(text) < 6:
                     continue

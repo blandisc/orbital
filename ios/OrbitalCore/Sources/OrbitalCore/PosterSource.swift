@@ -98,6 +98,20 @@ public final class PosterSource: @unchecked Sendable {
     /// El tamaño de TMDB que corresponde al de metahub (small 300, medium 500, large 780 de ancho).
     static func tmdbSize(_ metahub: String) -> String { ["small": "w342", "large": "w780"][metahub, default: "w500"] }
 
+    /// MP2 (25 nov 2026, «el problema de los pósters se repite en toda la aplicación»): la consulta a TMDB de cada póster
+    /// empieza en cuanto llega la lista (al traducir sus títulos, `Localizer.catalog`), no cuando la pantalla ya pinta el
+    /// cuadro. Cuando el póster se pide, la respuesta ya está o va en camino. La calidad no cambia: es la misma imagen.
+    public static func warm(_ urls: [String]) {
+        guard let source = activeLock.withLock({ active }), !urls.isEmpty else { return }
+        for url in urls where metahub(url) != nil {
+            Task.detached(priority: .utility) { _ = await source.resolve(url) }
+        }
+    }
+    /// La fuente que usa la app (la registra al crearla); en las pruebas, ninguna.
+    public func activate() { Self.activeLock.withLock { Self.active = self } }
+    private static let activeLock = NSLock()
+    nonisolated(unsafe) private static var active: PosterSource?
+
     /// Lo ya sabido, sin preguntar: la URL de TMDB, o nil (no es de metahub, TMDB no lo tiene o aún no se sabe).
     public func known(_ url: String) -> URL? {
         guard let (imdb, size) = Self.metahub(url), let entry = lock.withLock({ map[key(imdb)] }),

@@ -267,7 +267,9 @@ final class AppEnvironment {
         shareConsoleWithImages()
         let posterFile = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Orbital-SWR/poster-source.json")
         let posterTmdb = self.posterTmdb
-        ImagePipeline.shared.setPosterSource(PosterSource(file: posterFile, legacy: services.kv) { posterTmdb.withLock { $0 } })
+        let posters = PosterSource(file: posterFile, legacy: services.kv) { posterTmdb.withLock { $0 } }
+        posters.activate()
+        ImagePipeline.shared.setPosterSource(posters)
         // Si ni TMDB ni metahub tienen el póster, el de IMDb (en la demostración, por su cliente de mentira).
         ImagePipeline.shared.setImdbPoster(ImdbPoster(http: services.http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("imdb", megabytes: 4) : services.http))
         session = SessionModel(services)

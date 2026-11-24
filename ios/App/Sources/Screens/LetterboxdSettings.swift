@@ -82,7 +82,7 @@ struct LetterboxdSettings: View {
         let user = typed
         Task {
             problem = await model.connect(user)
-            if problem == nil { env.notify("Letterboxd conectado", detail: "\(model.entries.count) películas de tu diario", tone: .success) }
+            if problem == nil { env.notify("Letterboxd conectado", detail: String(format: Strings.tr("%lld películas de tu diario", language: env.services.appSettings.uiLanguage), model.entries.count), tone: .success) }
         }
     }
 }
