@@ -184,7 +184,8 @@ struct MacTopRow<Trailing: View>: View {
             Spacer(minLength: DS.Space.s2)
             trailing
                 .buttonStyle(.plain).foregroundStyle(DS.text)
-                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
+                // SZ1: del alto de la cápsula de Inicio (44), aunque adentro haya un menú de 44 (antes crecía a 60).
+                .padding(.horizontal, DS.Space.s2).frame(height: DS.Size.touchTarget)
                 .macTopGlass(Capsule())
         }
         // RN2: las pestañas en su cápsula, al centro del renglón (como la tele).

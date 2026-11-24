@@ -601,7 +601,7 @@ struct HomeView: View {
                         Text("Películas").tag("movie")
                         Text("Series").tag("series")
                     }
-                } label: { Image(systemName: "line.3.horizontal.decrease") }
+                } label: { Image(systemName: "line.3.horizontal.decrease") }   // ds-exception: en la barra de arriba el sistema le da los 44
                 .accessibilityLabel(Text("Ordenar y filtrar"))
             }
         }

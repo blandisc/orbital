@@ -237,7 +237,7 @@ struct ListsView: View {
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
         // La Mac: el logo y las pestañas en su renglón, con el índice de secciones y tu perfil (MAC-A).
-        .macOwnTopRow { HStack(spacing: DS.Space.s4) { sectionMenu(proxy); ProfileButton() } }
+        .macOwnTopRow { HStack(spacing: DS.Space.s1) { sectionMenu(proxy); ProfileButton() } }   // el menú ya trae su aire (44)
 
         .navigationDestination(for: PlatformRoute.self) { route in
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }

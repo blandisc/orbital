@@ -1182,7 +1182,9 @@ abrir 3.4 s de trabajo con 1 s congelada, Explorar 2 s con 1 s congelada.
   fondo». El marco del panel es casi cuadrado: un fondo 16:9 se recortaba a menos de la mitad y se corría hacia el sujeto
   (si estaba en la orilla, quedaba pegado al borde y cortado), y un póster alto se corría hacia un cuchillo y cortaba la
   cabeza. En el panel (`keepsWide`), el fondo ancho va completo arriba y se funde en su copia difuminada
-  (`ArtFit.wholeTop`) y el póster alto se ancla arriba (`ArtFit.fillTop`). `ArtFitTests.testWideArtStaysWholeInTallPanel`.
+  (`ArtFit.wholeTop`) y el póster alto se ancla arriba y al centro (`ArtFit.fillTop`). En el panel esto se decide antes
+  que nada: con el marco casi cuadrado un póster 2:3 pasaba el límite de «completo» y se iba pegado a la derecha, como el
+  destacado de Inicio (Fernando, otra vez el mismo día: «no está bien centrado»). `ArtFitTests.testWideArtStaysWholeInTallPanel`.
 
 ### La receta de la ficha ancha (17 nov 2026)
 

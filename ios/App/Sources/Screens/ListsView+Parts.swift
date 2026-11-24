@@ -31,7 +31,11 @@ struct SectionMenu: View {
                     Label { tracker.active == section ? Text("\(section.title)  \(Image(systemName: DS.Symbol.current))") : section.title } icon: { Image(systemName: section.symbol) }
                 }
             }
-        } label: { Image(systemName: "list.bullet.indent") }
+        } label: {
+            // OI-1: responde en 44 × 44 (en la Mac solo respondía el dibujo, 22 × 13; un menú no crece con el aire de fuera).
+            Image(systemName: "list.bullet.indent")
+                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
+        }
         .accessibilityLabel(Text("Ir a una sección"))
         .accessibilityIdentifier("paraTi-sections")
     }

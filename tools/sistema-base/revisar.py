@@ -120,7 +120,7 @@ def revisar_archivo(ruta: Path, rel: str, tipo: str, reglas: dict, cuales: set[s
             if s.startswith("/*") and "*/" not in s:
                 en_comentario = True
                 continue
-            if s.startswith(("//", "*", "/*")):
+            if s.startswith("//") or s.startswith("*") or s.startswith("/*"):
                 continue
         if ignorada(i):
             continue

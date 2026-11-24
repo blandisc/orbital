@@ -29,9 +29,13 @@ public enum ArtFit: Equatable, Sendable {
     public static func choose(image: CGSize, box: CGSize, limit: Double = narrowLimit, keepsWide: Bool = false) -> ArtFit {
         guard image.width > 0, image.height > 0, box.width > 0, box.height > 0 else { return .fill }
         let imageAspect = image.width / image.height, boxAspect = box.width / box.height
+        // En el panel de la ficha (Mac) se decide primero: su marco es casi cuadrado y un póster 2:3 pasaba el límite, se iba
+        // completo pegado a la derecha (como el destacado de Inicio) y se veía corrido (Fernando, 24 nov 2026, otra vez).
+        if keepsWide {
+            if imageAspect / boxAspect > limit { return .wholeTop }
+            if imageAspect < boxAspect { return .fillTop }
+        }
         if boxAspect / imageAspect > limit { return .whole }
-        if keepsWide, imageAspect / boxAspect > limit { return .wholeTop }
-        if keepsWide, imageAspect < boxAspect { return .fillTop }
         return .fill
     }
 

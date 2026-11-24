@@ -55,5 +55,8 @@ final class ArtFitTests: XCTestCase {
         XCTAssertEqual(ArtFit.choose(image: backdrop, box: panel), .fill, "el iPhone sigue llenando su portada")
         XCTAssertEqual(ArtFit.choose(image: poster, box: panel, keepsWide: true), .fillTop, "un póster alto llena desde arriba")
         XCTAssertEqual(ArtFit.choose(image: poster, box: panel), .fill, "fuera del panel, hacia el sujeto como siempre")
+        // El marco real de la ficha es casi cuadrado (480 × 470): el póster no se va completo a la derecha, llena centrado.
+        XCTAssertEqual(ArtFit.choose(image: poster, box: CGSize(width: 480, height: 470), keepsWide: true), .fillTop,
+                       "en el panel un póster nunca se pega a una orilla")
     }
 }

@@ -25,7 +25,13 @@ extension DesignRulesTests {
             for (i, line) in file.lines.enumerated() {
                 let code = line.trimmingCharacters(in: .whitespaces)
                 if code.hasPrefix("//") { continue }
-                guard line.range(of: #"Button\b[^\n]*(\{|label:)\s*\{?\s*Image\("#, options: .regularExpression) != nil,
+                // También los menús y botones de varios renglones (`} label: { Image(…)`, o el ícono en el renglón de abajo): el
+                // menú «Ir a una sección» de Explorar solo respondía en su dibujo, 22 × 13 en la Mac (24 nov 2026).
+                let next = i + 1 < file.lines.count ? file.lines[i + 1].trimmingCharacters(in: .whitespaces) : ""
+                let opensIcon = line.range(of: #"Button\b[^\n]*(\{|label:)\s*\{?\s*Image\("#, options: .regularExpression) != nil
+                    || code.range(of: #"^\}\s*label:\s*\{\s*Image\("#, options: .regularExpression) != nil
+                    || (code.range(of: #"^\}\s*label:\s*\{$"#, options: .regularExpression) != nil && next.hasPrefix("Image("))
+                guard opensIcon,
                       line.range(of: #"Text\(|Label|systemImage:"#, options: .regularExpression) == nil else { continue }
                 let window = file.lines[i..<min(file.lines.count, i + 4)].joined(separator: "\n")
                 let declared = ["DS.Size.touchTarget", "ds-exception:", "dsControlSize(.large)", "controlSize(.large)"].contains { window.contains($0) }
