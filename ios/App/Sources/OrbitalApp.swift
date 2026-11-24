@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import OrbitalCore
 
 @main
 struct OrbitalApp: App {
@@ -18,6 +19,7 @@ struct OrbitalApp: App {
         DiskSpace.warm()   // el espacio libre, medido por detrás: la ficha y Descargas nunca esperan al disco
         // Video con sonido aunque el teléfono esté en silencio (como cualquier reproductor).
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        StreamLinks.shared.enable()   // «Ver» abre la dirección final de Torrentio, resuelta desde la ficha (sin otra vuelta)
         #if AETHER_ENGINE
         EnginePrewarm.install()   // «Ver» arranca con el principio del video que se bajó desde la ficha
         #endif

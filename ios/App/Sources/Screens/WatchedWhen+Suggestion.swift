@@ -18,7 +18,7 @@ private struct SuggestionWatchedWhen: ViewModifier {
     @State private var released: Date?
 
     func body(content: Content) -> some View {
-        content.sheet(item: $item) { s in
+        content.appSheet(item: $item) { s in
             let language = env.services.appSettings.uiLanguage
             WatchedWhenSheet(title: Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)), detail: s.year.map { Text(verbatim: "\(Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)) · \($0)") } ?? Text(verbatim: Strings.kind(s.kind, language: env.services.appSettings.uiLanguage)),
                              poster: s.poster, releaseTitle: Text("El día que se estrenó"),

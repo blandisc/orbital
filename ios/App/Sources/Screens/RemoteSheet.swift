@@ -112,7 +112,7 @@ struct RemoteSheet: View {
         #if DEBUG
         .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true }; if Demo.isOn, Demo.open == "remote-pad" { showsPad = true } }   // -demo-open voice-guide: la guía, para capturas
         #endif
-        .sheet(isPresented: $showsGuide) {
+        .appSheet(isPresented: $showsGuide) {
             NavigationStack {
                 VoiceGuideView(hints: model.hints, nowTitle: model.now?.title) { phrase in
                     showsGuide = false
@@ -121,7 +121,7 @@ struct RemoteSheet: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
             }
         }
-        .sheet(isPresented: $pickingEpisode) {
+        .appSheet(isPresented: $pickingEpisode) {
             if let now = model.now, let seriesID = now.metaID {
                 EpisodePickerSheet(title: titleName(now.title, id: now.metaID, kind: now.kind), currentVideoID: now.videoID,
                                    load: { await VoiceAssistant(services: env.services, tvNow: model).episodes(seriesID: seriesID) },

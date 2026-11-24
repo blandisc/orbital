@@ -88,7 +88,7 @@ struct OneDriveSettings: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("OneDrive").navigationBarTitleDisplayMode(.inline)
         .onAppear { model.refresh() }
-        .sheet(isPresented: $pickingFolder) {
+        .appSheet(isPresented: $pickingFolder) {
             NavigationStack { OneDriveFolderPicker(path: "", model: model) { pickingFolder = false } }
         }
         .confirmationDialog("¿Desconectar OneDrive?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)

@@ -184,6 +184,10 @@ public final class PlayerModel: ObservableModel {
     /// Cambiaste de versión a mano: a cuál y a qué segundo volver si la nueva no llega a sonar (falla después de abrir, se
     /// acaba el plazo o es el aviso de Real-Debrid). Antes caía a cualquier otra fuente.
     var switchBack: (source: Source, position: Double)?
+    // Cambios dentro del reproductor (`PlayerModel+Switching.swift`): el segundo de la carga en curso, el último guardado en
+    // camino, el audio elegido que el motor aún pone y con qué elección se sumó el último subtítulo de internet.
+    var loadTarget: Double = 0, pendingSave: Task<Void, Never>?, pendingAudioAt: Date?, addedSubtitleTicket = 0
+    public internal(set) var pendingAudio: Int? { didSet { if oldValue != pendingAudio { changed() } } }
     /// Lo más que dura el video de aviso de Real-Debrid («la estamos bajando»): uno así en un título largo no es el título.
     static let placeholderMaxSeconds: Double = 120, placeholderTitleMinSeconds: Double = 600
     /// Lo más que el reproductor espera a que se pongan el audio y los subtítulos antes de seguir atendiendo al video.
@@ -269,30 +273,9 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: arranque
     /// Empieza a reproducir. Devuelve cuando el motor ya recibió la fuente (el video puede tardar unos segundos).
-    /// La bitácora del reproductor en el registro del sistema (Consola de la Mac con el iPhone conectado, categoría «player»): qué
-    /// se abrió, qué versión, cuándo sonó y por qué falló. Sin enlaces ni claves: solo ids de IMDb, el servidor y el motivo.
-    nonisolated static let log = Logger(subsystem: "mx.iracheta.orbital", category: "player")
-
-    /// La misma bitácora en un archivo de la app (`player-log.txt`, las últimas `logKeep` líneas), para leerla desde la Mac con
-    /// `devicectl` cuando algo no carga en el iPhone (el registro del sistema pide la clave de administrador).
-    nonisolated static let logFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Orbital", isDirectory: true).appendingPathComponent("player-log.txt")
-    nonisolated static let logKeep = 400
-    nonisolated private static let logLock = NSLock()
-    nonisolated public static func note(_ text: String) {
-        log.notice("\(text, privacy: .public)")
-        guard NSClassFromString("XCTestCase") == nil else { return }   // las pruebas no escriben en la Mac
-        let line = ISODates.string(Date()) + " " + text
-        logLock.withLock {
-            let old = (try? String(contentsOf: logFile, encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
-            let kept = (old + [line]).suffix(logKeep).joined(separator: "\n") + "\n"
-            try? FileManager.default.createDirectory(at: logFile.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? kept.write(to: logFile, atomically: true, encoding: .utf8)
-        }
-    }
-
+    /// La bitácora (`note`) vive en `PlayerModel+Log.swift`.
     public func begin(_ request: PlayRequest) async {
-        Self.note("abrir \(request.kind) \(request.videoID) local=\(request.localFile != nil)")
+        Self.note("abrir \(request.kind) \(request.videoID) local=\(request.localFile != nil)"); startup = StartupStages(at: clock())
         subtitleDelay = 0
         ownAttempts = 0
         backgroundPosition = 0
@@ -388,7 +371,7 @@ public final class PlayerModel: ObservableModel {
                 }
                 defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
-                Self.note("versiones encontradas: \(sourceChoices.count)")
+                Self.note("versiones encontradas: \(sourceChoices.count)"); markStartup(.found)
                 await noteTorrentioNotices(await finder.notices(kind: request.kind, videoID: request.videoID), generation: mine)
                 // Real-Debrid acaba de decir que tu cuenta no sirve (venció, sin Premium, clave vieja): ninguna versión va a
                 // abrir, así que se dice ya en vez de probarlas. Si solo lo guardado dice que venció, se le pregunta antes (21 nov).
@@ -421,7 +404,7 @@ public final class PlayerModel: ObservableModel {
             guard mine == generation, !closing else { return }
             guard let found else { return failedSources.isEmpty ? await noSources(generation: mine) : fail("Ninguna versión funcionó.", .noneWorked) }
             source = found
-            noteChoice(found, prefs: langs.prefs, generation: mine)   // en qué idioma quedó y, si no es el tuyo, si se puede pedir
+            noteChoice(found, prefs: langs.prefs, generation: mine); chose(found)   // en qué idioma quedó (y si se puede pedir); su enlace, ya
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
@@ -483,18 +466,27 @@ public final class PlayerModel: ObservableModel {
 
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
-    func report(_ phase: PlaybackPhase) async {
+    /// `sendReport` arma el aviso ya (con el video y el segundo de ahora) y lo manda aparte: cambiar de episodio no espera a la red.
+    func report(_ phase: PlaybackPhase) async { await sendReport(phase)?.value }
+    @discardableResult func sendReport(_ phase: PlaybackPhase) -> Task<Void, Never>? {
         // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá. Un canal
         // de Inicio o la ruleta sí (V2): a medias se retoma, terminado no mueve tu orden (`event.channel`).
-        guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
+        guard var event = event(), !event.metaID.hasPrefix("file:") else { return nil }
         let reserved: Double
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved
         if case .stopped = phase { finalReported = true }
         if case .started = phase {} else if !event.channel { rememberChoice() }   // la versión del canal no es «la tuya»
-        let outcome = await watch.report(event, phase: phase)
-        if case .started = phase { return }
-        if outcome.saved { lastSave = clock() } else { watchedUnsaved += reserved }
+        let watch = watch, previous = pendingSave, videoID = event.videoID
+        let task = Task { [weak self] in
+            await previous?.value   // en orden: el «terminé» de un episodio antes que el «empecé» del siguiente
+            let outcome = await watch.report(event, phase: phase)
+            guard let self else { return }
+            if case .started = phase { return }
+            if outcome.saved { lastSave = clock() } else if request?.videoID == videoID { watchedUnsaved += reserved }
+        }
+        pendingSave = task
+        return task
     }
 
     // MARK: pistas
@@ -578,7 +570,9 @@ public final class PlayerModel: ObservableModel {
     var backgrounded = false, playWantedWhileRestoring = false   // tocaste play mientras se rearmaba en pausa
     var foregroundPending = false
     var backgroundPosition = 0.0
-    var loadStartedAt = Date.distantPast
+    var loadStartedAt = Date.distantPast, startup = StartupStages()
+    /// Las direcciones finales de los complementos (`StreamLinks`): la de la app; las pruebas ponen la suya.
+    var links = StreamLinks.shared
     var lastLoggedState = ""
     var resumeOnForeground = false
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
@@ -591,9 +585,4 @@ public final class PlayerModel: ObservableModel {
     /// diga de la posición (pasa un momento por 0 o por el inicio) no cuenta para «Saltar intro».
     var skipAnchor: Double?
 
-}
-
-extension Double {
-    /// Redondeo a décimas (los pasos de la sincronía no acumulan 0.30000000000000004).
-    func rounded(toPlaces places: Int) -> Double { let f = pow(10, Double(places)); return (self * f).rounded() / f }
 }

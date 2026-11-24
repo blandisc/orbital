@@ -62,7 +62,7 @@ struct SavedListManagement: ViewModifier {
                                }
                            }, id: "list-share-card")
             }
-            .sheet(isPresented: $reordering) {
+            .appSheet(isPresented: $reordering) {
                 ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName),
                                  items: model.items) { order in
                     do { try await model.reorder(listID, imdbs: order); return true }

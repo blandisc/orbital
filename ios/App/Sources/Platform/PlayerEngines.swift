@@ -210,20 +210,26 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
             statusObservation = item.observe(\.status, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.publish() } }
             player.replaceCurrentItem(with: item)
         }
-        audioGroup = try? await asset.loadMediaSelectionGroup(for: .audible)
-        legibleGroup = try? await asset.loadMediaSelectionGroup(for: .legible)
-        if let groups = try? await asset.load(.availableChapterLocales), let locale = groups.first,
-           let metadata = try? await asset.loadChapterMetadataGroups(withTitleLocale: locale, containingItemsWithCommonKeys: []) {
-            var found: [Chapter] = []
-            for group in metadata {
-                guard let title = try? await group.items.first?.load(.stringValue) else { continue }
-                found.append(Chapter(title: title, time: group.timeRange.start.seconds))
-            }
-            chapters = found
-        }
+        // Audio, subtítulos y capítulos a la vez (23 nov): antes, uno tras otro, cada uno con su ida a la red antes de sonar.
+        async let audible = try? asset.loadMediaSelectionGroup(for: .audible)
+        async let legible = try? asset.loadMediaSelectionGroup(for: .legible)
+        async let found = Self.chapters(of: asset)
+        audioGroup = await audible; legibleGroup = await legible
+        if let found = await found { chapters = found }
         if startAt > 1 { await player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }
         await MainActor.run { player.play() }
         publish()
+    }
+
+    nonisolated private static func chapters(of asset: AVURLAsset) async -> [Chapter]? {
+        guard let groups = try? await asset.load(.availableChapterLocales), let locale = groups.first,
+              let metadata = try? await asset.loadChapterMetadataGroups(withTitleLocale: locale, containingItemsWithCommonKeys: []) else { return nil }
+        var found: [Chapter] = []
+        for group in metadata {
+            guard let title = try? await group.items.first?.load(.stringValue) else { continue }
+            found.append(Chapter(title: title, time: group.timeRange.start.seconds))
+        }
+        return found
     }
 
     func play() async { await MainActor.run { player.play() } }

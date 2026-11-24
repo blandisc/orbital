@@ -17,6 +17,7 @@ extension PlayerModel {
         if previous.state == .playing, let last = lastSnapshotAt { watchedUnsaved += min(max(0, now.timeIntervalSince(last)), 5) }
         lastSnapshotAt = now
         snapshot = s
+        settlePendingAudio(s, now: now)
         if s.state == .playing, s.position > 0 { lastGoodPosition = s.position }
         restoreOffsetIfVersionChanged()
         if pendingResumeFraction != nil, s.state == .playing || s.state == .paused, !isPlaceholder(s) { await seekToPendingResume(s) }
@@ -47,7 +48,7 @@ extension PlayerModel {
             lastLoggedState = "\(s.state)"
             Self.note(String(format: "motor: %@ (%.1f s)", lastLoggedState, clock().timeIntervalSince(loadStartedAt)))
         }
-        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); hasPlayed = true; startupPosition = s.position; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); markStartup(.playing); hasPlayed = true; startupPosition = s.position; startupDeadline = nil; phase = .playing; switchBack = nil }
         if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
@@ -98,6 +99,7 @@ extension PlayerModel {
         defer { lastTick = now }
         // El reloj nunca se queda esperando una carga: si el motor se colgaba abriendo el archivo, `tick` no volvía, nadie revisaba
         // el plazo y la pantalla cargaba para siempre (44 min en el iPhone el 29 oct). Lo largo corre aparte (`transition`).
+        settlePendingAudio(snapshot, now: now)   // en pausa el motor no avisa: el plazo de la palomita corre aquí
         if foregroundCheck != nil { checkForegroundStall(now: now) }
         if playRequest != nil { checkPlayRequest(now: now) }
         checkBufferingStall(now: now)

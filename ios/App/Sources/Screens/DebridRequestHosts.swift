@@ -42,7 +42,7 @@ struct DebridRequestSheetHost: View {
                            notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured,
                            service: request.cloud)
             .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
-            .sheet(isPresented: $explaining) { DebridExplainer(service: request.cloud) }
+            .appSheet(isPresented: $explaining) { DebridExplainer(service: request.cloud) }
     }
 }
 
@@ -86,7 +86,7 @@ struct DebridFlowIntroHost: ViewModifier {
                 env.services.kv.set(Self.seenKey, data: Data("1".utf8))
                 showing = true
             }
-            .sheet(isPresented: $showing) { DebridFlowIntro(service: env.services.debrid.service) { showing = false }.fittedSheet() }
+            .appSheet(isPresented: $showing) { DebridFlowIntro(service: env.services.debrid.service) { showing = false }.fittedSheet() }
     }
 
     private var allowed: Bool {

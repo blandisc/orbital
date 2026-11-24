@@ -136,7 +136,7 @@ struct DownloadsView: View {
             cloudWatch = requests.onChange { let count = requests.active.count; if count != cloudActive { cloudActive = count } }
         }
         .task(id: model.items.map { "\($0.id)\($0.state)" }) { await media.model.refreshPhone() }   // lo que bajas de Mi media se marca allá
-        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
+        .appSheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
         .task(id: model.active.first?.metaID) {
             // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
             await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
@@ -486,7 +486,7 @@ struct DownloadSeasonView: View {
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? "")).navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
+        .appSheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
     }
 }
 

@@ -174,7 +174,7 @@ struct SettingsView: View {
     /// Las hojas y preguntas de Ajustes: conectar tu Orbital, apagarla, los avisos, desconectar Trakt y tu perfil.
     private func withDialogs(_ content: some View, _ s: AppSettings) -> some View {
         content
-            .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
+            .appSheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
             .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
                 Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
                 Button("Dejarla conectada", role: .cancel) {}
@@ -183,7 +183,7 @@ struct SettingsView: View {
                 Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
                 Button("Dejarla conectada", role: .cancel) {}
             } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
-            .sheet(isPresented: $editingAvatar) { profileSheet }
+            .appSheet(isPresented: $editingAvatar) { profileSheet }
     }
 
     /// `-demo-open` y `-demo-settings-page`: abrir una página de Ajustes para las capturas (solo en Debug).

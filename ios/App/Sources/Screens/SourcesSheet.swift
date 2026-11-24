@@ -212,9 +212,9 @@ struct SourcesSheet: View {
             demoSeriesAsk(model)
             #endif
         }
-        .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
+        .appSheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
         .debridFlowIntro(when: request != nil && !model.toRequest.isEmpty && !showsAll)   // RX3-A: «↓ Por pedir» a la vista
-        .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
+        .appSheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
         // Las dos preguntas son tarjetas de la app (Fernando, 13 nov 2026: «también conviértelos en la tarjeta»). Lo que
         // eliges corre cuando la tarjeta ya se cerró: «Ver Inglés…» puede traer después la de la serie sin chocar con ella.
         .choiceSheet(item: $seriesAsk) { ask in seriesCard(ask, ui) }

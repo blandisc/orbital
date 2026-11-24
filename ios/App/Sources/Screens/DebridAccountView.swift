@@ -62,8 +62,8 @@ struct DebridAccountView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(title(model)).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid, service: model.service) }
-        .sheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
+        .appSheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid, service: model.service) }
+        .appSheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
             DebridRedeemSheet(points: Strings.count(model.status?.points ?? 0, language: env.services.appSettings.uiLanguage),
                               redeem: { confirmRedeem = false; Task { await model.redeemPoints() } }, close: { confirmRedeem = false })
         }

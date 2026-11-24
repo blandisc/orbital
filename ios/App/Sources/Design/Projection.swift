@@ -37,6 +37,7 @@ struct DataLine: View {
                 line(Array(shown.prefix(count)))
             }
         }
+        .id(shown)   // con otras partes, uno nuevo (DesignRulesTests+Sheets: la Mac tronaba al cambiar cuántas opciones hay)
     }
 
     @ViewBuilder private func line(_ parts: [String]) -> some View {

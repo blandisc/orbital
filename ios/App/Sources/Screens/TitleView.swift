@@ -149,7 +149,7 @@ struct TitleView: View {
         let _ = BodyCount.tick("title", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = observer.model
         loaded(model)
-        .sheet(item: $sourcesFor) { target in
+        .appSheet(item: $sourcesFor) { target in
             SourcesSheet(model: model, videoID: target.videoID, fromHere: target.fromHere, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
@@ -159,8 +159,8 @@ struct TitleView: View {
             }, request: env.services.debridRequests.canRequest ? { source in await sendRequest(model, source: source, videoID: target.videoID) } : nil)
             .presentationDragIndicator(.visible)   // el alto lo pone la hoja (`VersionSheetSizing`)
         }
-        .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
-        .sheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }
+        .appSheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
+        .appSheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }
         .debridFlowIntro(when: model.debridOffer != nil && model.debridRequest == nil)   // RX3-A: «Pedir a la nube» a la vista
         .task { _ = await DebridRequestNotifier.permission() }   // IOS-8: sin permiso no se promete «Te aviso»
         .debridCancelConfirmation(isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
@@ -170,7 +170,7 @@ struct TitleView: View {
         .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
         .modifier(TitleViewingsAndNote(model: model, viewingsFor: $viewingsFor, noting: $noting, ratingSeason: $ratingSeason))
-        .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
+        .appSheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             if let r = replacing {
                 DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
                     keepBoth: { replacing = nil; Task { await report(model.download([r.videoID], source: r.source, keepBoth: true), model) } },

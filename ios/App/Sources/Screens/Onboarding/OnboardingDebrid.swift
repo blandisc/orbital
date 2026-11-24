@@ -46,11 +46,11 @@ struct OnboardingSeeHere: View {
             }
         }
         .dsFeedback(.success, trigger: model.ready)
-        .sheet(isPresented: $choosing) { DebridCloudSheet(debrid: model) }
-        .sheet(isPresented: $none, onDismiss: { if chooseAfter { chooseAfter = false; choosing = true } }) {
+        .appSheet(isPresented: $choosing) { DebridCloudSheet(debrid: model) }
+        .appSheet(isPresented: $none, onDismiss: { if chooseAfter { chooseAfter = false; choosing = true } }) {
             CloudNoneSheet(connect: { chooseAfter = true; none = false }, later: { none = false; next() })
         }
-        .sheet(isPresented: $explaining) { DebridCloudsExplainer() }
+        .appSheet(isPresented: $explaining) { DebridCloudsExplainer() }
         .onChange(of: model.ready) { _, ready in if ready { choosing = false; readyStart = Date() } }
         .onAppear { start = Date() }
         .task { await guide.model.loadCandidates() }

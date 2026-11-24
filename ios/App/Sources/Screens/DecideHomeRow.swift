@@ -18,7 +18,7 @@ struct DecideHomeRow: View {
         DecideDoor(posters: Array(fan.prefix(DS.ParaTiB.matchFan)), offline: !env.isOnline, id: "home-decide",
                    more: compact ? [] : Array(fan.dropFirst(DS.ParaTiB.matchFan)), inset: compact ? 0 : nil) { deciding = true }
             .task { await env.paraTi.model.loadIfStale() }
-            .sheet(isPresented: $deciding) { DecideSheet(open: open) }
+            .appSheet(isPresented: $deciding) { DecideSheet(open: open) }
             #if DEBUG
             .task { if Demo.isOn, Demo.open == "home-decide" { try? await Task.sleep(for: .seconds(3)); deciding = true } }   // ds-exception: capturas (Demo)
             #endif

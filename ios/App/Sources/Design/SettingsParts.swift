@@ -224,7 +224,7 @@ struct SettingsPaneHeader: View {
                     .accessibilityLabel(Text("Volver"))
                     .keyboardShortcut("[", modifiers: .command)
             }
-            title.recipe(.section, color: DS.text).lineLimit(1)
+            title.recipe(DS.Mac.settingsPaneTitle, color: DS.text).lineLimit(1)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: width, alignment: .leading)

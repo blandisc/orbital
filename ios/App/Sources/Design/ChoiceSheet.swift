@@ -141,7 +141,7 @@ private struct ChoicePresenter<Item: Identifiable>: ViewModifier {
     @State private var pending: (() -> Void)?
 
     func body(content: Content) -> some View {
-        content.sheet(item: $item, onDismiss: { let run = pending; pending = nil; run?() }) { current in
+        content.appSheet(item: $item, onDismiss: { let run = pending; pending = nil; run?() }) { current in
             ChoiceSheet(card: card(current)) { action in pending = action.run; item = nil }
         }
     }

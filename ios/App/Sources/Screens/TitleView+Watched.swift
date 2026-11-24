@@ -79,7 +79,7 @@ struct TitleWatchedWhen: ViewModifier {
     @Environment(AppEnvironment.self) private var env
 
     func body(content: Content) -> some View {
-        content.sheet(item: $scope) { scope in
+        content.appSheet(item: $scope) { scope in
             let language = env.services.appSettings.uiLanguage
             let span = model.releaseSpan(scope)
             let day = { (d: Date) in Strings.longDay(d, language: language) }

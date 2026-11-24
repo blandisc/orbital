@@ -93,7 +93,7 @@ struct AddonsSettings: View {
         } message: { addon in
             AddonRemoveMessage(last: model.isLastSource(addon.id), tv: env.services.orbital.isConfigured)
         }
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons, service: env.services.debrid.service) }
+        .appSheet(isPresented: $explaining) { DebridExplainer(topic: .addons, service: env.services.debrid.service) }
         .environment(\.editMode, $editMode)
         .task {
             await model.prepare()

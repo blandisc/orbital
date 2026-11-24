@@ -115,7 +115,7 @@ struct RootView: View {
     private func withPrompts(_ content: some View) -> some View {
         content
             .dsFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
-            .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
+            .appSheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
                 ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
             }
             .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {   // ds-exception: sí o no que llega al volver de Infuse sobre lo que esté abierto (una hoja en la raíz no se vería encima de otra)
@@ -356,7 +356,7 @@ struct MainTabs: View {
         // el panel abierto, pasa solo a la tarjeta (`remoteAsPanel`).
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
-        .inspector(isPresented: sidePanelShown) { sidePanel }
+        .inspector(isPresented: sidePanelShown) { sidePanel.environment(env) }   // como las hojas: la app a mano (Screens/AppSheet.swift)
         .modifier(SideTitle(item: Binding(get: { titleAsPanel ? panelTitle : nil }, set: { panelTitle = $0 })))
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
@@ -424,7 +424,7 @@ struct MainTabs: View {
         .task { if Demo.isOn, Demo.open == "remote-idle" { remoteLarge = true; showRemote = true } }   // el control sin nada en la TV
         #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
-        .sheet(isPresented: $showGame) {
+        .appSheet(isPresented: $showGame) {
             if let game = tvNow.model.game {
                 GameCompanionView(tvNow: tvNow, game: game).dsSheetContent(sides: false)   // su carrusel llega a las orillas
                     .fittedSheet().presentationDragIndicator(.visible)   // del alto de lo que tiene, como el control
@@ -440,7 +440,7 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
         #endif
         // Se cerró un juego en la consola: su resumen.
-        .sheet(isPresented: Binding(get: { showRemote && !remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
+        .appSheet(isPresented: Binding(get: { showRemote && !remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
     }

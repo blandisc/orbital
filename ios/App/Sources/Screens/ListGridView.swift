@@ -65,7 +65,7 @@ struct ListGridView: View {
                 .padding(.bottom, DS.Layout.screenBottom)
                 .navigationTitle(shelfTitle(plan))
                 .toolbar { if editable { ListEditToolbar(editing: $editing) { adding = true } } }
-                .sheet(isPresented: $adding) { addSheet(plan) }
+                .appSheet(isPresented: $adding) { addSheet(plan) }
             }
         }
         .background(Backdrop())

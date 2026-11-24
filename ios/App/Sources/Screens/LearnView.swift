@@ -52,7 +52,7 @@ struct LearnView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Aprende").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sheet(isPresented: $confirmReset) {
+        .appSheet(isPresented: $confirmReset) {
             ResetTipsCard(reset: { model.reset(); confirmReset = false }, cancel: { confirmReset = false })
         }
     }

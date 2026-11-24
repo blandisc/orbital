@@ -236,12 +236,25 @@ public enum StreamWarmup {
             return true
         }
         guard fresh else { return false }
-        if !parallel, let engineWarm = lock.withLock({ Self.engineWarm }) { engineWarm(url, PlaybackHeaders.headers(for: url)); return true }
+        // 23 nov: primero la redirección del complemento (`StreamLinks`, sin abrir el archivo) y luego se calienta la dirección
+        // final, la misma que abrirá «Ver»: así el motor no vuelve a pasar por Torrentio aunque esto no termine a tiempo.
+        if let resolving = links.start(url) {
+            Task { send(await resolving.value ?? url, parallel: parallel, session: session) }
+            return true
+        }
+        send(url, parallel: parallel, session: session)
+        return true
+    }
+
+    /// Dónde se resuelven las redirecciones (las pruebas ponen la suya).
+    nonisolated(unsafe) static var links = StreamLinks.shared
+
+    private static func send(_ url: URL, parallel: Bool, session: URLSession) {
+        if !parallel, let engineWarm = lock.withLock({ Self.engineWarm }) { engineWarm(url, PlaybackHeaders.headers(for: url)); return }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         for (k, v) in PlaybackHeaders.headers(for: url) { request.setValue(v, forHTTPHeaderField: k) }
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
         session.dataTask(with: request).resume()
-        return true
     }
 }
 

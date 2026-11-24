@@ -52,7 +52,7 @@ struct DebridCloudChooser: View {
                 .accessibilityIdentifier("cloud-explain")
         }
         .listRowBackground(DS.surface)
-        .sheet(isPresented: $explaining) { DebridCloudsExplainer() }
+        .appSheet(isPresented: $explaining) { DebridCloudsExplainer() }
     }
 }
 
@@ -88,7 +88,7 @@ struct DebridCloudList: View {
             Text("Es la que hace que los videos arranquen al instante. Orbital funciona con estas tres; tú pagas la que elijas en su página.")
         }
         .listRowBackground(DS.surface)
-        .sheet(isPresented: $explaining) { DebridCloudsExplainer() }
+        .appSheet(isPresented: $explaining) { DebridCloudsExplainer() }
     }
 
     static func value(_ cloud: DebridService, _ model: DebridModel) -> LocalizedStringKey {

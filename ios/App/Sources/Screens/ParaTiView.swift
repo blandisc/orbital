@@ -148,7 +148,7 @@ struct ParaTiView: View {
             let lists = WidgetListsPublisher.lists(from: m)
             if lists.contains(where: { !$0.posters.isEmpty }) { WidgetListsPublisher.publish(lists) }
         }
-        .sheet(isPresented: $deciding) { DecideSheet { openTitle = $0 } }
+        .appSheet(isPresented: $deciding) { DecideSheet { openTitle = $0 } }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }

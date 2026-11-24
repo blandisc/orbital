@@ -51,18 +51,18 @@ struct TitleViewingsAndNote: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $viewingsFor) { target in
+            .appSheet(item: $viewingsFor) { target in
                 ViewingsSheet(target: target) { await model.refreshState() }
                     .fittedScrollSheet()
             }
-            .sheet(isPresented: $noting) {
+            .appSheet(isPresented: $noting) {
                 NoteSheet(title: titleName(model.title, id: model.metaID, kind: model.kind), text: env.notes.note(model.metaID), inTrakt: env.notes.savesInTrakt) { text in
                     let notes = env.notes, id = model.metaID, series = model.kind == "series"
                     Task { await notes.save(id, series: series, text: text) }
                 }
                 .presentationDetents([.large])
             }
-            .sheet(isPresented: Binding(get: { ratingSeason != nil }, set: { if !$0 { ratingSeason = nil } })) {
+            .appSheet(isPresented: Binding(get: { ratingSeason != nil }, set: { if !$0 { ratingSeason = nil } })) {
                 SeasonRatingSheet(title: titleName(model.title, id: model.metaID, kind: model.kind), show: model.metaID, season: ratingSeason ?? model.selectedSeason)
             }
             .task(id: model.metaID) { await env.notes.load() }
@@ -193,10 +193,10 @@ struct ViewingsSheet: View {
             .contentMargins(.top, DS.Space.s2, for: .scrollContent)   // sin el hueco de sección entre la barra y la tarjeta
             .navigationTitle(Text("Tus vistas")).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
-            .sheet(item: $editing) { v in
+            .appSheet(item: $editing) { v in
                 ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: v.at) { date in move(v, to: date) }
             }
-            .sheet(isPresented: $adding) {
+            .appSheet(isPresented: $adding) {
                 ViewingDatePicker(title: Text("La vi otra vez"), initial: Date()) { date in add(at: date) }
             }
         }

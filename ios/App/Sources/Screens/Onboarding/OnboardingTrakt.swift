@@ -34,7 +34,7 @@ struct OnboardingTrakt: View {
                   skip: next, skipGuide: skip, back: back) {
             if linked { done(model) } else { ask(model) }
         }
-        .sheet(isPresented: $showsCode) { TraktCodeSheet(settings: settings.model) }
+        .appSheet(isPresented: $showsCode) { TraktCodeSheet(settings: settings.model) }
         .onChange(of: linked) { _, now in
             if now { showsCode = false; Task { await model.traktLinked() } }
         }

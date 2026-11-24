@@ -339,9 +339,11 @@ private struct MosaicTileCell: View {
                     if inWatchlist { DSIconBadge(symbol: "bookmark.fill", label: "En Mi lista") }
                     else if let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: badgeKey(tile.item.reason)) }
                     TitleLogo(url: tile.item.logo, title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind))
+                    let facts = factStrings(tile.item, language: language)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
-                        ForEach(Array(factVariants(tile.item, language: language).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
+                        ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in Text(verbatim: fact).lineLimit(1).fixedSize(horizontal: true, vertical: false) }
                     }
+                    .id(facts)   // con otras opciones, uno nuevo (DesignRulesTests+Sheets: la Mac tronaba al cambiar cuántas hay)
                     .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
                 .padding(DS.Space.s6)

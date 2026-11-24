@@ -188,7 +188,7 @@ struct RepisaCollectionView: View {
             }
             // La que sigue sale de lo que pasa el filtro (antes, de la colección entera: «Anora» con «Drama · 2010s»).
             .safeAreaBar(edge: .bottom) { if let next = filtered(c, model).next(model.watched) { nextBar(next, c) } }
-            .sheet(item: $picked, onDismiss: { asking = askNext; askNext = nil }) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
+            .appSheet(item: $picked, onDismiss: { asking = askNext; askNext = nil }) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
             .askingWhenWatched($asking) { s, date in place(s, at: date, model) }
             .overlay { if let placed { moment(placed, c, model) } }
             .task { if !model.loaded { await model.load() } }   // entrando directo a una colección (sin pasar por la repisa)

@@ -93,7 +93,7 @@ extension PlayerScreen {
             let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
             guard seen.insert(code).inserted else { return nil }
             let title = TrackChooser.audioCode(t).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
-            return AudioChoice(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
+            return AudioChoice(id: String(t.id), title: title, selected: model.shownAudio == t.id)   // la que tocaste, ya (el motor tarda en ponerla)
         }
         let others: [AudioChoice] = model.otherVersionAudio(excluding: seen).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
             let speed = Strings.tr(o.instant ? "en la nube" : "Todavía no está en la nube", language: ui)

@@ -33,11 +33,19 @@ extension SettingsView {
                 .environment(\.readableWidth, DS.Mac.settingsPageWidth)   // AJ-A: la página llena el ancho, no una columna de 720
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .macSettingsType()
             .background(Backdrop())
             .dsFeedback(.selection, trigger: macPage)
             .dsFeedback(.selection, trigger: macStack.count)
         } else {
             list
         }
+    }
+}
+
+private extension View {
+    /// Solo en la Mac: en el iPad ancho manda el tamaño de letra que eligió la persona.
+    @ViewBuilder func macSettingsType() -> some View {
+        if ThisDevice.isMac { font(DS.styled(DS.Mac.settingsBody)).dynamicTypeSize(DS.Mac.settingsType) } else { self }   // ds-exception: Ajustes en la Mac, un paso arriba
     }
 }

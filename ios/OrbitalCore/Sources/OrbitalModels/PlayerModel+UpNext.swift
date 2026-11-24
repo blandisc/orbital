@@ -74,7 +74,9 @@ extension PlayerModel {
 
     func evaluateUpNext(_ s: EngineSnapshot, now: Date) async {
         if demoPinned { return }
-        guard let next = nextEpisodeID(), s.duration > 0, let request else { return }
+        // El que sigue ya se calculó al abrir (`nextUp`): leer los episodios de la ficha en cada aviso del motor (10 por segundo)
+        // recorría la serie entera cada vez (cientos de episodios en Los Simpson) en el hilo principal.
+        guard let next = nextUp?.videoID, s.duration > 0, let request else { return }
         let remaining = s.duration - s.position
         if remaining <= PlaybackRules.upNextLookahead && !preloadedNext && request.localFile == nil {
             preloadedNext = true  // que al llegar el momento ya esté buscada la fuente
@@ -188,8 +190,11 @@ extension PlayerModel {
         upNext = nil; upNextDeadline = nil
         let task = Task { [weak self] in
             guard let self else { return }
+            // El que dejas se calla ya y se guarda aparte: el elegido empieza a cargar sin esperar a la red (antes seguía sonando
+            // el anterior mientras se guardaba en Stremio y Trakt).
+            await engine.pause()
             let watched = LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: base.kind)
-            if !finalReported { await report(.stopped(finished: watched)) }
+            if !finalReported { sendReport(.stopped(finished: watched)) }
             guard !closing, phase != .closed else { advancing = false; return }
             var next = base
             next.videoID = videoID; next.fromStart = true; next.binge = source?.binge
@@ -238,7 +243,8 @@ extension PlayerModel {
         advancing = true
         let task = Task { [weak self] in
             guard let self else { return }
-            if !finalReported { await report(.stopped(finished: true)) }
+            if snapshot.state != .ended { await engine.pause() }   // «Ver ahora» en los créditos: se calla ya
+            if !finalReported { sendReport(.stopped(finished: true)) }   // aparte: el siguiente no espera a la red
             guard !closing, phase != .closed else { advancing = false; return }
             if request.localFile != nil, LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: request.kind) { onFinishedLocal?(request) }
             var next = request
@@ -254,7 +260,7 @@ extension PlayerModel {
     }
 
     /// Espera a que termine el cambio de episodio en curso (para las pruebas y para la vista).
-    public func waitForTransition() async { await transition?.value }
+    public func waitForTransition() async { await transition?.value; await pendingSave?.value }
 
     /// Un «final» a más de 90 s del final de verdad es la conexión que se cortó, no el episodio visto (como `CUT_MARGIN` en la consola).
     static let cutMargin = 90.0

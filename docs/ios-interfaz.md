@@ -740,6 +740,9 @@ pregunta de alineación vuelve a medirlo todo, y en una hoja que cambia de alto 
   dentro de una pila alineada por línea base.** Para elegir forma, decide por el tamaño de letra (`dynamicTypeSize`) o con una
   pieza de `Layout`.
 - En un encabezado que se mide muy seguido (la hoja de Decide), ningún `ViewThatFits`: las pestañas usan `adapts: false`.
+- **Si elige entre una lista (`ForEach`), se rearma cuando la lista cambia** (`.id(opciones)`). En la Mac la 2458 tronó cuatro
+  veces seguidas en Explorar cuando la tira de pósters cambiaba cuántas opciones tenía mientras llegaban
+  (`DesignRulesTests+Sheets`, `testListChoicesRebuildWhenTheyChange`).
 - Arreglados también el encabezado de sección (`DSSectionHead` con sello), las fuentes («Recomendada») y los sustos del control.
 
 Lo cuida `DesignRulesTests+Layout.swift` (`testViewThatFitsIsNotNestedNorUnderBaseline`) en todo `ios/App/Sources`.
@@ -1002,9 +1005,11 @@ nuevos tamaños»):
   selector parecía íconos sueltos. En la Mac los íconos del tipo van de línea (`KindGlyph.variant`): el rollo de película
   relleno se veía como un bloque. El vidrio del reproductor no lleva base: va sobre el video.
 - **El reproductor en la Mac** (revisión del 16 nov 2026, «revisa muy bien el reproductor»):
-  - **Toda pantalla completa recibe la app a mano:** cada `fullScreenCover` lleva `.environment(env)` en lo que muestra. En la
-    Mac la cubierta leía sus preferencias (el zoom de entrada, `interactiveDismissDisabled`) antes de heredar `AppEnvironment`
-    y la app tronaba al abrir el reproductor desde cualquier lado. `DesignRulesTests+Covers` lo vigila.
+  - **Toda pantalla completa y toda hoja recibe la app a mano:** cada `fullScreenCover` lleva `.environment(env)` en lo que
+    muestra y toda hoja se abre con `.appSheet(` (nunca `.sheet(` suelto), que se la pone. En la Mac la cubierta o la hoja lee
+    sus preferencias (el zoom de entrada, `interactiveDismissDisabled`) antes de heredar `AppEnvironment` y la app tronaba al
+    abrir el reproductor desde cualquier lado y, en la 2491 (23 nov), al abrir una hoja con una película puesta.
+    `DesignRulesTests+Covers` y `DesignRulesTests+Sheets` lo vigilan.
   - **Sus controles crecen en la Mac y en el iPad** (Fernando: «más grandes los iconos para tanto pantalla de Mac como
     para pantalla de iPad»): play, ±10, los círculos de arriba (`DS.PlayerPanel.circle`), la barra de avance y el ancho del
     panel van por `DS.PlayerPanel.big`: en la Mac como su letra (×1.25), en el iPad ×1.2 (`padScale`), en el iPhone igual.
@@ -1286,6 +1291,14 @@ primero la guía del pellizco mientras tienes los dedos puestos, luego el aviso 
 acabas de hacer (el zoom) y al final lo que solo informa (subtítulos, «Orbital ajustó la imagen»). Cada uno conserva su
 forma. *Por qué:* al pellizcar, «Suelta para llenar la pantalla» salía encima de otro aviso y chocaban.
 `DesignRulesTests+TopNotice` falla si un aviso de arriba vuelve a pintarse por su cuenta o con otra píldora.
+
+### Lo que eliges en el reproductor se ve al tocar (23 nov 2026)
+
+Cambiar de versión, de audio, de subtítulo o de episodio se ve elegido al momento (la palomita, la carga) aunque el motor o la
+red tarden, y el último toque gana: lo que llega tarde de un toque anterior no se pone encima ni te regresa al principio. Lo que
+no se ve (guardar en Stremio y Trakt, la bitácora) corre aparte y nunca hace esperar al cambio. *Por qué:* tocar dos versiones
+seguidas empezaba la película desde el principio, el audio nuevo no se marcaba hasta 2 s después, un subtítulo de internet que
+llegaba tarde tapaba el que elegiste y otro episodio esperaba a que se guardara el anterior. `InstantSwitchingTests` lo vigila.
 
 ### Pegar es el botón del sistema (22 nov 2026)
 

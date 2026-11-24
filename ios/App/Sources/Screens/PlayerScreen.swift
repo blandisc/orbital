@@ -319,7 +319,7 @@ struct PlayerScreen: View {
         .accessibilityAction(.magicTap) { userTogglePlay(holder.model) }
         .statusBarHidden(true)
         // P4-A: antes de la pregunta de iOS, la misma explicación que en la ficha (una sola vez, la primera).
-        .sheet(item: $notices.askNotify) { ask in DebridNotifyAsk(done: ask.then) }
+        .appSheet(item: $notices.askNotify) { ask in DebridNotifyAsk(done: ask.then) }
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)

@@ -140,8 +140,8 @@ struct CloudSheetsHost: ViewModifier {
                 }
                 #endif
             }
-            .sheet(isPresented: $sheets.explaining) { DebridExplainer(service: env.services.debrid.service) }
-            .sheet(item: $sheets.opened) { which in
+            .appSheet(isPresented: $sheets.explaining) { DebridExplainer(service: env.services.debrid.service) }
+            .appSheet(item: $sheets.opened) { which in
                 if let request = model.requests.first(where: { $0.hash == which.id }) { sheet(request, model) }
             }
             // IOS-7: la misma pregunta que la hoja; lo terminado se quita («¿Quitarlo de tu Real-Debrid?»), no se cancela.

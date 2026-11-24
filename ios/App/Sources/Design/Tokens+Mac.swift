@@ -77,6 +77,14 @@ extension DS {
         /// Entre grupos de una página de Ajustes en la Mac: con el espacio de iOS, la explicación de un grupo quedaba pegada al
         /// nombre del siguiente y no se sabía de cuál era (23 nov 2026). Con 300 de barra, «Conectado a Trakt, Real-De…» se cortaba.
         static let settingsSectionGap = Space.s8
+        /// Ajustes y cada una de sus páginas, un paso de letra arriba del resto de la Mac (Fernando, 23 nov 2026: «asegúrate que
+        /// ya hiciste esa pasada también en Settings y dentro de cada una subpantalla»): junto a Inicio, los renglones, la barra
+        /// lateral y las explicaciones se veían de iPhone. El nombre de la página, de título (antes el de una sección).
+        static let settingsType: DynamicTypeSize = .xxxLarge
+        /// La letra de los renglones de Ajustes en la Mac: la de la Mac va a tamaño fijo (`DS.styled`), así que el paso de arriba
+        /// solo lo toman los controles del sistema; los nombres van con la de `title3` (20 en vez de 17, por la escala).
+        static let settingsBody: Font.TextStyle = .title3
+        static let settingsPaneTitle = TextRecipe.title
         /// MC1: cuánto se quedan quietas las animaciones del sistema al cambiar de pestaña en la Mac (lo que dura su fundido).
         static let tabSwitchQuiet: Double = 0.4
         /// El campo de Buscar en la Mac (MS1): grande, no la rayita de la barra; desde BU-A (22 nov 2026), a lo ancho de la

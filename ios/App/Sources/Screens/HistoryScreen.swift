@@ -91,17 +91,17 @@ struct HistoryScreen: View {
         .refreshable { await model.reload() }
         .task { await model.loadIfNeeded() }
         .onChange(of: language) { model.monthName = Self.monthName(env.services) }   // los meses en el idioma nuevo
-        .sheet(item: $editing) { e in
+        .appSheet(item: $editing) { e in
             ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: e.at) { date in move(e, to: date) }
         }
-        .sheet(isPresented: $adding, onDismiss: { pickedReady = picked; picked = nil }) {
+        .appSheet(isPresented: $adding, onDismiss: { pickedReady = picked; picked = nil }) {
             AddToListSheet(listName: Text("Historial"), search: { await env.titles.searchTitles($0) }, contains: { _ in false }) { r in
                 picked = r
                 adding = false
             }
         }
         // Con `item` (no `isPresented`): la hoja nace con su título; con `isPresented` llegaba en blanco (la pasada del 10 nov).
-        .sheet(item: $pickedReady) { r in
+        .appSheet(item: $pickedReady) { r in
             if r.kind == "movie" {
                 ViewingDatePicker(title: Text(verbatim: titleName(r.title, id: r.metaID, kind: r.kind)), initial: Date()) { date in add(r, at: date) }
             } else {

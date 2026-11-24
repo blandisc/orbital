@@ -76,7 +76,7 @@ struct MiMediaView<Top: View>: View {
         .task { await model.load(); await model.localizeNames() }
         .onChange(of: model.all.map(\.imdb)) { Task { await model.localizeNames() } }
         .task { await model.followDownloads() }
-        .sheet(item: $fixing) { file in FixMatchSheet(info: file.info, fileName: file.name, model: model) }
+        .appSheet(item: $fixing) { file in FixMatchSheet(info: file.info, fileName: file.name, model: model) }
     }
 
     /// Tu carpeta: cuántos títulos, cuándo se revisó, revisar ahora y más (orden, carpetas, ajustes).
@@ -200,7 +200,7 @@ struct MiMediaTitleView: View {
                     if let wanted { season = wanted } else if !seasons.contains(where: { $0.season == season }) { season = seasons.first?.season ?? 0 }
                 }
                 .task { await tint.load(String(format: ForYou.metahubBackground, t.imdb)) }
-                .sheet(item: $findingSource) { missing in
+                .appSheet(item: $findingSource) { missing in
                     if let tm = titleModel {
                         SourcesSheet(model: tm, videoID: missing.id) { source, purpose in
                             findingSource = nil
@@ -209,7 +209,7 @@ struct MiMediaTitleView: View {
                         .presentationDragIndicator(.visible)   // el alto lo pone la hoja (`VersionSheetSizing`)
                     }
                 }
-                .sheet(isPresented: $fixing) {
+                .appSheet(isPresented: $fixing) {
                     if let first = t.entries.first {
                         // Al corregir cambia la ficha (y su id): se regresa a Mi media, donde ya sale con la buena.
                         FixMatchSheet(info: first.file.info, fileName: first.file.name, model: model) { result in

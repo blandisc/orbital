@@ -65,15 +65,15 @@ extension PlayerScreen {
             }
         }
         .ignoresSafeArea(edges: landscape ? .all : [])
-        .sheet(isPresented: $dockState.dockLanguages) {
+        .appSheet(isPresented: $dockState.dockLanguages) {
             let locale = Locale(identifier: env.services.appSettings.uiLanguage)
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
                                name: { code in locale.localizedString(forLanguageCode: SubtitleLanguage.code(code) ?? code)?.capitalized(with: locale) ?? code }) { code in
                 Task { await model.chooseLanguage(code) }
             }
         }
-        .sheet(isPresented: $dockState.dockVersions) { subtitleVersionsSheet(model) }
-        .sheet(isPresented: $dockState.dockAudio) { audioSheet(model) }
+        .appSheet(isPresented: $dockState.dockVersions) { subtitleVersionsSheet(model) }
+        .appSheet(isPresented: $dockState.dockAudio) { audioSheet(model) }
         .task { await model.ensureSubtitleSearch() }
         .onDisappear { dockState.syncLines = nil; dockState.syncResult = nil; dockState.syncPicked = nil }
     }
@@ -115,7 +115,7 @@ extension PlayerScreen {
         if current.localFile != nil { return Strings.tr("Descarga en el iPhone", language: ui) }
         guard let src = model.source else { return "" }
         // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
-        let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
+        let heard = model.snapshot.audioTracks.first { $0.id == model.shownAudio }.flatMap(TrackChooser.audioCode)
         let language = (heard ?? Streams.playingLanguage(src, heardPrefs(model))?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
         let size = src.size > 0 ? ByteSize.text(Int64(src.size), language: ui) : nil
         return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")

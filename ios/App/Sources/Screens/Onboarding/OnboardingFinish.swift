@@ -42,7 +42,7 @@ struct OnboardingTV: View {
             }
         }
         .dsFeedback(.success, trigger: connected)
-        .sheet(isPresented: $connecting, onDismiss: {
+        .appSheet(isPresented: $connecting, onDismiss: {
             if guide.model.orbitalConfigured { start = Date(); Task { await debrid.model.load() } }
         }) { OrbitalSetupView() }
         .onAppear { start = Date() }

@@ -5,7 +5,8 @@ import OrbitalCore
 /// apagar y prender, y el audio. El estado guardado sigue en `PlayerModel`; aquí vive lo que se hace con él.
 extension PlayerModel {
     /// Se está bajando un subtítulo de internet para ponerlo (el botón de subtítulos enseña que carga).
-    public var loadingSubtitle: Bool { pendingSubtitleURL != nil }
+    /// Solo el que pediste al último: si elegiste otro (o los apagaste) mientras llegaba, el botón ya no carga.
+    public var loadingSubtitle: Bool { pendingSubtitleURL != nil && addedSubtitleTicket == subtitleTicket }
 
     /// El nombre de tu copia (la fuente o el archivo descargado): con él se ve qué subtítulo le va.
     public var currentRelease: String? {
@@ -77,15 +78,26 @@ extension PlayerModel {
         case .embedded(let track): await engine.selectSubtitle(track.id)
         case .internet(let option):
             if let id = addedTracks[option.url] { await engine.selectSubtitle(id); return }
+            let ticket = subtitleTicket, mine = generation
+            // La carga se ve al tocar (antes, nada hasta que contestaba OpenSubtitles).
+            pendingSubtitleURL = option.url; addedSubtitleTicket = ticket
+            addedSubtitleURLs.insert(option.url)
             // Uno de la API de OpenSubtitles se pide ahora (gasta cuota): si no se puede (sin cuenta o sin cuota), se dice.
             let real: URL
-            do { real = try await finder.resolveSubtitle(option.url) } catch { notice = .openSubtitles("\(error)"); return }
+            do { real = try await finder.resolveSubtitle(option.url) } catch { dropPendingSubtitle(option.url); notice = .openSubtitles("\(error)"); return }
+            // Mientras llegaba elegiste otro, lo apagaste o cambió el video: no se pone encima de lo tuyo.
+            guard ticket == subtitleTicket, mine == generation else { return dropPendingSubtitle(option.url) }
             knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
             addedExternalSubtitle = true
             pendingSubtitleURL = option.url
-            addedSubtitleURLs.insert(option.url)
             await engine.addSubtitle(url: real, language: option.language)
         }
+    }
+
+    /// Uno de internet que ya no se va a poner: sin su carga.
+    private func dropPendingSubtitle(_ url: URL) {
+        if pendingSubtitleURL == url { pendingSubtitleURL = nil }
+        if addedTracks[url] == nil { addedSubtitleURLs.remove(url) }
     }
 
     /// Mantener presionado el botón: apaga los subtítulos o los vuelve a prender (lo que tenías, lo que elegiste en este
@@ -115,8 +127,12 @@ extension PlayerModel {
     public func chooseLanguage(_ language: String) async -> Bool {
         var versions = subtitleVersions(language: language)
         if versions.isEmpty {
+            subtitleTicket += 1
+            let ticket = subtitleTicket
             // Lo pediste tú: se busca aunque la anterior no haya encontrado nada (o se espera la que va en camino).
             if foundSubtitles == nil { await searchSubtitles() }
+            // Mientras buscaba elegiste otro: ese gana (no es «no hay», así que tampoco se avisa).
+            guard ticket == subtitleTicket else { return true }
             versions = subtitleVersions(language: language)
         }
         guard let best = versions.first else { return false }
@@ -148,16 +164,11 @@ extension PlayerModel {
         return true
     }
 
-    public func selectAudio(_ id: Int?) async {
-        userTouched()
-        await engine.selectAudio(id)
-        if let id, let track = snapshot.audioTracks.first(where: { $0.id == id }), let request {
-            titlePrefs.remember(metaID: request.metaID, audioTrack: track.language)
-        }
-    }
+    // `selectAudio` vive en `PlayerModel+Switching.swift`.
 
     public func selectSubtitle(_ id: Int?) async {
         userTouched(); stopBriefSubtitles()
+        subtitleTicket += 1   // uno de internet que venía en camino ya no se pone encima
         await engine.selectSubtitle(id)
         guard let request else { return }
         if let id {

@@ -43,7 +43,7 @@ struct RatingReminderHost: View {
             if !Task.isCancelled { tucked = true }
         }
         .onChange(of: scenePhase) { _, phase in if phase == .active { tucked = false } }
-        .sheet(isPresented: $showQueue) {
+        .appSheet(isPresented: $showQueue) {
             NavigationStack {
                 RatingQueue(rows: model.queue.map { .init(id: $0.imdb, title: $0.title, poster: URL(string: $0.poster)) },
                             onRate: { imdb, stars in

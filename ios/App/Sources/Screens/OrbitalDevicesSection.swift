@@ -36,7 +36,7 @@ struct OrbitalDevicesSection: View {
         }
         .listRowBackground(DS.surface)
         .task { await model.refresh() }
-        .sheet(item: $opened) { device in
+        .appSheet(item: $opened) { device in
             OrbitalDeviceSheet(device: device, detail: detail(device)) { opened = nil; Task { await model.remove(device) } }
         }
         if let me {
@@ -133,7 +133,7 @@ struct OrbitalRescanProblem: View {
         let _ = env.services.track()
         Group { if let reason = env.services.rescanReason { problem(reason) } }
             // Fuera del problema: al quedar conectado el problema se va, y la hoja se queda para decir «Listo».
-            .sheet(isPresented: $upgrading) { OrbitalUpgradeSheet(scan: { upgrading = false; scan() }) }
+            .appSheet(isPresented: $upgrading) { OrbitalUpgradeSheet(scan: { upgrading = false; scan() }) }
     }
 
     @ViewBuilder private func problem(_ reason: Services.RescanReason) -> some View {

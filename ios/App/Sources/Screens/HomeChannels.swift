@@ -65,7 +65,7 @@ struct HomeChannels: View {
                 channel.onAir(at: now).map { $0.episode.still.isEmpty ? channel.background : $0.episode.still }
             })
         }
-        .sheet(isPresented: $choosing, onDismiss: { Task { await model.load() } }) { ChannelsSheet(model: model) }
+        .appSheet(isPresented: $choosing, onDismiss: { Task { await model.load() } }) { ChannelsSheet(model: model) }
     }
 
     /// El nombre de la serie en el idioma de la app («The Simpsons» en inglés); los que vienen de la búsqueda, tal cual.

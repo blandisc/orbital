@@ -13,9 +13,13 @@ extension PlayerModel {
         let src = source.map { "\($0.cached ? "en la nube" : ($0.debrid ? "la nube aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
         Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
         loadStartedAt = clock(); lastLoggedState = ""
+        loadTarget = start; pendingAudio = nil; pendingAudioAt = nil   // otro archivo: sus pistas son otras
         if rd.shortDuration != nil { rd.shortDuration = nil }   // otra carga: la duración corta era de la anterior
-        if source?.resolution == "4K" { ParallelPlayback.want(url) }   // varias conexiones solo en 4K
         await resumeSync?.value
+        // La dirección final del complemento, si ya se resolvió (`StreamLinks`): el motor no vuelve a pasar por Torrentio.
+        let target = await openable(url)
+        markStartup(.link)
+        if source?.resolution == "4K" { ParallelPlayback.want(target); ParallelPlayback.want(url) }   // varias conexiones solo en 4K
         if let request {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
@@ -33,8 +37,18 @@ extension PlayerModel {
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
             await engine.prepare(titleKey: request.metaID)
         }
-        try await engine.load(url: url, startAt: start)
+        let mine = generation
+        do { try await engine.load(url: target, startAt: start) }
+        catch where target != url && !(error is CancellationError) && mine == generation && !closing {
+            // La dirección final no abrió (venció, la nube la movió): la del complemento, como antes.
+            links.forget(url)
+            Self.note("la dirección resuelta no abrió: con la del complemento")
+            try await engine.load(url: url, startAt: start)
+        }
+        // Mientras abría se pidió otra carga (cambiaste de versión dos veces seguidas): lo que diga el motor ya no es de esta.
+        guard mine == generation else { return }
         engineOpened = true
+        markStartup(.opened)
         Self.note(String(format: "el motor abrió el archivo en %.1f s", clock().timeIntervalSince(loadStartedAt)))
         if rate != 1 { await engine.setRate(rate) }
     }
@@ -141,72 +155,7 @@ extension PlayerModel {
 
     func stopBriefSubtitles() { briefSubtitles?.cancel(); briefSubtitles = nil }
 
-    /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.
-    /// Cambiar de versión a mano (en la hoja, o un idioma que solo trae otra versión: `language`). Se pausa y se toma el
-    /// segundo exacto; cuenta como «la elegiste tú» (ya no se ofrece cambiar otra vez); si no abre, se vuelve a la que veías
-    /// en el mismo segundo (antes caía a cualquier otra); el idioma elegido sigue en los siguientes episodios.
-    public func switchSource(to index: Int, language: String? = nil) async {
-        guard let request, !closing else { return }
-        userTouched()
-        if snapshot.state == .playing { await engine.pause() }
-        generation += 1
-        let mine = generation
-        let position = snapshot.position
-        let previous = source
-        notice = nil   // el aviso era de la versión que dejas
-        acceptingSnapshots = false
-        if clock().timeIntervalSince(choicesAt) > Self.choicesLifetime {
-            let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-            if let fresh = try? await finder.find(kind: request.kind, videoID: request.videoID, prefs: prefs, fresh: true) { sourceChoices = fresh; choicesAt = clock() }
-        }
-        guard mine == generation, !closing, let choice = sourceChoices.first(where: { $0.index == index }) ?? sourceChoices.first(where: { $0.release == source?.release && $0.index == index }),
-              let url = choice.playbackURL else { acceptingSnapshots = true; return }
-        self.request?.sourceIndex = index
-        let subtitlesWereOn = snapshot.selectedSubtitle != nil
-        source = choice; phase = .preparing
-        // Suelta lo que el motor estuviera abriendo: si la versión de antes se quedó cargando, la nueva quedaba formada detrás de
-        // ella y la pantalla solo enseñaba la carga (el iPhone el 29 oct).
-        await engine.stop()
-        guard mine == generation, !closing else { return }
-        startLoading()
-        if !choice.instant { queued.mark(choice.key, at: clock()) }   // abrirla le pide a Real-Debrid que la baje
-        if let previous { switchBack = (previous, position) }
-        forgetSubtitleSearch()   // otro archivo: «coincide con tu copia» se vuelve a calcular con su huella
-        if subtitlesWereOn { askInSync = true }   // otro archivo, la sincronía empieza en 0: «¿Va a tiempo?»
-        do {
-            try await loadVideo(url, at: position)
-            if let language { titlePrefs.remember(metaID: request.metaID, audioTrack: language) }
-        } catch {
-            guard mine == generation else { return }
-            markFailed(choice, "la elegiste y no abrió: \(error)")
-            if !goBackAfterSwitch() { await retryWithAnotherSource("la elegiste y no abrió")?.value }
-        }
-    }
-
-    /// Vuelve a la versión que veías antes de cambiar a mano, en el mismo segundo. false si no hay a cuál volver.
-
-    /// Vuelve a la versión que veías antes de cambiar a mano, en el mismo segundo. false si no hay a cuál volver.
-    @discardableResult
-    func goBackAfterSwitch() -> Bool {
-        guard let back = switchBack, let url = back.source.playbackURL, !closing else { return false }
-        switchBack = nil
-        if let source, source.index != back.source.index { markFailed(source, "la elegiste y no llegó a sonar: se vuelve a la de antes") }
-        generation += 1
-        let mine = generation
-        acceptingSnapshots = false
-        request?.sourceIndex = back.source.index
-        source = back.source
-        phase = .preparing
-        if notice != .notReadyOnRealDebrid { notice = .switchFailedBack }
-        transition = Task { [weak self] in
-            guard let self else { return }
-            await engine.stop()
-            guard mine == generation else { return }
-            startLoading()
-            do { try await loadVideo(url, at: back.position) } catch { guard mine == generation else { return }; await retryWithAnotherSource()?.value }
-        }
-        return true
-    }
+    // Cambiar de versión a mano y volver a la de antes: `PlayerModel+Switching.swift`.
 
     /// El aviso corto que Real-Debrid manda en lugar de una versión que aún no tiene.
     func isPlaceholder(_ s: EngineSnapshot) -> Bool {

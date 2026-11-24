@@ -216,17 +216,19 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.count, PlaybackRules.maxSourceRetries + 1)
     }
 
-    func testProgressIsSavedEveryMinuteOnPauseAndOnClose() async throws {
+    /// Cada `PlaybackRules.saveEvery` (15 s desde el 23 nov 2026: si la app se cierra de golpe pierdes a lo más eso), al pausar y al cerrar.
+    func testProgressIsSavedRegularlyOnPauseAndOnClose() async throws {
         let rig = try twoSources()
+        let every = Int(PlaybackRules.saveEvery)   // desde el minuto 1:40: un guardado al principio con casi nada visto no cuenta (`minPositionToSave`)
         await rig.model.begin(rig.request())
-        await rig.model.handle(rig.playing(10))
-        for second in 1...59 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(second))); await rig.model.tick() }
-        XCTAssertTrue(rig.saved().isEmpty, "antes del minuto no se guarda")
-        rig.clock.advance(1); await rig.model.handle(rig.playing(70)); await rig.model.tick()
+        await rig.model.handle(rig.playing(100))
+        for second in 1..<every { rig.clock.advance(1); await rig.model.handle(rig.playing(100 + Double(second))); await rig.model.tick() }
+        XCTAssertTrue(rig.saved().isEmpty, "antes de \(every) s no se guarda")
+        rig.clock.advance(1); await rig.model.handle(rig.playing(100 + Double(every))); await rig.model.tick()
         XCTAssertEqual(rig.saved().count, 1)
-        XCTAssertEqual(rig.saved()[0].position, 70)
+        XCTAssertEqual(rig.saved()[0].position, 100 + Double(every))
         // Pausar guarda
-        rig.clock.advance(2); await rig.model.handle(rig.playing(72, state: .paused))
+        rig.clock.advance(2); await rig.model.handle(rig.playing(102 + Double(every), state: .paused))
         XCTAssertEqual(rig.saved().count, 2)
         // Cerrar guarda dónde te quedaste y lo visto
         await rig.model.close()
@@ -234,7 +236,7 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.model.phase, .closed)
         XCTAssertEqual(rig.saved().last?.videoID, "tt0386676:1:1")
         let watchedAtFirstSave = try XCTUnwrap(rig.saved().first?.watched)
-        XCTAssertTrue((58...62).contains(watchedAtFirstSave), "se sumaron los ~60 s que de verdad viste: \(watchedAtFirstSave)")
+        XCTAssertTrue(abs(watchedAtFirstSave - Double(every)) <= 2, "se sumaron los segundos que de verdad viste: \(watchedAtFirstSave)")
     }
 
     func testPausedTimeDoesNotCountAsWatched() async throws {

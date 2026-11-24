@@ -129,7 +129,7 @@ extension PlayerModel {
         if let track = find(s.subtitleTracks, sub) { await engine.selectSubtitle(track.id); return true }
         // Este archivo no los trae (otra fuente, o venían de la TV): los mismos de su complemento, o los de ese idioma.
         if let text = sub.url, let url = URL(string: text), url.scheme == "https" || url.scheme == "http" {
-            addedExternalSubtitle = true
+            addedExternalSubtitle = true; addedSubtitleTicket = subtitleTicket
             await engine.addSubtitle(url: url, language: sub.language)
             return true
         }
@@ -183,6 +183,7 @@ extension PlayerModel {
     private func addExternalSubtitle(language: String) async {
         guard let request, !addedExternalSubtitle else { return }
         addedExternalSubtitle = true
+        let ticket = subtitleTicket, mine = generation   // si eliges otro (o cambia el video) mientras se busca, gana lo tuyo
         var url = request.localSubtitles.first { $0.lastPathComponent.hasPrefix(language) }
         // También para una descarga (si hay red): con la huella del archivo, el subtítulo de esa copia exacta.
         if url == nil {
@@ -190,8 +191,9 @@ extension PlayerModel {
             url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
         }
         guard let url, let real = await finder.playableSubtitle(url) else { return Self.note("subtítulos de internet en \(language): ninguno") }
+        guard ticket == subtitleTicket, mine == generation else { return }
         Self.note("subtítulos de internet en \(language): \(url.host ?? "archivo")")
-        pendingSubtitleURL = url; await engine.addSubtitle(url: real, language: language)
+        pendingSubtitleURL = url; addedSubtitleTicket = ticket; await engine.addSubtitle(url: real, language: language)
     }
 
     public func loadScares() async {
@@ -242,6 +244,8 @@ extension PlayerModel {
             knownSubtitleIDs.insert(track.id)
             // El que se sumó de internet ya es esta pista: en la lista sale como «de internet», no «del video».
             if let url = pendingSubtitleURL { addedTracks[url] = track.id; pendingSubtitleURL = nil }
+            // Elegiste otro (o los apagaste) después de pedir este: queda en la lista, pero no se pone encima del tuyo.
+            guard addedSubtitleTicket == subtitleTicket else { return }
             await engine.selectSubtitle(track.id)
         }
     }

@@ -50,9 +50,6 @@ func yearAndKind(year: String, kind: String) -> Text {
 
 /// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5», «Película · 2026 · 1 h 45 min».
 /// Del más completo al más corto (`ViewThatFits` elige el que cabe); las reglas viven en `Vocabulary.factVariants`.
-func factVariants(_ s: Suggestion, language: String) -> [Text] { factStrings(s, language: language).map { Text(verbatim: $0) } }
-
-/// Lo mismo, como texto (para `DataLine`).
 func factStrings(_ s: Suggestion, language: String) -> [String] {
     let next = s.next.map { episodeText(season: $0.season, episode: $0.episode, language: language) }
     return Vocabulary.factVariants(kind: Strings.kind(s.kind, language: language), year: s.year, runtime: s.runtime, next: next)

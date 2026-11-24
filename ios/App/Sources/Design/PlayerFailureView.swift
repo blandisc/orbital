@@ -65,7 +65,7 @@ struct PlayerFailureView: View {
         }
         .background(DS.backdropDeep.ignoresSafeArea())
         .accessibilityElement(children: .contain)
-        .sheet(isPresented: $explaining) { DebridExplainer(service: service) }
+        .appSheet(isPresented: $explaining) { DebridExplainer(service: service) }
     }
 
     /// Las causas de Real-Debrid llevan «¿Qué es esto?» (O2): es donde surge la duda.

@@ -235,7 +235,7 @@ struct HomeView: View {
             env.ui.openSimpsons = false
             rollingSimpsons = true
         }
-        .sheet(isPresented: $showingCalendar) {
+        .appSheet(isPresented: $showingCalendar) {
             ReleaseCalendarView { route in showingCalendar = false; openTitle = route }
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
