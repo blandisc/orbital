@@ -150,15 +150,14 @@ PiP en iOS) es una envoltura Swift más cómoda; Dolby Vision, PGS y AirPlay sin
 - ¿Descargas con Infuse en la versión 1 (sin avance) o esperar al reproductor propio?
 - Pagar Infuse Pro (o SenPlayer Pro) si la prueba A muestra que hace falta.
 - Compilar AetherEngine y FFmpegBuild desde fuente (más seguro) o aceptar los binarios del repo.
-- **Pendiente (Fernando, 25 nov 2026):** el video se traba un poco cuando el PiP se abre solo al salir de la app
-  (`canStartPictureInPictureAutomaticallyFromInline`, `Platform/PictureInPicture.swift`). Medir en el iPhone con la
-  compilación Release y probar a no cambiar el dibujo de subtítulos (`setNativeSubtitleRendering`) en el mismo instante
-  en que arranca la ventana.
-- **Pendiente (Fernando, 25 nov 2026):** revisión minuciosa de cuándo sale el ícono de cargar y cuándo play/pausa. La
-  carga solo mientras de verdad carga; en cuanto entra la imagen, el ícono cambia a play/pausa y la carga se quita. Hoy
-  todavía no están bien sincronizados.
-- **Pendiente (Fernando, 25 nov 2026):** al volver a la app después de estar fuera, tocar play debe reproducir de
-  inmediato; hoy hay un periodo corto de carga antes.
+- **Atendido (25 nov 2026), falta medir en el iPhone:** la trabada al abrirse el PiP solo. Encender sus subtítulos arranca
+  la lectura del archivo; ahora se encienden 1,2 s después de abrir la ventana (`PlayerTiming.pipSubtitleDelay`).
+- **Atendido (25 nov 2026), falta medir en el iPhone:** la carga se quita a los 0,3 s de que la imagen avanza (antes 0,5 s;
+  `PlayerModel.startupSettleSeconds`).
+- **Atendido en parte (25 nov 2026):** al volver a la app tras más de ~30 s en pausa, iOS obliga a soltar el video y hay que
+  pedirlo otra vez a Real-Debrid (1–3 s que no se pueden quitar). Si tocas play a media carga, suena en cuanto abre, sin la
+  espera de 0,25 s del primer cuadro. Volver antes de ~30 s ya era instantáneo. Empezar a rearmar en «inactiva» no se vale: el
+  motor sigue en modo segundo plano hasta «activa» y soltaría lo cargado.
 
 ## 9. Contradicciones sin resolver
 

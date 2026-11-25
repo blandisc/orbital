@@ -167,10 +167,10 @@ public final class PlayerModel: ObservableModel {
     /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
     /// el búfer y enseguida se detiene a llenarlo, o recarga todo para cambiar la pista de audio: hasta que corre, la pantalla sigue
     /// enseñando la carga. Antes el botón hacía carga → pausa → carga → pausa en cada video.
-    /// Medio segundo basta para saber que corre: con 2 s el video ya se veía y se oía un par de segundos con la ruedita encima
-    /// (29 oct). Un atorón después de ese medio segundo sigue la regla de «si dura» (`PlayerPresentation.settleDelay`).
+    /// 0,3 s (antes 2 s y luego 0,5 s: la imagen ya corría con la carga encima; Fernando, 25 nov 2026). Un atorón después
+    /// sigue la regla de «si dura» (`PlayerPresentation.settleDelay`).
     public internal(set) var playbackSettled = false { didSet { if oldValue != playbackSettled { changed() } } }
-    static let startupSettleSeconds: Double = 0.5
+    static let startupSettleSeconds: Double = 0.3
     var startupPosition: Double = 0
     var startupDeadline: Date?
     /// El motor ya abrió el archivo de la carga en curso (desde ahí, lo que diga es de este video).

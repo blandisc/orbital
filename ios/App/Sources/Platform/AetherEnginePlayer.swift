@@ -263,8 +263,18 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
         // texto nativa del motor) mientras la ventana está fuera, y al volver a la app se quita (vuelve el nuestro).
         // No hay equivalente para subtítulos de imagen (PGS); los que se agregan después de cargar entran al rearmar (`addSubtitle`).
-        engine.setNativeSubtitleRendering(active)
+        // Encender la pista nativa arranca la lectura de subtítulos del archivo: en el mismo instante en que la ventana se abre
+        // sola al salir de la app, el video se trababa (Fernando, 25 nov 2026). Se enciende un momento después, ya abierta;
+        // al cerrarla se apaga al instante.
+        nativeRendering?.cancel()
+        guard active else { engine.setNativeSubtitleRendering(false); return }
+        nativeRendering = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: PlayerTiming.pipSubtitleDelay)
+            guard let self, !Task.isCancelled, self.engine.pictureInPictureActive else { return }
+            self.engine.setNativeSubtitleRendering(true)
+        }
     }
+    private var nativeRendering: Task<Void, Never>?
 
     func setRate(_ rate: Float) async { engine.setRate(rate); currentRate = rate }
     private var currentRate: Float = 1
@@ -344,8 +354,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             if engine.needsForegroundVideoRestore { try await engine.reloadAtCurrentPosition { $0.autoplay = resume } }
             else { try await engine.reloadAtCurrentPosition() }
         } catch { return false }
-        // Ya abrió: un momento para que el primer cuadro llegue a la pantalla.
-        try? await Task.sleep(nanoseconds: PlayerTiming.firstFrameSettle)
+        // Ya abrió: un momento para que el primer cuadro llegue a la pantalla. Si tocaste play mientras, suena ya, sin esa espera
+        // (Fernando, 25 nov 2026: «al volver a la app, tocar play debe reproducir de inmediato»).
+        if rearmIntent != true { try? await Task.sleep(nanoseconds: PlayerTiming.firstFrameSettle) }
         if case .error = engine.state { return false }
         // Lo que tocaste mientras se rearmaba manda (antes se pausaba siempre al terminar y el play se perdía: había que tocar
         // dos veces).
@@ -563,6 +574,8 @@ enum PlayerTiming {
     static let backgroundGrace: Double = 60
     /// Tras rearmar el video al volver de segundo plano: lo que se espera a que el primer cuadro esté en pantalla.
     static let firstFrameSettle: UInt64 = 250_000_000
+    /// Con la ventana de PiP recién abierta: cuánto se espera para encender sus subtítulos (que no se trabe al abrir).
+    static let pipSubtitleDelay: UInt64 = 1_200_000_000
     /// Leer el cuadro de AVPlayer: cuántas veces y cada cuánto (en pausa sale a la primera; sonando, en unos 300 ms).
     static let stillAttempts = 60
     static let stillRetry: UInt64 = 8_000_000
