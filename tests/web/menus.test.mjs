@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, languageAddMenu, languageMenu, languagesMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, cloudSay, debridForm, debridServiceMenu, debridSignupMenu, explainerMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, tvSetupMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -97,7 +97,10 @@ test("confirmar apagar: «Dejarla prendida» primero y aviso si hay un juego abi
   assert.match(menu.subtitle, /Zelda sigue abierto/);
   assert.equal(menu.options[0].label, "Dejarla prendida");
   assert.deepEqual(menu.options[1].command, { type: "power", action: "shutdown" });
+  assert.equal(menu.options[1].label, "Apagar la consola"); // AJ-17: el botón dice su objeto
   assert.equal(powerConfirmMenu("restart").subtitle, "");
+  // AJ-17 (25 nov 2026, C3): al reiniciar, los dos repiten el verbo («No reiniciar / Reiniciar la consola»).
+  assert.deepEqual(powerConfirmMenu("restart").options.map((o) => o.label), ["No reiniciar", "Reiniciar la consola"]);
 });
 
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
@@ -136,7 +139,8 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
   assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Tu nube", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio", "Pasar a Trakt"], ["Claves de Explorar", undefined],
-    ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
+    // AJ-8 (25 nov 2026, V1): «Agregar clave» (y en Letterboxd, que es tu usuario, «Agregar usuario»), no «Agregar» a secas.
+    ["TMDB", "✓ Guardada"], ["RAWG", "Agregar clave"], ["MDBList", "Agregar clave"], ["SteamGridDB", "Agregar clave"], ["Letterboxd", "Agregar usuario"], ["Clave de Trakt", "Agregar clave"]]);
   assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
   assert.deepEqual(keys.options[6].command, { type: "keys", service: "rawg" });
@@ -147,8 +151,8 @@ test("ajustes › Cuentas › Trakt: último scrobble en palabras, o el error", 
   const now = Date.UTC(2026, 9, 15, 12, 0, 0);
   const at = now / 1000 - 180;
   assert.equal(scrobbleHint({ last: { title: "The Office T2 · E5", action: "pause", at }, error: null }, now),
-    "Último scrobble: The Office T2 · E5 · en pausa · hace 3 min");
-  assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Explorar · Último scrobble: aún nada");
+    "Lo último que le contaste a Trakt: The Office T2 · E5 · en pausa · hace 3 min"); // AJ-7: sin «scrobble», palabra de Trakt
+  assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Explorar · Lo que veas se le cuenta a Trakt");
   assert.equal(scrobbleHint({ last: null, error: "Trakt respondió HTTP 500" }, now), "Trakt no recibe lo que ves: Trakt respondió HTTP 500");
   const row = settingsCategory("accounts", { trakt: { configured: true, linked: true, scrobble: { last: null, error: "No pude conectar con Trakt" } } })
     .options.find((o) => o.label === "Trakt");
@@ -255,6 +259,9 @@ test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; sin batería ni Wi
 
 test("capturas vacías explican cómo hacer una", () => {
   assert.match(capturesMenu([]).subtitle, /Home y pulsa RB/);
+  // AJ-19 (25 nov 2026): la Legion Go no tiene Home (las toma la barra de juegos de Windows) y la salida dice a dónde vuelve.
+  assert.doesNotMatch(capturesMenu([], { legion: true }).subtitle, /Home|RB/);
+  assert.deepEqual(capturesMenu([]).options.map((o) => [o.label, o.command.type]), [["Volver al Panel rápido", "back"]]);
   assert.equal(capturesMenu([{ name: "a", kind: "image", time: 0, path: "x" }]).options[0].command.type, "view-capture");
 });
 
@@ -265,7 +272,9 @@ test("carpetas de juegos: cada emulador con sus juegos y dónde los busca", () =
   assert.equal(menu.options[0].hint, "…\\Switch\\ROMs");
   assert.equal(menu.options[1].value, "1 juego");
   assert.equal(menu.options.at(-1).command.type, "refresh");
-  assert.match(menu.subtitle, /orbital\\config\.yaml/);
+  // AJ-14 (25 nov 2026, V5): en palabras; sin «rom_dirs» ni config.yaml (la ruta de la configuración está en Diagnóstico).
+  assert.match(menu.subtitle, /otra carpeta/);
+  assert.doesNotMatch(menu.subtitle, /rom_dirs|config\.yaml/);
 });
 
 test("actualizar: qué cambia, actualizar primero, y avisos claros si no se puede", () => {
@@ -519,10 +528,13 @@ test("Voz: lo esencial primero, dónde hablarle con cuándo llegó lo último de
 
   // Dos días sin una sola orden: la primera fila dice que la falla está antes de la consola.
   const quiet = voiceHelpMenu({ sources: { alexa: now / 1000 - 8 * 86400 } }, { now });
-  assert.match(quiet.options[0].label, /ninguna orden/);
-  assert.equal(quiet.options[0].value, "Hace 8 días");
+  // AJ-5 (25 nov 2026): una fila de puro texto no lleva valor (se llevaba el ancho); cuándo llegó lo último va en el nombre.
+  assert.equal(quiet.options[0].label, "La última orden llegó hace 8 días");
+  assert.equal(quiet.options[0].value, undefined);
+  assert.match(voiceHelpMenu({ sources: {} }, { now }).options[0].label, /ninguna orden/);
+  assert.doesNotMatch(JSON.stringify(voiceHelpMenu()), /skill/); // «la función «mi consola»»
   assert.notEqual(voiceHelpMenu(status, { now }).options[0].icon, "warning"); // con el iPhone hace 5 min, no
-  assert.equal(sinceVoice(null), "Nunca");
+  assert.equal(sinceVoice(null), "Sin usar todavía"); // AJ-4: «Nunca» parecía un ajuste elegido
   assert.equal(sinceVoice(now / 1000 - 90, now), "Hace 2 min");
   assert.equal(sinceVoice(now / 1000 - 5 * 3600, now), "Hace 5 h");
 });
@@ -620,7 +632,15 @@ test("Ajustes › Tele y voz: la tele, dónde hablarle con su última orden, la 
   // Sin tele configurada: no hay «Probar», y la fila dice cómo se hace.
   const bare = settingsCategory("voice", {});
   assert.ok(!bare.options.some((o) => o.label.startsWith("Probar")));
-  assert.match(bare.options.find((o) => o.label === "La tele no se prende sola").help, /orbital tv setup/);
+  // AJ-2 y AJ-3 (25 nov 2026): el pie, sin comandos; «Ver cómo prenderla» abre su propia hoja (antes, «Si no funciona» de Alexa).
+  const off = bare.options.find((o) => o.label === "La tele no se prende sola");
+  assert.doesNotMatch(off.help, /orbital tv/);
+  assert.deepEqual([off.value, off.command], ["Ver cómo prenderla", { type: "tv-setup" }]);
+  assert.doesNotMatch(bare.lead, /se prende sola;/); // no promete lo que aún no pasa
+  const how = tvSetupMenu();
+  assert.equal(how.title, "Prender la tele con Orbital");
+  assert.ok(how.options.some((o) => /orbital tv setup/.test(o.label))); // el cómo, aquí, paso por paso
+  assert.ok(how.options.every((o) => o.info)); // solo se leen
   assert.equal(bare.options.find((o) => o.label === "Alexa").value, "Sin configurar");
 });
 
@@ -672,6 +692,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(addonRows({ ...status, entries: [{ ...status.entries[1], on: false }] })[1].value, "Apagado");
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
+  // AJ-6 (25 nov 2026): con uno, el riel concuerda con la fila del Resumen («1 de 1 contesta»).
+  assert.equal(settingsMeta("addons", { addons: { ...status, entries: [status.entries[1]] } }), "1 de 1 contesta");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Dejarlo como está"]);
   assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Dejarlo como está"]);
@@ -690,8 +712,10 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   assert.equal(debridRow({ linked: true, problem: "bad_key" }).value, "Vuelve a conectar Real-Debrid");
   const account = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: in18, days: 18,
     requests: [{ hash: "a", state: "downloading", percent: 42 }] });
-  assert.equal(account.subtitle, "Conectada como fer · Tomada de tu Torrentio · termina en ••3F2A"); // de dónde salió la clave
-  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined], ["Tu nube", "Real-Debrid"], ["¿Qué es esto?", undefined]]);
+  assert.equal(account.subtitle, "Conectada como fer · La clave vino de tu Torrentio · termina en ••3F2A"); // AJ-10: qué vino de dónde
+  assert.equal(account.options[1].hint, "Vence el 21 nov · quedan 18 días"); // AJ-10: sin valor al lado, en una línea
+  assert.equal(account.options[2].command.change, true); // AJ-11: ya conectada, «Cambiar la clave de Real-Debrid»
+  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", undefined], ["Cambiar la clave", undefined], ["Tu nube", "Real-Debrid"], ["¿Qué es esto?", undefined]]);
   assert.deepEqual(account.options.at(-1).command, { type: "explain", topic: "realdebrid" }); // PT13: los cuatro puntos
   // PT14: vencida, el aviso primero y con su fecha; nunca «Conectada».
   const ago = Date.UTC(2026, 10, 2, 18) / 1000;
@@ -704,11 +728,15 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     { hash: "b", title: "Severance · T2 E1", state: "no_peers", by: "iPhone de Fernando" },
     { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
-    ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
+    ["En camino", undefined, undefined], // P1-A y FI-12: «En camino» (en cola, bajando, sin gente); los vacíos no salen
     ["Nocturne · T1 E1", "Bajando en la nube · 42 % · Lo pediste aquí", "cloudDownload"],
     ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "playersOff"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
-  assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
-    ["Bajando", "Ya terminaron"]);
+  // FI-12 (25 nov 2026): lo que Real-Debrid no dejó bajar va en su grupo «No se pudo» (antes, en «Ya terminaron»).
+  assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }, { hash: "c", state: "refused" }]).options.filter((o) => o.heading).map((o) => o.label),
+    ["En camino", "Ya terminaron", "No se pudo"]);
+  // FI-13 (25 nov 2026, C8): lo que baja lleva su barra en la fila (antes, el «42 %» solo en texto).
+  assert.equal(list.options[1].progress, 0.42);
+  assert.equal(list.options[2].progress, undefined);
   assert.equal(debridRequestsMenu([]).options[0].label, "Todavía no le pides nada");
   const one = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "too_many", by: "TV", account: "7", kind: "series", meta_id: "tt1",
     video_ids: ["tt1:1:1"] }, { account: "7" });
@@ -727,20 +755,21 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   assert.deepEqual(theirs.options.map((o) => o.label), ["Abrir la ficha"]); // lo de otra cuenta, solo la ficha
   assert.equal(debridRow({ linked: true, loading: true }).value, "Revisando…"); // P6-A: nunca «Conectada» sin confirmar
   assert.equal(debridRow({ linked: true, problem: "offline" }).value, "Sin confirmar");
-  assert.equal(requestLabel({ state: "ready" }), "Listo");
+  assert.equal(requestLabel({ state: "ready" }), "Listo · arranca al instante"); // FI-12: no un «Listo» solitario
   assert.equal(requestedBy({ by: "iPad" }), "Lo pidió el iPad");
 });
 
 test("ajustes › Complementos › Torrentio: cada opción con su valor y su cambio (corte S3, los nombres del iPhone)", () => {
   const entry = { id: "torrentio", template: "torrentio", name: "Torrentio", on: true, options: { sort: "seeders", language: ["latino"], qualityfilter: ["brremux", "cam", "scr"] } };
-  assert.equal(torrentioSummary(entry.options), "Las más compartidas primero · Latino · Sin Remux, cine y Screener");
+  // AJ-12 (25 nov 2026, V5): «copia de prensa», no «Screener».
+  assert.equal(torrentioSummary(entry.options), "Las más compartidas primero · Latino · Sin Remux, cine y copia de prensa");
   assert.equal(torrentioHidden([]), "Ninguna: ves todas");
   const row = addonRows({ source: "own", imported_at: 1, entries: [entry] }).find((r) => r.label === "Torrentio");
   assert.equal(row.hint, "Fuentes de video · usa tu Real-Debrid"); // PT16: lo que aporta, como el iPhone
   assert.equal(addonRows({ source: "own", imported_at: 1, entries: [{ ...entry, needs_key: true }] }).find((r) => r.label === "Torrentio").warn, true);
   assert.equal(addonMenu(entry).options[0].label, "Configurar");
   const menu = torrentioMenu(entry);
-  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Se usan tus idiomas", "Cambiar"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
+  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Se usan tus idiomas", "Cambiar"], ["Calidades que no quieres", "Sin Remux, cine y copia de prensa"],
     ["Solo lo que ya está en la nube", "No"], ["Orden", "Las más compartidas primero"], ["Cuántas por calidad", "Todas"],
     ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined], ["¿Qué es esto?", undefined]]);
   const order = menu.options[3].command;
@@ -875,7 +904,7 @@ test("RX2-A y RX3-A (Fernando, 3 nov): la hoja de un pedido dice cuánto falta, 
   assert.match(sheet.subtitle, /^Bajando en la nube · 50 % · .+\. A este paso, faltan unos minutos\. Te aviso\. La nube es tu Real-Debrid/);
   assert.doesNotMatch(sheet.subtitle, /Suele tardar/);
   assert.deepEqual(sheet.options.slice(0, 2).map((o) => [o.label, o.command.type]),
-    [["Ver Latino · 720p, ya arranca", "watch"], ["Esperar a que llegue", "close"]]);
+    [["Ver en latino · 720p (ya arranca)", "watch"], ["Esperar a que llegue", "close"]]); // FI-11: el idioma en minúscula a media frase
   assert.deepEqual(sheet.options[0].command.play, play);
   assert.ok(!sheet.options.some((o) => o.label === "Seguir esperando"));
   // Sin otra al instante, solo cuánto lleva (como antes).

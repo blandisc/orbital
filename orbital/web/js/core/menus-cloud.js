@@ -45,8 +45,9 @@ const DEBRID_PROBLEMS = {
   bad_key: { label: "Vuelve a conectar Real-Debrid", hint: "Tu clave ya no sirve · Pega la nueva aquí o desde cualquier celular",
     command: { type: "rd-connect" } },
 };
+// FI-12 (25 nov 2026): listo dice qué se gana («arranca al instante»), no un «Listo» solitario (P2).
 const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta", refused: "Real-Debrid no lo dejó bajar",
-  too_many: "Muchas descargas activas", ready: "Listo" };
+  too_many: "Muchas descargas activas", ready: "Listo · arranca al instante" };
 // PT10: los del iPhone; el triángulo solo para «Real-Debrid no lo dejó bajar».
 const REQUEST_ICONS = { queued: "clock", downloading: "cloudDownload", no_peers: "playersOff", refused: "warning", too_many: "stack", ready: "checkCircle" };
 
@@ -119,7 +120,7 @@ export function requestedBy(req, now = Date.now()) {
   return `${who} ${ago === "ayer" ? "ayer" : `hace ${ago}`}`;
 }
 
-const REQUEST_GOING = ["queued", "downloading", "no_peers", "too_many"]; // «Bajando»: todo lo que sigue en camino
+const REQUEST_GOING = ["queued", "downloading", "no_peers", "too_many"]; // «En camino»: todo lo que sigue (en cola, bajando, sin gente)
 
 const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
 
@@ -236,7 +237,7 @@ export function debridServiceMenu(rd) {
 
 function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
   const requests = rd?.requests || [];
-  const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
+  const from = DEBRID_SOURCES[rd?.source] || "La clave vino de tu Torrentio"; // AJ-10: dice qué vino de dónde
   const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
   const which = { icon: "cloud", label: "Tu nube", value: "Real-Debrid", hint: "Cámbiala por otra de las tres",
     command: { type: "rd-services" } };
@@ -259,33 +260,39 @@ function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
       problem && { icon: "warning", label: problem.label, hint: `${expiredOn}${problem.hint}`, warn: true, command: problem.command },
       { icon: "cloudDownload", label: "Tus pedidos", value: active ? `${active} en camino` : requests.length ? `${requests.length}` : "Ninguno",
         hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
-      !problem && rd.expires && { icon: "premium", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
-          hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
+      // AJ-10 (25 nov 2026): sin valor a la derecha, la pista va en una línea a todo lo ancho (antes el valor se llevaba el
+      // ancho y la pista iba en cinco renglones, «real-/debrid.com»); dónde renovar, solo cuando ya urge.
+      !problem && rd.expires && { icon: "premium", label: "Premium",
+          hint: [`Vence el ${dayMonth(rd.expires)}`, rd.days != null && (rd.days === 1 ? "queda 1 día" : `quedan ${rd.days} días`),
+            rd.days != null && rd.days <= 7 && "renuévalo en real-debrid.com"].filter(Boolean).join(" · "),
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
-      { icon: "key", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone",
-        command: { type: "rd-connect", service: cloudOf(rd?.service) } },
+      { icon: "key", label: "Cambiar la clave", hint: "Desde cualquier celular o tu iPhone, o pégala aquí",
+        command: { type: "rd-connect", service: cloudOf(rd?.service), change: true } },
       which,
       explainRow("realdebrid"), // PT13: los cuatro puntos del iPhone
     ].filter(Boolean),
   };
 }
 
-const DEBRID_SOURCES = { iphone: "Te la mandó tu iPhone", celular: "La pegaste desde tu celular", tv: "La pegaste en la TV" };
+const DEBRID_SOURCES = { iphone: "La clave te la mandó tu iPhone", celular: "La clave la pegaste desde tu celular", tv: "La clave la pegaste en la TV" };
 
-/** Conectar Real-Debrid (CA2-A y TEC-4): pegarla aquí con Ctrl+V o, con el QR, desde cualquier celular. La clave la prueba
- *  y la guarda la consola; esta pantalla nunca la recibe del celular. */
+/** Conectar Real-Debrid (CA2-A y TEC-4): con el QR, desde cualquier celular, o pegarla aquí. La clave la prueba y la guarda la
+ *  consola; esta pantalla nunca la recibe del celular. AJ-11 (25 nov 2026): el texto nombra la clave, pone primero el
+ *  celular (P5: en la TV, teclear es lo último) y no pide Ctrl+V. */
 export const DEBRID_FORM = {
   id: "realdebrid", title: "Conectar Real-Debrid", submitLabel: "Usar esta clave", remote: "realdebrid",
-  lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V.",
+  lead: "Tu clave de Real-Debrid está en real-debrid.com/apitoken. Ábrela en tu celular con el código, o pégala aquí.",
   missing: "Pega tu clave de Real-Debrid.",
   // TB-52: la etiqueta dice qué es; la dirección va en el texto de ayuda (`lead`), no en el nombre del campo.
   fields: [{ name: "token", label: "Tu clave de Real-Debrid", secret: true }],
 };
 
-/** El de tu nube: el mismo formulario, con su nombre y su página (y el código del celular para esa nube). */
-export function debridForm(service) {
+/** El de tu nube: el mismo formulario, con su nombre y su página (y el código del celular para esa nube). Ya conectada
+ *  (`change`), se titula «Cambiar la clave de …» (AJ-11; antes «Conectar Real-Debrid» aunque ya lo estuviera). */
+export function debridForm(service, { change = false } = {}) {
   const s = cloudOf(service);
-  return { ...inCloud(DEBRID_FORM, s), id: s, remote: s };
+  const form = inCloud(change ? { ...DEBRID_FORM, title: "Cambiar la clave de Real-Debrid" } : DEBRID_FORM, s);
+  return { ...form, id: s, remote: s };
 }
 
 /** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «No usarla» va primero. */
@@ -422,18 +429,23 @@ export function debridRequestsMenu(requests = [], service) {
 function debridRequestsWords(requests = []) {
   const shown = requests.filter((r) => r.state !== "gone");
   // El estado va en la línea de abajo (con quién lo pidió): a la derecha apretaba el título en dos o tres renglones.
+  // FI-13 (25 nov 2026, C8): lo que baja lleva su barra en la fila, como en la ficha (antes, el «42 %» solo en texto).
   const row = (r) => ({ icon: REQUEST_ICONS[r.state] || "cloudDownload", label: r.title || "Tu pedido",
     hint: `${requestLabel(r)}${r.state === "too_many" ? ` · ${RETRY_WORDS}` : ""} · ${requestedBy(r)}`, ok: r.state === "ready", warn: ["refused", "too_many", "no_peers"].includes(r.state),
+    progress: r.state === "downloading" ? Math.max(0, Math.min(1, (r.percent || 0) / 100)) : undefined, progressLabel: "Cuánto lleva en la nube",
     command: { type: "rd-request-menu", hash: r.hash } });
-  // Dos grupos, como el iPhone (P1-A, Fernando, 3 nov): lo que sigue en camino y lo que ya terminó; uno vacío no sale.
+  // Los grupos (P1-A, Fernando, 3 nov; FI-12, 25 nov): lo que sigue en camino (en cola, bajando o sin gente), lo listo y lo
+  // que no se pudo (antes «Real-Debrid no lo dejó bajar» iba en «Ya terminaron»); uno vacío no sale.
   const going = shown.filter((r) => REQUEST_GOING.includes(r.state));
-  const done = shown.filter((r) => ["ready", "refused"].includes(r.state));
+  const done = shown.filter((r) => r.state === "ready");
+  const failed = shown.filter((r) => r.state === "refused");
   return {
     title: "Tus pedidos",
     subtitle: "Lo que le pediste a Real-Debrid desde la TV o tu iPhone. Lo terminado se olvida a la semana.",
     options: shown.length ? [
-      ...(going.length ? [{ heading: true, label: "Bajando" }, ...going.map(row)] : []),
+      ...(going.length ? [{ heading: true, label: "En camino" }, ...going.map(row)] : []),
       ...(done.length ? [{ heading: true, label: "Ya terminaron" }, ...done.map(row)] : []),
+      ...(failed.length ? [{ heading: true, label: "No se pudo" }, ...failed.map(row)] : []),
       explainRow("requests"),
     ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedir a la nube» cuando todavía no está en la nube", command: { type: "close" } },
       explainRow("requests")],
@@ -477,7 +489,8 @@ function debridRequestWords(req, { account = null, now = Date.now(), instead = n
     meter: req.state === "downloading" ? (req.percent || 0) / 100 : null, meterLabel: "Cuánto lleva en la nube", // PT9
     options: [
       // RX2-A: mientras baja, la que ya arranca en tus idiomas (la misma regla que «Ver») y, junto, «Esperar a que llegue».
-      going && { icon: "play", label: `Ver ${instead.label}, ya arranca`, command: { type: "watch", play: instead.play } },
+      // FI-11 (25 nov 2026): «Ver en inglés · 1080p (ya arranca)»: el idioma en minúscula a media frase (V4).
+      going && { icon: "play", label: `Ver ${readyLine(instead.label)} (ya arranca)`, command: { type: "watch", play: instead.play } },
       going && { icon: "calendar", label: "Esperar a que llegue", command: { type: "close" } },
       // TV-4: listo es para verlo (como «Ver ahora» del iPhone).
       req.state === "ready" && ref && { icon: "play", label: "Ver ahora", command: { type: "rd-other-version", play: {
@@ -497,6 +510,13 @@ function debridRequestWords(req, { account = null, now = Date.now(), instead = n
   };
 }
 
+/** «Inglés · 1080p» → «en inglés · 1080p»: la que ya arranca, dicha a media frase. Si no empieza con un idioma («1080p»), tal cual. */
+export function readyLine(label = "") {
+  const [first = "", ...rest] = String(label).split(" · ");
+  if (!/^\p{Lu}\p{Ll}/u.test(first)) return String(label);
+  return [`en ${first.charAt(0).toLowerCase()}${first.slice(1)}`, ...rest].join(" · ");
+}
+
 /** «¿Desconectar Stremio?» (TV-17): «Dejarlo conectado» primero. */
 export function stremioLogoutMenu(command = {}) {
   return {
@@ -504,7 +524,7 @@ export function stremioLogoutMenu(command = {}) {
     subtitle: command.backup ? "No se pierde nada: lo tuyo ya está en Trakt." : "Dejarás de ver tu Seguir viendo y Mi lista de Stremio aquí.",
     options: [
       { icon: "close", label: "Dejarlo conectado", command: { type: "back" } },
-      { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
+      { icon: "exit", label: "Desconectar Stremio", danger: true, command: { type: "stremio-logout" } },
     ],
   };
 }
@@ -553,7 +573,7 @@ export function addonsMeta(status) {
   const on = shownAddons(status.entries).filter((e) => e.on);
   if (!on.length) return "Ninguno prendido";
   const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
-  return `${answering} de ${on.length} contestan`;
+  return `${answering} de ${on.length} ${on.length === 1 ? "contesta" : "contestan"}`; // AJ-6: como la fila del Resumen
 }
 
 /** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital y los que agregaste tú («Agregado por
@@ -628,11 +648,11 @@ const TORRENTIO_QUALITIES = [
   ["4k", "4K", "La imagen más nítida; de 15 a 70 GB por película"], // V2: el número, no «la mejor» (web 4K ~15–25, remux ~50–70) ["1080p", "1080p", "Alta definición; la más común"], ["720p", "720p", "Buena en el teléfono"],
   ["480p", "480p", "Se ve borrosa en la TV"], ["hdrall", "HDR y Dolby Vision", "Colores intensos; solo si tu TV lo aguanta"],
   ["threed", "3D", "Para lentes 3D"], ["brremux", "Remux de Blu-ray", "Copia exacta del disco; enorme"],
-  ["scr", "Screener", "Copia de prensa, a veces con marcas"],
+  ["scr", "Copia de prensa", "La que se manda a los críticos; a veces con marcas"], // AJ-12: antes «Screener»
   ["cam", "Grabada en el cine (CAM)", "Con una cámara en la sala: se ve y oye mal"], // ds-exception: siglas de calidad de video
   ["other", "Otras copias (DVD)", "Copias viejas o de menos calidad"], // ds-exception: siglas de calidad de video
   ["unknown", "Sin calidad conocida", "No dice qué es"]];
-const TORRENTIO_SHORT = { cam: "cine", scr: "Screener", brremux: "Remux", unknown: "sin calidad", "4k": "4K", hdrall: "HDR", threed: "3D", other: "otras copias" };
+const TORRENTIO_SHORT = { cam: "cine", scr: "copia de prensa", brremux: "Remux", unknown: "sin calidad", "4k": "4K", hdrall: "HDR", threed: "3D", other: "otras copias" };
 const TORRENTIO_SORTS = [["quality", "Mejor calidad primero"], ["qualitysize", "Calidad y luego tamaño"], ["seeders", "Las más compartidas primero"],
   ["size", "Las más pesadas primero"]];
 const TORRENTIO_LIMITS = [[undefined, "Todas"], [5, "Hasta 5"], [2, "Hasta 2"]];
@@ -649,7 +669,7 @@ const PROVIDER_NAMES = { yts: "YTS", eztv: "EZTV", rarbg: "RARBG", "1337x": "133
 const nextOf = (list, current) => list[(list.findIndex(([v]) => v === current) + 1) % list.length][0];
 const nameOf = (list, current, fallback) => (list.find(([v]) => v === current) || [null, fallback])[1];
 
-/** Las calidades escondidas en una línea, como el iPhone: «Sin cine, Screener y sin calidad». */
+/** Las calidades escondidas en una línea, como el iPhone: «Sin cine, copia de prensa y sin calidad». */
 export function torrentioHidden(keys = []) {
   const words = keys.map((k) => TORRENTIO_SHORT[k] || k);
   if (!words.length) return "Ninguna: ves todas";
@@ -697,7 +717,7 @@ function torrentioWords(entry, languages = [], service) {
         command: set({ sizefilter: nextOf(TORRENTIO_SIZES, TORRENTIO_SIZES.some(([v]) => v === o.sizefilter) ? o.sizefilter : undefined) }) },
       { icon: "search", label: "Sitios donde busca", value: `${sites} de ${TORRENTIO_PROVIDERS.length}`,
         command: { type: "torrentio-providers" } },
-      !isRecommended(o) && { icon: "undo", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, Screener ni sin calidad",
+      !isRecommended(o) && { icon: "undo", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, copia de prensa ni sin calidad",
         command: { type: "torrentio-set", options: { ...TORRENTIO_RECOMMENDED, verbatim: o.verbatim }, reopen: "main" } },
       explainRow("torrentio"),
     ].filter(Boolean),

@@ -11,7 +11,7 @@ export function traktAccountMenu() {
     subtitle: "Explorar dejará de enseñar tus listas y recomendaciones.",
     options: [
       { icon: "close", label: "Dejarla conectada", command: { type: "close" } },
-      { icon: "exit", label: "Desconectar", danger: true, command: { type: "trakt-unlink" } },
+      { icon: "exit", label: "Desconectar Trakt", danger: true, command: { type: "trakt-unlink" } }, // AJ-9: con su objeto
     ],
   };
 }

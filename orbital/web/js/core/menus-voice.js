@@ -21,9 +21,11 @@ export const ALEXA_EXAMPLES = [
   { icon: "sound", label: "«le suba al volumen»", hint: "O «le baje tantito», «ponga el volumen en 30»" },
 ];
 
-/** Cuándo llegó la última orden, como se dice: «Hace 5 min», «Hace 3 h», «Hace 8 días», «Nunca». */
+/** Cuándo llegó la última orden, como se dice: «Hace 5 min», «Hace 3 h», «Hace 8 días», «Sin usar todavía» (AJ-4, 25 nov 2026:
+ *  «Nunca» parecía un ajuste elegido, no que aún no ha llegado ninguna orden). */
+export const VOICE_UNUSED = "Sin usar todavía";
 export function sinceVoice(seconds, now = Date.now()) {
-  if (!seconds) return "Nunca";
+  if (!seconds) return VOICE_UNUSED;
   const min = Math.round((now / 1000 - seconds) / 60);
   if (min < 1) return "Hace un momento";
   if (min < 60) return `Hace ${min} min`;
@@ -131,6 +133,24 @@ export function voiceLogMenu(status = null, { now = Date.now() } = {}) {
   };
 }
 
+/** AJ-3 (25 nov 2026): «Prender la tele con Orbital», los pasos para que la tele se prenda sola (antes «Cómo» abría «Si no
+ *  funciona», que habla de Alexa). Es lo que hace `orbital tv setup` (orbital/roku.py): busca la Roku que está prendida en
+ *  una entrada HDMI y la guarda. */
+export function tvSetupMenu() {
+  const step = (icon, label, hint) => ({ icon, label, hint, info: true, command: { type: "stay" } });
+  return {
+    title: "Prender la tele con Orbital", crumb: "La tele",
+    subtitle: "Con una Roku TV, «prende la tele» la enciende y la pone en la entrada de Orbital. Se arregla una sola vez:",
+    options: [
+      step("tv", "1. Una Roku TV en la misma red", "La tele y la consola, conectadas al mismo internet de tu casa"),
+      step("power", "2. Prende solo esa tele, en la entrada de Orbital", "Así sé cuál es: la que está prendida mostrando la consola"),
+      step("windows", "3. En la consola, escribe «orbital tv setup»", "En una ventana de comandos de Windows (con un teclado); la encuentra y la guarda"),
+      step("restart", "4. Reinicia Orbital", "Desde ahí, «prende la tele» por voz o en Ajustes › Tele y voz"),
+      step("sun", "Si no prende estando apagada", "En la tele: Configuración › Sistema › Energía › Inicio rápido de TV"),
+    ],
+  };
+}
+
 /** Si la voz no funciona: lo que más pasa, en la tele, con lo que la consola sabe (si llegó algo y cuándo). */
 export function voiceHelpMenu(status = null, { now = Date.now() } = {}) {
   const seen = status?.sources || {};
@@ -139,12 +159,14 @@ export function voiceHelpMenu(status = null, { now = Date.now() } = {}) {
   return {
     title: "Si no funciona", crumb: "Si no funciona",
     options: [
-      ...(quiet ? [{ icon: "warning", label: "A la consola no le ha llegado ninguna orden", value: sinceVoice(last, now),
-        hint: "Lo que falla está antes de Orbital: Alexa no abre la skill, Siri no reconoce la frase o el iPhone no alcanza la consola. Prueba primero con el micrófono del iPhone, en la misma red.",
+      // AJ-5 (25 nov 2026): una fila de puro texto no lleva valor a la derecha (se llevaba el ancho y el párrafo iba en 7
+      // renglones): cuándo llegó lo último va en el nombre.
+      ...(quiet ? [{ icon: "warning", label: last ? `La última orden llegó ${sinceVoice(last, now).toLowerCase()}` : "A la consola no le ha llegado ninguna orden",
+        hint: "Lo que falla está antes de Orbital: Alexa no abre la función «mi consola», Siri no reconoce la frase o el iPhone no alcanza la consola. Prueba primero con el micrófono del iPhone, en la misma red.",
         command: { type: "stay" } }] : []),
       { icon: "phone", label: "Primero, el micrófono del iPhone", hint: "Abre la app, estira el control, toca «Dile a Orbital» y di «pon la tele». Es el camino más corto y enseña «Entendí: …».", command: { type: "stay" } },
       { icon: "assistant", label: "Alexa: di «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola. El nombre es «mi consola», no «Orbital»: el Echo no lo oye bien.", command: { type: "stay" } },
-      { icon: "assistant", label: "Alexa: revisa qué oyó", hint: "En la app Alexa › Más › Actividad está lo que transcribió. Si no dice «mi consola», no abrió la skill.", command: { type: "stay" } },
+      { icon: "assistant", label: "Alexa: revisa qué oyó", hint: "En la app Alexa › Más › Actividad está lo que transcribió. Si no dice «mi consola», no abrió la función.", command: { type: "stay" } },
       { icon: "wifi", label: "iPhone: «Tu Orbital no contesta»", hint: "Fuera de casa el iPhone entra por el túnel de Tailscale; si se traba, en la consola apágalo y préndelo (Tailscale › Funnel).", command: { type: "stay" } },
       { icon: "search", label: "Revisa lo que entendió", hint: "«Qué ha oído la consola» enseña lo que llegó: si el nombre salió mal, dilo más despacio o búscalo escribiendo", command: { type: "stay" } },
       { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele (y en el iPhone) para elegir", command: { type: "stay" } },
