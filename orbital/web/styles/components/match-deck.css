@@ -6,6 +6,9 @@
 .match > .decide-head { grid-column: 1 / -1; }
 .match > .match__info { grid-row: 2; grid-column: 1; }
 .match > .match__stage { grid-row: 2; grid-column: 2; margin-right: var(--space-12); }
+/* BL-17: sin carta (el mazo terminado o su error), el vacío con su botón va al centro, a todo lo ancho: lo que dice y lo que
+   haces, juntos. */
+.match:has(> .match__stage > .empty-state) > .match__stage { grid-column: 1 / -1; margin-right: 0; }
 /* Cuántas guardaste en esta vuelta (el ♥ verde de Guardar). */
 .match__saved {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-4);

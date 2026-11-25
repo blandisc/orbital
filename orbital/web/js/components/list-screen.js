@@ -1,4 +1,5 @@
-import { h, hideAfterExit, markGridEdge, mount } from "../core/dom.js";
+import { h, hideAfterExit, markGridEdge, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { rankOf } from "../core/foryou.js";
 import { storage } from "../core/storage.js";
 import { fillWindow, keepInView, windowCells } from "./browse.js";
@@ -6,7 +7,7 @@ import { Button } from "./button.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, CornerRibbon, EmptyState, ErrorState, FilterChip, Pill, PosterSkeletons, SelectMark } from "./ui.js";
+import { Badge, Chip, CornerRibbon, EmptyState, ErrorState, FilterChip, Pill, PosterSkeletons, SelectMark } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -31,7 +32,7 @@ export const SORTS = [
   { id: "best", label: "Mejor calificadas (IMDb y Trakt)" },
   { id: "imdb", label: "Mejor calificadas en IMDb" },
   { id: "trakt", label: "Mejor calificadas en Trakt" },
-  { id: "year", label: "Año (lo más nuevo primero)" },
+  { id: "year", label: "Año: más nuevas" }, // BL-11: la pareja de «Año: más viejas» (en el iPhone, pendiente)
   { id: "oldest", label: "Año: más viejas" },
   { id: "az", label: "A–Z" },
   // GD2 (Fernando, 13 nov 2026: «que en mis listas también pueda ordenar por agregadas»): solo donde hay fecha (Mi lista y
@@ -324,11 +325,11 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
         : EmptyState({ icon: "list", title: "Aquí van los títulos de esta lista", text: "Todavía no trae ninguno; se pone al día sola.",
           action: step("Volver a cargar", () => load(tab, { again: true })) }));
     }
-    // C7: con cero, qué quitar y cuántos vuelves a ver («Quita “Terror” y ves 12»).
+    // C7: con cero, qué quitar y cuántos vuelves a ver («Quita «Terror» y ves 12»).
     const fix = bestRemoval();
     return mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros",
-      text: fix ? `Quita “${fix.filter.label}” y ves ${fix.count}.` : "Quita alguno con su × o en ☰ «Ordenar y filtrar».",
-      action: fix ? step(`Quitar “${fix.filter.label}”`, () => removeFilter(fix.filter)) : null }));
+      text: fix ? `Quita «${fix.filter.label}» y ves ${fix.count}.` : "Quita alguno con su × o en ☰ «Ordenar y filtrar».",
+      action: fix ? step(`Quitar «${fix.filter.label}»`, () => removeFilter(fix.filter)) : null }));
   }
 
   function paintGrid() {
@@ -359,7 +360,12 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
     else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
     if (editing) built.card.append(SelectMark(chosen.has(item.meta_id), { label: item.title, onPress: () => { focusHere(); toggleChosen(item); } }));
-    if (reordering && grabbed && i === index) built.card.classList.add("list-screen__grabbed");
+    // BL-6 (25 nov 2026): el tomado tiene su marca, distinta de la del foco (antes se veía idéntico al enfocado): sube más y
+    // lleva el ícono de mover en su placa.
+    if (reordering && grabbed && i === index) {
+      built.card.classList.add("list-screen__grabbed");
+      built.card.append(Badge(svg(ICONS.swap), { plate: true, className: "list-screen__grab" }));
+    }
     return built.el ?? built.card;
   }
 
@@ -511,22 +517,26 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     get kindTabs() { return !!list?.tabs.some((t) => t.id === "series" || t.id === "movie"); },
     /** Los órdenes que aplican aquí (sin fecha de cuando la agregaste, no hay «Agregadas»). */
     sorts() { return sortsFor(loaded.get(tab)); },
+    // BL-7 (25 nov 2026): cada orden y cada filtro avisan al cambiar (onChange): el pie «Ordenar y filtrar · N» iba un
+    // filtro atrasado.
     async setSort(id) {
       settings.sort = chooseSort(list.id, settings.sort, id);
       if (id === "imdb" || id === "best") await needImdb();
       index = 0;
       refresh();
+      onChange?.();
     },
-    setKind(kind) { settings.kind = kind; keepFilters(); index = 0; refresh(); },
-    setGenre(genre, label) { settings.genre = genre; settings.genreLabel = label; keepFilters(); index = 0; refresh(); },
+    setKind(kind) { settings.kind = kind; keepFilters(); index = 0; refresh(); onChange?.(); },
+    setGenre(genre, label) { settings.genre = genre; settings.genreLabel = label; keepFilters(); index = 0; refresh(); onChange?.(); },
     async setMinRating(value) {
       settings.minRating = value;
       keepFilters();
       if (value != null) await needImdb();
       index = 0;
       refresh();
+      onChange?.();
     },
-    setDecade(decade) { settings.decade = decade; keepFilters(); index = 0; refresh(); },
+    setDecade(decade) { settings.decade = decade; keepFilters(); index = 0; refresh(); onChange?.(); },
     /** Una lista tuya: `{ name, where }` («Mi lista» y «watchlist», «Terror de octubre» y «list:123»), o null. */
     get editable() { return list?.editable ?? null; },
     get editing() { return editing; },
@@ -578,6 +588,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       if (on && !seen) seen = new Set(await watched?.().catch(() => []) ?? []);
       index = 0;
       refresh();
+      onChange?.();
     },
   };
 

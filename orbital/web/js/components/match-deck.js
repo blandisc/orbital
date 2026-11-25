@@ -119,10 +119,13 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
       ending = kept.length && onShowKept
         ? { label: "Ver las que guardaste", run: () => onShowKept(keptWhere) }
         : { label: "Tres que caben", run: () => toDecide() };
-      mount(info, actions);
+      // BL-17 (25 nov 2026): título, texto y botón juntos, en el vacío del sistema (antes el botón iba a la izquierda y su
+      // explicación ~860 px a la derecha).
+      mount(info);
+      const action = { label: ending.label, glyph: glyphs.select, onPress: () => ending?.run() };
       mount(stage, EmptyState(kept.length
-        ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Mañana hay mazo nuevo.` }
-        : { icon: "list", title: "Ya viste todo el mazo", text: "Mañana hay mazo nuevo. Hoy, «Tres que caben» te propone tres para tu noche." }));
+        ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Mañana hay mazo nuevo.`, action }
+        : { icon: "list", title: "Ya viste todo el mazo", text: "Mañana hay mazo nuevo. Hoy, «Tres que caben» te propone tres para tu noche.", action }));
       return paintActions();
     }
     const at = Math.max(1, total - cards.length + 1);
@@ -150,7 +153,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   /** AD-6: una sola fila: «Ver ya» (A) sólido y ✕ · ★ · ♥ redondos con su botón del mando y su nombre. */
   function paintActions() {
     const top = cards[0];
-    if (!top && ending) return mount(actions, Button({ label: ending.label, glyph: glyphs.select, variant: "primary", onPress: () => ending?.run() }));
+    if (!top && ending) return mount(actions); // su botón va en el vacío, junto a lo que dice (BL-17)
     mount(actions, top && [
       Button({ label: "Ver ya", glyph: glyphs.select, variant: "primary", onPress: () => play() }),
       ...Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },

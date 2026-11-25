@@ -149,6 +149,8 @@ const ui = {
     onOpen: (result) => (result.source === "genre" ? (ui.search.close(), openGenre(result))
       : isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
     onAdvanced: () => openFilter(), // PA3-A: la búsqueda avanzada, también desde Buscar
+    // BL-4: Y (o clic derecho, o el dedo sostenido) sobre un resultado: sus Opciones, como en cualquier cuadrícula.
+    onMore: (item) => openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() })),
     localSearch: (query) => searchLibrary(state.allRows, query),
     // T7: con la caja vacía, también lo que jugaste (A continuación y favoritos), sin repetir.
     played: () => {

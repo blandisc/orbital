@@ -156,7 +156,10 @@ def calendar_item(g: dict, today: date) -> dict:
 def game_item(described: dict, why: str) -> dict:
     """Un juego tuyo (de la biblioteca): A lo abre como en Juegos."""
     played = float(described.get("playtime") or 0)
-    detail = f"{hours_text(played)} jugadas" if played >= 60 else "Nunca lo has abierto"
+    # BL-18 (25 nov 2026): lo jugado de verdad («35 min jugados», «48 h jugadas») o, sin estrenar, «Sin estrenar»; con la
+    # etiqueta «Sin jugar» no se repite (antes «Nunca lo has abierto», que sonaba a reproche y salía con 35 min jugados).
+    detail = (f"{hours_text(played)} jugadas" if played >= 3600 else f"{hours_text(played)} jugados" if played >= 60
+              else "" if why == "Sin jugar" else "Sin estrenar")
     extra = described.get("extra") or {}
     steam_id = str(described["id"]).removeprefix("steam:")
     appid = extra.get("steam_appid") or described.get("steam_appid") or (

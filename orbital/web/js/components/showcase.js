@@ -79,10 +79,12 @@ export function createShowcase({ load, onOpen, onMove, onClose, onChange, glyphs
       ? h("img", { class: "showcase__emblem", src: artEmblem(c.art), alt: "", decoding: "async" })
       : svg(ICONS[c.family === "award" ? "trophy" : "list"])),
     h("span", { class: "showcase__text" }, h("strong", { class: "showcase__name" }, c.title), c.meta && h("span", { class: "showcase__meta" }, c.meta)),
-    // Sin contar todavía: cuántos títulos tiene; la barra llega con la cuenta.
+    // Sin contar todavía: cuántos títulos tiene; la barra llega con la cuenta (y sin nada visto, vacía: BL-14).
+    // BL-13 (25 nov 2026): la barra y la cifra en el mismo renglón, debajo del nombre (antes la cifra, a la derecha del
+    // nombre, se lo comía: «Top 250 de IMDb» quedaba en «To…»).
+    Progress(c.total && c.seen != null ? c.seen / c.total : null, { className: "showcase__progress", label: "Cuánto llevas", zero: true }),
     // C8: la cifra con su veredicto («3 de 12 · te faltan 9»; toda vista, «12 de 12 · completa»).
-    h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : collectionVerdict(c.seen, c.total)),
-    Progress(c.total && c.seen != null ? c.seen / c.total : 0, { className: "showcase__progress", label: "Cuánto llevas" }))));
+    h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : collectionVerdict(c.seen, c.total)))));
     paint();
   }
 

@@ -291,7 +291,15 @@ class Gestor:
         board = build_board(watchlist, watched, self.dropped(), now=time.time())
         why = {"in_list": "En Mi lista", "watching": "Sigues viéndola", "stale": "¿La dejaste?", "watched": "Vista", "dropped": "La dejaste"}
         out = {name: [{**video_item(e, why[name]), "pile": name} for e in board[name] if e.get("title")] for name in why}
-        return {"trakt": True, **out, "last": board["last"], "lists": self.lists()}
+        return {"trakt": True, **out, "last": board["last"], "lists": self.lists(), "favorites": self._favorites_count()}
+
+    def _favorites_count(self) -> int | None:
+        """Cuántos tiene Favoritos, para su mosaico de «Listas» («12 títulos», como las demás; BL-8). Sin poder leerlos,
+        None: el mosaico no inventa una cifra."""
+        try:
+            return len(self.trakt.favorites())
+        except Exception:  # noqa: BLE001 — sin la cifra, Guardado igual abre
+            return None
 
     def automatic_changes(self, board: dict) -> list[dict]:
         """Lo que cambió solo desde la última vez que abriste el tablero (`automaticChanges`): algo que pasó a Vistas o una

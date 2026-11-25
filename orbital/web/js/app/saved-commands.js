@@ -20,12 +20,14 @@ export const PILES = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched
 export const SAVED_TABS = [["in_list", "Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["lists", "Listas"]];
 
 /** Los mosaicos de la pestaña Listas: Favoritos, tus listas y, si no tienes ninguna, «Nueva lista» (con listas, ＋ del renglón). */
-export function listTiles(lists, { online = true } = {}) {
-  const tiles = [{ meta_id: "trakt-favorites", kind: "list", title: "Favoritos", subtitle: "Trakt",
+export function listTiles(lists, { online = true, favorites = null } = {}) {
+  // BL-8 (25 nov 2026): Favoritos dice su cuenta, como las demás («7 títulos»; antes «Trakt»). Sin la cifra (un Orbital
+  // anterior o sin poder leerla), dónde vive.
+  const tiles = [{ meta_id: "trakt-favorites", kind: "list", title: "Favoritos", subtitle: favorites != null ? many(favorites, "1 título", "títulos") : "Trakt",
     command: { type: "list-open", where: "trakt-favorites", name: "Favoritos" } }];
   for (const l of lists) {
     tiles.push({ meta_id: `list:${l.id}`, kind: "list", title: l.name,
-      subtitle: l.count != null ? many(l.count, "1 título", "títulos") : privacyName(l.privacy), // quién la ve, en su ☰
+      subtitle: l.count != null ? many(l.count, "1 título", "títulos") : privacyHint(l.privacy), // quién la ve, en su ☰
       command: { type: "list-open", where: `list:${l.id}`, name: l.name } });
   }
   if (!lists.length) tiles.push({ meta_id: "list-new", kind: "list", title: "Nueva lista", subtitle: online ? "Nace «Solo tú»" : "Necesita internet",
@@ -37,7 +39,9 @@ export const PRIVACY = [["private", "Solo tú", "Nadie más la ve"], ["link", "C
   ["public", "Todos en Trakt", "Sale en tu perfil"], ["friends", "Solo amigos", "Tus amigos de Trakt"]];
 export const privacyName = (p) => PRIVACY.find(([id]) => id === p)?.[1] || "Solo tú";
 
-/** «Todos en Trakt» → «todos en Trakt» (después de « · »): solo la primera letra. */
+/** Quién la ve, junto a su cifra: una pública dice «Pública en Trakt» (BL-9); «Todos en Trakt» es la opción de la hoja. */
+export const privacyHint = (p) => (p === "public" ? "Pública en Trakt" : privacyName(p));
+/** «Pública en Trakt» → «pública en Trakt» (después de « · »): solo la primera letra. */
 const lower = (text) => text.charAt(0).toLowerCase() + text.slice(1);
 const ref = (item) => ({ kind: item.kind === "series" ? "series" : "movie", id: item.meta_id });
 const many = (n, one, more) => (n === 1 ? one : `${n} ${more}`);
@@ -165,7 +169,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
     const online = navigator.onLine !== false;
     const tabs = SAVED_TABS.map(([id, label]) => {
       if (id === "lists") {
-        const tiles = listTiles(lists, { online });
+        const tiles = listTiles(lists, { online, favorites: found.favorites ?? null });
         return { id, label: `${label} · ${lists.length + 1}`, noEdit: true, load: () => Promise.resolve(tiles),
           tools: lists.length ? [{ label: "Nueva lista", icon: "plus", command: { type: "list-new" } }] : [] };
       }
@@ -348,7 +352,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         await api.manageList("privacy", { where: command.where, privacy: command.privacy });
         lists = lists.map((l) => (`list:${l.id}` === command.where ? { ...l, privacy: command.privacy } : l));
         sound.play("select");
-        ui.toast.show(`«${command.name}» · ${privacyName(command.privacy)}`, { tone: "success" });
+        ui.toast.show(`«${command.name}» · ${privacyHint(command.privacy)}`, { tone: "success" });
         if (command.share) return openMenu(shareMenu(command.where, command.name));
       } catch (err) { failed(err, "No pude cambiar quién la ve", () => commands["list-privacy"](command)); }
       return renderHints();
@@ -427,7 +431,8 @@ export function savedMenuOptions(tabId, lists, { online = true, stale = 0, piles
       { icon: "plus", label: "Nueva lista", hint: online ? "El ＋ del renglón · nace «Solo tú»" : "Necesita internet", ...(online ? {} : { info: true }), command: { type: "list-new" } }];
   }
   out.push({ heading: true, label: "Tus listas" },
-    ...lists.map((l) => ({ icon: "list", label: l.name, hint: [l.count != null && many(l.count, "1 título", "títulos"), lower(privacyName(l.privacy))].filter(Boolean).join(" · "),
+    // BL-9: «7 títulos · pública en Trakt» (con «todos en Trakt» se leía «todos están en Trakt»).
+    ...lists.map((l) => ({ icon: "list", label: l.name, hint: [l.count != null && many(l.count, "1 título", "títulos"), lower(privacyHint(l.privacy))].filter(Boolean).join(" · "),
       command: { type: "list-open", where: `list:${l.id}`, name: l.name } })),
     { icon: "plus", label: "Nueva lista", ...(online ? {} : { info: true, hint: "Necesita internet" }), command: { type: "list-new" } });
   return out;

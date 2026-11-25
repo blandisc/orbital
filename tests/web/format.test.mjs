@@ -97,7 +97,8 @@ test("lo que dura un video: «169 min» de Cinemeta se dice «2 h 49 min»", asy
 test("¿Qué vemos? dice cuánto dura: «42 min por episodio», no «2520 por episodio»", async () => {
   // runtime() espera el texto de Cinemeta («42 min»); con segundos devolvía el número tal cual (visto en la tele).
   const { pickFacts } = await import("../../orbital/web/js/components/decide.js");
-  assert.equal(pickFacts({ kind: "series", minutes: 42, why: "Porque viste Fargo" }), "Porque viste Fargo · 42 min por episodio");
+  // BL-15 (25 nov 2026): sin el porqué, que ya va en la etiqueta de arriba («En tendencia» salía dos veces).
+  assert.equal(pickFacts({ kind: "series", minutes: 42, why: "Porque viste Fargo" }), "42 min por episodio");
   assert.equal(pickFacts({ kind: "movie", minutes: 107, imdb_rating: "7.1" }), "1 h 47 min · IMDb 7.1");
   assert.equal(pickFacts({ kind: "series" }), "Serie");
   assert.equal(pickFacts({ kind: "series", minutes: 42, episode: "T2 E5" }), "42 min por episodio", "la serie completa, sin el episodio en que vas");
