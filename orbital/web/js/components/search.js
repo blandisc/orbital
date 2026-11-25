@@ -97,6 +97,10 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   let token = 0;
   let pending = ""; // la búsqueda que ya va en camino (no se repite al pulsar Buscar otra vez)
   let typedPhysically = false; // con teclado físico, Enter busca en vez de pulsar la tecla en pantalla
+  // Escrito desde el iPhone (Fernando, 24 nov 2026: «que no me mande a las letras… directo a las opciones»): quien escribe en
+  // el teléfono no usa el teclado de la TV, así que las flechas van a los resultados; y «Buscar» los espera si aún no llegan.
+  let fromPhone = false;
+  let goWhenReady = false;
   let listening = null;
   let shownListening = false;
   let cancelExit = () => {};
@@ -156,6 +160,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
       groupHead(picking?.kind === "series" ? "Series" : picking?.kind === "movie" ? "Películas" : "Películas y series"),
       h("div", { class: "search__set-cards" }, [0, 1, 2, 3].map(() => h("span", { class: "search__ghost" })))));
     results.classList.remove("search__results--recent");
+    if (goWhenReady && items.length) { zone = "results"; resultIndex = 0; goWhenReady = false; }
     if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
     if (!items.length && zone === "results") zone = "keys";
     render();
@@ -273,7 +278,10 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     // Si ya va en camino, se espera (antes cada pulsación la tiraba y volvía a empezar); si no, ya.
     const q = text.trim();
     if (q.length < MIN_CHARS) setHint("Escribe al menos 2 letras.");
-    else if (pending !== q) schedule(0);
+    else {
+      goWhenReady = true; // en cuanto lleguen, el foco pasa a ellos
+      if (pending !== q) schedule(0);
+    }
   }
 
   /** Teclado físico: una letra, "\b" para borrar, "\n" (Enter) para ver los resultados. */
@@ -301,6 +309,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   function setText(value) {
     if (el.hidden || el.classList.contains("screen--leaving")) return;
     typedPhysically = true;
+    fromPhone = true;
     cleared = "";
     text = Array.from(String(value).toLowerCase()).slice(0, MAX_CHARS).join("");
     render();
@@ -366,6 +375,13 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
 
   function moveKeys(dr, dc) {
     typedPhysically = false;
+    if (fromPhone && items.length) { // escrito en el iPhone: la flecha va a los resultados, no a las letras
+      fromPhone = false;
+      zone = "results";
+      resultIndex = Math.min(resultIndex, items.length - 1);
+      render();
+      return;
+    }
     // A la derecha del teclado están los resultados: desde su orilla, → pasa a ellos (antes daba la vuelta a la fila).
     if (dc > 0 && items.length && keyboard.wraps(dc)) { zone = "results"; resultIndex = Math.min(resultIndex, items.length - 1); }
     else keyboard.move(dr, dc);
@@ -417,7 +433,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     else if (action === "down") moveKeys(1, 0);
     else if (action === "left") moveKeys(0, -1);
     else if (action === "right") moveKeys(0, 1);
-    else if (action === "select") keyboard.press();
+    else if (action === "select") { fromPhone = false; keyboard.press(); }
     else return true;
     onMove?.();
     render();
@@ -432,6 +448,8 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     if (pick) setHint(pick.hint || (pick.kind === "series" ? "Busca la serie correcta y elígela" : "Busca la película correcta y elígela"));
     if (initial) text = initial.toLowerCase();
     zone = "keys";
+    fromPhone = false;
+    goWhenReady = false;
     el.hidden = false;
     schedule();
     render();
