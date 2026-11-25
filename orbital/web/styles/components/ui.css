@@ -67,7 +67,7 @@
 /* La cápsula de la elegida es una sola y viaja de una a otra (glassSwitchGlide), como la de la barra de secciones. */
 .glass-switch__glide {
   position: absolute; left: 0; top: 0; border-radius: var(--radius-pill); pointer-events: none;
-  background: var(--color-glass-selected-legible); box-shadow: var(--edge-glass-selected); /* R3-6: «Steam» en blanco, AA */
+  background: var(--color-glass-selected-legible); box-shadow: var(--edge-glass); /* R3-6: «Steam» en blanco, AA; el filo del vidrio de siempre (el de elegido, al 45 %, dejaba «Steam» en 4,40 a 1280×800, 25 nov 2026) */
 }
 .glass-switch__item {
   position: relative; padding: 0 var(--space-4) 0 var(--space-2); color: var(--color-text); /* R3-6: en gris, 3,1 sobre arte claro */
