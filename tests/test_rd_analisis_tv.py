@@ -86,6 +86,9 @@ def test_error_9_lo_pedido_le_gana_a_continuar(library, monkeypatch):
     mine.requested = False
     assert w.choose_source("movie", "tt1375666", prefs, {"source": old.key}) is old  # sin pedido, «Continuar» como antes
     assert w.choose_source("movie", "tt1375666", prefs, {"source": cam.key}) is found[0]  # nunca la de cine
+    mine.requested = True
+    same = {"source": old.key, "video_id": "tt1375666"}
+    assert w.choose_source("movie", "tt1375666", prefs, same) is old  # «Continuar» del mismo episodio: la que estabas viendo
 
 
 def test_error_1_el_siguiente_episodio_de_un_paquete_pedido(library, monkeypatch):

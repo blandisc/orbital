@@ -357,7 +357,10 @@ class _Sources(_Accounts):
             # ni una que parece de otro título o episodio (análisis de fondo con el iPhone, error 9).
             mine = next((s for s in found if s.requested), None)
             same = next((s for s in found if s.key == resume["source"]), None)
-            if mine is not None and (same is None or not same.requested):
+            # «Continuar» del mismo episodio (aquí o desde el iPhone): la versión con que lo estabas viendo gana a lo pedido
+            # (Fernando, 25 nov 2026: un paquete pedido daba el aviso de 30 s de Real-Debrid para ese episodio).
+            same_episode = resume.get("video_id") == video_id
+            if mine is not None and (same is None or not same.requested) and not (same_episode and same is not None):
                 return mine
             if same is not None and not same.doubtful and not {"CAM", "Tráiler"} & set(same.tags):
                 return same

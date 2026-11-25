@@ -381,11 +381,13 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation, !closing else { return }
                 await resumeSync?.value
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
-                // Lo que pediste y ya está, antes que la de «Continuar» (la misma regla que «Ver» de la ficha, `SourcesModel.toPlay`).
-                else if failedSources.isEmpty, let ready = SourcesModel.toPlay(sourceChoices, resume: nil, family: nil), ready.requested { found = ready }
-                // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
+                // «Continuar» del mismo episodio (aquí o desde la TV): la versión con que lo estabas viendo, si sigue ahí, antes que
+                // lo que pediste a tu nube (Fernando, 25 nov 2026: escogía un paquete pedido que para ese episodio era el aviso de
+                // 30 s de Real-Debrid y luego no hallaba la suya). Para otro episodio, lo pedido sigue ganando (error 9).
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key && !$0.isOtherTitle }) { found = pick }
+                // Lo que pediste y ya está (la misma regla que «Ver» de la ficha, `SourcesModel.toPlay`).
+                else if failedSources.isEmpty, let ready = SourcesModel.toPlay(sourceChoices, resume: nil, family: nil), ready.requested { found = ready }
                 // Otro episodio: la misma familia de versión con que dejaste la serie (no solo el mismo idioma).
                 else {
                     let family = request.binge ?? (request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)?.binge)
@@ -418,7 +420,17 @@ public final class PlayerModel: ObservableModel {
             startLoading()
             // Abrirla le pide a Real-Debrid que la baje: se anota en la libreta para seguirla (R12).
             if !found.instant { queued.mark(found.key, at: clock()); noteOpenedOnDebrid(found) }
-            do { try await loadVideo(url, at: start); return }
+            var loadError: Error
+            do { try await loadVideo(url, at: start); return } catch { loadError = error }
+            // Cancelada al abrir sin que nadie la cambiara: es el cierre del video anterior que alcanzó a la carga nueva (pasaba
+            // siempre justo después de un cambio de versión; la siguiente sí abría). Se intenta la misma otra vez, no se descarta.
+            if loadError is CancellationError, mine == generation, !closing {
+                Self.note("la carga se canceló al cerrar la anterior: otra vez la misma")
+                try? await Task.sleep(for: .milliseconds(400))
+                guard mine == generation, !closing else { return }
+                do { try await loadVideo(url, at: start); return } catch { loadError = error }
+            }
+            do { throw loadError }
             catch {
                 guard mine == generation else { return }
                 markFailed(found, "no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")

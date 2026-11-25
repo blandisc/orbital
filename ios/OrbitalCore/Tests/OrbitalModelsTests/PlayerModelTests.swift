@@ -444,6 +444,16 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.subs.count, before, "no la copia de internet que este iPhone recordaba")
     }
 
+    /// Fernando, 25 nov 2026: la versión que estabas viendo «no abría» justo después de un cambio de versión (el cierre de la
+    /// anterior cancelaba la carga nueva). Una carga cancelada se intenta otra vez con la misma, no se descarta.
+    func testACancelledLoadRetriesTheSameVersion() async throws {
+        let rig = try twoSources()
+        rig.engine.cancelOnce = ["https://rd.example/best.mkv"]
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://rd.example/best.mkv", "https://rd.example/best.mkv"], "la misma, dos veces")
+        XCTAssertTrue(rig.model.failedSources.isEmpty, "no se da por mala")
+    }
+
     func testThisOneWorksPicksTheSameReleaseNextEpisode() async throws {
         let rig = try twoSources()
         rig.model.subtitlePicks = SubtitlePicks(rig.kv)

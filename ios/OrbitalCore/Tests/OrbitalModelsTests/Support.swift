@@ -54,6 +54,8 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     private let lock = NSLock()
     private var _loads: [(url: URL, start: Double)] = [], _calls: [String] = [], _subs: [URL] = []
     var failing: Set<String> = []
+    /// La primera carga de estas direcciones termina cancelada (como cuando el cierre del video anterior alcanza a la nueva).
+    var cancelOnce: Set<String> = []
     var loads: [(url: URL, start: Double)] { lock.withLock { _loads } }
     var calls: [String] { lock.withLock { _calls } }
     var subs: [URL] { lock.withLock { _subs } }
@@ -61,6 +63,7 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     func load(url: URL, startAt: Double) async throws {
         lock.withLock { _loads.append((url, startAt)) }
         if failing.contains(url.absoluteString) { throw NetworkError("no abre") }
+        if lock.withLock({ cancelOnce.remove(url.absoluteString) }) != nil { throw CancellationError() }
         // Como el motor del iPhone el 29 oct: se queda abriendo el archivo y no vuelve hasta que lo detienen.
         if hangLoads { try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in lock.withLock { hung.append(c) } } }
     }

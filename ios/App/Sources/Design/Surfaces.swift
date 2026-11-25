@@ -164,7 +164,9 @@ struct DSSeasonPicker: View {
             }
             .scrollTargetLayout()
         }
-        .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+        // Vive en la tarjeta de episodios del reproductor: con muchas temporadas las cápsulas se salían a los lados de la
+        // tarjeta (Fernando, 25 nov 2026); se cortan en su orilla.
+        .rowEdge(.inCard)
         .fixedSize(horizontal: false, vertical: true)
         .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         .scrollPosition(id: $scrolled, anchor: .center)
