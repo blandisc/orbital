@@ -4,14 +4,14 @@ import { Glyph } from "./glyph.js";
 import { clampKey, moveKey, normalizeLayout } from "../core/keyboard.js";
 
 /**
- * Teclado en pantalla del sistema de diseño (Buscar, Conectar Stremio…). Pinta la distribución,
+ * Teclado en pantalla del sistema de diseño (Buscar, las claves y formularios de login.js…). Pinta la distribución,
  * marca la tecla enfocada y se mueve con el mando; quien lo usa decide qué hace cada tecla.
  *
  * Teclas especiales (opcionales en cada tecla):
  *   icon: nombre de ICONS · tone: "action" (gris) | "go" (la acción principal) · on: activa (Mayúsculas)
  *   glyph: el botón del mando que hace lo mismo sin ir hasta la tecla (Dictar: ☰)
  *   iconOnly: solo el ícono (Atrás); el nombre queda para el lector de pantalla
- * Cuántas columnas tiene sale de la distribución (la fila más ancha): Buscar usa 7, Conectar Stremio 10.
+ * Cuántas columnas tiene sale de la distribución (la fila más ancha): Buscar usa 7, los formularios (login.js) 10.
  */
 export function createKeyboard({ onPress, label = "Teclado" }) {
   const el = h("div", { class: "keyboard", role: "group", "aria-label": label });

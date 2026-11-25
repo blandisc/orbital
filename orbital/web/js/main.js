@@ -381,10 +381,10 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 
 /**
  * Vistas a pantalla completa, de arriba abajo: la primera abierta recibe los botones y pone el pie
- * (Conectar Stremio sobre todo; las fuentes sobre la ficha; la ficha sobre la búsqueda). Una vista
+ * (un formulario de clave sobre todo; las fuentes sobre la ficha; la ficha sobre la búsqueda). Una vista
  * nueva se agrega aquí con { handle, hints, isOpen } y ya funciona con el mando.
  */
-// Conectar Stremio o Trakt desde Ajustes › Cuentas: B regresa a Cuentas (antes caías en Inicio).
+// Una clave o Trakt desde Ajustes › Cuentas: B regresa a Cuentas (antes caías en Inicio).
 let loginFrom = null;
 let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
@@ -2311,7 +2311,7 @@ const input = createInput({
   onModality: setModality,
   onTouch: () => { if (state.modality !== "touch") touchSince = performance.now(); }, // el aspecto cambia tras su clic
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
-  // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
+  // Un formulario no borra por palabras (es una clave o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
   onText: (char) => { if (videoInFront()) return; (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "\b" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),

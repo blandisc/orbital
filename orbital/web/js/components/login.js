@@ -7,18 +7,17 @@ import { createKeyboard } from "./keyboard.js";
 import { ScreenHead } from "./ui.js";
 
 /**
- * Escribir con el mando: Conectar Stremio (correo y contraseña) y las claves de Para ti (TMDB, RAWG,
- * Trakt). Campos y un teclado QWERTY con mayúsculas y símbolos, como el de Steam Deck: A escribe,
- * X borra, Y muestra u oculta lo secreto, LT/RT cambian de campo, B vuelve. Con un teclado físico se
- * escribe directo, y una clave larga se pega con Ctrl+V. La contraseña va solo a Stremio: Orbital
- * guarda la clave de sesión que devuelve.
+ * Escribir con el mando: las claves (tu nube, TMDB, RAWG, Trakt…), OpenSubtitles y el nombre de una lista. Campos y un
+ * teclado QWERTY con mayúsculas y símbolos, como el de Steam Deck: A escribe, X borra, Y muestra u oculta lo secreto, LT/RT
+ * cambian de campo, B vuelve. Con un teclado físico se escribe directo, y una clave larga se pega con Ctrl+V.
+ * (Conectar Stremio con correo y contraseña se quitó el 25 nov 2026: ningún camino lo abría; queda `orbital stremio login`.)
  *
  * O desde el celular: junto a los campos, un QR abre una página de Orbital con los mismos campos (remote_input.py);
  * lo que mandas de allá llena el formulario y se envía solo. Así un correo, una contraseña o una clave de 32 letras
  * no se teclean con el mando (y el llavero del iPhone puede llenarlos).
  *
  * open(form) recibe { title, lead, fields: [{ name, label, secret, optional }], submitLabel, missing, submit(values, signal) };
- * sin form, Conectar Stremio. onDone(respuesta, form) al terminar bien.
+ * onDone(respuesta, form) al terminar bien.
  */
 const LETTERS = [[..."1234567890"], [..."qwertyuiop"], [..."asdfghjklñ"], [..."zxcvbnm@._"]];
 const SYMBOLS = [[..."1234567890"], [..."!#$%&*+=?/"], [..."-'\"():;,~^"], [..."<>[]{}|\\`€"]];
@@ -28,19 +27,11 @@ const ACTIONS = [
   { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente campo", span: 2, tone: "go" },
 ];
 
-const STREMIO = {
-  id: "stremio", title: "Conectar Stremio", submitLabel: "Conectar Stremio", // AJ-8: con su objeto missing: "Escribe tu correo y tu contraseña.",
-  lead: "Para «Seguir viendo», tus complementos y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda. "
-    + "¿Entras a Stremio con Google o Facebook? Ponle una contraseña en stremio.com › Ajustes. ¿No tienes cuenta? Es gratis en stremio.com.",
-  fields: [{ name: "email", label: "Correo de Stremio" }, { name: "password", label: "Contraseña", secret: true, forget: true }],
-  submit: (v, signal) => api.stremioLogin(v.email.trim(), v.password, signal),
-};
-
 /** Borra el último carácter completo (un emoji no se parte a la mitad). */
 const dropLast = (text) => Array.from(text).slice(0, -1).join("");
 
 export function createLogin({ onDone, onMove, onClose, onRemote }) {
-  let form = STREMIO;
+  let form = null;
   let fields = [];
   const box = h("div", { class: "login__form" });
   const phoneImage = h("img", { class: "login__phone-qr", alt: "Código QR para escribir desde el celular" });
@@ -54,7 +45,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
   const message = h("div", { class: "login__message", role: "status" });
   const keyboard = createKeyboard({ label: "Teclado", onPress: (key) => press(key) });
   const keys = keyboard.el;
-  const el = h("section", { class: "login screen", hidden: true, "aria-label": STREMIO.title }, head,
+  const el = h("section", { class: "login screen", hidden: true, "aria-label": "Escribir" }, head,
     h("div", { class: "login__body" }, box, phone), keys);
   const saved = new Map(); // lo que no es secreto se recuerda entre aperturas (tu correo)
 
@@ -126,7 +117,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
     }
     busy = true;
     const mine = ++attempt;
-    message.textContent = form === STREMIO ? "Conectando con Stremio…" : form.service ? "Comprobando la clave…" : "Guardando…";
+    message.textContent = form.service ? "Comprobando la clave…" : "Guardando…";
     el.classList.add("login--busy");
     abort = new AbortController();
     const { signal } = abort;
@@ -260,7 +251,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
     submit();
   }
 
-  function open(next = STREMIO) {
+  function open(next) {
     cancelExit();
     fields.forEach((f) => { if (!f.secret) saved.set(`${form.id}:${f.name}`, f.value); });
     form = next;
@@ -308,7 +299,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
   const hints = (pad, g = typingGlyphs(pad)) => [
     { glyph: g.select, label: "Escribir" }, { glyph: g.alt, label: "Borrar" },
     // Solo si hay algo secreto: el nombre de una lista o tu nota no tienen clave que ver (pulido del gestor, 10 nov 2026).
-    fields.some((f) => f.secret) && { glyph: g.options, label: `${reveal ? "Ocultar" : "Ver"} ${form === STREMIO ? "contraseña" : "clave"}` },
+    fields.some((f) => f.secret) && { glyph: g.options, label: `${reveal ? "Ocultar" : "Ver"} ${form.fields.some((f) => f.name === "password") ? "contraseña" : "clave"}` },
     fields.length > 1 && { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 

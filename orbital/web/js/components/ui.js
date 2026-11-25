@@ -116,7 +116,7 @@ export const Eyebrow = (text, { className = null, tag = "span", icon = null } = 
   return why ? h(tag, { class: ["eyebrow", className] }, icon, why) : null;
 };
 
-/** Encabezado de una pantalla completa (Conectar Stremio, Conectar Trakt): de dónde es, el título y una línea. */
+/** Encabezado de una pantalla completa (una clave, Conectar Trakt): de dónde es, el título y una línea. */
 export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
   h("div", { class: ["screen-head", className] },
     Eyebrow(eyebrow, { tag: "div", className: "screen-head__eyebrow" }),

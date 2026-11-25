@@ -400,27 +400,6 @@ def router(d: Deps) -> APIRouter:
 
     d.extra["play_stremio"] = play  # «Ver en la TV» del iPhone entra por el puerto público (server.create_public_app)
 
-    @r.post("/login")
-    def login(body: dict) -> dict:
-        """Conectar Stremio desde la consola. La contraseña solo viaja a Stremio: no se guarda ni se
-        registra; Orbital guarda la clave de sesión que devuelve (igual que `orbital stremio login`)."""
-        email, password = str(body.get("email") or "").strip(), str(body.get("password") or "")
-        if not email or not password:
-            raise HTTPException(422, "Escribe tu correo y tu contraseña de Stremio")
-        try:
-            key = catalog.stremio_client.login(email, password)
-            count = catalog.watch.link_stremio(key)
-        except stremio_api.StremioUnreachable:
-            raise HTTPException(502, "No pude conectar con Stremio. Revisa tu conexión a internet e inténtalo de nuevo.")
-        except stremio_api.StremioError as exc:
-            text = str(exc)
-            if text.startswith(("No pude conectar", "Stremio respondió HTTP")):
-                raise HTTPException(502, "No pude conectar con Stremio. Revisa Internet e inténtalo de nuevo.")
-            if any(w in text.lower() for w in ("passphrase", "password", "user not found", "wrong", "invalid")):
-                raise HTTPException(401, "El correo o la contraseña no son correctos.")
-            raise HTTPException(401, "Stremio no aceptó esos datos. Revísalos e inténtalo de nuevo.")
-        return {"ok": True, "count": count}
-
     @r.post("/logout")
     def logout() -> dict:
         catalog.watch.unlink_stremio()

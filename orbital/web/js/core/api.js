@@ -149,7 +149,6 @@ export const api = {
   savedIn: (kind, id) => request(`/api/foryou/saved?kind=${kind}&id=${encodeURIComponent(id)}`),
   saveTo: (kind, id, where, add) => post("/api/foryou/save", { kind, id, where, add }),
   trailer: (kind, id, keep = false) => post("/api/stremio/trailer", { kind, id, keep }, SLOW),
-  stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
   // Ajustes › Complementos (S1): tu lista, traerla de Stremio, prender, ordenar, quitar y de dónde salen.
   addonsStatus: () => request("/api/addons/status"),

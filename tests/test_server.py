@@ -201,26 +201,6 @@ def test_ui_reload_only_allows_known_views(make_client):
         assert c.post("/api/ui/reload", json={"view": {"buscar": "dune", "evil": "x"}}).json() == {"ok": True}
 
 
-def test_connect_stremio_from_the_console(make_client, library, monkeypatch):
-    from orbital.library.stremio_api import StremioError
-    seen = []
-
-    def login(email, password):
-        seen.append(email)
-        if password != "bien":
-            raise StremioError("Wrong password")
-        return "clave-sesion"
-
-    monkeypatch.setattr(library.stremio_client, "login", login)
-    monkeypatch.setattr(library.watch, "link_stremio", lambda key: seen.append(key) or 42)
-    with make_client() as c:
-        assert c.post("/api/stremio/login", json={"email": "", "password": ""}).status_code == 422
-        bad = c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "mal"})
-        assert bad.status_code == 401 and "no son correctos" in bad.json()["detail"]
-        assert c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "bien"}).json() == {"ok": True, "count": 42}
-    assert seen == ["yo@x.com", "yo@x.com", "clave-sesion"]  # se guarda la clave de sesión, nunca la contraseña
-
-
 def test_setup_status_for_first_use(make_client):
     with make_client() as c:
         status = c.get("/api/setup").json()

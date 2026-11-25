@@ -33,7 +33,7 @@ test("quien pasa su propio límite o su señal de cancelar lo conserva", async (
   const f = stubFetch();
   try {
     const mine = new AbortController();
-    await api.stremioLogin("a@b.c", "x", mine.signal); // 20 s y su señal: las dos juntas
+    await api.openSubtitlesLogin("yo", "x", mine.signal); // 20 s y su señal: las dos juntas
     assert.ok(f.calls[0].signal instanceof AbortSignal && f.calls[0].signal !== mine.signal);
     mine.abort();
     assert.equal(f.calls[0].signal.aborted, true);
