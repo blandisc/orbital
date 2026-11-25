@@ -191,6 +191,22 @@ def test_phone_legend_and_back_while_trying():
     assert p.phone_legend()["alt"] == "Audio y subtítulos"
 
 
+def test_from_the_phone_menu_tries_subtitles_and_the_video_keeps_playing():
+    """Fernando, 24 nov 2026: con el control del iPhone no se puede mantener X; ☰ entra en un toque. Y mientras pruebas
+    el video sigue (cada cambio regresa unos segundos para oír la misma frase): en pausa no se oye nada."""
+    p, mpv, _ = trial_player()
+    assert p.phone_legend()["menu"] == "Probar subtítulos"
+    mpv.props["pause"] = True
+    p.phone_button("menu")
+    assert p._try is not None and ("set_property", "pause", False) in mpv.sent
+    mpv.props["pause"] = True  # la pausaste a media prueba
+    mpv.sent.clear()
+    p.phone_button("right")
+    assert ("set_property", "pause", False) in mpv.sent
+    p.phone_button("back")
+    assert p._try is None
+
+
 def test_the_strip_with_the_finger_has_buttons():
     p, mpv, _ = trial_player(urls=None)
     player_ui.set_touch(True)

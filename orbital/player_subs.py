@@ -94,6 +94,7 @@ class SubtitleTrial:
         self._try = {"token": token, "lang": lang, "home": lang, "options": None, "searching": searching, "status": "", "timer": None,
                      "chosen": chosen["id"] if chosen else None, "candidates": [], "index": -1}
         self._try_build(lang)
+        self._keep_playing()
         if self._hud_visible:
             self.hide_hud()
         if searching:
@@ -266,7 +267,14 @@ class SubtitleTrial:
             trial["status"] = f"No encontré subtítulos en {(player_ui.language(lang) or lang).lower()}"
         self._try_draw()
 
+    def _keep_playing(self) -> None:
+        """Mientras pruebas, el video sigue: cada cambio regresa unos segundos para oír la misma frase, y en pausa no se oye
+        nada (Fernando, 24 nov 2026: «deberías seguir reproduciendo para que escuches el audio»)."""
+        if self._value("pause"):
+            self.mpv.command("set_property", "pause", False)
+
     def _try_select(self, index: int) -> None:
+        self._keep_playing()
         here = self._here()
         if here is not None:
             here["delay"] = self.sub_delay

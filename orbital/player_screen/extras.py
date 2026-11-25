@@ -284,7 +284,9 @@ class _Extras(_Input):
         segment = self.segment
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
-        legend = {"select": "Seguir viendo" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
+        # ☰: «Probar subtítulos» en un toque. En el teléfono no se puede mantener X, y por el panel eran varios pasos
+        # (Fernando, 24 nov 2026: «es bien difícil cambiar subtítulos cuando estás usando el control del iPhone»).
+        legend = {"select": "Seguir viendo" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos", "menu": "Probar subtítulos",
                   "options": "Episodios y versión" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
@@ -338,6 +340,9 @@ class _Extras(_Input):
         meta = getattr(self.current, "meta", None) or {}
         if action in ("pageleft", "pageright") and self.menu is None and not self._is_live()                 and meta.get("kind") == "series" and self.on_episode:
             self._queue_episode(meta, -1 if action == "pageleft" else 1)  # en el teléfono no se mantiene: directo
+            return
+        if action == "menu" and self._try is None and self.menu is None and not self._is_live():
+            self.try_subtitles()  # ☰ en el teléfono: directo a probar subtítulos (la leyenda lo dice)
             return
         button = {"select": "a", "alt": "x", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt",
                   "prevsection": "lb", "nextsection": "rb"}.get(action, action)
