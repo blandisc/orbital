@@ -77,9 +77,9 @@
 }
 
 /* Entrada (al abrir Orbital): lo de arriba, «A continuación» y las consolas una tras otra. */
-.home--intro .home__hero { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
-.home--intro .home__row-head, .home--intro .home__track--upnext, .home--intro .home__track--posters { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
-.home--intro .tile--console { animation: home-in var(--duration-enter-long) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
+.home--intro .home__hero { animation: home-in var(--duration-enter) var(--ease-out) var(--delay-1) both; }
+.home--intro .home__row-head, .home--intro .home__track--upnext, .home--intro .home__track--posters { animation: home-in var(--duration-enter) var(--ease-out) var(--delay-2) both; }
+.home--intro .tile--console { animation: home-in var(--duration-enter) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
 
 /* Angostas: 4 consolas a la vista; muy angostas, 2. */

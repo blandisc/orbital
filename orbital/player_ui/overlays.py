@@ -427,7 +427,7 @@ def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
              figures(x + w / 2, y + 32, number, TYPE_MD, TEXT, align=5, alpha="70" if muted else "00"),
              rrect(track_x, track_top, track_w, track_h, track_w / 2, TEXT, "D0")]  # el riel
     if extra:
-        parts.append(text(x + w / 2, y + 58, "EXTRA", TYPE_SM, EXTRA, weight="semi", align=5))
+        parts.append(text(x + w / 2, y + 58, "Extra", TYPE_SM, EXTRA, weight="semi", align=5))
     if fill:
         parts.append(rrect(track_x, track_top + track_h - fill, track_w, fill, track_w / 2, TEXT))
     if extra:  # el Extra, en ámbar, encima de lo normal

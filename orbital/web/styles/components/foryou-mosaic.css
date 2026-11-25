@@ -14,7 +14,7 @@
 .foryou-mosaic--glide-out .foryou-mosaic__track { transition-timing-function: var(--ease-glide-out); }
 
 /* La entrada: las columnas suben con un fundido, una tras otra. */
-.foryou-mosaic--intro .foryou-mosaic__col { animation: foryou-col-in var(--duration-enter-long) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 1.5); }
+.foryou-mosaic--intro .foryou-mosaic__col { animation: foryou-col-in var(--duration-enter) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 1.5); }
 @keyframes foryou-col-in { from { opacity: 0; translate: 0 3rem; } }
 
 .foryou-mosaic__tile {

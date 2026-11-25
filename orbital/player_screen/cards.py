@@ -21,7 +21,7 @@ class _Cards(SubtitleTrial):
     # desvanecen. Las pruebas lo apagan con CARD_FRAME = 0 (todo de golpe, como antes).
     CARD = 4  # la capa de las tarjetas
     CARD_FRAME = 1 / 30
-    CARD_IN, CARD_OUT = .32, .2  # s: entrar, irse
+    CARD_IN, CARD_OUT = .3, .2  # s: entrar, irse (B12: dentro de 180–300 ms)
     SPIN = .85  # vueltas por segundo del anillo de «Cargando…»
     SPIN_ARC = .28  # lo largo del arco que gira (en vueltas)
     MORPH = .45  # s: lo que tarda el anillo de la cuenta atrás en volverse el de «Cargando…»

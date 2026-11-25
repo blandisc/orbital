@@ -182,7 +182,7 @@
   --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
   --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
   --duration-snap: 300ms; /* el foco de una portada, una sección que entra de lado (TB-19: antes 360) */
-  --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
+  --duration-enter-long: 640ms; /* solo abrir un juego (launch-overlay): lento a propósito, como la carga; la primera entrada de Inicio y del mosaico usa --duration-enter (B12, 25 nov 2026) */
   --duration-land: 760ms; /* el arranque de Orbital */
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
   --duration-breathe: 1.4s; /* algo que espera: dictando */

@@ -917,7 +917,7 @@ def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     muted = player_ui.volume_ass(50, muted=True)
     assert "—" in muted and muted.count("\\p1}") == 6  # cápsula y su luz, riel (sin relleno), la rayita, cuerpo y la ✕
     extra = player_ui.volume_ass(160)
-    assert "EXTRA" in extra and player_ui.EXTRA in extra and "EXTRA" not in player_ui.volume_ass(100)  # V1-C
+    assert "Extra" in extra and player_ui.EXTRA in extra and "Extra" not in player_ui.volume_ass(100)  # V1-C; V4: «Extra», no en mayúsculas (25 nov 2026)
     touch = player_ui.volume_ass(80, touch=True)  # V2-A: + y − tocables
     assert [t[4] for t in player_ui.targets["volume"]] == ["up", "down"] and "+" in touch
     player_ui.volume_ass(80)
