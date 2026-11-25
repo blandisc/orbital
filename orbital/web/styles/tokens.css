@@ -51,17 +51,16 @@
   --radius-sm: .5rem; /* esquina chica: botones cuadrados, teclas, insignias y lo diminuto (el cursor, la batería) */
   --radius-lg: 1rem; /* esquina de tarjeta: pósters, tarjetas, hojas, menús */
 
-  /* Grosores: los del iPhone (Font.Weight), con el mismo nombre */
+  /* Grosores: los del iPhone (Font.Weight), con el mismo nombre; solo los que usan las recetas de la TV */
   --weight-regular: 400;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-heavy: 800; /* la cifra grande (stat), como el .heavy del iPhone */
 
-  /* Duraciones que comparte con el iPhone (DS.Motion, allá en segundos) */
-  --duration-fast: 140ms;
+  /* Duraciones que comparte con el iPhone (DS.Motion, allá en segundos); las de durationTv valen solo aquí */
+  --duration-fast: 180ms;
   --duration-base: 220ms;
-  --duration-slow: 320ms;
-  --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
+  --duration-slow: 240ms;
+  --duration-enter: 300ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-tint: 700ms; /* lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego */
   /* generado: fin */
 
@@ -77,26 +76,25 @@
   /* El logotipo «orbital» (status-bar, boot), con su luna como punto final; en SemiBold (`--weight-semibold`), la única que trae. */
   --font-brand: "Orbital Wordmark", var(--font-sans);
   --tracking-brand: -.03em;
-  /* Legible a 3 m (T2, 10 nov 2026): a 1080p lo más chico (caption) mide ~21 px, footnote ~24, secondary ~26 y el cuerpo ~27.
-     --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño); --text-room, la pantalla chica
-     (base.css: la Legion Go en la mano, 1280×800, sube el texto sin mover el lienzo). */
+  /* Legible a 3 m (T2, 10 nov 2026) y con pocos tamaños (TB-03, 24 nov 2026; sistema base B4): cuatro de interfaz y dos
+     grandes, cada uno al menos 1,2× el de abajo. A 1080p: 21 · 26 · 32 · 40 px y 52 · 63 px (antes nueve: 21, 24, 26, 27, 30,
+     35, 52, 63 y 80, con saltos de 1,04×). --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el
+     diseño); --text-room, la pantalla chica (base.css: la Legion Go en la mano, 1280×800, sube el texto sin mover el lienzo; y
+     en una ventana de 700 px o menos, que lo más chico no baje de 12 px). */
   --text-scale: 1;
   --text-room: 1;
-  --text-2xs: calc(.97rem * var(--text-scale) * var(--text-room)); /* ~21 px a 1080p: lo más chico (subtítulos de tarjeta, glifos) */
-  --text-xs: calc(1.11rem * var(--text-scale) * var(--text-room)); /* ~24 px */
-  --text-sm: calc(1.2rem * var(--text-scale) * var(--text-room)); /* ~26 px */
-  --text-md: calc(1.25rem * var(--text-scale) * var(--text-room)); /* ~27 px: el cuerpo, siempre un paso arriba de secondary */
-  --text-lg: calc(1.4rem * var(--text-scale) * var(--text-room));
-  --text-xl: calc(1.6rem * var(--text-scale) * var(--text-room));
-  --text-2xl: calc(2.4rem * var(--text-scale));
-  --text-3xl: calc(2.9rem * var(--text-scale));
-  --text-display: calc(3.7rem * var(--text-scale));
+  --text-2xs: calc(.97rem * var(--text-scale) * var(--text-room)); /* ~21 px a 1080p: lo más chico (subtítulos de tarjeta, placas, glifos) */
+  --text-sm: calc(1.2rem * var(--text-scale) * var(--text-room)); /* ~26 px: el cuerpo, los datos y las notas (×1,24) */
+  --text-lg: calc(1.48rem * var(--text-scale) * var(--text-room)); /* ~32 px: el título de una fila (×1,23) */
+  --text-xl: calc(1.85rem * var(--text-scale) * var(--text-room)); /* ~40 px: el encabezado de una zona o una hoja (×1,25) */
+  --text-2xl: calc(2.4rem * var(--text-scale)); /* ~52 px: un título que baja un paso, una cifra grande (×1,3) */
+  --text-3xl: calc(2.9rem * var(--text-scale)); /* ~63 px: el título más grande de una pantalla (×1,21) */
   /* Recetas de texto: los mismos nombres que el iPhone (design/tokens.json → «type»), sobre esta escala.
-     Una pieza nueva usa la receta; el peso va con ella (section y title en negrita, cardTitle y eyebrow medium). */
+     Una pieza nueva usa la receta; el peso va con ella (D2-B: negrita solo hero y display; lo demás, seminegrita o normal). */
   /* Las recetas de texto, las mismas del iPhone (DS.TextRecipe, design/tokens.json › type): cada una es un tamaño de la escala
      y un grosor, y una pieza usa los dos juntos (su tamaño --type-<receta> y su grosor --type-<receta>-weight). La prueba de
      design-system lo vigila: nada de torcer una receta con otro grosor; si hace falta otro, es otra receta. */
-  --type-hero: var(--text-display); /* el título del héroe de Películas y series y Apps (solo la TV) */
+  --type-hero: var(--text-3xl); /* el título del héroe de Películas y series y Apps (solo la TV); del tamaño de display desde TB-03 */
   --type-hero-weight: var(--weight-bold);
   --type-hero-tracking: -.03em; /* lo grande se aprieta y lo chico se abre (SF Pro lo hace solo en el iPhone) */
   --type-display: var(--text-3xl);
@@ -111,14 +109,14 @@
   --type-section: var(--text-lg);
   --type-section-weight: var(--weight-semibold);
   --type-section-tracking: -.012em;
-  --type-card-title: var(--text-md);
+  --type-card-title: var(--text-sm);
   --type-card-title-weight: var(--weight-semibold);
   --type-card-title-tracking: -.006em;
-  --type-body: var(--text-md);
+  --type-body: var(--text-sm);
   --type-body-weight: var(--weight-regular);
   --type-secondary: var(--text-sm);
   --type-secondary-weight: var(--weight-regular);
-  --type-footnote: var(--text-xs);
+  --type-footnote: var(--text-sm);
   --type-footnote-weight: var(--weight-regular);
   --type-caption: var(--text-2xs);
   --type-caption-weight: var(--weight-regular);
@@ -126,21 +124,21 @@
   --type-eyebrow: var(--text-sm);
   --type-eyebrow-weight: var(--weight-semibold);
   --type-eyebrow-tracking: .01em;
-  --type-data: var(--text-xs); /* números tabulares (tabular-nums), nunca una monoespaciada */
+  --type-data: var(--text-sm); /* números tabulares (tabular-nums), nunca una monoespaciada */
   --type-data-weight: var(--weight-regular);
-  --type-label: var(--text-xs); /* un rótulo o botón chico, un dato que resalta */
+  --type-label: var(--text-sm); /* un rótulo o botón chico, un dato que resalta */
   --type-label-weight: var(--weight-semibold);
   --type-label-tracking: .012em;
   --type-label-large: var(--text-sm); /* el valor de un control, un nombre en un renglón */
   --type-label-large-weight: var(--weight-semibold);
   --type-badge: var(--text-2xs); /* una placa: «4K», «Nuevo», cifras en una placa */
-  --type-badge-weight: var(--weight-bold);
+  --type-badge-weight: var(--weight-semibold); /* TB-06: seminegrita en la TV (el iPhone sigue en bold) */
   --type-badge-tracking: .02em;
   --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en minúsculas y seminegrita (D2-B); en la TV, un paso más grande: se lee de lejos */
   --type-group-label-weight: var(--weight-semibold);
   --type-group-label-tracking: var(--tracking-label);
   --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
-  --type-stat-weight: var(--weight-heavy);
+  --type-stat-weight: var(--weight-semibold); /* TB-06: sin el 800, y no es lo más grande de su pantalla (el programa, display) */
   /* Interlineado: seis pasos. none = una línea suelta (reloj, glifos); tight = títulos grandes; snug = datos y títulos medianos;
      title = texto chico con «…» o line-clamp (el recorte corta en el renglón y con menos de ~1.3 se comía la cola de g, p, j, y);
      normal = textos cortos; relaxed = párrafos. Un título GRANDE con line-clamp no sube el interlineado: deja asomar la cola con
@@ -163,9 +161,9 @@
 
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
   --duration-none: 0s; /* movimiento reducido: sin transición */
-  --duration-instant: 90ms;
+  --duration-instant: 180ms; /* TB-19: lo más corto que se ve (antes 90) */
   --duration-loop: 1.6s; /* un ciclo que se repite: el barrido de carga, el giro del aviso, cada paso de «¿Qué es esto?» (DebridFlowStrip del iPhone) */
-  --duration-exit: 160ms;
+  --duration-exit: 180ms; /* TB-19: antes 160 */
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-in: cubic-bezier(.5, 0, .75, 0);
   /* La deriva de Para ti arranca y se frena con estas: su pendiente en la unión es 2, así medio recorrido en un tramo de rampa
@@ -178,12 +176,12 @@
   --ease-sweep: cubic-bezier(.45, 0, .55, 1); /* barrido de la barra de carga */
   --ease-float: cubic-bezier(.37, 0, .63, 1); /* vaivén suave de lo que flota (pantalla de carga) */
   /* Los resortes con nombre del iPhone (DS.Motion), como curvas: el mismo nombre hace lo mismo en las dos apps. */
-  --duration-smooth: 440ms; /* DS.Motion.smooth: resorte sin rebote (0.32 s de respuesta); lo que viaja y cambia de forma */
+  --duration-smooth: 300ms; /* DS.Motion.smooth: resorte sin rebote; lo que viaja y cambia de forma (TB-19: la misma curva en 300; antes 440) */
   --ease-smooth: linear(0, 0.031, 0.103, 0.195, 0.294, 0.391, 0.481, 0.563, 0.636, 0.698, 0.751, 0.796, 0.834, 0.865, 0.891, 0.912, 0.929, 0.943, 0.955, 0.964, 0.971, 0.977, 0.982, 0.986, 0.989, 0.991, 0.993, 0.994, 0.996, 0.996, 0.997, 0.998, 1);
   --duration-snappy: 290ms; /* DS.Motion.snap: firme, con un rebote que casi no se ve; lo que se acomoda o se aprieta */
   --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
   --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
-  --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
+  --duration-snap: 300ms; /* el foco de una portada, una sección que entra de lado (TB-19: antes 360) */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
   --duration-land: 760ms; /* el arranque de Orbital */
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
@@ -197,9 +195,9 @@
      el ícono y rebota un poco, y al final el texto. Lo mismo encima del juego (overlay.py usa estos valores; tests/test_overlay.py lo cuida). */
   --duration-notice-icon: 240ms; /* el ícono sale solo (--ease-pop) */
   --delay-notice-grow: 160ms; /* la cajita empieza cuando el ícono ya casi está */
-  --duration-notice-grow: 420ms; /* sin rebote (24 nov 2026: al pasarse y regresar, la cajita se veía resbalar bajo el texto) */
+  --duration-notice-grow: 300ms; /* sin rebote (24 nov 2026: al pasarse y regresar, la cajita se veía resbalar bajo el texto); TB-19: antes 420 */
   --ease-notice-grow: cubic-bezier(.22, 1, .36, 1); /* llega y se asienta, sin pasarse */
-  --delay-notice-text: 480ms; /* el texto y la sombra, cuando la cajita ya llegó (antes salía sobre el fondo, sin cajita) */
+  --delay-notice-text: 400ms; /* el texto y la sombra, cuando la cajita ya llegó (antes salía sobre el fondo, sin cajita); TB-19: antes 480, la cajita llega antes */
   /* Pantalla de carga (cinemática: más lenta a propósito) */
   --duration-launch-travel: 5.5s;
   --duration-launch-orbit: 3.4s; /* una vuelta pausada: con 2.6 s se sentía ansiosa */
@@ -223,7 +221,7 @@
   --ease-brand-out: cubic-bezier(0, 0, .58, 1); /* el easeOut de SwiftUI */
   --boot-brand-scale: 4; /* la marca al centro, tantas veces la de la barra */
   /* Escalonado: cada pieza entra un poco después que la anterior */
-  --stagger: 45ms;
+  --stagger: 100ms; /* TB-19 (B12): unos 100 ms entre pieza y pieza de una cadena (antes 45: se veían entrar juntas) */
   --delay-1: 90ms;
   --delay-2: 170ms;
   --delay-3: 260ms;
@@ -253,6 +251,9 @@
   --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
   --card-gap: var(--space-8); /* B1 (24 nov 2026): antes 1,85rem, fuera de la escala */
   --card-focus-scale: 1.2;
+  /* La cifra del Top 10 (card-ranked__number): tantas veces el alto de la portada. Es un adorno (--color-decorative), no texto
+     que se lee: por eso mide con el póster y no está en la escala de letra (TB-03). */
+  --rank-figure: .82;
   --card-radius: var(--radius-sm);
   --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-6));

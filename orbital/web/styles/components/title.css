@@ -79,7 +79,7 @@
 .title__ratings { display: flex; align-items: center; gap: var(--space-4); min-height: 1.5rem; }
 /* Vacío se quita, salvo mientras llegan (title.js · title__ratings--waiting): su lugar ya está y nada salta al llegar. */
 .title__ratings:empty:not(.title__ratings--waiting) { display: none; }
-.title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); /* D2-B: una cifra (la nota) */ font-variant-numeric: tabular-nums; /* el número rueda sin bailar */ }
+.title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-semibold); /* la nota resalta por su logo y su color, no por negrita (TB-06, B5) */ font-variant-numeric: tabular-nums; /* el número rueda sin bailar */ }
 .title__rating-mark { display: block; height: 1.3rem; width: auto; }
 .title__rating-mark--trakt { height: 1.4rem; } /* el círculo se ve más chico que las cajas a la misma altura */
 .title__rating-mark--letterboxd { height: 1.1rem; } /* sus tres puntos, a lo ancho */

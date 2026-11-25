@@ -5,7 +5,7 @@
   position: relative; flex: none;
   width: calc(var(--card-height) * var(--ratio, .667)); height: var(--card-height);
   border-radius: var(--card-radius); text-align: left; /* sin overflow: el pie va fuera de la portada */
-  background: var(--gradient-card); box-shadow: var(--shadow-card);
+  background: var(--gradient-card); /* sin sombra: una portada quieta no flota (TB-14, B10) */
   /* El foco escala desde la esquina inferior izquierda y empuja a las vecinas con el
      margen: transform no recalcula el layout de la tarjeta ni reacomoda su contenido. */
   transform-origin: 0 100%;
@@ -64,7 +64,7 @@
 .card-ranked { display: inline-flex; align-items: flex-end; flex: none; }
 .card-ranked__number {
   flex: none; margin-right: calc(-1 * var(--space-6)); margin-bottom: calc(-.12 * var(--card-height));
-  color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold); /* D2-B: una cifra (el Top 10) */
+  color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * var(--rank-figure)); font-weight: var(--weight-bold); /* D2-B: una cifra (el Top 10) */
   line-height: var(--leading-none); letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
 }
 .card-ranked .card__trend.badge { top: var(--inset-poster); }
@@ -131,7 +131,13 @@
 }
 .card__stand-in-photo { width: 88%; max-height: 50%; object-fit: contain; filter: var(--shadow-drop-lg); }
 .card--stand-in .card__subtitle { display: none; } /* la consola ya la dice la foto */
-.card--stand-in .card__title { font-family: var(--font-sans); font-size: min(var(--type-body), calc(var(--card-height) * .115)); /* la portada chica (Buscar) no parte palabras */ font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); }
+/* El nombre en una portada de respaldo: un paso de la escala (TB-03), no un tamaño que sigue al alto del póster; en una portada
+   angosta (filas de Inicio y Juegos), el paso más chico para no partir palabras. */
+.card--stand-in { container-type: inline-size; }
+.card--stand-in .card__title { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+@container (max-width: 7rem) {
+  .card--stand-in .card__title { font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); }
+}
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }

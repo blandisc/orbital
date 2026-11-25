@@ -215,7 +215,7 @@
 /* El nombre de una plataforma dentro de un texto (mosaico: «N.º 1 en Prime Video»): con el color y el carácter de su marca;
    el resto del texto no cambia. Netflix, apretado y en negrita; Prime Video en minúsculas, como su logo; Apple TV+ con el
    color del texto y seminegrita, como Apple. */
-.brand-name { font-weight: var(--weight-bold); } /* D2-B: el carácter de la marca (Netflix), no un título */
+.brand-name { font-weight: var(--weight-semibold); } /* el carácter de la marca va en su color; la negrita es del texto más grande (TB-06, B5) */
 .brand-name--netflix { color: var(--brand-netflix); letter-spacing: var(--tracking-tight); }
 .brand-name--prime { color: var(--brand-prime); text-transform: lowercase; }
 .brand-name--disney { color: var(--brand-disney); }

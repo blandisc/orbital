@@ -39,7 +39,7 @@ const RULES = [
   ["tiempo", /(?<![\w.-])\d*\.?\d+m?s\b/],
   ["capa", /z-index:\s*-?\d/],
   ["letra", /font-size:\s*(?!var\(|calc\(var|inherit|100%)[\d.]/],
-  ["escala de letra directa", /var\(--text-(?:2xs|xs|sm|md|lg|xl|2xl|3xl|display)\)/], // un componente usa la receta --type-*
+  ["escala de letra directa", /var\(--text-(?:2xs|xs|sm|md|lg|xl|2xl|3xl|display)\)/], // un componente usa la receta --type-* (TB-03: quedan 2xs, sm, lg, xl, 2xl y 3xl)
   ["interlineado", /line-height:\s*[\d.]/],
   ["trazo", /stroke-width:\s*[\d.]/], // --stroke-*
   ["espaciado de letras", /letter-spacing:\s*-?[\d.]/],
@@ -289,17 +289,16 @@ test("la etiqueta de arriba (eyebrow) es una sola receta: turquesa, sin otros co
   assert.deepEqual(problems, []);
 });
 
-// D2-B (20 nov 2026) y OT-2: la negrita es solo del título más grande (las recetas `hero` y `display`) y de las placas y las
-// cifras (`badge`, `stat`). Ninguna pieza pone negrita a mano: lo que antes se marcaba en negrita (el botón «Jugar», la pestaña
+// D2-B (20 nov 2026) y OT-2: la negrita es solo del título más grande (las recetas `hero` y `display`). Desde TB-06 (24 nov
+// 2026, sistema base B5) las placas y las cifras (`badge`, `stat`), la marca de una plataforma y la nota de la ficha van en
+// seminegrita en la TV (el iPhone sigue igual hasta que Fernando lo vea allá). Ninguna pieza pone negrita a mano: lo que antes se marcaba en negrita (el botón «Jugar», la pestaña
 // elegida, el nombre enfocado de una fila, la tecla «Buscar», un <strong> dentro de un texto) va en seminegrita. Las únicas
 // negritas sueltas son cifras o marcas que no tienen receta, con su selector aquí y su porqué en el comentario de la línea.
-const BOLD_RECIPES = /var\(--type-(hero|display|badge|stat)-weight\)/;
+const BOLD_RECIPES = /var\(--type-(hero|display)-weight\)/;
 const BOLD_ALLOWED = [
-  [/\.card-ranked__number\b/, "la cifra enorme del Top 10"],
-  [/\.title__rating\b/, "la nota de la ficha, una cifra"],
-  [/^\.brand-name$/, "el nombre de una plataforma con el carácter de su marca (Netflix en negrita)"],
+  [/\.card-ranked__number\b/, "la cifra enorme del Top 10: lo más grande de su fila"],
 ];
-test("negrita (D2-B): solo las recetas del título más grande, las placas y las cifras", () => {
+test("negrita (D2-B, TB-06): solo las recetas del título más grande y la cifra del Top 10", () => {
   const offenders = [];
   for (const r of cssRules()) {
     for (const [, value] of r.body.matchAll(/font-weight:\s*([^;]+)/g)) {
@@ -311,10 +310,10 @@ test("negrita (D2-B): solo las recetas del título más grande, las placas y las
     const short = r.body.match(/(?:^|;)\s*font:\s*([^;]+)/)?.[1] || "";
     if (short && !BOLD_RECIPES.test(short) && /var\(--weight-(bold|heavy)\)|\b(bold|bolder|[7-9]00)\b/.test(short)) offenders.push(`${rule(r)}: font ${short}`);
   }
-  assert.deepEqual(offenders, [], "Usa --weight-semibold o el grosor de su receta (--type-<receta>-weight); la negrita es de hero, display, badge y stat");
-  // Y las recetas en negrita son esas cuatro (las demás, seminegrita o normal).
+  assert.deepEqual(offenders, [], "Usa --weight-semibold o el grosor de su receta (--type-<receta>-weight); la negrita es de hero y display");
+  // Y las recetas en negrita son esas dos (las demás, seminegrita o normal).
   const bold = [...read(TOKEN_FILES[0]).matchAll(/--type-([a-z-]+)-weight:\s*var\(--weight-(bold|heavy)\)/g)].map((m) => m[1]).sort();
-  assert.deepEqual(bold, ["badge", "display", "hero", "stat"]);
+  assert.deepEqual(bold, ["display", "hero"]);
 });
 
 // OT-8 (20 nov 2026): un token se define una sola vez por archivo (--icon-xl estaba dos veces, con 1,75 y 1,8 rem, y valía el

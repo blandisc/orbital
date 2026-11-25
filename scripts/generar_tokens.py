@@ -28,8 +28,9 @@ SWIFT = ROOT / "ios" / "OrbitalCore" / "Sources" / "OrbitalCore" / "DesignTokens
 CSS_MARKS = ("  /* generado: inicio */\n", "  /* generado: fin */\n")
 SWIFT_MARKS = ("    // generado: inicio\n", "    // generado: fin\n")
 
-# Las duraciones de la TV que comparte con el iPhone (las demás de tokens.json › duration son las mismas: todas).
-WEIGHT_NOTES = {"heavy": "la cifra grande (stat), como el .heavy del iPhone"}
+# Las duraciones de la TV que comparte con el iPhone: las de tokens.json › duration, salvo las que la TV vale distinto
+# (tokens.json › durationTv, con su porqué). Los grosores: solo los que usan las recetas de la TV (`pesoTv` o `peso`).
+WEIGHT_NOTES: dict[str, str] = {}
 DURATION_NOTES = {
     "tint": "lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego",
     "enter": "algo que aparece: tarjetas, textos, insignias",
@@ -91,12 +92,18 @@ def css_block(tokens: dict) -> str:
     for suffix, px in corners.items():
         note = f" /* {RADIUS_NOTES[suffix]} */" if suffix in RADIUS_NOTES else ""
         out.append(f"  --radius-{suffix}: {_num(px / 16)}rem;{note}\n")
-    out += ["\n", "  /* Grosores: los del iPhone (Font.Weight), con el mismo nombre */\n"]
+    out += ["\n", "  /* Grosores: los del iPhone (Font.Weight), con el mismo nombre; solo los que usan las recetas de la TV */\n"]
+    used = {spec.get("pesoTv", spec["peso"]) for group in ("type", "typeTvOnly")
+            for _, spec in _items(tokens[group]) if isinstance(spec, dict)}
     for name, value in _items(tokens["weight"]):
+        if name not in used:
+            continue
         note = f" /* {WEIGHT_NOTES[name]} */" if name in WEIGHT_NOTES else ""
         out.append(f"  --weight-{name}: {value};{note}\n")
-    out += ["\n", "  /* Duraciones que comparte con el iPhone (DS.Motion, allá en segundos) */\n"]
+    out += ["\n", "  /* Duraciones que comparte con el iPhone (DS.Motion, allá en segundos); las de durationTv valen solo aquí */\n"]
+    tv_only = dict(_items(tokens.get("durationTv", {})))
     for name, ms in _items(tokens["duration"]):
+        ms = tv_only.get(name, ms)
         note = f" /* {DURATION_NOTES[name]} */" if name in DURATION_NOTES else ""
         out.append(f"  --duration-{name}: {ms}ms;{note}\n")
     out.append(CSS_MARKS[1])
