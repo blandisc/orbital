@@ -191,7 +191,7 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
       help: "Abre el código para conectar Trakt desde tu celular.", command: { type: "trakt-link" } });
   }
   if (!phones && !rd?.linked) { // AU2-A: con Real-Debrid ya se usa sin iPhone; se sigue ofreciendo en Cuentas
-    missing.push({ icon: "phone", label: "Sin iPhone", hint: "Es el mejor micrófono y el control a distancia", value: "Conectar iPhone", warn: true,
+    missing.push({ icon: "phone", label: "Sin iPhone", hint: "Te oye desde el sillón y es tu control a distancia", value: "Conectar iPhone", warn: true,
       help: "Abre el código QR para conectar tu iPhone o iPad.", command: { type: "phone-link" } });
   }
   return missing.map((m) => ({ ...m, action: m.value }));
@@ -481,14 +481,14 @@ export function updateMenu(info = {}) {
   if (!info.available) {
     return { title: "Actualizar Orbital", subtitle: "Ya tienes la versión más reciente.",
       options: [{ icon: "refresh", label: "Buscar otra vez", command: { type: "update-check", force: true } },
-        { icon: "check", label: "Listo", command: { type: "close" } }] };
+        { icon: "back", label: "Volver", command: { type: "back" } }] }; // TB-49: al menú de antes (o se cierra)
   }
   return {
     title: `Hay ${info.available} cambio${info.available === 1 ? "" : "s"} nuevo${info.available === 1 ? "" : "s"}`,
     subtitle: [...(Array.isArray(info.changes) ? info.changes : []).slice(0, 6).map((text) => `• ${text}`), "Tarda unos minutos."].join("\n"),
     options: [
       { icon: "refresh", label: "Actualizar ahora", command: { type: "update-apply" } },
-      { icon: "close", label: "Más tarde", command: { type: "close" } },
+      { icon: "close", label: "Quizás después", command: { type: "close" } }, // V6: saltar se dice así; vuelve en Ajustes › Sistema
     ],
   };
 }
@@ -608,7 +608,7 @@ export const KEY_FORMS = {
     fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
   },
   rawg: {
-    service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y lo mejor en juegos",
+    service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y los mejor calificados en juegos",
     title: "Clave de RAWG", submitLabel: "Guardar",
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
@@ -750,7 +750,7 @@ export function deviceMenu(device) {
     subtitle: "Tiene su propia conexión con esta TV.",
     options: [
       { icon: "close", label: "Dejarlo conectado", command: { type: "close" } },
-      { icon: "minus", label: "Quitar", danger: true, hint: "Para volver, escanea el código de la TV",
+      { icon: "minus", label: "Quitar el aparato", danger: true, hint: "Para volver, escanea el código de la TV",
         command: { type: "device-remove-ask", id: device.device_id, name } },
     ],
   };
@@ -777,7 +777,7 @@ export function deviceRemoveMenu(command) {
     subtitle: "Deja de hablar con esta TV al instante. Para volver, escanea el código de la TV otra vez.",
     options: [
       { icon: "close", label: "Dejarlo conectado", command: { type: "back" } },
-      { icon: "minus", label: "Quitar", danger: true, command: { type: "device-remove", id: command.id, name: command.name } },
+      { icon: "minus", label: "Quitar el aparato", danger: true, command: { type: "device-remove", id: command.id, name: command.name } },
     ],
   };
 }
@@ -817,7 +817,7 @@ export function keysMenu(service) {
     options: [
       { icon: "close", label: "Conservar la clave", command: { type: "close" } },
       { icon: "key", label: "Cambiar la clave", command: { type: "keys", service } },
-      { icon: "minus", label: "Quitar", danger: true, command: { type: "keys-remove", service } },
+      { icon: "minus", label: service === "letterboxd" ? "Quitar tu usuario" : "Quitar la clave", danger: true, command: { type: "keys-remove", service } },
     ],
   };
 }

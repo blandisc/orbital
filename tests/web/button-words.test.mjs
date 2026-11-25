@@ -21,11 +21,12 @@ const JS = walk(join(ROOT, "orbital", "web", "js"));
 const rel = (path) => path.slice(ROOT.length).replaceAll("\\", "/");
 const code = (line) => line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "").replace(/^\s*\*.*$/, "");
 
-// Donde «Continuar» a secas sí vale: el botón de un video a medias (design/vocabulario.json · «Continuar»: la película de la
-// ficha, el póster de Inicio y su episodio) y el encabezado de lo que dejaste en Inicio cuando hay juegos.
-const CONTINUE_OK = ["orbital/web/js/core/library.js", "orbital/web/js/core/watch.js", "orbital/web/js/core/home.js", "orbital/web/js/components/title.js"];
-// «Cancelar» a secas sí vale cuando es la acción misma: B en la pantalla de carga cancela lo que se está abriendo.
-const CANCEL_OK = ["orbital/web/js/components/launch-overlay.js"];
+// Donde «Continuar» a secas sí vale: el encabezado de lo que dejaste en Inicio cuando hay juegos (un título, no un botón) y
+// el armado de «Continuar T3 E5» en la ficha (core/watch.js, siempre con el episodio). Desde TB-44 (24 nov 2026) los botones
+// dicen su objeto: «Continuar la película», «Continuar la serie», «Continuar episodio».
+const CONTINUE_OK = ["orbital/web/js/core/watch.js", "orbital/web/js/core/home.js"];
+// «Cancelar» a secas ya no vale en ningún lado: B en la pantalla de carga dice «No abrir» (TB-46, 24 nov 2026).
+const CANCEL_OK = [];
 
 test("ningún botón dice «Siguiente», «Aceptar», «OK», «Aplicar», «Enviar», «Omitir» ni «Cargando…» a secas", () => {
   const problems = [];
@@ -57,7 +58,8 @@ test("la guía rápida dice a dónde lleva cada paso, y las confirmaciones empie
     assert.notEqual(next, "Siguiente");
     assert.match(next, /^(Aprender|Conocer) /, `paso ${step + 1}: ${next}`);
   }
-  assert.equal(tourMenu(4).options[0].label, "¡Listo!");
+  assert.equal(tourMenu(4).options[0].label, "Ir a Inicio"); // TB-36: el final dice qué sigue, no «¡Listo!»
+  assert.match(tourMenu(4).subtitle, /Ya sabes lo esencial/);
   assert.equal(exitMenu().options[0].label, "Quedarme en Orbital");
   assert.equal(powerConfirmMenu("off").options[0].label, "Dejarla prendida");
 });

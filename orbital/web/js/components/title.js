@@ -412,7 +412,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     }, b.primary
       ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label)]
       : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)]),
-    // El botón dice solo «Continuar» o «Ver» (Fernando, 2 nov, opción C); a su lado, cómo va a sonar y verse, en una cápsula
+    // El botón dice «Continuar la película» o «Ver» (Fernando, 2 nov, opción C; con su objeto desde TB-44, 24 nov); a su lado, cómo va a sonar y verse, en una cápsula
     // de vidrio que con Y (o tocándola) abre las versiones. El idioma va como su bandera, sin la palabra: «🇲🇽 · 1080p · CC».
     b.primary && (b.hint ? versionCapsule(b.hint) : searching && b.id === "play" && versionPending())]).filter(Boolean));
   }
@@ -499,7 +499,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
         // El que vas viendo resalta (como el iPhone, O1): ▶ sobre su imagen, la barra más gruesa y «quedan 20 min».
         // R2-8: el que sigue (empezado o no) lleva ▶ sobre su imagen, sin cápsula de texto.
         (st.left || ep.id === details?.resume?.video_id) && h("span", { class: "episode__play", role: "img",
-          "aria-label": details?.resume?.position > 0 ? "Continuar" : "Sigue" }, svg(ICONS.play)),
+          "aria-label": details?.resume?.position > 0 ? "Continuar este episodio" : "Sigue" }, svg(ICONS.play)),
         Progress(st.progress, { className: "episode__progress" })),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
@@ -1152,7 +1152,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       panelStep(1) && { glyph: g.rows, label: PANEL_NAMES[panelStep(1)] }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : zone === "episodes"
     ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Ver de internet"
-      : episode().id === details?.resume?.video_id && details.resume.position > 0 ? "Continuar" : "Ver" },
+      : episode().id === details?.resume?.video_id && details.resume.position > 0 ? "Continuar episodio" : "Ver" },
       episode() && { glyph: g.options, label: "Versión" },
       episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" },
       seasons().length > 1 && { glyph: g.section, label: "Temporada" },

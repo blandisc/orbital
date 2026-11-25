@@ -98,12 +98,9 @@
       "ios/App/Sources/Screens/TitleView+TusVistas.swift": 1,
       "ios/App/Sources/Screens/WrappedView.swift": 1,
       "ios/App/Widgets/TVActivityWidget.swift": 1,
-      "orbital/web/js/components/launch-overlay.js": 1,
-      "orbital/web/js/components/title.js": 2,
       "orbital/web/js/core/home.js": 1,
-      "orbital/web/js/core/library.js": 1,
       "orbital/web/js/core/menus-settings.js": 1,
-      "orbital/web/js/core/watch.js": 3
+      "orbital/web/js/core/watch.js": 1
     },
     "SB-2": {
       "ios/App/Sources/Design/BrandGuideCloud.swift": 2,

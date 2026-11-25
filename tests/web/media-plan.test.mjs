@@ -195,7 +195,7 @@ test("«Porque viste»: tus títulos llevan su logo (el héroe no los pone en te
   assert.equal(stageJump({ id: "curated:trend", items: [{}, {}] }, 0, 1), null);
 });
 
-test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas", async () => {
+test("Mejor calificadas por género y Temporadas van junto a Estudios y Tus plataformas", async () => {
   const { mediaRows, fetchPlan, keyOf, GROUPS } = await plan();
   const lists = [...LISTS,
     { id: "genre:accion", title: "Acción", headline: "Lo mejor de Acción en 2026", meta: "Las mejor calificadas del año", collection: "genre", kinds: ["movie", "series"] },
@@ -213,7 +213,7 @@ test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas",
   assert.deepEqual(ids.filter((id) => ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"].includes(id)),
     ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"]);
   const genre = rows.find((r) => r.id === "curated:genre-top");
-  assert.equal(genre.title, "Lo mejor del género");
+  assert.equal(genre.title, "Mejor calificadas por género");
   assert.equal(genre.centered, true);
   assert.deepEqual(genre.items.map((c) => c.title), ["Acción", "Terror"]);
   const accion = genre.items[0];

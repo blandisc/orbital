@@ -43,7 +43,7 @@ export function createBoot({ state, applySettings, openMenu, notify = null, busy
       if (settings.welcomed) return;
       const status = await api.setup();
       // Después de que aterrice la interfaz, y no encima de algo que ya abriste (un juego cargando).
-      const open = () => openMenu(setupMenu(status));
+      const open = () => openMenu(setupMenu(status, { welcome: true }));
       const show = () => (busy() ? setTimeout(show, 1500) : notify ? notify(welcomeNotice(status), open) : open());
       setTimeout(show, 1200);
       applySettings(await api.setSettings({ welcomed: true }));

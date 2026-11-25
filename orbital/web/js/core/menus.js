@@ -116,7 +116,7 @@ export function listEditOptions(list, editing = false) {
   return [
     { heading: true, label: list.name },
     editing
-      ? { icon: "check", label: "Listo", hint: "Deja de elegir · X o B", command: { type: "list-edit", on: false } }
+      ? { icon: "check", label: "Dejar de elegir", hint: "X o B", command: { type: "list-edit", on: false } }
       : { icon: "checkCircle", label: "Elegir varios", hint: "Para moverlos o quitarlos de una vez · X", command: { type: "list-edit", on: true } },
     editing && { icon: "checkCircle", label: "Elegir todas", hint: "Otra vez, ninguna", command: { type: "list-choose-all" } },
     list.add !== false && { icon: "plus", label: "Agregar a esta lista…", hint: "Busca una película o serie", command: { type: "list-add" } },
@@ -311,7 +311,7 @@ export function memoryMenu({ room_mb: room, apps = [], video = null }) {
     ? { icon: "close", label: `Cerrar ${app.name}`, value: gb(app.mb), hint: app.warning || undefined,
       command: { type: "confirm-close-app", exe: app.exe, name: app.name } }
     : { icon: "windows", label: app.name, value: gb(app.mb), hint: "De Windows u Orbital: no se cierra", command: { type: "stay" } })));
-  options.push({ icon: "check", label: "Listo", command: { type: "close" } });
+  options.push({ icon: "back", label: "Volver", command: { type: "back" } }); // TB-49: al menú de antes (o se cierra)
   const tight = room != null && room < 2048;
   return {
     title: "Liberar memoria", crumb: "Memoria",
@@ -378,7 +378,7 @@ export function playersMenu({ players = [], game = null }) {
     options.push({ icon: "restart", label: `Reiniciar ${game.title} con estos jugadores`, hint: "Lo no guardado se pierde",
       danger: true, command: { type: "players-restart-confirm", title: game.title } });
   }
-  options.push({ icon: "check", label: "Listo", command: { type: "close" } });
+  options.push({ icon: "back", label: "Volver", command: { type: "back" } }); // TB-49: al menú de antes (o se cierra)
   let subtitle = "El control con el que abres un juego es el Jugador 1. Los que conectes después se suman.";
   if (game) subtitle = game.live_join ? `${game.title}: un control que conectes entra solo.` : `${game.title} lee los controles al abrir: para cambiarlos, reinícialo.`;
   return { title: "Jugadores", crumb: "Jugadores", subtitle, options };
@@ -451,13 +451,13 @@ export function healthMenu(message, { restart = true, release = null } = {}) {
   if (!restart) {
     return { title: "Memoria casi llena", subtitle: message,
       options: [{ icon: "memory", label: "Liberar memoria", command: { type: "memory" } },
-        { icon: "check", label: "Más tarde", command: { type: "close" } }] };
+        { icon: "check", label: "Ahora no", command: { type: "close" } }] }; // V6: vuelve en Panel rápido › Liberar memoria
   }
   return {
     title: "La consola necesita reiniciarse",
     subtitle: message,
     options: [
-      { icon: "close", label: "Más tarde", command: { type: "close" } },
+      { icon: "close", label: "Ahora no", command: { type: "close" } },
       ...(release ? videoMemoryOptions({ dwm_mb: Infinity, release }).map((o) => ({ ...o, value: undefined })) : []),
       { icon: "restart", label: "Reiniciar ahora", danger: true, command: { type: "power-confirm", action: "restart" } },
     ],

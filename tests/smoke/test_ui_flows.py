@@ -3,6 +3,7 @@ mando que no tenían prueba (F11). Mismo servidor de demostración y mismo naveg
 
 from __future__ import annotations
 
+import re
 import time
 
 import pytest
@@ -244,8 +245,9 @@ def test_menu_reaches_every_entry(browser, server):  # noqa: F811
     page.keyboard.press("m")
     page.locator(".sheet .sheet__item").first.wait_for(timeout=5000)
     page.wait_for_timeout(500)
-    if page.locator(".sheet .sheet__item", has_text="Listo").count():  # con la consola recién puesta, ☰ abre su guía: «Listo»
-        page.locator(".sheet .sheet__item", has_text="Listo").click()
+    done = re.compile(r"^(Ir a Inicio|Volver)$")  # TB-49: «Tu consola» se cierra con lo que hace (antes «Listo»)
+    if page.locator(".sheet .sheet__item .sheet__label", has_text=done).count():  # con la consola recién puesta, ☰ abre «Tu consola»
+        page.locator(".sheet .sheet__item", has=page.locator(".sheet__label", has_text=done)).first.click()
         page.wait_for_timeout(800)
         page.keyboard.press("m")
         page.locator(".sheet .sheet__item", has_text="Ajustes").wait_for(timeout=5000)
