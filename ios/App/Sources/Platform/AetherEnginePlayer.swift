@@ -256,14 +256,10 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func setPictureInPictureActive(_ active: Bool) {
         engine.pictureInPictureActive = active
         if active { pipDuringBackground = true }
-        if active, needsNativeSubtitleReload, engine.sessionReloadRefusal == nil {
-            needsNativeSubtitleReload = false
-            let rate = currentRate
-            Task { @MainActor in
-                try? await engine.reloadAtCurrentPosition()   // una vez: los subtítulos de internet pasan a la ventana de PiP
-                if rate != 1 { engine.setRate(rate) }
-            }
-        }
+        // Nunca se rearma con la ventana abierta: el rearme cambia la capa del video, la ventana de PiP se quedaba sin
+        // subtítulos (o se cerraba y se volvía a abrir sola) (Fernando, 25 nov 2026). Se rearma antes, ya en la app
+        // (`scheduleNativeSubtitleReload`).
+        if active { nativeReload?.cancel() } else if nativeReloadPending { scheduleNativeSubtitleReload() }
         // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
         // texto nativa del motor) mientras la ventana está fuera, y al volver a la app se quita (vuelve el nuestro).
         // No hay equivalente para subtítulos de imagen (PGS); los que se agregan después de cargar entran al rearmar (`addSubtitle`).
@@ -296,10 +292,27 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func addSubtitle(url: URL, language: String?) async {
         let track = engine.addExternalSubtitleTrack(ExternalSubtitleTrack(url: url, name: language ?? "Externo", language: language))
         engine.selectSubtitleTrack(index: track.id)
-        needsNativeSubtitleReload = true
+        scheduleNativeSubtitleReload()
     }
-    /// Hay subtítulos de internet que la ventana de PiP aún no conoce (entran al rearmar la sesión en el mismo punto).
-    private var needsNativeSubtitleReload = false
+    /// Los subtítulos de internet entran a la pista nativa (la que dibuja la ventana de PiP) rearmando la sesión en el mismo
+    /// punto, una sola vez y dentro de la app: cuando dejas de probar versiones unos segundos (probar varias ya no traba el
+    /// video) y nunca con la ventana de PiP abierta.
+    private var nativeReload: Task<Void, Never>?
+    private var nativeReloadPending = false
+    private func scheduleNativeSubtitleReload() {
+        nativeReload?.cancel()
+        nativeReloadPending = true
+        nativeReload = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.nativeReloadQuiet))
+            guard let self, !Task.isCancelled, !self.engine.pictureInPictureActive, self.engine.sessionReloadRefusal == nil else { return }
+            let rate = self.currentRate
+            self.nativeReloadPending = false
+            try? await self.engine.reloadAtCurrentPosition()
+            if rate != 1 { self.engine.setRate(rate) }
+        }
+    }
+    /// Cuánto sin tocar los subtítulos antes de pasarlos a la pista nativa.
+    private static let nativeReloadQuiet: Double = 6
 
     /// En segundo plano y en pausa, pasada la ventana de gracia (la pide de 60 s, pero iOS solo presta ~30 s antes de suspender
     /// la app), AetherEngine suelta el decodificador y la conexión

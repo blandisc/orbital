@@ -417,6 +417,33 @@ final class PlayerModelTests: XCTestCase {
     }
 
     /// «Este va bien» en una serie: en el siguiente episodio se pone el de la misma copia (grupo), aunque el video traiga uno.
+    /// Lo que mandó la TV (o el otro aparato) para este mismo episodio gana a lo que este iPhone recordaba del título:
+    /// misma versión, mismo audio, mismos subtítulos (Fernando, 25 nov 2026).
+    func testHandoffTracksBeatWhatThisDeviceRemembered() async throws {
+        let rig = try twoSources()
+        rig.model.subtitlePicks = SubtitlePicks(rig.kv)
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let subs: JSON = ["subtitles": [["url": "https://s.example/b.srt", "lang": "spa", "release": "Show.WEB-DL-NTb", "downloads": 5]]]
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A1.json"] = subs
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A2.json"] = subs
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A2.json"] = rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        await rig.model.ensureSubtitleSearch()
+        let web = try XCTUnwrap(rig.model.subtitleVersions(language: "es").first { $0.id == "https://s.example/b.srt" })
+        await rig.model.selectVersion(web, trying: true)
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, subEs, MediaTrack(id: 20, kind: .subtitle, language: "spa")], selectedAudio: 1, selectedSubtitle: 20))
+        rig.model.confirmSubtitle()   // en este iPhone elegiste esa copia de internet para la serie
+        let before = rig.engine.subs.count
+        await rig.model.begin(rig.request(video: "tt0386676:1:2"))
+        // Mientras carga llega lo que mandó la TV para el episodio 2: la pista del video «Latinoamérica».
+        let latino = MediaTrack(id: 12, kind: .subtitle, language: "spa", title: "Latinoamérica")
+        rig.titlePrefs.remember(metaID: "tt0386676", choice: ResumeChoice(videoID: "tt0386676:1:2", subtitle: .init(language: "spa", title: "Latinoamérica")), share: false)
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, latino], selectedAudio: 1))
+        XCTAssertTrue(rig.engine.calls.contains("sub 12"), "los subtítulos que mandó la TV")
+        XCTAssertEqual(rig.engine.subs.count, before, "no la copia de internet que este iPhone recordaba")
+    }
+
     func testThisOneWorksPicksTheSameReleaseNextEpisode() async throws {
         let rig = try twoSources()
         rig.model.subtitlePicks = SubtitlePicks(rig.kv)
