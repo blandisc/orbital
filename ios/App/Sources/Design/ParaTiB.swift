@@ -224,7 +224,9 @@ struct MosaicCover: View {
         // caigan justo donde van las del mosaico (si no, al cambiar brincaban de lado).
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { wallX = $0 }
         .offset(x: alignShift * reach)
-        .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
+        // MT4-A: en la puerta se endereza aquí mismo (un solo giro). Antes giraba aquí y se desgiraba en `CoverOpening` sobre
+        // otro centro: derecho quedaba corrido de lado y el mosaico no podía tomar sus pósters (salían dos mosaicos).
+        .rotationEffect(.degrees(DS.ParaTiB.coverTilt * (isDoor ? 1 - reach : 1)))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -310,10 +312,21 @@ struct MosaicCover: View {
             let top = max(0, MosaicHandoff.mosaicTop - box.minY)
             let fade = (WindowMetrics.column.height - MosaicHandoff.mosaicTop) * DesignTokens.Opacity.hairline * 0.7
             let hidden = Color.black.opacity(1 - Double(reach))
+            // MT4-A: las columnas del muro que caen fuera del mosaico (en las orillas) se apagan al abrirse; si no, quedaban
+            // detrás como un segundo mosaico (Fernando, 25 nov 2026).
+            let screen = WindowMetrics.column.width
+            let left = max(0, DS.Space.s2 - box.minX), right = max(0, box.maxX - (screen - DS.Space.s2))
             VStack(spacing: 0) {
                 hidden.frame(height: top)
                 LinearGradient(colors: [hidden, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
                 Color.black
+            }
+            .mask {
+                HStack(spacing: 0) {
+                    hidden.frame(width: left)
+                    Color.black
+                    hidden.frame(width: right)
+                }
             }
         }
     }
@@ -352,7 +365,7 @@ private struct CoverOpening: ViewModifier {
             content.opacity(left)
         } else {
             content
-                .rotationEffect(.degrees(-DS.ParaTiB.coverTilt * p), anchor: center)
+                .rotationEffect(.degrees(door ? 0 : -DS.ParaTiB.coverTilt * p), anchor: center)
                 .scaleEffect(1 + DS.ParaTiB.doorGrow * p, anchor: center)
         }
     }
