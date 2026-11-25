@@ -174,6 +174,8 @@ public struct OrbitalRemote: Sendable {
         public var kind: String, live: Bool
         public var metaID: String?, videoID: String?
         public var title: String, episodeLabel: String
+        /// El nombre del capítulo («La boda roja»), si la TV lo manda; vacío en películas, en vivo o consolas viejas.
+        public var episodeTitle = ""
         /// Temporada y episodio en números (0 = especiales); nil en películas, TV en vivo o consolas viejas (queda `episodeLabel`).
         public var season: Int?, episode: Int?
         public var poster: String?
@@ -224,6 +226,7 @@ public struct OrbitalRemote: Sendable {
                               channel: json["channel"]?.string, number: json["number"]?.intValue, category: json["category"]?.string,
                               muted: json["muted"]?.bool ?? false, season: json["season"]?.intValue, episode: json["episode"]?.intValue)
             now.logo = json["logo"]?.nonEmptyString
+            now.episodeTitle = json["episode_title"]?.nonEmptyString ?? ""
             now.audioTracks = (json["tracks"]?["audio"]?.array ?? []).compactMap(Track.parse)
             now.subtitleTracks = (json["tracks"]?["subtitles"]?.array ?? []).compactMap(Track.parse)
             return now
