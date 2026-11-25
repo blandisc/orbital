@@ -52,7 +52,7 @@ export function createTvScreen({ state, ui, inTv, renderHints, goToSection, step
     if (moved === "exit") return goToSection("home", -1);
     switch (action) {
       case "select": return tvActivate(ui.tv.current);
-      case "alt": return tvRefresh();
+      case "alt": return ui.tv.failed ? (sound.play("select"), ui.tv.load({ force: true })) : tvRefresh(); // con el error a la vista, X es su «Reintentar»
       case "options": { // Y en uno de «Tus canales»: ver la serie o quitarlo (con Trakt); en los demás, nada
         const channel = ui.tv.current?.channel;
         const mine = channel?.categories?.includes("Tus canales") && String(channel.id).startsWith("mine:") ? channel.id.slice(5) : null;
@@ -67,5 +67,5 @@ export function createTvScreen({ state, ui, inTv, renderHints, goToSection, step
     }
   }
 
-  return { tvFocused, tvActivate, handleTv };
+  return { tvFocused, tvActivate, handleTv, tvRefresh };
 }

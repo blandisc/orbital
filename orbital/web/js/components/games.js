@@ -153,17 +153,39 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
       const card = Card(games[i], { caption: "focus", onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
-    }, { focusIdOf: (i) => `game:${i}` }) : EmptyState(filter === "favorites"
-      ? { icon: "heart", title: "Aún no tienes favoritos aquí", text: "Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos." }
-      : c?.folder !== undefined
-        ? { icon: "folder", title: "Ya tienes el emulador", text: `Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.` }
-        : { icon: "gamepad", title: "Nada por aquí" }));
+    }, { focusIdOf: (i) => `game:${i}` }) : EmptyState(emptyFilter(c, filter)));
     const remembered = games.findIndex((g) => g.id === memory[consoleId]);
     if (focusId.startsWith("game:") && remembered >= 0) {
       focusId = `game:${remembered}`; // el foco sigue al juego, no a la posición (la lista se reordena al jugar)
     } else if (!targets.has(focusId)) {
       focusId = games.length ? `game:${Math.max(0, remembered)}` : activeFilter(); // sin juegos: el filtro que estás viendo
     }
+  }
+
+  /**
+   * Un filtro sin juegos (C4 · C7, JT-4): dice qué saldrá ahí, en positivo, y trae «Ver todos», que regresa a Recientes (con
+   * el mando, X; con el dedo o el mouse, el botón). Una consola sin ningún juego dice dónde ponerlos.
+   */
+  function emptyFilter(c, filter) {
+    const all = filter !== "recent" ? { label: "Ver todos", glyph: options.glyphs.alt, onPress: () => showAll() } : null;
+    const name = c?.name || "esta consola";
+    if (filter === "favorites") {
+      return { icon: "heart", title: `Tus favoritos de ${name} salen aquí`, text: "Para marcar uno, enfoca un juego y elige Opciones › Añadir a favoritos.", action: all };
+    }
+    if (!all && c?.folder !== undefined) {
+      return { icon: "folder", title: "Ya tienes el emulador", text: `Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.` };
+    }
+    const label = filtersFor(consoleId).find((f) => f.id === filter)?.label;
+    return { icon: "gamepad", title: label ? `Ningún juego de ${name} en «${label}»` : `Aún no hay juegos de ${name}`,
+      text: all ? "Los demás siguen en Recientes." : null, action: all };
+  }
+
+  /** «Ver todos»: de un filtro vacío a Recientes, con el foco en su pestaña. */
+  function showAll() {
+    filterOf[consoleId] = "recent";
+    renderConsole();
+    focusId = activeFilter();
+    paint();
   }
 
   /** El juego a pantalla: su porqué en turquesa, su logo (o su nombre), una línea de datos y sus botones (Jugar en blanco;
@@ -303,6 +325,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
       paint();
       return true;
     }
+    if (action === "alt" && !games.length && filterNow() !== "recent") { showAll(); return true; } // el «Ver todos» del vacío
     if (action === "back") {
       if (focusId.startsWith("rail:") || focusId.startsWith("filter:")) { focusId = firstGame(); paint(); return true; }
       if (focusId !== "game:0" && games.length) { focusId = "game:0"; paint(); return true; }
@@ -320,5 +343,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     get current() { return targets.get(focusId) ?? null; },
     get focusId() { return focusId; },
     get console() { return current(); },
+    /** Un filtro sin juegos: X hace su «Ver todos» (el pie lo dice). */
+    get showAll() { return !games.length && filterNow() !== "recent"; },
   };
 }

@@ -7,7 +7,12 @@
 }
 .viewer--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 .viewer__image { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* El pie va en su placa de vidrio legible (C10 · B9, JT-8): la captura puede ser clara y el texto suelto no se leía (1,2:1). */
 .viewer__caption {
-  position: absolute; left: 0; right: 0; bottom: calc(var(--space-6) + var(--safe-y));
-  text-align: center; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
+  position: absolute; left: 0; right: 0; bottom: calc(var(--space-6) + var(--safe-y)); width: fit-content; max-width: calc(100% - 2 * var(--page-gutter));
+  margin-inline: auto; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
+  background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+  text-align: center; color: var(--color-text); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
 }
+.viewer__caption:empty { display: none; }
+.viewer__count { font-variant-numeric: tabular-nums; } /* B7: «1 de 2» no baila al pasar */

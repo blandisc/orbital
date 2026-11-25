@@ -14,7 +14,7 @@
 /* El juego a pantalla: a la izquierda, sobre el velo del fondo; lo de la derecha es arte. */
 .games__hero {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-width: min(46rem, 50%);
-  padding: var(--space-2) 0;
+  padding: var(--space-2) 0 var(--space-6); /* B2 (JT-3): de «Jugar» a las pestañas, 24 (antes 8): los filtros son de sus juegos, no del héroe */
 }
 /* El porqué y el logo (o el nombre) van juntos, abajo de una caja que mide siempre lo mismo (la del logo más alto): al pasar
    de un juego a otro, o mientras su logo llega y entretanto va el nombre (games.js · paintHero), los datos, los botones y la

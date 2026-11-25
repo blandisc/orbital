@@ -188,7 +188,8 @@ class _Menus(_Hud):
         except ValueError as exc:  # sin iPhone o sin internet: en palabras, nunca un error crudo
             self.toast(str(exc), 4)
             return
-        self.toast(said or "Listo", 5)
+        # P2 (JT-14): nunca un «Listo» solitario: lo que pasó («Sigue en tu iPhone», «Enviado al iPhone»).
+        self.toast(said or ("Sigue en tu iPhone" if action == "continue" else "Enviado al iPhone"), 5)
         if action == "continue":  # sigue allá: la TV regresa a Orbital (lo visto se guarda al cerrar)
             time.sleep(1.5)
             self.stop()

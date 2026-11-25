@@ -11,7 +11,7 @@ import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints } from 
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { tokenMs } from "./core/tokens.js";
-import { failure, retry, serverDetail } from "./core/notices.js";
+import { failure, retry, serverDetail, triedTitle } from "./core/notices.js";
 import { cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, debridSignupMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
@@ -242,6 +242,7 @@ const ui = {
     onFocus: () => tvFocused(),
     // Una categoría cambia los canales al primer toque (antes el primero solo la marcaba y parecía trabada).
     onPick: (target, id) => (ui.tv.focusId === id || target?.kind === "filter" ? (ui.tv.focus(id), tvActivate(target)) : ui.tv.focus(id)),
+    onRefresh: () => tvRefresh(), // el botón «Buscar canales» del vacío (C4), lo mismo que X
   }),
   traktLink: createTraktLink({
     glyphs, onChange: () => renderHints(),
@@ -266,6 +267,11 @@ const ui = {
       const touched = target.metaId ? pickArt(mediaItems, target.metaId, which, url) : [];
       if (touched.length && url) buildCuration();
       else if (touched.length) fetchMany(touched.map(unkeyOf)).then(buildCuration); // «El de siempre»: se vuelven a pedir
+    },
+    // C5 (JT-7): no se pudo guardar la elegida: dice qué pasó, que se queda la de ahora, y «Reintentar».
+    onPickFailed: (target, err, again) => {
+      sound.play("error");
+      ui.toast.show(`No pude cambiar el arte de ${target.title}`, failure(retry(again), { err, detail: "Se queda la de ahora" }));
     },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -518,14 +524,14 @@ function renderHints() {
   if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(capHints(ui.foryou.hints(g), g));
   if (inTv() && !ui.sheet.isOpen) {
     return ui.hints.render(tvHints(g, ui.tv.current, {
-      empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart, onAir: ui.tv.onAir,
+      empty: ui.tv.empty, failed: ui.tv.failed, categories: ui.tv.categories, atStart: ui.tv.atStart, onAir: ui.tv.onAir,
       running: state.running?.managed && state.running.live ? state.running : null,
       mine: String(ui.tv.current?.channel?.id || "").startsWith("mine:"),
     }));
   }
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
-    return ui.hints.render(gamesHints(g, target && { ...target, focusId: ui.games.focusId }));
+    return ui.hints.render(gamesHints(g, target && { ...target, focusId: ui.games.focusId }, { showAll: ui.games.showAll }));
   }
   if (inHome() && !ui.sheet.isOpen) {
     const target = ui.home.current;
@@ -1999,8 +2005,9 @@ async function runCommand(command, context = null) {
     }
   } catch (err) {
     sound.play("error");
-    // Lo que dijo el servidor va en el detalle; el aviso dice que no se pudo y ofrece hacerlo otra vez (OT-3).
-    ui.toast.show("No pude hacerlo", failure(retry(() => runCommand(command, context)), { err }));
+    // El título dice qué se intentaba (la opción del menú, JT-11); lo que dijo el servidor, en el detalle (nunca un error de
+    // JavaScript: serverDetail lo calla) y el arreglo es hacerlo otra vez (OT-3).
+    ui.toast.show(triedTitle(context?.menu?.options?.[context.index]?.label), failure(retry(() => runCommand(command, context)), { err }));
   }
 }
 
@@ -2262,7 +2269,7 @@ function handleRows(action, { repeat = false } = {}) {
 
 /** Botones en el Inicio: moverse por posición (spatial), A/X/Y sobre lo enfocado, lo demás igual. */
 // TV en vivo, los botones (app/tv-screen.js).
-const { tvFocused, tvActivate, handleTv } = createTvScreen({ state, ui, inTv, renderHints, goToSection, stepSection, openSearch,
+const { tvFocused, tvActivate, handleTv, tvRefresh } = createTvScreen({ state, ui, inTv, renderHints, goToSection, stepSection, openSearch,
   openMenu, traktLinked, resumeRunning, playChannel });
 
 // ---------------------------------------------------------------- eventos del servidor (app/server-events.js)

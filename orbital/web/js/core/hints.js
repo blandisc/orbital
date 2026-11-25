@@ -128,9 +128,11 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
 }
 
 /** Pie de Juegos (lógica pura): jugar lo enfocado, filtrar, o cambiar de consola en el riel. */
-export function gamesHints(glyphs, target) {
+export function gamesHints(glyphs, target, { showAll = false } = {}) {
   const list = [];
   if (target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Filtrar" });
+  // Un filtro sin juegos: X es el «Ver todos» del vacío (JT-4); la tele ya lo dibuja en el botón, el iPhone lo rotula.
+  if (showAll && glyphs.alt) list.push({ glyph: glyphs.alt, label: "Ver todos", offscreen: true });
   else if (target?.kind === "rail") list.push({ glyph: glyphs.select, label: "Ver sus juegos" });
   // Un juego enfocado: arriba ya se ven Jugar, Con … y Opciones con su botón; el pie no los repite.
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
@@ -146,14 +148,16 @@ export function gamesHints(glyphs, target) {
  * Pie de TV en vivo (lógica pura): A sintoniza el canal enfocado; LT/RT cambian de categoría (LB/RB, como en toda
  * la app, de sección); X vuelve a buscar y revisar los canales.
  */
-export function tvHints(glyphs, target, { empty = false, categories = 1, atStart = true, onAir = false, running = null, mine = false } = {}) {
+export function tvHints(glyphs, target, { empty = false, failed = false, categories = 1, atStart = true, onAir = false, running = null, mine = false } = {}) {
   const list = [];
   // El canal que ya está al aire: A vuelve a él (no lo sintoniza otra vez).
   if (!empty && target?.kind === "channel") list.push({ glyph: glyphs.select, label: onAir ? "Volver al canal" : "Ver" });
   else if (!empty && target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Elegir" });
   if (!empty && categories > 1 && glyphs.page) list.push({ glyph: glyphs.page, label: "Categoría" });
   if (mine && target?.kind === "channel") list.push({ glyph: glyphs.options, label: "Opciones" }); // uno de «Tus canales»
-  list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
+  // Sin canales, X es el botón del vacío («Reintentar» o «Buscar canales», JT-1): la tele ya lo dibuja; el iPhone lo rotula.
+  if (empty) list.push({ glyph: glyphs.alt, label: failed ? "Reintentar" : "Buscar canales", offscreen: true });
+  else list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", offscreen: true });
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true }); // de los canales, B vuelve a las categorías; de ahí, al Inicio
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).

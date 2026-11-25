@@ -8,9 +8,8 @@ import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
 import { airingLine, ALL, nextLine, categoriesOf, categoryHue, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay, windowCells } from "./browse.js";
-import { Badge, Chip, EmptyState, Eyebrow } from "./ui.js";
+import { Badge, Chip, EmptyState, ErrorState, Eyebrow } from "./ui.js";
 import { rememberedMap } from "../core/storage.js";
-import { serverDetail } from "../core/notices.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 const TYPE_MS = 1300; // tecleando un número: lo que se espera al siguiente dígito antes de sintonizar
@@ -26,10 +25,11 @@ const RECENT = "recent";
  * La miniatura es una a la vez (la del canal donde te detienes) y pasa por Orbital en la calidad más baja
  * (library/iptv_preview.py); se apaga al salir de la sección.
  *
- * Callbacks: onFocus(target | null) · onPick(target, id) (dedo, ratón o número)
+ * Callbacks: onFocus(target | null) · onPick(target, id) (dedo, ratón o número) · onRefresh() (el botón «Buscar canales»
+ * del vacío, lo mismo que X)
  * target = { kind: "channel", channel } | { kind: "filter", value }
  */
-export function createTv({ onFocus, onPick }) {
+export function createTv({ onFocus, onPick, onRefresh }) {
   const cats = h("nav", { class: "tv__cats", "aria-label": "Categorías" });
   const video = h("video", { class: "tv__video", muted: true, playsInline: true, autoplay: true, "aria-hidden": "true" });
   video.muted = true; // el atributo solo no basta para que se pueda reproducir solo
@@ -46,10 +46,11 @@ export function createTv({ onFocus, onPick }) {
   const el = h("section", { class: "tv", hidden: true, "aria-label": "TV en vivo" }, cats, main, typed, notice);
 
   let data = null; // lo último que contestó /api/tv
-  let error = "";
+  let error = false; // no llegó la lista (el vacío es el error del catálogo, con «Reintentar»)
   let loading = false;
   let playing = null; // el canal que está al aire en el reproductor (viene del estado de Orbital)
   let fetchedAt = 0;
+  let glyphs = {}; // el botón del vacío lleva la tecla que lo hace (X)
   let category = null;
   let list = []; // [{ id, title, count }]
   let channels = [];
@@ -118,7 +119,7 @@ export function createTv({ onFocus, onPick }) {
     mount(grid, windowCells(grid, channels.length, (i) => tile(channels[i], i),
       { focusIdOf: (i) => `channel:${i}`, slotClass: ["tv__tile", "tv__tile--slot"] }));
     const empty = emptyState(data, { loading, error });
-    mount(notice, empty && EmptyState({ icon: "tv", title: empty.title, text: empty.text, className: "tv__message" }));
+    mount(notice, empty && emptyPiece(empty));
     main.hidden = cats.hidden = !!empty;
     if (focusId.startsWith("cat:")) focusId = `cat:${list.findIndex((c) => c.id === category)}`;
     else {
@@ -127,6 +128,15 @@ export function createTv({ onFocus, onPick }) {
       focusId = `channel:${again >= 0 ? again : Math.max(0, remembered)}`;
     }
     paint();
+  }
+
+  /** El vacío o el error del catálogo (C4/C5) con su botón; con el mando lo hace X (tv-screen.js), con el dedo se toca. */
+  function emptyPiece(empty) {
+    if (empty.tone === "error") {
+      return ErrorState({ title: empty.title, text: empty.text, glyph: glyphs.alt, onRetry: () => load({ force: true }), className: "tv__message" });
+    }
+    const action = empty.action === "refresh" && onRefresh ? { label: "Buscar canales", glyph: glyphs.alt, onPress: () => onRefresh() } : null;
+    return EmptyState({ icon: "tv", title: empty.title, text: empty.text, className: "tv__message", action });
   }
 
   /** Marca el foco, deja a la vista la casilla y pone la miniatura del canal donde te detienes. */
@@ -238,11 +248,11 @@ export function createTv({ onFocus, onPick }) {
     if (loading) render();
     try {
       data = await api.tv();
-      error = "";
+      error = false;
       fetchedAt = Date.now();
       if (data.playing !== undefined && playing === null) playing = data.playing ?? null;
-    } catch (err) {
-      error = serverDetail(err); // el detalle (C5): qué pasó lo dice el título del vacío
+    } catch {
+      error = true; // C5: el vacío dice qué pasó con palabras de Orbital, nunca el texto crudo del servidor
     }
     loading = false;
     render();
@@ -360,7 +370,8 @@ export function createTv({ onFocus, onPick }) {
 
   return {
     el, load, render, handle, setCategory, remember, setPlaying,
-    setGlyphs: () => {}, // las categorías se ven a la izquierda; LT/RT las cambian (la leyenda lo dice)
+    // Las categorías se ven a la izquierda (LT/RT las cambian, la leyenda lo dice); el glifo es el del botón del vacío.
+    setGlyphs: (g) => { glyphs = g || {}; if (!el.hidden && emptyState(data, { loading, error })) render(); },
     focus: (id) => { if (targets.has(id)) { focusId = id; paint(); } },
     show: () => { el.hidden = false; load(); if (data) { paint(); scheduleAiringRefresh(); } },
     hide: () => { el.hidden = true; stopPreview(); previewing = null; clearTimeout(airingTimer); },
@@ -369,6 +380,8 @@ export function createTv({ onFocus, onPick }) {
     get category() { return category === RECENT ? ALL : category ?? ALL; },
     get categories() { return list.length; },
     get empty() { return allChannels().length === 0; },
+    /** No llegó la lista (el vacío es un error): X la vuelve a pedir en vez de buscar canales nuevos. */
+    get failed() { return emptyState(data, { loading, error })?.action === "retry"; },
     get playing() { return playing; },
     get onAir() { return playing !== null && targets.get(focusId)?.channel?.id === playing; },
     get atStart() { return focusId.startsWith("cat:"); },

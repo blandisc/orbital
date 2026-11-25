@@ -6,7 +6,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { failure, fixWith, openSettings, RETRY, retry, serverDetail } from "../../orbital/web/js/core/notices.js";
+import { failure, fixWith, openSettings, RETRY, retry, serverDetail, triedTitle } from "../../orbital/web/js/core/notices.js";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
@@ -52,6 +52,18 @@ test("failure: rojo, con su arreglo, y lo del servidor solo en el detalle (sin �
   assert.equal(serverDetail(new Error("No lo encontré.")), "No lo encontré");
   assert.throws(() => failure(null), TypeError, "sin arreglo no hay aviso de error");
   assert.throws(() => failure({ label: "Reintentar" }), TypeError);
+});
+
+// JT-11 (C5, 25 nov 2026): el aviso genérico enseñaba «Cannot read properties of undefined…» en el detalle. Un error de
+// JavaScript o un texto técnico del sistema (en inglés) no es un detalle; y el título dice qué se intentaba, no «No pude hacerlo».
+test("serverDetail calla lo técnico y triedTitle dice qué se intentaba", () => {
+  assert.equal(serverDetail(new TypeError("Cannot read properties of undefined (reading 'id')")), "");
+  assert.equal(serverDetail(new Error("Connection reset by peer [WinError 10054]")), "");
+  assert.equal(serverDetail(new Error("Sin conexión con Orbital.")), "Sin conexión con Orbital");
+  assert.equal(triedTitle("Añadir a favoritos"), "No pude añadir a favoritos");
+  assert.equal(triedTitle("Buscar juegos nuevos…"), "No pude buscar juegos nuevos");
+  assert.equal(triedTitle("Capturas"), "No pude abrir Capturas");
+  assert.equal(triedTitle(""), "No pude hacerlo");
 });
 
 test("el aviso pinta el arreglo como su acción y lo amarra al mando (bindAction)", () => {

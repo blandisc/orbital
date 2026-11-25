@@ -98,7 +98,7 @@ const ICON_MEANINGS = {
     ok: [/label: "Calific(ar|ación)"/, /label: `Calificar la temporada/, /STARS\.map/, /label: "Cualquiera"/, /label: ratingName/, /RATE = /,
       /"genre-top": "star"/, /id: "rating"/],
   },
-  heart: { idea: "♥ favoritos (los juegos y títulos que marcas; lo guardado es el marcador)", ok: [/label: "Añadir a favoritos"/, /Aún no tienes favoritos/] },
+  heart: { idea: "♥ favoritos (los juegos y títulos que marcas; lo guardado es el marcador)", ok: [/label: "Añadir a favoritos"/, /Tus favoritos de \$\{name\} salen aquí/] },
   heartFill: { idea: "♥ favoritos (marcado)", ok: [/"Favorito"/] },
   heartOff: { idea: "♥ quitar de favoritos", ok: [/label: "Quitar de favoritos"/] },
   premium: { idea: "el diamante de Premium (Real-Debrid)", ok: [/label: "Premium"/] },

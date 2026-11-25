@@ -2,7 +2,8 @@
    del juego lo pone backdrop.css, con su luz), a la izquierda lo suyo y sus botones, a la derecha lo tuyo en vidrio, abajo
    los demás juegos de su consola. */
 .game-page {
-  display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-6);
+  /* B3 (JT-6): «Más de Steam» se pega a su fila, no a los botones: arriba 48 (antes 24, quedaba a 33 de los botones). */
+  display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-12);
   background: var(--veil-leading), var(--veil-bottom);
 }
 /* Abierta, lo de atrás (la sección, la barra) se esconde: queda solo el arte del juego (main.js · openGamePage). */
@@ -33,6 +34,8 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
 [data-text-size="xlarge"] .game-page__logo { max-height: 6rem; }
 /* C8: el veredicto de las horas suma un renglón; con letra muy grande, el panel aprieta su aire para que quepa. */
 @media (max-height: 900px) { [data-text-size="xlarge"] .game-page__panel { gap: var(--space-1); padding: var(--space-4); } }
+/* JT-6: con letra muy grande en la Legion Go (1280×800) el aire sobre «Más de…» vuelve a 24; con 48 el panel se cortaba. */
+@media (max-height: 900px) { [data-text-size="xlarge"] .game-page { gap: var(--space-6); } }
 @media (max-height: 900px) { [data-text-size="large"] .game-page__synopsis { -webkit-line-clamp: 2; } }
 .game-page__stat { display: grid; gap: var(--space-1); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .game-page__stat-label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }

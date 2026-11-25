@@ -91,8 +91,9 @@ class _Cards(SubtitleTrial):
             settle = player_ui.ease_out(spent / self.MORPH) if self.CARD_FRAME else 1.0
             length = self.SPIN_ARC + (card.get("from", 0.0) - self.SPIN_ARC) * (1 - settle)  # el arco que quedaba
             label, name = card.get("label") or "", card.get("name") or ""
-            ass = player_ui.upnext_ass(name or label or "Siguiente episodio",
-                                       f"Cargando {label}…" if label and name else "Cargando…",
+            # C9 (JT-14): sin nombre, dice qué prepara, nunca «Cargando…» a secas.
+            ass = player_ui.upnext_ass(name or label or "A continuación",
+                                       f"Cargando {label}…" if label and name else "Preparando el siguiente episodio…",
                                        spinner=(spent * self.SPIN, length), actions=[("B", "Mantén: salir")],
                                        still=room, appear=appear)
         else:

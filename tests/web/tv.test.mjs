@@ -72,10 +72,19 @@ test("el dato bajo el título dice cuántos hay y qué pasa", () => {
 test("lo que se dice cuando no hay canales, en cada caso", () => {
   assert.equal(emptyState(DATA), null);
   assert.equal(emptyState(null, { loading: true }).title, "Buscando canales…");
-  assert.equal(emptyState(null, { error: "Sin conexión con Orbital." }).text, "Sin conexión con Orbital. Pulsa X para intentarlo otra vez.");
+  // C5 (JT-1): el error es de Orbital, con «Reintentar»; el texto crudo del servidor («Connection reset by peer…») no sale.
+  const failed = emptyState(null, { error: "Connection reset by peer [WinError 10054]" });
+  assert.equal(failed.title, "No pude traer los canales");
+  assert.equal(failed.tone, "error");
+  assert.equal(failed.action, "retry");
+  assert.doesNotMatch(failed.text, /Connection|WinError|Pulsa X/);
   assert.match(emptyState({ channels: [], checking: true }).text, /primera vez/);
   assert.match(emptyState({ channels: [], offline: true }).text, /Internet/);
-  assert.equal(emptyState({ channels: [] }).title, "No encontré canales");
+  // C4 (JT-1): el vacío dice qué vas a tener ahí y trae su botón («Buscar canales»), no «Pulsa X» (con el dedo no hay X).
+  assert.equal(emptyState({ channels: [] }).title, "Aquí salen tus canales en vivo");
+  assert.equal(emptyState({ channels: [] }).action, "refresh");
+  assert.equal(emptyState({ channels: [], offline: true }).action, "refresh");
+  assert.equal(emptyState({ channels: [], checking: true }).action, undefined);
   // Con una lista que ya está, un error de red al refrescar no tapa los canales.
   assert.equal(emptyState(DATA, { error: "x" }), null);
 });
@@ -136,9 +145,12 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   // Con teclado, Home es Ctrl + Inicio (atajo global de la consola): el pie lo dice, para saber qué tecla picar.
   assert.deepEqual(tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 1, running: { title: "X" } }).find((x) => x.label === "Volver a X"),
     { glyph: "Ctrl Inicio", label: "Volver a X" });
-  // Sin canales no hay nada que ver: solo actualizar y volver.
-  const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
-  assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));
+  // Sin canales no hay nada que ver: X es el botón del vacío (JT-1), «Buscar canales» o, si no llegó la lista, «Reintentar»;
+  // la tele ya lo dibuja en el botón (offscreen) y el control del iPhone lo rotula.
+  const empty = tvHints(g, null, { empty: true, categories: 1 });
+  assert.ok(!labels(empty).includes("Ver"));
+  assert.deepEqual(empty.find((x) => x.glyph === "X"), { glyph: "X", label: "Buscar canales", offscreen: true });
+  assert.equal(tvHints(g, null, { empty: true, failed: true, categories: 1 }).find((x) => x.glyph === "X").label, "Reintentar");
 });
 
 test("un canal de Orbital dice qué episodio va y a qué hora termina", async () => {

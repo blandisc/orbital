@@ -1,4 +1,5 @@
-import { h, hideAfterExit } from "../core/dom.js";
+import { h, hideAfterExit, mount } from "../core/dom.js";
+import { captureName } from "../core/menus.js";
 import { swipeArea } from "../core/swipe.js";
 
 /**
@@ -24,8 +25,11 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     img.src = item.kind === "image" ? `/api/captures/file?path=${encodeURIComponent(item.path)}` : "";
     img.hidden = item.kind !== "image";
     const when = Number.isFinite(item.time) ? new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "";
-    caption.textContent = `${item.name} · ${when} · ${index + 1} de ${items.length}`
-      + (item.kind === "video" ? " · Es un clip: ábrelo para verlo" : ""); // el botón (A, Enter o tocar) va en el pie
+    // C10 · B9 · B7 (JT-8): el nombre limpio (sin lo que pone Windows), en su placa de vidrio (la captura puede ser clara) y
+    // «1 de 2» con cifras del mismo ancho, que no baila al pasar. El botón del clip (A, Enter o tocar) va en el pie.
+    mount(caption, [captureName(item.name), when].filter(Boolean).join(" · ") + " · ",
+      h("span", { class: "viewer__count" }, `${index + 1} de ${items.length}`),
+      item.kind === "video" ? " · Es un clip: ábrelo para verlo" : "");
   }
 
   function open(list, start = 0) {

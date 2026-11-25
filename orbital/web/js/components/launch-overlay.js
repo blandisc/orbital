@@ -10,8 +10,20 @@ const HOLD_MS = 52_000;
 const ART_WAIT_MS = 700;
 // Una imagen que no llega en este tiempo se da por perdida para el aviso al servidor (si llega después, igual entra).
 const IMAGE_GIVE_UP_MS = 6000;
-// Sin cambios de fase en este rato: «Está tardando más de lo normal» (que no parezca colgada).
-const SLOW_MS = 15_000;
+// Sin cambios de fase en este rato: «Está tardando más de lo normal» (que no parezca colgada). C9 (JT-10): a los 8 s, no a
+// los 15: pasado eso, quien espera ya se pregunta si se colgó.
+const SLOW_MS = 8_000;
+
+/**
+ * La primera fase de abrir algo dice qué abre (C9, JT-10), no «Abriendo» a secas: un juego de Steam espera a Steam; uno de
+ * emulador, a su emulador («Abriendo Ryujinx…», o «Abriendo el emulador…» si no se sabe cuál). Lo demás (una app, un video,
+ * un canal), «Abriendo»: el video y el canal cambian de fase enseguida con lo que buscan.
+ */
+export function openingPhase(item, runner = null) {
+  if (item?.category === "steam" || item?.source === "steam") return "Esperando a Steam…";
+  if (item?.category === "emulators") return `Abriendo ${runner || "el emulador"}…`;
+  return "Abriendo";
+}
 // El fondo ambiental: el arte dibujado UNA vez en un lienzo diminuto y estirado a la pantalla. Sale difuminado sin
 // filtros: antes un blur(30px) de pantalla completa (más grande que la pantalla) se recalculaba en la GPU integrada
 // justo cuando el juego la necesitaba, y el cuadro se trababa.
@@ -64,7 +76,7 @@ function paintAmbient(canvas, img) {
  * Pantalla de carga: el viaje de Orbital al juego.
  *
  * La portada vuela desde su tarjeta al centro y queda "en órbita" (el anillo de la marca gira a su alrededor). Abajo, qué
- * está pasando, en fases honestas ("Abriendo" → "Preparando" → "Listo"), sin fingir un porcentaje; si una fase tarda de
+ * está pasando, en fases honestas ("Esperando a Steam…" → "Preparando el juego…" → "Listo"), sin fingir un porcentaje; si una fase tarda de
  * más, lo dice.
  *
  * El fondo, en capas que llegan cada una a su tiempo (nunca a medio pintar: cada imagen entra ya decodificada):
@@ -215,7 +227,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
    * `from`: la portada en la fila ({ rect, ratio }). La portada "vuela" desde ahí hasta su lugar
    * (transición de elemento compartido), así abrir un juego se siente continuo, no un corte.
    */
-  function show(item, detail, { from = null } = {}) {
+  function show(item, detail, { from = null, phase = null } = {}) {
     const turn = ++shown;
     settleArt(); // un aviso que quedó de un lanzamiento anterior
     el.classList.remove("launch--art", "launch--ambient", "launch--plain", "launch--revealing");
@@ -237,7 +249,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     // «Continuar» (miniaturas cuadradas) salía un cuadrito con la caja recortada (visto en la TV el 2026-10-26). Al
     // llegar la imagen se ajusta a su proporción real (posterRatio). Como mucho cuadrada: una ancha taparía el fondo.
     setRatio(item.image ? POSTER_RATIO : 1);
-    setLabel("Abriendo");
+    setLabel(phase || openingPhase(item));
     mount(leave, KeyHint(backGlyph(), "No abrir")); // por si lo abriste sin querer (antes «Ocultar», que seguía abriéndose, y «Cancelar»: TB-46)
     title.textContent = item.title;
     subtitle.textContent = detail || "";
@@ -270,12 +282,13 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     label.classList.add("launch__label--changed");
   }
 
-  /** El servidor mantiene Orbital encima hasta que el juego está listo: esperar su aviso. */
-  function hold() {
+  /** El servidor mantiene Orbital encima hasta que el juego está listo: esperar su aviso. `phase`: qué se prepara («Preparando el
+   *  juego…»); un video o un canal cambian de fase enseguida con `status`. */
+  function hold(phase = "Preparando") {
     if (el.hidden) return;
     holding = true;
     waiting = false;
-    setLabel("Preparando");
+    setLabel(phase);
     restartSlow();
     clearTimeout(timer);
     timer = setTimeout(hide, HOLD_MS);
