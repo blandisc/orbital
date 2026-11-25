@@ -145,7 +145,7 @@ struct MosaicCover: View {
             }
             .overlay(alignment: .bottomLeading) {
                 // MT4-A: la chapa se apaga mientras se abre (no es del mosaico) y va un poco más abajo (Fernando, 25 nov 2026).
-                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(1 - Double(reach)) }
+                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(Double(1 - reach)) }
             }
             .contentShape(Rectangle())
     }
@@ -261,7 +261,7 @@ struct MosaicCover: View {
         let count = CGFloat(Mosaic.columnCount(width: width, horizontalSizeClass: horizontalSizeClass))
         return (width - 2 * DS.Space.s2 - DS.Space.s2 * (count - 1)) / count
     }   // lo que le queda a la pantalla (sin el panel del control)
-    private var columns: Int { matchedWidth != nil ? needed : min(needed, DS.ParaTiB.coverMaxColumns) }
+    private var columns: Int { min(needed, DS.ParaTiB.coverMaxColumns) }
     private var widen: CGFloat { matchedWidth.map { $0 / Self.columnWidth } ?? CGFloat(needed) / CGFloat(columns) }
     /// MT4-A: con columnas del ancho del mosaico, una vuelta cubre todo el alto del muro; si no, al abrirse se veía la misma
     /// tira repetida abajo (un segundo mosaico igual al de arriba; Fernando, 25 nov 2026).
@@ -321,7 +321,7 @@ struct MosaicCover: View {
             let box = g.frame(in: .global)
             let top = max(0, MosaicHandoff.mosaicTop - box.minY)
             let fade = (WindowMetrics.column.height - MosaicHandoff.mosaicTop) * DesignTokens.Opacity.hairline * 0.7
-            let hidden = Color.black.opacity(1 - Double(reach))
+            let hidden = Color.black.opacity(Double(1 - reach))
             // MT4-A: las columnas del muro que caen fuera del mosaico (en las orillas) se apagan al abrirse; si no, quedaban
             // detrás como un segundo mosaico (Fernando, 25 nov 2026).
             let screen = WindowMetrics.column.width

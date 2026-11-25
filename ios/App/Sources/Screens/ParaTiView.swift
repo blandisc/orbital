@@ -78,7 +78,7 @@ struct ParaTiView: View {
                     // MT4-A (Fernando, 25 nov 2026, captura): entre las columnas se veía el muro de Explorar todavía detrás (una
                     // copia corrida del mosaico) al soltar; el mosaico lleva su propio fondo y va encima de todo.
                     .background(Backdrop(tint: tint.colors).ignoresSafeArea())
-                    .zIndex(2)
+                    .zIndex(2)   // ds-exception: el mosaico tapa el muro de Explorar mientras entra (MT4-A)
                     .transition(MosaicCover.mosaicTransition(reduceMotion))
                     // La Mac: el logo y las pestañas en su renglón, con «Actualizar» y la ✕ del mosaico (en Listas lo pone `ListsView`).
                     .macOwnTopRow {

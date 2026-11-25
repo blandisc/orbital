@@ -291,9 +291,9 @@ public enum DesignTokens {
     /// El mosaico de «Para ti» (como `foryou-mosaic.js` en la TV): cuánto se ensancha la columna enfocada,
     /// cuánto se espera quieto antes del ambiente o de «cobrar vida», y a qué ritmo sube sola cada columna.
     public enum Mosaic {
-        /// Carriles: 3 en un iPhone a lo alto (2 si es angosto, menos de `compactWidth` puntos), 5 a lo ancho o en iPad; todas
+        /// Carriles: 4 en un iPhone a lo alto (2 si es angosto, menos de `compactWidth` puntos), 5 a lo ancho o en iPad; todas
         /// las piezas del mismo tamaño (`uniform`), para que ninguna quede tan chica que no se vea.
-        public static let columnsPortrait = 3, columnsCompact = 2, columnsLandscape = 5, compactWidth = 360.0
+        public static let columnsPortrait = 4, columnsCompact = 2, columnsLandscape = 5, compactWidth = 360.0
         public static let uniform = true
         /// La enfocada crece un poco y las demás se apagan (como `.foryou-mosaic` en la TV: opacidad .5 y `saturate(.6)`; en el
         /// teléfono un poco menos apagadas, porque se ven a la vez más cerca).

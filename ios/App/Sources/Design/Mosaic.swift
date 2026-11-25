@@ -87,7 +87,7 @@ struct Mosaic: View {
                 if let handoff = MosaicHandoff.take() {
                     // MT4-A: sin animar (si no, el acomodo de siempre se alcanzaba a ver y se desvanecía encima del sembrado).
                     var quiet = Transaction(); quiet.disablesAnimations = true
-                    withTransaction(quiet) { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX) }
+                    withTransaction(quiet) { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX, height: geo.size.height) }
                     if entryShift != 0 { DispatchQueue.main.async { withAnimation(DS.Motion.spring(reduceMotion)) { entryShift = 0 } } }
                 }
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
@@ -191,7 +191,7 @@ struct Mosaic: View {
     /// MT4-A: cada columna del mosaico toma la del muro que quedó en su mismo lugar, con sus pósters a la misma altura: el
     /// muro derecho ya era el mosaico y no se ve el cambio. Si alguna no empata (otro ancho, un póster que no es del mosaico),
     /// se queda como siempre.
-    private func seed(from handoff: MosaicHandoff, top: CGFloat, left: CGFloat) {
+    private func seed(from handoff: MosaicHandoff, top: CGFloat, left: CGFloat, height: CGFloat) {
         let byPoster = Dictionary(items.map { ($0.poster, $0) }, uniquingKeysWith: { a, _ in a })
         let frames = runtime.columnFrames
         var plan: [(items: [Suggestion], offset: Double)] = []
@@ -208,7 +208,7 @@ struct Mosaic: View {
             shifts.append(wall.minX - x)
             // La primera fila que todavía se ve (su orilla de abajo debajo del borde de arriba del mosaico).
             let k0 = max(0, Int(((top - wall.firstTop) / handoff.pitch).rounded(.down)))
-            let rows = Int((UIScreen.main.bounds.height / handoff.pitch).rounded(.up)) + 1
+            let rows = Int((height / handoff.pitch).rounded(.up)) + 1
             var seeds: [Suggestion] = []
             for k in k0..<(k0 + rows) {
                 guard let s = byPoster[wall.posters[k % wall.posters.count]], !seeds.contains(where: { $0.imdb == s.imdb }) else { break }

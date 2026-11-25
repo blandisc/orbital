@@ -55,7 +55,8 @@ final class FineObservationTests: XCTestCase {
         let rows = watch { _ = title.rows }
         title.select(season: 2)
         XCTAssertEqual(season.value, 1)
-        XCTAssertEqual(rows.value, 1, "los episodios se vuelven a armar")
+        // En el arnés las dos temporadas llegan sin episodios: la misma lista no repinta (b63e1fc1, «un dato que llega igual no avisa»).
+        XCTAssertEqual(rows.value, 0, "la misma lista de episodios no repinta")
         XCTAssertEqual(header.value, 0, "el arte y el nombre no se vuelven a pintar")
     }
 
@@ -75,7 +76,7 @@ final class FineObservationTests: XCTestCase {
         XCTAssertEqual(whole.value, 0)
         XCTAssertEqual(heard, 1)
         title.sourceCheck = .none
-        XCTAssertEqual(heard, 2, "`sourceCheck` avisaba siempre, aunque fuera el mismo: sigue igual")
+        XCTAssertEqual(heard, 1, "el mismo `sourceCheck` ya no avisa (b63e1fc1)")
         subscription.cancel()
     }
 
