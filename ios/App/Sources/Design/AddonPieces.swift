@@ -147,14 +147,14 @@ enum TorrentioWords {
 
     static func quality(_ key: String) -> (name: Text, detail: Text) {
         switch key {
-        case "4k": (Text(verbatim: "4K"), Text("La mejor imagen; pesa mucho"))
+        case "4k": (Text(verbatim: "4K"), Text("La imagen más nítida; de 15 a 70 GB por película"))
         case "1080p": (Text(verbatim: "1080p"), Text("Alta definición; la más común"))
         case "720p": (Text(verbatim: "720p"), Text("Buena en el teléfono"))
         case "480p": (Text(verbatim: "480p"), Text("Se ve borrosa en la TV"))
         case "hdrall": (Text("HDR y Dolby Vision"), Text("Colores intensos; solo si tu TV lo aguanta"))
         case "threed": (Text(verbatim: "3D"), Text("Para lentes 3D"))
         case "brremux": (Text("Remux de Blu-ray"), Text("Copia exacta del disco; enorme"))
-        case "scr": (Text(verbatim: "Screener"), Text("Copia de prensa, a veces con marcas"))
+        case "scr": (Text("Copia de prensa"), Text("La que mandan a la crítica; a veces con marcas"))
         case "cam": (Text("Grabada en el cine (CAM)"),   // ds-exception: siglas de calidad de video
                    Text("Con una cámara en la sala: se ve y oye mal"))
         case "other": (Text("Otras copias (DVD)"),   // ds-exception: siglas de calidad de video
@@ -164,11 +164,11 @@ enum TorrentioWords {
         }
     }
 
-    /// Corto, para el renglón: «Sin cine, Screener y Remux».
+    /// Corto, para el renglón: «Sin cine, copia de prensa y Remux».
     static func hidden(_ keys: [String]) -> Text {
         func short(_ key: String) -> Text {
             switch key {
-            case "cam": Text("cine"); case "scr": Text(verbatim: "Screener"); case "brremux": Text(verbatim: "Remux"); case "unknown": Text("sin calidad")
+            case "cam": Text("cine"); case "scr": Text("copia de prensa"); case "brremux": Text(verbatim: "Remux"); case "unknown": Text("sin calidad")
             case "4k": Text(verbatim: "4K"); case "hdrall": Text(verbatim: "HDR"); case "threed": Text(verbatim: "3D"); case "other": Text("otras copias")
             default: Text(verbatim: key)
             }
@@ -214,7 +214,7 @@ enum TorrentioWords {
         return Text(verbatim: value.replacingOccurrences(of: "GB", with: " GB").replacingOccurrences(of: "MB", with: " MB"))
     }
 
-    /// Un resumen de unas opciones (para elegir entre dos Torrentio, C5): «Más compartidas · latino · sin cine, Screener…».
+    /// Un resumen de unas opciones (para elegir entre dos Torrentio, C5): «Más compartidas · latino · sin cine, copia de prensa…».
     static func summary(_ options: AddonOptions, uiLanguage: String) -> Text {
         let order = options.sort.map { sort($0).name } ?? sort("quality").name
         let languages = options.languages.first.map { language($0, uiLanguage: uiLanguage) } ?? Text("sin idioma primero")

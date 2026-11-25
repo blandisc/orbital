@@ -101,7 +101,7 @@ struct DebridRequestSheet: View {
     let turnOnNotifications: () -> Void
     /// «Ver ahora» (listo).
     var watchNow: (() -> Void)?
-    /// RX2-A · mientras baja en la nube, la que ya arranca en tus idiomas («Ver Inglés · 1080p, ya arranca») y, junto,
+    /// RX2-A · mientras baja en la nube, la que ya arranca en tus idiomas («Ver en inglés · 1080p (ya arranca)») y, junto,
     /// «Esperar a que llegue» (cierra la hoja). nil sin otra al instante: solo cuánto lleva.
     var instead: (title: Text, action: () -> Void)?
     let otherVersion: (() -> Void)?

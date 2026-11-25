@@ -143,13 +143,13 @@ struct SourcesSheet: View {
     }
 
     /// RX2-A · mientras la tuya baja en la nube: la mejor que ya arranca en tus idiomas (la primera de la misma lista que
-    /// usa «Ver»), «Ver Inglés · 1080p, ya arranca». nil si no hay ninguna.
+    /// usa «Ver»), «Ver en inglés · 1080p (ya arranca)». nil si no hay ninguna.
     private func instantInstead(_ model: SourcesModel, _ ui: String) -> (title: Text, action: () -> Void)? {
         let instant = model.languageRows.flatMap { row in row.options.filter { $0.cached && !$0.otherTitle }.map { (row.code, $0) } }
         guard let source = model.ranked.first(where: { s in instant.contains { $0.1.id == s.index } }),
               let match = instant.first(where: { $0.1.id == source.index }) else { return nil }
-        let name = "\(Streams.versionLanguageName(match.0, in: ui)) · \(match.1.quality)"
-        return (Text("Ver \(Text.withFlagImages(LanguageFlags.flagged(name, match.0))), ya arranca"), { waiting = nil; pick(source, .watch, code: match.0) })
+        let name = "\(VersionText.inline(Streams.versionLanguageName(match.0, in: ui), ui)) · \(match.1.quality)"
+        return (Text("Ver en \(Text.withFlagImages(LanguageFlags.flagged(name, match.0))) (ya arranca)"), { waiting = nil; pick(source, .watch, code: match.0) })
     }
 
     /// Ventana ancha (iPad, Mac): la tarjeta mide lo que trae, con tope en el alto de la ventana. Sin `fixedSize` (cortaba la
@@ -264,7 +264,7 @@ struct SourcesSheet: View {
         let status = requestStatus(item.id, full: true)
         return ChoiceCard(title: Text(verbatim: status?.title ?? ""), detail: status?.detail.map { Text(verbatim: $0) },   // no-es-título: el estado del pedido
                           primary: instantInstead(model, ui).map { instead in
-                              ChoiceAction(id: "request-instead", title: instead.title, symbol: "play.fill", run: instead.action)   // no-es-título: «Ver Inglés · 1080p, ya arranca»
+                              ChoiceAction(id: "request-instead", title: instead.title, symbol: "play.fill", run: instead.action)   // no-es-título: «Ver en inglés · 1080p (ya arranca)»
                           },
                           id: "request-waiting-card")
     }

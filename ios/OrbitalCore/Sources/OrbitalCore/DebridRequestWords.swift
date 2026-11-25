@@ -98,19 +98,22 @@ public enum DebridRequestWords {
         [.refused, .noPeers, .tooMany].contains(request.state) || request.isStalled(now: now)
     }
 
-    /// P1-A · los dos grupos de «Tus pedidos»: lo que todavía falta y lo que ya terminó (bien o mal). Como las descargas de
-    /// iOS: nunca pierdes de vista lo que todavía no está.
+    /// P1-A · los grupos de «Tus pedidos»: lo que todavía falta, lo que ya terminó y lo que no se pudo (FI-12, 25 nov 2026,
+    /// igual que la TV). Como las descargas de iOS: nunca pierdes de vista lo que todavía no está.
     public enum Group: Sendable, Equatable, CaseIterable {
-        /// «Bajando»: en cola, bajando, sin gente que lo comparta, muchas descargas activas.
+        /// «En camino»: en cola, bajando, sin gente que lo comparta, muchas descargas activas.
         case pending
-        /// «Ya terminaron»: listo o Real-Debrid no lo dejó bajar.
+        /// «Ya terminaron»: listo (o ya no está en tu nube).
         case finished
+        /// «No se pudo»: Real-Debrid no lo dejó bajar.
+        case failed
     }
 
     public static func group(_ state: DebridRequest.State) -> Group {
         switch state {
         case .queued, .downloading, .noPeers, .tooMany: .pending
-        case .ready, .refused, .gone: .finished
+        case .ready, .gone: .finished
+        case .refused: .failed
         }
     }
 

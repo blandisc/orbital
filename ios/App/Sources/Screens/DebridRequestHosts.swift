@@ -12,7 +12,7 @@ struct DebridRequestSheetHost: View {
     let since: String
     let status: DebridRequestStatus
     var watchNow: (() -> Void)?
-    /// RX2-A · «Ver Inglés · 1080p, ya arranca» y «Esperar a que llegue» (ver `DebridRequestSheet.instead`).
+    /// RX2-A · «Ver en inglés · 1080p (ya arranca)» y «Esperar a que llegue» (ver `DebridRequestSheet.instead`).
     var instead: (title: Text, action: () -> Void)?
     let otherVersion: (() -> Void)?
     var openTitle: (() -> Void)?
@@ -36,7 +36,7 @@ struct DebridRequestSheetHost: View {
     var body: some View {
         DebridRequestSheet(name: name, status: status, since: since, notificationsOff: notificationsOff,
                            turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, instead: instead, otherVersion: otherVersion,
-                           openTitle: openTitle, finished: DebridRequestWords.group(request.state) == .finished, otherAccount: otherAccount,
+                           openTitle: openTitle, finished: DebridRequestWords.group(request.state) != .pending, otherAccount: otherAccount,
                            manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloads(in: request.cloud) : nil,
                            cancel: cancel, explain: explain ?? { explaining = true }, close: close,
                            notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured,

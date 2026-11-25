@@ -7,6 +7,22 @@ import OrbitalCore
 /// Con VoiceOver se ajusta de media en media. El lugar táctil mide al menos 44 pt de alto y sale un poco a los lados (aunque
 /// la estrella sea chica), y al arrastrar una burbuja arriba del dedo dice cuánto llevas («3½») (13 nov 2026).
 struct RatingStars: View {
+    /// FI-18 (24 nov 2026, las palabras de la TV, `yours-commands.js › STARS`): tu nota también en palabras, «Me gustó · 4 de 5».
+    /// Con media estrella, la palabra de la entera de abajo y la cifra con su media («Me gustó · 4½ de 5»).
+    static func words(_ stars: Double) -> Text {
+        let whole = Int(stars.rounded(.down))
+        let half = stars - Double(whole) >= 0.5
+        let amount = half ? "\(whole)½" : "\(whole)"
+        switch whole {
+        case 5...: return Text("Me encantó · \(amount) de 5")
+        case 4: return Text("Me gustó · \(amount) de 5")
+        case 3: return Text("Estuvo bien · \(amount) de 5")
+        case 2: return Text("No me gustó · \(amount) de 5")
+        case 1: return Text("Muy mala · \(amount) de 5")
+        default: return Text("\(amount) de 5")
+        }
+    }
+
     let value: Double?
     var size: CGFloat = DS.Rating.star
     var gap: CGFloat = DS.Rating.gap

@@ -12528,17 +12528,6 @@
         }
       }
     },
-    "Año (lo más nuevo primero)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Year (newest first)"
-          }
-        }
-      }
-    },
     "Año: más nuevas": {
       "extractionState": "manual",
       "localizations": {
@@ -12645,17 +12634,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your services haven't loaded yet."
-          }
-        }
-      }
-    },
-    "Aún no tienes listas en Trakt.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You don't have any Trakt lists yet."
           }
         }
       }
@@ -49936,6 +49914,226 @@
           "stringUnit": {
             "state": "translated",
             "value": "On this device, Orbital doesn't control the TV. Use your iPhone."
+          }
+        }
+      }
+    },
+    "Continuar el episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue the episode"
+          }
+        }
+      }
+    },
+    "Continuar la película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue the movie"
+          }
+        }
+      }
+    },
+    "Copia de prensa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press screener"
+          }
+        }
+      }
+    },
+    "copia de prensa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "press screener"
+          }
+        }
+      }
+    },
+    "En camino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the way"
+          }
+        }
+      }
+    },
+    "En camino · %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the way · %lld of %lld"
+          }
+        }
+      }
+    },
+    "La imagen más nítida; de 15 a 70 GB por película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sharpest picture; 15 to 70 GB per movie"
+          }
+        }
+      }
+    },
+    "La que mandan a la crítica; a veces con marcas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The one sent to critics; sometimes watermarked"
+          }
+        }
+      }
+    },
+    "No se pudo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't"
+          }
+        }
+      }
+    },
+    "Tu pedido está en cola en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your request is queued in the cloud"
+          }
+        }
+      }
+    },
+    "Tus listas de Trakt salen aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt lists show up here"
+          }
+        }
+      }
+    },
+    "Ver en %@ (ya arranca)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch in %@ (starts now)"
+          }
+        }
+      }
+    },
+    "Me encantó · %@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loved it · %@ of 5"
+          }
+        }
+      }
+    },
+    "Me gustó · %@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liked it · %@ of 5"
+          }
+        }
+      }
+    },
+    "Estuvo bien · %@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It was fine · %@ of 5"
+          }
+        }
+      }
+    },
+    "No me gustó · %@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't like it · %@ of 5"
+          }
+        }
+      }
+    },
+    "Muy mala · %@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Really bad · %@ of 5"
+          }
+        }
+      }
+    },
+    "%@ de 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of 5"
+          }
+        }
+      }
+    },
+    "Ir al próximo estreno (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to the next release (%@)"
+          }
+        }
+      }
+    },
+    "Nada en %@ de lo que sigues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in %@ from what you follow."
           }
         }
       }

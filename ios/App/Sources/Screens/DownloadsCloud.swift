@@ -71,7 +71,7 @@ struct DownloadsCloudPart: View {
     private func row(_ request: DebridRequest, _ model: DebridRequestsModel, now: Date) -> some View {
         // De otra cuenta de Real-Debrid (la TV con la suya): se enseña, pero no se cancela desde aquí.
         let other = model.isOtherAccount(request)
-        let finished = DebridRequestWords.group(request.state) == .finished
+        let finished = DebridRequestWords.group(request.state) != .pending
         let tr = CloudWords(env).tr
         return Button { sheets.opened = .init(id: request.hash) } label: {
             DebridRequestStatus(symbol: DebridRequestWords.symbol(request.state), title: CloudWords(env).name(request),
@@ -98,11 +98,15 @@ struct DownloadsCloudPart: View {
         .accessibilityIdentifier("debrid-request-\(request.hash.prefix(8))")
     }
 
-    /// «Bajando · 3 de 25» (cuántas van de tu límite, si Real-Debrid lo dijo) y «Ya terminaron».
+    /// «En camino · 3 de 25» (cuántas van de tu límite, si Real-Debrid lo dijo), «Ya terminaron» y «No se pudo» (FI-12).
     private func header(_ group: DebridRequestWords.Group, _ model: DebridRequestsModel) -> Text {
-        guard group == .pending else { return Text("Ya terminaron") }
-        guard let count = model.activeCount, count.limit > 0 else { return Text("Bajando") }
-        return Text("Bajando · \(count.active) de \(count.limit)")
+        switch group {
+        case .finished: return Text("Ya terminaron")
+        case .failed: return Text("No se pudo")
+        case .pending: break
+        }
+        guard let count = model.activeCount, count.limit > 0 else { return Text("En camino") }
+        return Text("En camino · \(count.active) de \(count.limit)")
     }
 }
 
@@ -147,7 +151,7 @@ struct CloudSheetsHost: ViewModifier {
             // IOS-7: la misma pregunta que la hoja; lo terminado se quita («¿Quitarlo de tu Real-Debrid?»), no se cancela.
             .debridCancelConfirmation(isPresented: Binding(get: { sheets.cancelling != nil }, set: { if !$0 { sheets.cancelling = nil } }),
                                       name: sheets.cancelling.map(CloudWords(env).name) ?? "",
-                                      finished: sheets.cancelling.map { DebridRequestWords.group($0.state) == .finished } ?? false,
+                                      finished: sheets.cancelling.map { DebridRequestWords.group($0.state) != .pending } ?? false,
                                       service: sheets.cancelling?.cloud ?? env.services.debrid.service, locale: env.uiLocale) {
                 if let request = sheets.cancelling { CloudWords(env).cancel(request) }
             }

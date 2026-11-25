@@ -97,7 +97,7 @@ struct SaveView: View {
                     case .skeleton:
                         CheckRowSkeleton()
                     case .empty:
-                        Text("Aún no tienes listas en Trakt.").recipe(.footnote)
+                        Text("Tus listas de Trakt salen aquí").recipe(.footnote)   // TB-37: sin culpa; «Nueva lista…» va arriba
                             .frame(maxWidth: .infinity, minHeight: rowHeight, alignment: .leading)
                     }
                 }

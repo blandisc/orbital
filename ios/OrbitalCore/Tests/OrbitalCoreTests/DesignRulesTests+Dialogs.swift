@@ -67,7 +67,7 @@ extension DesignRulesTests {
         XCTAssertTrue(option[row...].contains(".padding(.vertical, DS.Space."), "`WatchedOption` lleva su aire vertical (aire parejo con letra grande)")
     }
 
-    /// «Versión»: «¿Para el resto de la serie también?» y el pedido que baja en la nube («Ver Inglés…, ya arranca») son
+    /// «Versión»: «¿Para el resto de la serie también?» y el pedido que baja en la nube («Ver en inglés… (ya arranca)») son
     /// tarjetas (13 nov), con las mismas salidas de antes y sin «Cancelar» ni «Esperar a que llegue» (esperar es cerrarla).
     func testVersionQuestionsAreAppCards() throws {
         let file = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "SourcesSheet.swift" })

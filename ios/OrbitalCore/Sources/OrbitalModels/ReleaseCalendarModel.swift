@@ -12,6 +12,9 @@ public final class ReleaseCalendarModel: ObservableModel {
     /// Trakt no contestó (o no hay red): el mes no está completo y se dice, en vez de enseñarlo como «no sale nada»
     /// (auditoría del 31 oct 2026). nil si llegó todo.
     public private(set) var problem: Degraded? { didSet { if oldValue != problem { changed() } } }
+    /// FI-15 (24 nov 2026, igual que la TV): un mes sin estrenos busca el siguiente (hasta tres meses adelante) para ofrecer
+    /// «Ir al próximo estreno (14 feb)». nil si el mes tiene algo o no se encontró.
+    public private(set) var nextRelease: Date? { didSet { if oldValue != nextRelease { changed() } } }
 
     private let services: Services
     private let calendar: Calendar
@@ -55,6 +58,27 @@ public final class ReleaseCalendarModel: ObservableModel {
         var grouped: [Date: [Airing]] = [:]
         for a in all { grouped[a.day, default: []].append(a) }
         days = grouped
+        nextRelease = nil
+        if grouped.isEmpty, failure == nil { nextRelease = await findNext(after: skip + count) }
+    }
+
+    /// El primer día con estreno después del mes, en tramos de 31 días (lo más que da Trakt por pedido).
+    private func findNext(after skip: Int) async -> Date? {
+        let start = max(skip, 0)
+        for step in 0..<3 {
+            guard case .success(let found) = await Self.half(services.forYou, skip: start + step * 31, days: 31, calendar: calendar) else { return nil }
+            if let first = found.map(\.day).filter({ $0 >= today }).min() { return first }
+        }
+        return nil
+    }
+
+    /// Va al mes de un día y lo elige («Ir al próximo estreno»).
+    public func jump(to day: Date) async {
+        guard let first = calendar.date(from: calendar.dateComponents([.year, .month], from: day)) else { return }
+        month = first
+        days = [:]
+        await load()
+        selected = calendar.startOfDay(for: day)
     }
 
     private nonisolated static func half(_ forYou: ForYou, skip: Int, days: Int, calendar: Calendar) async -> Result<[Airing], Error> {

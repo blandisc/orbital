@@ -18,7 +18,7 @@ extension TitleView {
     private func tr(_ key: String) -> String { Strings.tr(key, language: language) }
 
     /// El botón principal cuando entra Real-Debrid; nil si no aplica (y va el «Ver» de siempre).
-    /// - Ya pedido (y la recomendada no arranca al instante): «Bajando en la nube · 42 %», «En cola»… y tocarlo abre el pedido.
+    /// - Ya pedido (y la recomendada no arranca al instante): «Bajando en la nube · 42 %», «Tu pedido está en cola en la nube»… y tocarlo abre el pedido.
     /// - Existe pero Real-Debrid no lo tiene: «Pedir a la nube» toma el lugar de «Ver» (R2-A, igual que la TV), con una
     ///   línea que no promete y, si otro idioma sí arranca, «Verlo en inglés al instante».
     func debridContinueAction(_ model: TitleModel) -> ContinueAction? {
@@ -50,7 +50,9 @@ extension TitleView {
                                       note: Text(verbatim: [episode, DebridRequestWords.title(request, tr)].compactMap { $0 }.joined(separator: " · ")),
                                       play: { openVersions(video) }, aside: alternative ?? cancel, warn: true, tint: artAccent)
             }
-            return ContinueAction(title: Text(verbatim: DebridRequestWords.title(request, tr)), symbol: DebridRequestWords.symbol(request.state),
+            // FI-1 (24 nov 2026, igual que la TV): en la ficha, en cola dice dónde («Tu pedido está en cola en la nube»).
+            let title = request.state == .queued ? tr("Tu pedido está en cola en la nube") : DebridRequestWords.title(request, tr)
+            return ContinueAction(title: Text(verbatim: title), symbol: DebridRequestWords.symbol(request.state),
                                   progress: request.state == .downloading ? Double(request.percent) / 100 : nil,
                                   note: Text(verbatim: [episode, detail].compactMap { $0 }.joined(separator: " · ")),
                                   play: { debridSheet = .request }, aside: alternative ?? cancel, tint: artAccent)
@@ -81,12 +83,12 @@ extension TitleView {
         return (Text("Verlo en \(name) al instante"), "play.fill", { start(observerModel, videoID: nil, source: source) })
     }
 
-    /// RX2-A · en la hoja del pedido: «Ver Inglés · 1080p, ya arranca», la misma versión de «Verlo en inglés al instante».
+    /// RX2-A · en la hoja del pedido: «Ver en inglés · 1080p (ya arranca)», la misma versión de «Verlo en inglés al instante».
     private func instantInstead(_ offer: DebridOffer) -> (title: Text, action: () -> Void)? {
         guard let code = offer.instantLanguage, let source = offer.instantSource else { return nil }
         let quality = AllSources.quality(source)
-        let name = [Streams.versionLanguageName(code, in: language), quality == "Otras" ? nil : quality].compactMap { $0 }.joined(separator: " · ")
-        return (Text("Ver \(Text.withFlagImages(LanguageFlags.flagged(name, code))), ya arranca"), { debridSheet = nil; start(observerModel, videoID: nil, source: source) })
+        let name = [VersionText.inline(Streams.versionLanguageName(code, in: language), language), quality == "Otras" ? nil : quality].compactMap { $0 }.joined(separator: " · ")
+        return (Text("Ver en \(Text.withFlagImages(LanguageFlags.flagged(name, code))) (ya arranca)"), { debridSheet = nil; start(observerModel, videoID: nil, source: source) })
     }
 
     /// «Pedir a la nube»: la primera vez, antes de la pregunta de iOS, una línea de para qué son los avisos (R10).

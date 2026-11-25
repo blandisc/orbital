@@ -10,7 +10,7 @@ extension ListSort {
         case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"; case .letterboxd: "Mejor calificadas en Letterboxd"
         case .addedNewest: "Agregadas: más recientes"; case .addedOldest: "Agregadas: más viejas"
         case .shortest: "Más cortas primero"
-        case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
+        case .newest: "Año: más nuevas"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
     }
 }

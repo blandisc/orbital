@@ -84,6 +84,17 @@ struct ReleaseCalendarView: View {
             // Sin Trakt o sin red no se sabe si ese día sale algo: se dice por qué (antes, «no sale nada»).
             if let problem = model.problem, airings.isEmpty, !model.loading {
                 DegradedNotice(state: problem) { Task { await model.load() } }
+            } else if model.days.isEmpty && !model.loading {
+                // FI-15: el mes entero sin estrenos lo dice una vez y ofrece el siguiente (la TV igual).
+                let monthName = model.month.formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide))
+                Text("Nada en \(monthName) de lo que sigues.").recipe(.footnote)
+                if let next = model.nextRelease {
+                    Button { Task { await model.jump(to: next) } } label: {
+                        Text("Ir al próximo estreno (\(next.formatted(Date.FormatStyle(locale: env.uiLocale).day().month(.abbreviated))))")
+                    }
+                    .dsGlassButton()
+                    .accessibilityIdentifier("calendar-next-release")
+                }
             } else if airings.isEmpty && !model.loading { Text("Ese día no sale nada de lo que sigues.").recipe(.footnote) }
             ForEach(airings) { a in
                 Button { open(a.series.route) } label: {

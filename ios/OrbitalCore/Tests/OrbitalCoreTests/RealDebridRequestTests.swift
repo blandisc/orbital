@@ -117,9 +117,10 @@ final class RealDebridRequestTests: XCTestCase {
         }
         let all = [make("a", .ready), make("b", .downloading), make("c", .refused), make("d", .queued), make("e", .noPeers), make("f", .tooMany)]
         let groups = DebridRequestWords.grouped(all)
-        XCTAssertEqual(groups.map(\.group), [.pending, .finished])
+        XCTAssertEqual(groups.map(\.group), [.pending, .finished, .failed])
         XCTAssertEqual(groups[0].requests.map(\.state), [.downloading, .queued, .noPeers, .tooMany], "en el orden de la lista")
-        XCTAssertEqual(groups[1].requests.map(\.state), [.ready, .refused])
+        XCTAssertEqual(groups[1].requests.map(\.state), [.ready])
+        XCTAssertEqual(groups[2].requests.map(\.state), [.refused], "FI-12: lo que no se pudo, aparte")
         XCTAssertEqual(DebridRequestWords.grouped([make("a", .ready)]).map(\.group), [.finished], "un grupo vacío no sale")
         XCTAssertTrue(DebridRequestWords.grouped([]).isEmpty)
         let soon = Date(timeIntervalSince1970: 60)

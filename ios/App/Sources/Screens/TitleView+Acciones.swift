@@ -124,7 +124,8 @@ extension TitleView {
             let stars = RatingStars(value: ratings.stars(model.metaID)) { stars in
                 Task { await ratings.rate(imdb: model.metaID, kind: model.kind, stars: stars) }
             }
-            let name = Text("Tu calificación").recipe(.secondary, color: DS.textMuted).lineLimit(1)
+            // FI-18: ya calificada, el nombre dice tu nota en palabras («Me gustó · 4 de 5»), como la TV.
+            let name = (ratings.stars(model.metaID).map(RatingStars.words) ?? Text("Tu calificación")).recipe(.secondary, color: DS.textMuted).lineLimit(1)
             // En un renglón si cabe entero (iPad, Mac); si no, el nombre arriba y abajo las estrellas a la izquierda y la nota a
             // la derecha, centradas entre sí (el nombre nunca parte en dos).
             ViewThatFits(in: .horizontal) {
@@ -202,7 +203,9 @@ extension TitleView {
 
     func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
         if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
-        return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
+        // Los nombres de la TV (`core/watch.js`): «Continuar» siempre dice qué continúa.
+        if label.isResume { return model.kind == "series" ? Text("Continuar el episodio") : Text("Continuar la película") }
+        return Text("Ver")
     }
 
 }
