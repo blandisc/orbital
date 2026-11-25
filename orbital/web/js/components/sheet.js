@@ -99,7 +99,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
         : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, ...Flags(option.flags), option.label),
-      below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
+      below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint),
+      // FI-13 (25 nov 2026, C8): cuánto lleva lo de este renglón (un pedido en «Tus pedidos»), dibujado bajo su línea (`progress`: 0–1).
+      option.progress > 0 && Progress(option.progress, { className: "sheet__progress", label: option.progressLabel || "Cuánto lleva" })),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
     // Calificar: las cinco estrellas en color (`Stars`), con ✓ en la tuya.
     option.stars && h("span", { class: "sheet__value sheet__value--stars" }, option.mine && h("span", { class: "sheet__mine" }, "✓"), Stars(option.stars)),

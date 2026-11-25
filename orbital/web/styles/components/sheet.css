@@ -29,6 +29,10 @@
 .is-focused.sheet__item .sheet__icon.sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
 /* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
    mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
+/* FI-13: la barra de un renglón (un pedido que baja), bajo su línea; en el renglón enfocado (claro), su riel oscuro. */
+.sheet__progress { margin-top: var(--space-1); }
+.is-focused.sheet__item .sheet__progress { background: var(--on-light-fill-strong); }
+.is-focused.sheet__item .sheet__progress .progress__fill { background: var(--inverse-fg); }
 .sheet__meter { padding: 0 var(--space-2) var(--space-6); margin-top: calc(-1 * var(--space-2)); } /* PT9: la barra del pedido, bajo su texto */
 .sheet__qr { display: block; width: 12rem; height: 12rem; margin: 0 auto var(--space-6); border-radius: var(--radius-sm); } /* 18 nov: un enlace para el celular */
 .sheet__steps { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-2); padding: 0 var(--space-2) var(--space-6); }
@@ -99,8 +103,9 @@
 /* Sin ayuda debajo (Volumen, Brillo): nombre, ícono y valor en la misma línea, centrados. */
 .sheet__item--setting:not(:has(.sheet__hint--below)) { align-items: center; }
 .sheet__item--setting:not(:has(.sheet__hint--below)) :is(.sheet__icon, .sheet__value) { margin-top: 0; }
-/* El valor nunca aplasta el nombre: a lo más 55 % y, si es largo, en varias líneas (alineado a la derecha). */
-.sheet__value { flex: 0 1 auto; max-width: 55%; margin-left: auto; padding-left: var(--space-2); font-weight: var(--weight-semibold); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; } /* parte solo entre palabras: «Start+Select+Home» entero */
+/* El valor nunca aplasta el nombre: a lo más 40 % (AJ-12, 25 nov 2026; antes 55 % y partía «Calidades que no quieres» en tres
+   renglones) y, si es largo, en varias líneas (alineado a la derecha). Cifras del mismo ancho (B7, AJ-16: «60 %», «1.2 GB»). */
+.sheet__value { flex: 0 1 auto; max-width: 40%; margin-left: auto; padding-left: var(--space-2); font-weight: var(--weight-semibold); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; font-variant-numeric: tabular-nums; } /* parte solo entre palabras: «Start+Select+Home» entero */
 /* Un estado que ya está bien (✓ Conectada, ✓ Guardada): su color, para verlo de un vistazo. */
 .sheet__value--ok { color: var(--color-ok); }
 .is-focused.sheet__item .sheet__value--ok { color: inherit; }

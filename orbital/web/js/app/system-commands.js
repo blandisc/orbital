@@ -1,6 +1,6 @@
 /** Comandos de la consola: energía, ventanas, ajustes, mandos, emuladores, actualizar, capturas y Alexa.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, runnerMenu, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
+export function systemCommands({ alexaMenu, tvSetupMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, runnerMenu, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
   return {
     "stop": async (command, context) => {
       await api.stop();
@@ -209,7 +209,7 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     },
     "captures": async (command, context) => {
       state.captures = (await api.captures()).items;
-      return openMenu(capturesMenu(state.captures), nested(context));
+      return openMenu(capturesMenu(state.captures, { legion: state.legion === true }), nested(context));
     },
     "alexa-menu": async (command, context) => {
       // La guía (fija) y el estado (vivo: cuándo llegó la última orden de cada lado), a la vez.
@@ -224,6 +224,10 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     "voice-group": async (command, context) => {
       const group = state.voiceGuide?.groups?.[command.index];
       return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
+    },
+    // AJ-3: Ajustes › Tele y voz › «Ver cómo prenderla»: los pasos para que la tele se prenda sola.
+    "tv-setup": async (command, context) => {
+      return openMenu(tvSetupMenu(), nested(context));
     },
     "voice-help": async (command, context) => {
       return openMenu(voiceHelpMenu(state.voiceStatus), nested(context));

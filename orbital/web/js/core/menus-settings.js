@@ -125,7 +125,8 @@ function settingRow(key, settings, category) {
 function accountRows(settings) {
   return [
     debridRow(settings.realdebrid),
-    settings.trakt?.configured ? { icon: "link", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
+    // AJ-8 (25 nov 2026, V1): el botón dice qué conecta («Conectar Trakt»), no «Conectar» a secas.
+    settings.trakt?.configured ? { icon: "link", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar Trakt",
       ok: !!settings.trakt.linked,
       command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
       hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
@@ -279,7 +280,9 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
       { icon: "folder", label: "Carpetas de juegos", hint: "Dónde busco tus juegos", command: { type: "folders" } },
       { icon: "refresh", label: "Buscar juegos nuevos", hint: "Lo que copiaste desde la última vez", command: { type: "refresh" } },
     ] };
-    case "voice": return { title: "Tele y voz", lead: "La tele se prende sola; tú le hablas desde el iPhone, Alexa o Siri.", options: voiceRows(settings, voice, now) };
+    // AJ-3 (25 nov 2026): «La tele se prende sola» solo si ya se prende (antes lo decía también cuando no).
+    case "voice": return { title: "Tele y voz", lead: settings.tv?.configured ? "La tele se prende sola; tú le hablas desde el iPhone, Alexa o Siri."
+      : "Le hablas desde el iPhone, Alexa o Siri; con una Roku TV, también se prende sola.", options: voiceRows(settings, voice, now) };
     case "display": return { title: "Pantalla y sonido", lead: "Lo que se ve y se oye en la consola.", options: [
       row("text_size"), row("safe_area"), row("reduce_motion"), row("sounds"), row("screensaver_minutes"),
     ] };
@@ -364,8 +367,9 @@ function voiceRows(settings, voice, now) {
     tv.configured
       ? { icon: "tv", label: "Se prende con Orbital", value: "✓ Roku TV", ok: true, hint: TV_INPUTS[tv.input] ? `Y cambia sola a ${TV_INPUTS[tv.input]}` : undefined,
         help: "«Prende la tele» (por voz o aquí abajo) la enciende y la pone en la entrada de Orbital.", command: { type: "stay" } }
-      : { icon: "tv", label: "La tele no se prende sola", value: "Cómo", warn: true, command: { type: "voice-help" },
-        help: "Con una Roku TV en la misma red, Orbital la prende y cambia a su entrada. Se configura una vez en la consola: orbital tv setup." },
+      // AJ-2 y AJ-3 (25 nov 2026): una frase corta al pie, sin comandos; el cómo, en su propia hoja.
+      : { icon: "tv", label: "La tele no se prende sola", value: "Ver cómo prenderla", warn: true, command: { type: "tv-setup" },
+        help: "Con una Roku TV en la misma red, Orbital la prende y la pone en su entrada." },
     tv.configured && { icon: "power", label: "Probar: «prende la tele»", value: "Probar", hint: "La prende de verdad y la cambia a Orbital",
       help: "Hace lo mismo que decírselo: prende la tele y cambia a la entrada de Orbital. Queda en «Qué ha oído la consola».",
       command: { type: "voice-try", text: "prende la tele" } },
@@ -376,7 +380,7 @@ function voiceRows(settings, voice, now) {
       ? { icon: "assistant", label: "Alexa: «pídele a mi consola que…»", value: when("alexa"), ok: !stale("alexa"), warn: stale("alexa"), command: { type: "voice-help" },
         help: "Empieza siempre con «Alexa, pídele a mi consola que…»; sin eso, Alexa intenta hacerlo sola." }
       : { icon: "assistant", label: "Alexa", value: "Sin configurar", command: { type: "voice-help" },
-        help: "La skill «mi consola» se activa en la app Alexa; mientras, usa el iPhone." },
+        help: "La función «mi consola» se activa en la app Alexa; mientras, usa el iPhone." },
     { icon: "mic", label: "Siri: «Oye Siri, pausa en Orbital»", command: { type: "voice-help" },
       help: "Siri entiende las frases esenciales y los títulos de «Seguir viendo». Llega como el iPhone." },
     { heading: true, label: "Ayuda" },
@@ -425,7 +429,8 @@ export function emulatorsMenu({ mode = "avisar", items = [], installing = false,
       ...edenBuild(variants.eden),
       { heading: true, label: "Tus emuladores" },
       ...items.map(row),
-      { icon: "refresh", label: "Revisar ahora", command: { type: "emulators", force: true } },
+      // AJ-13 (25 nov 2026, C4): vacía, dice qué va aquí junto al primer paso.
+      { icon: "refresh", label: "Revisar ahora", hint: items.length ? undefined : "Aquí salen los que usan tus juegos", command: { type: "emulators", force: true } },
     ],
   };
 }
@@ -472,11 +477,14 @@ export function emulatorMenu(e) {
 
 /** Actualizar Orbital: qué cambia y "Actualizar ahora" (prueba la versión nueva; si falla, vuelve). */
 export function updateMenu(info = {}) {
+  // AJ-15 (25 nov 2026, C5 y V1): actualizando, se sigue usando; si falla, «Reintentar» y «Volver» (antes «Entendido» en los dos).
   if (info.busy) {
-    return { title: "Actualizando Orbital…", subtitle: "Te aviso cuando termine.", options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+    return { title: "Actualizando Orbital…", subtitle: "Te aviso cuando termine.", options: [{ icon: "check", label: "Seguir usando Orbital", command: { type: "close" } }] };
   }
   if (info.error) {
-    return { title: "Actualizar Orbital", subtitle: info.error, options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+    return { title: "Actualizar Orbital", subtitle: info.error, options: [
+      { icon: "refresh", label: "Reintentar", command: { type: "update-check", force: true } },
+      { icon: "back", label: "Volver", command: { type: "back" } }] };
   }
   if (!info.available) {
     return { title: "Actualizar Orbital", subtitle: "Ya tienes la versión más reciente.",
@@ -506,8 +514,9 @@ export function foldersMenu({ emulators = [], config = null } = {}) {
   }));
   options.push({ icon: "refresh", label: "Buscar juegos nuevos", hint: "Descargas, Escritorio, C:\\Emuladores",
     command: { type: "refresh" } });
+  // AJ-14 (25 nov 2026, V5): en palabras, sin «rom_dirs» ni config.yaml (la ruta de la configuración está en Diagnóstico).
   return { title: "Carpetas de juegos", crumb: "Carpetas",
-    subtitle: config ? `Otras carpetas: rom_dirs en ${shortPath(config, 2)}` : "", options };
+    subtitle: config ? "¿Tus juegos están en otra carpeta? Cópialos a Descargas, al Escritorio o a C:\\Emuladores y busca otra vez." : "", options };
 }
 
 /** Rutas largas: solo lo último ("…\orbital\mpv\mpv.exe"), que es lo que importa. */
@@ -562,13 +571,14 @@ export function diagnosticsMenu(d = {}, { now = Date.now() } = {}) {
 
 const SCROBBLE_ACTIONS = { start: "viendo", pause: "en pausa", stop: "cerrado" };
 
-/** Lo último que la consola le contó a Trakt («Último scrobble: …») o, si falló, por qué, en palabras. */
+/** Lo último que la consola le contó a Trakt («Lo último que le contaste a Trakt: …»; AJ-7, 25 nov 2026: antes «Último
+ *  scrobble», una palabra de Trakt) o, si falló, por qué, en palabras. */
 export function scrobbleHint(scrobble, now = Date.now()) {
   if (scrobble?.error) return `Trakt no recibe lo que ves: ${scrobble.error}`;
   const last = scrobble?.last;
-  if (!last?.title) return "Tus listas en Explorar · Último scrobble: aún nada";
+  if (!last?.title) return "Tus listas en Explorar · Lo que veas se le cuenta a Trakt";
   const ago = lastPlayed(last.at, now, "").trim();
-  return `Último scrobble: ${last.title} · ${SCROBBLE_ACTIONS[last.action] || last.action}${ago ? ` · ${ago}` : ""}`;
+  return `Lo último que le contaste a Trakt: ${last.title} · ${SCROBBLE_ACTIONS[last.action] || last.action}${ago ? ` · ${ago}` : ""}`;
 }
 
 /** Lo que recuerda cada título: el idioma y los subtítulos que elegiste viéndolo. A lo olvida (vuelve a lo de Ajustes). */
@@ -586,7 +596,8 @@ export function rememberedMenu(titles = []) {
 export function followedMenu(series = []) {
   return {
     title: "Series que sigues",
-    subtitle: "Apagada, ya no sale en tus estrenos ni en Lo nuevo de lo tuyo. Lo que viste se queda.",
+    // AJ-20 (25 nov 2026): vacía, no habla de una serie que no está.
+    subtitle: series.length ? "Apagada, ya no sale en tus estrenos ni en Lo nuevo de lo tuyo. Lo que viste se queda." : "Aquí eliges de qué series te aviso.",
     options: series.length
       ? series.map((s) => ({ icon: s.following ? "bell" : "bellOff", label: s.title, hint: s.year ? String(s.year) : undefined,
         value: s.following ? "Sí" : "No", ok: !!s.following,
@@ -603,43 +614,43 @@ export function followedMenu(series = []) {
 export const KEY_FORMS = {
   tmdb: {
     service: "tmdb", label: "TMDB", icon: "movie", mark: "img/ratings/tmdb.svg", hint: "Plataformas y sinopsis en español",
-    title: "Clave de TMDB", submitLabel: "Guardar",
+    title: "Clave de TMDB", submitLabel: "Guardar clave",
     lead: "En themoviedb.org crea una cuenta, entra a Ajustes › API, pide una clave (uso personal) y copia la «Clave de la API».",
     fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
   },
   rawg: {
     service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y los mejor calificados en juegos",
-    title: "Clave de RAWG", submitLabel: "Guardar",
+    title: "Clave de RAWG", submitLabel: "Guardar clave",
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
   mdblist: {
     service: "mdblist", label: "MDBList", icon: "trophy", hint: "Aprobadas por la crítica (Rotten Tomatoes)",
-    title: "Clave de MDBList", submitLabel: "Guardar",
+    title: "Clave de MDBList", submitLabel: "Guardar clave",
     lead: "En mdblist.com entra con tu cuenta de Trakt, ve a Preferences › API y copia la clave. Sin ella también sale, con las listas públicas.",
     fields: [{ name: "key", label: "Clave de MDBList", secret: true }],
   },
   steamgriddb: {
     service: "steamgriddb", label: "SteamGridDB", icon: "cover", hint: "Más portadas y fondos para tus juegos",
-    title: "Clave de SteamGridDB", submitLabel: "Guardar",
+    title: "Clave de SteamGridDB", submitLabel: "Guardar clave",
     lead: "En steamgriddb.com entra con tu cuenta de Steam, ve a Preferences › API y copia la clave (API Key).",
     fields: [{ name: "key", label: "Clave de SteamGridDB", secret: true }],
   },
   letterboxd: {
     service: "letterboxd", label: "Letterboxd", icon: "list", mark: "img/ratings/letterboxd.svg", hint: "Tus reseñas en la ficha y tus listas",
-    title: "Tu usuario de Letterboxd", submitLabel: "Guardar",
+    title: "Tu usuario de Letterboxd", submitLabel: "Guardar usuario",
     lead: "Escribe tu usuario, el de letterboxd.com/tu-usuario. Orbital solo lee lo público de tu perfil (tu diario, tus reseñas y tus listas); nunca escribe en Letterboxd.",
     fields: [{ name: "user", label: "Usuario de Letterboxd", secret: false }],
   },
   onedrive: {
     service: "onedrive", label: "Clave de OneDrive", icon: "cloud", hint: "Para ver tus películas guardadas en OneDrive",
-    title: "Clave de OneDrive", submitLabel: "Guardar",
+    title: "Clave de OneDrive", submitLabel: "Guardar clave",
     lead: "En entra.microsoft.com › Registros de aplicaciones › Nuevo registro: ponle «Orbital», elige «Cuentas personales de Microsoft» y créala. En «Autenticación» activa «Permitir flujos de clientes públicos». Copia su «Id. de aplicación (cliente)».",
     fields: [{ name: "id", label: "Id. de aplicación (cliente)", secret: false }],
   },
   trakt: {
     service: "trakt", label: "Clave de Trakt", icon: "link", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
-    title: "Clave de Trakt", submitLabel: "Guardar",
+    title: "Clave de Trakt", submitLabel: "Guardar clave",
     lead: "En developer.trakt.tv crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID. Las aplicaciones nuevas no tienen Client Secret: déjalo vacío.",
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
@@ -650,7 +661,7 @@ export function onedriveRow(status) {
   if (!status) return null;
   const base = { icon: "cloud", label: "OneDrive" };
   if (!status.configured) return { ...base, value: "Configurar", hint: "Primero, su clave (el Id. de la aplicación)", command: { type: "keys", service: "onedrive" } };
-  if (!status.linked) return { ...base, value: "Conectar", hint: "Tus películas guardadas ahí", command: { type: "onedrive-link" } };
+  if (!status.linked) return { ...base, value: "Conectar OneDrive", hint: "Tus películas guardadas ahí", command: { type: "onedrive-link" } };
   const found = status.scanning ? "Buscando tus videos…" : status.folder ? `${status.titles} títulos en «${status.folder}»` : "Elige la carpeta de tus videos";
   return { ...base, value: "✓ Conectada", ok: true, hint: status.error || found, command: { type: "onedrive-account" } };
 }
@@ -658,7 +669,7 @@ export function onedriveRow(status) {
 /** OpenSubtitles (como el iPhone): tu cuenta gratuita para tener muchos más subtítulos y los de tu copia exacta. Sin la
  *  clave de la app en esta consola no sale (no serviría). */
 export const OPENSUBTITLES_FORM = {
-  id: "opensubtitles", title: "Conectar OpenSubtitles", submitLabel: "Conectar",
+  id: "opensubtitles", title: "Conectar OpenSubtitles", submitLabel: "Conectar OpenSubtitles",
   lead: "Más subtítulos y de tu copia exacta. Crea tu cuenta gratis en opensubtitles.com/es/users/sign_up (desde el celular) y escribe aquí tu usuario y contraseña.",
   missing: "Escribe tu usuario y tu contraseña.",
   fields: [{ name: "username", label: "Usuario de OpenSubtitles", secret: false }, { name: "password", label: "Contraseña", secret: true }],
@@ -667,7 +678,7 @@ export const OPENSUBTITLES_FORM = {
 export function opensubtitlesRow(status) {
   if (!status?.available) return null;
   const base = { icon: "captions", label: "OpenSubtitles" };
-  if (!status.connected) return { ...base, value: "Conectar", hint: "Más subtítulos y de tu copia exacta", command: { type: "os-connect" } };
+  if (!status.connected) return { ...base, value: "Conectar OpenSubtitles", hint: "Más subtítulos y de tu copia exacta", command: { type: "os-connect" } };
   const left = Number.isInteger(status.remaining) ? `Te quedan ${status.remaining} hoy` : "Más subtítulos y de tu copia exacta";
   return { ...base, value: "✓ Conectada", ok: true, hint: `${status.username} · ${left}`, command: { type: "os-account" } };
 }
@@ -678,21 +689,22 @@ export function opensubtitlesMenu(status) {
     title: "OpenSubtitles", subtitle: `Conectada como ${status?.username || "tú"}. Sin ella, los subtítulos salen del complemento de siempre (menos opciones).`,
     options: [
       { icon: "close", label: "Dejarla conectada", command: { type: "close" } },
-      { icon: "minus", label: "Desconectar", danger: true, command: { type: "os-disconnect" } },
+      { icon: "minus", label: "Desconectar OpenSubtitles", danger: true, command: { type: "os-disconnect" } }, // AJ-9: con su objeto
     ],
   };
 }
 
-/** OneDrive conectado: la carpeta, buscar de nuevo y desconectar («Dejarlo como está» primero). */
+/** OneDrive conectado: la carpeta, buscar de nuevo y desconectar («Dejarlo conectado» primero; AJ-9, 25 nov 2026: antes
+ *  «Dejarlo como está», que no dice qué protege). */
 export function onedriveMenu(status) {
   return {
     title: "OneDrive", subtitle: "Orbital solo lee la carpeta que elijas: nunca cambia ni borra nada.",
     options: [
-      { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
+      { icon: "close", label: "Dejarlo conectado", command: { type: "close" } },
       { icon: "folder", label: "Carpeta de tus videos", value: status?.folder || "Elegir", command: { type: "onedrive-folder", path: "" } },
       status?.folder && { icon: "refresh", label: "Buscar de nuevo", hint: "Lo nuevo que subiste", command: { type: "onedrive-scan" } },
       { icon: "cloud", label: "Clave de OneDrive", value: "✓ Guardada", ok: true, command: { type: "keys-menu", service: "onedrive" } },
-      { icon: "minus", label: "Desconectar", danger: true, command: { type: "onedrive-unlink" } },
+      { icon: "minus", label: "Desconectar OneDrive", danger: true, command: { type: "onedrive-unlink" } },
     ].filter(Boolean),
   };
 }
@@ -795,7 +807,7 @@ export function phoneRow(seen, now = Date.now(), live = 0) {
   return { ...row, value: "Conectar", hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
 }
 
-/** Un renglón de Cuentas: «Agregar» o «✓ Guardada» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
+/** Un renglón de Cuentas: «Agregar clave» o «✓ Guardada» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
  *  Antes decía «En config.yaml», que no le dice nada a quien no lo armó. */
 function keyRow(service, status) {
   const form = KEY_FORMS[service];
@@ -804,7 +816,7 @@ function keyRow(service, status) {
   // Letterboxd no es una clave: dice tu usuario («@fernando»).
   const shown = service === "letterboxd" && status.letterboxd ? `@${status.letterboxd}` : "✓ Guardada";
   return { icon: form.icon, mark: form.mark, label: form.label, hint: form.hint,
-    value: saved || ready ? shown : "Agregar", ok: saved || ready,
+    value: saved || ready ? shown : service === "letterboxd" ? "Agregar usuario" : "Agregar clave", ok: saved || ready, // AJ-8: con su objeto
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 

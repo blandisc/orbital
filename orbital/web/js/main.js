@@ -14,7 +14,7 @@ import { tokenMs } from "./core/tokens.js";
 import { failure, retry, serverDetail } from "./core/notices.js";
 import { cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, debridSignupMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
-import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, tvSetupMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -342,7 +342,7 @@ const ui = {
       renderHints();
       const from = captureFrom;
       captureFrom = null;
-      if (from) setTimeout(() => { if (!ui.sheet.isOpen && !topOverlay()) { ui.sheet.open(capturesMenu(state.captures || []), { ...from.options, index: from.first + at }); renderHints(); } }, 0);
+      if (from) setTimeout(() => { if (!ui.sheet.isOpen && !topOverlay()) { ui.sheet.open(capturesMenu(state.captures || [], { legion: state.legion === true }), { ...from.options, index: from.first + at }); renderHints(); } }, 0);
     },
     onOpenVideo: (item) => openCapture(item),
   }),
@@ -437,9 +437,10 @@ function debridSaved(res) {
   renderHints();
 }
 
-/** Conectar tu nube (la de `service` o la que usas): su formulario y su clave, que la consola prueba antes de guardar. */
-const debridLogin = (service) => {
-  const form = debridForm(service || state.settings?.realdebrid?.service);
+/** Conectar tu nube (la de `service` o la que usas): su formulario y su clave, que la consola prueba antes de guardar.
+ *  `change`: ya conectada, «Cambiar la clave de …» (AJ-11). */
+const debridLogin = (service, change = false) => {
+  const form = debridForm(service || state.settings?.realdebrid?.service, { change });
   return { ...form, submit: (values, signal) => api.debridKey(values.token.trim(), signal, form.remote) };
 };
 
@@ -1852,7 +1853,7 @@ function commands() {
   if (commandTable) return commandTable;
   const torrentioMenus = { main: (entry) => torrentioMenu(entry, state.settings?.languages || [], state.settings?.realdebrid?.service), languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, debridSignupMenu, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { UNDO_MS, openSources, cloudSay, debridLogin, debridServiceMenu, debridSignupMenu, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, tvSetupMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }),
     ...savedTable(), ...viewingsCommands({ ...deps, openListForm }) };
   return commandTable;
@@ -1943,7 +1944,7 @@ async function runCommand(command, context = null) {
       case "rd-connect": // Conectar Real-Debrid: pegarla aquí o con el QR desde cualquier celular (CA2-A, TEC-4)
         sound.play("open");
         loginFrom = { context };
-        ui.login.open(debridLogin(command.service));
+        ui.login.open(debridLogin(command.service, !!command.change));
         return renderHints();
       case "rd-remote-confirm": {
         const res = await api.debridRemoteConfirm(command.code);

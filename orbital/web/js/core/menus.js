@@ -395,13 +395,13 @@ export function playerMenu({ slot, name, player }) {
   };
 }
 
-/** Reiniciar el juego con los jugadores de ahora: se pierde lo no guardado («Seguir jugando» primero). */
+/** Reiniciar el juego con los jugadores de ahora: se pierde lo no guardado («Seguir jugando» primero; «Reiniciar <juego>», AJ-18). */
 export function playersRestartMenu({ title }) {
   return {
     title: `¿Reiniciar ${title}?`, subtitle: "Se cierra y se abre con estos jugadores. Lo que no hayas guardado se perderá.",
     options: [
       { icon: "close", label: "Seguir jugando", command: { type: "back" } },
-      { icon: "restart", label: "Reiniciar", danger: true, command: { type: "players-restart" } },
+      { icon: "restart", label: `Reiniciar ${title}`, danger: true, command: { type: "players-restart" } },
     ],
   };
 }
@@ -427,11 +427,14 @@ export function captureName(raw) {
   return name || "Captura";
 }
 
-/** Capturas y clips, lo más reciente primero. */
-export function capturesMenu(items) {
+/** Capturas y clips, lo más reciente primero. Sin ninguna (AJ-19, 25 nov 2026): cómo se toman según el mando (la Legion Go
+ *  no tiene Home: ahí las toma la barra de juegos de Windows, como dice el Panel rápido) y «Volver al Panel rápido». */
+export function capturesMenu(items, { legion = false } = {}) {
   if (!items.length) {
-    return { title: "Capturas", subtitle: "Aún no hay capturas. En un juego: mantén Home y pulsa RB.",
-      options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+    return { title: "Capturas", crumb: "Capturas",
+      subtitle: legion ? "Aquí salen las capturas que tomes en tus juegos con la barra de juegos de Windows."
+        : "Aquí salen las capturas que tomes en tus juegos: mantén Home y pulsa RB, sin salir del juego.",
+      options: [{ icon: "back", label: "Volver al Panel rápido", command: { type: "back" } }] };
   }
   return {
     title: "Capturas", crumb: "Capturas",
@@ -487,7 +490,8 @@ export function exitMenu() {
 
 /**
  * Reiniciar y Apagar piden confirmar (un A de más ya no apaga la consola). Si hay un juego
- * abierto, se dice: lo que no se guardó se pierde. «Dejarla prendida» va primero.
+ * abierto, se dice: lo que no se guardó se pierde. Lo seguro va primero («No reiniciar» o «Dejarla prendida») y los dos
+ * botones dicen su objeto («Reiniciar la consola», «Apagar la consola»; AJ-17, 25 nov 2026).
  */
 export function powerConfirmMenu(action, running = null) {
   const verb = action === "restart" ? "Reiniciar" : "Apagar";
@@ -495,8 +499,8 @@ export function powerConfirmMenu(action, running = null) {
     title: `¿${verb} la consola?`,
     subtitle: running?.managed ? `${running.title} sigue abierto: lo que no hayas guardado se perderá.` : "",
     options: [
-      { icon: "close", label: "Dejarla prendida", command: { type: "close" } },
-      { icon: action === "restart" ? "restart" : "power", label: verb, danger: true, command: { type: "power", action } },
+      { icon: "close", label: action === "restart" ? "No reiniciar" : "Dejarla prendida", command: { type: "close" } },
+      { icon: action === "restart" ? "restart" : "power", label: `${verb} la consola`, danger: true, command: { type: "power", action } },
     ],
   };
 }

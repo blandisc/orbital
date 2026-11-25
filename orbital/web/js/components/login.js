@@ -29,7 +29,7 @@ const ACTIONS = [
 ];
 
 const STREMIO = {
-  id: "stremio", title: "Conectar Stremio", submitLabel: "Conectar", missing: "Escribe tu correo y tu contraseña.",
+  id: "stremio", title: "Conectar Stremio", submitLabel: "Conectar Stremio", // AJ-8: con su objeto missing: "Escribe tu correo y tu contraseña.",
   lead: "Para «Seguir viendo», tus complementos y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda. "
     + "¿Entras a Stremio con Google o Facebook? Ponle una contraseña en stremio.com › Ajustes. ¿No tienes cuenta? Es gratis en stremio.com.",
   fields: [{ name: "email", label: "Correo de Stremio" }, { name: "password", label: "Contraseña", secret: true, forget: true }],

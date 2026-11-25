@@ -6,7 +6,7 @@ test("OpenSubtitles en Cuentas: sin la clave de la app no sale; sin cuenta, Cone
   assert.equal(opensubtitlesRow({ available: false }), null);
   assert.equal(opensubtitlesRow(undefined), null);
   const off = opensubtitlesRow({ available: true, connected: false });
-  assert.equal(off.value, "Conectar");
+  assert.equal(off.value, "Conectar OpenSubtitles"); // AJ-8 (25 nov 2026, V1): con su objeto
   assert.equal(off.command.type, "os-connect");
   const on = opensubtitlesRow({ available: true, connected: true, username: "fer", remaining: 17 });
   assert.ok(on.ok);
