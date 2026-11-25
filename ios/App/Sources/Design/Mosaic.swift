@@ -40,6 +40,8 @@ struct Mosaic: View {
     /// Lo que ya colocó `runtime`: si lo nuevo es solo un subconjunto (una «no me interesa» que el
     /// propio `runtime.dismiss` ya quitó), no se vuelve a armar todo —eso perdería el foco y el lugar.
     @State private var configuredIDs: Set<String> = []
+    /// MT4-A: lo que el muro quedó corrido de lado al entrar; el mosaico arranca ahí y se acomoda suave a su lugar.
+    @State private var entryShift: CGFloat = 0
 
     var body: some View {
         #if DEBUG
@@ -53,6 +55,7 @@ struct Mosaic: View {
                     MosaicColumnView(scroll: runtime.scrolls[c], layer: layer(c))
                 }
             }
+            .offset(x: entryShift)
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
             .clipped()
             .mask(LinearGradient(stops: Self.maskStops, startPoint: .top, endPoint: .bottom))
@@ -85,6 +88,7 @@ struct Mosaic: View {
                     // MT4-A: sin animar (si no, el acomodo de siempre se alcanzaba a ver y se desvanecía encima del sembrado).
                     var quiet = Transaction(); quiet.disablesAnimations = true
                     withTransaction(quiet) { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX) }
+                    if entryShift != 0 { DispatchQueue.main.async { withAnimation(DS.Motion.spring(reduceMotion)) { entryShift = 0 } } }
                 }
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
@@ -191,10 +195,17 @@ struct Mosaic: View {
         let byPoster = Dictionary(items.map { ($0.poster, $0) }, uniquingKeysWith: { a, _ in a })
         let frames = runtime.columnFrames
         var plan: [(items: [Suggestion], offset: Double)] = []
+        var shifts: [CGFloat] = []
+        // MT4-A (Fernando, 25 nov 2026: «hace el switch violento con el mosaico real»): antes, si una sola columna no
+        // empataba se dejaba todo el acomodo de siempre; ahora cada columna toma la del muro más cercana y la que no tenga,
+        // se llena como siempre.
         for f in frames {
             let x = left + CGFloat(f.x)
             guard let wall = handoff.columns.min(by: { abs($0.minX - x) < abs($1.minX - x) }),
-                  abs(wall.minX - x) < handoff.pitch / 4, abs(wall.width - CGFloat(f.width)) < 2, !wall.posters.isEmpty else { return }
+                  abs(wall.minX - x) < handoff.pitch / 2, abs(wall.width - CGFloat(f.width)) < 2, !wall.posters.isEmpty else {
+                plan.append(([], 0)); continue
+            }
+            shifts.append(wall.minX - x)
             // La primera fila que todavía se ve (su orilla de abajo debajo del borde de arriba del mosaico).
             let k0 = max(0, Int(((top - wall.firstTop) / handoff.pitch).rounded(.down)))
             let rows = Int((UIScreen.main.bounds.height / handoff.pitch).rounded(.up)) + 1
@@ -203,10 +214,12 @@ struct Mosaic: View {
                 guard let s = byPoster[wall.posters[k % wall.posters.count]], !seeds.contains(where: { $0.imdb == s.imdb }) else { break }
                 seeds.append(s)
             }
-            guard !seeds.isEmpty else { return }
+            guard !seeds.isEmpty else { plan.append(([], 0)); continue }
             plan.append((seeds, Double(top - (wall.firstTop + CGFloat(k0) * handoff.pitch))))
         }
+        guard plan.contains(where: { !$0.items.isEmpty }) else { return }
         runtime.seed(plan)
+        entryShift = shifts.isEmpty ? 0 : shifts.reduce(0, +) / CGFloat(shifts.count)
     }
 
     private func dismiss(_ item: Suggestion) {
