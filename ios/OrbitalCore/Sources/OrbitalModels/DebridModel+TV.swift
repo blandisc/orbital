@@ -52,6 +52,9 @@ extension DebridModel {
         tvAccount = .checking
         do {
             guard let tv = try await services.orbital.realDebridAccount() else { tvAccount = .tvHasNone; return }
+            // TB1 (25 nov 2026): si la TV usa otra nube (Real-Debrid y este iPhone TorBox), no tiene la tuya: «Pasar a la TV»
+            // a la vista. Antes se comparaba solo el usuario y la de TorBox nunca llegaba.
+            if hasToken, tv.service != services.debrid.service { tvAccount = .tvHasNone; return }
             tvAccount = Self.compare(tv: tv, mine: hasToken ? status : nil, kept: keptApart(tv.user))
         } catch is CancellationError { tvAccount = .unknown }
         catch { tvAccount = .unreachable }
