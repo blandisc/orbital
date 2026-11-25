@@ -370,3 +370,21 @@ def test_audit_a_mistyped_quick_code_lets_you_retry_and_ten_devices_hide_the_qr(
     assert local.get("/api/companion/pair.svg").status_code == 409
     templates = {e["id"]: e.get("template") for e in local.get("/api/settings").json()["addons"]["entries"]}
     assert templates.get("opensubtitles") == "opensubtitles"
+
+
+def test_secrets_travel_by_tailscale_not_funnel():
+    """TB2: tailscaled reenvía con X-Forwarded-For (100.x); eso es Tailscale. El Funnel o una IP cualquiera, no."""
+    from types import SimpleNamespace
+
+    from orbital.server.phone import by_tailscale
+
+    def req(host, funnel=False):
+        headers = {"tailscale-funnel-request": "?1"} if funnel else {}
+        return SimpleNamespace(client=SimpleNamespace(host=host), headers=headers)
+
+    assert by_tailscale(req("127.0.0.1"))
+    assert by_tailscale(req("100.71.27.96"))
+    assert by_tailscale(req("fd7a:115c:a1e0::1be7"))
+    assert not by_tailscale(req("100.71.27.96", funnel=True))
+    assert not by_tailscale(req("192.168.1.20"))
+    assert not by_tailscale(req("8.8.8.8"))

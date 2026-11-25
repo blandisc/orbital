@@ -72,7 +72,6 @@ struct DebridTVCompare: View {
             }
             result(model)
         }
-        .choiceSheet(item: $asking) { ask in card(ask, model) }
     }
 
     /// «Pasar a la TV» / «Usar la de la TV»: arriba qué cuenta queda y qué pasa si Real-Debrid no la acepta; abajo la acción.
@@ -111,6 +110,10 @@ struct DebridTVCompare: View {
             if let detail { detail.recipe(.footnote, color: DS.textMuted) }
         }
         .accessibilityElement(children: .combine)
+        // TB3 (25 nov 2026, «aparece la card y desaparece y le tengo que picar otra vez»): la tarjeta va en un solo renglón.
+        // Puesta en el `Group`, en una lista se repetía en cada renglón y uno la abría y otro la cerraba. Siempre hay un solo
+        // `line` cuando hay botón que la abre.
+        .choiceSheet(item: $asking) { ask in card(ask, debrid) }
     }
 
     private func passButton(_ title: Text, _ detail: Text) -> some View {

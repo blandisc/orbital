@@ -217,18 +217,31 @@ async def key_required(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(KEY_REQUIRED, status_code=401)
 
 
+# Las direcciones de Tailscale (CGNAT 100.64.0.0/10 y su rango IPv6).
+TAILNET = (ipaddress.ip_network("100.64.0.0/10"), ipaddress.ip_network("fd7a:115c:a1e0::/48"))
+
+
+def by_tailscale(request: Request) -> bool:
+    """¿Llegó por Tailscale? tailscaled reenvía a 127.0.0.1 y uvicorn pone en `client` la dirección que trae
+    X-Forwarded-For (la del iPhone en la tailnet, 100.x), así que el loopback solo ya no basta (TB2, 25 nov 2026: «Pasar a
+    la TV» siempre daba 403). Lo del Funnel (internet abierto) no cuenta aunque venga del mismo tailscaled."""
+    if "tailscale-funnel-request" in request.headers:
+        return False
+    client = request.client.host if request.client else ""
+    try:
+        ip = ipaddress.ip_address(client)
+    except ValueError:
+        return False
+    return ip.is_loopback or any(ip in net for net in TAILNET)
+
+
 def with_key(request: Request, kind: str = "secret") -> dict:
     """Lo que lleva una clave (contrato, secrets): solo con llave de aparato, solo desde loopback (Tailscale) y con su
     límite por hora."""
     device = device_of(request)
     if device is None:
         raise KeyRequired()
-    client = request.client.host if request.client else ""
-    try:
-        loopback = ipaddress.ip_address(client).is_loopback
-    except ValueError:
-        loopback = False
-    if not loopback:
+    if not by_tailscale(request):
         raise HTTPException(403, "Esto solo viaja por Tailscale")
     if not request.app.state.main.state.devices.allow(device["device_id"], kind):
         raise HTTPException(429, "Ya fueron muchas veces esta hora. Inténtalo más tarde.")
