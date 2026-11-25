@@ -155,8 +155,11 @@ struct MosaicCover: View {
         MosaicCover.cameFromMosaic = true
         guard let grow = DS.Motion.grow(reduceMotion) else { onWalk(); return }
         walking?.cancel()
-        withAnimation(grow, completionCriteria: .logicallyComplete) { opening = 1 } completion: {
-            // MT4-A: ya derecho, se mide dónde quedó cada póster y el mosaico arranca con esos mismos.
+        withAnimation(grow) { opening = 1 }
+        // MT4-A: ya derecho, se mide dónde quedó cada póster y el mosaico arranca con esos mismos. Con un reloj y no con el
+        // `completion` de la animación: a veces no llegaba y el muro se quedaba abierto sin entrar al mosaico.
+        walking = Task { @MainActor in
+            guard (try? await Task.sleep(for: .seconds(DS.Motion.growDuration))) != nil else { return }
             MosaicHandoff.capture()
             onWalk()
         }
@@ -227,6 +230,8 @@ struct MosaicCover: View {
         // MT4-A: en la puerta se endereza aquí mismo (un solo giro). Antes giraba aquí y se desgiraba en `CoverOpening` sobre
         // otro centro: derecho quedaba corrido de lado y el mosaico no podía tomar sus pósters (salían dos mosaicos).
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt * (isDoor ? 1 - reach : 1)))
+        // Al tocar la chapa el giro no seguía la animación (se enderezaba de golpe): se anima aquí con el mismo resorte.
+        .animation(DS.Motion.grow(reduceMotion), value: opening)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -663,6 +668,14 @@ struct MosaicHandoff {
             let drift = (layer.presentation() ?? layer).transform.m42
             out.append(Column(minX: rect.minX, width: rect.width, firstTop: rect.minY + drift, posters: view.key))
             pitch = rect.width / DS.Poster.aspect + DS.Space.s2
+        }
+        // Al tocar la chapa (el muro dentro de un botón) cada columna reporta el ancho de toda su tira, no el suyo: el ancho
+        // sale de la distancia entre columnas, que sí es la buena (si no, el mosaico no la empataba y salía otro).
+        let xs = out.map(\.minX).sorted()
+        if xs.count > 1, let step = zip(xs, xs.dropFirst()).map({ $1 - $0 }).min(), step > DS.Space.s2 {
+            let width = step - DS.Space.s2
+            out = out.map { Column(minX: $0.minX, width: width, firstTop: $0.firstTop, posters: $0.posters) }
+            pitch = width / DS.Poster.aspect + DS.Space.s2
         }
         pending = out.isEmpty ? nil : MosaicHandoff(columns: out, pitch: pitch)
     }
