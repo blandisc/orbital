@@ -177,7 +177,7 @@ export function platformMark(item) {
   const marks = [["switch", "switch.webp"], ["gamecube", "gc.webp"], ["wii", "wii.webp"], ["gba", "gba.webp"], ["game boy", "gba.webp"],
     ["xbox 360", "xbox360.webp"], ["xbox360", "xbox360.webp"], ["xbox", "xbox.webp"], ["psp", "psp.webp"], ["ps4", "ps4.webp"],
     ["playstation 4", "ps4.webp"], ["ps3", "ps3.webp"], ["playstation 3", "ps3.webp"]];
-  const found = marks.find(([key]) => text.includes(key)) ?? (/gc/.test(text) ? ["gc", "gc.webp"] : null);
+  const found = marks.find(([key]) => text.includes(key)) ?? (/\bgc\b/.test(text) ? ["gc", "gc.webp"] : null);
   return found ? file(found[1]) : null;
 }
 

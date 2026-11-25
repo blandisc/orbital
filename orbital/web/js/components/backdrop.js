@@ -6,7 +6,7 @@ const SAMPLE = 24; // px: basta para el tono y es instantáneo
 const palettes = new Map(); // url -> { tint, accent }
 
 /** La misma imagen, chica (el servidor la reduce): para sacar el tono basta y es casi gratis. null si no pasa por él. */
-const tiny = (url) => (/^\/api\/(img|art)/.test(url) && /[?&]w=\d+/.test(url) ? url.replace(/([?&])w=\d+/, "$1w=160") : null);
+const tiny = (url) => (/^\/api\/(img|art)\b/.test(url) && /[?&]w=\d+/.test(url) ? url.replace(/([?&])w=\d+/, "$1w=160") : null);
 
 /** Tono de la imagen ya cargada (mismo origen: /api/art; de fuera, cargada con permiso CORS). null: no se pudo leer.
  *  Se lee de una copia de 160 px: dibujar el fondo grande en el lienzo obligaba a traerlo entero de la GPU (26 ms en cada
