@@ -175,7 +175,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     }
 
     /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
-    enum Sheet { static let maxShare: CGFloat = 0.86 }
+    enum Sheet { static let maxShare: CGFloat = 0.86, versionStart: CGFloat = 0.6 }   // versionStart: «Versión» abre a este alto y ahí espera a que lleguen
 
     enum Radius {
         static let xs = CGFloat(DesignTokens.Radius.xs), sm = CGFloat(DesignTokens.Radius.sm), md = CGFloat(DesignTokens.Radius.md)

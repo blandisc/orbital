@@ -84,6 +84,12 @@ struct SourcesSheet: View {
     /// Mac) la tarjeta mide lo que trae, con tope en el de la ventana, en vez de un hueco abajo con pocas versiones.
     @State private var listSlack: CGFloat = 0
     @State private var sheetHeight: CGFloat = 0
+    /// Ya terminó la primera carga (`isLoading` empieza en falso: sin esto, la hoja se medía vacía antes de cargar).
+    @State private var loaded = false
+    /// El alto al que se acomoda, calculado una sola vez cuando la lista ya se midió (si se calculara en cada cuadro, la hoja
+    /// se medía a sí misma mientras se movía y subía y bajaba). Vuelve a calcularse al cambiar entre «por idioma» y «Todas».
+    @State private var settled: CGFloat?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsMore = false
     /// «Todas» (la lista completa y plana), desde el enlace del pie.
     @State private var showsAll = SourcesSheet.demoShowsAll
@@ -147,10 +153,18 @@ struct SourcesSheet: View {
     }
 
     /// Ventana ancha (iPad, Mac): la tarjeta mide lo que trae, con tope en el alto de la ventana. Sin `fixedSize` (cortaba la
-    /// lista): el alto de ahora más lo que a la lista le sobra o le falta. nil mientras no se ha medido.
+    /// lista): el alto de ahora más lo que a la lista le sobra o le falta. Mientras cargan las versiones (y antes de medir),
+    /// un alto fijo: antes abría a pantalla completa, se encogía al esqueleto y volvía a cambiar al llegar la lista (tres
+    /// brincos; Fernando, 25 nov 2026). Ahora sube una vez y cambia de alto una sola vez, suave, cuando ya está todo.
     private var fittedHeight: CGFloat? {
-        guard sheetHeight > 0 else { return nil }
-        return min(max(DS.Size.touchTarget * 6, sheetHeight + listSlack), WindowMetrics.size.height * DS.Sheet.maxShare)
+        settled ?? WindowMetrics.size.height * DS.Sheet.versionStart
+    }
+
+    /// Fija el alto con lo que mide la lista ahora (una vez), con un resorte.
+    private func settle() {
+        guard loaded, sheetHeight > 0 else { return }
+        let height = min(max(DS.Size.touchTarget * 6, sheetHeight + listSlack), WindowMetrics.size.height * DS.Sheet.maxShare)
+        withAnimation(DS.Motion.spring(reduceMotion)) { settled = height }
     }
 
     var body: some View {
@@ -194,10 +208,15 @@ struct SourcesSheet: View {
                     if !model.isLoading, !model.ranked.isEmpty { allLink(model) }
                 }
             }
+            .animation(DS.Motion.base(reduceMotion), value: loaded)   // el esqueleto se funde con la lista
             .defaultScrollAnchor(Self.demoBottom ? .bottom : nil)   // `-demo-open sources-request`: abre abajo, en «Hay que pedirlas»
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom - $0.containerSize.height } action: { _, slack in listSlack = slack }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom - $0.containerSize.height } action: { _, slack in
+                listSlack = slack
+                if settled == nil { settle() }
+            }
+            .onChange(of: showsAll) { Task { @MainActor in settle() } }   // un cambio, desde el alto de ahora
             if env.connectivity.isCellular {
                 Text("Con datos móviles te avisamos antes de usar versiones de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
             }
@@ -208,6 +227,10 @@ struct SourcesSheet: View {
         .task {
             model.playerOpen = { HardwareVolumeButtons.yieldsToPlayer }   // con el reproductor abierto no se revisa el audio de nada
             await model.load(onCellular: env.connectivity.isCellular)
+            withAnimation(DS.Motion.base(reduceMotion)) { loaded = true }   // el esqueleto se funde con la lista
+            // Si la lista mide igual que el esqueleto no llega ningún cambio de medida: se fija con lo que hay.
+            try? await Task.sleep(for: .seconds(DesignTokens.Motion.base))
+            if settled == nil { settle() }
             #if DEBUG
             demoSeriesAsk(model)
             #endif
