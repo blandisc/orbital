@@ -95,6 +95,10 @@ extension DS {
         static let maxShare = DS.Sheet.maxShare
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
         static let swipeStep: CGFloat = 56
+        /// Inercia del pad: desde qué velocidad al soltar (pt/s) sigue solo, cuántos pt/s vale cada flecha más, cuántas
+        /// (mínimo y máximo), la pausa antes de la primera (s) y cuánto crece cada pausa.
+        static let glideSpeed: CGFloat = 700, glideSpeedPerArrow: CGFloat = 300, glideMin = 3, glideMax = 15
+        static let glideFirstGap: Double = 0.07, glideSlowdown: Double = 1.22
         /// Lo que se puede mover el dedo y seguir contando como toque (A).
         static let tapSlop: CGFloat = 10
         /// La luz bajo el dedo en el pad.

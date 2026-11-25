@@ -17,6 +17,8 @@ struct TouchPad: View {
     @State private var ticks = 0
     /// La flecha que se acaba de mandar: se enciende un instante en su orilla (sabes a dónde fue sin mirar la TV).
     @State private var flash: OrbitalRemote.InputAction?
+    /// La inercia al soltar un deslizamiento rápido: sigue mandando flechas cada vez más espaciadas; un toque la corta.
+    @State private var glide: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -43,7 +45,7 @@ struct TouchPad: View {
             .onChanged { value in
                 // Un toque nuevo empieza de cero: si la hoja canceló el anterior (sin `onEnded`), su origen viejo
                 // convertía este toque en flecha y la A no llegaba («le toco varias veces y no abre»).
-                if gestureStart != value.startLocation { gestureStart = value.startLocation; origin = nil; moved = false }
+                if gestureStart != value.startLocation { gestureStart = value.startLocation; origin = nil; moved = false; glide?.cancel(); glide = nil }
                 touch = value.location
                 let start = origin ?? value.startLocation
                 if origin == nil { origin = start }
@@ -56,9 +58,31 @@ struct TouchPad: View {
             .onEnded { value in
                 let total = hypot(value.translation.width, value.translation.height)
                 if !moved, total < DS.Remote.tapSlop { fire(.select) }
+                if moved { coast(value) }
                 origin = nil; moved = false; gestureStart = nil
                 withAnimation(DS.Motion.base(reduceMotion)) { touch = nil }
             }
+    }
+
+    /// Inercia (Fernando, 24 nov 2026: «que siga con cierto momentum» en filas largas de episodios): con la velocidad al
+    /// soltar, unas `glideMin…glideMax` flechas más en esa dirección, cada una un poco más espaciada, como el scroll de iOS.
+    /// Con «Reducir movimiento», a lo más una o dos.
+    private func coast(_ value: DragGesture.Value) {
+        let vx = value.velocity.width, vy = value.velocity.height
+        let speed = max(abs(vx), abs(vy))
+        guard speed >= DS.Remote.glideSpeed else { return }
+        let direction: OrbitalRemote.InputAction = abs(vx) > abs(vy) ? (vx > 0 ? .right : .left) : (vy > 0 ? .down : .up)
+        var count = min(DS.Remote.glideMax, max(DS.Remote.glideMin, Int(speed / DS.Remote.glideSpeedPerArrow)))
+        if reduceMotion { count = min(count, 2) }
+        glide?.cancel()
+        glide = Task { @MainActor in
+            var gap = DS.Remote.glideFirstGap
+            for _ in 0..<count {
+                guard (try? await Task.sleep(for: .seconds(gap))) != nil else { return }
+                fire(direction)
+                gap *= DS.Remote.glideSlowdown
+            }
+        }
     }
 
     private func fire(_ action: OrbitalRemote.InputAction) {
@@ -161,11 +185,13 @@ struct RemoteTextField: View {
             TextField("Escribir en la TV", text: $text)
                 .submitLabel(.search)
                 .autocorrectionDisabled()
-                .onSubmit(onSubmit)
+                // Al mandar la búsqueda se va el teclado: el pad queda a la mano para moverse por los resultados (Fernando,
+                // 24 nov 2026: «cuando sales de la búsqueda, que te oculte el teclado»).
+                .onSubmit { onSubmit(); focused = false }
                 .foregroundStyle(DS.text)
                 .focused($focused)
         }
-        .onChange(of: autoFocus, initial: true) { _, wants in if wants { focused = true } }
+        .onChange(of: autoFocus, initial: true) { _, wants in focused = wants }   // la TV cerró el campo: se esconde también
         .font(DS.TextRecipe.body.font)
         .padding(.horizontal, DS.Space.s4)
         .frame(minHeight: DS.Remote.keyHeightFitted)
