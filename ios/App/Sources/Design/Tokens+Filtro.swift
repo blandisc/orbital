@@ -31,7 +31,7 @@ extension DS {
         static let miniTileHeight: CGFloat = 70
         /// Sin ningún filtro puesto, los mosaicos sin renglón de valor (Fernando, 2 nov 2026, K5): más bajos, en la puerta y
         /// en el cajón.
-        static let miniTileCompact: CGFloat = 52, tileCompact: CGFloat = 76, stripTile: CGFloat = 92
+        static let miniTileCompact: CGFloat = 52, tileCompact: CGFloat = 76, quietCircle: CGFloat = 50
         /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
         static let artHeight: CGFloat = 30, miniArtHeight: CGFloat = 20
         /// La flechita del panel que se abre bajo su mosaico.

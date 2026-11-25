@@ -114,6 +114,14 @@ struct SettingsView: View {
             SettingsLink(.downloads) { destination(.downloads, model) } label: {
                 SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
             }
+            // De qué temporadas sale la dona de Inicio: de vuelta en Ajustes (Fernando, 25 nov 2026), además de junto a los canales.
+            if env.services.settingsEntries.simpsons {
+                SettingsLink(.simpsons) { destination(.simpsons, model) } label: {
+                    SettingsRow(title: "Un Simpson al azar", symbol: DS.Symbol.channelSeasons, tint: DS.ListTint.watching,
+                                value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+                }
+                .accessibilityIdentifier("settings-simpsons-seasons")
+            }
         } header: { Text("En este aparato") }
         .listRowBackground(DS.surface)
     }
@@ -265,6 +273,7 @@ struct SettingsView: View {
         case .playback: self.page("Reproducción") { playback(model) }
         case .alerts: self.page("Avisos") { alerts(model) }
         case .downloads: self.page("Descargas") { downloads(model) }
+        case .simpsons: SimpsonsSeasonsPage()
         case .accounts: self.page("Cuentas") { accounts(model) }
         case .addons: AddonsSettings()
         case .orbital: self.page("Tu Orbital") { orbitalSection(model) }

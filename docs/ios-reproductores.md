@@ -150,6 +150,10 @@ PiP en iOS) es una envoltura Swift más cómoda; Dolby Vision, PGS y AirPlay sin
 - ¿Descargas con Infuse en la versión 1 (sin avance) o esperar al reproductor propio?
 - Pagar Infuse Pro (o SenPlayer Pro) si la prueba A muestra que hace falta.
 - Compilar AetherEngine y FFmpegBuild desde fuente (más seguro) o aceptar los binarios del repo.
+- **Pendiente (Fernando, 25 nov 2026):** el video se traba un poco cuando el PiP se abre solo al salir de la app
+  (`canStartPictureInPictureAutomaticallyFromInline`, `Platform/PictureInPicture.swift`). Medir en el iPhone con la
+  compilación Release y probar a no cambiar el dibujo de subtítulos (`setNativeSubtitleRendering`) en el mismo instante
+  en que arranca la ventana.
 
 ## 9. Contradicciones sin resolver
 
