@@ -8,7 +8,7 @@ import { dictationBase, dictationProblem } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
-import { EmptyState, Pill, SectionHead } from "./ui.js";
+import { EmptyState, ErrorState, Pill, SectionHead } from "./ui.js";
 
 /** El nombre de un grupo de resultados: un encabezado de subsección como el de cualquier fila (blanco, sin porqué). */
 const groupHead = (name) => {
@@ -70,7 +70,7 @@ export function rememberSearch(recent, query) {
   return [q, ...recent.filter((r) => r !== q)].slice(0, RECENT_MAX);
 }
 
-export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
+export function createSearch({ onOpen, onMore = null, onMove, onClose, onAdvanced = null, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
   let picking = null; // { kind, onPick }: «Corregir ficha»
   // C6: una etiqueta visible y fija arriba del campo (la ayuda de adentro se va al escribir; la etiqueta no).
   const label = h("span", { class: "search__label", id: "search-label" }, "Buscar");
@@ -150,7 +150,9 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
       const group = groupOf(item);
       const shown = group === "movie" || group === "series"
         ? { ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") } : item;
-      const card = Card(shown, { caption: true, onPress: () => { zone = "results"; resultIndex = i; open(); } });
+      // Clic derecho o dedo sostenido: sus Opciones, lo mismo que Y (como en toda cuadrícula de portadas).
+      const card = Card(shown, { caption: true, onPress: () => { zone = "results"; resultIndex = i; open(); },
+        onMore: hasMore(item) ? () => { zone = "results"; resultIndex = i; render(); more(); } : null });
       focusables.push(card);
       sets.at(-1).cards.push(card);
     });
@@ -193,6 +195,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
       const i = at++;
       return Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
         caption: !item.label, onPress: () => { zone = "results"; resultIndex = i; open(); },
+        onMore: hasMore(item) ? () => { zone = "results"; resultIndex = i; render(); more(); } : null,
       });
     })]);
     focusables = [...door, ...chips, ...sets.flatMap(([, nodes]) => nodes)];
@@ -209,14 +212,35 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   // Con el dedo no hay «→»: se toca el resultado.
   const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ${document.body.dataset.input === "touch" ? "toca uno para abrirlo" : "→ para elegir"}`;
 
+  /** El vacío o el error donde irían los resultados (BL-1, BL-2): su botón se enfoca como un resultado más (→ desde el
+   *  teclado, A lo pulsa) y con el dedo o el mouse se toca. `keep`: debajo de lo que ya se ve (tus juegos). */
+  function showStep(node, { step, keep = false }) {
+    const button = node.querySelector(".button");
+    if (!keep) { items = []; focusables = []; mount(results); }
+    items.push({ step });
+    if (button) focusables.push(button);
+    results.append(node);
+    render();
+  }
+
+  /** El botón del vacío o del error: «Borrar todo» (con su «Deshacer» en la tecla) o «Reintentar» (busca otra vez ya). */
+  function runStep() {
+    const item = items.find((i) => i.step);
+    if (!item) return;
+    zone = "keys";
+    if (item.step === "clear") { press("clear"); return; }
+    schedule(0);
+  }
+
   function schedule(delay = DEBOUNCE_MS) {
     clearTimeout(timer);
     const q = text.trim();
     token++;
     pending = "";
     if (q.length < MIN_CHARS) {
-      if (q) showResults([]);
-      else showRecent();
+      // BL-3 (25 nov 2026): con una letra sigue lo de la caja vacía (antes la derecha quedaba en blanco); los resultados
+      // llegan desde la 2.ª.
+      showRecent();
       setHint(q ? "Sigue escribiendo…" : picking?.hint || "Escribe el nombre y verás los resultados.");
       return;
     }
@@ -224,7 +248,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     // Eligiendo una ficha («Corregir ficha»): solo películas o series del tipo que corrige, nada de tus juegos.
     const local = picking ? [] : localSearch(q);
     showResults(local, { searching: true });
-    setHint(local.length ? `${count(local.length)} · buscando películas y series…` : `Buscando “${q}”…`);
+    setHint(local.length ? `${count(local.length)} · buscando películas y series…` : `Buscando «${q}»…`);
     timer = setTimeout(async () => {
       const mine = ++token;
       pending = q;
@@ -234,14 +258,21 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
         pending = "";
         showResults([...local, ...data.results.filter((r) => !picking || (r.kind || r.extra?.kind) === picking.kind || !picking.kind)]);
         setHint(items.length ? count(items.length) : "");
-        // Sin nada: el vacío del sistema (EmptyState) donde irían los resultados, no una frase chica a la derecha.
-        if (!items.length) mount(results, EmptyState({ icon: "search", title: `Nada con «${q}»`, text: "Prueba con otra palabra o menos letras.", className: "search__empty" }));
+        // Sin nada: el vacío del sistema (EmptyState) donde irían los resultados, con su paso (BL-2: «Borrar todo», y la
+        // caja vacía trae la búsqueda avanzada y lo tuyo).
+        if (!items.length) {
+          showStep(EmptyState({ icon: "search", title: `Nada con «${q}»`, text: "Prueba con otra palabra o menos letras.", className: "search__empty",
+            action: { label: "Borrar todo", onPress: () => runStep() } }), { step: "clear" });
+        }
       } catch {
         if (mine !== token) return;
         pending = "";
         showResults(local); // sin las portadas vacías: no va a llegar nada
-        // Sin internet: tus juegos siguen funcionando; se dice claro y sin jerga.
-        setHint(local.length ? `${count(local.length)} · sin conexión para películas y series` : "Sin conexión para películas y series");
+        // BL-1 (25 nov 2026): sin internet, la pieza de error con «Reintentar» donde irían las películas y series (antes una
+        // frase chica y la mitad derecha en blanco); tus juegos, si los hay, siguen arriba.
+        setHint(local.length ? count(local.length) : "Sin conexión"); // el porqué y «Reintentar» ya van en la pieza
+        showStep(ErrorState({ title: "No pude buscar películas y series", text: local.length ? "Tus juegos siguen aquí. Revisa tu internet y vuelve a intentarlo."
+          : "Revisa tu internet y vuelve a intentarlo.", className: "search__empty", onRetry: () => runStep() }), { step: "retry", keep: local.length > 0 });
       }
     }, delay);
   }
@@ -350,6 +381,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   function open() {
     const item = items[resultIndex];
     if (!item || el.hidden || el.classList.contains("screen--leaving")) return; // un segundo toque mientras se va no abre otra cosa
+    if (item.step) { runStep(); return; } // «Borrar todo» o «Reintentar» (BL-1, BL-2)
     if (item.door === "advanced") { // PA3-A: la búsqueda avanzada, encima de Buscar
       close();
       onAdvanced?.();
@@ -371,6 +403,14 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     }
     storage.set(RECENT_KEY, rememberSearch(storage.get(RECENT_KEY, []), text));
     onOpen(item);
+  }
+
+  /** Lo que tiene Opciones (Y): un juego, una película o una serie; no una búsqueda reciente, un género, una lista ni un botón. */
+  const hasMore = (item) => !!onMore && !!item && !item.recent && !item.door && !item.step && item.source !== "genre" && item.source !== "collection";
+
+  function more() {
+    const item = items[resultIndex];
+    if (hasMore(item) && !picking) onMore(item);
   }
 
   function moveKeys(dr, dc) {
@@ -407,6 +447,10 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
       render();
       return true;
     }
+    // BL-4 (25 nov 2026): en los resultados, Y abre las Opciones de la portada enfocada (como en toda cuadrícula) y X no hace
+    // nada (antes Y escribía un espacio y volvía a buscar, y X borraba letras desde los resultados).
+    if (zone === "results" && action === "options") { more(); return true; }
+    if (zone === "results" && action === "alt") return true;
     // X borra una letra; mantenido, palabra por palabra (y cada vez más rápido).
     if (action === "alt") { press(repeat ? "delete-word" : "delete"); return true; }
     if (action === "options") { press("space"); return true; }
@@ -468,6 +512,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   /** Pistas del pie mientras la búsqueda está abierta. */
   // Lo que hace falta saber: escribir, dictar (con un botón, sin ir hasta la tecla) y volver. X y Y
   // (borrar, espacio) siguen como atajos sin llenar el pie.
+  const stepLabel = () => ({ clear: "Borrar todo", retry: "Reintentar" })[items[resultIndex]?.step] || "";
   const hints = (pad) => {
     const g = typingGlyphs(pad);
     const page = String(pad?.page || "").split(" "); // LT RT con mando, RePág AvPág con teclado
@@ -478,7 +523,8 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
       keyboard.setLayout(layout(shownCleared, dictateGlyph, !!listening, goGlyph));
     }
     return [
-      { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
+      { glyph: g.select, label: zone === "results" ? stepLabel() || "Abrir" : "Escribir" },
+      zone === "results" && !picking && hasMore(items[resultIndex]) && { glyph: g.options, label: "Opciones" },
       // Buscar, Dictar y Espacio ya están en el teclado con su botón: no se repiten en el pie (como mucho cinco pistas).
       // Siempre a la vista: el atajo para buscar desde cualquier tecla (antes solo salía sin resultados y escondido).
       zone === "keys" && go && { glyph: go, label: "Buscar" },

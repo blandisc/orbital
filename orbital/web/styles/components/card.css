@@ -97,6 +97,10 @@
 .card-grid .is-focused.card--name-on-focus.card .card__caption { right: auto; width: max-content; max-width: calc(var(--card-height) * 1.8); text-align: left; }
 .card-grid .is-focused.card--name-on-focus.card[data-edge="end"] .card__caption { left: auto; right: 0; text-align: right; }
 .card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+/* BL-5 (25 nov 2026): bajo los pósters de una cuadrícula (Buscar, listas, Guardado, colecciones, la filmografía de una persona)
+   el nombre va en dos renglones, como ya iba en Buscar: «Blade Runner…», «Dune: Parte d…» no se distinguían. El nombre solo
+   bajo la enfocada (Juegos) sigue en uno, a lo ancho que necesite. */
+.card:not(.card--name-on-focus) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; }
 .card__caption span { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* En la enfocada, el héroe ya dice "Jugado hace…" en grande. */
 .is-focused.card .card__chip, .card--dimmed .card__chip { opacity: 0; } /* filas inactivas: no asoman */

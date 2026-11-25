@@ -129,7 +129,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
 
   /**
    * C7: con cero, prueba quitar cada filtro puesto (hasta TRY_REMOVING, la cuenta la da el servidor) y se queda con el que
-   * devuelve más: «Quita “Terror” y ves 12». Lo prueba en segundo plano; mientras, la frase de siempre.
+   * devuelve más: «Quita «Terror» y ves 12». Lo prueba en segundo plano; mientras, la frase de siempre.
    */
   async function findRescue(mine) {
     const rows = FILTERS.filter((row) => row.id !== "kind" && valueOf(row)).slice(0, TRY_REMOVING);
@@ -141,7 +141,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
     if (rescue) paintSide();
   }
 
-  /** «Quitar “Terror”»: ese filtro vuelve a su «Cualquiera» (los demás se quedan). */
+  /** «Quitar «Terror»»: ese filtro vuelve a su «Cualquiera» (los demás se quedan). */
   function removeRescue() {
     if (!rescue) return false;
     choose(rescue.row, "");
@@ -188,7 +188,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
         // C9: qué prepara · C5: qué pasó, en palabras de Orbital (Y abre los títulos igual) · C7: con cero, qué quitar.
         h("span", { class: "filter__total-label" }, found === null ? "Contando títulos…" : failed
           ? "No pude contarlos ahora; tus filtros siguen puestos." : none
-          ? (rescue ? `Quita “${rescue.label}” y ves ${countText(rescue.total)}.` : "Nada con esto. Prueba quitar un filtro (X borra todos).")
+          ? (rescue ? `Quita «${rescue.label}» y ves ${countText(rescue.total)}.` : "Nada con esto. Prueba quitar un filtro (X borra todos).")
           : `${total === 1 ? "título" : "títulos"}${active() ? " con lo que elegiste" : ""}`)),
       // Con cero, sin muro (las cajas vacías parecían «cargando»).
       !none && h("div", { class: ["filter__wall", (counting || found === null) && "filter__wall--loading"], "aria-hidden": "true" },
@@ -198,7 +198,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
             : h("span", { class: "filter__poster filter__poster--empty" });
         })));
     mount(actions, none
-      ? [rescue && Button({ label: `Quitar “${rescue.label}”`, glyph: g.options, variant: "primary", onPress: () => removeRescue() }),
+      ? [rescue && Button({ label: `Quitar «${rescue.label}»`, glyph: g.options, variant: "primary", onPress: () => removeRescue() }),
         Button({ label: "Borrar filtros", glyph: g.alt, variant: rescue ? "ghost" : "primary", icon: rescue ? "close" : null, onPress: () => clear() })]
       : [go, active() > 0 && Button({ label: "Borrar filtros", glyph: g.alt, icon: "close", onPress: () => clear() })]);
   }

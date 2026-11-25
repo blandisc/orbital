@@ -27,11 +27,17 @@
   box-shadow: var(--edge-glass-hairline), 0 0 1.2rem -.2rem color-mix(in oklab, var(--halo) 60%, transparent); }
 .showcase__emblem { width: 78%; height: 78%; object-fit: contain; }
 .showcase__item--art .showcase__progress .progress__fill { background: var(--halo); }
-.showcase__text { display: grid; gap: var(--space-1); min-width: 0; }
-.showcase__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
-.showcase__meta { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
-.showcase__count { color: var(--color-text-muted); font-size: var(--type-data); font-weight: var(--type-data-weight); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.showcase__progress { grid-column: 2 / 4; --progress-width: auto; }
+/* BL-13 (25 nov 2026): arriba el nombre y su línea, a todo lo ancho y en hasta dos renglones cada uno; abajo, la barra y la
+   cifra en el mismo renglón (antes la cifra iba a la derecha del nombre y se lo comía: «Top 250 de IMDb» → «To…»). */
+.showcase__text { grid-column: 2 / 4; grid-row: 1; display: grid; gap: var(--space-1); min-width: 0; }
+.showcase__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); line-height: var(--leading-title);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.showcase__meta { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); line-height: var(--leading-title);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.showcase__count { grid-column: 3; grid-row: 2; color: var(--color-text-muted); font-size: var(--type-data); font-weight: var(--type-data-weight); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Sin barra (aún sin contar lo que viste), la cifra ocupa el renglón entero. */
+.showcase__text + .showcase__count { grid-column: 2 / 4; }
+.showcase__progress { grid-column: 2; grid-row: 2; --progress-width: auto; }
 @media (max-width: 1100px) { .showcase__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* Enfocada: el foco invertido (como una opción de Ajustes): sin arte, solo levantarse no se notaba. */
 /* CO-1 (16 nov 2026): sin agrandarse (crecida, se encimaba con la de al lado): el foco invertido basta. */

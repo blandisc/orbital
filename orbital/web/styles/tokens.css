@@ -267,6 +267,9 @@
   --match-stamp-line: 3px; /* el borde del sello (DS.Match.stampLine) */
   --match-stamp-tilt: 12deg; /* el giro del sello y de la carta al salir (DS.Match.stampTilt) */
   --caption-room: calc((.65rem + 2.8 * var(--type-footnote)) * 1.15);
+  /* BL-5 (25 nov 2026): el pie de un póster de cuadrícula con el nombre en dos renglones y su dato debajo (tres renglones de
+     footnote), con lo que crece la enfocada: lo deja libre cada renglón de una lista (list-screen.css). */
+  --caption-room-titled: calc((.55rem + 3 * var(--type-footnote) * var(--leading-normal)) * 1.1);
   --status-room: calc(var(--space-6) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
   --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
   --menu-row-height: 3.6rem; /* una fila de un menú y el pie de controles */

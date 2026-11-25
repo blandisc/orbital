@@ -213,7 +213,6 @@ export function glassSwitchGlide(nav, travel = false) {
   state.frame = requestAnimationFrame(chase);
 }
 
-/** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 /**
  * RowCount (T12, 10 nov 2026): el contador de una fila, uno solo en toda la TV. En lo enfocado dice dónde vas, «3 / 15»;
  * fuera, cuántos hay («15», o con su unidad: «21 juegos»). Antes había cuatro formatos («6», «3 / 6», «2 de 9» y puntos).
@@ -230,8 +229,10 @@ export function rowCountText(at, total, { unit = null } = {}) {
   return unit ? unit(total) : String(total);
 }
 
-export function Progress(fraction, { className = null, label = "Avance" } = {}) {
-  if (!(fraction > 0)) return null;
+/** Cuánto llevas (0..1). Sin avance no se dibuja nada, salvo con `zero`: entonces 0 dibuja la pista vacía (BL-14: las
+ *  tarjetas de Colecciones sin nada visto, del mismo alto que las demás). Sin dato (null), nada. */
+export function Progress(fraction, { className = null, label = "Avance", zero = false } = {}) {
+  if (!(fraction > 0) && !(zero && fraction === 0)) return null;
   const pct = Math.round(Math.min(1, fraction) * 100);
   return h("span", { class: ["progress", className], role: "progressbar", "aria-label": label, "aria-valuenow": pct, "aria-valuemin": 0, "aria-valuemax": 100 },
     h("span", { class: "progress__fill", style: { width: `${pct}%` } }));

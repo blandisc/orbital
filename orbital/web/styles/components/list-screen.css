@@ -21,8 +21,15 @@
 .list-screen__tools:not([hidden]) + .list-screen__chips { margin-left: 0; } /* el empuje a la derecha ya lo dio «Editar» */
 /* Eligiendo varios (G3-A): cuántas van, junto a «Todas» y «Con las elegidas…». */
 .list-screen__count { align-self: center; color: var(--color-text-muted); font-variant-numeric: tabular-nums; font-size: var(--type-body); font-weight: var(--type-body-weight); }
-/* Ordenar a mano (G4-A): el póster tomado se ve levantado y con su filo, aunque el foco se mueva con él. */
-.list-screen__grabbed { box-shadow: var(--edge-glass-selected), var(--focus-lift); }
+/* Ordenar a mano (G4-A): el póster tomado se ve levantado y con su filo, aunque el foco se mueva con él. BL-6 (25 nov 2026):
+   su marca le gana a la del foco (antes era idéntico al enfocado): sube más que una enfocada, lleva el filo de lo elegido y,
+   en su esquina, la placa con el ícono de mover. */
+.list-screen__grid .is-focused.card.list-screen__grabbed {
+  transform: translateY(calc(-1 * var(--space-4))) scale(var(--card-focus-scale));
+  box-shadow: var(--edge-glass-selected), var(--focus-lift);
+}
+.list-screen__grab { position: absolute; top: var(--inset-poster); right: var(--inset-poster); z-index: var(--z-raised); display: grid; place-items: center; }
+.list-screen__grab .icon { width: var(--icon-md); height: var(--icon-md); }
 .list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
 .list-screen__tabs { display: flex; gap: var(--space-2); }
 .list-screen__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
@@ -32,7 +39,8 @@
 }
 /* Entre renglones, lugar para el nombre y el año que van bajo cada póster. */
 /* La enfocada crece 10 % (como en Juegos): con 20 % tapaba a su vecina, porque el espacio entre portadas es menor que lo que crecía. */
-.list-screen__grid { --card-focus-scale: 1.1; position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: calc(var(--space-8) * 2.4) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
+/* BL-5: el nombre bajo el póster va en dos renglones y su dato en el tercero; entre renglones, ese pie entero (--caption-room-titled). */
+.list-screen__grid { --card-focus-scale: 1.1; position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: calc(var(--caption-room-titled) + var(--space-2)) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 /* El año del premio o el día del estreno, en una placa sobre el póster (como bajo el póster en el iPhone). */
 .list-screen__note {
   position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);

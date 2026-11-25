@@ -105,7 +105,10 @@ def test_titles_without_imdb_are_skipped():
 def test_a_library_game_plays_from_here():
     item = game_item({"id": "steam:1145360", "title": "Hades", "playtime": 48 * 3600, "extra": {"logo": "/l.png"}}, "Tu más jugado")
     assert item["detail"] == "48 h jugadas" and item["action"] == "Jugar" and item["logo"] == "/l.png"
-    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin jugar")["detail"] == "Nunca lo has abierto"
+    # BL-18: los minutos reales o «Sin estrenar»; con la etiqueta «Sin jugar», nada más (no se repite).
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 35 * 60}, "Al azar")["detail"] == "35 min jugados"
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Al azar")["detail"] == "Sin estrenar"
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin jugar")["detail"] == ""
 
 
 # ---------------------------------------------------------------- caché

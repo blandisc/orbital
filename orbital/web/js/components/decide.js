@@ -14,8 +14,8 @@ import { serverDetail } from "../core/notices.js";
  * «Decide por mí» · «Tres que caben» (AD-1…AD-12, Fernando, 16 nov 2026: «pulir muchísimo más las pantallas de adentro:
  * fondo, forma, todo»). Se ve y se maneja como el Inicio: el arte de la enfocada a pantalla completa con el velo de Orbital
  * (AD-1), arriba el encabezado compacto con sus pestañas y el reloj (AD-2), a la izquierda por qué cabe, su logo, sus datos y
- * su sinopsis (AD-3) con «Ver ya» (A), «Ficha» (Y) y «Otras tres» (X) (AD-4), y abajo las tres como tarjetas anchas (AD-7)
- * con «Filtros» al final (AD-8), que abre su panel (AD-9). «Hoy no» y «No me interesa» van en ☰ (AD-5).
+ * su sinopsis (AD-3) con «Ver ya» (A) y «Ficha» (Y) (AD-4), y abajo las tres como tarjetas anchas (AD-7) con «Otras tres»
+ * (también X; BL-16: una sola vez, ya no como botón junto a «Ver ya») y «Filtros» al final (AD-8), que abre su panel (AD-9). «Hoy no» y «No me interesa» van en ☰ (AD-5).
  *   ◀ ▶ propuesta (y «Otras tres», «Filtros») · ↑ pestañas · A ver ya · Y ficha · X otras tres · ☰ opciones · LB/RB «Una por una» (AD-11) · B cerrar
  *
  * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · dismiss(key) · onPick(item) · onPlay(item) ·
@@ -163,11 +163,12 @@ export function decideLead(picks, time) {
   return `${fit === 1 ? "Una cabe" : "Dos caben"} en ${time}; ${picks.length - fit === 1 ? "la otra es la más corta" : "las otras, las más cortas"}.`;
 }
 
-/** La línea de datos de una propuesta: por qué · cuánto dura · IMDb · géneros. Una serie se propone completa, sin el
- * episodio en que vas (Fernando, 2 nov 2026; antes decía «Sigue T2 E5»). */
+/** La línea de datos de una propuesta: cuánto dura · IMDb · géneros. Una serie se propone completa, sin el episodio en que
+ * vas (Fernando, 2 nov 2026; antes decía «Sigue T2 E5»). Sin el porqué (BL-15, 25 nov 2026): ya va arriba, en la etiqueta
+ * («En tendencia» salía dos veces). */
 export function pickFacts(p) {
   const minutes = p.minutes ? duration(p.minutes * 60) : ""; // «42 min» (runtime() espera el texto «42 min»: daba «2520»)
-  return [p.why, p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
+  return [p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
     p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", ")].filter(Boolean).join(" · ");
 }
 
@@ -251,11 +252,14 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
           Button({ label: empty && state === "error" ? "Reintentar" : "Elegir filtros", glyph: g.select, variant: "primary", onPress: () => select() })));
     }
     const p = current();
-    return mount(info, ...DecideInfo(p, { eyebrow: endsLine(p) || p.why, facts: pickFacts(p) }),
+    // El porqué, una sola vez: en la etiqueta; si ahí va «Cabe en tu noche · termina a las…», abre la línea de datos (BL-15).
+    const ends = endsLine(p);
+    return mount(info, ...DecideInfo(p, { eyebrow: ends || p.why, facts: [ends && p.why, pickFacts(p)].filter(Boolean).join(" · ") }),
+      // BL-16 (25 nov 2026): «Otras tres» una sola vez, su tarjeta en la fila (la que alcanza el control del teléfono); antes
+      // también era un botón redondo aquí. X sigue pidiéndolas (el pie lo dice).
       h("div", { class: "button-row decide__actions" },
         Button({ label: "Ver ya", glyph: g.select, variant: "primary", onPress: () => onPlay?.(p) }),
-        Button({ label: "Ficha", glyph: g.options, icon: "info", onPress: () => onPick?.(p) }),
-        Button({ label: "Otras tres", glyph: g.alt, icon: "refresh", onPress: reroll })));
+        Button({ label: "Ficha", glyph: g.options, icon: "info", onPress: () => onPick?.(p) })));
   }
 
   function paintPanel() {
@@ -452,11 +456,12 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     return true;
   }
 
-  // El pie: lo que hacen A, Y y X ya lo dicen los botones de la izquierda (como el Inicio); aquí lo demás.
+  // El pie: lo que hacen A y Y ya lo dicen los botones de la izquierda (como el Inicio); aquí lo demás, con X «Otras tres»
+  // (su tarjeta está en la fila; BL-16).
   const hints = (g) => (panelFrom != null
     ? [{ glyph: g.sides, label: "Elegir" }, { glyph: g.select, label: "Siguiente pregunta" }, { glyph: g.back, label: "Listo", end: true }]
     : onTabs ? [{ glyph: g.right, label: "Una por una" }, { glyph: g.down, label: "Volver" }, { glyph: g.back, label: "Atrás", end: true }]
-    : [picks.length > 0 && { glyph: g.sides, label: "Otra" }, { glyph: g.section, label: "Una por una" },
+    : [picks.length > 0 && { glyph: g.sides, label: "Otra" }, picks.length > 0 && { glyph: g.alt, label: "Otras tres" }, { glyph: g.section, label: "Una por una" },
       current() && { glyph: g.menu, label: "Opciones" }, { glyph: g.back, label: "Atrás", end: true }]).filter(Boolean);
 
   return { el, open, close, handle, hints, notToday, notInterested,
