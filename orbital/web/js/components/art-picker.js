@@ -7,9 +7,10 @@ import { EmptyState, ErrorState, ScreenHead } from "./ui.js";
 /**
  * Cambiar el arte de una película o serie (lo que tiene TMDB) o de un juego (TheGamesDB, Steam y Wikipedia): dos filas
  * (Póster/Portada y Fondo), la primera casilla de cada una es «El de siempre» («La automática» en un juego). La cruceta
- * recorre, A elige (se ve ya en la biblioteca, Para ti y la ficha), B cierra.
+ * recorre, A elige (se ve ya en la biblioteca, Para ti y la ficha), B cierra. Si no se pudo guardar la elegida,
+ * `onPickFailed(target, err, again)` (el aviso con «Reintentar»; la de ahora se queda).
  */
-export function createArtPicker({ onMove, onPicked, onClose, onChange, glyphs = () => ({}) }) {
+export function createArtPicker({ onMove, onPicked, onPickFailed, onClose, onChange, glyphs = () => ({}) }) {
   const lead = h("p", { class: "art-picker__lead" });
   const body = h("div", { class: "art-picker__body" });
   const el = h("section", { class: "art-picker screen", hidden: true, "aria-label": "Cambiar el arte" },
@@ -104,6 +105,9 @@ export function createArtPicker({ onMove, onPicked, onClose, onChange, glyphs = 
       });
       if (option.url) option.button.append(h("span", { class: "art-picker__badge" }, "Ahora"));
       onPicked?.(target, row.which, option.url);
+    } catch (err) {
+      // C5 (JT-7): antes no se decía nada (y quedaba un error suelto). Aviso con «Reintentar»; la marca «Ahora» no se movió.
+      onPickFailed?.(target, err, () => { focus = { r: rows.indexOf(row), c: row.options.indexOf(option) }; paint(); choose(); });
     } finally {
       busy = false;
     }

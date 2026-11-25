@@ -139,7 +139,11 @@
 /* El nombre en una portada de respaldo: un paso de la escala (TB-03), no un tamaño que sigue al alto del póster; en una portada
    angosta (filas de Inicio y Juegos), el paso más chico para no partir palabras. */
 .card--stand-in { container-type: inline-size; }
-.card--stand-in .card__title { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
+.card--stand-in .card__title { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); -webkit-line-clamp: 5; }
+/* C10 (JT-5): el nombre usa el alto de la portada antes de cortar («Super Mario Bros…», «Zelda Tears of the…» se cortaban a
+   tres renglones con media portada vacía): la foto sube y se achica, y el nombre llega a cinco renglones. */
+.card--stand-in .card__stand-in { padding-top: 12%; }
+.card--stand-in .card__stand-in-photo { max-height: 34%; }
 @container (max-width: 7rem) {
   .card--stand-in .card__title { font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); }
 }

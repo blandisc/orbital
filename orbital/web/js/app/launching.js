@@ -5,7 +5,8 @@
 import { api } from "../core/api.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
 import { beforePlayMenu, keepBothMenu, switchMenu as closeAndOpenMenu } from "../core/menus.js";
-import { failure, fixWith, retry } from "../core/notices.js";
+import { failure, fixWith, retry, serverDetail } from "../core/notices.js";
+import { openingPhase } from "../components/launch-overlay.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
@@ -244,13 +245,13 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     sound.play("open");
     const name = runnerName(item, runner);
     const from = item.id === current()?.id ? focusedRect() : null;
-    const art = ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
+    const art = ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from, phase: openingPhase(item, name) });
     inFlight = true;
     try {
       await art; // el fondo listo antes que el emulador (xemu abre en 1 s y se lleva el CPU)
       if (!ui.launch.visible) return; // B mientras tanto: cancelado antes de abrir nada
       const res = await api.launch(item.id, runner, keep);
-      if (res.reveal) ui.launch.hold(); // Orbital tapa las ventanas del emulador hasta que el juego está listo
+      if (res.reveal) ui.launch.hold("Preparando el juego…"); // Orbital tapa las ventanas del emulador hasta que el juego está listo
       pollStatus();
     } catch (err) {
       state.launchLockedUntil = 0;
@@ -260,17 +261,31 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       // juego ya no está en la biblioteca (404), otro emulador tampoco lo abre.
       // Sin conexión con Orbital tampoco: no es culpa del emulador.
       const alt = err.status === 404 || err.network ? null : alternativeRunner(item);
+      const cause = launchCause(item, runner, err);
       if (alt && alt.id !== runner) {
-        return openMenu({ title: `No pude abrir ${item.title}`, subtitle: err.message, options: [
+        return openMenu({ title: `No pude abrir ${item.title}`, subtitle: cause, options: [
           { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },
           { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
           { icon: "close", label: "Entendido", command: { type: "close" } },
         ] });
       }
-      ui.toast.show(`No pude abrir ${item.title}`, failure(retry(again), { err }));
+      ui.toast.show(`No pude abrir ${item.title}`, failure(retry(again), { detail: cause }));
     } finally {
       inFlight = false;
     }
+  }
+
+  /**
+   * Por qué no abrió, para el detalle (C5, JT-9): lo que dijo el servidor si dice algo más que el título («No pude abrir Hollow
+   * Knight / No pude abrir Hollow Knight» repetía); si no, qué revisar con lo que se abre («Revisa que Steam esté abierto»).
+   */
+  function launchCause(item, runner, err) {
+    const said = serverDetail(err);
+    if (said && !said.includes(item.title) && !/^No pude abrir\b/i.test(said)) return said;
+    if (err.network) return said; // sin conexión con Orbital: eso dice (no es culpa de Steam ni del emulador)
+    const name = runnerName(item, runner) || (item.category === "steam" || item.source === "steam" ? "Steam" : "");
+    if (name === "Steam") return "Revisa que Steam esté abierto y con tu sesión iniciada";
+    return name ? `Revisa que ${name} siga instalado` : "Revisa que siga instalado";
   }
 
   return { watch, trailer, playStremio, playChannel, resumeRunning, launch };

@@ -15,3 +15,5 @@
 .phone-link__status strong { color: var(--color-text); font-weight: var(--weight-semibold); }
 .phone-link__status--error { color: var(--color-danger); }
 .phone-link__steps { padding-left: var(--space-6); display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: left; }
+/* Sin código que escanear (sin túnel o si falló, JT-12): ni el hueco del QR ni los pasos que apuntan a un código que no hay. */
+.phone-link--blocked :is(.phone-link__qr, .phone-link__steps) { display: none; }

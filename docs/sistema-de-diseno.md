@@ -192,6 +192,28 @@ Las pantallas que recorre la prueba de texto partido: las cinco secciones, la fi
 avanzado, Colecciones, Panel rápido, Jugadores, Buscar con resultados y las siete categorías de Ajustes, en la tele y en la Legion Go
 con la letra más grande.
 
+### Juegos, TV en vivo y conectar (JT, 25 nov 2026)
+
+La pasada del sistema base por Juegos, TV en vivo, Cambiar el arte, el visor de capturas, abrir un juego, los avisos y
+conectar un aparato o Trakt (Fernando aprobó los 14 arreglos).
+
+| Regla | Dónde vive | Prueba |
+|---|---|---|
+| **TV en vivo sin canales usa las piezas del catálogo** (C5 · C4, JT-1): si no llegó la lista, `ErrorState` («No pude traer los canales», qué no se perdió y «Reintentar», que la vuelve a pedir); si llegó vacía, `EmptyState` en positivo («Aquí salen tus canales en vivo») con «Buscar canales». X hace el botón con el mando o el teclado; con el dedo o el mouse se toca (`.tv__notice` deja pasar el toque al botón). Nunca el texto crudo del servidor («Connection reset by peer…») ni «Pulsa X» | `core/tv.js · emptyState`, `components/tv.js`, `app/tv-screen.js`, `core/hints.js · tvHints` | `tv.test.mjs` |
+| **Un mosaico quieto no lleva sombra** (B10, JT-2): `.tile` (canales, Cambiar el arte, consolas) va con su filo (`--edge-hairline`) y la sombra llega con el foco (`--focus-lift`); la miniatura de TV en vivo, solo `--edge-strong` | `ui.css`, `tv.css` | — |
+| De «Jugar» a las pestañas de filtro, 24 (B2, JT-3; antes 8): los filtros son de sus juegos, no del héroe | `games.css · .games__hero` | — |
+| **Un filtro vacío dice en positivo qué saldrá y trae «Ver todos»** (C4 · C7, JT-4): «Tus favoritos de Switch salen aquí» y «Ningún juego de Steam en «Instalados»», con «Ver todos» (X, o el botón), que regresa a Recientes con el foco en su pestaña | `games.js · emptyFilter`, `core/hints.js · gamesHints` | `icon-meaning.test.mjs` |
+| El nombre en una portada de respaldo usa el alto antes de cortar (C10, JT-5): la foto de la consola sube y se achica y el nombre llega a cinco renglones («Zelda Tears of the Kingdom» entero a 1280) | `card.css · .card--stand-in` | — |
+| «Más de Steam» en la página de un juego: 48 de aire arriba (B3, JT-6; antes 24, quedaba más cerca de los botones que de su fila). Con letra «Muy grande» en una pantalla de 900 o menos de alto (la Legion Go), 24: con 48 el panel de lo tuyo se cortaba | `game-page.css · .game-page` | humo · `test_no_text_is_cut_in_half` |
+| Si no se pudo guardar el arte elegido, se dice (C5, JT-7): aviso «No pude cambiar el arte de X» · «Se queda la de ahora» con «Reintentar»; antes no se decía nada y quedaba un error suelto | `art-picker.js · choose` (`onPickFailed`), `main.js` | — |
+| El pie del visor de capturas (C10 · B9 · B7, JT-8): el nombre limpio (`captureName`), en placa de vidrio legible (`--color-glass-legible`) y «1 de 2» con cifras del mismo ancho | `viewer.js`, `viewer.css` | — |
+| **Abrir un juego que falla no repite el título** (C5, JT-9): el detalle es la causa útil («Revisa que Steam esté abierto y con tu sesión iniciada», «Ryujinx no arrancó. Revisa que siga instalado»); lo que dijo el servidor solo si dice algo más que «No pude abrir X» | `app/launching.js · launchCause`, `api/play.py · humane_error` | `test_player_flow.py · test_errors_in_plain_words` |
+| **La pantalla de carga dice qué abre** (C9, JT-10): «Esperando a Steam…», «Abriendo Ryujinx…» (o «Abriendo el emulador…»), luego «Preparando el juego…»; «Está tardando más de lo normal» a los 8 s (antes 15) | `launch-overlay.js · openingPhase`, `SLOW_MS` | — |
+| **Un error de JavaScript nunca se enseña** (C5, JT-11): `serverDetail` calla los errores del código (`TypeError`…) y el texto técnico del sistema (en inglés, `[WinError …]`); el aviso genérico de un menú dice qué se intentaba con el nombre de la opción («No pude añadir a favoritos», `triedTitle`), no «No pude hacerlo» | `core/notices.js`, `main.js · runCommand` | `notices.test.mjs` |
+| **Conectar un aparato sin túnel** (V5 · C5 · P2, JT-12): sin código no hay hueco del QR ni pasos que apuntan a él; la causa en palabras (sin `config.yaml` ni nombres de ajustes) y el botón dice «Reintentar» | `phone-link.js · blocked`, `phone-link.css`, `companion.py · tunnel_info` | `test_companion.py` |
+| Conectar Trakt (u OneDrive) con error esconde la fila del código (C10 · C5, JT-13): ni la píldora negra vacía ni el QR | `trakt-link.js` | — |
+| El reproductor no dice «Cargando…» a secas ni «Listo» solo (C9 · P2, JT-14): la tarjeta del siguiente sin nombre dice «Preparando el siguiente episodio…»; mandar al iPhone dice lo que pasó («Sigue en tu iPhone», «Enviado al iPhone») | `player_screen/cards.py`, `player_screen/menus.py` | — |
+
 ### Avisos (la regla, 2 nov 2026)
 
 Un aviso dice una cosa, se lee de un vistazo y no se pierde. Valen para los de la interfaz (`toast.js`), los que manda el servidor

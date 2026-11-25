@@ -103,7 +103,9 @@ def tunnel_info(config, tailscale_url=None, funnel_on=None) -> dict:
     (Funnel). Ya no pide Alexa: con las llaves por aparato el iPhone no usa su token."""
     port = getattr(config.server, "public_port", 8711)
     if not port:
-        return {"ready": False, "reason": "El puerto del túnel está apagado (server.public_port en config.yaml)."}
+        # V5 (JT-12): en palabras de quien usa la TV; el nombre del ajuste se queda en el registro y en la guía de instalación.
+        return {"ready": False, "reason": "La entrada desde internet de Orbital está apagada en esta computadora, así que un "
+                                          "celular no llega a la TV. Enciéndela en la configuración de Orbital y vuelve a intentar."}
     url = (tailscale_url or alexa_setup.tailscale_url)()
     if not url:
         return {"ready": False, "reason": "Sin Tailscale encendido en esta computadora, un celular no llega a la TV. Ábrelo y vuelve a intentar."}

@@ -341,6 +341,10 @@ def test_errors_in_plain_words():
     err = FileNotFoundError(2, "No such file", r"C:\Emus\Eden\eden.exe")
     assert humane_error(err) .startswith("No encuentro eden")
     assert "WinError" not in humane_error(OSError("[WinError 5] Acceso denegado"), "Hades")
+    # JT-9 (C5): la TV ya dice «No pude abrir Hades»; el detalle no repite el título: da la causa útil.
+    assert "Hades" not in humane_error(OSError("[WinError 5] Acceso denegado"), "Hades")
+    assert humane_error(OSError("[WinError 2] x"), "Hades", "Steam") == "Revisa que Steam esté abierto y con tu sesión iniciada."
+    assert humane_error(OSError("[Errno 2] x"), "Zelda", "Ryujinx") == "Ryujinx no arrancó. Revisa que siga instalado."
 
 
 def test_hud_says_only_whats_left_and_forced_subtitles_option():

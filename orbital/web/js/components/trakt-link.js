@@ -46,10 +46,11 @@ export function createTraktLink({ onMove, onClose, onChange, glyphs = () => ({})
   // O con la cámara del celular: abre la página donde va el código (sin teclear la dirección).
   const qrImage = h("img", { class: "trakt-link__qr-image", src: SERVICES.trakt.qr, alt: "Código QR de trakt.tv/activate" });
   const qr = h("figure", { class: "trakt-link__qr", hidden: true }, qrImage, h("figcaption", {}, "O apunta la cámara aquí"));
+  const row = h("div", { class: "trakt-link__row" }, code, qr);
   const head = h("div", {});
   const list = h("ul", { class: "trakt-link__list" });
   const el = h("section", { class: "trakt-link screen", hidden: true, "aria-label": "Conectar cuenta" },
-    h("div", { class: "trakt-link__box" }, head, where, h("div", { class: "trakt-link__row" }, code, qr), status,
+    h("div", { class: "trakt-link__box" }, head, where, row, status,
       // Con el dedo o el mouse no hay pie: «Otro código» también es botón (con el mando lo dice su glifo).
       again, list));
   let svc = SERVICES.trakt;
@@ -69,6 +70,7 @@ export function createTraktLink({ onMove, onClose, onChange, glyphs = () => ({})
     waiting = false;
     pending = true;
     mount(code, h("span", { class: "trakt-link__placeholder" }, "······"));
+    row.hidden = false;
     qr.hidden = true;
     mount(where, `Pidiendo un código a ${svc.name}…`);
     show("", "");
@@ -89,6 +91,7 @@ export function createTraktLink({ onMove, onClose, onChange, glyphs = () => ({})
       pending = false;
       mount(where, `No pude pedir el código a ${svc.name}.`);
       mount(code);
+      row.hidden = true; // C10 · C5 (JT-13): sin código, ni la píldora vacía donde iba
       // C5: en palabras de Orbital (no el texto del servidor), con el botón de al lado que lo vuelve a pedir.
       show("error", `Revisa que Orbital tenga internet y vuelve a intentarlo. Tu cuenta de ${svc.name} no cambió.`);
       setFailed(true);

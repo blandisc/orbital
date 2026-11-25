@@ -26,8 +26,11 @@ class ArtRequest(BaseModel):
     shown: bool
 
 
-def humane_error(exc: Exception, what: str = "") -> str:
-    """Errores de Windows/Python en palabras de persona (lo técnico se queda en el log)."""
+def humane_error(exc: Exception, what: str = "", runner: str = "") -> str:
+    """Errores de Windows/Python en palabras de persona (lo técnico se queda en el log).
+
+    El aviso de la TV ya dice «No pude abrir <juego>»: aquí va la causa útil, no el título otra vez (C5, JT-9). `runner` es con
+    qué se abre (Steam, un emulador) cuando se sabe."""
     if isinstance(exc, FileNotFoundError):
         name = Path(exc.filename).stem if getattr(exc, "filename", None) else (what or "el programa")
         return f"No encuentro {name}. ¿Lo moviste o lo desinstalaste? Actualiza la biblioteca desde el menú (☰)."
@@ -35,8 +38,23 @@ def humane_error(exc: Exception, what: str = "") -> str:
         return f"Windows no me deja abrir {what or 'esto'}. Prueba abrirlo una vez desde el escritorio."
     text = str(exc)
     if "WinError" in text or "Errno" in text:
-        return f"No pude abrir {what or 'esto'}."
+        if runner == "Steam":
+            return "Revisa que Steam esté abierto y con tu sesión iniciada."
+        return f"{runner or 'El programa'} no arrancó. Revisa que siga instalado."
     return text
+
+
+def runner_name(item, runner_id: str | None) -> str:
+    """Con qué se abre un juego, para decirlo en el error: «Steam» o el nombre del emulador ("" si no se sabe)."""
+    if item is None:
+        return ""
+    if item.source == "steam" or item.category == "steam":
+        return "Steam"
+    wanted = runner_id or item.default_runner
+    for runner in item.runners or []:
+        if runner.id == wanted:
+            return runner.name
+    return item.runners[0].name if item.runners else ""
 
 
 def router(d: Deps) -> APIRouter:
@@ -58,7 +76,7 @@ def router(d: Deps) -> APIRouter:
         except (OSError, RuntimeError, ValueError) as exc:
             log.warning("No se pudo abrir %s: %s", body.id, exc)
             found = catalog.get(body.id)
-            raise HTTPException(500, humane_error(exc, found.title if found else ""))
+            raise HTTPException(500, humane_error(exc, found.title if found else "", runner_name(found, body.runner)))
         # `reveal`: la pantalla de carga espera el evento launch-ready (el juego ya está listo).
         return {"ok": True, "title": item.title, "reveal": catalog.revealing}
 

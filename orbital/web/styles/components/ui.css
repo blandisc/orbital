@@ -168,7 +168,7 @@
    El foco es el mismo anillo que las portadas (--focus-lift) y crece un poco; lo demás se atenúa. */
 .tile {
   position: relative; overflow: hidden; border-radius: var(--tile-radius);
-  background: var(--gradient-card); box-shadow: var(--edge-hairline), var(--shadow-card);
+  background: var(--gradient-card); box-shadow: var(--edge-hairline); /* B10 (JT-2): quieto, solo el filo; la sombra es del foco (--focus-lift) */
   text-align: left;
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out),
     opacity var(--duration-base) var(--ease-out), filter var(--duration-base) var(--ease-out);

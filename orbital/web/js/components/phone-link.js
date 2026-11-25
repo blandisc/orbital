@@ -40,21 +40,19 @@ export function createPhoneLink({ onMove, onClose, onChange, glyphs = () => ({})
     try {
       const info = await api.companionPair();
       if (mine !== attempt) return;
-      setFailed(false);
       if (!info.ready) {
-        mount(qr);
-        status.classList.add("phone-link__status--error");
-        mount(status, info.reason || "No se puede conectar el iPhone todavía.");
+        // V5 · C5 · P2 (JT-12): sin túnel no hay código que escanear: ni el hueco del QR ni los pasos que apuntan a él; la
+        // causa en palabras (la dice el servidor, companion.tunnel_info) y «Reintentar», por si ya se arregló.
+        blocked(info.reason || "No se puede conectar el iPhone todavía.");
         return;
       }
+      setFailed(false);
       status.classList.remove("phone-link__status--error");
       // El token va solo dentro del QR (la imagen), nunca en texto en pantalla.
       const image = h("img", { class: "phone-link__image", src: `/api/companion/pair.svg?v=${mine}`, alt: "Código QR para conectar un aparato" });
       image.addEventListener("error", () => { // nunca una imagen rota: qué pasó y cómo seguir
         if (mine !== attempt) return;
-        mount(qr);
-        status.classList.add("phone-link__status--error");
-        mount(status, "No pude preparar el código. Pide otro.");
+        blocked("No pude preparar el código. Revisa que Orbital tenga internet.");
       });
       mount(qr, image);
       clearTimeout(renew);
@@ -62,17 +60,23 @@ export function createPhoneLink({ onMove, onClose, onChange, glyphs = () => ({})
       mount(status, "Se conecta a ", h("strong", {}, info.host), " · aquí te avisa cuando quede conectado");
     } catch (err) {
       if (mine !== attempt) return;
-      mount(qr);
-      status.classList.add("phone-link__status--error");
       // C5: qué pasó en palabras de Orbital (no el texto del servidor) y el botón de al lado, que lo vuelve a pedir.
-      mount(status, "No pude preparar el código. Revisa que Orbital tenga internet y vuelve a intentarlo.");
-      setFailed(true);
+      blocked("No pude preparar el código. Revisa que Orbital tenga internet y vuelve a intentarlo.");
     }
+  }
+
+  /** No hay código: se van el QR y los pasos, queda la causa y el botón dice «Reintentar». */
+  function blocked(reason) {
+    mount(qr);
+    status.classList.add("phone-link__status--error");
+    mount(status, reason);
+    setFailed(true);
   }
 
   /** El botón vuelve de esperar y dice lo que hará: «Otro código» o, tras una falla, «Reintentar». */
   function setFailed(on) {
     failed = on;
+    el.classList.toggle("phone-link--blocked", on);
     setButtonBusy(again, false);
     const label = again.querySelector(".button__label");
     if (label) label.textContent = on ? "Reintentar" : "Otro código";
@@ -81,6 +85,7 @@ export function createPhoneLink({ onMove, onClose, onChange, glyphs = () => ({})
 
   function open() {
     failed = false;
+    el.classList.remove("phone-link--blocked");
     const fresh = againButton(); // el glifo del mando o del teclado que usas ahora
     again.replaceWith(fresh);
     again = fresh;

@@ -59,14 +59,21 @@ export function headMeta(data) {
   return parts.join(" · ");
 }
 
-/** Qué decir en lugar de la cuadrícula cuando no hay canales que mostrar (null: sí los hay). */
-export function emptyState(data, { loading = false, error = "" } = {}) {
+/**
+ * Qué decir en lugar de la cuadrícula cuando no hay canales que mostrar (null: sí los hay). `action` es el botón del vacío:
+ * "retry" (no llegó la lista: «Reintentar», la vuelve a pedir) o "refresh" (llegó vacía: «Buscar canales», que la busca
+ * otra vez). C5: el texto es de Orbital, nunca el mensaje crudo del servidor; C4: el vacío trae su primer paso.
+ */
+export function emptyState(data, { loading = false, error = false } = {}) {
   if (Array.isArray(data?.channels) && data.channels.length) return null;
-  if (error && !data) return { title: "No pude cargar los canales", text: `${error.replace(/\.$/, "")}. Pulsa X para intentarlo otra vez.` };
+  if (error && !data) {
+    return { title: "No pude traer los canales", text: "No se borró nada: tus canales y los que viste siguen guardados. Revisa el internet y vuelve a intentarlo.",
+      tone: "error", action: "retry" };
+  }
   if (loading || !data) return { title: "Buscando canales…", text: "" };
   if (data.checking) return { title: "Buscando canales…", text: "La primera vez tarda un momento." };
-  if (data.offline) return { title: "Aún no hay canales", text: "Conecta Orbital a Internet y pulsa X para buscarlos." };
-  return { title: "No encontré canales", text: "Pulsa X para buscar otra vez." };
+  if (data.offline) return { title: "Aquí salen tus canales en vivo", text: "Conecta Orbital a Internet para traerlos.", action: "refresh" };
+  return { title: "Aquí salen tus canales en vivo", text: "Orbital revisa tu lista de TV y deja los que abren. Tarda un momento.", action: "refresh" };
 }
 
 /**
