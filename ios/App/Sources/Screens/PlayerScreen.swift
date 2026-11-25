@@ -570,6 +570,14 @@ extension PlayerScreen {
     /// video y si se ven los controles): para entender desde la Mac una carga que no termina en el iPhone.
     func logLongLoading(_ model: PlayerModel) {
         guard presentation.showsLoading else { loadingSince = nil; return }
+        // La carga encima con nada cargando (en pausa, sin pedidos): un cambio que el botón no vio. Pasó al volver a la app y
+        // pausar (25 nov 2026, carga 87 s con el video quieto). Se corrige en el siguiente tic.
+        if PlayerPresentation.loadKind(model) == .none {
+            PlayerModel.note("la carga seguía sin nada cargando: se quita")
+            presentation.update(.none, playing: model.wantsToPlay, videoID: current.videoID)
+            loadingSince = nil
+            return
+        }
         let now = Date()
         let since = loadingSince ?? now
         if loadingSince == nil { loadingSince = now }
@@ -577,9 +585,10 @@ extension PlayerScreen {
         loadingLoggedAt = now
         let size = layoutSize
         let rect = videoRect(in: size)
-        PlayerModel.note(String(format: "carga larga %.0f s: fase=%@ motor=%@ pos=%.0f horizontal=%@ zoom=%@ pantalla=%.0fx%.0f rect=%.0f,%.0f %.0fx%.0f aspecto=%.2f controles=%@ reconectando=%@ esperaPlay=%@",
+        PlayerModel.note(String(format: "carga larga %.0f s: fase=%@ motor=%@ pos=%.0f horizontal=%@ zoom=%@ pantalla=%.0fx%.0f rect=%.0f,%.0f %.0fx%.0f aspecto=%.2f controles=%@ reconectando=%@ esperaPlay=%@ regla=%@ corre=%@",
                                 now.timeIntervalSince(since), "\(model.phase)", "\(model.snapshot.state)", model.snapshot.position,
                                 landscape ? "sí" : "no", zoom.rawValue, size.width, size.height, rect.minX, rect.minY, rect.width, rect.height, portraitAspect,
-                                controlsVisible ? "sí" : "no", model.reconnecting ? "sí" : "no", model.awaitingPlayback ? "sí" : "no"))
+                                controlsVisible ? "sí" : "no", model.reconnecting ? "sí" : "no", model.awaitingPlayback ? "sí" : "no",
+                                "\(PlayerPresentation.loadKind(model))", model.playbackSettled ? "sí" : "no"))
     }
 }
