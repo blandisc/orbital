@@ -236,3 +236,13 @@ test("PT-V (Fernando, 4 nov): las filas que no son de tus idiomas van a «Más i
     { audio: "es", spanish: "es-419", plan: ["original", "en", "es-ES"] });
   assert.deepEqual(rows.map((r) => [r.code, r.more]), [["es-419", false], ["en", false], ["it", true], ["de", true]]);
 });
+
+test("FI-2 (Fernando, 25 nov 2026: se queda así): prendido, el pie dice lo que hace A y no el estado", async () => {
+  const { STATUS_WORDS, downloadAction, debridAction } = await import("../../orbital/web/js/core/watch.js");
+  // En Mi lista, A la quita al instante (con «Deshacer»); X sigue abriendo «¿Cómo vas?».
+  assert.equal(STATUS_WORDS.in_list.verb, "Quitar de Mi lista");
+  for (const status of ["watching", "watched", "dropped"]) assert.equal(STATUS_WORDS[status].verb, "¿Cómo vas?");
+  // Descargada: A abre la hoja que confirma borrar (no se recupera con un toque). Un pedido en camino: «Ver tu pedido».
+  assert.equal(downloadAction({ status: "done" }).verb, "Borrar la descarga");
+  assert.equal(debridAction(42).verb, "Ver tu pedido");
+});

@@ -429,7 +429,7 @@ que vive en Ajustes y se usa en otra pantalla va ahí también como interruptor 
 **Un ícono por idea (TV, R2, 11 nov 2026).** `list` es «Episodios» y las listas; «Versión» es `hd` (la calidad); «Filtro
 avanzado» es `sliders`, nunca la lupa (la lupa es Buscar); el iPhone es un solo botón `phone` («Al iPhone», que abre
 «Enviar al iPhone» y «Descargar en el iPhone»). «Versión» va en un solo lugar: la cápsula junto a «Ver» (con su Y adentro)
-o, si no hay cápsula, su botón; el pie no la repite. El pie dice lo mismo que el botón enfocado; **FI-2 (24 nov 2026, V1):** si
+o, si no hay cápsula, su botón; el pie no la repite. El pie dice lo mismo que el botón enfocado; **FI-2 (24 nov 2026, V1; Fernando, 25 nov: «haz una sugerencia y ejecútala», se queda así):** si
 el redondo ya está prendido, el pie dice su verbo y no su estado (`verb` en `core/watch.js`): «Quitar de Mi lista» (A la quita,
 con «Deshacer»), «Ver tu pedido», «Borrar la descarga» (A abre la hoja que lo confirma); con «Viendo», «Vista» o «La dejé», A
 abre «¿Cómo vas?» y el pie no lo repite en X. El nombre bajo el botón sigue diciendo el estado.
