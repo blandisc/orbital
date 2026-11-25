@@ -3,7 +3,7 @@ import { h, mount } from "../core/dom.js";
 import { playOf, primaryAction, titleOf } from "../core/foryou.js";
 import { createForYouMosaic } from "./foryou-mosaic.js";
 import { Button } from "./button.js";
-import { EmptyState } from "./ui.js";
+import { EmptyState, ErrorState } from "./ui.js";
 
 /**
  * «Para ti»: la sección a la izquierda del Inicio, el mosaico de lo tuyo mezclado (foryou-mosaic). Las listas (Top 10,
@@ -15,7 +15,7 @@ import { EmptyState } from "./ui.js";
  */
 const EMPTY = "Agrega juegos o conecta Trakt (Ajustes › Cuentas).";
 
-export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge, covered = () => false }) {
+export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge, onChange, covered = () => false, glyphs = () => ({}) }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
   const details = new Map(); // clave → { overview, facts, logo_dark }
   let detailTimer = 0;
@@ -34,6 +34,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   let data = null;
   let loading = null;
   let loads = 0;
+  let failed = false; // no llegó: A (o el botón) lo vuelve a pedir
 
   function paint() {
     if (el.hidden || el.classList.contains("is-parked")) return; // oculta o estacionada: el mosaico no arranca
@@ -51,6 +52,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   /** Lo de «Para ti» (en segundo plano: al arrancar ya queda listo para cuando llegues). */
   function load({ force = false } = {}) {
     if (loading && !force) return loading;
+    failed = false;
     if (!data) mount(notice, h("p", { class: "foryou__message foryou__message--waiting" }, "Buscando qué recomendarte…"));
     const mine = ++loads; // una carga vieja y lenta no pisa a una más nueva (F5, «foryou-changed»)
     const request = api.forYou().then((res) => {
@@ -60,8 +62,11 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
       render();
     }, (err) => {
       if (mine === loads && !data) {
-        mount(notice, EmptyState({ icon: "warning", title: "No pude cargar Explorar",
-          text: `${err.message.replace(/\.$/, "")}. Vuelve a entrar para reintentar.`, className: "foryou__message" }));
+        // C5: qué pasó y qué no se perdió, con «Reintentar» que lo vuelve a pedir (A o el botón), no «Vuelve a entrar».
+        failed = true;
+        mount(notice, ErrorState({ title: "No pude traer Explorar", text: "Tus juegos y tus listas siguen aquí. Revisa tu internet y vuelve a intentarlo.",
+          glyph: glyphs().select, onRetry: () => load({ force: true }), className: "foryou__message" }));
+        onChange?.();
       }
     }).finally(() => { if (mine === loads) loading = null; });
     loading = request;
@@ -95,6 +100,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
 
   /** true = lo atendió (se movió o hizo algo) · "edge" · "exit" (B en el principio) · false = no es suyo. */
   function handle(action) {
+    if (!data && failed && action === "select") { load({ force: true }); return true; } // «Reintentar»
     if (!data) return action === "back" ? "exit" : false;
     // Del ambiente: si la pieza que tenías sigue a la vista, se queda enfocada y el botón cuenta (A, Y, X, flechas);
     // si ya se fue, el primer botón solo despierta. Los que llevan a otro lado (sección, menú, buscar) siempre pasan.
@@ -110,7 +116,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   /** Pistas del pie. */
   function hints(g) {
     const end = { glyph: g.menu, label: "Menú", end: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
-    if (!data) return [end];
+    if (!data) return [failed && { glyph: g.select, label: "Reintentar", offscreen: true }, end].filter(Boolean); // el botón ya lo dice
     const decide = onDecide && { glyph: g.alt, label: "Decide por mí" }; // D5-A: la entrada de Explorar, siempre a la vista
     if (mosaic.ambient) return [{ glyph: g.select, label: "Explorar" }, decide, end].filter(Boolean); // A entra al mosaico: el pie dice eso, no «Elegir»
     const item = mosaic.current;

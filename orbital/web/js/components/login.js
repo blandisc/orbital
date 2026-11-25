@@ -1,6 +1,8 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { typingGlyphs } from "../core/input.js";
+import { serverDetail } from "../core/notices.js";
+import { Button } from "./button.js";
 import { createKeyboard } from "./keyboard.js";
 import { ScreenHead } from "./ui.js";
 
@@ -20,6 +22,7 @@ import { ScreenHead } from "./ui.js";
  */
 const LETTERS = [[..."1234567890"], [..."qwertyuiop"], [..."asdfghjklñ"], [..."zxcvbnm@._"]];
 const SYMBOLS = [[..."1234567890"], [..."!#$%&*+=?/"], [..."-'\"():;,~^"], [..."<>[]{}|\\`€"]];
+const ACTIONS_ROW = 4; // la fila de Mayúsculas · Símbolos · .com · Borrar · Enviar
 const ACTIONS = [
   { key: "shift", label: "Mayúsculas", span: 2 }, { key: "symbols", label: "Símbolos", span: 2 },
   { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente campo", span: 2, tone: "go" },
@@ -109,6 +112,12 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
 
   const forget = () => fields.forEach((f) => { if (f.forget) f.value = ""; });
 
+  /** El error del formulario (C5): qué pasó y «Reintentar», que vuelve a enviar lo mismo (con el mando, Enviar en el teclado). */
+  function showFailure(text) {
+    mount(message, h("span", { class: "login__message-text" }, text),
+      Button({ label: "Reintentar", variant: "primary", onPress: () => submit() }));
+  }
+
   async function submit() {
     const values = Object.fromEntries(fields.map((f) => [f.name, f.value]));
     if (fields.some((f) => !f.optional && !f.value.trim())) {
@@ -117,7 +126,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
     }
     busy = true;
     const mine = ++attempt;
-    message.textContent = form === STREMIO ? "Conectando…" : "Comprobando…";
+    message.textContent = form === STREMIO ? "Conectando con Stremio…" : form.service ? "Comprobando la clave…" : "Guardando…";
     el.classList.add("login--busy");
     abort = new AbortController();
     const { signal } = abort;
@@ -130,11 +139,17 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
       onDone?.(res, done);
     } catch (err) {
       if (signal.aborted) return;
-      message.textContent = err.message;
+      // C5 / TB-27: lo que escribiste no se borra nunca (antes, una clave equivocada vaciaba la contraseña); el aviso dice qué
+      // pasó, que lo escrito sigue ahí, y trae «Reintentar». Lo que dijo el servicio («Correo o contraseña incorrectos») va
+      // como detalle, sin su «Intenta de nuevo» (lo dice el botón).
+      const network = err.network || err.status === 502;
+      showFailure(network ? "No pude conectar. Revisa tu internet; lo que escribiste sigue aquí."
+        : `${serverDetail(err) || "No se aceptó"}. Lo que escribiste sigue aquí: corrígelo y vuelve a intentarlo.`);
       startRemote(); // otro código: desde el celular se puede volver a mandar
-      // Una falla de red no es culpa de la contraseña: no hay que volver a escribirla.
-      if (!err.network && err.status !== 502) forget();
-      active = Math.max(0, fields.findIndex((f) => f.secret));
+      const secret = fields.findIndex((f) => f.secret);
+      active = network ? fields.length - 1 : Math.max(0, secret);
+      // Con el mando, A en la tecla de enviar reintenta: el teclado espera ahí si fue la red (lo escrito estaba bien).
+      if (network) { renderKeys(); keyboard.reset(ACTIONS_ROW, ACTIONS.length - 1); }
     } finally {
       abort = null;
       busy = false;
@@ -249,8 +264,9 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
     cancelExit();
     fields.forEach((f) => { if (!f.secret) saved.set(`${form.id}:${f.name}`, f.value); });
     form = next;
-    fields = form.fields.map((f) => ({ ...f, value: f.value ?? (saved.get(`${form.id}:${f.name}`) || ""),
-      node: h("div", { class: `login__field${f.secret ? " login__field--secret" : ""}` }) }));
+    // Con el dedo o el mouse, tocar un campo lo elige (como LT/RT con el mando).
+    fields = form.fields.map((f, i) => ({ ...f, value: f.value ?? (saved.get(`${form.id}:${f.name}`) || ""),
+      node: h("div", { class: `login__field${f.secret ? " login__field--secret" : ""}`, onClick: () => { if (!busy && i !== active) { switchField(i); onMove?.(); } } }) }));
     const top = ScreenHead({ eyebrow: form.eyebrow || null, title: form.title, className: "login__head", lead: form.lead });
     head.replaceWith(top);
     head = top;

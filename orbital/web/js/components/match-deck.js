@@ -8,7 +8,7 @@ import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
 import { DecideBackdrop, DecideHead, DecideInfo, DecideModes, endsAt } from "./decide.js";
-import { EmptyState } from "./ui.js";
+import { EmptyState, ErrorState } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
@@ -61,6 +61,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   let token = 0;
   let glyphs = {};
   let cancelExit = () => {};
+  let failed = false; // no se pudo armar: A reintenta
 
   const discards = () => freshDiscards(storage.get(DISCARDED, {}));
 
@@ -76,6 +77,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   async function refill() {
     const mine = ++token;
+    failed = false;
     mount(stage, h("div", { class: "match__card match__card--skeleton", "aria-label": "Cargando tus propuestas" }));
     paintActions();
     try {
@@ -88,7 +90,10 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     } catch (err) {
       if (mine !== token) return;
       cards = [];
-      mount(stage, EmptyState({ icon: "warning", title: "No pude armar el mazo", text: err.message }));
+      failed = true;
+      // C5: qué pasó y qué no se perdió, con «Reintentar» (A, o el botón); el texto del servidor no es el aviso.
+      mount(stage, ErrorState({ title: "No pude armar el mazo", text: "Lo que guardaste sigue guardado. Revisa tu internet y vuelve a intentarlo.",
+        glyph: glyphs.select, onRetry: () => refill() }));
       paintActions();
       return onReady?.();
     }
@@ -232,14 +237,15 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (action === "left") { decide("pass"); return true; }
     if (action === "right") { decide("keep"); return true; }
     if (action === "up") { decide("tonight"); return true; }
-    if (action === "select") { play(); return true; }
+    if (action === "select") { if (failed) refill(); else play(); return true; }
     if (action === "options") { if (cards[0]) onOpen?.(cards[0]); return true; }
     if (action === "alt") { undo(); return true; }
     return true;
   }
 
   // El pie: A y ◀ ▲ ▶ ya los dicen los botones de la izquierda.
-  const hints = (g) => [cards[0] && { glyph: g.options, label: "Ficha" }, { glyph: g.section, label: "Tres que caben" },
+  const hints = (g) => [failed && { glyph: g.select, label: "Reintentar", offscreen: true }, // el botón ya lo dice
+    cards[0] && { glyph: g.options, label: "Ficha" }, { glyph: g.section, label: "Tres que caben" },
     last && { glyph: g.alt, label: "Deshacer" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, play, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };

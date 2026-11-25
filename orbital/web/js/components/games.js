@@ -10,6 +10,7 @@ import { fillFilters, fillWindow, fitBar, keepInView, markAbove, replay, showFil
 import { Button } from "./button.js";
 import { Card } from "./card.js";
 import { EmptyState, Eyebrow, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
+import { rememberedMap } from "../core/storage.js";
 
 /**
  * Juegos, como el Apple TV (Fernando, 31 oct 2026): dos pisos arriba —la barra de secciones y, debajo, tus consolas en el
@@ -71,8 +72,9 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   let rows = [];
   let list = [];
   let consoleId = null;
-  const filterOf = {}; // consola -> filtro
-  const memory = {}; // consola -> juego enfocado
+  // P6: sobreviven al reiniciar (core/storage.js · rememberedMap): el filtro de cada consola y el juego enfocado en ella.
+  const filterOf = rememberedMap("orbital.games.filter"); // consola -> filtro
+  const memory = rememberedMap("orbital.games.focus"); // consola -> juego enfocado
   let focusId = "game:0";
   let games = [];
   let options = { glyphs: {}, runningId: null };

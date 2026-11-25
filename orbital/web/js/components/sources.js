@@ -9,6 +9,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { Flag, Flags } from "./flag.js";
 import { cloudSay, requestLabel } from "../core/menus.js";
+import { serverDetail } from "../core/notices.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -330,7 +331,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       mount(list); // sin esqueletos: el porqué y «Reintentar»
       status.hidden = false;
       // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
-      status.textContent = err.message;
+      status.textContent = serverDetail(err) || "No pude buscar las versiones."; // C5: el porqué, sin su «Intenta de nuevo» (lo dice «Reintentar»)
       failed = true;
     }
     status.classList.toggle("sources__status--problem", failed);

@@ -23,7 +23,7 @@
 .login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-sm); animation: rise-in var(--duration-enter) var(--ease-out); }
 @media (max-height: 820px) { .login__phone-qr { width: 5.5rem; height: 5.5rem; } }
 .login__field {
-  display: grid; gap: .2rem; min-width: 0; padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg);
+  display: grid; gap: .2rem; min-width: 0; min-height: var(--touch-target); padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
@@ -36,6 +36,8 @@
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
 .login__quick { margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; overflow-wrap: anywhere; }
 .login__quick strong { color: var(--color-text); }
-.login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; text-wrap: balance; }
+.login__message { display: flex; align-items: center; justify-content: center; gap: var(--space-4); height: max(2.8em, var(--control-height)); overflow: hidden; color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; text-wrap: balance; }
+/* C5: el error en dos renglones como mucho y, a su lado, «Reintentar» (con el dedo o el mouse; con el mando, Enviar). */
+.login__message-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-width: 0; }
 
 @media (max-height: 640px) { .login { gap: var(--space-2); } .login__head .screen-head__lead { display: none; } }

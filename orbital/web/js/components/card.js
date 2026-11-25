@@ -6,7 +6,7 @@ import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio, isWatchable, needsInternet } from "../core/library.js";
 import { ArtFit } from "./art-fit.js";
-import { Badge, CornerRibbon, Progress } from "./ui.js";
+import { Badge, Chip, CornerRibbon, Progress, Veil } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
 /**
@@ -77,7 +77,7 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
   // portadas pueden ser casi iguales: The Office de EE. UU. y la británica).
   const chip = caption
     ? h("span", { class: "card__caption" }, h("strong", {}, item.title), h("span", {}, item.subtitle))
-    : ago ? h("span", { class: "card__chip" }, ago) : null;
+    : ago ? Chip(ago, { plate: true, className: "card__chip" }) : null; // C10: en su placa, legible sobre cualquier fondo
   const progress = Progress(item.progress, { className: "card__progress" });
   // Un nombre sobre el arte (Por género: «Terror»), como las tarjetas de Explora del iPhone.
   const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
@@ -166,7 +166,11 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
   const fresh = (item.day_label === "Nuevo" || item.fresh) && !badge ? CornerRibbon() : null;
   // Lo que sale hoy (Lo nuevo de lo tuyo): «Hoy» en la otra esquina, como el HOY del iPhone.
   const today = item.today && !rank ? Badge("Hoy", { className: "card__rank card__today", plate: true }) : null;
-  card.append(...[badge, rank, today, trend, live, chip, label, logo, meta, progress, fresh].filter(Boolean));
+  // C10: ningún texto va sobre un arte que no controlas sin su velo (Veil, como ArtVeil del iPhone): el nombre de una ancha
+  // (y su logo) y el de una tarjeta con nombre encima («Terror»). Va debajo de su texto.
+  const veil = (label || (wide && (item.hero || item.image))) ? Veil("bottom") : null;
+  veil?.classList.add("card__veil");
+  card.append(...[badge, rank, today, trend, live, chip, veil, label, logo, meta, progress, fresh].filter(Boolean));
   return card;
 }
 

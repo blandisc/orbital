@@ -13,7 +13,7 @@
 /* Si las dos filas no caben (pantalla baja, letra grande), el cuerpo se desplaza (la casilla enfocada se mantiene a la vista). */
 .art-picker__body { display: grid; gap: var(--layout-between-subsections); min-height: 0; overflow-y: auto; scrollbar-width: none; }
 .art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-.art-picker__status--error { color: var(--color-danger); }
+.art-picker__error { justify-items: center; margin-inline: auto; text-align: center; } /* C5: el error, al centro como lo demás */
 .art-picker__label { margin: 0 0 var(--space-2); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 /* Una fila que se recorre de lado (sin barra): la enfocada siempre a la vista (scrollIntoView). */
 .art-picker__track { display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none; padding: var(--space-2); }

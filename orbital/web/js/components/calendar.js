@@ -1,6 +1,6 @@
 import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
 import { sized } from "../core/images.js";
-import { EmptyState, ScreenHead } from "./ui.js";
+import { EmptyState, ErrorState, ScreenHead } from "./ui.js";
 
 // Del tamaño en que se ven (core/images.js): una casilla del mes (~1/7 de la pantalla) y el póster chico de la lista.
 const CELL_PX = 240;
@@ -23,13 +23,14 @@ const sentence = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 export const MAX_MONTHS = 24; // lo más lejos que contesta el servidor (api/foryou.py, /calendar)
 export const monthsFromNow = (d, now = new Date()) => (d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth();
 
-export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange = () => {} }) {
+export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange = () => {}, glyphs = () => ({}) }) {
   const head = h("div", { class: "calendar__head" });
   const weekdays = h("div", { class: "calendar__weekdays", "aria-hidden": "true" }, WEEKDAYS.map((d) => h("span", {}, d)));
   const grid = h("div", { class: "calendar__grid", role: "grid" });
   const dayTitle = h("h3", { class: "calendar__day-title" });
   const list = h("div", { class: "calendar__list", role: "list" });
-  const status = h("p", { class: "calendar__status", role: "status" });
+  const status = h("div", { class: "calendar__status", role: "status" });
+  let failed = false; // el mes no llegó: Y (o el botón) lo vuelve a pedir
   const el = h("section", { class: "calendar screen", hidden: true, "aria-label": "Calendario de estrenos" },
     head, h("div", { class: "calendar__body" },
       h("div", { class: "calendar__month" }, weekdays, grid, status),
@@ -108,7 +109,8 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     at = wanted >= 0 ? wanted : todayIndex >= 0 ? todayIndex : cells.findIndex(Boolean);
     zone = "grid";
     status.hidden = false;
-    status.textContent = "Buscando lo que sale…";
+    failed = false;
+    status.textContent = `Buscando lo que sale en ${MONTHS[month.getMonth()]}…`;
     paint();
     try {
       const res = await load(monthKey(month));
@@ -120,7 +122,11 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
       paint();
     } catch (err) {
       if (mine !== token) return;
-      status.textContent = err?.message || "No pude leer tu calendario.";
+      // C5: qué pasó, qué no se perdió y «Reintentar» (Y o el botón), no el texto del servidor.
+      failed = true;
+      mount(status, ErrorState({ title: "No pude traer los estrenos de este mes", text: "Las series que sigues no cambian. Revisa tu internet y vuelve a intentarlo.",
+        glyph: glyphs().options, onRetry: () => show(month) }));
+      onChange();
     }
   }
 
@@ -159,6 +165,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
       return true;
     }
     if (action === "back") { close(); return true; }
+    if (action === "options" && failed) { show(month); return true; } // «Reintentar»
     if (action === "prevsection" || action === "nextsection") {
       const day = cells[at]?.date.getDate() || 1;
       const next = new Date(month.getFullYear(), month.getMonth() + (action === "nextsection" ? 1 : -1), 1);
@@ -186,6 +193,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     return zone === "list"
       ? [{ glyph: g.select, label: "Ver la serie" }, { glyph: g.back, label: "Al calendario", end: true }]
       : [shows.length === 1 && { glyph: g.select, label: "Ver la serie" }, shows.length > 1 && { glyph: g.select, label: "Elegir serie" },
+        failed && { glyph: g.options, label: "Reintentar", offscreen: true }, // el botón ya lo dice
         { glyph: g.section, label: "Otro mes" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
   };
 

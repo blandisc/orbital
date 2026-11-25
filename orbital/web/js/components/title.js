@@ -14,6 +14,7 @@ import { learnName } from "../core/title-names.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, finishedSeason, titleActions, titleProgress, titleStatus } from "../core/watch.js";
 import { Flag } from "./flag.js";
+import { serverDetail } from "../core/notices.js";
 
 const REVIEWS_PER_VIEW = 3; // como --reviews-per-view en title.css
 
@@ -796,7 +797,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (quiet) return; // no se pudo poner al día: se queda la ficha que estaba bien (no un «Reintentar»)
       // Sin conexión o Stremio caído: un aviso claro (ícono, qué pasó y qué hacer), no una línea gris.
       // El servidor suele decir lo mismo («No pude cargar la ficha. Revisa tu conexión…»): sin repetirlo.
-      const detail = String(err.message || "").replace(/^No pude cargar la ficha\.?\s*/i, "") || "Revisa tu conexión e inténtalo de nuevo.";
+      const detail = serverDetail(err).replace(/^No pude cargar la ficha\.?\s*/i, "") || "Revisa tu conexión e inténtalo de nuevo.";
       mount(status, h("span", { class: "title__status-icon", "aria-hidden": "true" }, svg(ICONS.info)),
         h("span", { class: "title__status-text" }, h("strong", {}, "No pude cargar la ficha"), h("span", {}, detail)));
       status.classList.add("title__status--error");
@@ -897,7 +898,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (ask.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000);
     } catch (err) {
       if (mine !== token) return;
-      showCloud({ why: "error", message: err.message || "La nube no pudo con ese pedido" });
+      showCloud({ why: "error", message: serverDetail(err) || "La nube no pudo con ese pedido" });
     }
   }
 

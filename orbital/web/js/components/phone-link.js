@@ -1,6 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
-import { Button } from "./button.js";
+import { Button, setButtonBusy } from "./button.js";
 import { ScreenHead } from "./ui.js";
 
 /**
@@ -9,8 +9,10 @@ import { ScreenHead } from "./ui.js";
  * «Para ti» y la sesión de Trakt salen de aquí. En cuanto el iPhone habla con Orbital (evento «phone-linked»), esta
  * pantalla se cierra con «iPhone conectado» (main.js). B cierra; Y lo vuelve a pedir (si se encendió Tailscale mientras tanto).
  */
-export function createPhoneLink({ onMove, onClose, glyphs = () => ({}) }) {
-  const againButton = () => Button({ label: "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+export function createPhoneLink({ onMove, onClose, onChange, glyphs = () => ({}) }) {
+  // C5: si no se pudo, el mismo botón (Y) dice «Reintentar»; mientras pide, espera sin cambiar de ancho (C1).
+  const againButton = () => Button({ label: failed ? "Reintentar" : "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+  let failed = false;
   let again = againButton();
   const qr = h("div", { class: "phone-link__qr" });
   const status = h("p", { class: "phone-link__status", role: "status" });
@@ -34,9 +36,11 @@ export function createPhoneLink({ onMove, onClose, glyphs = () => ({}) }) {
     const mine = ++attempt;
     mount(qr, h("span", { class: "phone-link__placeholder" }, "Preparando el código…"));
     mount(status);
+    setButtonBusy(again, true, "Pidiendo…");
     try {
       const info = await api.companionPair();
       if (mine !== attempt) return;
+      setFailed(false);
       if (!info.ready) {
         mount(qr);
         status.classList.add("phone-link__status--error");
@@ -60,11 +64,23 @@ export function createPhoneLink({ onMove, onClose, glyphs = () => ({}) }) {
       if (mine !== attempt) return;
       mount(qr);
       status.classList.add("phone-link__status--error");
-      mount(status, err.message);
+      // C5: qué pasó en palabras de Orbital (no el texto del servidor) y el botón de al lado, que lo vuelve a pedir.
+      mount(status, "No pude preparar el código. Revisa que Orbital tenga internet y vuelve a intentarlo.");
+      setFailed(true);
     }
   }
 
+  /** El botón vuelve de esperar y dice lo que hará: «Otro código» o, tras una falla, «Reintentar». */
+  function setFailed(on) {
+    failed = on;
+    setButtonBusy(again, false);
+    const label = again.querySelector(".button__label");
+    if (label) label.textContent = on ? "Reintentar" : "Otro código";
+    onChange?.();
+  }
+
   function open() {
+    failed = false;
     const fresh = againButton(); // el glifo del mando o del teclado que usas ahora
     again.replaceWith(fresh);
     again = fresh;
@@ -89,7 +105,7 @@ export function createPhoneLink({ onMove, onClose, glyphs = () => ({}) }) {
     return true;
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otro código", offscreen: true }, { glyph: g.back, label: "Atrás", end: true }]; // el botón ya lo dice
+  const hints = (g) => [{ glyph: g.options, label: failed ? "Reintentar" : "Otro código", offscreen: true }, { glyph: g.back, label: "Atrás", end: true }]; // el botón ya lo dice
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

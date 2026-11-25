@@ -1,6 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
-import { Button } from "./button.js";
+import { Button, setButtonBusy } from "./button.js";
 import { ScreenHead } from "./ui.js";
 
 /**
@@ -35,8 +35,10 @@ export function whereWords(url, fallback) {
   return ["Escribe este código en ", siteOf(url, fallback)];
 }
 
-export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
-  const againButton = () => Button({ label: "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+export function createTraktLink({ onMove, onClose, onChange, glyphs = () => ({}) }) {
+  // C5: si no se pudo, el mismo botón (Y) dice «Reintentar»; mientras pide, espera sin cambiar de ancho (C1).
+  const againButton = () => Button({ label: failedNow ? "Reintentar" : "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+  let failedNow = false;
   let again = againButton();
   const code = h("div", { class: "trakt-link__code", "aria-live": "polite" });
   const where = h("p", { class: "trakt-link__step" });
@@ -70,10 +72,12 @@ export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
     qr.hidden = true;
     mount(where, `Pidiendo un código a ${svc.name}…`);
     show("", "");
+    setButtonBusy(again, true, "Pidiendo…");
     try {
       const res = await svc.link();
       if (mine !== attempt) return; // otro código más nuevo (Y), o ya se cerró: este no se muestra
       pending = false;
+      setFailed(false);
       waiting = true;
       const [lead, site] = whereWords(res.url, svc.site);
       mount(where, lead, h("strong", {}, site));
@@ -83,10 +87,21 @@ export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
     } catch (err) {
       if (mine !== attempt) return;
       pending = false;
-      mount(where, "No pude pedir el código.");
+      mount(where, `No pude pedir el código a ${svc.name}.`);
       mount(code);
-      show("error", err.message);
+      // C5: en palabras de Orbital (no el texto del servidor), con el botón de al lado que lo vuelve a pedir.
+      show("error", `Revisa que Orbital tenga internet y vuelve a intentarlo. Tu cuenta de ${svc.name} no cambió.`);
+      setFailed(true);
     }
+  }
+
+  /** El botón vuelve de esperar y dice lo que hará: «Otro código» o, tras una falla, «Reintentar». */
+  function setFailed(on) {
+    failedNow = on;
+    setButtonBusy(again, false);
+    const label = again.querySelector(".button__label");
+    if (label) label.textContent = on ? "Reintentar" : "Otro código";
+    onChange?.();
   }
 
   function open(service = "trakt") {
@@ -96,6 +111,7 @@ export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
     qrImage.src = svc.qr;
     qrImage.alt = `Código QR de ${svc.site}`;
     el.setAttribute("aria-label", `Conectar ${svc.name}`);
+    failedNow = false;
     const fresh = againButton(); // el glifo del mando o del teclado que usas ahora
     again.replaceWith(fresh);
     again = fresh;
@@ -128,7 +144,7 @@ export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
     return true; // nada más que hacer aquí: el resto de botones no se escapan a lo de atrás
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otro código", offscreen: true }, // el botón ya lo dice
+  const hints = (g) => [{ glyph: g.options, label: failedNow ? "Reintentar" : "Otro código", offscreen: true }, // el botón ya lo dice
     { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, failed, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };

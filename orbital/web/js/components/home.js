@@ -6,7 +6,7 @@ import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { Card } from "./card.js";
 import { DecideDoor, DecideDoorHero } from "./decide.js";
 import { ConsoleHero, ConsoleTile, FeatureHero } from "./tiles.js";
-import { SectionHead } from "./ui.js";
+import { EmptyState, SectionHead } from "./ui.js";
 
 /**
  * Inicio, como el Apple TV (Fernando, 31 oct 2026, dirección B «A continuación»; D4-B, 10 nov 2026): arriba, lo enfocado a
@@ -21,15 +21,17 @@ import { SectionHead } from "./ui.js";
  * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
  * onAction(action, target) para los botones de arriba. target = { kind, item?, console?, list? }.
  */
-/** Sin nada jugado todavía: con juegos, invita a Juegos; si los ocultaste todos, a mostrarlos; sin
- * ningún juego, a revisar qué falta (antes decía «Aún no encontré juegos» con 18 ocultos). */
-function emptyFeature(hasGames, hidden = 0) {
-  const [title, detail] = hasGames ? ["Empieza a jugar", "Lo que abras aparecerá aquí para seguir donde te quedaste."]
-    : hidden > 0 ? [`Tienes ${hidden} juego${hidden === 1 ? "" : "s"} oculto${hidden === 1 ? "" : "s"}`, "Pulsa para mostrarlos otra vez."]
-      : ["Aún no encontré juegos", "Te digo qué revisar: carpetas de juegos, Steam y emuladores."];
-  return h("div", { class: ["tile", "home__empty"], role: "button", tabindex: "-1", "data-focus-id": "feature" },
-    h("h2", { class: "feature-hero__title" }, title),
-    h("span", { class: "feature-hero__detail" }, detail));
+/** Sin nada jugado todavía: el vacío del sistema (EmptyState, C4) con su primer paso. Con juegos, invita a Juegos; si los
+ * ocultaste todos, a mostrarlos; sin ningún juego, a revisar qué falta (antes decía «Aún no encontré juegos» con 18 ocultos).
+ * Dice qué vas a tener aquí, sin culpar. Con el mando, A (lo enfocado); con el dedo o el mouse, su botón. */
+export function emptyFeature(hasGames, hidden = 0, { glyph = null, onPress = null } = {}) {
+  const [title, detail, step] = hasGames ? ["Aquí sigues donde te quedaste", "Lo que abras aparece aquí, listo para seguir.", "Ir a Juegos"]
+    : hidden > 0 ? [`Tienes ${hidden} juego${hidden === 1 ? "" : "s"} oculto${hidden === 1 ? "" : "s"}`, "Muéstralos y vuelven a tus consolas.", "Mostrarlos"]
+      : ["Aquí van a estar tus juegos", "Te digo qué revisar: carpetas de juegos, Steam y emuladores.", "Qué revisar"];
+  const node = EmptyState({ icon: hasGames || hidden > 0 ? "gamepad" : "folder", title, text: detail, className: "home__empty",
+    action: { label: step, glyph, onPress } });
+  node.dataset.focusId = "feature";
+  return node;
 }
 
 /** Las filas del Inicio, de arriba abajo: la clave es el prefijo de su foco («card:3», «mine:0»…). */
@@ -206,7 +208,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     } else if (target?.kind === "decide") {
       stage = DecideDoorHero(target.door, { glyphs: options.glyphs, onAction: act });
     } else {
-      stage = emptyFeature(model.consoles.length > 0, hiddenCount);
+      stage = emptyFeature(model.consoles.length > 0, hiddenCount, { glyph: options.glyphs.select, onPress: () => act("select") });
     }
     mount(hero, stage);
     if (watchedStage) watch.unobserve(watchedStage);

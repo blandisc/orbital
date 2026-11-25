@@ -23,6 +23,8 @@
 [data-text-size="xlarge"] .search__field { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
 
 .search__top { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+/* C6: la etiqueta del campo, visible siempre (no solo la ayuda de adentro, que se va al escribir). */
+.search__label { color: var(--color-text-muted); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
 .search__field {
   display: flex; align-items: center; gap: var(--space-2); flex: 1; min-width: 0;
   padding-bottom: var(--space-2); border-bottom: 2px solid var(--color-hairline);

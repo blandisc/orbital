@@ -9,6 +9,7 @@
 /* El estado vacío de Explorar (EmptyState) y «Buscando qué recomendarte…», al centro. */
 .foryou__message { justify-items: center; max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 .foryou__message--waiting { animation: fade-in var(--duration-enter) var(--ease-out); }
+.foryou__message .empty-state__action { pointer-events: auto; } /* «Reintentar» se toca (el aviso deja pasar el dedo al mosaico) */
 
 /* Protector de pantalla (main.js · saver): el mosaico a pantalla completa y solo la hora; nada de botones ni leyendas. */
 body[data-screensaver] .hints, body[data-screensaver] .status-bar__brand,

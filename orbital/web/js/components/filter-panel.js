@@ -38,6 +38,7 @@ export const FILTERS = [
 const KEY = "orbital.filter";
 const EMPTY = { kind: "movie", genre: "", length: "", decade: "", rating: "", fame: "", platform: "", country: "", unseen: "" };
 const PREVIEW = 8; // los pósters de la derecha: dos renglones de cuatro (más grandes que diez)
+const TRY_REMOVING = 4; // con cero: cuántos filtros puestos se prueban quitar (uno por uno) para sugerir cuál quitar
 
 /** Cuántos, al estilo de México: «8,506», «Más de 10,000». */
 export const countText = (total) => (total > 9999 ? "Más de 10,000" : total.toLocaleString("es-MX"));
@@ -64,6 +65,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
   let filter = { ...EMPTY, ...storage.get(KEY, {}) };
   let at = 0; // la pregunta enfocada; FILTERS.length = «Ver N títulos»
   let found = null; // { total, items } | Error | null (contando)
+  let rescue = null; // con cero: { row, label, total } el filtro que, quitado, devuelve más (C7) · null si no hay o aún no se sabe
   let counting = false; // contando de nuevo: lo de antes se queda atenuado (no brinca a «…»)
   let token = 0;
   let timer = 0;
@@ -105,6 +107,7 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
     clearTimeout(timer);
     const mine = ++token;
     counting = true;
+    rescue = null;
     paintSide();
     timer = setTimeout(async () => {
       try {
@@ -112,7 +115,9 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
         if (mine !== token) return;
         found = { total: res.total ?? (res.items || []).length, items: (res.items || []).slice(0, PREVIEW) };
         counting = false;
+        rescue = null;
         backdrop.show(found.items[0]?.hero || found.items[0]?.image || null);
+        if (found.total === 0) findRescue(mine);
       } catch (err) {
         if (mine !== token) return;
         found = err instanceof Error ? err : new Error(String(err));
@@ -120,6 +125,27 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
       }
       paintSide();
     }, 350);
+  }
+
+  /**
+   * C7: con cero, prueba quitar cada filtro puesto (hasta TRY_REMOVING, la cuenta la da el servidor) y se queda con el que
+   * devuelve más: «Quita “Terror” y ves 12». Lo prueba en segundo plano; mientras, la frase de siempre.
+   */
+  async function findRescue(mine) {
+    const rows = FILTERS.filter((row) => row.id !== "kind" && valueOf(row)).slice(0, TRY_REMOVING);
+    const tries = await Promise.all(rows.map((row) => preview({ ...filter, [row.id]: "" })
+      .then((res) => ({ row, total: res.total ?? (res.items || []).length }), () => null)));
+    if (mine !== token) return;
+    const best = tries.filter((t) => t && t.total > 0).sort((a, b) => b.total - a.total)[0];
+    rescue = best ? { row: best.row, label: best.row.options[indexOf(best.row)][1], total: best.total } : null;
+    if (rescue) paintSide();
+  }
+
+  /** «Quitar “Terror”»: ese filtro vuelve a su «Cualquiera» (los demás se quedan). */
+  function removeRescue() {
+    if (!rescue) return false;
+    choose(rescue.row, "");
+    return true;
   }
 
   function paint() {
@@ -149,16 +175,20 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
     const failed = found instanceof Error;
     const total = found && !failed ? found.total : null;
     const none = total === 0 && !counting;
-    const label = found === null ? "Contando…" : failed ? "Ver títulos" : `Ver ${total > 9999 ? "más de 10,000" : countText(total)} títulos`;
-    // Blanco solo con el foco (el blanco es el foco en Orbital); mientras eliges, de vidrio, con su Y a la vista.
-    const go = Button({ label, variant: at === FILTERS.length ? "primary" : "ghost", glyph: g.options, onPress: () => results() });
+    const waiting = found === null;
+    const label = waiting ? "Contando títulos…" : failed ? "Reintentar" : `Ver ${total > 9999 ? "más de 10,000" : countText(total)} títulos`;
+    // Blanco solo con el foco (el blanco es el foco en Orbital); mientras eliges, de vidrio, con su Y a la vista. Contando, el
+    // botón espera (C1): su ícono gira y dice qué hace.
+    const go = Button({ label, variant: at === FILTERS.length ? "primary" : "ghost", glyph: g.options, busy: waiting, onPress: () => (failed ? refresh() : results()) });
     go.classList.toggle("is-focused", at === FILTERS.length);
     const posters = found && !failed ? found.items : [];
     mount(side,
       h("div", { class: ["filter__count", (counting || found === null) && "filter__count--counting"] },
         h("strong", { class: "filter__total" }, found === null ? "…" : failed ? "—" : countText(total)),
-        h("span", { class: "filter__total-label" }, found === null ? "Contando…" : failed ? `No pude contar: ${found.message}` : none
-          ? "Nada con esto. Prueba quitar un filtro (X borra todos)."
+        // C9: qué prepara · C5: qué pasó, en palabras de Orbital (Y abre los títulos igual) · C7: con cero, qué quitar.
+        h("span", { class: "filter__total-label" }, found === null ? "Contando títulos…" : failed
+          ? "No pude contarlos ahora; tus filtros siguen puestos." : none
+          ? (rescue ? `Quita “${rescue.label}” y ves ${countText(rescue.total)}.` : "Nada con esto. Prueba quitar un filtro (X borra todos).")
           : `${total === 1 ? "título" : "títulos"}${active() ? " con lo que elegiste" : ""}`)),
       // Con cero, sin muro (las cajas vacías parecían «cargando»).
       !none && h("div", { class: ["filter__wall", (counting || found === null) && "filter__wall--loading"], "aria-hidden": "true" },
@@ -168,7 +198,8 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
             : h("span", { class: "filter__poster filter__poster--empty" });
         })));
     mount(actions, none
-      ? Button({ label: "Borrar filtros", glyph: g.alt, variant: "primary", onPress: () => clear() })
+      ? [rescue && Button({ label: `Quitar “${rescue.label}”`, glyph: g.options, variant: "primary", onPress: () => removeRescue() }),
+        Button({ label: "Borrar filtros", glyph: g.alt, variant: rescue ? "ghost" : "primary", icon: rescue ? "close" : null, onPress: () => clear() })]
       : [go, active() > 0 && Button({ label: "Borrar filtros", glyph: g.alt, icon: "close", onPress: () => clear() })]);
   }
 
@@ -198,7 +229,11 @@ export function createFilterPanel({ preview, onResults, onMove, onClose }) {
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
-    if (action === "options") { results(); return true; } // Y: los resultados, desde cualquier pregunta
+    if (action === "options") { // Y: los resultados (con cero, quitar el sugerido; sin cuenta, «Reintentar»)
+      if (found instanceof Error) refresh();
+      else if (!(found?.total === 0 && removeRescue())) results();
+      return true;
+    }
     if (action === "alt") { clear(); return true; }
     if (action === "up" || action === "down") {
       const next = Math.max(0, Math.min(FILTERS.length, at + (action === "up" ? -1 : 1)));

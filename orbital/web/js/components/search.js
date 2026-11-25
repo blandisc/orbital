@@ -72,7 +72,9 @@ export function rememberSearch(recent, query) {
 
 export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
   let picking = null; // { kind, onPick }: «Corregir ficha»
-  const field = h("div", { class: "search__field" });
+  // C6: una etiqueta visible y fija arriba del campo (la ayuda de adentro se va al escribir; la etiqueta no).
+  const label = h("span", { class: "search__label", id: "search-label" }, "Buscar");
+  const field = h("div", { class: "search__field", role: "textbox", "aria-labelledby": "search-label" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
   const query = h("span", { class: "search__query" });
   const placeholder = h("span", { class: "search__placeholder" }, "Juego, película o serie");
@@ -82,7 +84,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
   const keyboard = createKeyboard({ label: "Teclado de búsqueda", onPress: (key) => press(key) });
   const keys = keyboard.el;
   const el = h("section", { class: ["screen", "search"], hidden: true, "aria-label": "Buscar" },
-    h("div", { class: "search__top" }, field, hint), keys, results);
+    h("div", { class: "search__top" }, label, field, hint), keys, results);
 
   let text = "";
   let shownText = "";
@@ -217,7 +219,7 @@ export function createSearch({ onOpen, onMove, onClose, onAdvanced = null, local
     // Eligiendo una ficha («Corregir ficha»): solo películas o series del tipo que corrige, nada de tus juegos.
     const local = picking ? [] : localSearch(q);
     showResults(local, { searching: true });
-    setHint(local.length ? `${count(local.length)} · buscando películas y series…` : "Buscando…");
+    setHint(local.length ? `${count(local.length)} · buscando películas y series…` : `Buscando “${q}”…`);
     timer = setTimeout(async () => {
       const mine = ++token;
       pending = q;
