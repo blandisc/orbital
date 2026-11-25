@@ -28287,6 +28287,17 @@
         }
       }
     },
+    "Probar subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try subtitles"
+          }
+        }
+      }
+    },
     "Probar otra vez": {
       "extractionState": "manual",
       "localizations": {
