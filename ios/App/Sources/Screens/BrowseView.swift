@@ -306,10 +306,18 @@ struct BrowseView: View {
         let model = env.advancedFilter
         let _ = model.track()
         let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
-        return FilterDoor(context: context, count: model.count, open: { page in
+        let open: (FilterPage?) -> Void = { page in
             filterStart = page
             showFilter = true
-        }, clear: { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } })
+        }
+        let clear = { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
+        return Group {
+            if let style = FilterDoorQuiet.chosen, !ThisDevice.isMac {
+                FilterDoorQuiet(style: style, context: context, count: model.count, open: open, clear: clear)
+            } else {
+                FilterDoor(context: context, count: model.count, open: open, clear: clear)
+            }
+        }
         .coachAnchor("advanced-search")   // F3: el aviso con foco de Buscar señala la puerta del filtro
         .padding(.horizontal, DS.Space.gutter)
     }

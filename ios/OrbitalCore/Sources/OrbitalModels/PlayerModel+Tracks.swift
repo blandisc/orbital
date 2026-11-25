@@ -55,6 +55,15 @@ extension PlayerModel {
         tracksApplied = true
         let mine = generation   // puede terminar después: si ya es otro video (u otra fuente), no se le toca
         rememberCheckedAudio(s)
+        // «Continuar» de este mismo episodio (aquí o desde la TV): exactamente las pistas con que lo dejaste, antes que lo
+        // elegido en este aparato o «apagados en este título» (Fernando, 25 nov 2026: «mismo idioma, mismos subtítulos»).
+        if !request.fromStart, let exact = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID), exact.subtitle != nil,
+           await applyResumeTracks(exact, s) {
+            guard mine == generation else { return }
+            Self.note("subtítulos: como lo dejaste en este episodio (\(exact.subtitle?.off == true ? "apagados" : exact.subtitle?.language ?? "sin idioma"))")
+            return
+        }
+        guard mine == generation else { return }
         // Apagados en este título: eso gana a todo lo recordado.
         let subtitlesOff = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).subtitles.isEmpty
         // La versión que elegiste en este título: el subtítulo más parecido (gana a «Continuar» y a la regla).
