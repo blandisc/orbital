@@ -18,7 +18,7 @@
 
 /* --- Portadas: aire generoso con los filtros y entre ellas; la enfocada crece sin cortarse arriba. --- */
 .browse__viewport {
-  flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 1.6rem var(--space-4) var(--space-4); margin: 0 calc(-1 * var(--space-4));
+  flex: 1 1 auto; min-height: 0; overflow: hidden; padding: var(--space-6) var(--space-4) var(--space-4); margin: 0 calc(-1 * var(--space-4));
   /* Sin desvanecido abajo (Fernando, 24 nov 2026): tapaba el nombre del juego enfocado. */
 }
 /* position: relative: offsetTop de las portadas se mide desde la cuadrícula (antes, en la primera

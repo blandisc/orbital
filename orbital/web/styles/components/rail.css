@@ -17,17 +17,17 @@
 .rail--open::before { opacity: 1; }
 
 /* La ventana: lo que no cabe se recorre; un desvanecido indica que hay más arriba o abajo. */
-.rail__window { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0 -.6rem; padding: 0 .6rem; }
+.rail__window { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0 calc(-1 * var(--space-2)); padding: 0 var(--space-2); }
 .rail__window--more-up { -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 2.5rem); mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 2.5rem); }
 .rail__window--more-down { -webkit-mask-image: linear-gradient(0deg, transparent 0, var(--mask-solid) 2.5rem); mask-image: linear-gradient(0deg, transparent 0, var(--mask-solid) 2.5rem); }
 .rail__window--more-up.rail__window--more-down {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 2.5rem, var(--mask-solid) calc(100% - 2.5rem), transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 2.5rem, var(--mask-solid) calc(100% - 2.5rem), transparent 100%);
 }
-.rail__track { display: flex; flex-direction: column; gap: var(--space-2); padding: .6rem 0; transition: transform var(--duration-slow) var(--ease-out); }
+.rail__track { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) 0; transition: transform var(--duration-slow) var(--ease-out); }
 
 /* RePág / AvPág: en la columna de las casillas. */
-.rail__key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; width: var(--rail-width); min-height: var(--control-sm); color: var(--color-text-muted); } /* tocable con el dedo */
+.rail__key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1); width: var(--rail-width); min-height: var(--control-sm); color: var(--color-text-muted); } /* tocable con el dedo */
 .rail__key--next { flex-direction: column-reverse; }
 .rail__arrow { display: grid; place-items: center; }
 .rail__arrow .icon { width: var(--icon-xs); height: var(--icon-xs); transform: rotate(-90deg); }
@@ -80,7 +80,7 @@
 .rail__item--current .rail__icon .icon { width: 2rem; height: 2rem; }
 
 .rail__label {
-  display: flex; flex-direction: column; gap: .1rem; min-width: 0; padding-right: var(--space-4);
+  display: flex; flex-direction: column; gap: 0; min-width: 0; padding-right: var(--space-4);
   opacity: 0; transform: translateX(-.6rem); pointer-events: none;
   transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }

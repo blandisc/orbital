@@ -60,7 +60,7 @@
 }
 
 /* Por año (YearCard): cuatro pósters en mosaico y el número grande encima. */
-.collection__grid { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; }
+.collection__grid { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--space-1); }
 .collection__grid .collection__poster { width: 100%; height: 100%; border-radius: 0; }
 .card--year::before {
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); pointer-events: none; background: var(--gradient-art-base);

@@ -23,7 +23,7 @@
 .login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-sm); animation: rise-in var(--duration-enter) var(--ease-out); }
 @media (max-height: 820px) { .login__phone-qr { width: 5.5rem; height: 5.5rem; } }
 .login__field {
-  display: grid; gap: .2rem; min-width: 0; padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg);
+  display: grid; gap: var(--space-1); min-width: 0; padding: var(--space-2) var(--space-6); border-radius: var(--radius-lg);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
@@ -32,7 +32,7 @@
 .login__value { min-height: 1.6em; font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .login__field--secret .login__value { letter-spacing: var(--tracking-digits); }
 /* El cursor de escribir: el único parpadeo permitido (es lo que dice «aquí se escribe»). */
-.login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+.login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: var(--space-1); vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
 .login__quick { margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; overflow-wrap: anywhere; }
 .login__quick strong { color: var(--color-text); }

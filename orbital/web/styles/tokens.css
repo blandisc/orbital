@@ -251,7 +251,7 @@
   /* El piso es chico a propósito: con uno grande, «Pequeño» y «Sin margen» se veían idénticos. */
   --page-gutter: max(var(--space-4), var(--safe-x));
   --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
-  --card-gap: 1.85rem;
+  --card-gap: var(--space-8); /* B1 (24 nov 2026): antes 1,85rem, fuera de la escala */
   --card-focus-scale: 1.2;
   --card-radius: var(--radius-sm);
   --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
@@ -272,6 +272,7 @@
   --touch-target: 2.9rem; /* con el dedo: al menos ~44 px */
   --pill-height: 2.5rem; /* una píldora que se elige: filtro, pestaña, búsqueda reciente */
   --glyph-size: 1.75rem;
+  --glyph-size-sm: 1.45rem; /* la tecla chica (glyph--sm): la de Buscar en la barra */
   /* Íconos de línea dentro de un texto o un botón (los contenedores —círculos, marcas, casillas— llevan su propia medida). */
   --icon-xs: .85rem;
   --icon-sm: 1rem;
@@ -297,6 +298,7 @@
   --progress-height: .25rem;
   --progress-height-current: .4rem; /* la barra del episodio que vas viendo, más gruesa (como el iPhone, O1) */
   --sheet-width: 29rem;
+  --measure-text: 36rem; /* B6: lo más ancho de un párrafo (45–75 letras por renglón): hojas, encabezados, vacíos, el héroe */
   --pip-room: 20vw; /* el video en pequeño: 30 % del ancho en 16:9 más su margen (player.PIP_WIDTH y PIP_MARGIN) */
   --keyboard-width: 54rem;
   /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
@@ -319,15 +321,18 @@
   --opacity-dim: .35;
   --opacity-match-tint: .45; /* el tinte de la carta del mazo al decidir (DS.Match.tintMax) */
   --opacity-grain: .035;
-  --tile-gap: 1.1rem;
+  --tile-gap: var(--space-4); /* B1 (24 nov 2026): antes 1,1rem, fuera de la escala */
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro
      lados, y lo que va en una esquina (píldora, insignia, número) usa el mismo, así su borde se alinea con el texto. */
   --inset-poster: var(--space-2); /* póster o miniatura: insignias, avance */
   --inset-row: var(--space-2); /* renglón (También tenías): miniatura y texto */
   --inset-card: var(--space-4); /* tarjeta mediana: consola, canal, calendario */
   --inset-feature: var(--space-6); /* destacado y fichas grandes */
-  /* Esquinas concéntricas: lo que va dentro de una tarjeta curva lo mismo que ella, menos el margen. */
-  --radius-inner-row: calc(var(--tile-radius) - var(--inset-row));
+  /* Esquinas concéntricas (C2, 24 nov 2026): lo que va dentro curva como lo de afuera menos el margen entre ambos, nunca menos
+     de 0; un token por cada par (tests/web/radius-nesting.test.mjs). Antes uno solo, --radius-inner-row, para todo. */
+  --radius-inner-sheet: calc(max(0px, var(--radius-lg) - var(--space-6))); /* un renglón de una hoja: el panel (1rem) menos su margen (1,5rem) = 0 */
+  --radius-inner-card: calc(max(0px, var(--radius-lg) - var(--inset-row))); /* lo que va dentro de una tarjeta de renglón: la miniatura del calendario */
+  --radius-inner-filter: calc(max(0px, var(--radius-lg) - var(--space-2))); /* el ícono de una pregunta del filtro: su renglón menos el aire de arriba */
   /* Las caras del reparto (person-chip) y la persona arriba de su filmografía (person-head), como el iPhone. */
   --person-photo: 5.4rem;
   --touch-back-room: 9rem; /* con el dedo: lo que aparta un encabezado para que «Atrás» (arriba a la derecha) no lo tape */

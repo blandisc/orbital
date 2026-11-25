@@ -108,24 +108,7 @@
     "SB-2": {
       "ios/App/Sources/Design/BrandGuideCloud.swift": 2,
       "ios/App/Sources/Design/BrandGuideTV.swift": 2,
-      "ios/App/Sources/Design/BrandGuideTrakt.swift": 5,
-      "orbital/web/styles/components/boot.css": 1,
-      "orbital/web/styles/components/browse.css": 1,
-      "orbital/web/styles/components/button.css": 3,
-      "orbital/web/styles/components/card.css": 3,
-      "orbital/web/styles/components/collection-card.css": 1,
-      "orbital/web/styles/components/glyph.css": 1,
-      "orbital/web/styles/components/hints.css": 1,
-      "orbital/web/styles/components/launch-overlay.css": 3,
-      "orbital/web/styles/components/list-screen.css": 1,
-      "orbital/web/styles/components/login.css": 2,
-      "orbital/web/styles/components/rail.css": 3,
-      "orbital/web/styles/components/sheet.css": 2,
-      "orbital/web/styles/components/status-bar.css": 13,
-      "orbital/web/styles/components/tiles.css": 1,
-      "orbital/web/styles/components/title.css": 1,
-      "orbital/web/styles/components/tv.css": 3,
-      "orbital/web/styles/components/ui.css": 6
+      "ios/App/Sources/Design/BrandGuideTrakt.swift": 5
     },
     "SB-3": {},
     "SB-4": {}

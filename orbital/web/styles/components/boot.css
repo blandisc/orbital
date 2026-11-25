@@ -8,7 +8,7 @@
 #boot::before { content: ""; position: absolute; inset: 0; background: var(--color-bg); } /* el fondo de la app: se funde aparte de la marca */
 /* La marca, armada igual que la de la barra (status-bar.css · .status-bar__brand) y más grande: al irse, solo se encoge. */
 #boot .boot__brand {
-  position: absolute; left: 50%; top: 50%; display: inline-flex; align-items: center; gap: .6rem; font-size: var(--type-body); font-weight: var(--type-body-weight);
+  position: absolute; left: 50%; top: 50%; display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--type-body); font-weight: var(--type-body-weight);
   transform: translate(-50%, -50%) scale(var(--boot-brand-scale));
 }
 #boot .boot__mark { width: 2.05rem; height: 2.05rem; overflow: visible; }

@@ -34,7 +34,7 @@
 /* Un canal de Orbital: la imagen del episodio que va, a sangre (no hay señal que enseñar). */
 .tv__preview--still .tv__preview-logo { padding: 0; }
 .tv__preview--still .tv__preview-logo img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; filter: none; }
-.tv__preview-badge { position: absolute; left: var(--inset-poster); top: var(--inset-poster); padding: .15rem .6rem; border-radius: var(--radius-pill);
+.tv__preview-badge { position: absolute; left: var(--inset-poster); top: var(--inset-poster); padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .tv__preview-badge:empty { display: none; }
 .tv__preview--live .tv__preview-badge::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-right: .4em; border-radius: 50%; background: var(--color-live); vertical-align: .1em; } /* «En vivo» siempre del mismo color */
@@ -47,7 +47,7 @@
 .tv__now-hint { color: var(--color-text-faint-strong); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
 /* Abajo: los canales de la categoría, en cuadrícula; la ventana se desliza para dejar el enfocado a la vista. */
-.tv__viewport { flex: 1; min-height: 0; padding-bottom: 3.6rem;
+.tv__viewport { flex: 1; min-height: 0; padding-bottom: var(--space-16);
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
 .tv__grid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
