@@ -138,7 +138,7 @@ struct SettingsPane {
 /// Las páginas de Ajustes que se abren desde la lista.
 enum SettingsPage: String, CaseIterable {
     case languages, playback, alerts, accounts, addons
-    case appearance, downloads, orbital, voice, diagnostics, learn
+    case appearance, downloads, simpsons, orbital, voice, diagnostics, learn
 
     /// El nombre de la página, el mismo del renglón: en la Mac va arriba de la página, a la derecha (MA2).
     var title: Text {
@@ -148,6 +148,7 @@ enum SettingsPage: String, CaseIterable {
         case .playback: Text("Reproducción")
         case .alerts: Text("Avisos")
         case .downloads: Text("Descargas")
+        case .simpsons: Text("Un Simpson al azar")   // edición: solo con `settingsEntries.simpsons`
         case .accounts: Text("Cuentas")
         case .addons: Text("Complementos")   // edición: la página solo existe con `settingsEntries.addons`
         case .orbital: Text("Tu Orbital")
