@@ -359,7 +359,14 @@ class _Extras(_Input):
             # Qué era (película o serie, su IMDb): al terminarla, la interfaz ofrece calificarla (como el iPhone). Un tráiler o
             # un canal no se califican.
             rateable = not segment.live and not segment.meta.get("clip") and not segment.meta.get("synthetic")
+            # FI-16/17 (24 nov): el aviso dice qué episodio terminaste y cuál sigue («Terminaste T2 E7 · Sigue el E8»), o en
+            # qué minuto quedaste («Guardé dónde ibas: 40 min de 2 h 46»).
+            episode = (segment.meta.get("detail") or "").split(" · ", 1)[0] if segment.meta.get("kind") == "series" else ""
+            where = {} if segment.live or finished or not segment.duration else {
+                "position": round(segment.position), "duration": round(segment.duration)}
             self.last_end = {"title": current.title, "finished": finished, "kind": segment.meta.get("kind"),
                              **({"meta_id": segment.meta.get("meta_id")} if rateable and segment.meta.get("meta_id") else {}),
-                             **({"live": True} if segment.live else {})}
+                             **({"episode": episode} if episode else {}),
+                             **({"next": segment.meta["next"]} if episode and segment.meta.get("next") else {}),
+                             **where, **({"live": True} if segment.live else {})}
         self.mpv.command("quit")

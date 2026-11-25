@@ -7,7 +7,7 @@
  *  - El aviso de «Vista» trae «Cambiar» (Y): «Deshacer» (solo la de hoy) u «Otra fecha».
  *  - «Historial» (☰ de Guardado › Vistas), con las repetidas marcadas y «Borrar N vistas repetidas».
  *  Sin internet, las vistas y la nota esperan en la cola de Trakt. */
-import { STARS } from "./yours-commands.js";
+import { STARS, starsWords } from "./yours-commands.js";
 import { clock } from "../core/format.js";
 import { failure, retry } from "../core/notices.js";
 
@@ -95,7 +95,7 @@ export function seasonStarsMenu({ id, title, season }, stars = null) {
   return { title: `¿Qué tal la temporada ${season}?`, subtitle: title, options };
 }
 
-export function viewingsCommands({ api, nested, openMenu, openListForm, renderHints, sound, ui }) {
+export function viewingsCommands({ api, nested, openMenu, openListForm, renderHints, sound, ui, undoable }) {
   /** No se pudo: qué pasó con palabras de Orbital y «Reintentar» (`again`: el mismo comando otra vez, OT-3). */
   const failed = (err, title, again) => {
     sound.play("error");
@@ -124,8 +124,16 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
       try {
         const r = await api.changeViewing(body(about, { action, viewing_id: viewing?.id || null, at: command.at ?? null }));
         sound.play(action === "remove" ? "select" : "success");
-        ui.toast.show({ add: "Una vista más", move: "Cambié la fecha", remove: "Borré esa vista" }[action], { tone: "success",
-          detail: offline(r) || (action === "remove" ? "Las demás se quedan" : about.title) });
+        // FI-19 (24 nov): borrar una vista trae «Deshacer», como los otros avisos que quitan algo (la vuelve a poner ese día).
+        if (action === "remove" && viewing?.at) {
+          undoable("Borré esa vista", offline(r) || "Las demás se quedan", async () => {
+            await api.changeViewing(body(about, { action: "add", at: viewing.at }));
+            ui.title.statusChanged?.(about.id);
+          }, { tone: "success" });
+        } else {
+          ui.toast.show({ add: "Una vista más", move: "Cambié la fecha", remove: "Borré esa vista" }[action], { tone: "success",
+            detail: offline(r) || (action === "remove" ? "Las demás se quedan" : about.title) });
+        }
         ui.title.statusChanged?.(about.id);
       } catch (err) { return failed(err, "No pude cambiar tu historial", () => commands["viewing-change"](command)); }
       return renderHints();
@@ -193,7 +201,8 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
       try {
         await api.rateSeason(command.id, command.season, command.stars);
         sound.play(command.stars ? "success" : "select");
-        ui.toast.show(command.stars ? `${command.title}, temporada ${command.season}` : "Quité tu calificación de la temporada", { tone: "success", stars: command.stars || 0 });
+        ui.toast.show(command.stars ? `${command.title}, temporada ${command.season}` : "Quité tu calificación de la temporada", { tone: "success", stars: command.stars || 0,
+          detail: starsWords(command.stars) });
       } catch (err) { return failed(err, "No pude guardar tu calificación", () => commands["season-rate-set"](command)); }
       return renderHints();
     },

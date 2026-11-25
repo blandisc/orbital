@@ -38,7 +38,8 @@ const resumeLabel = (started, label) => (label ? `${started ? "Continuar" : "Ver
 /** El botón de Descargar según cómo va (para ver sin internet): Descargar · Descargando 42 % · Descargada. */
 export function downloadAction(job) {
   if (!job) return { id: "download", icon: "download", label: "Descargar" };
-  if (job.status === "done") return { id: "download", icon: "check", label: "Descargada", active: true };
+  // FI-2: prendido, el nombre dice el estado y el pie el verbo de A (abre la hoja con «Borrar la descarga», como el iPhone).
+  if (job.status === "done") return { id: "download", icon: "check", label: "Descargada", verb: "Borrar la descarga", active: true };
   if (job.status === "failed") return { id: "download", icon: "refresh", label: "Reintentar la descarga", short: "Reintentar" };
   const pct = job.progress != null ? Math.floor(job.progress * 100) : null;
   return { id: "download", icon: "download", label: pct != null ? `Descargando ${pct} %` : "En espera", short: pct != null ? `${pct} %` : "En espera" };
@@ -55,7 +56,7 @@ export function debridAction(request) {
   // PT5: la nube con flecha (la flecha sola es «Descargar»).
   if (request?.label) return { id: "rd-request", icon: "cloudDownload", label: request.label, short: "Pedirla" };
   if (request === "ask") return { id: "rd-request", icon: "cloudDownload", label: "Pedir a la nube", short: "Pedir" };
-  if (typeof request === "number") return { id: "rd-request", icon: "cloudDownload", label: `Bajando en la nube · ${request} %`, short: "Tu pedido", active: true }; // PT3: el % va en su renglón, con barra
+  if (typeof request === "number") return { id: "rd-request", icon: "cloudDownload", label: `Bajando en la nube · ${request} %`, short: "Tu pedido", verb: "Ver tu pedido", active: true }; // PT3: el % va en su renglón, con barra
   return null;
 }
 
@@ -90,12 +91,14 @@ export function titleStatus(details, { kind = "movie", dropped = false, now = Da
 }
 
 /** El botón de estado (G1-A): lo que dice y su ícono, como `statusTitle` y `statusSymbol` del iPhone. */
+// FI-2 (pasada del 24 nov): `verb` es lo que dice el pie para A sobre el botón ya prendido (el nombre dice el estado). En Mi
+// lista, A la quita (con «Deshacer»); con otro estado, A abre «¿Cómo vas?» (X también).
 export const STATUS_WORDS = {
   none: { label: "Mi lista", icon: "bookmark" },
-  in_list: { label: "En Mi lista", icon: "bookmarkFill" },
-  watching: { label: "Viendo", icon: "watching" },
-  watched: { label: "Vista", icon: "checkCircle" },
-  dropped: { label: "La dejé", icon: "hide" },
+  in_list: { label: "En Mi lista", icon: "bookmarkFill", verb: "Quitar de Mi lista" },
+  watching: { label: "Viendo", icon: "watching", verb: "¿Cómo vas?" },
+  watched: { label: "Vista", icon: "checkCircle", verb: "¿Cómo vas?" },
+  dropped: { label: "La dejé", icon: "hide", verb: "¿Cómo vas?" },
 };
 const statusAction = (status) => ({ id: "status", status, ...STATUS_WORDS[status], active: status !== "none" });
 

@@ -193,6 +193,7 @@ const ui = {
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   sources: createSources({
+    glyphs,
     onPlay: (play) => watch(play),
     // T8-A: «Pedir a la nube» justo esa versión (o, si ya está pedida, su hoja con cuánto falta, «Ver …, ya arranca» y
     // «Esperar a que llegue», RX2-A).
@@ -1481,7 +1482,13 @@ function downloadProgress(event) {
 /** «Descargar» en la ficha: empieza, o dice cómo va (y reintenta si falló). */
 async function downloadTitle(body, job) {
   try {
-    if (job?.status === "done") return ui.toast.show(`${body.title} ya está descargada · «Ver» la pone del disco, sin internet`, { tone: "success" });
+    // FI-2 (24 nov): A en «Descargada» hace lo que dice el pie, «Borrar la descarga», con una hoja que lo confirma (como el
+    // iPhone); antes solo avisaba que ya estaba.
+    if (job?.status === "done") {
+      return openMenu({ title: body.title, subtitle: [body.detail, "Lista para ver sin internet"].filter(Boolean).join(" · "), options: [
+        { icon: "close", label: "Borrar la descarga", danger: true, hint: "Libera espacio · «Ver» la pone de internet",
+          command: { type: "download-remove", id: job.id, title: job.title || body.title } }] });
+    }
     if (job?.status === "failed") {
       await api.downloadRetry(job.id);
       ui.toast.show(`Descargando ${body.title} otra vez`);

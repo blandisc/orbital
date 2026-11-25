@@ -241,7 +241,8 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
         const { heading, message } = closedSummary(event);
         // Terminaste una película o un episodio (con Trakt): «Calificar» en el aviso, con Y o tocándolo (como el iPhone).
         const rate = event.finished && event.meta_id && traktLinked() && ["movie", "series"].includes(event.kind)
-          ? offerVoiceAction({ kind: "undo", label: "Calificar", button: "options",
+          // FI-16: qué se califica (la serie, no el episodio que terminaste).
+          ? offerVoiceAction({ kind: "undo", label: event.kind === "series" ? "Calificar la serie" : "Calificar", button: "options",
             run: () => runCommand({ type: "rate", kind: event.kind, id: event.meta_id, title: String(event.title || "").split(" · ")[0] }) })
           : {};
         // Con «Calificar»: «¿Qué tal Oppenheimer?» con sus estrellas vacías y «La terminaste» abajo (Fernando, 16 nov: «pulir

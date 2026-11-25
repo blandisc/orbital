@@ -362,6 +362,18 @@ def test_knows_how_it_ended_before_closing():
     assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series", "meta_id": "s"}  # con su IMDb: se ofrece calificarla
 
 
+def test_the_end_says_which_episode_and_where_you_were():
+    """FI-16/17 (24 nov 2026): el aviso al volver dice qué episodio terminaste y cuál sigue, o en qué minuto quedaste."""
+    p, mpv = series_player(**{"time-pos": 5990.0, "duration": 6000.0})
+    p.segment.meta.update(detail="T2 E7 · Defiant Jazz", next="E8")
+    p.segment.position, p.segment.duration = 5990.0, 6000.0
+    p._quit()
+    assert p.last_end["episode"] == "T2 E7" and p.last_end["next"] == "E8" and "position" not in p.last_end
+    p.segment.position = 2400.0  # sin terminar: el minuto y de cuánto
+    p._quit()
+    assert p.last_end["finished"] is False and (p.last_end["position"], p.last_end["duration"]) == (2400, 6000)
+
+
 def test_more_lists_the_season_and_restarts():
     p, mpv = series_player(**{"time-pos": 600.0, "duration": 1300.0})
     jumped = []

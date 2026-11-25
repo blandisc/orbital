@@ -69,6 +69,17 @@ test("al volver: un video no se juega", async () => {
   assert.deepEqual(closedSummary({ id: "media:player", title: "Interstellar", finished: true }), { heading: "Interstellar", message: "Lo terminaste" });
   assert.deepEqual(closedSummary({ id: "app:youtube", title: "YouTube" }), { heading: "YouTube", message: "De vuelta en Orbital" });
   assert.deepEqual(closedSummary({ id: "media:player", title: "Azteca 7", live: true }), { heading: "", message: "De vuelta de la TV en vivo" });
+  // FI-16/17 (24 nov): cuál episodio terminaste y cuál sigue; en qué minuto quedaste y de cuánto.
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Severance · T2 E7", finished: true, episode: "T2 E7", next: "E8" }),
+    { heading: "Severance", message: "Terminaste T2 E7 · Sigue el E8" });
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Severance · T2 E10", finished: true, episode: "T2 E10" }),
+    { heading: "Severance", message: "Terminaste T2 E10" }); // el último: no hay «Sigue»
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Oppenheimer", position: 2400, duration: 9960 }),
+    { heading: "Oppenheimer", message: "Guardé dónde ibas: 40 min de 2 h 46" });
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Severance · T2 E7", position: 1500, duration: 3120, episode: "T2 E7" }),
+    { heading: "Severance", message: "Guardé dónde ibas en T2 E7: 25 min de 52 min" });
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Oppenheimer", position: 20, duration: 9960 }),
+    { heading: "Oppenheimer", message: "Guardé dónde ibas" }); // menos de un minuto: no hay minuto que decir
 });
 
 test("si un juego se cierra enseguida, el aviso dice qué revisar según de dónde es", async () => {

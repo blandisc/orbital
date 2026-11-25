@@ -45,6 +45,10 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
   let row = 0;
   let token = 0;
   let cancelExit = () => {};
+  // FI-15 (24 nov): un mes sin estrenos dice que está vacío y ofrece ir al próximo. `upcoming`: null (no aplica), "searching",
+  // "none" (nada en los meses que siguen) o { iso, date } (el próximo día con algo).
+  let loaded = false;
+  let upcoming = null;
 
   const airings = (key) => byDay.get(key) || [];
 
@@ -79,6 +83,8 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     const c = cells[at];
     if (!c) return;
     const shows = airings(c.iso);
+    if (loaded && !byDay.size) return paintEmptyMonth();
+    dayTitle.hidden = false;
     dayTitle.textContent = sentence(`${DAY_NAMES[c.date.getDay()]} ${c.date.getDate()} de ${MONTHS[c.date.getMonth()]}`)
       + (c.iso === today ? " · hoy" : "");
     mount(list, shows.length ? shows.map((s, i) => h("button", {
@@ -89,6 +95,53 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
       h("strong", { class: "calendar__show-title" }, s.title),
       h("span", { class: "calendar__show-meta" }, [s.episode_label, s.time, s.network].filter(Boolean).join(" · ")))))
       : EmptyState({ icon: "calendar", title: "Nada este día", text: c.iso < today ? "Ese día no salió nada de lo que sigues." : "Ese día no sale nada de lo que sigues." }));
+  }
+
+  /** FI-15: el mes entero sin nada: qué pasa y el siguiente paso (antes, 30 casillas vacías y «Nada este día»). */
+  function paintEmptyMonth() {
+    const name = MONTHS[month.getMonth()];
+    dayTitle.hidden = true;
+    const when = upcoming?.date ? `${upcoming.date.getDate()} de ${MONTHS[upcoming.date.getMonth()]}` : "";
+    mount(list, EmptyState({ icon: "calendar", title: `Nada en ${name}`,
+      text: upcoming === "searching" ? "Ninguna de las series que sigues estrena este mes. Busco cuándo sale lo próximo…"
+        : when ? `Ninguna de las series que sigues estrena este mes. Lo próximo sale el ${when}.`
+          : upcoming === "none" ? "Ninguna de las series que sigues estrena este mes, ni en los meses que siguen."
+            : "Ninguna de las series que sigues estrena este mes.",
+      // En el botón, el mes corto («14 feb»): con el largo no cabía en el lado del calendario a 1280.
+      action: when ? { label: `Ir al próximo estreno (${upcoming.date.getDate()} ${MONTHS[upcoming.date.getMonth()].slice(0, 3)})`,
+        glyph: glyphs().options, onPress: goUpcoming } : null }));
+  }
+
+  /** El próximo día con un estreno, de hoy en adelante (o del mes que sigue al que se ve, si es futuro): mes por mes, hasta
+   *  el tope del servidor. */
+  async function findUpcoming(mine) {
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let next = month < thisMonth ? thisMonth : new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    upcoming = "searching";
+    for (; monthsFromNow(next) <= MAX_MONTHS; next = new Date(next.getFullYear(), next.getMonth() + 1, 1)) {
+      let res;
+      try { res = await load(monthKey(next)); } catch {
+        if (mine === token) { upcoming = null; paint(); } // sin internet: no se promete nada
+        return;
+      }
+      if (mine !== token) return;
+      const days = (res.items || []).map((item) => item.day).filter((day) => day >= (res.today || today)).sort();
+      if (days.length) {
+        const [y, m, d] = days[0].split("-").map(Number);
+        upcoming = { iso: days[0], date: new Date(y, m - 1, d) };
+        return paint();
+      }
+    }
+    if (mine !== token) return;
+    upcoming = "none";
+    paint();
+  }
+
+  function goUpcoming() {
+    if (!upcoming?.date) return;
+    onMove?.();
+    show(upcoming.date, upcoming.date.getDate());
   }
 
   function paint() {
@@ -102,6 +155,8 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     const mine = ++token;
     month = new Date(target.getFullYear(), target.getMonth(), 1);
     byDay = new Map();
+    loaded = false;
+    upcoming = null;
     paintHead();
     build();
     const wanted = keepDay ? cells.findIndex((c) => c && c.date.getDate() === Math.min(keepDay, cells.filter(Boolean).length)) : -1;
@@ -118,8 +173,10 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
       today = res.today || today;
       for (const item of res.items || []) byDay.set(item.day, [...(byDay.get(item.day) || []), item]);
       status.hidden = true;
+      loaded = true;
       build();
       paint();
+      if (!byDay.size) findUpcoming(mine);
     } catch (err) {
       if (mine !== token) return;
       // C5: qué pasó, qué no se perdió y «Reintentar» (Y o el botón), no el texto del servidor.
@@ -166,6 +223,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     }
     if (action === "back") { close(); return true; }
     if (action === "options" && failed) { show(month); return true; } // «Reintentar»
+    if (action === "options" && upcoming?.date) { goUpcoming(); return true; } // FI-15: «Ir al próximo estreno»
     if (action === "prevsection" || action === "nextsection") {
       const day = cells[at]?.date.getDate() || 1;
       const next = new Date(month.getFullYear(), month.getMonth() + (action === "nextsection" ? 1 : -1), 1);
@@ -194,6 +252,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
       ? [{ glyph: g.select, label: "Ver la serie" }, { glyph: g.back, label: "Al calendario", end: true }]
       : [shows.length === 1 && { glyph: g.select, label: "Ver la serie" }, shows.length > 1 && { glyph: g.select, label: "Elegir serie" },
         failed && { glyph: g.options, label: "Reintentar", offscreen: true }, // el botón ya lo dice
+        upcoming?.date && { glyph: g.options, label: "Ir al próximo estreno", offscreen: true },
         { glyph: g.section, label: "Otro mes" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
   };
 

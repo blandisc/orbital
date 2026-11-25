@@ -1,5 +1,5 @@
 import { api } from "../core/api.js";
-import { Chip, LineSkeleton, Pill, Progress, SectionHead } from "./ui.js";
+import { Chip, LineSkeleton, Pill, Progress, SectionHead, Veil } from "./ui.js";
 import { ArtFit } from "./art-fit.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
@@ -17,6 +17,8 @@ import { Flag } from "./flag.js";
 import { serverDetail } from "../core/notices.js";
 
 const REVIEWS_PER_VIEW = 3; // como --reviews-per-view en title.css
+/** FI-1: el renglón de la nube de un pedido en cola (en «Tus pedidos» y en Versión sigue la palabra corta, «En cola»). */
+export const QUEUED_HERE = "Tu pedido está en cola en la nube";
 
 /**
  * La ficha de una película o serie, a pantalla completa sobre su arte y con el mando (como Apple TV): lo que manda es
@@ -91,8 +93,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   const credits = h("div", { class: "title__credits", hidden: true });
   // Lo esencial, de arriba abajo: logo; qué es (Serie · clasificación · año · géneros · duración), sus calificaciones y la
   // tuya; la sinopsis y quién la hizo; lo disponible y dónde ibas; y los botones.
+  // FI-6: el velo del lado del texto, encima del arte (title.css · title__veil): sobre un arte claro el texto se lee.
+  const veil = Veil("leading");
+  veil.classList.add("title__veil");
   const el = h("section", { class: ["screen", "title"], hidden: true, "aria-label": "Ficha" },
     backdrop,
+    veil,
     h("div", { class: "title__info" }, logo, name, meta, episodeHead, description, readMore, credits, avail, progress, actions, cloud, status),
     browser, more);
 
@@ -666,11 +672,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       season: series && seasons()[season]?.season > 0 ? seasons()[season].season : null };
   }
 
-  /** El botón de estado: sin estado, un toque la guarda en Mi lista (como «Guardar»); con estado, abre «¿Cómo vas con…?».
-   * X (o ☰ › «¿Cómo vas con…?» de la hoja de Opciones) siempre abre el menú. */
+  /** El botón de estado: sin estado, un toque la guarda en Mi lista (como «Guardar»); en Mi lista, la quita (FI-2: lo que dice
+   * el pie, con «Deshacer»); con otro estado, abre «¿Cómo vas con…?». X (o ☰ › «¿Cómo vas con…?» de la hoja de Opciones)
+   * siempre abre el menú. */
   function runStatus({ menu = false } = {}) {
     if (!details || details.error) return;
-    onStatus(statusAbout(), { quick: !menu && statusNow() === "none" });
+    onStatus(statusAbout(), { quick: !menu && ["none", "in_list"].includes(statusNow()) });
   }
 
   function run(button) {
@@ -911,6 +918,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       || (why?.why === "debrid" && !(req?.mine && ["refused", "too_many"].includes(req.state)));
     let text = why?.message || "";
     if (going) text = `Bajando en la nube · ${Math.round(req.percent || 0)} %`;
+    // FI-1 (pasada del 24 nov): bajo los botones, «En cola» a secas no decía qué ni dónde.
+    else if (calm && why?.why === "requested" && req?.state === "queued") text = QUEUED_HERE;
     else if (why?.why === "unreleased" && why.detail) text = `${why.message} · ${why.detail}`;
     else if (!calm && why?.detail) text = `${why.message} · ${why.detail}`;
     cloudText.textContent = text;
@@ -1159,10 +1168,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    // R2-8: el pie dice lo mismo que el botón enfocado («Vista», «En Mi lista»…); X siempre abre «¿Cómo vas?». «Versión» va
-    // en un solo lugar: si «Ver» trae su cápsula (con su Y adentro), el pie no la repite.
-    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.short || buttons[action]?.label?.split(" · ")[0] || "Ver" },
-    !onVersion && buttons[action]?.id === "status" && { glyph: g.alt, label: "¿Cómo vas?" },
+    // R2-8: el pie dice lo mismo que el botón enfocado; FI-2 (24 nov): si ya está prendido, su verbo («Quitar de Mi lista»,
+    // «Ver tu pedido», «Borrar la descarga»), no su estado. X siempre abre «¿Cómo vas?» (si A ya lo dice, no se repite).
+    // «Versión» va en un solo lugar: si «Ver» trae su cápsula (con su Y adentro), el pie no la repite.
+    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.verb || buttons[action]?.short || buttons[action]?.label?.split(" · ")[0] || "Ver" },
+    !onVersion && buttons[action]?.id === "status" && buttons[action]?.verb !== "¿Cómo vas?" && { glyph: g.alt, label: "¿Cómo vas?" },
     hasTarget() && !led() && !onVersion && !buttons[0]?.hint && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : panelZone() && { glyph: g.rows, label: PANEL_NAMES[panelZone()] },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },

@@ -112,8 +112,13 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   // Un ranking de verdad: la pestaña lo pide y sus títulos traen puesto (R2: Criterion pedía ranking sin puestos).
   const ranked = () => !!current()?.ranked && (loaded.get(tab) || []).some((item) => rankOf(item) != null);
 
-  /** La biografía de una persona: tres líneas o desplegada (X, un clic o el dedo). */
-  function toggleBio() { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); }
+  /** La biografía de una persona: tres líneas o desplegada (X, un clic o el dedo). FI-14: el pie cambia con ella. */
+  function toggleBio() { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); onChange?.(); }
+  /** FI-14 (24 nov): ¿hay biografía que leer? Solo si se corta (o ya está abierta): antes «X Biografía» salía aunque cupiera
+   *  entera y X no hiciera nada visible. */
+  const bioOpen = () => !!about.firstChild?.classList.contains("person-head--open");
+  const bioCut = () => { const bio = about.querySelector(".person-head__bio"); return !!bio && bio.scrollHeight > bio.clientHeight + 1; };
+  const bioMore = () => !!list?.person?.biography && !about.hidden && (bioOpen() || bioCut());
 
   function paintHead() {
     // Una lista de «Esta semana»: su ícono a color con el resplandor de su color, como el iPhone.
@@ -219,6 +224,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (!list?.person) return;
     list.person = { ...list.person, ...person };
     paintHead();
+    requestAnimationFrame(() => onChange?.()); // FI-14: ya se sabe si la biografía se corta
   }
 
   function paintTabs() {
@@ -491,7 +497,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (action === "alt" && list.editable && !current()?.noEdit) { setEditing(!editing); return true; } // X: Editar · Listo
     if (action === "select" && editing) { toggleChosen(item); return true; }
     if (action === "options" && editing && chosen.size) { onBatch?.(api); return true; }
-    if (action === "alt" && list.person?.biography) { toggleBio(); return true; }
+    if (action === "alt" && list.person?.biography) { if (bioMore()) toggleBio(); return true; }
     if (action === "select" || action === "alt") { if (item) onPick?.(item); return true; }
     if (action === "options") { if (item) onMore?.(item); return true; }
     return true;
@@ -603,7 +609,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   ].filter(Boolean) : [
     shown.length ? { glyph: g.select, label: "Ver" } : statusAction && { glyph: g.select, label: "Primer paso", offscreen: true }, // el botón ya lo dice
     list?.editable && !current()?.noEdit && { glyph: g.alt, label: "Editar" },
-    list?.person?.biography && { glyph: g.alt, label: "Biografía" },
+    bioMore() && { glyph: g.alt, label: bioOpen() ? "Ver menos" : "Leer la biografía" },
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
     { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },

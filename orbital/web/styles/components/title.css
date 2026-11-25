@@ -7,9 +7,13 @@
   animation-duration: var(--duration-fast); /* el arte aparece casi de inmediato y se queda quieto */
 }
 .title--series { grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-2); }
-/* En una serie el alto se reparte con la fila de episodios: menos aire bajo los botones (el nombre del redondo enfocado
-   cabe igual) y episodios un poco más chicos, para que el logo no tenga que encogerse. */
-.title--series .title__actions { margin-bottom: var(--space-6); }
+/* En una serie el alto se reparte con la fila de episodios: menos aire bajo los botones y episodios un poco más chicos, para
+   que el logo no tenga que encogerse. FI-4 (24 nov): pero el renglón del nombre del redondo enfocado se guarda entero (su
+   separación, su renglón y un poco de aire); con --space-6 se encimaba 7 px con «Temporada 1». */
+.title--series .title__actions { margin-bottom: calc(var(--space-2) + var(--type-label) * var(--leading-title) + var(--space-2)); }
+/* FI-6 (24 nov): el velo del lado del texto (Veil, ui.css), entre el arte y lo esencial: sobre un arte claro (Severance) la
+   clasificación quedaba en 1,1:1 y los géneros en 2,95:1. Detrás del texto, encima del arte. */
+.title__veil { z-index: var(--z-behind); }
 /* El arte casi entero: solo se funde a la izquierda y abajo, donde va el texto (antes iba al 55 % y se perdía). */
 .title__backdrop {
   position: absolute; inset: 0; z-index: var(--z-behind);
@@ -74,7 +78,7 @@
 .title__sep { opacity: var(--opacity-faint); }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
 /* PT1: la clasificación al final (T10: tras un «·», sin la cajita del iPhone). */
-.title__cert { color: var(--color-text-muted); } /* T10: sin cajita (parecía el botón B del mando); un dato más */
+.title__cert { color: var(--color-on-art-secondary); } /* T10: sin cajita (parecía el botón B del mando); un dato más. FI-6: la tinta de un rótulo sobre arte, no la gris de lo que va sobre fondo liso */
 /* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
 .title__ratings { display: flex; align-items: center; gap: var(--space-4); min-height: 1.5rem; }
 /* Vacío se quita, salvo mientras llegan (title.js · title__ratings--waiting): su lugar ya está y nada salta al llegar. */
@@ -84,10 +88,12 @@
 .title__rating-mark--trakt { height: 1.4rem; } /* el círculo se ve más chico que las cajas a la misma altura */
 .title__rating-mark--letterboxd { height: 1.1rem; } /* sus tres puntos, a lo ancho */
 
-/* Serie, con el foco en la fila: cuál episodio es («T2 · E3 · Su nombre»). Guarda su renglón aunque esté vacío. */
+/* Serie, con el foco en la fila: cuál episodio es («T2 · E3 · Su nombre»). Guarda su renglón aunque esté vacío. FI-5 (24 nov):
+   en dos renglones si hace falta (antes uno: «Episodio 1: El Regreso del…» no se leía entero en ningún lado); crece hacia
+   arriba, los botones no se mueven. */
 .title__episode {
   min-height: 1lh; font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); line-height: var(--leading-title);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance;
 }
 .title__description {
   max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed);
@@ -189,9 +195,11 @@
 }
 .title__action-name {
   position: absolute; top: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%);
-  white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); text-shadow: var(--shadow-text-strong);
+  white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); line-height: var(--leading-title); text-shadow: var(--shadow-text-strong);
   opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
 }
+/* FI-4 (24 nov): el primero de la fila (una serie sin «Ver») no centra su nombre: centrado se salía 14 px del margen. */
+.title__action--icon:first-child .title__action-name { left: 0; transform: none; }
 /* Prendido («Siguiendo», «Guardada»): vidrio elegido, el papel de lo seleccionado. En blanco se confundía con el enfocado. */
 .title__action--on .title__action-tile { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); }
 /* Foco invertido (como el menú): se ve desde el sofá. «Ver» toma el color del arte (como el Jugar de Game Glance). */
@@ -300,12 +308,15 @@
 }
 /* Las portadas crecen hacia arriba al enfocarlas (desde la esquina de abajo): arriba les queda ese lugar (antes el anillo
    de la enfocada se cortaba). */
-/* T8: aquí lo enfocado crece como un tile (la órbita ya lo marca), así entre el título y las portadas queda
-   --layout-title-to-content más solo lo que la enfocada necesita para crecer (antes ~4 rem de hueco). */
+/* T8: aquí lo enfocado crece como un tile (la órbita ya lo marca). FI-3 (24 nov, B3): crece hacia abajo, desde su esquina de
+   arriba y sin levantarse, donde la fila ya tiene lugar (su relleno de abajo); arriba solo queda el de la órbita. Antes crecía
+   hacia arriba y el lugar que se le guardaba dejaba el título casi igual de lejos de sus portadas (62 px) que de la parte de
+   arriba (65 px); la regla pide 3–4 veces más aire arriba que abajo. */
 .title__more-row:is(.title__more-row--saga, .title__more-row--more) {
   --card-focus-scale: var(--tile-focus-scale);
-  padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-4)); /* + el filo y la orilla que se desvanece arriba */
+  padding-top: calc(var(--orbit-width) + var(--orbit-gap)); /* lo que la órbita sale de la portada */
 }
+.title__more-row:is(.title__more-row--saga, .title__more-row--more) > .is-focused.card { transform: scale(var(--card-focus-scale)); transform-origin: 0 0; }
 /* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
 .title__more-row--cast { align-items: flex-start; }
 /* «Detalles»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). R2-8: el texto no tiene foco

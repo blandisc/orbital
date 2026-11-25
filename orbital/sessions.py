@@ -519,7 +519,8 @@ class Sessions:
         end = self.last_end() if item_id == "media:player" else None
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"], **({"live": True} if end.get("live") else {}),
-                         **({"meta_id": end["meta_id"], "kind": end.get("kind")} if end.get("meta_id") else {}))
+                         **({"meta_id": end["meta_id"], "kind": end.get("kind")} if end.get("meta_id") else {}),
+                         **{k: end[k] for k in ("episode", "next", "position", "duration") if end.get(k)})
         self.events.publish(event)
         if not cancelled and not item_id.startswith(("media:", "app:")):  # un juego: su resumen en la bandeja del iPhone
             try:

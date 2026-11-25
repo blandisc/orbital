@@ -126,8 +126,12 @@
    se sigue viendo el arte. Lo usa «Elegir versión» (antes a la derecha y a todo lo alto: con dos idiomas, media pantalla vacía). */
 .side-panel--bottom { align-items: flex-end; justify-content: stretch; }
 .side-panel--bottom .side-panel__panel {
-  width: auto; flex: 1; height: auto; max-height: calc(100vh - var(--space-16) - var(--safe-y));
-  margin: 0 var(--page-gutter) calc(var(--space-6) + var(--safe-y));
+  /* FI-7 (24 nov): pegado abajo, sobre el pie (su margen de abajo es el lugar del pie) y con el margen de siempre arriba: su
+     alto descuenta los dos. Antes se alineaba arriba (align-self del SidePanel) sin margen: tocaba el borde de arriba y se
+     cortaban sus esquinas (a 1920 y a 1280). */
+  align-self: flex-end;
+  width: auto; flex: 1; height: auto; max-height: calc(100vh - var(--hints-room) - var(--space-6) - var(--safe-y));
+  margin: 0 var(--page-gutter) var(--hints-room);
   animation-name: slide-in-up;
 }
 .side-panel--bottom.side-panel--leaving .side-panel__panel { animation-name: slide-out-down; }
