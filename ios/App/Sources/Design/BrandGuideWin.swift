@@ -14,7 +14,7 @@ struct WinMosaic: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.titleName) private var titleName
 
-    static let cols = 6, rows = 3, seed = 8
+    nonisolated static let cols = 6, rows = 3, seed = 8
     static let tile = CGSize(width: 54, height: 81), gap: CGFloat = 9
     static let end = 1.7, highlight = 0.95
     static let height: CGFloat = 284

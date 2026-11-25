@@ -154,7 +154,7 @@ struct OnboardingPlatforms: View {
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
-    private static let space = "platforms"
+    private nonisolated static let space = "platforms"
 
     /// Marcar: la palomita brota y el logo sale volando; el renglón de la ficha cambia cuando aterriza. Desmarcar: la ficha
     /// enseña otra de las tuyas (o vuelve a «¿Ya la pagas?»).

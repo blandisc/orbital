@@ -6,7 +6,15 @@ import OrbitalCore
 
 extension EnvironmentValues {
     /// Para cada colección, el ícono de su lista de «Esta semana» si lo es (nil: es un premio o una lista famosa).
-    @Entry var shelfWeeklyArt: (String) -> String? = { _ in nil }
+    @Entry var shelfWeeklyArt = ShelfWeeklyArt { _ in nil }
+}
+
+/// La búsqueda de `shelfWeeklyArt` envuelta para que el entorno la compare: siempre es la misma regla (lo que cambia lo lee
+/// adentro, de la repisa observada), así que dos son iguales y no repinta a quien la usa en cada cambio del entorno.
+struct ShelfWeeklyArt: Equatable {
+    let lookup: (String) -> String?
+    func callAsFunction(_ id: String) -> String? { lookup(id) }
+    static func == (_: ShelfWeeklyArt, _: ShelfWeeklyArt) -> Bool { true }
 }
 
 /// La estatuilla de un premio (Óscar, Palma, Ariel…) completa, o el objeto de una lista famosa (el disco de Criterion, la

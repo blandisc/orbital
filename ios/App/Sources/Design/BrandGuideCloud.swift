@@ -191,7 +191,7 @@ enum GuideCloudReady {
         .accessibilityHidden(true)
     }
 
-    static func row(_ posters: [(url: String?, title: String)], _ t: Double) -> some View {
+    @MainActor static func row(_ posters: [(url: String?, title: String)], _ t: Double) -> some View {
         let M = GuideTraktScene.Motion.self
         let rl = M.item(t, 0.32, 8)
         return VStack(spacing: DS.Space.s2) {
