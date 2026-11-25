@@ -158,8 +158,8 @@ def test_what_carries_a_key_needs_the_device_key(apps):
     assert ok.status_code == 200 and "NUEVA" not in json.dumps(ok.json()) and ok.json()["user"] == "fer"
     assert main.state.catalog.watch.rd_token() == "NUEVA" * 8
     assert any("cambió la clave" in e.get("message", "") for e in events)
-    away = TestClient(public.app, base_url="https://legion.ts.net", client=("100.64.0.9", 3))
-    assert away.get("/api/realdebrid?full=1", headers=key).status_code == 403  # solo por Tailscale (loopback)
+    away = TestClient(public.app, base_url="https://legion.ts.net", client=("192.168.1.50", 3))
+    assert away.get("/api/realdebrid?full=1", headers=key).status_code == 403  # solo por Tailscale (loopback o la tailnet); la red de casa no
 
 
 def test_each_device_switches_only_its_own_and_takes_it_when_removed(apps):
