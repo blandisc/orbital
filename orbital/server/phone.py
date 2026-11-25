@@ -235,13 +235,15 @@ def by_tailscale(request: Request) -> bool:
     return ip.is_loopback or any(ip in net for net in TAILNET)
 
 
-def with_key(request: Request, kind: str = "secret") -> dict:
-    """Lo que lleva una clave (contrato, secrets): solo con llave de aparato, solo desde loopback (Tailscale) y con su
-    límite por hora."""
+def with_key(request: Request, kind: str = "secret", inbound: bool = False) -> dict:
+    """Lo que lleva una clave (contrato, secrets): solo con llave de aparato, solo por Tailscale y con su límite por hora.
+    `inbound` (TB-B, Fernando, 25 nov 2026: «mandar sí, traer no»): una clave que el iPhone *manda* a la TV puede llegar
+    también por el Funnel (https y con la llave del aparato); lo que *sale* de la TV (una clave entera) sigue solo por
+    Tailscale. Quien tuviera la llave podría cambiar la clave de la TV, nunca leerla."""
     device = device_of(request)
     if device is None:
         raise KeyRequired()
-    if not by_tailscale(request):
+    if not inbound and not by_tailscale(request):
         raise HTTPException(403, "Esto solo viaja por Tailscale")
     if not request.app.state.main.state.devices.allow(device["device_id"], kind):
         raise HTTPException(429, "Ya fueron muchas veces esta hora. Inténtalo más tarde.")

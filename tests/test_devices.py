@@ -160,6 +160,10 @@ def test_what_carries_a_key_needs_the_device_key(apps):
     assert any("cambió la clave" in e.get("message", "") for e in events)
     away = TestClient(public.app, base_url="https://legion.ts.net", client=("192.168.1.50", 3))
     assert away.get("/api/realdebrid?full=1", headers=key).status_code == 403  # solo por Tailscale (loopback o la tailnet); la red de casa no
+    # TB-B: mandar una clave sí entra por el Funnel (con la llave); traer la de la TV, no.
+    funnel = {**key, "Tailscale-Funnel-Request": "?1"}
+    assert away.put("/api/realdebrid", json={"token": "NUEVA" * 8}, headers=funnel).status_code != 403
+    assert away.get("/api/realdebrid?full=1", headers=funnel).status_code == 403
 
 
 def test_each_device_switches_only_its_own_and_takes_it_when_removed(apps):

@@ -416,7 +416,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     async def companion_debrid_put(request: Request) -> JSONResponse:
         """«Pasar a la TV»: la clave fija de tu nube, probada antes de guardarla (contrato, secrets). Con «service»
         (realdebrid, torbox o alldebrid) esa nube queda como la de la TV; sin él, Real-Debrid (el iPhone de antes)."""
-        device = with_key(request, "rd_put")
+        device = with_key(request, "rd_put", inbound=True)
         try:
             body = await request.json()
         except ValueError:
@@ -439,7 +439,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.put("/api/opensubtitles")
     async def companion_opensubtitles_put(request: Request) -> JSONResponse:
         """«Pasar a la TV»: tu cuenta de OpenSubtitles del iPhone (usuario y token, nunca la contraseña)."""
-        with_key(request, "rd_put")  # el mismo límite que cambiar una clave (5 por hora)
+        with_key(request, "rd_put", inbound=True)  # el mismo límite que cambiar una clave (5 por hora)
         try:
             body = await request.json()
         except ValueError:
