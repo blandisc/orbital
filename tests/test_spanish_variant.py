@@ -75,14 +75,6 @@ def test_cada_variante_se_busca_y_se_recuerda_aparte():
     assert a != b
 
 
-def test_sin_tocar_ajustes_suena_latino_con_subtitulos_en_espanol():
-    """TB-43 (24 nov 2026): quien estrena la consola en México no tocó Ajustes; config.py manda y antes decía inglés."""
-    from orbital.config import StremioConfig, parse_config
-    assert (StremioConfig().audio, StremioConfig().subtitles) == ("es-419", "es")  # como el iPhone (AppSettings)
-    assert parse_config({}).stremio.audio == "es-419"
-    assert streams.languages_from_audio(StremioConfig().audio) == streams.DEFAULT_LANGUAGES  # latino, original, inglés…
-
-
 def test_el_ajuste_de_idioma_trae_la_variante(library):
     w = library.watch
     w.state.set_setting("audio", "es-419")

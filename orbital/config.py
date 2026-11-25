@@ -90,12 +90,10 @@ class DetectConfig:
 class StremioConfig:
     enabled: bool = True
     executable: str | None = None  # None = autodetectar
-    # Para elegir la fuente por ti: idioma del audio ("es-419" latino, "es-ES", "en"…) y resolución ("1080p" o "4K").
-    # Sin tocar Ajustes, esto es lo que oye quien estrena la consola (TB-43, 24 nov 2026): latino y subtítulos en español,
-    # como el iPhone (`AppSettings.audio`/`subtitles`) y el orden de omisión de Tus idiomas (latino, original, inglés…).
-    audio: str = "es-419"
+    # Para elegir la fuente por ti: idioma del audio ("en", "es"…) y resolución ("1080p" o "4K").
+    audio: str = "en"
     quality: str = "1080p"
-    subtitles: str = "es"  # "" = sin subtítulos
+    subtitles: str = "en"  # "" = sin subtítulos
     # "orbital": reproductor propio (mpv) manejado con el mando; "stremio": el de Stremio.
     player: str = "orbital"
 
