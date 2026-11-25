@@ -48,10 +48,12 @@ struct RemoteStatusCard: View {
                 Spacer(minLength: 0)
             }
         } else {
+            // El planeta del tamaño del título y los dos al centro (CT2, 25 nov 2026: «se ve muy pequeño y no está centrado»).
             HStack(spacing: DS.Space.s2) {
-                OrbitalMark(size: DS.Size.markSmall).foregroundStyle(DS.text)
+                OrbitalMark(size: DS.Size.markRemote).foregroundStyle(DS.text)
                 Text("Tu Orbital").recipe(.section)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 }

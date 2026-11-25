@@ -407,6 +407,7 @@ siempre en el idioma de la app, también si cambia con la pantalla abierta: un t
 (TN1, 25 nov 2026: «Idiomas» seguía en español con la app en inglés). Prueba: `testNavigationTitlesFollowTheLanguage`.
 Toda frase que se ve en pantalla tiene su inglés, también las que empiezan con un dato o un número («en 3 meses», «de 10»,
 «\(n) por ver») (T2, 25 nov 2026). Prueba: `python3 scripts/ios_strings.py --check` (en la CI, `tests/test_ios_strings.py`).
+Lo que llega de la TV en español (las teclas del control, la sección) también se traduce: pasa por el catálogo con `Text(tv:)`, nunca tal cual (CT1, 25 nov 2026; `DesignRulesTests.testRemoteTranslatesWhatTheTVSends`).
 
 **Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
 

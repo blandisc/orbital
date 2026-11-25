@@ -411,6 +411,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// El planeta solo, junto a un título o en el widget.
         static let markSmall: CGFloat = 22
+        /// El planeta junto a «Tu Orbital» en el control: más grande que junto a un título suelto.
+        static let markRemote: CGFloat = 34
         /// Lo que una marca redonda (el jitomate) baja de la línea del título: como la «o», que cae un poco abajo de la línea,
         /// así su cuerpo queda centrado con las mayúsculas en vez de verse flotando.
         static let markOvershoot: CGFloat = 1.5

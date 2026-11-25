@@ -241,7 +241,7 @@ struct RemoteSheet: View {
     private func key(_ model: TVNowModel, _ symbol: String, _ legendKey: String?, _ fallback: Text,
                      _ action: OrbitalRemote.InputAction, hold: OrbitalRemote.InputAction? = nil) -> some View {
         let named = legendKey.flatMap { model.legend[$0] }
-        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback,
+        return RemoteKey(symbol: symbol, title: named.map { Text(tv: $0) } ?? fallback,
                          longPress: hold.map { held in { Task { await model.press(held) } } }) {
             collapse()
             Task { await model.press(action) }
@@ -454,14 +454,14 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
             trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
-            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios y versión") : Text("Versión"))) {
+            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(tv: $0) } ?? (series ? Text("Episodios y versión") : Text("Versión"))) {
                 Task { await model.press(.options) }
                 withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }
             }
             .accessibilityIdentifier("remote-options")
             // Atrás hasta la última pantalla y ahí Salir (Fernando, 6 nov): lo decide la TV (cierra el panel abierto o sale).
             let exits = (model.legend["back"] ?? "Salir") == "Salir"
-            RemoteKey(symbol: exits ? DS.Symbol.leave : "chevron.backward", title: model.legend["back"].map { Text(verbatim: $0) } ?? Text("Salir")) {
+            RemoteKey(symbol: exits ? DS.Symbol.leave : "chevron.backward", title: model.legend["back"].map { Text(tv: $0) } ?? Text("Salir")) {
                 Task { await model.press(.back) }
             }
         }
@@ -535,7 +535,7 @@ struct RemoteSheet: View {
                 // Un renglón siempre, completo o nada (I3, 10 nov): si no cabe entero entre las teclas («Películas y se…» con
                 // letra grande), se esconde; es lo secundario, las teclas ya dicen qué hacen y la TV enseña la sección.
                 ViewThatFits(in: .horizontal) {
-                    Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                    Text(tv: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
                     EmptyView()
                 }
             }

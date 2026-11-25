@@ -78,7 +78,7 @@ struct TouchPad: View {
             HStack { chevron("chevron.left", .left); Spacer(); chevron("chevron.right", .right) }
             VStack(spacing: DS.Space.s1) {
                 // Dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, «Elegir» (no la letra del mando: A16).
-                (selectLabel.map { Text(verbatim: $0) } ?? Text("Elegir")).recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
+                (selectLabel.map { Text(tv: $0) } ?? Text("Elegir")).recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
                 // Con letra de accesibilidad el pad no da para dos renglones entre las flechas: queda solo lo que hace tocar.
                 if !typeSize.isAccessibilitySize {
                     Text("Desliza para moverte").recipe(.caption, color: DS.textFaint)
@@ -494,4 +494,10 @@ private struct PadAccessibility: ViewModifier {
             .accessibilityAction(named: Text("Derecha")) { onAction(.right) }
             .accessibilityAction { onAction(.select) }
     }
+}
+
+extension Text {
+    /// Lo que manda la TV (el nombre de una tecla, la sección): llega en español y pasa por el catálogo, así el control
+    /// sale en el idioma de la app (CT1, 25 nov 2026: «en el control hay elementos sin traducir»). Si no está, tal cual.
+    init(tv text: String) { self.init(LocalizedStringKey(text)) }
 }

@@ -60,3 +60,12 @@ extension DesignRulesTests {
         XCTAssertEqual(found, [], "cierra la hoja y abre después (como `go` en DecideView)")
     }
 }
+
+extension DesignRulesTests {
+    /// CT1 (25 nov 2026): lo que manda la TV (las teclas, la sección) pasa por el catálogo con `Text(tv:)`, no tal cual.
+    func testRemoteTranslatesWhatTheTVSends() throws {
+        let found = hits(#"(legend\[[^\]]*\]|selectLabel|named)\.map \{ Text\(verbatim"#, in: try sources(["Design", "Screens"]))
+            + hits(#"Text\(verbatim: section\)"#, in: try sources(["Screens"]))
+        XCTAssertEqual(found, [], "usa Text(tv:) para lo que llega de la TV")
+    }
+}
