@@ -258,7 +258,12 @@ struct MosaicCover: View {
     }   // lo que le queda a la pantalla (sin el panel del control)
     private var columns: Int { matchedWidth != nil ? needed : min(needed, DS.ParaTiB.coverMaxColumns) }
     private var widen: CGFloat { matchedWidth.map { $0 / Self.columnWidth } ?? CGFloat(needed) / CGFloat(columns) }
-    private var rows: Int { Int((Double(DS.ParaTiB.coverRows) / Double(widen)).rounded(.up)) }
+    /// MT4-A: con columnas del ancho del mosaico, una vuelta cubre todo el alto del muro; si no, al abrirse se veía la misma
+    /// tira repetida abajo (un segundo mosaico igual al de arriba; Fernando, 25 nov 2026).
+    private var rows: Int {
+        if matchedWidth != nil { return Int((DS.ParaTiB.coverWallHeight / (columnWidth / DS.Poster.aspect + DS.Space.s2)).rounded(.up)) + 1 }
+        return Int((Double(DS.ParaTiB.coverRows) / Double(widen)).rounded(.up))
+    }
     private var columnWidth: CGFloat { Self.columnWidth * widen }
     private var loop: CGFloat { (columnWidth / DS.Poster.aspect + DS.Space.s2) * CGFloat(rows) }
 
