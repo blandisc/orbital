@@ -157,7 +157,13 @@ PiP en iOS) es una envoltura Swift más cómoda; Dolby Vision, PGS y AirPlay sin
 - **Atendido en parte (25 nov 2026):** al volver a la app tras más de ~30 s en pausa, iOS obliga a soltar el video y hay que
   pedirlo otra vez a Real-Debrid (1–3 s que no se pueden quitar). Si tocas play a media carga, suena en cuanto abre, sin la
   espera de 0,25 s del primer cuadro. Volver antes de ~30 s ya era instantáneo. Empezar a rearmar en «inactiva» no se vale: el
-  motor sigue en modo segundo plano hasta «activa» y soltaría lo cargado.
+  motor sigue en modo segundo plano hasta «activa» y soltaría lo cargado. Comprobado en el simulador (25 nov): 75 s fuera en
+  pausa, el motor soltó el video y al tocar play sonó en menos de 1 s, sin carga; volviendo con el video sonando, siguió sin
+  carga.
+- **Visto en el simulador (25 nov 2026):** una vez, tras volver y pausar, la carga se quedó encima 87 s con el video quieto y
+  nada pendiente. No se repitió; ahora, si la carga sigue y la regla dice que nada carga, se quita en el siguiente tic y la
+  bitácora lo anota («la carga seguía sin nada cargando»; «carga larga» trae `regla=` y `corre=`).
+- **Sin comprobar:** el PiP no se abre solo en el simulador; su trabada y sus subtítulos se miden en el iPhone.
 
 ## 9. Contradicciones sin resolver
 
