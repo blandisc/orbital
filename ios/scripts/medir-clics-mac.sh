@@ -17,7 +17,7 @@
 set -euo pipefail
 SECS=${1:?segundos}; OUT=${2:?carpeta}; CLICKS=${3:-}
 mkdir -p "$OUT"
-pid=$(pgrep -x Orbital) || { echo "Abre Orbital primero" >&2; exit 1; }
+pid=$(pgrep -f 'Wrapper/Orbital.app/Orbital' | head -1); [[ -n $pid ]] || { echo "Abre Orbital primero" >&2; exit 1; }
 rm -rf "$OUT/clics.trace"
 echo "Grabando ${SECS} s (Orbital $pid)…"
 xcrun xctrace record --template 'Time Profiler' --attach "$pid" --time-limit "${SECS}s" --output "$OUT/clics.trace" >/dev/null

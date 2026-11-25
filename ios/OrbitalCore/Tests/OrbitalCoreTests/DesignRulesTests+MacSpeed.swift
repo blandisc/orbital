@@ -27,6 +27,30 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("DecideSheet.swift").contains("DecideFanMemo"), "el abanico de «Decide por mí» se guarda por versión del modelo")
     }
 
+    /// Lo que llega tarde a la ficha (las versiones, el pedido a la nube) se pinta en su propia pieza: leído en el cuerpo de la
+    /// ficha o en su columna, cada llegada volvía a armar la ficha entera (~90 ms en la Mac). Y un estado que la ficha ancha no
+    /// usa no se prende en ella (`belowFold`, que solo usa la de una columna).
+    func testLateDataRedrawsOnlyItsPiece() throws {
+        let file = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "TitleView.swift" })
+        let code = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+        for piece in ["actions(model)", "details(model)"] {
+            var rest = code[...]
+            var count = 0
+            while let use = rest.range(of: piece) {
+                let before = rest[..<use.lowerBound]
+                if !before.hasSuffix("func ") {
+                    count += 1
+                    XCTAssertTrue(before.hasSuffix("TitleLayoutHost { AnyView("), "`\(piece)` va en su propia pieza (`TitleLayoutHost`): lee lo que llega tarde")
+                }
+                rest = rest[use.upperBound...]
+            }
+            XCTAssertGreaterThan(count, 0, "no encontré `\(piece)`")
+        }
+        let follow = try XCTUnwrap(code.range(of: "private struct TitleDebridFollow"), "falta `TitleDebridFollow`")
+        XCTAssertFalse(code[..<follow.lowerBound].contains("model.debridRequest"), "el pedido a la nube se lee solo en `TitleDebridFollow`")
+        XCTAssertTrue(code.contains("guard sizeClass != .regular, !belowFold"), "`belowFold` no se prende en la ficha ancha")
+    }
+
     /// Un valor que se compara no avisa cuando es el mismo: con `@Tracked(always: true)` cada sondeo repintaba la ficha entera
     /// aunque nada hubiera cambiado. `always` queda para lo que no se puede comparar.
     func testTrackedValuesCompareBeforeNotifying() throws {

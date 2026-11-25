@@ -51,19 +51,35 @@ struct TitleView: View {
     @State var ratingSeason: Int?
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
-    @State private var viewport: CGSize = .zero
-    @State private var belowHero: CGFloat = 0
+    @State private var measure = TitleMeasure()
+    /// En la Mac las tres medidas (pantalla, margen de arriba, lo de bajo el arte) llegan juntas: cada una por su lado volvía
+    /// a pintar y acomodar la ficha entera, tres veces seguidas al abrirla (~90 ms; 24 nov 2026). Ver `TitleMeasure`.
+    @State private var measureBox = TitleMeasure.Box()
+    private var viewport: CGSize { measure.viewport }
+    private var belowHero: CGFloat { measure.belowHero }
     /// Lo de abajo de la ficha (episodios, reparto, detalles) se arma cuando la ficha ya llegó, no en el mismo cuadro del
     /// toque: así el toque responde al momento (en la Mac armar todo junto congelaba 250–400 ms al abrir; 24 nov 2026).
     @State private var belowFold = false
     /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
-    @State var topInset: CGFloat = 0
+    var topInset: CGFloat { measure.topInset }
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
 
     init(route: TitleRoute) {
         self.route = route
         _observer = State(wrappedValue: ModelObserver(TitleModel(AppEnvironment.shared.services, kind: route.kind, metaID: route.metaID, hint: (route.title, route.poster))))
+    }
+
+    /// Guarda una medida. En la Mac se juntan las que llegan en la misma vuelta y se aplican una vez (el panel entra desde
+    /// fuera de la pantalla: esa vuelta no se ve); en el iPhone y el iPad, al momento, como siempre.
+    private func measured(_ change: (inout TitleMeasure) -> Void) {
+        guard ThisDevice.isMac else { change(&measure); return }
+        measureBox.add(to: measure, change) {
+            #if MAC_DRIVE
+            MacDrive.state("measure")
+            #endif
+            measure = $0
+        }
     }
 
     /// La ficha con su arte, su barra y su fondo. En partes (`framed`, `loaded`): el cuerpo de una sola pieza no lo alcanzaba
@@ -79,8 +95,8 @@ struct TitleView: View {
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
         #endif
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { new in measured { $0.viewport = new } }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { new in measured { $0.topInset = new } }
         // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
         // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
         // En el iPad y la Mac la barra de pestañas ocupa ese renglón: el nombre no sube a la barra (se encimaba).
@@ -113,11 +129,14 @@ struct TitleView: View {
         .onChange(of: appEnv?.ui.returnedToApp) { Task { await model.refreshState() } }
         .task(id: model.metaID) {   // Letterboxd es de películas: las series no se preguntan
             guard route.kind == "movie" else { return }
-            letterboxdInfo = await Letterboxd(http: env.services.http, kv: env.services.kv).info(imdb: model.metaID)
+            let info = await Letterboxd(http: env.services.http, kv: env.services.kv).info(imdb: model.metaID)
+            if info != letterboxdInfo { letterboxdInfo = info }   // sin reseñas no hay nada que volver a pintar
         }
         .task { await model.loadConsoleDetails() }
-        .task {   // lo de abajo, cuando la ficha ya llegó (ver `belowFold`)
-            guard (try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))) != nil else { return }
+        // Lo de abajo, cuando la ficha ya llegó (ver `belowFold`). Solo la ficha de una columna lo usa: en la ancha (iPad, Mac)
+        // prenderlo volvía a armar la ficha entera a los 0.3 s sin cambiar nada a la vista.
+        .task(id: sizeClass == .regular) {
+            guard sizeClass != .regular, !belowFold, (try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))) != nil else { return }
             belowFold = true
         }
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
@@ -149,12 +168,18 @@ struct TitleView: View {
             }
             #endif
             await tint.load(model.background ?? model.poster)
+            #if MAC_DRIVE
+            MacDrive.state("tint")
+            #endif
         }
     }
 
     var body: some View {
         let _ = BodyCount.tick("title", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = observer.model
+        #if MAC_DRIVE
+        let _ = MacDrive.body("title")
+        #endif
         loaded(model)
         .appSheet(item: $sourcesFor) { target in
             SourcesSheet(model: model, videoID: target.videoID, fromHere: target.fromHere, choose: { source, purpose in
@@ -168,13 +193,13 @@ struct TitleView: View {
         }
         .appSheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
         .appSheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }
-        .debridFlowIntro(when: model.debridOffer != nil && model.debridRequest == nil)   // RX3-A: «Pedir a la nube» a la vista
+        // RX3-A: «Pedir a la nube» a la vista; y si un pedido cambió de estado (quedó listo, lo cancelaste), la versión y el botón
+        // se ponen al día. Aparte (`TitleDebridFollow`): leer el pedido aquí rearmaba toda la ficha cuando llegaban las versiones.
+        .modifier(TitleDebridFollow(model: model) { Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } })
         .task { _ = await DebridRequestNotifier.permission() }   // IOS-8: sin permiso no se promete «Te aviso»
         .debridCancelConfirmation(isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
                                   name: cancelling?.title ?? "", finished: false,
                                   service: cancelling?.cloud ?? env.services.debrid.service, locale: env.uiLocale) { if let request = cancelling { Task { await cancelRequest(request) } } }
-        // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
-        .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
         .modifier(TitleViewingsAndNote(model: model, viewingsFor: $viewingsFor, noting: $noting, ratingSeason: $ratingSeason))
         .appSheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
@@ -202,9 +227,9 @@ struct TitleView: View {
                     // anidado de datos + acciones + secciones; cada pedazo con su propio tipo lo acota (`TitleFactsLine`).
                     AnyView(VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         facts(model)
-                        actions(model)
+                        TitleLayoutHost { AnyView(actions(model)) }   // aparte: las versiones llegan tarde y solo rearman esto
                     })
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { new in measured { $0.belowHero = new } }
                     AnyView(readingSections(model))
                 }
                 .modifier(TitleEntrance())   // el arte llega con el zoom; lo de abajo entra detrás de él
@@ -247,7 +272,7 @@ struct TitleView: View {
                                 TitleLogo(url: model.logo, title: name, size: .hero, grow: stage.grow)
                                     .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: .leading)
                                 facts(model, leading: true)
-                                actions(model).alignmentGuide(.bandAnchor) { $0[.top] }
+                                TitleLayoutHost { AnyView(actions(model)) }.alignmentGuide(.bandAnchor) { $0[.top] }
                             }
                             .frame(width: column, alignment: .leading)
                             synopsis(model, lines: DS.TitleAction.bandSynopsisLines)
@@ -261,7 +286,7 @@ struct TitleView: View {
                             TitleLogo(url: model.logo, title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
                                 .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: stage.portrait ? .center : .leading)
                             facts(model, leading: !stage.portrait)
-                            actions(model)
+                            TitleLayoutHost { AnyView(actions(model)) }
                             synopsis(model, centered: stage.portrait)
                         }
                         .frame(maxWidth: column, alignment: stage.portrait ? .center : .leading)
@@ -310,7 +335,7 @@ struct TitleView: View {
                                     columns: DS.Mac.reviewColumns)
         }
         if let extras = model.extras { rich(extras, trailers: false, people: false).padding(.horizontal, -side) }
-        details(model)
+        TitleLayoutHost { AnyView(details(model)) }   // lee la versión, que llega tarde
     }
 
     /// iPad: pestañas bajo el arte (Episodios · Reparto y equipo · Más como esto · Detalles) y solo lo de la elegida.
@@ -338,7 +363,7 @@ struct TitleView: View {
             }
             .frame(maxWidth: DS.TitleAction.wideReading, alignment: .leading)
             if let extras = model.extras { rich(extras, people: false, similar: false).padding(.horizontal, -side) }
-            details(model)
+            TitleLayoutHost { AnyView(details(model)) }
         }
     }
 
@@ -369,7 +394,7 @@ struct TitleView: View {
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).
         if let extras = model.extras { rich(extras).padding(.horizontal, -side) }
-        details(model)
+        TitleLayoutHost { AnyView(details(model)) }   // lee la versión, que llega tarde
     }
 
     // MARK: partes
@@ -601,9 +626,50 @@ private struct DismissWhen: ViewModifier {
     }
 }
 
+/// Lo de Real-Debrid que la ficha sigue: «Así funciona» la primera vez que aparece «Pedir a la nube», y volver a buscar la
+/// versión cuando un pedido cambia de estado. Aparte para que solo esta pieza lea el pedido (que depende de las versiones).
+private struct TitleDebridFollow: ViewModifier {
+    let model: TitleModel
+    let reload: () -> Void
+    func body(content: Content) -> some View {
+        content
+            .debridFlowIntro(when: model.debridOffer != nil && model.debridRequest == nil)
+            .onChange(of: model.debridRequest?.state) { _, _ in reload() }
+    }
+}
+
 /// Lo de adentro de la ficha en su propia vista: SwiftUI lo arma en su turno y no dentro del cuerpo de `TitleView`, que es
 /// grande y se copia en cada cierre (ver `framed`).
 private struct TitleLayoutHost: View {
     let make: () -> AnyView
-    var body: some View { make() }
+    var body: some View {
+        #if MAC_DRIVE
+        let _ = MacDrive.body("host")
+        #endif
+        make()
+    }
+}
+
+/// Lo que la ficha mide de sí misma: la pantalla visible, el margen de arriba y lo que hay bajo el arte hasta las acciones.
+struct TitleMeasure: Equatable {
+    var viewport: CGSize = .zero
+    var topInset: CGFloat = 0
+    var belowHero: CGFloat = 0
+
+    /// Junta las medidas que llegan en la misma vuelta del hilo de la pantalla y las entrega una sola vez, en la siguiente.
+    @MainActor final class Box {
+        private var pending: TitleMeasure?
+        func add(to current: TitleMeasure, _ change: (inout TitleMeasure) -> Void, apply: @escaping (TitleMeasure) -> Void) {
+            let first = pending == nil
+            var next = pending ?? current
+            change(&next)
+            pending = next
+            guard first else { return }
+            DispatchQueue.main.async { [self] in
+                guard let ready = pending else { return }
+                pending = nil
+                if ready != current { apply(ready) }
+            }
+        }
+    }
 }

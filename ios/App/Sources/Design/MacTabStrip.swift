@@ -212,7 +212,18 @@ extension View {
     /// (el vidrio solo no se veía: por eso los demás controles de la Mac llevan `macPillBase`).
     /// En el iPhone y el iPad, el vidrio de siempre (ahí va sobre la barra del sistema y ya se lee).
     func macTopGlass(_ shape: some Shape) -> some View {
+        #if MAC_DRIVE
+        if MacDrive.noGlass { return AnyView(self) }   // solo para medir
+        // Opciones para Fernando (24 nov): esmerilado con el mismo tinte (sin refracción ni brillo) y cápsula sólida.
+        if MacDrive.frostGlass { return AnyView(background(Capsule().fill(DS.Mac.topGlassTint)).background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: DS.Stroke.regular))) }
+        if MacDrive.solidGlass { return AnyView(macPillBase(Capsule())) }
+        if MacDrive.glassInstant { return AnyView(glassEffect(.regular.tint(DS.Mac.topGlassTint).interactive(), in: shape).glassEffectTransition(.identity)) }
+        if MacDrive.stillGlass { return AnyView(glassEffect(.regular.tint(DS.Mac.topGlassTint), in: shape)) }
+        return AnyView(glassEffect(ThisDevice.isMac ? .regular.tint(DS.Mac.topGlassTint).interactive() : .regular.interactive(), in: shape))
+        #else
         glassEffect(ThisDevice.isMac ? .regular.tint(DS.Mac.topGlassTint).interactive() : .regular.interactive(), in: shape)
+        #endif
     }
 
     /// En la Mac, una sombra bajo la barra de arriba: sobre el mosaico de Explorar o la portada de Inicio las pestañas se

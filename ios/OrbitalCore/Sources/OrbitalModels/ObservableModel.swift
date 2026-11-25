@@ -80,6 +80,12 @@ open class ObservableModel: Observable {
     public final func notifyListeners() { for handler in observers.values { handler() } }
 }
 
+/// Para medir: quién avisó (solo lo prenden las compilaciones de medición de la Mac, `MacDrive`; apagado no cuesta nada).
+@MainActor public enum Tracking {
+    public static var changed: ((AnyKeyPath) -> Void)?
+    public static var read: ((AnyKeyPath) -> Void)?
+}
+
 /// Una propiedad publicada que avisa sola (V9): la vista que la lee se vuelve a pintar solo cuando ESTA cambia, y quien
 /// escucha todo el modelo (`onChange`, `trackAll`) se entera igual que antes con `changed()`. Con un valor `Equatable`, poner
 /// el mismo valor no avisa (como el `didSet { if oldValue != … }` de antes); `always: true` avisa siempre.
@@ -110,12 +116,14 @@ public struct Tracked<Value> {
     ) -> Value {
         get {
             model.access(model, wrappedKeyPath)
+            Tracking.read?(wrappedKeyPath)
             return model[keyPath: storageKeyPath].value
         }
         set {
             let storage = model[keyPath: storageKeyPath]
             if let same = storage.same, same(storage.value, newValue) { return }
             model.mutate(model, wrappedKeyPath) { model[keyPath: storageKeyPath].value = newValue }
+            Tracking.changed?(wrappedKeyPath)
             if storage.alone { model.notifyListeners() } else { model.changed() }
         }
     }

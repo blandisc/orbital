@@ -3,6 +3,7 @@ import Darwin
 import OrbitalCore
 #if MAC_DRIVE
 import os
+import OrbitalModels
 #endif
 
 /// Cuánto tarda en verse cada cosa (con `-perf`): cada marca se anota una sola vez, en milisegundos desde que arrancó el
@@ -605,6 +606,16 @@ final class MainPing: @unchecked Sendable {
     private static let log = Logger(subsystem: "mx.iracheta.orbital", category: "drive")
     static func start(tabs: MacTabs, closeTitle: @escaping () -> Void) {
         guard let script = UserDefaults.standard.string(forKey: "macDrive") else { return }
+        // Qué dato de la ficha avisó, y cuándo se volvió a pintar (`body`): para saber qué junta un acomodo con otro.
+        Tracking.changed = { path in
+            if let name = TitleModel.trackedName(path) { log.notice("set \(name, privacy: .public)") }
+        }
+        // Qué lee cada cuerpo (`-macReads YES`, solo para buscar la causa: escribir cada lectura ensucia la medida).
+        if UserDefaults.standard.bool(forKey: "macReads") {
+            Tracking.read = { path in
+                if let name = TitleModel.trackedName(path) { log.notice("read \(name, privacy: .public)") }
+            }
+        }
         Task { @MainActor in
             for (i, line) in script.split(separator: "|").enumerated() {
                 let w = line.split(separator: " ").map(String.init)
@@ -625,5 +636,16 @@ final class MainPing: @unchecked Sendable {
             log.notice("mark listo")
         }
     }
+
+    /// `-macStillGlass`: el vidrio de arriba sin respuesta al puntero (para aislar su costo al cambiar de pestaña).
+    static let stillGlass = UserDefaults.standard.bool(forKey: "macStillGlass")
+    /// `-macNoGlass`: sin vidrio arriba; `-macGlassInstant`: el vidrio sin su entrada animada al volver a una pestaña.
+    static let noGlass = UserDefaults.standard.bool(forKey: "macNoGlass")
+    static let glassInstant = UserDefaults.standard.bool(forKey: "macGlassInstant")
+    static let frostGlass = UserDefaults.standard.bool(forKey: "macFrostGlass")
+    static let solidGlass = UserDefaults.standard.bool(forKey: "macSolidGlass")
+
+    static func body(_ name: StaticString) { log.notice("body \(name, privacy: .public)") }
+    static func state(_ name: StaticString) { log.notice("state \(name, privacy: .public)") }
 }
 #endif

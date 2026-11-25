@@ -157,6 +157,60 @@ public final class TitleModel: ObservableModel {
         if metaID.hasPrefix("tt") { background = String(format: ForYou.metahubBackground, metaID) }
     }
 
+    /// Cuánto espera Cinemeta a su traducción para pintarse junto con ella.
+    /// Para medir (`Tracking`, solo en las compilaciones de medición de la Mac): el nombre de cada dato que se lee o cambia.
+    public static func trackedName(_ path: AnyKeyPath) -> String? { trackedNames[path] }
+    private static let trackedNames: [AnyKeyPath: String] = [
+        \TitleModel.title: "title",
+        \TitleModel.originalTitle: "originalTitle",
+        \TitleModel.info: "info",
+        \TitleModel.credits: "credits",
+        \TitleModel.poster: "poster",
+        \TitleModel.background: "background",
+        \TitleModel.seasons: "seasons",
+        \TitleModel.selectedSeason: "selectedSeason",
+        \TitleModel.rows: "rows",
+        \TitleModel.inLibrary: "inLibrary",
+        \TitleModel.lists: "lists",
+        \TitleModel.loadingLists: "loadingLists",
+        \TitleModel.inSomeList: "inSomeList",
+        \TitleModel.traktAvailable: "traktAvailable",
+        \TitleModel.isFavorite: "isFavorite",
+        \TitleModel.isLoading: "isLoading",
+        \TitleModel.error: "error",
+        \TitleModel.message: "message",
+        \TitleModel.consoleOverview: "consoleOverview",
+        \TitleModel.extras: "extras",
+        \TitleModel.bestSource: "bestSource",
+        \TitleModel.recommendedSource: "recommendedSource",
+        \TitleModel.recommendedLanguage: "recommendedLanguage",
+        \TitleModel.poorFit: "poorFit",
+        \TitleModel.sourceCheck: "sourceCheck",
+        \TitleModel.unavailableCause: "unavailableCause",
+        \TitleModel.debridOffer: "debridOffer",
+        \TitleModel.wantedOffer: "wantedOffer",
+        \TitleModel.traktRating: "traktRating",
+        \TitleModel.lookupEmpty: "lookupEmpty",
+        \TitleModel.listedHashes: "listedHashes",
+        \TitleModel.meta: "meta",
+        \TitleModel.localized: "localized",
+        \TitleModel.entry: "entry",
+        \TitleModel.watched: "watched",
+        \TitleModel.downloadStates: "downloadStates",
+        \TitleModel.downloadProgress: "downloadProgress",
+    ]
+
+    static let translationWait: TimeInterval = 0.15
+
+    /// Lo que dé `task` si llega antes de `seconds`; si no, nil (y `task` sigue).
+    static func soon<T: Sendable>(_ task: Task<T, Never>, within seconds: TimeInterval) async -> T? {
+        let once = Once()
+        return await withCheckedContinuation { (done: CheckedContinuation<T?, Never>) in
+            Task { let value = await task.value; if once.claim() { done.resume(returning: value) } }
+            Task { try? await Task.sleep(for: .seconds(seconds)); if once.claim() { done.resume(returning: nil) } }
+        }
+    }
+
     public func load() async {
         isLoading = true
         defer { isLoading = false }
@@ -182,12 +236,18 @@ public final class TitleModel: ObservableModel {
         }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
+            // La traducción casi siempre llega enseguida (guardada): si llega en `translationWait`, la ficha se pinta una sola
+            // vez con todo; antes se pintaba y acomodaba entera dos veces seguidas (~35 ms aparte, 24 nov 2026). Si tarda, el
+            // arte y el póster no la esperan.
+            let localizer = services.localizer, kind = kind
+            let translating = Task { await localizer.meta(kind: kind, meta: original) }
+            let soon = await Self.soon(translating, within: Self.translationWait)
             meta = original
-            // Arte y póster en cuanto llega Cinemeta; el texto traducido llega después.
             poster = CinemetaParsing.medium(original["poster"]?.string) ?? poster
             // Si Cinemeta no trae fondo, tampoco hay en metahub: se cae al póster (no a un hueco).
             if let art = original["background"]?.string, !art.isEmpty { background = art } else { background = nil }
-            let local = await services.localizer.meta(kind: kind, meta: original)
+            let local: JSON
+            if let soon { local = soon } else { local = await translating.value }
             localized = local
             title = local["name"]?.string ?? original["name"]?.string ?? title
             originalTitle = original["name"]?.string ?? title

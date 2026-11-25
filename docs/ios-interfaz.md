@@ -1200,6 +1200,11 @@ marca cada una), tres rondas antes (2531) y cuatro después (2533).
   (`ObservableModel.revision`, el abanico de «Decide por mí»), y una propiedad publicada que se compara no avisa con el
   mismo valor (`@Tracked` sin `always`). `DesignRulesTests.testWhatIsNotSeenIsNotBuilt` y
   `testTrackedValuesCompareBeforeNotifying` lo vigilan.
+- **Lo que llega tarde se pinta en su propia pieza** (24 nov, segunda pasada). En la ficha las versiones llegan al final
+  (~0.4–1 s): «Ver», sus acciones y los detalles las leen dentro de su propia vista (`TitleLayoutHost`), y el pedido a la
+  nube se sigue en `TitleDebridFollow`. Leídas en el cuerpo de la ficha, cada llegada volvía a armar la ficha entera. Un
+  estado que una forma de la ficha no usa no se prende en ella (`belowFold` solo en la de una columna).
+  `DesignRulesTests.testLateDataRedrawsOnlyItsPiece` lo vigila.
 - **Resultado (2531 → 2533):** abrir la app, congelada 720–800 ms → 380–640 ms (mediana 750 → 470, −37 %), trabajo de la
   pantalla en los primeros 5 s 1.8–2.1 s → 1.51–1.70 s (−18 %), lista en 3.45–3.6 s → 3.05–3.45 s (−10 %). Cambiar de pestaña: 50–190 ms
   de trabajo, igual que antes, pero quieta en 100 ms en vez de 150 ms y sin congelarse nunca. Abrir una ficha: 475–690 ms
