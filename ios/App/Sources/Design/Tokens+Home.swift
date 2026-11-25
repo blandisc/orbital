@@ -144,7 +144,7 @@ extension DS {
         static let doorSeconds = 0.6
         // MT1/MT2: el muro crece hasta que su póster mide lo que uno del mosaico (~96 → ~130 pt en el iPhone) y el mosaico entra
         // a ese mismo tamaño.
-        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0, doorUnveil: Double = 0.5
+        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0, doorUnveil: Double = 1
         /// MT3: cuánto baja el muro al abrirse la puerta (lo alto de un iPhone grande, sin la portada).
         static let doorReveal: CGFloat = 640
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una

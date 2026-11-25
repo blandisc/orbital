@@ -80,7 +80,12 @@ struct Mosaic: View {
                 if configuredIDs.isEmpty || Set(items.map(\.imdb)) != configuredIDs { configure(items: items, columnCount: columnCount) }
                 else { runtime.updateColumnCount(columnCount) }
                 runtime.updateSize(width: Double(geo.size.width), height: Double(geo.size.height))
-                if let handoff = MosaicHandoff.take() { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX) }
+                MosaicHandoff.mosaicTop = geo.frame(in: .global).minY
+                if let handoff = MosaicHandoff.take() {
+                    // MT4-A: sin animar (si no, el acomodo de siempre se alcanzaba a ver y se desvanecía encima del sembrado).
+                    var quiet = Transaction(); quiet.disablesAnimations = true
+                    withTransaction(quiet) { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX) }
+                }
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
             .onChange(of: geo.size) { _, size in

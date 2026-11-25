@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalModels
+import OrbitalCore
 
 // Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
 // puerta de «Decide por mí».
@@ -26,6 +27,8 @@ struct MosaicCover: View {
     /// `CoverOpening`.
     @State private var opening: CGFloat
     @State private var walking: Task<Void, Never>?
+    /// MT4-A: dónde empieza el muro en la pantalla, sin inclinar.
+    @State private var wallX: CGFloat = 0
     /// Cuántas columnas del muro ya están armadas. La primera vez entran una por una (`coverColumnStep`): armarlas todas
     /// juntas (unos 200 pósters, cada columna con su motor) trababa medio segundo el cambio a Explorar (17 nov 2026). Las
     /// siguientes veces, todas desde el primer cuadro.
@@ -46,6 +49,14 @@ struct MosaicCover: View {
     private var reach: CGFloat {
         guard isDoor else { return 0 }
         return max(opening, (pull?.entering ?? false) ? 1 : (pull?.doorProgress ?? 0))
+    }
+    /// MT4-A: lo que hay que recorrer el muro (a lo más media columna) para que una columna empiece donde la primera del mosaico.
+    private var alignShift: CGFloat {
+        guard matchedWidth != nil else { return 0 }
+        let pitch = columnWidth + DS.Space.s2
+        var d = (DS.Space.s2 - wallX).truncatingRemainder(dividingBy: pitch)
+        if d > pitch / 2 { d -= pitch } else if d < -pitch / 2 { d += pitch }
+        return d
     }
     /// Ya se vio que la portada se abre sola (una vez, en los ajustes locales).
     static let hintKey = "mosaic-door-hint-seen"
@@ -77,7 +88,9 @@ struct MosaicCover: View {
     }
     /// Lo que deja el mosaico (Explorar) se apaga y crece tantito, como si entraras: antes se quitaba de golpe.
     static func listsTransition(_ reduce: Bool) -> AnyTransition {
-        .opacity   // MT3: las listas ya quedaron tapadas por el muro
+        // MT4-A: al entrar al mosaico, Explorar se quita de una vez (el mosaico ya es lo que se veía; con fundido se veía el
+        // muro regresar encimado); al volver, entra con un fundido.
+        .asymmetric(insertion: .opacity, removal: .identity)
     }
     /// El paso entre Explorar y el mosaico: un resorte suave y pausado.
     static func doorAnimation(_ reduce: Bool) -> Animation { DS.Motion.door(reduce) ?? DS.Motion.fade }
@@ -124,6 +137,7 @@ struct MosaicCover: View {
                 }
                 .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown + DS.ParaTiB.doorReveal * reach)
                 .mask { fade }
+                .mask { mosaicEdge }
                 .clipped()
                 .offset(y: DS.ParaTiB.coverBleedDown + DS.ParaTiB.doorReveal * reach)
                 .allowsHitTesting(false)
@@ -205,6 +219,10 @@ struct MosaicCover: View {
             }
         }
         .frame(width: CGFloat(columns) * columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
+        // MT4-A: dónde empieza el muro (sin la inclinación); al enderezarse se recorre lo que le falta para que sus columnas
+        // caigan justo donde van las del mosaico (si no, al cambiar brincaban de lado).
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { wallX = $0 }
+        .offset(x: alignShift * reach)
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -279,6 +297,22 @@ struct MosaicCover: View {
             .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
             .init(color: .clear, location: 1),
         ], startPoint: .top, endPoint: .bottom)
+    }
+
+    /// MT4-A: al abrirse, lo que queda arriba del mosaico (detrás de la barra) se apaga como en el mosaico, con su mismo
+    /// desvanecido; si no, al cambiar desaparecían de golpe los pósters de arriba.
+    private var mosaicEdge: some View {
+        GeometryReader { g in
+            let box = g.frame(in: .global)
+            let top = max(0, MosaicHandoff.mosaicTop - box.minY)
+            let fade = (WindowMetrics.column.height - MosaicHandoff.mosaicTop) * DesignTokens.Opacity.hairline * 0.7
+            let hidden = Color.black.opacity(1 - Double(reach))
+            VStack(spacing: 0) {
+                hidden.frame(height: top)
+                LinearGradient(colors: [hidden, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
+                Color.black
+            }
+        }
     }
 
     /// Un velo bajo el título y la chapa, para que se lean sobre cualquier póster; sigue de largo bajo los círculos.
@@ -593,6 +627,8 @@ struct MosaicHandoff {
     let columns: [Column]
     let pitch: CGFloat
     @MainActor static var live: [WeakDrift] = []
+    /// Dónde empieza el mosaico en la pantalla (lo dice el mosaico al aparecer; antes, lo de un iPhone con isla).
+    @MainActor static var mosaicTop: CGFloat = 124
     @MainActor private static var pending: MosaicHandoff?
 
     /// Mide cada columna en pantalla (con lo que lleva bajado su deriva) justo antes de cambiar al mosaico.
