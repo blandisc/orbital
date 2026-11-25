@@ -2,7 +2,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { artEmblem, artHalo } from "./collection-card.js";
-import { EmptyState, Progress, ScreenHead } from "./ui.js";
+import { EmptyState, ErrorState, Progress, ScreenHead } from "./ui.js";
 
 /**
  * Colecciones (☰; como la vitrina y la repisa del iPhone, ola 3 de «Una sola Orbital»): los premios y las listas famosas,
@@ -15,7 +15,14 @@ import { EmptyState, Progress, ScreenHead } from "./ui.js";
  *
  * load({ counts }) → { collections: [{ id, title, meta, family: "award" | "list", tint?, art?, total, seen }], trakt } · onOpen(collection)
  */
-export function createShowcase({ load, onOpen, onMove, onClose }) {
+/** C8: cuánto llevas de una colección con su veredicto: «3 de 12 · te faltan 9», «12 de 12 · completa», «0 de 12». */
+export function collectionVerdict(seen, total) {
+  const base = `${seen} de ${total}`;
+  if (!total || !seen) return base;
+  return seen >= total ? `${base} · completa` : `${base} · te faltan ${total - seen}`;
+}
+
+export function createShowcase({ load, onOpen, onMove, onClose, onChange, glyphs = () => ({}) }) {
   const head = h("div");
   const grid = h("div", { class: "showcase__grid", role: "group" });
   const status = h("div", { class: "showcase__status" });
@@ -25,11 +32,13 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
   let focusId = "col:0";
   let token = 0;
   let cancelExit = () => {};
+  let failed = false; // no llegaron: A (o el botón) reintenta
 
   async function open() {
     cancelExit();
     const mine = ++token;
     el.hidden = false;
+    failed = false;
     mount(head, ScreenHead({ eyebrow: "Los premios y las listas famosas", title: "Colecciones" }));
     mount(grid);
     mount(status, EmptyState({ icon: "trophy", title: "Buscando las colecciones…" }));
@@ -50,7 +59,12 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
     } catch (err) {
       if (mine !== token) return;
       if (items.length) mount(status); // ya se ven: sin la cuenta, igual se pueden abrir
-      else mount(status, EmptyState({ icon: "warning", title: "No pude cargar Colecciones", text: err.message }));
+      else {
+        failed = true;
+        mount(status, ErrorState({ title: "No pude traer Colecciones", text: "Lo que llevas de cada una sigue en Trakt. Revisa tu internet y vuelve a intentarlo.",
+          glyph: glyphs().select, onRetry: () => open() }));
+        onChange?.();
+      }
     }
   }
 
@@ -66,7 +80,8 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
       : svg(ICONS[c.family === "award" ? "trophy" : "list"])),
     h("span", { class: "showcase__text" }, h("strong", { class: "showcase__name" }, c.title), c.meta && h("span", { class: "showcase__meta" }, c.meta)),
     // Sin contar todavía: cuántos títulos tiene; la barra llega con la cuenta.
-    h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : `${c.seen} de ${c.total}`),
+    // C8: la cifra con su veredicto («3 de 12 · te faltan 9»; toda vista, «12 de 12 · completa»).
+    h("span", { class: "showcase__count" }, c.seen == null ? `${c.total} títulos` : collectionVerdict(c.seen, c.total)),
     Progress(c.total && c.seen != null ? c.seen / c.total : 0, { className: "showcase__progress", label: "Cuánto llevas" }))));
     paint();
   }
@@ -95,6 +110,7 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
       onMove?.();
       return true;
     }
+    if (action === "select" && failed) { open(); return true; }
     if (action === "select") {
       const c = items[Number(focusId.split(":")[1])];
       if (c) onOpen?.(c);
@@ -103,7 +119,7 @@ export function createShowcase({ load, onOpen, onMove, onClose }) {
     return true;
   }
 
-  const hints = (g) => [items.length && { glyph: g.select, label: "Ver la lista" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+  const hints = (g) => [failed && { glyph: g.select, label: "Reintentar", offscreen: true }, items.length && { glyph: g.select, label: "Ver la lista" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

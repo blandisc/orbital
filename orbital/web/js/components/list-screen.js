@@ -6,7 +6,7 @@ import { Button } from "./button.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons, SelectMark } from "./ui.js";
+import { Chip, CornerRibbon, EmptyState, ErrorState, FilterChip, Pill, PosterSkeletons, SelectMark } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -47,6 +47,15 @@ export const ratingName = (r) => `De ${r} para arriba`;
 export const decadeName = (d) => (d >= 2000 ? `${d}s` : `${String(d % 100).padStart(2, "0")}s`);
 const KIND_LABEL = { series: "Series", movie: "Películas" };
 const sortKey = (id) => `orbital.list.sort.${id}`;
+const filterKey = (id) => `orbital.list.filters.${id}`;
+/** Los filtros de una lista que sobreviven al reabrirla (P6), como su orden: tipo, género, calificación, década y «ocultar vistas». */
+const KEPT_FILTERS = ["kind", "genre", "genreLabel", "minRating", "decade", "hideWatched"];
+export function keptFilters(listId) {
+  const saved = storage.get(filterKey(listId), null);
+  if (!saved || typeof saved !== "object") return {};
+  return Object.fromEntries(KEPT_FILTERS.filter((k) => k in saved).map((k) => [k, saved[k]]));
+}
+const NO_FILTERS = { kind: "all", genre: null, genreLabel: null, minRating: null, decade: null, hideWatched: false };
 
 /** Elegir un orden: el que ya estaba puesto se quita (vuelve a «default»). Se recuerda lo que QUEDA puesto: antes se
  * guardaba el que se pidió, y al quitarlo y reabrir la lista volvía el que quitaste. */
@@ -56,7 +65,7 @@ export function chooseSort(listId, current, id) {
   return next;
 }
 
-export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBatch, onReorder, onAdd, onChange, onTool, ratings, watched }) {
+export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBatch, onReorder, onAdd, onChange, onTool, ratings, watched, glyphs = () => ({}) }) {
   const media = h("span", { class: "list-screen__media", "aria-hidden": "true" });
   const title = h("h2", { class: "list-screen__title" });
   const meta = h("span", { class: "list-screen__meta" });
@@ -74,6 +83,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   let list = null; // lo que se abrió
   let tab = 0;
   const loaded = new Map(); // pestaña → items
+  const failedTabs = new Set(); // pestañas que no llegaron (su error con «Reintentar»)
   let shown = []; // lo que se ve (ordenado y filtrado)
   let zone = "grid"; // "tabs" | "grid"
   let index = 0;
@@ -177,7 +187,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     reordering = on;
     editing = false;
     grabbed = false;
-    if (on) settings = { ...settings, sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
+    if (on) settings = { ...settings, sort: "default", ...NO_FILTERS };
     zone = "grid";
     onMove?.();
     refresh();
@@ -220,15 +230,16 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
 
   /** Lo que se ve: el orden y los filtros que elegiste (un ranking se queda en su orden). */
   const piles = () => current()?.piles || null;
-  const pileNow = () => (piles()?.some(([id]) => id === settings.pile) ? settings.pile : piles()?.[0]?.[0] ?? null);
+  const pileOf = (use) => (piles()?.some(([id]) => id === use.pile) ? use.pile : piles()?.[0]?.[0] ?? null);
+  const pileNow = () => pileOf(settings);
 
-  function arrange(items) {
-    const pile = pileNow();
-    let out = items.filter((i) => (!pile || (i.pile || piles()[0][0]) === pile) && (settings.kind === "all" || i.kind === settings.kind)
-      && (!settings.genre || (i.genres || []).includes(settings.genre))
-      && (settings.minRating == null || (score(i) ?? 0) >= settings.minRating)
-      && (settings.decade == null || Math.floor((Number(i.year) || 0) / 10) * 10 === settings.decade)
-      && (!settings.hideWatched || !seen?.has(i.meta_id)));
+  function arrange(items, use = settings) {
+    const pile = pileOf(use);
+    let out = items.filter((i) => (!pile || (i.pile || piles()[0][0]) === pile) && (use.kind === "all" || i.kind === use.kind)
+      && (!use.genre || (i.genres || []).includes(use.genre))
+      && (use.minRating == null || (score(i) ?? 0) >= use.minRating)
+      && (use.decade == null || Math.floor((Number(i.year) || 0) / 10) * 10 === use.decade)
+      && (!use.hideWatched || !seen?.has(i.meta_id)));
     if (ranked()) return out;
     const by = {
       best: (a, b) => (score(b) ?? 0) - (score(a) ?? 0),
@@ -239,32 +250,95 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       az: (a, b) => String(a.title).localeCompare(String(b.title), "es"),
       added: (a, b) => (b.added_at || -Infinity) - (a.added_at || -Infinity) || 0,
       added_old: (a, b) => (a.added_at || Infinity) - (b.added_at || Infinity) || 0,
-    }[settings.sort];
+    }[use.sort];
     if (by) out = [...out].sort(by);
     return out;
   }
 
+  /** Lo que está filtrando, cada uno con cómo se quita (`without`): las fichas de arriba, su × y la sugerencia de cero. */
   const activeFilters = () => [
-    piles() && pileNow() !== piles()[0][0] && piles().find(([id]) => id === pileNow())?.[1],
-    settings.sort !== "default" && !ranked() && SORTS.find((s) => s.id === settings.sort)?.label,
-    settings.kind !== "all" && KIND_LABEL[settings.kind],
-    settings.genre && settings.genreLabel,
-    settings.minRating != null && ratingName(settings.minRating),
-    settings.decade != null && decadeName(settings.decade),
-      settings.hideWatched && "Sin lo que ya viste",
-  ].filter(Boolean);
+    piles() && pileNow() !== piles()[0][0] && { id: "pile", label: piles().find(([id]) => id === pileNow())?.[1], without: { pile: piles()[0][0] } },
+    settings.sort !== "default" && !ranked() && { id: "sort", label: SORTS.find((s) => s.id === settings.sort)?.label, without: { sort: "default" } },
+    settings.kind !== "all" && { id: "kind", label: KIND_LABEL[settings.kind], without: { kind: "all" } },
+    settings.genre && { id: "genre", label: settings.genreLabel, without: { genre: null, genreLabel: null } },
+    settings.minRating != null && { id: "minRating", label: ratingName(settings.minRating), without: { minRating: null } },
+    settings.decade != null && { id: "decade", label: decadeName(settings.decade), without: { decade: null } },
+    settings.hideWatched && { id: "hideWatched", label: "Sin lo que ya viste", without: { hideWatched: false } },
+  ].filter((f) => f && f.label);
+
+  /** P6: los filtros se recuerdan por lista (el orden ya se recordaba, `chooseSort`). */
+  function keepFilters() {
+    if (list?.id) storage.set(filterKey(list.id), Object.fromEntries(KEPT_FILTERS.map((k) => [k, settings[k] ?? null])));
+  }
+
+  /** El × de una ficha (o «Quitar …» de la sugerencia): quita ese filtro y nada más. */
+  function removeFilter(filter) {
+    if (filter.id === "sort") settings.sort = chooseSort(list.id, settings.sort, settings.sort);
+    else settings = { ...settings, ...filter.without };
+    keepFilters();
+    index = 0;
+    onMove?.();
+    refresh();
+    if (filter.id === "pile") paintTools();
+    onChange?.();
+  }
+
+  /** C7: con cero, el filtro que más devuelve al quitarlo (con lo que ya está cargado, sin preguntar al servidor). */
+  function bestRemoval() {
+    const items = loaded.get(tab) || [];
+    let best = null;
+    for (const filter of activeFilters()) {
+      if (filter.id === "sort") continue; // ordenar no quita nada
+      const count = arrange(items, { ...settings, ...filter.without }).length;
+      if (count > 0 && (!best || count > best.count)) best = { filter, count };
+    }
+    return best;
+  }
 
   function paintChips() {
-    mount(chips, activeFilters().map((text) => h("span", { class: "list-screen__chip" }, text)));
+    // C7: lo que filtra, como ficha con su × (tocarla lo quita); con el mando, lo mismo está en ☰ «Ordenar y filtrar».
+    mount(chips, activeFilters().map((f) => FilterChip(f.label, { onRemove: () => removeFilter(f) })));
+  }
+
+  let statusAction = null; // el primer paso del vacío o del error: A (o su botón) lo hace
+
+  /** Lo de arriba de la cuadrícula cuando no hay qué ver: cargando, el error, la lista vacía o nada con esos filtros. */
+  function paintStatus(items) {
+    const g = glyphs();
+    statusAction = null;
+    const step = (label, run) => { statusAction = run; return { label, glyph: g.select, onPress: run }; };
+    if (failedTabs.has(tab)) {
+      // C5: qué pasó, qué no se perdió y «Reintentar», que la vuelve a pedir (antes, el texto del servidor sin botón).
+      const again = step("Reintentar", () => load(tab, { again: true }));
+      return mount(status, ErrorState({ title: `No pude traer ${list.title}`, text: "La lista sigue igual. Revisa tu internet y vuelve a intentarlo.",
+        glyph: again.glyph, onRetry: again.onPress }));
+    }
+    // C9: mientras llega, qué se prepara (con la forma de la cuadrícula debajo), no un gris mudo.
+    if (!items) return mount(status, h("p", { class: "list-screen__waiting", role: "status" }, `Trayendo los títulos de ${list.title}…`));
+    if (!items.length || !activeFilters().length) {
+      // C4: qué vas a tener aquí y un primer paso, sin culpar.
+      const canAdd = list.editable && list.editable.add !== false && !current()?.noEdit;
+      return mount(status, canAdd
+        ? EmptyState({ icon: "list", title: `Lo que agregues a ${list.editable.name || "esta lista"} sale aquí`,
+          text: "Busca una película o una serie y agrégala.", action: step("Agregar", () => onAdd?.()) })
+        : EmptyState({ icon: "list", title: "Aquí van los títulos de esta lista", text: "Todavía no trae ninguno; se pone al día sola.",
+          action: step("Volver a cargar", () => load(tab, { again: true })) }));
+    }
+    // C7: con cero, qué quitar y cuántos vuelves a ver («Quita “Terror” y ves 12»).
+    const fix = bestRemoval();
+    return mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros",
+      text: fix ? `Quita “${fix.filter.label}” y ves ${fix.count}.` : "Quita alguno con su × o en ☰ «Ordenar y filtrar».",
+      action: fix ? step(`Quitar “${fix.filter.label}”`, () => removeFilter(fix.filter)) : null }));
   }
 
   function paintGrid() {
     const items = loaded.get(tab);
-    // Cargando: la forma de la cuadrícula (esqueleto); vacía o sin nada con esos filtros: su estado vacío.
-    status.hidden = !items || (!!items.length && !!shown.length);
-    if (items && !items.length) mount(status, EmptyState({ icon: "list", title: "Esta lista está vacía por ahora" }));
-    else if (items && !shown.length) mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros", text: "Cámbialos con ☰." }));
-    if (!items) mount(grid, PosterSkeletons(12));
+    // Cargando: la forma de la cuadrícula (esqueleto) y qué se prepara; vacía, sin nada con esos filtros o con error: su estado
+    // vacío (o su error) con el primer paso.
+    status.hidden = !failedTabs.has(tab) && !!items?.length && !!shown.length;
+    if (!status.hidden) paintStatus(items);
+    else statusAction = null;
+    if (!items && !failedTabs.has(tab)) mount(grid, PosterSkeletons(12));
     // V4: una lista de cientos (un género, tu historial) arma solo lo que está cerca de la vista (browse.js · windowCells). El
     // Top 10 no: son diez y cada uno va con su cifra.
     else if (ranked()) mount(grid, shown.map((item, i) => cell(item, i)));
@@ -308,20 +382,25 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     paintGrid();
   }
 
-  async function load(i) {
+  async function load(i, { again = false } = {}) {
+    if (again) loaded.delete(i);
     if (loaded.has(i)) return refresh();
     const mine = ++attempt;
+    failedTabs.delete(i);
     refresh();
     try {
       const items = await list.tabs[i].load();
       if (mine !== attempt || !list) return;
       loaded.set(i, Array.isArray(items) ? items : []);
-    } catch (err) {
+      // P6: los filtros que volvieron al reabrir necesitan sus datos (las notas de IMDb, lo que ya viste).
+      if (i === tab && (settings.minRating != null || settings.sort === "imdb" || settings.sort === "best")) await needImdb();
+      if (i === tab && settings.hideWatched && !seen) seen = new Set(await watched?.().catch(() => []) ?? []);
+      if (mine !== attempt || !list) return;
+    } catch {
       if (mine !== attempt) return;
-      loaded.set(i, []);
-      status.textContent = err?.message || "No pude cargar esta lista.";
+      failedTabs.add(i); // C5: su error con «Reintentar» (paintStatus), no el texto del servidor
     }
-    if (i === tab) refresh();
+    if (i === tab) { refresh(); onChange?.(); }
   }
 
   function switchTab(i) {
@@ -347,8 +426,9 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     grabbed = false;
     chosen = new Set();
     loaded.clear();
-    settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false,
-      pile: next.pile || null };
+    failedTabs.clear();
+    // P6: al reabrir, el orden y los filtros que dejaste en esta lista.
+    settings = { sort: storage.get(sortKey(list.id), "default"), ...NO_FILTERS, ...keptFilters(list.id), pile: next.pile || null };
     paintHead();
     el.hidden = false;
     load(tab);
@@ -397,6 +477,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       return true;
     }
     const item = shown[index];
+    if (action === "select" && !item && statusAction) { statusAction(); return true; } // el primer paso del vacío o «Reintentar»
     if (reordering) {
       if (action === "select" || action === "alt") { grabbed = !grabbed; onMove?.(); paintGrid(); onChange?.(); }
       return true;
@@ -436,15 +517,16 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       index = 0;
       refresh();
     },
-    setKind(kind) { settings.kind = kind; index = 0; refresh(); },
-    setGenre(genre, label) { settings.genre = genre; settings.genreLabel = label; index = 0; refresh(); },
+    setKind(kind) { settings.kind = kind; keepFilters(); index = 0; refresh(); },
+    setGenre(genre, label) { settings.genre = genre; settings.genreLabel = label; keepFilters(); index = 0; refresh(); },
     async setMinRating(value) {
       settings.minRating = value;
+      keepFilters();
       if (value != null) await needImdb();
       index = 0;
       refresh();
     },
-    setDecade(decade) { settings.decade = decade; index = 0; refresh(); },
+    setDecade(decade) { settings.decade = decade; keepFilters(); index = 0; refresh(); },
     /** Una lista tuya: `{ name, where }` («Mi lista» y «watchlist», «Terror de octubre» y «list:123»), o null. */
     get editable() { return list?.editable ?? null; },
     get editing() { return editing; },
@@ -492,6 +574,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     },
     async setHideWatched(on) {
       settings.hideWatched = on;
+      keepFilters();
       if (on && !seen) seen = new Set(await watched?.().catch(() => []) ?? []);
       index = 0;
       refresh();
@@ -507,7 +590,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     { glyph: g.alt, label: "Listo" },
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean) : [
-    { glyph: g.select, label: "Ver" },
+    shown.length ? { glyph: g.select, label: "Ver" } : statusAction && { glyph: g.select, label: "Primer paso", offscreen: true }, // el botón ya lo dice
     list?.editable && !current()?.noEdit && { glyph: g.alt, label: "Editar" },
     list?.person?.biography && { glyph: g.alt, label: "Biografía" },
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).

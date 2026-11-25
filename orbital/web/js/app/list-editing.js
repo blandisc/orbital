@@ -14,13 +14,15 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
     // al final, de respaldo y con su nombre. Sin Trakt, «Mi lista» es la de Stremio.
     const stremio = (label) => row(label, "Stremio", s.library, "library");
     const options = [];
-    if (s.error) options.push(stremio("Mi lista"), { icon: "info", label: s.error, command: { type: "stay" } });
+    // C5: qué pasó y «Reintentar», que las vuelve a pedir (A sobre la opción, o tocarla).
+    if (s.error) options.push(stremio("Mi lista"), { icon: "refresh", label: "Reintentar", hint: s.error, command: { type: "save-toggle", where: "retry" } });
     else if (!s.trakt) options.push(stremio("Mi lista"), { icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
     else if (s.trakt.trakt) {
       // Tus favoritos de Trakt (el corazón del iPhone); Trakt guarda hasta 100.
       options.push(row("Mi lista", "Trakt", s.trakt.watchlist, "watchlist"), row("Favoritos", "Trakt", !!s.trakt.favorite, "favorites"),
         { heading: true, label: "Tus listas de Trakt" });
-      if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
+      // C4: qué vas a tener aquí y un primer paso, sin culpar.
+      if (!s.trakt.lists.length) options.push({ icon: "plus", label: "Nueva lista", hint: "Tus listas de Trakt salen aquí; nace «Solo tú»", command: { type: "list-new" } });
       for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
       options.push({ heading: true, label: "Stremio" }, stremio("Biblioteca de Stremio"));
     } else options.push(stremio("Mi lista"));
@@ -38,9 +40,14 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
   function openSave({ kind, id, title, library }) {
     const mine = saving = { kind, id, title, library, trakt: null, error: null };
     openMenu(saveMenu(saving));
-    api.savedIn(kind, id)
+    fetchLists(mine);
+  }
+
+  /** En qué listas de Trakt va (al abrir «Guardar en…» y con «Reintentar»). */
+  function fetchLists(mine) {
+    api.savedIn(mine.kind, mine.id)
       .then((res) => { mine.trakt = res; })
-      .catch((err) => { mine.error = err.message || "No pude leer tus listas de Trakt"; })
+      .catch(() => { mine.error = "No pude leer tus listas de Trakt; Mi lista de Stremio sigue a la mano"; })
       .finally(() => { if (saving === mine) refreshSave(); });
   }
 
@@ -48,6 +55,12 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
   function toggleSave(where) {
     const s = saving;
     if (!s) return;
+    if (where === "retry") { // «Reintentar» tras no poder leer tus listas de Trakt
+      s.error = null;
+      s.trakt = null;
+      refreshSave();
+      return fetchLists(s);
+    }
     const list = where.startsWith("list:") ? s.trakt?.lists.find((l) => `list:${l.id}` === where) : null;
     const get = () => (where === "library" ? s.library : where === "watchlist" ? s.trakt?.watchlist
       : where === "favorites" ? s.trakt?.favorite : list?.contains);

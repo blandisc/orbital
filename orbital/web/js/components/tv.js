@@ -9,6 +9,8 @@ import { sized } from "../core/images.js";
 import { airingLine, ALL, nextLine, categoriesOf, categoryHue, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay, windowCells } from "./browse.js";
 import { Badge, Chip, EmptyState, Eyebrow } from "./ui.js";
+import { rememberedMap } from "../core/storage.js";
+import { serverDetail } from "../core/notices.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 const TYPE_MS = 1300; // tecleando un número: lo que se espera al siguiente dígito antes de sintonizar
@@ -52,7 +54,7 @@ export function createTv({ onFocus, onPick }) {
   let list = []; // [{ id, title, count }]
   let channels = [];
   let focusId = "channel:0";
-  const memory = {}; // categoría -> canal enfocado (id)
+  const memory = rememberedMap("orbital.tv.channel"); // categoría -> canal enfocado (id); P6: sobrevive al reiniciar
   const targets = new Map();
   let digits = "";
   let typeTimer = 0;
@@ -240,7 +242,7 @@ export function createTv({ onFocus, onPick }) {
       fetchedAt = Date.now();
       if (data.playing !== undefined && playing === null) playing = data.playing ?? null;
     } catch (err) {
-      error = err.message;
+      error = serverDetail(err); // el detalle (C5): qué pasó lo dice el título del vacío
     }
     loading = false;
     render();

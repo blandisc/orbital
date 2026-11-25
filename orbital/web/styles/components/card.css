@@ -81,10 +81,10 @@
 }
 /* "Jugado recientemente": hace cuánto, como pie debajo de la portada (encima taparía la
    clasificación ESRB y los logos, que casi siempre van abajo). */
+/* C10: va en su placa (Chip plate): el fondo de abajo puede ser cualquier arte. */
 .card__chip {
   position: absolute; left: 0; top: calc(100% + .45rem);
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  color: var(--color-text-muted); font-size: var(--type-data); font-weight: var(--type-data-weight); font-variant-numeric: tabular-nums; white-space: nowrap;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 /* Pie con título y tipo (búsqueda): dos líneas, recortadas al ancho de la portada. */
 .card__caption {
@@ -114,6 +114,7 @@
 /* Ancha (Destacados, «A continuación»): su nombre sobre el arte mientras no se vea su logo (P4: sin logo, nunca muda). */
 .card--wide .card__meta { display: flex; z-index: var(--z-raised); padding: var(--inset-poster) calc(var(--inset-poster) + var(--space-1)); }
 .card--wide.card--logo-ready .card__meta { display: none; }
+/* C10: el nombre de una ancha va sobre su velo (.card__veil), no solo con sombra. */
 .card--wide .card__title { -webkit-line-clamp: 2; font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); text-shadow: var(--shadow-text-strong); }
 .card--wide .card__subtitle { color: var(--color-on-art-secondary); text-shadow: var(--shadow-text-strong); }
 .card__logo { opacity: 0; }
@@ -211,14 +212,15 @@
 
 /* Destacados: el logo del título sobre el arte ancho, abajo a la izquierda, con la base oscura del arte para leerse. */
 /* height: auto: con avance, la regla de .card--has-progress (alto 30 %) la cortaba en seco a media tarjeta. */
-.card--wide.card--has-art::before { content: ""; position: absolute; inset: 40% 0 0; height: auto; border-radius: inherit; background: var(--gradient-art-base); pointer-events: none; z-index: var(--z-raised); }
+/* El velo de abajo es la pieza Veil (.card__veil), arriba del arte y debajo del logo, del nombre y del avance. */
+.card__veil { z-index: var(--z-raised); }
 .card__logo { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   max-width: 58%; max-height: 38%; object-fit: contain; object-position: left bottom; filter: var(--shadow-drop-sm); }
 /* Con avance (A continuación): el logo y el nombre se suben arriba de la barra; antes el logo la tapaba. */
 .card--has-progress :is(.card__logo, .card__label) { bottom: calc(2 * var(--inset-poster) + var(--progress-height)); }
 
-/* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. Entero, en
-   dos renglones si hace falta (P4: «Ciencia fi…» en el póster de Buscar). */
+/* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster, sobre su velo (.card__veil, C10: antes
+   contaba con que el arte fuera oscuro abajo). Entero, en dos renglones si hace falta (P4: «Ciencia fi…» en el póster de Buscar). */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight);
   line-height: var(--leading-title); text-shadow: var(--shadow-text-strong); overflow: hidden; padding-bottom: .1em;

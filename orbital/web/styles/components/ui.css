@@ -265,6 +265,24 @@
 .empty-state__icon .icon { width: var(--icon-lg); height: var(--icon-lg); }
 .empty-state__title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight); }
 .empty-state__text { max-width: var(--measure-text); margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
+/* Su primer paso (C4) o «Reintentar» (C5): un botón del catálogo debajo de la línea. */
+.empty-state__action { margin-top: var(--space-2); }
+/* ErrorState: el mismo vacío con el ícono en el color de peligro (qué pasó, qué no se perdió y «Reintentar»). */
+.empty-state--error .empty-state__icon { color: var(--color-danger); }
+
+/* FilterChip: un filtro puesto con su × (C7); tocarlo lo quita. Vidrio con su filo, del alto de una píldora (con el dedo, de
+   --touch-target, y con el mouse su zona de toque crece igual que la de la píldora). */
+.filter-chip {
+  position: relative; flex: none; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height);
+  padding: 0 var(--space-2) 0 var(--space-4); border-radius: var(--radius-pill); white-space: nowrap; color: var(--color-text);
+  background: var(--color-glass); box-shadow: var(--edge-glass); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.filter-chip::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: max(100%, var(--touch-target)); transform: translateY(-50%); }
+.filter-chip:hover { background: var(--color-glass-hover); box-shadow: var(--edge-glass); }
+.filter-chip__remove { display: grid; place-items: center; width: var(--icon-md); height: var(--icon-md); color: var(--color-text-muted); }
+.filter-chip__remove svg { width: var(--icon-sm); height: var(--icon-sm); }
+[data-input="touch"] .filter-chip { min-height: var(--touch-target); }
 
 /* Skeleton: la forma de lo que llega, quieta (sin brillo que corra: Orbital no gasta mientras espera). */
 .skeleton { display: block; flex: none; border-radius: var(--card-radius); background: var(--color-fill); }

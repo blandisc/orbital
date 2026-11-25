@@ -116,7 +116,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
       list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
     }
   } else {
-    list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
+    // El vacío del Inicio ya enseña su botón con este glifo (EmptyState): el pie no lo repite.
+    list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : target?.unhide ? "Mostrarlos" : "Ir a Juegos", offscreen: true });
   }
   if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   // LT/RT saltan entre lo de arriba y Tus consolas (`jump`: a dónde llevan desde aquí).

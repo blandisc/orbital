@@ -235,6 +235,7 @@ const ui = {
     onFocus: (item) => forYouFocused(item),
     onEdge: () => sound.play("edge"),
     covered: () => !!topOverlay() || ui.sheet.isOpen || ui.launch.visible, // con una capa encima, el mosaico no entra en ambiente
+    glyphs, onChange: () => renderHints(),
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
@@ -242,16 +243,17 @@ const ui = {
     onPick: (target, id) => (ui.tv.focusId === id || target?.kind === "filter" ? (ui.tv.focus(id), tvActivate(target)) : ui.tv.focus(id)),
   }),
   traktLink: createTraktLink({
-    glyphs,
+    glyphs, onChange: () => renderHints(),
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(traktFrom); },
   }),
   phoneLink: createPhoneLink({
-    glyphs,
+    glyphs, onChange: () => renderHints(),
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(phoneFrom); },
   }),
   artPicker: createArtPicker({
+    glyphs, onChange: () => renderHints(),
     onMove: () => sound.play("move"),
     onPicked: (target, which, url) => {
       sound.play("select");
@@ -268,6 +270,7 @@ const ui = {
   }),
   // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
   listScreen: createListScreen({
+    glyphs,
     onMove: () => sound.play("move"),
     onPick: (item) => openListItem(item),
     // Una lista tuya: «Quitar de esta lista» en Opciones (como mantener el dedo en el iPhone).
@@ -307,6 +310,7 @@ const ui = {
   // Colecciones (como la repisa del iPhone): los premios y las listas famosas, con cuánto llevas.
   showcase: createShowcase({
     load: (options) => api.forYouCollections(options),
+    glyphs, onChange: () => renderHints(),
     onOpen: (c) => openShowcaseItem(c),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
@@ -322,6 +326,7 @@ const ui = {
   // Próximos estrenos en vista calendario (como «Sale hoy › el mes» del iPhone).
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
+    glyphs,
     onPick: (item) => openTitle(item),
     onEdge: () => { sound.play("edge"); ui.toast.show("El calendario llega hasta dos años"); },
     onChange: () => renderHints(),
@@ -912,7 +917,10 @@ function goToSection(id, direction = 0) {
         : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión (o descárgalo antes)");
   }
   // Las filas solo se arman donde se ven (Películas y series); en Inicio, Juegos, Para ti y TV quedan estacionadas.
-  if (document.body.dataset.view === "rows") ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
+  // C4: un vacío dice qué vas a tener ahí y trae su primer paso (Buscar; con el mando, su botón ⧉ o S).
+  if (document.body.dataset.view === "rows") ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Aquí salen tus películas y series",
+    emptyText: "Lo que veas y guardes llega solo. Para empezar, busca algo que ver.",
+    emptyAction: { label: "Buscar", glyph: searchGlyphs().search, onPress: () => openSearch() } }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo

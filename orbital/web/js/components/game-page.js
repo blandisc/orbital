@@ -14,6 +14,21 @@ import { Eyebrow } from "./ui.js";
  *
  * Callbacks: onAction(action, item) («select» | «alt» | «options») · onShow(item) (el fondo) · onMove · onClose.
  */
+/**
+ * C8: las horas con su veredicto, contra los demás juegos de su consola (datos reales; sin con qué comparar, nada):
+ * «Tu más jugado · 12 h más que el segundo», «Tu 2.º más jugado». Menos de una hora no cuenta como jugado.
+ */
+export function playtimeVerdict(item, games = []) {
+  const played = games.filter((g) => (g.playtime || 0) >= 60).sort((a, b) => b.playtime - a.playtime);
+  const at = played.findIndex((g) => g.id === item?.id);
+  if (at < 0 || played.length < 2) return null;
+  if (at === 0) {
+    const ahead = played[0].playtime - played[1].playtime;
+    return ahead >= 3600 ? `Tu más jugado · ${duration(ahead)} más que el segundo` : "Tu más jugado";
+  }
+  return at < 3 ? `Tu ${at + 1}.º más jugado` : null;
+}
+
 export function createGamePage({ onAction, onShow, onMove, onClose }) {
   const body = h("div", { class: "game-page__body" });
   const panel = h("div", { class: "game-page__panel" });
@@ -58,7 +73,9 @@ export function createGamePage({ onAction, onShow, onMove, onClose }) {
       ["Mando", { full: "Completo", partial: "Parcial" }[extra.controller] ?? null],
       ["En disco", it.category === "steam" ? bytes(extra.size) : null],
     ].filter(([, v]) => v);
-    mount(panel, stats.map(([k, v]) => h("div", { class: "game-page__stat" }, h("span", { class: "game-page__stat-label" }, k), h("strong", {}, v))));
+    const verdict = { Jugado: playtimeVerdict(it, games) };
+    mount(panel, stats.map(([k, v]) => h("div", { class: "game-page__stat" }, h("span", { class: "game-page__stat-label" }, k), h("strong", {}, v),
+      verdict[k] && h("span", { class: "game-page__stat-verdict" }, verdict[k]))));
     panel.hidden = !stats.length;
     body.classList.remove("browse__main--switch");
     void body.offsetWidth;

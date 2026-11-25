@@ -2,6 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { reasonOnly } from "../core/format.js";
 import { reducedMotion } from "../core/motion.js";
+import { Button } from "./button.js";
 import { Glyph } from "./glyph.js";
 
 /**
@@ -28,13 +29,38 @@ export const Badge = (text, { className = null, large = false, plate = false } =
  */
 export const Veil = (...sides) => h("span", { class: ["veil", ...sides.map((s) => `veil--${s}`)], "aria-hidden": "true" });
 
-/** Algo que no tiene nada (como DSEmptyState): su ícono, un título y una línea que dice qué hacer. Sin botones propios:
- *  lo que se puede hacer va en el pie o en ☰. */
-export const EmptyState = ({ icon = null, title, text = null, className = null }) =>
-  h("div", { class: ["empty-state", className], role: "status" },
+/**
+ * Algo que no tiene nada, o un error (como DSEmptyState): su ícono, un título que dice qué vas a tener ahí (o qué pasó) y una
+ * línea. Sin culpar: nunca «No has…» (C4). `action` (C4/C5): el primer paso, un botón del catálogo con su glifo
+ * ({ label, glyph, onPress, variant }); con el mando lo hace la tecla de su glifo (quien lo monta la atiende en su `handle`),
+ * con el dedo o el mouse se toca. `tone: "error"`: el ícono en el color de peligro (ErrorState).
+ */
+export const EmptyState = ({ icon = null, title, text = null, className = null, tone = null, action = null }) =>
+  h("div", { class: ["empty-state", tone && `empty-state--${tone}`, className], role: tone === "error" ? "alert" : "status" },
     icon && ICONS[icon] && h("span", { class: "empty-state__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
     h("strong", { class: "empty-state__title" }, title),
-    text && h("p", { class: "empty-state__text" }, text));
+    text && h("p", { class: "empty-state__text" }, text),
+    action && h("div", { class: "button-row empty-state__action" },
+      Button({ label: action.label, glyph: action.glyph || null, variant: action.variant || "primary", icon: action.icon || null,
+        onPress: action.onPress })));
+
+/**
+ * El error de una pantalla, uno solo en el catálogo (C5, el gemelo de `failure()` de los avisos): qué pasó en palabras de
+ * Orbital (`title`), qué no se perdió o qué revisar (`text`, nunca el mensaje crudo del servidor) y «Reintentar», que vuelve a
+ * hacer lo mismo (`onRetry`). Con el mando, la tecla de `glyph` (la pantalla la atiende); con el dedo o el mouse, el botón.
+ */
+export const ErrorState = ({ title, text = null, onRetry, glyph = null, label = "Reintentar", className = null }) =>
+  EmptyState({ icon: "warning", tone: "error", title, text, className, action: onRetry ? { label, glyph, onPress: onRetry } : null });
+
+/**
+ * Un filtro puesto, como chip con su × (C7): tocarlo (o hacerle clic) lo quita. Con el mando, el mismo camino está en ☰ (la
+ * hoja de la pantalla lo dice). Del alto de una píldora; con el dedo, de `--touch-target`.
+ */
+export const FilterChip = (label, { onRemove = null, className = null } = {}) =>
+  h("button", { class: ["filter-chip", className], type: "button", tabindex: "-1", "aria-label": `Quitar ${label}`,
+    onClick: onRemove && ((event) => { event.stopPropagation(); onRemove(); }) },
+  h("span", { class: "filter-chip__label" }, label),
+  h("span", { class: "filter-chip__remove", "aria-hidden": "true" }, svg(ICONS.close)));
 
 /** Lo que todavía carga, con la forma de lo que va a llegar (como FeedSkeleton): N casillas del tamaño de un póster. Quietas:
  *  nada se anima mientras se espera (Orbital no gasta). */

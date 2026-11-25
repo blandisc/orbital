@@ -8,6 +8,7 @@ import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
 import { Eyebrow, Pill } from "./ui.js";
+import { serverDetail } from "../core/notices.js";
 
 /**
  * «Decide por mí» · «Tres que caben» (AD-1…AD-12, Fernando, 16 nov 2026: «pulir muchísimo más las pantallas de adentro:
@@ -233,7 +234,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
 
   function paintInfo() {
     const g = glyphs();
-    if (state === "loading" && !picks.length) return mount(info, h("p", { class: "decide-info__status", role: "status" }, "Buscando…"));
+    if (state === "loading" && !picks.length) return mount(info, h("p", { class: "decide-info__status", role: "status" }, "Buscando tres para ti…"));
     if (onReroll()) {
       return mount(info, h("h2", { class: "decide-info__name" }, "Otras tres"),
         h("p", { class: "decide-info__facts" }, "Te propongo tres distintas con los mismos filtros"),
@@ -302,7 +303,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
       if (mine !== token) return;
       picks = [];
       state = "error";
-      problem = err?.message || "Revisa tu conexión.";
+      problem = serverDetail(err) || "Revisa tu conexión."; // C5: el detalle; qué pasó y «Reintentar» ya van arriba
     }
     index = 0;
     paintStrip();

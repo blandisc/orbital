@@ -95,3 +95,20 @@ test("«Reintentar» se escribe siempre igual (y nunca «Intentar de nuevo» ni 
   }
   assert.deepEqual(problems, []);
 });
+
+// TB-26 (C5, 24 nov 2026): siete pantallas enseñaban el `err.message` crudo, sin botón (el mazo, Colecciones, Explorar, Cambiar
+// el arte, Conectar un aparato, Conectar Trakt y el formulario de claves). Una pantalla dice qué pasó con palabras de Orbital
+// (ErrorState, con «Reintentar»); lo del servidor, si sirve, va como detalle con `serverDetail(err)`. El registro sí puede
+// guardarlo tal cual (console, logError).
+test("ningún componente pinta en pantalla el mensaje crudo de un error (err.message)", () => {
+  const problems = [];
+  for (const file of JS.filter((f) => /[\\/]components[\\/]/.test(f))) {
+    read(file).split("\n").forEach((line, i) => {
+      const code = line.replace(/\/\/.*$/, "");
+      if (!/\b(err|error|e|exc|reason|found)\??\.message\b/.test(code)) return;
+      if (/console\.|logError|reportError/.test(code)) return; // al registro, sí
+      problems.push(`${rel(file)}:${i + 1}: ${line.trim().slice(0, 90)}`);
+    });
+  }
+  assert.deepEqual(problems, [], "Usa ErrorState (qué pasó y «Reintentar») y, si sirve, serverDetail(err) como detalle");
+});

@@ -591,7 +591,8 @@ export function followedMenu(series = []) {
       ? series.map((s) => ({ icon: s.following ? "bell" : "bellOff", label: s.title, hint: s.year ? String(s.year) : undefined,
         value: s.following ? "Sí" : "No", ok: !!s.following,
         command: { type: "followed-toggle", id: s.id, title: s.title, following: !!s.following } }))
-      : [{ icon: "info", label: "Todavía no has visto series en Trakt", hint: "Se llena al ver una serie", inert: true }],
+      // C4: qué vas a tener aquí y un primer paso, sin culpar.
+      : [{ icon: "search", label: "Buscar una serie", hint: "Las series que veas salen aquí, cada una con su campana", command: { type: "search" } }],
   };
 }
 
@@ -755,15 +756,15 @@ export function deviceMenu(device) {
   };
 }
 
-/** CX8-A: un iPhone con el código de antes pide su propia llave sin volver a escanear. Sin este sí no hay llave; «No»
- *  va primero. */
+/** CX8-A: un iPhone con el código de antes pide su propia llave sin volver a escanear. Sin este sí no hay llave; «No darle
+ *  conexión» va primero (C3: los dos botones repiten el verbo de la pregunta). */
 export function deviceUpgradeMenu(event) {
   const name = event.name || PLATFORM_NAMES[event.platform] || "iPhone";
   return {
     title: `¿Darle su propia conexión a ${name}?`,
-    subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige No. La pregunta dura 3 minutos.",
+    subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige «No darle conexión». La pregunta dura 3 minutos.",
     options: [
-      { icon: "close", label: "No", command: { type: "device-upgrade", id: event.id, yes: false } },
+      { icon: "close", label: "No darle conexión", command: { type: "device-upgrade", id: event.id, yes: false } },
       { icon: "check", label: "Darle su propia conexión", command: { type: "device-upgrade", id: event.id, yes: true, name } },
     ],
   };

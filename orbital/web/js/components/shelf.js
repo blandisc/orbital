@@ -168,7 +168,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     setTimeout(() => el.classList.remove("shelf--intro"), 1200);
   }
 
-  function setRows(rows, { emptyTitle, emptyText, loading = false, popId } = {}) {
+  function setRows(rows, { emptyTitle, emptyText, emptyAction = null, loading = false, popId } = {}) {
     cancelPrepare();
     if (rows.length && !popId && same(shown, rows)) { intro(); return setFocus(focus.r, focus.c); }
     shown = rows.length ? rows : null;
@@ -179,7 +179,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
       mount(rowsEl, loading
         ? [0, 1].map((i) => h("div", { class: ["shelf__row", i === 0 && "shelf__row--current"], role: "status", "aria-label": emptyTitle },
           h("span", { class: "skeleton skeleton--heading", "aria-hidden": "true" }), h("div", { class: "shelf__track" }, PosterSkeletons(9))))
-        : h("div", { class: "shelf__row shelf__row--current" }, EmptyState({ icon: "movie", title: emptyTitle, text: emptyText })));
+        : h("div", { class: "shelf__row shelf__row--current" }, EmptyState({ icon: "movie", title: emptyTitle, text: emptyText, action: emptyAction })));
       return;
     }
     rowEls = rows.map((row, r) => makeRow(row, r, popId));
