@@ -29,8 +29,8 @@
 }
 .home__hero--swap > * { animation: fade-in var(--duration-enter) var(--ease-out); }
 .home__empty { align-self: flex-start; display: flex; flex-direction: column; gap: var(--space-2); max-width: 40rem; padding: var(--inset-feature); background: var(--color-glass); box-shadow: var(--edge-glass); }
-/* Más abajo de «A continuación», lo de arriba se aprieta un poco (el logo, un paso más chico) para dejarle lugar a la fila. */
-.home--scrolled .feature-hero__logo { max-height: 5.4rem; }
+/* Más abajo de «A continuación» (Mi lista, Tus consolas) el logo ya no se aprieta: se veía muy chiquito (Fernando, 24 nov 2026). */
+.home--scrolled .feature-hero__logo { max-height: 7rem; }
 
 
 /* Una fila del Inicio: su título y la pista que se desliza de lado (aire para lo que crece la enfocada). */

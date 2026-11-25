@@ -21,7 +21,9 @@
    borde de abajo (sobresalía hacia arriba). Baja lo justo para quedar al centro de las letras. */
 .shelf__heading .source-logo { position: relative; top: .24em; }
 .shelf__heading .source-logo--letterboxd { top: .1em; }
-.shelf__count { letter-spacing: normal; } /* RowCount (ui.css); no hereda el apretado del título */
+/* RowCount (ui.css); no hereda el apretado del título. A la derecha, como en Juegos (Fernando, 24 nov 2026: un solo «3 / 9»;
+   junto al título chocaba con la tarjeta enfocada de Destacados al crecer). */
+.shelf__count { align-self: center; margin-left: auto; letter-spacing: normal; }
 .shelf__row:not(.shelf__row--current) .shelf__heading { opacity: var(--opacity-faint); }
 /* Hay más a la derecha: la orilla se desvanece, como las filas del Inicio (home.css · home__viewport--more); al final, no.
    R2-10: si la fila ya avanzó, lo que quedó antes del margen se corta en seco (antes asomaba una tira del póster anterior). */

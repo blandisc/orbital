@@ -54,10 +54,16 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   // quedaba el de antes y la fila de arriba salía recortada en una franja, como aplastada). Si el dedo la movió, no: el dedo
   // manda dónde está hasta que el foco se mueva (si no, al irse las barras brincaba de regreso al enfocado).
   if (typeof ResizeObserver !== "undefined") {
+    // Se acomoda cuando el alto ya se asentó: lo de arriba se recoge con transición y, medido a medias, la cuadrícula subía y
+    // luego bajaba («rebota hacia arriba», 24 nov 2026).
+    let settle;
     new ResizeObserver(() => {
-      if (fingered || !focusId.startsWith("game:")) return;
-      grid.dataset.shift = "0";
-      keepInView(grid, viewport, focusId);
+      clearTimeout(settle);
+      settle = setTimeout(() => {
+        if (fingered || !focusId.startsWith("game:")) return;
+        grid.dataset.shift = "0";
+        keepInView(grid, viewport, focusId);
+      }, 80);
     }).observe(viewport);
   }
   const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, main);
@@ -219,16 +225,20 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     // Más abajo de la primera fila, las barras y el juego se van y quedan los juegos (como el Apple TV al bajar).
     const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
     fingered = false;
-    setAway(!!node && node.offsetTop > (grid.firstElementChild?.offsetTop ?? 0) + 1);
-    keepInView(grid, viewport, focusId);
+    // Al irse lo de arriba, la cuadrícula gana alto: medirla ahora (aún chica) la recorría hacia arriba y, al crecer, la
+    // regresaba: «rebota hacia arriba» (Fernando, 24 nov 2026). La acomoda el ResizeObserver con el alto ya ganado.
+    const leaving = setAway(!!node && node.offsetTop > (grid.firstElementChild?.offsetTop ?? 0) + 1) && away;
+    if (!leaving) keepInView(grid, viewport, focusId);
     onFocus?.(target ? { ...target, item: target.item ?? shown } : null);
   }
 
+  /** true si cambió. */
   function setAway(next) {
-    if (next === away) return;
+    if (next === away) return false;
     away = next;
     el.classList.toggle("games--away", away);
     onChrome?.(away);
+    return true;
   }
 
   /** Cambia de consola: el contenido nuevo aparece con un fundido corto (nada cruza la pantalla). */

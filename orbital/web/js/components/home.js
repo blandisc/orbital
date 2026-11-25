@@ -110,8 +110,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       targets.set("feature", { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     }
     // Sin el próximo estreno a la derecha (Fernando, 2 nov: quitarlo; los estrenos viven en Para ti y en el calendario).
-    // NQ-1: la puerta de «Decide por mí», segunda (después de lo que te toca), cuando ya llegaron los tres de hoy.
-    const entries = decide?.picks?.length && queue.length ? [queue[0], { door: decide }, ...queue.slice(1)] : queue;
+    // «Decide por mí» ya no va en «A continuación» (Fernando, 24 nov 2026: «no debería estar en la continuación»; al darle →
+    // la fila bajaba un poco porque la puerta medía otro alto). Su puerta es la fila «¿No sabes qué ver?» de Películas y series.
+    const entries = queue;
     fill(rowOf.card, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }), entries.map((item, i) => {
       if (item.door) {
         targets.set(`card:${i}`, { kind: "decide", door: item.door });
@@ -125,6 +126,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     }));
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     queue.forEach((item) => { const src = item.hero || item.image; if (src) new Image().src = src; });
+    // Y los logos de «A continuación» y «Mi lista»: arriba se veía el nombre chiquito un buen rato hasta que llegaba (24 nov 2026).
+    [...queue, ...model.mylist].forEach((item) => { if (item.extra?.logo) new Image().src = item.extra.logo; });
 
     // Lo tuyo de películas y series (D4-B): las mismas portadas de Películas y series; el nombre lo dice lo de arriba.
     for (const [key, title, items, extra] of [["mine", "Mi lista", model.mylist, { list: mylistEdit }]]) {

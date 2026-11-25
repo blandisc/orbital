@@ -15,7 +15,7 @@ import { Eyebrow, Pill } from "./ui.js";
  * (AD-1), arriba el encabezado compacto con sus pestañas y el reloj (AD-2), a la izquierda por qué cabe, su logo, sus datos y
  * su sinopsis (AD-3) con «Ver ya» (A), «Ficha» (Y) y «Otras tres» (X) (AD-4), y abajo las tres como tarjetas anchas (AD-7)
  * con «Filtros» al final (AD-8), que abre su panel (AD-9). «Hoy no» y «No me interesa» van en ☰ (AD-5).
- *   ◀ ▶ propuesta (y «Filtros») · A ver ya · Y ficha · X otras tres · ☰ opciones · LB/RB «Una por una» (AD-11) · B cerrar
+ *   ◀ ▶ propuesta (y «Otras tres», «Filtros») · ↑ pestañas · A ver ya · Y ficha · X otras tres · ☰ opciones · LB/RB «Una por una» (AD-11) · B cerrar
  *
  * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · dismiss(key) · onPick(item) · onPlay(item) ·
  * onOptions(item) · onMove() · onClose() · onDeck() · glyphs()
@@ -69,9 +69,9 @@ export function DecideHead(modes, { title = "Decide por mí", icon = "dice" } = 
 }
 
 /** Las dos pestañas, cada una con lo que hace debajo; `on` la que ves y `onPick(i)` al tocarla o hacer clic. Con el mando,
- * LB/RB (AD-11): ↑ ya no lleva aquí (en el mazo ▲ es «Para hoy»). */
-export const DecideModes = (el, { on, onPick }) => mount(el, DECIDE_MODES.map((label, i) => h("button", {
-  class: ["decide-mode", i === on && "decide-mode--on"], type: "button", tabindex: "-1", role: "tab", "aria-selected": String(i === on),
+ * LB/RB (AD-11); en «Tres que caben» también ↑ (24 nov 2026: el control del teléfono no tiene LB/RB). En el mazo ▲ es «Para hoy». */
+export const DecideModes = (el, { on, onPick, focused = false }) => mount(el, DECIDE_MODES.map((label, i) => h("button", {
+  class: ["decide-mode", i === on && "decide-mode--on", focused && i === on && "is-focused"], type: "button", tabindex: "-1", role: "tab", "aria-selected": String(i === on),
   onClick: () => onPick(i) }, h("span", { class: "decide-mode__name" }, svg(ICONS[MODE_ICONS[i]]), label),
   h("small", { class: "decide-mode__hint" }, MODE_HINTS[i]))));
 
@@ -187,7 +187,10 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   // guarda; regresar a ese tipo te devuelve esos tres. «Otras tres» y «Hoy no» sí traen otros.
   let seen = new Map();
   const seenKey = (c) => `${c.time}|${c.mood}|${c.kind}`;
-  let index = 0; // la tarjeta enfocada; `picks.length` es «Filtros»
+  // La tarjeta enfocada: las propuestas, luego «Otras tres» (`picks.length`) y «Filtros» (`picks.length + 1`). «Otras tres»
+  // es tarjeta (24 nov 2026): con el control del teléfono no hay X y no se veía cómo pedirlas.
+  let index = 0;
+  let onTabs = false; // ↑: el foco en las pestañas (◀ ▶ cambian; con el teléfono no hay LB/RB)
   let row = 0; // en el panel: la pregunta
   let option = 0; // en el panel: la respuesta enfocada
   let panelFrom = null; // lo elegido al abrir el panel (al cerrarlo, si cambió, se vuelve a elegir)
@@ -197,15 +200,24 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   let ticking = 0;
   let cancelExit = () => {};
 
-  const onFilters = () => index === picks.length;
-  const current = () => (onFilters() ? null : picks[index] || null);
+  const REROLL = () => (picks.length ? picks.length : -1); // sin propuestas no hay «Otras tres»: solo «Filtros»
+  const FILTERS = () => (picks.length ? picks.length + 1 : 0);
+  const onReroll = () => index === REROLL();
+  const onFilters = () => index === FILTERS();
+  const current = () => (onFilters() || onReroll() ? null : picks[index] || null);
+  const reroll = () => { onMove?.(); shuffle({ fresh: true }); };
 
   function paintStrip() {
     const summary = filtersSummary(choice);
     mount(strip, ...picks.map((p, i) => {
       return Card({ ...curatedItem(p), rank: undefined, trend: undefined }, { wide: true, onPress: () => press(i) });
-    }), h("button", { class: ["card", "decide__filters"], type: "button", tabindex: "-1", "aria-label": "Filtros", style: { "--ratio": 1.3 },
-      onClick: () => press(picks.length) },
+    }), picks.length > 0 && h("button", { class: ["card", "decide__filters", "decide__reroll"], type: "button", tabindex: "-1",
+      "aria-label": "Otras tres", style: { "--ratio": .9 }, onClick: () => press(REROLL()) },
+      h("span", { class: "decide__filters-icon", "aria-hidden": "true" }, svg(ICONS.refresh)),
+      h("span", { class: "decide__filters-name" }, "Otras tres"),
+      h("small", { class: "decide__filters-text" }, "Tres nuevas")),
+    h("button", { class: ["card", "decide__filters"], type: "button", tabindex: "-1", "aria-label": "Filtros", style: { "--ratio": .9 },
+      onClick: () => press(FILTERS()) },
       h("span", { class: "decide__filters-icon", "aria-hidden": "true" }, svg(ICONS.sliders)),
       h("span", { class: "decide__filters-name" }, "Filtros", summary.count > 0 && h("span", { class: "decide__filters-count" }, String(summary.count))),
       h("small", { class: "decide__filters-text" }, summary.text)));
@@ -222,6 +234,13 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   function paintInfo() {
     const g = glyphs();
     if (state === "loading" && !picks.length) return mount(info, h("p", { class: "decide-info__status", role: "status" }, "Buscando…"));
+    if (onReroll()) {
+      return mount(info, Eyebrow("¿Ninguna te late?", { className: "decide-info__eyebrow" }),
+        h("h2", { class: "decide-info__name" }, "Otras tres"),
+        h("p", { class: "decide-info__facts" }, "Te propongo tres distintas con los mismos filtros"),
+        h("div", { class: "button-row decide__actions" },
+          Button({ label: "Otras tres", glyph: g.select, variant: "primary", icon: "refresh", onPress: reroll })));
+    }
     if (onFilters() || !picks.length) {
       // AD-8: con el foco en «Filtros», la izquierda dice qué hace A; sin propuestas, por qué y qué hacer.
       const empty = !picks.length;
@@ -236,7 +255,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
       h("div", { class: "button-row decide__actions" },
         Button({ label: "Ver ya", glyph: g.select, variant: "primary", onPress: () => onPlay?.(p) }),
         Button({ label: "Ficha", glyph: g.options, icon: "info", onPress: () => onPick?.(p) }),
-        Button({ label: "Otras tres", glyph: g.alt, icon: "refresh", onPress: () => { onMove?.(); shuffle({ fresh: true }); } })));
+        Button({ label: "Otras tres", glyph: g.alt, icon: "refresh", onPress: reroll })));
   }
 
   function paintPanel() {
@@ -260,8 +279,8 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   }
 
   function paint() {
-    DecideModes(modes, { on: 0, onPick: (i) => (i === 1 ? onDeck?.() : null) });
-    [...strip.children].forEach((node, i) => node.classList.toggle("is-focused", panelFrom == null && i === index));
+    DecideModes(modes, { on: 0, focused: onTabs, onPick: (i) => (i === 1 ? onDeck?.() : null) });
+    [...strip.children].forEach((node, i) => node.classList.toggle("is-focused", panelFrom == null && !onTabs && i === index));
     const p = current();
     if (p) backdrop.show(p.hero || p.image || null); // AD-8: en «Filtros», el fondo se queda con la última
     paintInfo();
@@ -326,6 +345,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   function select() {
     if (!picks.length) return state === "error" ? shuffle() : openPanel();
     if (onFilters()) return openPanel();
+    if (onReroll()) return reroll();
     return onPlay?.(current());
   }
 
@@ -361,6 +381,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     picks = [];
     seen = new Map();
     index = 0;
+    onTabs = false;
     panelFrom = null;
     mount(strip);
     el.hidden = false;
@@ -411,11 +432,20 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     if (action === "search") return false;
     if (action === "menu") { const p = current(); if (p && onOptions) onOptions(p); return true; } // AD-5 (en «Filtros», nada)
     if (action === "nextsection" || action === "prevsection") { if (onDeck) onDeck(); return true; } // AD-11: LB/RB, «Una por una»
-    if (action === "alt") { onMove?.(); shuffle({ fresh: true }); return true; }
+    if (action === "alt") { reroll(); return true; }
+    if (onTabs) { // ◀ ▶ o A en «Una por una» la abren; ↓ regresa a las tarjetas
+      if (action === "right" || action === "select") { if (onDeck) onDeck(); return true; }
+      if (action !== "down") return true;
+      onTabs = false;
+      onMove?.();
+      paint();
+      return true;
+    }
     if (action === "options") { const p = current(); if (p) onPick?.(p); return true; }
     if (action === "select") { select(); return true; }
-    if (action === "left" && index > 0) index--;
-    else if (action === "right" && index < picks.length) index++;
+    if (action === "up") onTabs = true;
+    else if (action === "left" && index > 0) index--;
+    else if (action === "right" && index < FILTERS()) index++;
     else return true;
     onMove?.();
     paint();
@@ -425,6 +455,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   // El pie: lo que hacen A, Y y X ya lo dicen los botones de la izquierda (como el Inicio); aquí lo demás.
   const hints = (g) => (panelFrom != null
     ? [{ glyph: "◀ ▶", label: "Elegir" }, { glyph: g.select, label: "Siguiente pregunta" }, { glyph: g.back, label: "Listo", end: true }]
+    : onTabs ? [{ glyph: "▶", label: "Una por una" }, { glyph: "▼", label: "Volver" }, { glyph: g.back, label: "Atrás", end: true }]
     : [picks.length > 0 && { glyph: "◀ ▶", label: "Otra" }, { glyph: g.section, label: "Una por una" },
       current() && { glyph: g.menu, label: "Opciones" }, { glyph: g.back, label: "Atrás", end: true }]).filter(Boolean);
 
