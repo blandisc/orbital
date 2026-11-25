@@ -144,7 +144,8 @@ struct MosaicCover: View {
                 .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {
-                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
+                // MT4-A: la chapa se apaga mientras se abre (no es del mosaico) y va un poco más abajo (Fernando, 25 nov 2026).
+                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(1 - Double(reach)) }
             }
             .contentShape(Rectangle())
     }
@@ -295,7 +296,9 @@ struct MosaicCover: View {
             .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: (up - DS.ParaTiB.coverTitleZone) / total),
             .init(color: .black, location: up / total),
             .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
-            .init(color: .clear, location: 1),
+            // MT4-A: abierta, abajo ya no se apaga: los pósters de abajo son los del mosaico (antes se veían oscuros, un
+            // «fondo falso», y se prendían de golpe al cambiar).
+            .init(color: .black.opacity(Double(reach)), location: 1),
         ], startPoint: .top, endPoint: .bottom)
     }
 
