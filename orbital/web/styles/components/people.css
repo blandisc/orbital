@@ -28,3 +28,4 @@
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .person-head--open .person-head__bio { -webkit-line-clamp: 9; }
+.person-head__bio[role="button"] { cursor: pointer; } /* un clic o el dedo la despliegan, como X */

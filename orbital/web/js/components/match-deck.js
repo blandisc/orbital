@@ -32,9 +32,9 @@ export function freshDiscards(all, now = Date.now()) {
 
 /** Cada dirección con su nombre, su sello y su color (DS.Match.pass · tonight · keep). */
 const WAYS = {
-  pass: { label: "Paso", stamp: "Paso", icon: "close", glyph: "◀" },
-  tonight: { label: "Para hoy", stamp: "Para hoy", icon: "pin", glyph: "▲" }, // OT-5: ★ es calificar
-  keep: { label: "Guardar", stamp: "Guardar", icon: "bookmark", glyph: "▶" }, // lo guardado es el marcador (Guardado); ♥ es favoritos
+  pass: { label: "Paso", stamp: "Paso", icon: "close", arrow: "left" },
+  tonight: { label: "Para hoy", stamp: "Para hoy", icon: "pin", arrow: "up" }, // OT-5: ★ es calificar
+  keep: { label: "Guardar", stamp: "Guardar", icon: "bookmark", arrow: "right" }, // lo guardado es el marcador (Guardado); ♥ es favoritos
 };
 
 export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null }) {
@@ -137,7 +137,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     mount(actions, top && [
       Button({ label: "Ver ya", glyph: glyphs.select, variant: "primary", onPress: () => play() }),
       ...Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },
-        Button({ label: w.label, icon: w.icon, glyph: w.glyph, onPress: () => decide(way) }))),
+        Button({ label: w.label, icon: w.icon, glyph: glyphs[w.arrow], onPress: () => decide(way) }))),
     ]);
   }
 

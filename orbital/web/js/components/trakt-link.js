@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { Button } from "./button.js";
 import { ScreenHead } from "./ui.js";
 
 /**
@@ -34,7 +35,9 @@ export function whereWords(url, fallback) {
   return ["Escribe este código en ", siteOf(url, fallback)];
 }
 
-export function createTraktLink({ onMove, onClose }) {
+export function createTraktLink({ onMove, onClose, glyphs = () => ({}) }) {
+  const againButton = () => Button({ label: "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+  let again = againButton();
   const code = h("div", { class: "trakt-link__code", "aria-live": "polite" });
   const where = h("p", { class: "trakt-link__step" });
   const status = h("div", { class: "trakt-link__status", role: "status" });
@@ -44,7 +47,9 @@ export function createTraktLink({ onMove, onClose }) {
   const head = h("div", {});
   const list = h("ul", { class: "trakt-link__list" });
   const el = h("section", { class: "trakt-link screen", hidden: true, "aria-label": "Conectar cuenta" },
-    h("div", { class: "trakt-link__box" }, head, where, h("div", { class: "trakt-link__row" }, code, qr), status, list));
+    h("div", { class: "trakt-link__box" }, head, where, h("div", { class: "trakt-link__row" }, code, qr), status,
+      // Con el dedo o el mouse no hay pie: «Otro código» también es botón (con el mando lo dice su glifo).
+      again, list));
   let svc = SERVICES.trakt;
   let attempt = 0;
   let waiting = false;
@@ -91,6 +96,9 @@ export function createTraktLink({ onMove, onClose }) {
     qrImage.src = svc.qr;
     qrImage.alt = `Código QR de ${svc.site}`;
     el.setAttribute("aria-label", `Conectar ${svc.name}`);
+    const fresh = againButton(); // el glifo del mando o del teclado que usas ahora
+    again.replaceWith(fresh);
+    again = fresh;
     cancelExit();
     el.hidden = false;
     request();
@@ -120,7 +128,8 @@ export function createTraktLink({ onMove, onClose }) {
     return true; // nada más que hacer aquí: el resto de botones no se escapan a lo de atrás
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otro código" }, { glyph: g.back, label: "Atrás", end: true }];
+  const hints = (g) => [{ glyph: g.options, label: "Otro código", offscreen: true }, // el botón ya lo dice
+    { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, failed, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

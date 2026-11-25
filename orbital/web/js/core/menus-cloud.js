@@ -244,7 +244,7 @@ function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
     return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
       { icon: "bolt", label: "Conectar con tu clave", hint: "Pégala aquí o desde cualquier celular, con un código QR",
         command: { type: "rd-connect", service: cloudOf(rd?.service) } },
-      { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "stay" } },
+      { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Tu nube › Pasar a la TV", command: { type: "stay" } },
       which,
     ] };
   }
@@ -514,7 +514,7 @@ export function stremioAccountMenu(settings = {}) {
   const trakt = !!settings.trakt?.linked;
   return {
     title: "Stremio",
-    subtitle: "Stremio ya no se conecta: queda solo para ver torrents sin Real-Debrid. Tu Mi lista pasa a Trakt, sin borrar nada en Stremio.",
+    subtitle: "Stremio ya no se conecta: queda solo para ver torrents sin la nube. Tu Mi lista pasa a Trakt, sin borrar nada en Stremio.",
     options: [
       trakt
         ? { icon: "download", label: "Pasar a Trakt y desconectar", hint: "A tu lista «Mi lista Stremio» · se desconecta solo si llegó todo",
@@ -605,7 +605,7 @@ export function addonMenu(entry, { first = false, last = false, lastSource = fal
         command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on", name: entry.name, lastSource } },
       !first && { icon: "back", label: "Subir", hint: "Se le pregunta antes", command: { type: "addon-change", id: entry.id, action: "up" } },
       !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
-      entry.origin !== "orbital" && { icon: "close", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
+      entry.origin !== "orbital" && { icon: "trash", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
         command: { type: "addon-change", id: entry.id, action: "remove", name: entry.name } },
       { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
@@ -728,7 +728,7 @@ export function torrentioLanguageMenu(entry, key) {
     options: [
       i > 0 && { icon: "back", label: "Subir", command: { type: "torrentio-set", options: { ...o, language: moved(i - 1) }, reopen: "languages", back: true } },
       i < mine.length - 1 && { icon: "chevron", label: "Bajar", command: { type: "torrentio-set", options: { ...o, language: moved(i + 1) }, reopen: "languages", back: true } },
-      { icon: "close", label: "Quitar", danger: true, command: { type: "torrentio-set", options: { ...o, language: mine.filter((k) => k !== key) }, reopen: "languages", back: true } },
+      { icon: "trash", label: "Quitar", danger: true, command: { type: "torrentio-set", options: { ...o, language: mine.filter((k) => k !== key) }, reopen: "languages", back: true } },
       { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
   };

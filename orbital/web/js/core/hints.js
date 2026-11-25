@@ -15,18 +15,18 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     // Una fila que solo informa («Cómo se usa», ejemplos de Alexa): A no hace nada, no se ofrece.
     if (inert) return [{ glyph: glyphs.back, label: "Atrás" }];
     // En un ajuste (‹ Grande ›) lo que se hace es cambiarlo: ◀ ▶ (A también pasa al siguiente).
-    return [adjustable ? { glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },
+    return [adjustable ? { glyph: glyphs.sides, label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },
       { glyph: glyphs.back, label: "Atrás" }];
   }
   // T5: en las pestañas Todo · Películas · Series, A elige y ↓ regresa a la fila. D5-A: en un ícono, A dice qué abre.
-  if (kinds === "on") return capHints([{ glyph: glyphs.select, label: kindAction || "Mostrar" }, { glyph: "↓", label: "Volver a la fila", secondary: true },
+  if (kinds === "on") return capHints([{ glyph: glyphs.select, label: kindAction || "Mostrar" }, { glyph: glyphs.down, label: "Volver a la fila", secondary: true },
     { glyph: glyphs.menu, label: "Menú", end: true }], glyphs);
   return capHints([
     // T9: un pedido a la nube enfocado dice su estado con palabras (el ícono de la esquina, en grande, no basta a 3 m).
     status && { glyph: "", label: status, status: true },
     // En la primera fila de Películas y series, ↑ sube a las pestañas (como los filtros de Juegos).
     // D5-A: arriba también están Guardado, Colecciones y Filtro avanzado.
-    kinds === "above" && { glyph: "↑", label: "Mostrar y Guardado", secondary: true },
+    kinds === "above" && { glyph: glyphs.up, label: "Mostrar y Guardado", secondary: true },
     // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
     // Con el héroe a la vista, sus botones ya dicen A y X («Ver la serie», «Episodios»): el pie no los repite.
     primary && { glyph: glyphs.select, label: primary, offscreen: heroButtons },

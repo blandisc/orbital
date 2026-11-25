@@ -204,7 +204,7 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
   }
 
   const hints = (g) => {
-    if (zone === "rail") return [{ glyph: g.rows, label: "Categoría" }, { glyph: g.select, label: "Entrar" }, { glyph: g.back, label: "Cerrar", end: true }];
+    if (zone === "rail") return [{ glyph: g.rows, label: "Categoría" }, { glyph: g.select, label: "Entrar" }, { glyph: g.back, label: "Atrás", end: true }]; // B se llama «Atrás» al salir (como «Atrás» con el dedo); «Listo» solo al terminar de editar
     const o = focused();
     return [
       adjustable(o) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" },

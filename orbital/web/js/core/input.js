@@ -26,9 +26,11 @@ export const PADMAP = {
 export const REPEATABLE = new Set(["up", "down", "left", "right", "pageleft", "pageright"]);
 
 export const GLYPHS = {
-  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", search: "⧉", rows: "↕", page: "LT RT", section: "LB RB", home: "Home" },
+  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", search: "⧉", rows: "↕", page: "LT RT", section: "LB RB", home: "Home",
+    up: "▲", down: "▼", left: "◀", right: "▶", sides: "◀ ▶" }, // la cruceta
   // home: el Home del teclado es Ctrl + Inicio (atajo global de la consola, orbital/hotkey.py).
-  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E", home: "Ctrl Inicio" },
+  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E", home: "Ctrl Inicio",
+    up: "↑", down: "↓", left: "←", right: "→", sides: "← →" }, // las flechas: nadie las escribe a mano en el pie
 };
 // Escribiendo con un teclado físico las letras son texto: M, X y Y no pueden ser atajos ahí. Enter
 // busca o avanza, Tab cambia de campo y las acciones van a teclas que no escriben.
@@ -41,8 +43,8 @@ GLYPHS.touch = GLYPHS.keyboard;
 /** Qué hace cada glifo de la leyenda («Esc» → atrás, «Q» → la anterior): tocarlo en el pie hace lo mismo que la tecla. */
 const GLYPH_ACTIONS = {
   Enter: "select", Esc: "back", X: "alt", Y: "options", M: "menu", S: "search", RePág: "pageleft", AvPág: "pageright",
-  Q: "prevsection", E: "nextsection", F2: "menu", F3: "options",
-  A: "select", B: "back", "☰": "menu", "⧉": "search", LT: "pageleft", RT: "pageright", LB: "prevsection", RB: "nextsection",
+  Q: "prevsection", E: "nextsection", F2: "menu", F3: "options", "↑": "up", "↓": "down", "←": "left", "→": "right",
+  A: "select", B: "back", "☰": "menu", "⧉": "search", LT: "pageleft", RT: "pageright", LB: "prevsection", RB: "nextsection", "▲": "up", "▼": "down", "◀": "left", "▶": "right",
 };
 export const glyphAction = (glyph) => GLYPH_ACTIONS[glyph] ?? null;
 

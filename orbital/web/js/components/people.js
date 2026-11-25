@@ -26,11 +26,11 @@ export function PersonChip(person, { onPress } = {}) {
     photo, h("strong", { class: "person-chip__name" }, person.name), person.role ? h("span", { class: "person-chip__role" }, shortRole(person.role)) : null);
 }
 
-/** La persona arriba de su filmografía (list-screen): foto grande, de dónde es y su biografía (Y la despliega). */
-export function PersonHead(person) {
+/** La persona arriba de su filmografía (list-screen): foto grande, de dónde es y su biografía (X, un clic o el dedo la despliegan). */
+export function PersonHead(person, { onToggle } = {}) {
   return h("div", { class: "person-head" },
     person.photo ? h("img", { class: "person-head__photo", src: sized(person.photo, HEAD_PX), alt: "" }) : h("span", { class: "person-head__photo person-chip__photo--initials" }, initials(person.name)),
     h("div", { class: "person-head__text" },
       [person.born, person.place].filter(Boolean).length ? h("span", { class: "person-head__born" }, [person.born, person.place].filter(Boolean).join(" · ")) : null,
-      person.biography ? h("p", { class: "person-head__bio" }, person.biography) : null));
+      person.biography ? h("p", { class: "person-head__bio", role: onToggle ? "button" : null, onClick: onToggle }, person.biography) : null));
 }

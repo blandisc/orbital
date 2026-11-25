@@ -48,7 +48,7 @@ export function languageMenu(languages = [], code) {
     options: [
       up && validLanguages(up) && !same(up) && { icon: "back", label: "Subir", command: set(up) },
       down && validLanguages(down) && !same(down) && { icon: "chevron", label: "Bajar", command: set(down) },
-      validLanguages(removed) && { icon: "close", label: "Quitar", danger: true, command: set(removed) },
+      validLanguages(removed) && { icon: "trash", label: "Quitar", danger: true, command: set(removed) },
       { icon: "close", label: "Dejarlo como está", command: { type: "close" } },
     ].filter(Boolean),
   };

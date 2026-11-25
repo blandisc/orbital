@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { Button } from "./button.js";
 import { ScreenHead } from "./ui.js";
 
 /**
@@ -8,13 +9,17 @@ import { ScreenHead } from "./ui.js";
  * «Para ti» y la sesión de Trakt salen de aquí. En cuanto el iPhone habla con Orbital (evento «phone-linked»), esta
  * pantalla se cierra con «iPhone conectado» (main.js). B cierra; Y lo vuelve a pedir (si se encendió Tailscale mientras tanto).
  */
-export function createPhoneLink({ onMove, onClose }) {
+export function createPhoneLink({ onMove, onClose, glyphs = () => ({}) }) {
+  const againButton = () => Button({ label: "Otro código", glyph: glyphs().options, onPress: () => handle("options") });
+  let again = againButton();
   const qr = h("div", { class: "phone-link__qr" });
   const status = h("p", { class: "phone-link__status", role: "status" });
   const el = h("section", { class: "phone-link screen", hidden: true, "aria-label": "Conectar un aparato" },
     h("div", { class: "phone-link__box" },
       ScreenHead({ title: "Conectar un aparato" }),
       qr, status,
+      // Con el dedo o el mouse no hay pie: «Otro código» también es botón (con el mando lo dice su glifo).
+      again,
       h("ol", { class: "phone-link__steps" },
         // PT21 (Fernando, 4 nov): primero el camino del iPhone (lo que dice su pantalla); la cámara también sirve.
         h("li", {}, "En Orbital toca «Escanear el código» (o usa la cámara) y apunta a este código"),
@@ -45,7 +50,7 @@ export function createPhoneLink({ onMove, onClose }) {
         if (mine !== attempt) return;
         mount(qr);
         status.classList.add("phone-link__status--error");
-        mount(status, "No pude preparar el código. Y para intentar otra vez.");
+        mount(status, "No pude preparar el código. Pide otro.");
       });
       mount(qr, image);
       clearTimeout(renew);
@@ -60,6 +65,9 @@ export function createPhoneLink({ onMove, onClose }) {
   }
 
   function open() {
+    const fresh = againButton(); // el glifo del mando o del teclado que usas ahora
+    again.replaceWith(fresh);
+    again = fresh;
     cancelExit();
     el.hidden = false;
     load();
@@ -81,7 +89,7 @@ export function createPhoneLink({ onMove, onClose }) {
     return true;
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otra vez" }, { glyph: g.back, label: "Atrás", end: true }];
+  const hints = (g) => [{ glyph: g.options, label: "Otro código", offscreen: true }, { glyph: g.back, label: "Atrás", end: true }]; // el botón ya lo dice
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

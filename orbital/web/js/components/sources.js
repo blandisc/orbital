@@ -8,7 +8,7 @@ import { isOwnSource, languageLine, versionRows, versionStart, versionStep } fro
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { Flag, Flags } from "./flag.js";
-import { requestLabel } from "../core/menus.js";
+import { cloudSay, requestLabel } from "../core/menus.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -96,7 +96,8 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     // PT4 (Fernando, 4 nov): ámbar solo para lo que necesita tu atención; pedir, en cola o bajando van en gris.
     // PT11: «Bajando en la nube · 42 %» en todos lados.
     if (known?.state === "downloading") return [`Bajando en la nube · ${Math.round(known.percent || 0)} %`, null];
-    if (known) return [requestLabel(known), known.state === "ready" ? "good" : ["refused", "no_peers", "too_many"].includes(known.state) ? "warn" : null];
+    if (known) return [cloudSay(requestLabel(known), known.service), // «TorBox no lo dejó bajar» con TorBox
+      known.state === "ready" ? "good" : ["refused", "no_peers", "too_many"].includes(known.state) ? "warn" : null];
     return ["↓ Por pedir", null];
   };
   const isAsk = (r) => !!rows[r]?.ask;
@@ -148,6 +149,8 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       class: ["version", r === at.row && c === at.col && "is-focused"], type: "button",
       "aria-label": [rows[r].name, opt.res, recommended && "Recomendada"].filter(Boolean).join(" · "),
       onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
+      // Clic derecho o dedo sostenido: «Todas las de aquí», lo de X (con el dedo no hay pie que lo diga).
+      onContextmenu: opt.all.length > 1 ? (event) => { event.preventDefault(); focus({ row: r, col: c }); handle("alt"); } : null,
     },
     // La recomendada: un destello antes de la calidad, como el iPhone (VersionListRow · sparkles), no la cápsula «Recomendada»
     // en la esquina, que tapaba la marca del complemento en las tarjetas angostas (T12, revisión del 10 nov).
@@ -385,7 +388,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     if (!rows.length) return [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
     const many = rows[at.row]?.options[at.col]?.all.length > 1;
     return [{ glyph: g.select, label: verb(at.row, rows[at.row]?.options[at.col]?.source) }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
-      rows.some((r) => r.options.length > 1) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Calidad" },
+      rows.some((r) => r.options.length > 1) && { glyph: g.sides, label: "Calidad" },
       many && { glyph: g.alt, label: "Todas las de aquí", secondary: true },
       isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);

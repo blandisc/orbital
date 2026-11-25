@@ -101,6 +101,9 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   // Un ranking de verdad: la pestaña lo pide y sus títulos traen puesto (R2: Criterion pedía ranking sin puestos).
   const ranked = () => !!current()?.ranked && (loaded.get(tab) || []).some((item) => rankOf(item) != null);
 
+  /** La biografía de una persona: tres líneas o desplegada (X, un clic o el dedo). */
+  function toggleBio() { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); }
+
   function paintHead() {
     // Una lista de «Esta semana»: su ícono a color con el resplandor de su color, como el iPhone.
     mount(media, list.media?.emblem ? h("img", { class: "list-screen__emblem", src: list.media.emblem, alt: "", style: list.media.halo ? { "--halo": list.media.halo } : null })
@@ -115,7 +118,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
       list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
     if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // ds-exception: logotipo en mayúsculas
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
-    mount(about, list.person ? PersonHead(list.person) : null);
+    mount(about, list.person ? PersonHead(list.person, { onToggle: toggleBio }) : null);
     about.hidden = !list.person;
     paintTools();
   }
@@ -401,7 +404,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (action === "alt" && list.editable && !current()?.noEdit) { setEditing(!editing); return true; } // X: Editar · Listo
     if (action === "select" && editing) { toggleChosen(item); return true; }
     if (action === "options" && editing && chosen.size) { onBatch?.(api); return true; }
-    if (action === "alt" && list.person?.biography) { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); return true; }
+    if (action === "alt" && list.person?.biography) { toggleBio(); return true; }
     if (action === "select" || action === "alt") { if (item) onPick?.(item); return true; }
     if (action === "options") { if (item) onMore?.(item); return true; }
     return true;

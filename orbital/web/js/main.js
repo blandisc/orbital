@@ -242,10 +242,12 @@ const ui = {
     onPick: (target, id) => (ui.tv.focusId === id || target?.kind === "filter" ? (ui.tv.focus(id), tvActivate(target)) : ui.tv.focus(id)),
   }),
   traktLink: createTraktLink({
+    glyphs,
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(traktFrom); },
   }),
   phoneLink: createPhoneLink({
+    glyphs,
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(phoneFrom); },
   }),
