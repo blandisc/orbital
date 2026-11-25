@@ -1126,7 +1126,9 @@ mientras corre `sample`: detiene la app y ensucia el desplazamiento.
 Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser instantáneo… primero quiero evidencia».
 
 - **Regla: cambiar de pestaña muestra lo que ya estaba armado.** En la Mac las pestañas son una baraja (`MacTabDeck`): cada
-  pantalla se arma la primera vez y después solo se esconde. Lo escondido no cambia ningún valor del entorno (SwiftUI volvería
+  pantalla se arma la primera vez y después solo se esconde, siempre debajo de la que ves (en la 2534, sin eso, las
+  escondidas quedaban encima: la rueda del mouse les llegaba a ellas, Inicio se trababa al bajar y Biblioteca no cargaba,
+  24 nov 2026). Lo escondido no cambia ningún valor del entorno (SwiftUI volvería
   a resolver cada texto y color: la primera versión lo hacía y seguía costando ~0.4 s); se pregunta con `@TabHidden` o
   `.onTabHidden`, y sus atajos de teclado van con `shownKeyboardShortcut`. Lo que antes se apagaba en `onDisappear` (cielo,
   vaivén, «a la vista» de Descargas, cursor de Buscar) se apaga también al esconderse. «Esta semana» no se relee si se armó

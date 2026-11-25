@@ -33,7 +33,9 @@ struct HomeHeroSlide: View {
             // SE con letra grande). Crece hasta xxxLarge, como las piezas del mosaico; el visor de contenido grande lo amplía.
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .accessibilityShowsLargeContentViewer()
-            .padding(.bottom, overlap + (WindowMetrics.roomy ? DS.Space.s4 : DS.Space.s6))   // los puntos (en ventana ancha van debajo) y, en oscuro, lo que se encima
+            // Los puntos (en ventana ancha van debajo) y, en oscuro, lo que se encima. En el tablero (Mac, iPad) «Ver» va más
+            // cerca de la orilla de abajo: se veía flotando a media tarjeta (Fernando, 24 nov 2026).
+            .padding(.bottom, overlap + (tile ? DS.Space.s2 : WindowMetrics.roomy ? DS.Space.s4 : DS.Space.s6))
         }
         .contentShape(Rectangle())
         .onTapGesture { open(s.route) }

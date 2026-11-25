@@ -68,6 +68,9 @@ extension DesignRulesTests {
         let deck = try code("MacTabDeck.swift")
         XCTAssertTrue(deck.contains("@Environment(\\.macTabs) private var tabs") && !deck.contains("let current: Int"), "la baraja lee la pestaña ella misma")
         XCTAssertTrue(deck.contains(".opacity(on ? 1 : 0)") && deck.contains(".allowsHitTesting(on)"), "la escondida solo se esconde")
+        // Y queda debajo: sin `zIndex` las escondidas iban encima de la que ves y la rueda del mouse les llegaba a ellas (Inicio
+        // trabada al bajar y Biblioteca sin cargar, 24 nov 2026, en la 2534).
+        XCTAssertTrue(deck.contains(".zIndex(on ? 1 : 0)"), "la pestaña que ves va encima de las escondidas")
         let perCard = deck.components(separatedBy: "\n").filter { $0.contains(".environment(") }
         XCTAssertEqual(perCard.map { $0.trimmingCharacters(in: .whitespaces) }, [".environment(\\.macTabID, id)   // fijo: la carta siempre es la misma pestaña"],
                        "en la baraja ningún valor del entorno cambia con la pestaña: SwiftUI volvería a resolver cada texto y color (~0.4 s)")

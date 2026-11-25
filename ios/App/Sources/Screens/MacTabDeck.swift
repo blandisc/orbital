@@ -52,6 +52,9 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
                 .opacity(on ? 1 : 0)
                 .allowsHitTesting(on)
                 .accessibilityHidden(!on)
+                // La que ves, siempre arriba: sin esto las escondidas (Buscar, Biblioteca) quedaban encima de Inicio y la
+                // rueda del mouse o el puntero les llegaban a ellas (Inicio trabada al bajar, 24 nov 2026).
+                .zIndex(on ? 1 : 0)
                 .environment(\.macTabID, id)   // fijo: la carta siempre es la misma pestaña
         }
     }
