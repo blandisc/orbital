@@ -990,7 +990,7 @@ nuevos tamaños»):
   - Ficha (RF2): en la Mac no lleva pestañas; todo en una sola página que se baja: episodios, tráiler y reparto, tus créditos, tu calificación y tus vistas, reseñas en tres columnas de igual alto (`DS.Mac.reviewColumns`, con `Grid`), saga y parecidas, y detalles. En iPad siguen las pestañas.
   - Inicio (RI2): la portada a lo ancho con «Seguir viendo» (o «Lo que sigue») montado en su borde.
   - Pestañas (RN2): una cápsula al centro de la barra (`MacTabStrip`), en el orden del menú «Ir» (⌘1 Inicio, ⌘2 Explorar, ⌘3 Biblioteca), con la elegida llena del color del texto (crema en oscuro, oscura en claro). «Buscar» es una cápsula junto al logo (`MacSearchChip`) que abre Buscar con el cursor listo. En una ventana de menos de `DS.Mac.centeredTabsFrom` las dos van junto al logo, solo con íconos: al centro se encimaban.
-  - Pósters (RP2): al pasar el puntero, la tarjeta crece y su póster lleva el marco crema del foco de la tele; si el póster mide al menos `DS.Mac.quickMinWidth`, en su esquina salen ▶ y ＋. El marco y los botones se ponen sobre el póster (`macPosterBounds`), no sobre toda la tarjeta. ▶ y ＋ también son acciones de VoiceOver. La acción la pone la raíz (`posterQuick`, comparable: no repinta los pósters); ＋ sobre algo que ya está en Mi lista solo lo avisa, sin «Deshacer».
+  - Pósters (RP2): al pasar el puntero, la tarjeta crece y su póster lleva el marco crema del foco de la tele; si el póster mide al menos `DS.Mac.quickMinWidth`, en su esquina salen ▶ y ＋. El marco y los botones se ponen sobre el póster (`macPosterBounds`), no sobre toda la tarjeta. ▶ y ＋ también son acciones de VoiceOver. La acción la pone la raíz (`posterQuick`, comparable: no repinta los pósters); ＋ sobre algo que ya está en Mi lista solo lo avisa, sin «Deshacer». **Lo que responde al puntero solo se prende si el puntero se mueve** (25 nov 2026): al deslizar con la rueda el puntero se queda quieto y lo que pasa debajo (pósters, las ‹ › de las filas) no crece ni saca nada, uno tras otro; en cuanto lo mueves, se marca lo que tienes debajo (`MacPointer`, `macPointerWatch` en `MacTabDeck`). `DesignRulesTests.testHoverOnlyWhenPointerMoves` lo vigila.
   - Pantallas vacías (RB2): `DSEmptyState` ocupa casi todo el alto de lo que lo contiene (`DS.Mac.emptyShare`, con `containerRelativeFrame`), no de la ventana: en una hoja chica no se sale.
 - **La variante de iPad dice «dispositivo»:** la Mac toma la variante de iPad del catálogo de textos, así que ahí nunca se escribe «iPad» sino «dispositivo» («device»); «Como el iPad» es «Como el sistema». Al compilar, Xcode reescribe `Localizable.xcstrings`: se restaura y solo se cambia el texto a propósito.
 - **Una sola pestaña no se dibuja** (`DSTextTabs` con menos de dos opciones): en la ficha de una película sin reparto ni parecidas, «Detalles» sola parecía rota. Vale en iPhone, iPad y Mac.
@@ -1160,6 +1160,10 @@ Fernando: «le pico explorar y se tarda como 2 segundos en cambiar. Debería ser
   las pestañas escondidas: ninguna bajó el trabajo por clic (abrir la ficha siguió en 0.9–1.1 s y ~45 acomodos de la raíz).
   No se quedaron. Sí sirvió: el arte que respira a 4 pasos por segundo en vez de 20 (Inicio quieto: 15 % → 9 % del hilo
   principal). Ojo al medir: los clics por accesibilidad (computer use) suman 10–20 % de trabajo que el mouse no.
+- **VD-A (Fernando, 25 nov 2026): un solo renglón de vidrio para las cuatro pestañas no se sube.** La V3 (el logo, «Buscar»
+  y las pestañas dibujados una vez encima de la baraja) se veía idéntica, pero medida no es más rápida: volver a una pestaña
+  ya vista, 63–99 ms hoy contra 92–114 ms con la V3 (2544 → 2545, siete rondas alternadas). Queda en la rama local
+  `v3-renglon-comun` por si un día se quiere.
 
 ### La ficha de la Mac va en su propia capa (24 nov 2026)
 

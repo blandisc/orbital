@@ -6,6 +6,7 @@
 # Antes: compila Release con las órdenes (solo para medir; la app normal no las trae) e instálala:
 #   xcodebuild build … -configuration Release 'OTHER_SWIFT_FLAGS=$(inherited) -DMAC_DRIVE'
 #   ios/scripts/instalar-en-mac.sh <ruta a Orbital.app>
+# Las órdenes pueden empezar con `go`: la app espera a que Instruments ya grabe (si no, «Instruments aún no grababa»).
 # Uso:  ios/scripts/medir-mac-sin-manos.sh <carpeta de salida> [órdenes]   (por omisión ios/scripts/mac-sin-manos.txt)
 #       ORBITAL_ARGS='-macStillGlass YES' …: banderas de más para la app (pruebas de una sola cosa).
 # Escribe el arranque (cuándo quedó quieta, trabajo del hilo de la pantalla en los primeros 5 s y el congelamiento más largo)
@@ -18,7 +19,8 @@ mac='Wrapper/Orbital.app/Orbital'
 OUT=${1:?carpeta}; ORDERS=${2:-${0:A:h}/mac-sin-manos.txt}
 here=${0:A:h}; mkdir -p "$OUT"; rm -rf "$OUT/arranque.trace" "$OUT/ordenes.trace"
 script=$(grep -v '^\s*$' "$ORDERS" | paste -sd'|' -)
-secs=$(python3 -c "import sys;print(int(sum(float(l.split()[1]) for l in open(sys.argv[1]) if l.startswith('wait'))+10))" "$ORDERS")
+# Lo que se graba: las esperas, lo que dura cada `scroll <pt> <seg>` y un margen (antes solo las esperas: se cortaba a la mitad).
+secs=$(python3 -c "import sys;L=[l.split() for l in open(sys.argv[1])];print(int(sum(float(l[1]) for l in L if l[:1]==['wait'])+sum(float(l[2]) for l in L if l[:1]==['scroll'] and len(l)>2)+16))" "$ORDERS")
 pkill -f "$mac" 2>/dev/null || true; sleep 3
 xcrun xctrace record --template 'Time Profiler' --all-processes --time-limit 14s --output "$OUT/arranque.trace" >/dev/null 2>&1 &
 sleep 3
@@ -27,8 +29,11 @@ open /Applications/Orbital.app --args -macDrive "$script" ${=ORBITAL_ARGS:-}
 wait
 pid=$(pgrep -f "$mac" | head -1)
 # A veces Instruments no suelta la app al acabar el tiempo (24 nov: 27 min colgado): se le da un minuto de más y se corta.
-xcrun xctrace record --template 'Time Profiler' --attach "$pid" --time-limit "${secs}s" --output "$OUT/ordenes.trace" >/dev/null 2>&1 &
+xcrun xctrace record --template 'Time Profiler' --attach "$pid" --time-limit "${secs}s" --output "$OUT/ordenes.trace" > "$OUT/xctrace.log" 2>&1 &
 rec=$!
+# Si las órdenes empiezan con `go`, la app espera a que Instruments ya grabe (con la Mac ocupada tardaba más que cualquier espera fija).
+for _ in {1..120}; do grep -q "Ctrl-C" "$OUT/xctrace.log" 2>/dev/null && break; sleep 1; done
+sleep 6; notifyutil -p mx.iracheta.orbital.go
 for _ in {1..$((secs + 60))}; do kill -0 $rec 2>/dev/null || break; sleep 1; done
 if kill -0 $rec 2>/dev/null; then kill -INT $rec; sleep 5; kill $rec 2>/dev/null || true; echo "Instruments no terminó a tiempo: repite la ronda" >&2; fi
 wait $rec 2>/dev/null || true

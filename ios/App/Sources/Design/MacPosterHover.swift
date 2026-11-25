@@ -71,11 +71,44 @@ private struct MacPosterHover: ViewModifier {
                 // Crece la tarjeta entera (póster, insignias y barra de avance juntos); un renglón con póster chico no.
                 .scaleEffect(hovering && large ? DS.Mac.hoverScale : 1)
                 .zIndex(hovering ? 1 : 0)   // lo que crece pasa por encima del vecino, no por debajo
-                .onHover { inside in withAnimation(DS.Motion.fold(reduceMotion)) { hovering = inside } }
+                // Solo cuando el puntero se mueve: al deslizar con la rueda el puntero se queda quieto y los pósters pasan por
+                // debajo; cada uno crecía, se encogía y armaba su marco, decenas por segundo (el deslizar se sentía trabado,
+                // 25 nov 2026). Al dejar de deslizar, el póster bajo el puntero se marca en cuanto lo mueves.
+                .onContinuousHover(coordinateSpace: .global) { phase in
+                    switch phase {
+                    case .active(let at):
+                        MacPointer.note(at)
+                        if !hovering, MacPointer.isMoving { withAnimation(DS.Motion.fold(reduceMotion)) { hovering = true } }
+                    case .ended:
+                        if hovering { withAnimation(DS.Motion.fold(reduceMotion)) { hovering = false } }
+                    }
+                }
                 .modifier(QuickAccessibility(route: route, quick: quick))
         } else {
             content
         }
+    }
+}
+
+/// Cuándo se movió el puntero por última vez (lo anota toda la ventana, `macPointerWatch`, y cada póster): si un póster
+/// «entra» con el puntero quieto, es que el contenido se deslizó por debajo. Sin observar: nada se vuelve a pintar.
+@MainActor enum MacPointer {
+    private static var last: CGPoint?
+    private static var movedAt: CFTimeInterval = 0
+    static func note(_ point: CGPoint) {
+        if let last, abs(last.x - point.x) <= 0.5, abs(last.y - point.y) <= 0.5 { return }
+        last = point
+        movedAt = CACurrentMediaTime()
+    }
+    static var isMoving: Bool { CACurrentMediaTime() - movedAt < DS.Mac.pointerMoving }
+}
+
+extension View {
+    /// Toda la ventana anota cuándo se mueve el puntero (`MacPointer`); en iPhone y iPad, nada.
+    @ViewBuilder func macPointerWatch() -> some View {
+        if ThisDevice.isMac {
+            onContinuousHover(coordinateSpace: .global) { phase in if case .active(let at) = phase { MacPointer.note(at) } }
+        } else { self }
     }
 }
 

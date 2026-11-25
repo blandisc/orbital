@@ -143,7 +143,17 @@ struct PagingArrows: ViewModifier {
             } action: { _, new in edges = new }
             .overlay(alignment: .leading) { arrow("chevron.left", label: "Anteriores", shown: edges.canGoBack, step: -1) }
             .overlay(alignment: .trailing) { arrow("chevron.right", label: "Siguientes", shown: edges.canGoOn, step: 1) }
-            .onHover { inside in withAnimation(DS.Motion.fade) { hovering = inside } }
+            // Solo con el puntero en movimiento (`MacPointer`): al deslizar con la rueda, las filas que pasan bajo el puntero quieto
+            // no prenden y apagan sus flechas, una tras otra (25 nov 2026).
+            .onContinuousHover(coordinateSpace: .global) { phase in
+                switch phase {
+                case .active(let at):
+                    MacPointer.note(at)
+                    if !hovering, MacPointer.isMoving { withAnimation(DS.Motion.fade) { hovering = true } }
+                case .ended:
+                    if hovering { withAnimation(DS.Motion.fade) { hovering = false } }
+                }
+            }
     }
 
     @ViewBuilder private func arrow(_ symbol: String, label: LocalizedStringKey, shown: Bool, step: CGFloat) -> some View {

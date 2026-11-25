@@ -63,4 +63,27 @@ extension DesignRulesTests {
             XCTAssertFalse(text.contains("@Tracked(always: true)"), "\(url.lastPathComponent): `@Tracked` sin `always` (sus valores se comparan; con `always` repinta sin cambios)")
         }
     }
+    /// Lo que responde al puntero solo se prende si el puntero se mueve: al deslizar con la rueda el puntero queda quieto y cada
+    /// póster o fila que pasaba debajo crecía o sacaba sus flechas, uno tras otro (25 nov 2026). Nada usa `.onHover`; cada
+    /// `onContinuousHover` que prende algo pregunta a `MacPointer`.
+    func testHoverOnlyWhenPointerMoves() throws {
+        let files = try sources(["Design", "Screens", "App"])
+        var hovers = 0
+        for file in files {
+            let text = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            XCTAssertFalse(text.contains(".onHover {") || text.contains(".onHover(perform"), "\(file.name): `.onHover` se prende con el puntero quieto; usa `onContinuousHover` con `MacPointer.isMoving`")
+            var rest = text[...]
+            while let use = rest.range(of: ".onContinuousHover(") {
+                let body = rest[use.upperBound...].prefix(400)
+                if body.contains("= true") {
+                    hovers += 1
+                    XCTAssertTrue(body.contains("MacPointer.isMoving"), "\(file.name): lo que se prende al pasar el puntero pregunta `MacPointer.isMoving`")
+                }
+                rest = rest[use.upperBound...]
+            }
+        }
+        XCTAssertGreaterThanOrEqual(hovers, 2, "no encontré los pósters ni las flechas de las filas")
+        let deck = try XCTUnwrap(files.first { $0.name == "MacTabDeck.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(deck.contains(".macPointerWatch()"), "toda la ventana anota cuándo se mueve el puntero")
+    }
 }

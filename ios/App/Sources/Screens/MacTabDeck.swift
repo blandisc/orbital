@@ -29,6 +29,7 @@ struct MacTabDeck<Home: View, Explore: View, Library: View, Search: View>: View 
             card(3, shown) { library }
             card(2, shown) { search }
         }
+        .macPointerWatch()   // al deslizar con la rueda, los pósters que pasan bajo el puntero quieto no se marcan
         .onChange(of: current, initial: true) { _, now in if !mounted.contains(now) { mounted.insert(now) } }
         .task { await prepareAhead() }
     }

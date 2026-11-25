@@ -70,6 +70,9 @@ extension DS {
         /// Cuánto después de abrir la app se arman, escondidas, Biblioteca y Explorar (`MacTabDeck`), y cuánto entre una y otra:
         /// primero que Inicio se asiente; luego una a la vez, para no trabar lo que estés haciendo.
         static let tabPrepareDelay: Double = 4, tabPrepareGap: Double = 2.5
+        /// Un póster solo se marca si el puntero se movió hace menos de esto: al deslizar con la rueda el puntero está quieto y
+        /// los pósters pasan por debajo sin marcarse (`MacPointer`).
+        static let pointerMoving: Double = 0.15
         /// El tinte del vidrio del renglón de arriba (`macTopGlass`): lo justo para que se lea sobre el fondo oscuro sin volverse
         /// una cápsula sólida.
         static let topGlassTint = DS.surfaceRaised.opacity(0.45)
