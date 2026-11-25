@@ -144,7 +144,8 @@ struct MosaicCover: View {
                 .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {
-                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
+                // MT4-A: la chapa se apaga mientras se abre (no es del mosaico) y va un poco más abajo (Fernando, 25 nov 2026).
+                if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(1 - Double(reach)) }
             }
             .contentShape(Rectangle())
     }
@@ -223,7 +224,9 @@ struct MosaicCover: View {
         // caigan justo donde van las del mosaico (si no, al cambiar brincaban de lado).
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { wallX = $0 }
         .offset(x: alignShift * reach)
-        .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
+        // MT4-A: en la puerta se endereza aquí mismo (un solo giro). Antes giraba aquí y se desgiraba en `CoverOpening` sobre
+        // otro centro: derecho quedaba corrido de lado y el mosaico no podía tomar sus pósters (salían dos mosaicos).
+        .rotationEffect(.degrees(DS.ParaTiB.coverTilt * (isDoor ? 1 - reach : 1)))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -295,7 +298,9 @@ struct MosaicCover: View {
             .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: (up - DS.ParaTiB.coverTitleZone) / total),
             .init(color: .black, location: up / total),
             .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
-            .init(color: .clear, location: 1),
+            // MT4-A: abierta, abajo ya no se apaga: los pósters de abajo son los del mosaico (antes se veían oscuros, un
+            // «fondo falso», y se prendían de golpe al cambiar).
+            .init(color: .black.opacity(Double(reach)), location: 1),
         ], startPoint: .top, endPoint: .bottom)
     }
 
@@ -307,10 +312,21 @@ struct MosaicCover: View {
             let top = max(0, MosaicHandoff.mosaicTop - box.minY)
             let fade = (WindowMetrics.column.height - MosaicHandoff.mosaicTop) * DesignTokens.Opacity.hairline * 0.7
             let hidden = Color.black.opacity(1 - Double(reach))
+            // MT4-A: las columnas del muro que caen fuera del mosaico (en las orillas) se apagan al abrirse; si no, quedaban
+            // detrás como un segundo mosaico (Fernando, 25 nov 2026).
+            let screen = WindowMetrics.column.width
+            let left = max(0, DS.Space.s2 - box.minX), right = max(0, box.maxX - (screen - DS.Space.s2))
             VStack(spacing: 0) {
                 hidden.frame(height: top)
                 LinearGradient(colors: [hidden, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
                 Color.black
+            }
+            .mask {
+                HStack(spacing: 0) {
+                    hidden.frame(width: left)
+                    Color.black
+                    hidden.frame(width: right)
+                }
             }
         }
     }
@@ -349,7 +365,7 @@ private struct CoverOpening: ViewModifier {
             content.opacity(left)
         } else {
             content
-                .rotationEffect(.degrees(-DS.ParaTiB.coverTilt * p), anchor: center)
+                .rotationEffect(.degrees(door ? 0 : -DS.ParaTiB.coverTilt * p), anchor: center)
                 .scaleEffect(1 + DS.ParaTiB.doorGrow * p, anchor: center)
         }
     }
