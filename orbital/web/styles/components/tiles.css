@@ -44,7 +44,7 @@
 .tile--console__logo { height: 3.2rem; width: auto; opacity: var(--opacity-solid); filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
 .is-focused.tile--console.tile .tile--console__logo { transform: var(--pop-transform); opacity: 1; }
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
-.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--space-2) var(--inset-card) var(--inset-card); }
+.tile--console__text { position: relative; display: flex; flex-direction: column; gap: 0; padding: var(--space-2) var(--inset-card) var(--inset-card); }
 .tile--console__name {
   /* Con letra grande, «GameCube» quedaba en «GameC…»: el nombre se achica lo justo para caber en la tarjeta. Pasadas las 8 letras
      («GeForce NOW») se achica en proporción a las que tiene (--name-chars, tiles.js), para no cortarse (IN-3). */
@@ -52,7 +52,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
 .tile--console__text { min-width: 0; }
-.tile--console__count { min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile--console__count { min-width: 0; color: var(--color-text-muted); font-variant-numeric: tabular-nums; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile--console__fresh { position: absolute; top: var(--space-2); right: var(--space-2); z-index: var(--z-raised); max-width: calc(100% - 2 * var(--space-2)); }
 
 /* Al borde del Inicio: lo enfocado se empuja un poco hacia donde ya no hay nada (como las filas). */

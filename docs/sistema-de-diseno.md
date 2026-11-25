@@ -110,19 +110,30 @@ Una medida para cada cosa, repetida en toda la app, en la TV y en el iPhone:
 | Alto de fila | `--row-height` | — | uno para todas las filas |
 
 Los nombres viejos se quedan como alias para no tocar cada componente, pero solo valen esas dos medidas. Las esquinas
-concéntricas (`--radius-inner-row`) y los dibujos de aparatos (`ds-exception`) siguen aparte. Lo vigilan
+de adentro (`--radius-inner-*`, abajo) y los dibujos de aparatos (`ds-exception`) siguen aparte.
+
+**Esquinas anidadas (C2, 24 nov 2026):** lo que va dentro de algo redondeado curva como lo de afuera menos el margen entre
+ambos, nunca menos de 0; un token por par, y `tests/web/radius-nesting.test.mjs` comprueba la cuenta, que lo de afuera y su
+margen sigan siendo esos y que lo de adentro use su token:
+
+| Par | Token | Cuenta | Da |
+|---|---|---|---|
+| Renglón de una hoja (`.sheet__item`) dentro del panel (`.side-panel__panel`) | `--radius-inner-sheet` | `--radius-lg` − `--space-6` | 0: el margen (1,5rem) es más que la esquina (1rem), así que el renglón enfocado va en rectángulo (antes `--radius-lg`, chueco contra el panel) |
+| Miniatura del calendario (`.calendar__thumb`) dentro de su programa (`.calendar__show`) | `--radius-inner-card` | `--radius-lg` − `--inset-row` | .5rem (antes `--radius-inner-row`, que medía contra `--tile-radius` y no contra su tarjeta; se quitó) |
+| Ícono de una pregunta del filtro (`.filter__icon`) dentro de su renglón (`.filter__row`) | `--radius-inner-filter` | `--radius-lg` − `--space-2` | .5rem (el mismo valor que tenía, ahora por cuenta) | Lo vigilan
 `tests/web/design-system.test.mjs` («ritmo») y `DesignTests.testRadiiFollowTheRhythm`; los valores viven en `design/tokens.json`.
 
 ### Espacios
 
 | Qué | Token | Valor |
 |---|---|---|
-| La escala | `--space-1`, `-2`, `-4`, `-6`, `-8`, `-12`, `-16` | **Siete pasos y nada más (D3-B, Fernando, 20 nov 2026): 4 · 8 · 16 · 24 · 32 · 48 · 64** (.25, .5, 1, 1,5, 2, 3, 4 rem; en el iPhone `DS.Space.s1` … `s16`, los mismos puntos). 4 y 8 dentro de un grupo, 16 y 24 entre piezas, 32, 48 y 64 entre grupos. Si un aire no cae en la escala, se usa el paso más cercano, no un número nuevo; 12, 20, 40 y 56 ya no existen (pasaron a 8, 24, 48 y 64). `tests/web/design-parity.test.mjs` («siete pasos») falla si aparece otro en la TV o en el iPhone |
+| La escala | `--space-1`, `-2`, `-4`, `-6`, `-8`, `-12`, `-16` | **Siete pasos y nada más (D3-B, Fernando, 20 nov 2026): 4 · 8 · 16 · 24 · 32 · 48 · 64** (.25, .5, 1, 1,5, 2, 3, 4 rem; en el iPhone `DS.Space.s1` … `s16`, los mismos puntos). 4 y 8 dentro de un grupo, 16 y 24 entre piezas, 32, 48 y 64 entre grupos. Si un aire no cae en la escala, se usa el paso más cercano, no un número nuevo; 12, 20, 40 y 56 ya no existen (pasaron a 8, 24, 48 y 64). `tests/web/design-parity.test.mjs` («siete pasos») falla si aparece otro en la TV o en el iPhone. **B1 (24 nov 2026):** los rellenos, márgenes y huecos sueltos de `orbital/web/styles` (.1, .15, .4, .6, .78rem, 2px…: los 46 que anotaba el revisor y 12 que no veía por ir en la misma línea que otro) pasaron al paso más cercano (los de .1rem, a 0); el revisor común (`tools/sistema-base/revisar.py`, SB-2) ya no anota ninguno en la TV. Lo que no es un aire sino una cuenta va en `calc()`: el lado de la lupa de Buscar (el aire más media diferencia entre la lupa y la tecla, para que sigan concéntricas) y el centrado de la órbita y el satélite de la pantalla de carga (la mitad de su medida) |
 | A los lados de la pantalla | `--page-gutter` | El margen de la TV (`--safe-x`, Ajustes › Márgenes de la TV), nunca menos de `--space-4` |
 | Lo que ocupa la barra de arriba | `--status-room` | `--space-6` + `--safe-y` + `--control-height` |
 | Del título a lo suyo | `--layout-title-to-content` | `--space-2` (el mismo 8 del iPhone) |
 | Entre filas del Inicio y de Juegos | `--layout-between-sections` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma; entre ellas, el mismo espacio de sección que en el resto de la app. En el Inicio, lo de arriba (`.home__hero`) ocupa lo que queda sobre la fila enfocada y nunca menos que lo suyo: no se mete bajo la barra |
-| Entre tarjetas de una fila | `--card-gap`, `--tile-gap`, `--space-6` (tarjetas anchas) | — |
+| Entre tarjetas de una fila | `--card-gap` (`--space-8`), `--tile-gap` (`--space-4`), `--space-6` (tarjetas anchas) | Antes 1,85rem y 1,1rem, fuera de la escala (B1, 24 nov 2026) |
+| Lo más ancho de un párrafo | `--measure-text` (36rem) | 45–75 letras por renglón (B6, 24 nov 2026): el texto de una hoja (`.sheet__subtitle`), el de un encabezado (`.screen-head__lead`), el de un vacío (`.empty-state__text`) y el del héroe |
 | Dentro de una tarjeta | `--inset-poster` · `--inset-row` · `--inset-card` · `--inset-feature` | Un margen por tarjeta, igual en los cuatro lados (§ 3) |
 | Entre botones de una fila | `--space-2` (`.button-row`) | Nunca se parte ni se corta |
 | Alturas | `--control-height` (botón), `--pill-height` (píldora), `--menu-row-height` (opción), `--touch-target` (el dedo) | — |
@@ -189,7 +200,7 @@ Un aviso dice una cosa, se lee de un vistazo y no se pierde. Valen para los de l
 | `FeatureHero(item, { runningId, glyphs, onAction, reason })` | `tiles` | El destacado sobre el arte del Inicio: porqué, logo o título, de dónde es y su dato, avance y botones. |
 | `ConsoleHero(system, { glyphs, onAction })` | `tiles` | Lo de arriba del Inicio cuando enfocas una consola: «N juegos nuevos» como porqué, su nombre, «9 juegos · Jugaste Hades hace 36 min» y «Entrar» · «Seguir Hades». |
 | `Card(item, { caption: "focus" })` | `card` | La portada que solo dice su nombre cuando está enfocada. Clic y clic secundario llegan por un solo oyente en el documento (V10, P4), no dos por tarjeta. |
-| `Button({ variant: "primary" })` · `Button({ icon })` | `button` | El principal en blanco · el secundario redondo de vidrio con su nombre debajo. |
+| `Button({ variant: "primary" })` · `Button({ icon })` | `button` | El principal en blanco · el secundario redondo de vidrio con su nombre debajo. Margen a cada lado: la mitad de su alto (`calc(var(--control-height) / 2)`, C1, 24 nov 2026), con glifo o sin él y con mando o con el dedo; antes .7rem junto al glifo y 1,5 o 1,6rem del otro lado. |
 
 ### Revisión por pantalla
 
@@ -245,7 +256,7 @@ iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `-
 | `footnote` | footnote | xs | regular | Notas, créditos, la leyenda |
 | `caption` | caption | 2xs | regular | Lo más chico: pie de tarjeta |
 | `eyebrow` | footnote | sm | semibold | El porqué en turquesa, sobre un título |
-| `data` | footnote | xs | regular | Números (siempre `tabular-nums`) |
+| `data` | footnote | xs | regular | Números (siempre `tabular-nums`). B7 (24 nov 2026): también todo contador que cambia aunque use otra receta: `.list-screen__count`, `.decide__filters-count`, `.tile--console__count` (y los de siempre: la hora, la pila, `RowCount`, los chips) |
 | `label` | footnote | xs | semibold | Un rótulo o botón chico |
 | `label-large` | subheadline | sm | semibold | El valor de un control, un nombre en un renglón |
 | `badge` | caption | 2xs | bold | Una placa («4K», «Nuevo») y los glifos del mando |
@@ -735,7 +746,7 @@ Reglas:
 1. **Un margen por tarjeta, igual en los cuatro lados.**
 2. **Lo que va en una esquina usa el mismo margen que el texto** (píldora de plataforma, insignia, número): su borde
    izquierdo queda en la misma línea que el título.
-3. **Esquinas concéntricas:** lo que va dentro curva como la tarjeta menos el margen (`--radius-inner-row`); así no
+3. **Esquinas concéntricas:** lo que va dentro curva como la tarjeta menos el margen (un `--radius-inner-*` por par, § Ritmo); así no
    asoman esquinas claras entre la miniatura y el borde.
 4. **El avance de un video va sobre la imagen**, abajo, con `--inset-poster` (póster, miniatura de renglón), nunca como
    renglón extra de texto.
@@ -981,5 +992,5 @@ pieza, se paga de paso.
 | El brillo con el color de la consola se escribe en seis lugares con geometrías distintas (`card`, `tiles`, `rail`) | Una propiedad personalizada no se resuelve por pieza dentro de un token del tema; haría falta una clase compartida (`.console-glow`) y tocar el JS de cinco piezas. |
 | Hover y `disabled`: solo existen donde el ratón importa (botones, teclas, pistas); no hay controles deshabilitados | La interfaz es de mando y el ratón enfoca al pasar; si aparece un control deshabilitado, se define su estado en `ui.css` antes de usarlo. |
 | `✓`, `★`, `⚠`, `◀ ▶` salen como texto (fuente Segoe UI Symbol) | Hay ícono dibujado (`ICONS.check`, `ICONS.star`) pero esos textos también viajan al iPhone. |
-| Medidas sueltas en rem (.55, .6, .15…) que no coinciden con un `--space-*` | Son ajustes ópticos de cada pieza (un relleno de píldora, un hueco entre líneas); un token por cada una no aclararía nada. |
+| Medidas sueltas en rem (.55, .6, .15…) que no coinciden con un `--space-*`, **fuera de los rellenos, márgenes y huecos** (posiciones, anchos, desplazamientos en `em`) | Son ajustes ópticos de cada pieza; un token por cada una no aclararía nada. Los rellenos, márgenes y huecos ya van todos en la escala (B1, 24 nov 2026). |
 | El mosaico de Para ti llega a 9 px del borde de la pantalla | Es a propósito (los pósters pasan por los lados); con sobrebarrido de la TV, ajustar «Márgenes de la TV» no lo mueve. |

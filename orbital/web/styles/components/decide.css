@@ -75,6 +75,7 @@
 .decide__filters-count {
   display: inline-grid; place-items: center; min-width: var(--glyph-size); padding: 0 var(--space-2); border-radius: var(--radius-pill);
   background: var(--inverse-bg); color: var(--inverse-fg); font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking);
+  font-variant-numeric: tabular-nums; /* B7: un contador no baila al cambiar */
 }
 .decide__filters-text { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 

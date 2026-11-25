@@ -88,7 +88,7 @@
 }
 .launch__orbit {
   position: absolute; left: 50%; top: 50%;
-  width: calc(17rem * var(--ratio, .667) + 13rem); height: 7.5rem; margin: -3.75rem 0 0 calc((17rem * var(--ratio, .667) + 13rem) / -2);
+  width: calc(17rem * var(--ratio, .667) + 13rem); height: 7.5rem; margin: calc(7.5rem / -2) 0 0 calc((17rem * var(--ratio, .667) + 13rem) / -2);
   transform: rotate(-24deg);
   transition: transform var(--duration-enter-long) var(--ease-in), opacity var(--duration-enter) var(--ease-in);
 }
@@ -98,7 +98,7 @@
   animation: fade-in var(--duration-enter-long) var(--ease-out) var(--delay-2) backwards; } /* el satélite llega con el anillo ya dibujándose */
 .launch__spinner { position: absolute; inset: 0; animation: launch-spin var(--duration-launch-orbit) linear infinite; }
 .launch__satellite {
-  position: absolute; left: 50%; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  position: absolute; left: 50%; top: 0; width: 10px; height: 10px; margin: calc(10px / -2) 0 0 calc(10px / -2); border-radius: 50%;
   background: var(--color-star); box-shadow: 0 0 .7rem .18rem color-mix(in oklab, var(--art-accent) 70%, var(--color-star));
   animation: launch-counter var(--duration-launch-orbit) linear infinite;
 }

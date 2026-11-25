@@ -5,7 +5,7 @@
 /* Chip: un dato corto (4K, Inglés, Al instante). */
 .chip {
   display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: .14rem .55rem; border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); font-variant-numeric: tabular-nums;
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
@@ -13,14 +13,14 @@
    mismo sea Chip o Badge (píldora, letra xs en negrita): el número de un canal, la nota de un póster, el sube y baja. */
 .chip--plate {
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
-  border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
+  border-radius: var(--radius-pill); padding: var(--space-1) var(--space-2); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
 }
 .chip--good { color: var(--color-success); } /* OT-6: «Listo», «Descargado», «Al instante» en verde, como el iPhone (DS.success) */
 .chip--warn { color: var(--color-warning); }
 
 /* Badge: una etiqueta que llama la atención («3 nuevos», «Recomendada»). Clara sobre lo oscuro. */
 .badge {
-  display: inline-flex; align-items: center; padding: .1rem .55rem; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   background: var(--inverse-bg); color: var(--inverse-fg);
   font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -210,7 +210,7 @@
 .eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
 .eyebrow svg, .eyebrow img { flex: none; width: var(--icon-md); height: var(--icon-md); object-fit: contain; stroke: currentColor; fill: none; stroke-width: var(--stroke-regular); }
 .screen-head__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
-.screen-head__lead { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
+.screen-head__lead { max-width: var(--measure-text); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 
 /* El nombre de una plataforma dentro de un texto (mosaico: «N.º 1 en Prime Video»): con el color y el carácter de su marca;
    el resto del texto no cambia. Netflix, apretado y en negrita; Prime Video en minúsculas, como su logo; Apple TV+ con el
@@ -264,7 +264,7 @@
 .empty-state__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); margin-bottom: var(--space-1); border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text-muted); }
 .empty-state__icon .icon { width: var(--icon-lg); height: var(--icon-lg); }
 .empty-state__title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight); }
-.empty-state__text { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
+.empty-state__text { max-width: var(--measure-text); margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 
 /* Skeleton: la forma de lo que llega, quieta (sin brillo que corra: Orbital no gasta mientras espera). */
 .skeleton { display: block; flex: none; border-radius: var(--card-radius); background: var(--color-fill); }

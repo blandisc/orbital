@@ -15,7 +15,6 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   transition: background var(--duration-fast) var(--ease-out);
 }
 .status-bar__brand:hover { background: var(--color-glass); }
-.status-bar__brand { gap: .6rem; }
 /* La marca (icons.js · mark): el planeta de contorno, el anillo como pincelada que pasa por delante y la luna como punto final de
    «orbital». Quieta: su entrada la hace la de arranque (boot.css), que llega volando a este mismo lugar. Al señalarla,
    la luna da un saltito en su órbita. */
@@ -65,7 +64,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 /* Una sección: su ícono y, plegado, su nombre. La activa lo despliega (grid 0fr → 1fr: el ancho se anima sin medirlo)
    y la píldora la persigue mientras crece; la que dejas lo pliega a la vez, así los íconos de en medio se deslizan. */
 .status-bar__tab {
-  display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 0 .78rem; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 0 var(--space-4); border-radius: var(--radius-pill);
   color: var(--color-text-muted); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap;
   transition: color var(--duration-base) var(--ease-out);
 }
@@ -88,12 +87,14 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
     opacity var(--duration-base) var(--ease-out) var(--delay-1);
 }
 /* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. Centrado (Fernando, 14 nov): la
-   lupa (1rem) y el círculo de la tecla (1,45rem, glyph--sm) quedan concéntricos con las puntas redondas, a la misma distancia
+   lupa (--icon-sm) y el círculo de la tecla (--glyph-size-sm) quedan concéntricos con las puntas redondas, a la misma distancia
    de su orilla: a la derecha, el aire de arriba y abajo; a la izquierda, ese mismo más lo que la lupa es más chica (antes
-   .85rem y .5rem: todo corrido ~1,4 px a la derecha y el círculo casi tocando la orilla). */
+   .85rem y .5rem: todo corrido ~1,4 px a la derecha y el círculo casi tocando la orilla). B1 (24 nov): el aire es --space-2
+   (antes .4rem, fuera de la escala); el de la izquierda no es un paso sino una cuenta (el aire + media diferencia de tamaños),
+   para que la lupa siga concéntrica. */
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-2));
-  padding: .4rem .4rem .4rem .625rem; border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-sm)) / 2); border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
   color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
@@ -140,7 +141,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 
 /* Alexa: anillo de asistente + nombre, en gris; azul y «Te escuché» justo después de oírte. */
 .assistant {
-  display: inline-flex; align-items: center; gap: var(--space-2); padding: .4rem .85rem .4rem .6rem; margin: -.4rem 0;
+  display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2); margin: calc(-1 * var(--space-2)) 0;
   border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); white-space: nowrap;
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
@@ -169,7 +170,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 /* En su cápsula de cristal, como «Buscar»: se lee sobre cualquier fondo (sobre un arte claro, la pila gris se perdía). */
 .battery {
   display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums;
-  padding: .35rem .8rem .35rem .7rem; border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
 .battery__body {
@@ -197,7 +198,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 }
 @media (max-width: 760px) {
   .status-bar__tabs .glyph { display: none; }
-  .status-bar__tab { padding: 0 .55rem; }
+  .status-bar__tab { padding: 0 var(--space-2); }
 }
 @media (max-width: 480px) { .status-bar__search, .battery { display: none; } }
 /* Con el dedo no hay atajo que enseñar (T12, revisión del 10 nov: la «S» del teclado sobraba): solo la lupa y «Buscar». Objetivos de ~44 px. */
@@ -206,4 +207,4 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: var(--touch-target); justify-content: center; }
 /* Sin la tecla a la derecha, «Buscar» va centrado en su pastilla con el mismo aire que la lupa del otro lado: guardaba el
    relleno chico de junto al círculo y la palabra quedaba pegada a la orilla (18 px a la izquierda, 11 a la derecha). */
-[data-input="touch"] .status-bar__search, .status-bar__search:has(> .status-bar__search-glyph:empty) { padding-right: .625rem; }
+[data-input="touch"] .status-bar__search, .status-bar__search:has(> .status-bar__search-glyph:empty) { padding-right: calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-sm)) / 2); }

@@ -6,7 +6,7 @@
 .glyph {
   --glyph-ink: var(--color-text);
   display: inline-grid; place-items: center; flex: none; box-sizing: border-box;
-  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .42rem;
+  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--glyph-bg); color: var(--glyph-ink); backdrop-filter: var(--filter-glass);
   box-shadow: var(--edge-glyph), inset 0 0 0 1.5px var(--glyph-ring);
@@ -27,7 +27,7 @@
   box-shadow: var(--edge-glyph), inset 0 0 0 1px var(--glyph-ring), var(--shadow-keycap);
 }
 /* Dentro de un botón: un poco más chico. Sobre lo claro (el botón principal, el foco invertido) el disco va sólido. */
-.glyph--sm { --glyph-size: 1.45rem; }
+.glyph--sm { --glyph-size: var(--glyph-size-sm); }
 :is(.button--primary, .title__action--primary, .is-focused, .is-focused.pill) .glyph { --glyph-bg: var(--glyph-bg-solid); backdrop-filter: none; }
 
 .glyph--drawn { padding: 0; width: var(--glyph-size); }

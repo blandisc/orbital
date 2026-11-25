@@ -66,13 +66,13 @@
 }
 /* Pregunta ("¿Cerrar Mario Party?"): el título es el protagonista. */
 .sheet__title--question { padding-bottom: var(--space-2); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
-.sheet__subtitle { padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); white-space: pre-line; }
+.sheet__subtitle { max-width: var(--measure-text); padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); white-space: pre-line; }
 .sheet__back { padding: 0 var(--space-2) var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
 .sheet__items { display: flex; flex-direction: column; gap: var(--space-1); }
 .sheet__item {
   display: flex; align-items: center; gap: var(--space-4);
-  width: 100%; min-height: var(--menu-row-height); padding: var(--space-2) var(--space-2); border-radius: var(--radius-lg);
+  width: 100%; min-height: var(--menu-row-height); padding: var(--space-2) var(--space-2); border-radius: var(--radius-inner-sheet); /* C2: dentro del panel (--radius-lg) a --space-6 de su orilla */
   font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); text-align: left; color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
@@ -89,13 +89,13 @@
 .sheet__mark { width: 1.6rem; height: 1.6rem; object-fit: contain; }
 .sheet__icon--mark { background: var(--color-surface-raised); }
 .sheet__icon .icon, .sheet__icon svg { width: var(--icon-md); height: var(--icon-md); }
-.sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+.sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .sheet__label { min-width: 0; line-height: var(--leading-snug); }
 .sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; overflow-wrap: anywhere; line-height: var(--leading-normal); text-align: left; }
 /* Ajustes: el valor en una píldora con flechas suaves (A o ◀/▶ lo cambian). */
 .sheet__item--setting { align-items: flex-start; }
-.sheet__item--setting .sheet__icon, .sheet__item--setting .sheet__value { margin-top: .1rem; }
+.sheet__item--setting .sheet__icon, .sheet__item--setting .sheet__value { margin-top: 0; }
 /* Sin ayuda debajo (Volumen, Brillo): nombre, ícono y valor en la misma línea, centrados. */
 .sheet__item--setting:not(:has(.sheet__hint--below)) { align-items: center; }
 .sheet__item--setting:not(:has(.sheet__hint--below)) :is(.sheet__icon, .sheet__value) { margin-top: 0; }
@@ -105,7 +105,7 @@
 .sheet__value--ok { color: var(--color-ok); }
 .is-focused.sheet__item .sheet__value--ok { color: inherit; }
 .sheet__value--choice {
-  flex: none; max-width: none; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem .4rem; border-radius: var(--radius-pill);
+  flex: none; max-width: none; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text);
 }
 .sheet__chev { display: grid; place-items: center; opacity: var(--opacity-faint); }

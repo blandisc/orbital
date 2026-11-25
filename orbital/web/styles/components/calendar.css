@@ -41,7 +41,7 @@
   border-radius: var(--radius-lg); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text); text-align: left;
 }
 .is-focused.calendar__show { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
-.calendar__thumb { width: 3.2rem; aspect-ratio: 2 / 3; border-radius: var(--radius-inner-row); object-fit: cover; background: var(--color-surface-raised); }
+.calendar__thumb { width: 3.2rem; aspect-ratio: 2 / 3; border-radius: var(--radius-inner-card); object-fit: cover; background: var(--color-surface-raised); }
 .calendar__show-text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .calendar__show-title { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .calendar__show-meta { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
