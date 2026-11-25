@@ -143,8 +143,8 @@ struct MosaicCover: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             }
-            .overlay(alignment: .bottomLeading) {
-                // MT4-A: la chapa se apaga mientras se abre (no es del mosaico) y va un poco más abajo (Fernando, 25 nov 2026).
+            .overlay(alignment: .bottomTrailing) {
+                // MT4-A: la chapa se apaga mientras se abre (no es del mosaico) y va más abajo, a la derecha y al margen derecho (Fernando, 25 nov 2026).
                 if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(Double(1 - reach)) }
             }
             .contentShape(Rectangle())

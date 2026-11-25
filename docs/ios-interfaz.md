@@ -398,7 +398,7 @@ en dos filas desalineadas, medían distinto y los «−» «+» no eran del mism
   En horizontal, en el SE o con letra grande, la lista se desplaza por dentro y «Listo» se queda fijo arriba a la derecha.
 - Los botones que van en pareja («−» «+», ‹ ›) usan `DSIconButton(…, steady: true)`: el símbolo va en un marco fijo
   (`DS.IconButton.steadyGlyph`) y los dos miden lo mismo aunque «−» sea más angosto que «+». Mantener presionado repite
-  (`repeats: true`) y sin vibrar: el reproductor no vibra mientras ves. Vale para toda la app: las flechas de «Colecciones» y de «Tu año» también van con marco fijo.
+  (`repeats: true`) y sin vibrar: el reproductor no vibra mientras ves. Vale para toda la app: las flechas de «Colecciones» y de «Tu año» también van con marco fijo. Y los íconos de un mismo renglón de una lista (ordenar, filtrar, seleccionar en Guardado) van del mismo tamaño, el de `ListBarIcon` (`DesignRulesTests.testListRowIconsShareOneSize`).
 - Donde sí quedan cápsulas (filtros, temporadas «T1, T2…»), las de una misma fila miden lo mismo: `FlowChips` da a cada una el
   alto de su línea y `PanelChip` lo llena; el selector de temporada usa el mismo tamaño y forma para la elegida y las demás.
 - Abierto el panel, el video no se tapa: en vertical se acomoda justo arriba del panel (`PlayerLayout.portraitRect(abovePanel:)`,

@@ -209,4 +209,14 @@ extension DesignRulesTests {
         let filters = try XCTUnwrap(files.first { $0.name == "Filters.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(filters.contains("static var variant: SymbolVariants { ThisDevice.isMac ? .none : .fill }"), "En la Mac los íconos del tipo van de línea")
     }
+
+    /// Los íconos de un mismo renglón de una lista van del mismo tamaño (Fernando, 25 nov 2026: en Guardado, ordenar se veía
+    /// más chico que filtrar y seleccionar). El de ordenar lleva la letra de `ListBarIcon`.
+    func testListRowIconsShareOneSize() throws {
+        let files = try sources(["Design"])
+        let bar = try XCTUnwrap(files.first { $0.name == "ListSelection.swift" }).lines.joined(separator: "\n")
+        let controls = try XCTUnwrap(files.first { $0.name == "ListControls.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(bar.contains(".font(DS.TextRecipe.section.font)"), "ListBarIcon con la letra de sección")
+        XCTAssertTrue(controls.contains("Image(systemName: \"arrow.up.arrow.down\").font(DS.TextRecipe.section.font)"), "ordenar del tamaño de los otros íconos")
+    }
 }

@@ -70,6 +70,8 @@ extension DS {
 
     /// El reproductor: el video en vertical, «Audio y subtítulos» (a la derecha en horizontal, bajo el video en vertical) y los controles.
     enum PlayerPanel {
+        /// «Audio y subtítulos» entra creciendo un poco desde su orilla (Fernando, 25 nov 2026: «no me encanta» cómo salía).
+        static let dockEnterScale: CGFloat = 0.94
         /// Los controles del reproductor en pantallas grandes (Fernando, 16 nov 2026: «hacer más grandes los iconos para tanto
         /// pantalla de Mac como para pantalla de iPad»): en la Mac crecen como la letra (`DS.Mac.typeScale`); en el iPad,
         /// `padScale` (con el tamaño del iPhone se veían chicos en 11 y 13 pulgadas); en el iPhone, igual.

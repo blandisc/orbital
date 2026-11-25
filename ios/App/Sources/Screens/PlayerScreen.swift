@@ -258,7 +258,7 @@ struct PlayerScreen: View {
             if (controlsShown || (ipod != nil && !padlock.locked)) && moreOpen { moreLayer(model) }
             // El iPad de pie lo abre solo y fijo: si el video no arranca («Todavía no está en la nube»), se quita para que el aviso
             // y sus botones («Pedir a la nube», «Cerrar») queden a la vista; antes los tapaba y no había ✕ (recorrido Mac, 16 nov).
-            if dockState.subtitleDock && !padlock.locked && !(dockPinned && failed(model)) { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
+            if dockState.subtitleDock && !padlock.locked && !(dockPinned && failed(model)) { subtitleDockLayer(model).transition(dockTransition) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
