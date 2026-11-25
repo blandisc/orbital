@@ -83,21 +83,37 @@ export function bytes(n) {
 }
 
 /** Qué decir al volver a Orbital: un video no se "juega"; una app no cuenta tiempo jugado. */
-export function closedMessage({ id = "", title = "", seconds, finished = false, live = false }) {
+export function closedMessage({ id = "", title = "", seconds, finished = false, live = false, position = 0, duration: total = 0 }) {
   if (live) return "De vuelta de la TV en vivo"; // un canal no tiene «dónde ibas»
-  if (!title) return id === "media:player" ? (finished ? "Terminaste el video" : "Guardé dónde ibas") : "De vuelta"; // nunca «undefined»
-  if (id === "media:player") return finished ? `Terminaste ${title}` : `Guardé dónde ibas en ${title}`;
+  const at = whereYouWere(position, total);
+  if (!title) return id === "media:player" ? (finished ? "Terminaste el video" : `Guardé dónde ibas${at}`) : "De vuelta"; // nunca «undefined»
+  if (id === "media:player") return finished ? `Terminaste ${title}` : `Guardé dónde ibas en ${title}${at}`;
   if (id.startsWith("media:") || id.startsWith("app:")) return `De vuelta de ${title}`;
   const played = duration(seconds);
   return played ? `De vuelta. Jugaste ${title} ${played}` : `De vuelta de ${title}`;
 }
 
+/** FI-17 (24 nov): en qué minuto quedaste, de cuánto: «: 40 min de 2 h 46» («» si no se sabe o no llegó al minuto). */
+function whereYouWere(position, total) {
+  const at = duration(position);
+  if (!at || !total) return "";
+  const h = Math.floor(total / 3600), m = Math.round((total % 3600) / 60);
+  return `: ${at} de ${h ? `${h} h${m ? ` ${String(m).padStart(2, "0")}` : ""}` : `${m} min`}`;
+}
+
 /** El aviso al volver, en dos renglones (el título del juego arriba, qué pasó abajo) para el aviso con portada.
  *  Sin título (o la TV en vivo), un solo renglón: el de closedMessage. */
 export function closedSummary(event) {
-  const { id = "", title = "", seconds, finished = false, live = false } = event;
+  const { id = "", title = "", seconds, finished = false, live = false, episode = "", next = "" } = event;
   if (live || !title) return { heading: "", message: closedMessage(event) };
-  if (id === "media:player") return { heading: title, message: finished ? "Lo terminaste" : "Guardé dónde ibas" };
+  if (id === "media:player") {
+    // FI-16 (24 nov): un episodio dice cuál terminaste y cuál sigue («Terminaste T2 E7 · Sigue el E8»; antes «Lo terminaste»
+    // parecía la serie entera); el título va sin el episodio para no decirlo dos veces.
+    const show = episode ? String(title).split(" · ")[0] : title;
+    const at = whereYouWere(event.position, event.duration);
+    if (finished) return { heading: show, message: episode ? `Terminaste ${episode}${next ? ` · Sigue el ${next}` : ""}` : "Lo terminaste" };
+    return { heading: show, message: episode ? `Guardé dónde ibas en ${episode}${at}` : `Guardé dónde ibas${at}` };
+  }
   if (id.startsWith("media:") || id.startsWith("app:")) return { heading: title, message: "De vuelta en Orbital" };
   const played = duration(seconds);
   return { heading: title, message: played ? `Jugaste ${played}` : "De vuelta en Orbital" };

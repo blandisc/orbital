@@ -1,8 +1,7 @@
 import { api } from "../core/api.js";
 import { motion } from "../core/motion.js";
-import { Badge, Chip, Eyebrow, LineSkeleton } from "./ui.js";
+import { Badge, Chip, EmptyState, ErrorState, Eyebrow, LineSkeleton } from "./ui.js";
 import { AddonMark } from "./addon-mark.js";
-import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
@@ -20,12 +19,19 @@ import { serverDetail } from "../core/notices.js";
  * En un episodio, LB/RB: «Solo este episodio» o «Desde aquí» (la serie sigue con el idioma de la que elijas).
  * Las que Real-Debrid todavía no tiene van abajo, en su propio grupo «Hay que pedirlas · tardan» (T8-A, plan v5): A no
  * las reproduce (solo daría el video de aviso de Real-Debrid), las pide y avisa; si ya están pedidas, dicen cómo van.
- *   ↑/↓ idioma · ◀/▶ calidad · A ver (o pedir) · X todas las de aquí · LB/RB alcance · B volver a la ficha
+ *   ↑/↓ idioma · ◀/▶ calidad · A ver (o pedir) · X ver todas las de esa calidad · LB/RB alcance · B volver a la ficha
  */
+/** FI-9: lo que abre X, con su número y su calidad: «ver las 23 en 1080p» (antes «Todas las de aquí»). */
+const seeAll = (opt) => `ver las ${opt.all.length} en ${opt.res}`;
+const sentence = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+/** FI-8 (24 nov): los datos de una calidad, cada uno entero: el que no cabe en el renglón se suelta completo (sources.css ·
+ *  version__facts) en vez de cortarse a media palabra («5,9 GB · Dolby Visi…» a 1280). */
+const Facts = (list) => h("span", { class: "version__facts" }, list.map((f) => h("span", { class: "version__fact" }, f)));
+
 /** PT7: la misma frase corta que el iPhone (los días, solo en «¿Qué es esto?», como peor caso). */
 const ASK_WAIT = "La nube las baja por ti: suele tardar de minutos a horas.";
 
-export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], onMove, onClose, onChange }) {
+export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], onMove, onClose, onChange, glyphs = () => ({}) }) {
   // R2: arriba, la etiqueta del sistema (Eyebrow, turquesa), no el salmón del arte.
   const heading = Eyebrow("Elige la versión", { tag: "div", className: "sources__heading" });
   const title = h("h2", { class: "sources__title" });
@@ -62,11 +68,11 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   }
   new MutationObserver(() => requestAnimationFrame(edges)).observe(list, { childList: true });
   const why = h("div", { class: "sources__why", role: "status" });
-  const status = h("div", { class: "sources__status", role: "status" });
-  const retry = h("div", { class: "sources__retry", hidden: true },
-    Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
+  // FI-10 (24 nov): sin versiones o con error, las piezas del catálogo (EmptyState / ErrorState) con su siguiente paso; antes
+  // un renglón ámbar suelto y un «Reintentar» aparte.
+  const status = h("div", { class: "sources__status", hidden: true });
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
-    h("div", { class: "sources__head" }, heading, title, subtitle, scopeRow), status, retry, list, why);
+    h("div", { class: "sources__head" }, heading, title, subtitle, scopeRow), status, list, why);
   const el = h("section", { class: ["side-panel", "side-panel--bottom", "sources"], hidden: true, "aria-label": "Versión",
     onClick: (e) => e.target === el && close() }, panel);
 
@@ -142,7 +148,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
         "aria-label": `Más idiomas: ${rows[r].names.join(", ")}`,
         onClick: () => (r === at.row && c === at.col ? openMore(r) : focus({ row: r, col: c })) },
       h("span", { class: "version__res" }, "Ver los demás"),
-      h("span", { class: "version__facts" }, rows[r].names.slice(0, 3).join(", ") + (rows[r].names.length > 3 ? "…" : "")));
+      Facts([rows[r].names.slice(0, 3).join(", ") + (rows[r].names.length > 3 ? "…" : "")]));
     }
     const [label, tone] = rows[r].ask ? askState(opt.source) : state(opt.source);
     const recommended = r === start.row && c === start.col && opt.source === best();
@@ -150,7 +156,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       class: ["version", r === at.row && c === at.col && "is-focused"], type: "button",
       "aria-label": [rows[r].name, opt.res, recommended && "Recomendada"].filter(Boolean).join(" · "),
       onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
-      // Clic derecho o dedo sostenido: «Todas las de aquí», lo de X (con el dedo no hay pie que lo diga).
+      // Clic derecho o dedo sostenido: «Ver las N en 1080p», lo de X (con el dedo no hay pie que lo diga).
       onContextmenu: opt.all.length > 1 ? (event) => { event.preventDefault(); focus({ row: r, col: c }); handle("alt"); } : null,
     },
     // La recomendada: un destello antes de la calidad, como el iPhone (VersionListRow · sparkles), no la cápsula «Recomendada»
@@ -159,7 +165,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       recommended && h("span", { class: "version__badge", title: "Recomendada", "aria-hidden": "true" }, svg(ICONS.spark)),
       h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res), mark(opt.source)),
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
-    h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
+    Facts([...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean)),
     // Fernando, 4 nov: que se entienda qué quiere decir (antes «¿Otro episodio?» y «¿Otro título?»).
     opt.source.other_episode ? Chip("Parece de otra temporada", { tone: "warn", className: "version__other" })
       : opt.source.other_title && Chip(request?.kind === "series" ? "Puede ser otra serie" : "Puede ser otra película",
@@ -191,7 +197,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     if (!opt) return mount(why);
     if (opt.more) return mount(why, h("span", { class: "sources__why-langs" }, rows[at.row].names.join(", ")));
     const src = opt.source;
-    const more = opt.all.length > 1 ? `X: las ${opt.all.length} de aquí` : "";
+    const more = opt.all.length > 1 ? `X: ${seeAll(opt)}` : ""; // FI-9: qué hace X («las 23 de aquí» no lo decía)
     mount(why,
       h("span", { class: "sources__why-langs" }, ...sureFlags(src), languageLine(src, rows[at.row].code) || src.languages?.join(" + ") || "No dice idioma"),
       h("span", { class: "sources__why-more" }, [src.other_episode ? "El nombre dice otra temporada" : src.other_title && "El nombre no dice este título", src.site, more].filter(Boolean).join(" · ")));
@@ -292,13 +298,12 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     subtitle.textContent = "";
     mount(list, skeleton());
     mount(why);
-    status.textContent = "";
+    mount(status);
     const started = performance.now();
     // Si falla otra vez enseguida, que se note que sí lo intentó (antes nada cambiaba en pantalla).
     const settle = () => new Promise((resolve) => setTimeout(resolve, Math.max(0, 600 - (performance.now() - started))));
     status.hidden = true; // los esqueletos ya dicen que se está buscando
-    status.classList.remove("sources__status--problem");
-    retry.hidden = true;
+    list.hidden = false;
     el.hidden = false;
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
@@ -315,12 +320,17 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       at = versionStart(rows, best());
       start = { ...at };
       // PT7 (Fernando, 4 nov): sin nada al instante, el aviso del iPhone arriba: «Real-Debrid aún no tiene este título.»
-      subtitle.textContent = !groups.now.length && rows.length ? "Tu nube aún no tiene este título. Se piden y te aviso cuando estén."
+      // FI-10: sin versiones no se explica «Al instante» (no hay ninguna).
+      subtitle.textContent = !rows.length ? "" : !groups.now.length ? "Tu nube aún no tiene este título. Se piden y te aviso cuando estén."
         : rows.some((row) => row.ask)
           ? "«Al instante»: arranca en segundos. Las de abajo, la nube primero las baja: se piden y te avisa." // RX4-A
           : "«Al instante»: arranca en segundos.";
       status.hidden = !!rows.length;
-      status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";
+      list.hidden = !rows.length; // sin filas, la lista no guarda su aire de abajo
+      // Ni la nube tiene a quién pedírsela (las que sí, salen en «Hay que pedirlas»): el paso que queda es buscar otra vez.
+      mount(status, rows.length ? null : EmptyState({ icon: "search", title: "No encontré dónde ver esto",
+        text: "Tus complementos no lo tienen, ni para pedirlo a la nube. A veces aparece días después.",
+        action: { label: "Buscar otra vez", glyph: glyphs().select, onPress: () => request && open(request) } }));
       failed = !rows.length;
       renderRows();
       if (rows.some((row) => row.ask)) onFirstAsk?.(); // RX3-A: «Así funciona», una sola vez
@@ -329,13 +339,14 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       await settle();
       if (mine !== token) return;
       mount(list); // sin esqueletos: el porqué y «Reintentar»
+      list.hidden = true;
       status.hidden = false;
-      // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
-      status.textContent = serverDetail(err) || "No pude buscar las versiones."; // C5: el porqué, sin su «Intenta de nuevo» (lo dice «Reintentar»)
+      // C5: qué pasó y por qué (el servidor lo explica en palabras de Orbital: sin internet, sin complementos…); A lo intenta
+      // otra vez. «Ver» de la ficha no se pierde.
+      mount(status, ErrorState({ title: "No pude buscar las versiones", text: serverDetail(err) || "Revisa tu internet y vuelve a intentarlo.",
+        glyph: glyphs().select, onRetry: () => request && open(request) }));
       failed = true;
     }
-    status.classList.toggle("sources__status--problem", failed);
-    retry.hidden = !failed;
     onChange?.(); // el pie cambia: con la lista, «Ver con esta»; sin ella, «Reintentar»
   }
 
@@ -386,11 +397,14 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra versión" },
         { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);
     }
-    if (!rows.length) return [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
-    const many = rows[at.row]?.options[at.col]?.all.length > 1;
+    // FI-10: el botón de la pieza ya lo dice (con su glifo): el pie no lo repite.
+    if (!rows.length) return [failed && { glyph: g.select, label: status.querySelector(".empty-state--error") ? "Reintentar" : "Buscar otra vez", offscreen: true },
+      { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+    const here = rows[at.row]?.options[at.col];
+    const many = here?.all.length > 1;
     return [{ glyph: g.select, label: verb(at.row, rows[at.row]?.options[at.col]?.source) }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
       rows.some((r) => r.options.length > 1) && { glyph: g.sides, label: "Calidad" },
-      many && { glyph: g.alt, label: "Todas las de aquí", secondary: true },
+      many && { glyph: g.alt, label: sentence(seeAll(here)), secondary: true },
       isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
   };

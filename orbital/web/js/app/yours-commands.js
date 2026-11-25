@@ -5,6 +5,8 @@ import { watchedFixMenu } from "./viewings-commands.js";
 
 /** Las estrellas, de la mejor a la peor, con lo que dicen (como la hoja de calificar del iPhone). */
 export const STARS = [[5, "Me encantó"], [4, "Me gustó"], [3, "Estuvo bien"], [2, "No me gustó"], [1, "Muy mala"]];
+/** FI-18 (24 nov): la nota también en palabras, no solo por el color de las estrellas: «Me gustó · 4 de 5». */
+export const starsWords = (n) => (n ? `${STARS.find(([k]) => k === n)?.[1] || ""} · ${n} de 5`.replace(/^ · /, "") : "");
 export const starText = (n) => "★".repeat(n); // solo las que diste: «☆» junto a «★» casi no se distinguía en la tele
 
 /** «¿Cuándo la viste?»: el menú con sus opciones (como WatchedWhenSheet del iPhone). `episode`: «T3 E5» si es un episodio. */
@@ -162,7 +164,8 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
       ui.sheet.close();
       sound.play(command.stars ? "success" : "select");
       // OP-1 (16 nov 2026): las estrellas en ámbar (Stars), no en el blanco del texto.
-      ui.toast.show(command.stars ? command.title : `Quité tu calificación de ${command.title}`, { tone: "success", stars: command.stars || 0 });
+      ui.toast.show(command.stars ? command.title : `Quité tu calificación de ${command.title}`, { tone: "success", stars: command.stars || 0,
+        detail: starsWords(command.stars) });
       return renderHints();
     },
     "watched": async (command, context) => openMenu(watchedMenu(command), nested(context)),
