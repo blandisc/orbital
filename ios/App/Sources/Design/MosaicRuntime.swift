@@ -80,6 +80,23 @@ final class MosaicRuntime {
         relayoutAndFill()
     }
 
+    /// MT4-A (25 nov 2026, «las mismas películas que están en el muro sean las que integran el mosaico»): arma cada columna
+    /// empezando por los pósters que el muro tenía en ese lugar y a la misma altura (`offset`); lo demás lo llena el pool.
+    func seed(_ plan: [(items: [Suggestion], offset: Double)]) {
+        guard size.width > 0, plan.count == columnCount else { return }
+        columns = (0..<columnCount).map { _ in MosaicColumn() }
+        focus = nil; mode = .focus; aliveTileID = nil; pendingLift = []
+        for (c, p) in plan.enumerated() {
+            for item in p.items { serial += 1; columns[c].tiles.append(MosaicTile(id: "\(item.imdb)-\(serial)", item: item, shape: .poster)) }
+            columns[c].offset = p.offset
+        }
+        relayoutAndFill()
+        commit(force: true)
+    }
+
+    /// Dónde va cada columna (para empatarla con el muro).
+    var columnFrames: [MosaicColumnFrame] { columns.map(\.frame) }
+
     /// Más sugerencias de las mismas (completar el mosaico con lo de los estantes): entran a la fila sin rearmar nada,
     /// así no se pierde el lugar ni la pieza elegida.
     func extend(items: [Suggestion]) {

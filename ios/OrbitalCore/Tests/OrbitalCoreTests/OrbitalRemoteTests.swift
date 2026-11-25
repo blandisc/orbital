@@ -48,6 +48,10 @@ final class OrbitalRemoteTests: XCTestCase {
         http.statuses["https://tv.example/api/ping"] = 401
         http.json["https://tv.example/api/ping"] = ["detail": "Token inválido"]
         do { try await remote.check(); XCTFail() } catch { XCTAssertEqual(error as? OrbitalRemote.Failure, .badToken) }
+        // TB2: un 403 con su razón la dice («Esto solo viaja por Tailscale»), no «ya no reconoce este iPhone».
+        http.statuses["https://tv.example/api/ping"] = 403
+        http.json["https://tv.example/api/ping"] = ["detail": "Esto solo viaja por Tailscale"]
+        do { try await remote.check(); XCTFail() } catch { XCTAssertEqual(error as? OrbitalRemote.Failure, .refused("Esto solo viaja por Tailscale")) }
         http.fail = true
         do { try await remote.check(); XCTFail() } catch { XCTAssertEqual(error as? OrbitalRemote.Failure, .unreachable) }
         let empty = OrbitalRemote(http: http, address: "", token: "")

@@ -102,7 +102,9 @@ extension OrbitalRemote {
         case "device_key_required": .needsKey
         case "device_removed": .removed
         case "device_unknown": .unknownTV
-        default: .badToken
+        // TB2 (25 nov 2026): un 403 con su razón («Esto solo viaja por Tailscale») se dice tal cual; antes salía «ya no
+        // reconoce este iPhone» y mandaba a escanear otra vez sin que sirviera.
+        default: response.status == 403 ? (JSON.parse(response.data)?["detail"]?.nonEmptyString).map { .refused($0) } ?? .badToken : .badToken
         }
         if failure != .badToken { authProblem?(failure) }
         return failure

@@ -80,6 +80,7 @@ struct Mosaic: View {
                 if configuredIDs.isEmpty || Set(items.map(\.imdb)) != configuredIDs { configure(items: items, columnCount: columnCount) }
                 else { runtime.updateColumnCount(columnCount) }
                 runtime.updateSize(width: Double(geo.size.width), height: Double(geo.size.height))
+                if let handoff = MosaicHandoff.take() { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX) }
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
             .onChange(of: geo.size) { _, size in
@@ -178,6 +179,31 @@ struct Mosaic: View {
         runtime.configure(items: items, columnCount: columnCount, gap: Double(DS.Space.s2), ring: Double(DS.Space.s2), growRatio: Double(DS.Mosaic.growRatio), focusedRowRatio: Double(DS.Mosaic.focusedRowRatio))
     }
 
+    /// MT4-A: cada columna del mosaico toma la del muro que quedó en su mismo lugar, con sus pósters a la misma altura: el
+    /// muro derecho ya era el mosaico y no se ve el cambio. Si alguna no empata (otro ancho, un póster que no es del mosaico),
+    /// se queda como siempre.
+    private func seed(from handoff: MosaicHandoff, top: CGFloat, left: CGFloat) {
+        let byPoster = Dictionary(items.map { ($0.poster, $0) }, uniquingKeysWith: { a, _ in a })
+        let frames = runtime.columnFrames
+        var plan: [(items: [Suggestion], offset: Double)] = []
+        for f in frames {
+            let x = left + CGFloat(f.x)
+            guard let wall = handoff.columns.min(by: { abs($0.minX - x) < abs($1.minX - x) }),
+                  abs(wall.minX - x) < handoff.pitch / 4, abs(wall.width - CGFloat(f.width)) < 2, !wall.posters.isEmpty else { return }
+            // La primera fila que todavía se ve (su orilla de abajo debajo del borde de arriba del mosaico).
+            let k0 = max(0, Int(((top - wall.firstTop) / handoff.pitch).rounded(.down)))
+            let rows = Int((UIScreen.main.bounds.height / handoff.pitch).rounded(.up)) + 1
+            var seeds: [Suggestion] = []
+            for k in k0..<(k0 + rows) {
+                guard let s = byPoster[wall.posters[k % wall.posters.count]], !seeds.contains(where: { $0.imdb == s.imdb }) else { break }
+                seeds.append(s)
+            }
+            guard !seeds.isEmpty else { return }
+            plan.append((seeds, Double(top - (wall.firstTop + CGFloat(k0) * handoff.pitch))))
+        }
+        runtime.seed(plan)
+    }
+
     private func dismiss(_ item: Suggestion) {
         configuredIDs.remove(item.imdb)
         onDismiss(item)
@@ -197,7 +223,7 @@ struct Mosaic: View {
         }
     }
 
-    private static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
+    static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
         // Ventana ancha (iPad, Mac): tantas columnas como quepan de `wideColumn`; con cinco fijas, acostado cada póster medía
         // más de 200 pt y solo se veían dos renglones (un iPhone estirado).
         if horizontalSizeClass == .regular { return max(DS.Mosaic.columnsLandscape, Int(width / DS.Mosaic.wideColumn)) }

@@ -146,7 +146,7 @@ struct ListsView: View {
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     // Los del mosaico primero y luego los de los estantes, sin repetir: la lista solo crece mientras carga (antes
                     // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
-                    let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))
+                    let walls = Self.distinct((model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster))   // MT4-A: con mosaico, solo sus pósters (el muro se vuelve el mosaico)
                     // MO1: la portada es la puerta del mosaico (su chapa dice cuántas piezas trae); sin piezas no promete nada.
                     if !walls.isEmpty { MosaicCover(posters: walls, memory: model.coverWall, count: model.mosaic.count, settled: !model.isLoading) { model.mode = .mosaic }.perfTag("paraTi.hero").zIndex(1) }   // ds-exception: MT3, al abrirse el mosaico tapa lo de abajo
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
@@ -222,6 +222,7 @@ struct ListsView: View {
         // Tirar para actualizar, con la luna de Orbital. MO1: jalar más (desde la portada, arriba del todo) y soltar abre el mosaico.
         .orbitalRefreshable(beyond: model.mosaic.isEmpty ? nil : DS.ParaTiB.doorPull, onBeyond: { [model] in
             MosaicCover.cameFromMosaic = true
+            MosaicHandoff.capture()   // MT4-A
             model.mode = .mosaic
         }) { [model] in await model.refresh() }
         // Lo de arriba ya se ve (o ya no va a llegar): entonces lo de abajo. Al volver del mosaico, de una vez.

@@ -144,12 +144,12 @@ extension DS {
         static let doorSeconds = 0.6
         // MT1/MT2: el muro crece hasta que su póster mide lo que uno del mosaico (~96 → ~130 pt en el iPhone) y el mosaico entra
         // a ese mismo tamaño.
-        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0.35, doorUnveil: Double = 0.5
+        static let doorPull: CGFloat = 150, doorGrow: CGFloat = 0, doorUnveil: Double = 0.5
         /// MT3: cuánto baja el muro al abrirse la puerta (lo alto de un iPhone grande, sin la portada).
         static let doorReveal: CGFloat = 640
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
-        static let doorPressed: CGFloat = 0.98, doorLead: Duration = .milliseconds(260)
+        static let doorPressed: CGFloat = 0.98
         /// Cuántas pide la puerta de «Decide por mí» (Inicio y Explorar, la misma): en la Mac, también las de la tira que se asoma.
         static var doorFan: Int { matchFan + (WindowMetrics.roomy ? stripCount : 0) }
         static let doorHintDelay: Duration = .milliseconds(1200), doorHintHold: Duration = .milliseconds(650)

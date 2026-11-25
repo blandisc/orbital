@@ -39,6 +39,7 @@ struct MosaicCover: View {
     }
     @AppStorage(MosaicCover.hintKey) private var hintSeen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.perfTag) private var perfTag
     @Environment(RefreshPull.self) private var pull: RefreshPull?
     /// MT3: cuánto se abrió la puerta (al tocarla o al jalar): el muro baja hasta tapar la pantalla.
@@ -70,7 +71,9 @@ struct MosaicCover: View {
     /// mosaico entra con el tamaño y la inclinación del muro (sus pósters del mismo ancho que los del muro) y se endereza y
     /// crece a su lugar mientras el muro hace lo mismo y se apaga: a medio camino coinciden.
     static func mosaicTransition(_ reduce: Bool) -> AnyTransition {
-        .opacity   // MT3: el muro ya tapó la pantalla y se enderezó: el mosaico solo aparece encima
+        // MT4-A: el mosaico arranca con los mismos pósters del muro en su mismo lugar: entra de golpe (sin fundido entre dos
+        // muros) y se va con un fundido al volver.
+        .asymmetric(insertion: .identity, removal: .opacity)
     }
     /// Lo que deja el mosaico (Explorar) se apaga y crece tantito, como si entraras: antes se quitaba de golpe.
     static func listsTransition(_ reduce: Bool) -> AnyTransition {
@@ -115,7 +118,8 @@ struct MosaicCover: View {
                 // «Decide por mí» y las listas; al soltar, el mosaico aparece en su lugar con un fundido.
                 ZStack {
                     DS.bg.opacity(Double(reach))
-                    moving.modifier(CoverOpening(opening: opening, door: isDoor))
+                    // MT4-A: los pósters se quedan donde estaban (el marco crece hacia abajo; sin esto bajaban la mitad).
+                    moving.modifier(CoverOpening(opening: opening, door: isDoor)).offset(y: -DS.ParaTiB.doorReveal * reach / 2)
                     veil.modifier(CoverOpening(opening: opening, door: isDoor, unveil: true))
                 }
                 .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown + DS.ParaTiB.doorReveal * reach)
@@ -136,10 +140,9 @@ struct MosaicCover: View {
         MosaicCover.cameFromMosaic = true
         guard let grow = DS.Motion.grow(reduceMotion) else { onWalk(); return }
         walking?.cancel()
-        withAnimation(grow) { opening = 1 }
-        walking = Task {
-            try? await Task.sleep(for: DS.ParaTiB.doorLead)
-            guard !Task.isCancelled else { return }
+        withAnimation(grow, completionCriteria: .logicallyComplete) { opening = 1 } completion: {
+            // MT4-A: ya derecho, se mide dónde quedó cada póster y el mosaico arranca con esos mismos.
+            MosaicHandoff.capture()
             onWalk()
         }
     }
@@ -218,9 +221,22 @@ struct MosaicCover: View {
     /// Cuántas columnas lleva el muro en esta ventana: ocho, o más en ventana ancha, pero nunca más de `coverMaxColumns`; lo
     /// que falta para cubrir la ventana lo ponen columnas más anchas (`widen`), con menos renglones. En la Mac eran 13 columnas
     /// de 26 pósters (~340 a la vez) y cambiar de Inicio a Explorar se trababa (Fernando, 17 nov 2026: «está lentísimo»).
-    private var needed: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.column.width) }   // lo que le queda a la pantalla (sin el panel del control)
-    private var columns: Int { min(needed, DS.ParaTiB.coverMaxColumns) }
-    private var widen: CGFloat { CGFloat(needed) / CGFloat(columns) }
+    private var needed: Int {
+        if let w = matchedWidth {   // MT4-A: columnas del ancho del mosaico, en número impar (así quedan centradas igual)
+            let n = Int(((WindowMetrics.column.width + 2 * DS.ParaTiB.coverTiltSlack) / (w + DS.Space.s2)).rounded(.up))
+            return n % 2 == 0 ? n + 1 : n
+        }
+        return DS.ParaTiB.coverColumns(forWidth: WindowMetrics.column.width)
+    }
+    /// MT4-A: en el iPhone parado, cada columna del muro mide lo que una del mosaico (así al enderezarse ya es el mosaico).
+    private var matchedWidth: CGFloat? {
+        guard isDoor, ThisDevice.platform == "iphone", horizontalSizeClass != .regular else { return nil }
+        let width = WindowMetrics.column.width
+        let count = CGFloat(Mosaic.columnCount(width: width, horizontalSizeClass: horizontalSizeClass))
+        return (width - 2 * DS.Space.s2 - DS.Space.s2 * (count - 1)) / count
+    }   // lo que le queda a la pantalla (sin el panel del control)
+    private var columns: Int { matchedWidth != nil ? needed : min(needed, DS.ParaTiB.coverMaxColumns) }
+    private var widen: CGFloat { matchedWidth.map { $0 / Self.columnWidth } ?? CGFloat(needed) / CGFloat(columns) }
     private var rows: Int { Int((Double(DS.ParaTiB.coverRows) / Double(widen)).rounded(.up)) }
     private var columnWidth: CGFloat { Self.columnWidth * widen }
     private var loop: CGFloat { (columnWidth / DS.Poster.aspect + DS.Space.s2) * CGFloat(rows) }
@@ -245,7 +261,7 @@ struct MosaicCover: View {
     private func strip(_ posters: [String]) -> some View {
         VStack(spacing: DS.Space.s2) {
             ForEach(0..<(posters.count * 2), id: \.self) { i in
-                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic * widen, decorative: true).frame(width: columnWidth)
+                PosterView(url: posters[i % posters.count], title: "", maxPoints: matchedWidth != nil ? DS.Image.mosaic : DS.Image.mosaic * widen, decorative: true)   // MT4-A: la misma imagen que el mosaico (sin volver a cargarla).frame(width: columnWidth)
             }
         }
         .frame(width: columnWidth, alignment: .top)
@@ -462,6 +478,8 @@ private struct CoreDrift: UIViewRepresentable {
     func makeUIView(context: Context) -> DriftView {
         let view = DriftView(content, contentHeight: contentHeight, loop: loop, duration: Double(loop) / max(speed, 1), phase: phase, rising: rising)
         view.key = key
+        MosaicHandoff.live.append(WeakDrift(view))
+        MosaicHandoff.live.removeAll { $0.view == nil }
         return view
     }
 
@@ -472,7 +490,7 @@ private struct CoreDrift: UIViewRepresentable {
 }
 
 /// La vista de `CoreDrift`: aloja la tira de SwiftUI y anima su capa hacia abajo, sin fin.
-private final class DriftView: UIView {
+final class DriftView: UIView {
     let host: UIHostingController<AnyView>
     var key: [String] = []
     private let contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double, rising: Bool
@@ -568,3 +586,32 @@ private final class DriftView: UIView {
         }
     }
 }
+
+/// MT4-A: dónde quedó cada columna del muro derecho, para que el mosaico arranque con esos mismos pósters en ese lugar.
+struct MosaicHandoff {
+    struct Column { let minX: CGFloat; let width: CGFloat; let firstTop: CGFloat; let posters: [String] }
+    let columns: [Column]
+    let pitch: CGFloat
+    @MainActor static var live: [WeakDrift] = []
+    @MainActor private static var pending: MosaicHandoff?
+
+    /// Mide cada columna en pantalla (con lo que lleva bajado su deriva) justo antes de cambiar al mosaico.
+    @MainActor static func capture() {
+        var out: [Column] = []
+        var pitch: CGFloat = 0
+        for weak in live {
+            guard let view = weak.view, view.window != nil, !view.key.isEmpty else { continue }
+            let rect = view.convert(view.bounds, to: nil)
+            let layer = view.host.view.layer
+            let drift = (layer.presentation() ?? layer).transform.m42
+            out.append(Column(minX: rect.minX, width: rect.width, firstTop: rect.minY + drift, posters: view.key))
+            pitch = rect.width / DS.Poster.aspect + DS.Space.s2
+        }
+        pending = out.isEmpty ? nil : MosaicHandoff(columns: out, pitch: pitch)
+    }
+
+    /// Lo toma el mosaico al aparecer (una sola vez).
+    @MainActor static func take() -> MosaicHandoff? { defer { pending = nil }; return pending }
+}
+
+final class WeakDrift { weak var view: DriftView?; init(_ v: DriftView) { view = v } }
