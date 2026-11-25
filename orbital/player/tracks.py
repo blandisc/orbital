@@ -305,6 +305,8 @@ class _Tracks(_UpNext):
         return {"kind": meta.get("kind") or "movie", "live": False, "meta_id": meta.get("meta_id"),
                 "video_id": meta.get("video_id"), "title": meta.get("title") or current.title,
                 "episode_label": episode_label, "poster": meta.get("poster") or fallback,
+                # El nombre del capítulo: el iPhone lo pone en grande en la actividad en vivo (Fernando, 25 nov 2026).
+                "episode_title": (meta.get("detail") or "").split(" · ", 1)[1] if " · " in (meta.get("detail") or "") else "",
                 **episode_numbers(meta.get("video_id") if meta.get("kind") == "series" else None),
                 "position": self._reported_position(segment), "duration": segment.duration,
                 "paused": bool(self._value("pause"))}

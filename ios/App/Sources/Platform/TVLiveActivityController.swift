@@ -41,7 +41,7 @@ final class TVLiveActivityController {
         if let title = dismissedTitle, title == now.title { return }
         dismissedTitle = nil
         let detail = now.live ? (now.channel ?? "") : AppEnvironment.shared.services.tvEpisodeLabel(now.season, now.episode, now.episodeLabel)
-        var state = TVActivityAttributes.ContentState(title: AppEnvironment.shared.services.titleNames.name(now.title, id: now.metaID, kind: now.kind), detail: detail, poster: last?.poster, position: now.position,
+        var state = TVActivityAttributes.ContentState(title: now.episodeTitle.isEmpty ? AppEnvironment.shared.services.titleNames.name(now.title, id: now.metaID, kind: now.kind) : now.episodeTitle, detail: detail, poster: last?.poster, position: now.position,
                                                       duration: now.duration, measuredAt: tv.fetchedAt, paused: now.paused, live: now.live,
                                                       language: language())
         // Sin póster todavía (no cargó): se vuelve a intentar en el siguiente sondeo en vez de quedarse sin él.

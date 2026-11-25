@@ -107,6 +107,7 @@ def test_now_playing_describes_a_movie(library):
 def test_now_playing_formats_the_episode_label(library):
     _play_episode(library)
     assert companion.now_playing(library)["episode_label"] == "T1 · E1"
+    assert companion.now_playing(library)["episode_title"] == "Pilot"  # el nombre del capítulo, en grande en el iPhone
     assert (companion.now_playing(library)["season"], companion.now_playing(library)["episode"]) == (1, 1)  # números para el iPhone
 
 
