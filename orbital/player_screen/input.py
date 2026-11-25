@@ -49,7 +49,7 @@ class _Input(_Menus):
                 self._try_press(action)
             return
         if self._episode_steps and self._episode_timer is not None and player_ui.hit("card", x, y) == "b":
-            self._cancel_episode()  # «Cancelar» en la cuenta atrás del cambio de episodio
+            self._cancel_episode()  # «Quedarme en este» en la cuenta atrás del cambio de episodio
             return
         if self._card is not None:
             action = player_ui.hit("card", x, y)
@@ -130,7 +130,7 @@ class _Input(_Menus):
             self._redraw_for_input()
         if button == "esc":
             if self._episode_steps and self._episode_timer is not None:
-                button = "b"  # Esc en la cuenta atrás del cambio de episodio: cancelar (la tarjeta dice «Esc Cancelar»)
+                button = "b"  # Esc en la cuenta atrás del cambio de episodio: cancelar (la tarjeta dice «Esc Quedarme en este»)
             elif self.menu is None and self._card is None and self._try is None:
                 self._quiet_episodes = 0
                 self._show_card({"kind": "quit", "title": self.current.title})

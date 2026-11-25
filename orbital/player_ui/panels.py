@@ -6,7 +6,23 @@ from dataclasses import dataclass, field
 
 from .. import flags
 from . import canvas
-from .canvas import FLAG_GAP, FLAG_H, LIVE, MARGIN, MUTED, NEXT, ON_LIGHT, RADIUS_CARD, SHADE, SOFT, TEXT, H, targets
+from .canvas import (
+    FLAG_GAP,
+    FLAG_H,
+    LIVE,
+    MARGIN,
+    MUTED,
+    NEXT,
+    ON_LIGHT,
+    RADIUS_CARD,
+    SHADE,
+    SOFT,
+    TEXT,
+    TYPE_MD,
+    TYPE_SM,
+    H,
+    targets,
+)
 from .draw import _shape, fit, glass, gradient, hints, hints_width, icon, rrect, text, text_width, wrap
 from .hud import pills, pills_width
 from .labels import clock, esc, track_label
@@ -103,9 +119,9 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
     if playing or muted:
         label = " · ".join(p for p in ("Sigue reproduciendo" if playing else "", "sin sonido" if muted else "") if p)
         label = label[:1].upper() + label[1:]
-        lines += [glass(MARGIN, 64, text_width(label, 22, "semi") + 70, 46, 23),
+        lines += [glass(MARGIN, 64, text_width(label, TYPE_SM, "semi") + 70, 46, 23),
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
-                  text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
+                  text(MARGIN + 50, 87, label, TYPE_SM, weight="semi", align=4)]
     n = len(panel.columns)
     # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, la de siempre. La
     # cuadrícula de versiones, la que más: hasta cuatro calidades por idioma.
@@ -121,7 +137,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         name = TAB_NAMES.get(column.key, column.key)
         if column.pages:  # «Episodios · T5»: la temporada a la vista
             name += f" · {column.pages[column.page]['label']}"
-        lines.append(text(x + 18, PANEL_TOP + 40, esc(name), 22, TEXT if active else MUTED, weight="semi"))
+        lines.append(text(x + 18, PANEL_TOP + 40, esc(name), TYPE_SM, TEXT if active else MUTED, weight="semi"))
         if canvas.TOUCH:
             targets["panel"].append((x, PANEL_TOP + 20, col_w, 44, ("column", c)))
         if column.key in ICON_COLUMNS:  # Reproducción: cada renglón con su ícono y su texto entero (dos renglones si hace falta)
@@ -136,11 +152,11 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         column.top = first = max(0, min(column.top, len(column.options) - PANEL_ROWS))
         y = PANEL_TOP + 84  # filas de 54 cada 60: la sexta termina (958) bien antes de la fila de botones
         if not column.options:
-            lines.append(text(x + 18, y + 27, "Nada que elegir aquí", 24, MUTED, align=4))
+            lines.append(text(x + 18, y + 27, "Nada que elegir aquí", TYPE_MD, MUTED, align=4))
         if column.grid:
             lines += _grid_rows(column, c, x, y, col_w, active)
-            name_w = text_width(name, 22, "semi") + 48
-            counter = text_width("99 de 99", 20) + 24 if len(column.options) > PANEL_ROWS else 0
+            name_w = text_width(name, TYPE_SM, "semi") + 48
+            counter = text_width("99 de 99", TYPE_SM) + 24 if len(column.options) > PANEL_ROWS else 0
             legend = legend_items(column.options)
             if legend_width(legend) <= col_w - 36 - name_w - counter:  # en el encabezado si cabe entera; si no, abajo
                 lines += states_legend(legend, x + 18 + name_w, PANEL_TOP + 40 + 15)
@@ -155,28 +171,28 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 targets["panel"].append((x, y, col_w, 54, ("option", c, i)))
             color = ON_LIGHT if focused else (TEXT if current else SOFT)
             if current:
-                lines.append(text(x + 18, y + 27, "✓", 24, color, weight="bold", align=4))
+                lines.append(text(x + 18, y + 27, "✓", TYPE_MD, color, weight="semi", align=4))
             hint = option.get("hint") or ""
-            room = col_w - 70 - (text_width(hint, 20) + 20 if hint else 0)
+            room = col_w - 70 - (text_width(hint, TYPE_SM) + 20 if hint else 0)
             if hint and room < (col_w - 70) * .45:  # en 4:3 / 16:10 «720p» desaparecía bajo «MediaFusion · 900 MB…»
                 room = (col_w - 70) * .45
-                hint = fit(hint, 20, col_w - 70 - room - 20)
+                hint = fit(hint, TYPE_SM, col_w - 70 - room - 20)
             weight = "semi" if focused or current else "regular"
             left = x + 52
             if option.get("flag"):  # la banderita del idioma, antes de su nombre (como en la interfaz)
                 lines += flags.ass(option["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
                 left += FLAG_H * flags.W / flags.H + FLAG_GAP
                 room -= left - x - 52
-            need = text_width(option["label"], 24, weight)
+            need = text_width(option["label"], TYPE_MD, weight)
             if hint and need > room:  # el nombre primero: la pista suelta sus datos del final («En otra · 4K» → «En otra»)
                 spare = col_w - 70 - (left - x - 52) - need - 20
-                shorter = fit(hint, 20, spare) if spare > 0 else ""
+                shorter = fit(hint, TYPE_SM, spare) if spare > 0 else ""
                 if shorter and not shorter.endswith("…"):
-                    hint, room = shorter, col_w - 70 - (left - x - 52) - text_width(shorter, 20) - 20
-            lines.append(text(left, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
+                    hint, room = shorter, col_w - 70 - (left - x - 52) - text_width(shorter, TYPE_SM) - 20
+            lines.append(text(left, y + 27, esc(fit(option["label"], TYPE_MD, room, weight)), TYPE_MD, color, weight=weight, align=4))
             if hint:
                 tint = ON_LIGHT if focused else NEXT if option.get("accent") else MUTED
-                lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, tint, align=6))
+                lines.append(text(x + col_w - 18, y + 27, esc(hint), TYPE_SM, tint, align=6))
             if option.get("progress"):
                 bar_w = col_w - 70
                 tint = ON_LIGHT if focused else TEXT
@@ -184,7 +200,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                           rrect(x + 52, y + 47, max(4, bar_w * min(1, option["progress"])), 4, 2, tint)]
             y += 60
         if len(column.options) > PANEL_ROWS:  # en el encabezado, a la derecha: abajo se encimaba con la nota de Fuentes
-            lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
+            lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", TYPE_SM, MUTED, align=9))
     seasons = len(panel.column.pages) > 1  # Episodios con más de una temporada: LB/RB (o sus botones) la cambian
     turn = [("‹ Temporada", "lb"), ("Temporada ›", "rb")] if seasons else []
     keys = [("◀ ▶", "Columna"), ("A", "Elegir"), *([("LB RB", "Temporada")] if seasons else []), ("B", "Cerrar")]
@@ -201,11 +217,11 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                                           "la que ves" if cell.get("current") else "") if p)
             note = said if legend_below else f"{said}      Al instante: tu nube ya la tiene y arranca en segundos"
         room = note_room - (legend_width(legend_below) + 40 if legend_below else 0)
-        note = fit(note, 20, room) if room >= 160 else ""  # sin lugar (4:3, letra grande), la dice solo la casilla enfocada
+        note = fit(note, TYPE_SM, room) if room >= 160 else ""  # sin lugar (4:3, letra grande), la dice solo la casilla enfocada
         if note:
-            lines.append(text(MARGIN, 1022, esc(note), 20, MUTED, align=4))
+            lines.append(text(MARGIN, 1022, esc(note), TYPE_SM, MUTED, align=4))
         if legend_below:
-            lines += states_legend(legend_below, MARGIN + (text_width(note, 20) + 40 if note else 0), 1022)
+            lines += states_legend(legend_below, MARGIN + (text_width(note, TYPE_SM) + 40 if note else 0), 1022)
     elif legend_below:
         lines += states_legend(legend_below, MARGIN, 1022)
     if canvas.TOUCH:
@@ -219,15 +235,17 @@ ICON_COLUMNS = {"playback"}  # columnas de acciones: un ícono por renglón y el
 
 ICON_SIZE = 30  # el ícono de un renglón (crece con el tamaño del texto)
 
+ICON_STEP = 32  # de un renglón al otro del nombre de una acción (TYPE_MD con su interlineado)
+
 
 def _icon_row_lines(option: dict, room: float) -> tuple[list[str], float]:
     """Los renglones del nombre de una acción (hasta tres, partidos entre palabras: nunca «…» a media palabra) y lo que mide
     su fila. La pista («Mismo minuto») va debajo, en chico: a la derecha le quitaba lugar al nombre."""
     words = str(option["label"]).split()
-    label = wrap(option["label"], 24, room, 3)
+    label = wrap(option["label"], TYPE_MD, room, 3)
     if " ".join(label) != " ".join(words):  # ni en tres renglones (no pasa con estos textos): una palabra por renglón
-        label = [fit(w, 24, room, "semi") for w in words]
-    step = 30 * canvas._text_scale
+        label = [fit(w, TYPE_MD, room, "semi") for w in words]
+    step = ICON_STEP * canvas._text_scale
     body = step * len(label) + (26 * canvas._text_scale if option.get("hint") else 0)
     return label, max(54.0, body + 22)
 
@@ -238,7 +256,7 @@ def _icon_rows(column: Column, c: int, x: float, col_w: float, active: bool) -> 
     el foco (sin brincar: solo cuando el foco sale de las que se ven)."""
     lines: list[str] = []
     if not column.options:
-        return [text(x + 18, ROWS_TOP + 27, "Nada que elegir aquí", 24, MUTED, align=4)]
+        return [text(x + 18, ROWS_TOP + 27, "Nada que elegir aquí", TYPE_MD, MUTED, align=4)]
     size = ICON_SIZE * canvas._text_scale
     left = x + 18 + size + 14
     room = x + col_w - 18 - left
@@ -264,18 +282,18 @@ def _icon_rows(column: Column, c: int, x: float, col_w: float, active: bool) -> 
         ink = ON_LIGHT if focused else TEXT if option.get("current") else SOFT
         weight = "semi" if focused or option.get("current") else "regular"
         hint = option.get("hint") or ""
-        step = 30 * canvas._text_scale
+        step = ICON_STEP * canvas._text_scale
         top = y + (h - step * len(label) - (26 * canvas._text_scale if hint else 0)) / 2
         lines.append(icon(option.get("icon") or "restart", x + 18 + size / 2, y + h / 2, size, ink))
         for n, part in enumerate(label):
-            lines.append(text(left, top + step * (n + .5), esc(part), 24, ink, weight=weight, align=4))
+            lines.append(text(left, top + step * (n + .5), esc(part), TYPE_MD, ink, weight=weight, align=4))
         if hint:
-            lines.append(text(left, top + step * len(label) + 13 * canvas._text_scale, esc(fit(hint, 20, room)), 20,
+            lines.append(text(left, top + step * len(label) + 13 * canvas._text_scale, esc(fit(hint, TYPE_SM, room)), TYPE_SM,
                               ON_LIGHT if focused else MUTED, align=4))
         y += h + 6
         shown += 1
     if shown < len(column.options):  # no caben todas: cuál es la enfocada, en el encabezado (como las demás columnas)
-        lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
+        lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", TYPE_SM, MUTED, align=9))
     return lines
 
 
@@ -305,7 +323,7 @@ def legend_items(grid: list[dict]) -> list[tuple[str, str, str]]:
 
 def legend_width(items: list[tuple[str, str, str]]) -> float:
     size = CELL_ICON * canvas._text_scale
-    return sum(size + 8 + text_width(name, 20) for name, _, _ in items) + 24 * max(0, len(items) - 1)
+    return sum(size + 8 + text_width(name, TYPE_SM) for name, _, _ in items) + 24 * max(0, len(items) - 1)
 
 
 def states_legend(items: list[tuple[str, str, str]], x: float, cy: float) -> list[str]:
@@ -313,8 +331,8 @@ def states_legend(items: list[tuple[str, str, str]], x: float, cy: float) -> lis
     size, out = CELL_ICON * canvas._text_scale, []
     for name, shape, color in items:
         out.append(icon(shape, x + size / 2, cy, size, color))
-        out.append(text(x + size + 8, cy, esc(name), 20, MUTED, align=4))
-        x += size + 8 + text_width(name, 20) + 24
+        out.append(text(x + size + 8, cy, esc(name), TYPE_SM, MUTED, align=4))
+        x += size + 8 + text_width(name, TYPE_SM) + 24
     return out
 
 
@@ -335,9 +353,9 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
         if row.get("flag"):
             lines += flags.ass(row["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
             left += FLAG_H * flags.W / flags.H + FLAG_GAP
-        weight, name_size, room = "semi" if here else "regular", 24, name_w - 8 - (left - x)
-        while name_size > 19 and text_width(row["label"], name_size, weight) > room:  # se achica antes de cortarse
-            name_size -= 1
+        weight, room = "semi" if here else "regular", name_w - 8 - (left - x)
+        # Si no cabe, baja un paso de la escala (B4: no de uno en uno, que inventaba tamaños) antes de cortarse.
+        name_size = TYPE_MD if text_width(row["label"], TYPE_MD, weight) <= room else TYPE_SM
         lines.append(text(left, y + 27, esc(fit(row["label"], name_size, room, weight)), name_size,
                           TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT, weight=weight, align=4))
         cx = x + name_w
@@ -357,11 +375,11 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
             if mark := ADDON_MARKS.get(cell.get("addon") or ""):
                 lines.append(icon(mark[1], cx + width - 12 - size / 2, y + 40, size, ON_LIGHT if focused else MUTED))
             room = width - 24
-            label_size = 21  # «4K HDR» en una casilla angosta (16:10, letra grande): se achica antes de cortarse
-            while label_size > 16 and text_width(cell["label"], label_size, "semi") > room:
-                label_size -= 1
-            lines.append(text(cx + 12, y + 17, esc(fit(cell["label"], label_size, room, "semi")), label_size, ink,
-                              weight="semi", align=4))
+            # La calidad, en lo chico de la escala; «4K HDR» en una casilla angosta (16:10, letra grande) se lee entera en
+            # seminegrita normal o, si de plano no cabe, en normal (más angosta) antes de cortarse.
+            cell_weight = "semi" if text_width(cell["label"], TYPE_SM, "semi") <= room else "regular"
+            lines.append(text(cx + 12, y + 17, esc(fit(cell["label"], TYPE_SM, room, cell_weight)), TYPE_SM, ink,
+                              weight=cell_weight, align=4))
             ix = cx + 12
             for _name, shape, color in cell_states(cell):
                 lines.append(icon(shape, ix + size / 2, y + 40, size, ON_LIGHT if focused else color))

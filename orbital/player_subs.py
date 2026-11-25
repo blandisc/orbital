@@ -193,7 +193,7 @@ class SubtitleTrial:
         here = self._here()
         status = trial["status"] or ("Buscando más en internet…" if trial["searching"] else "")
         self._overlay(self.TRY, player_ui.sub_trial_ass(player_ui.SubTrial(
-            language=player_ui.language(trial["lang"]) or trial["lang"].upper(), number=trial["index"] + 1 if here else 0,
+            language=player_ui.language(trial["lang"]) or "Otro idioma", number=trial["index"] + 1 if here else 0,
             total=len(trial["candidates"]), origin=here["origin"] if here else "video", delay=self.sub_delay, status=status,
             flag=flags.flag_for(trial["lang"]), badge=subtitle_lib.badge(here["match"]) if here else "",
             release=(here or {}).get("release") or "", downloads=(here or {}).get("downloads"),

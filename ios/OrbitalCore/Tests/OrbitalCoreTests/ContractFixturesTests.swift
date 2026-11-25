@@ -158,7 +158,7 @@ final class ContractFixturesTests: XCTestCase {
         XCTAssertEqual(playing.duration, 1200)
         XCTAssertFalse(playing.paused)
         XCTAssertEqual(playing.audioTracks.count, 2)
-        XCTAssertEqual(playing.audioTracks.first, .init(id: "1", label: "Inglés · 5.1 · E-AC3", selected: true))
+        XCTAssertEqual(playing.audioTracks.first, .init(id: "1", label: "Inglés · 5.1 · Dolby Digital Plus", selected: true))
         XCTAssertFalse(playing.subtitleTracks.isEmpty)
         XCTAssertEqual(snapshot.screen, "player")
         XCTAssertEqual(snapshot.legend["select"], "Pausa")

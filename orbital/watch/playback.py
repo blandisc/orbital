@@ -82,6 +82,7 @@ class _Playback(_Progress):
         # PA7-B (como el iPhone): los sustos de la película en la barra; Ajustes › Reproducción › «Marcar los sustos».
         p.scares_provider = self._scares_for if self.setting("scare_marks", True) else None
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
+        player_ui.set_reduce_motion(bool(self.setting("reduce_motion", False)))  # B12: y «Reducir movimiento» (o el de Windows)
 
     def _channel_seen(self, meta: dict, position: float, duration: float, watched: float, finished: bool) -> None:
         """V2: un episodio de un canal de Orbital. A medias, sale en Seguir viendo (sin tocar Trakt ni Stremio); terminado,

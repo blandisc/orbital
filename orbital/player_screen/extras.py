@@ -179,7 +179,7 @@ class _Extras(_Input):
     def _queue_episode(self, meta: dict, step: int) -> None:
         """LT/RT: se cuentan las pulsaciones y, cuando paras, se carga ese episodio (antes dos RT rápidos cargaban el
         mismo «siguiente» dos veces). Mientras, la tarjeta de «Siguiente episodio» con la cuenta atrás en su anillo y
-        «B Cancelar»: se ve cuándo va a cambiar y hasta cuándo se puede arrepentir (antes solo un aviso que se iba)."""
+        «B Quedarme en este»: se ve cuándo va a cambiar y hasta cuándo se puede arrepentir (antes solo un aviso que se iba)."""
         self._episode_steps += step
         n = self._episode_steps
         if self._episode_timer:
@@ -216,7 +216,7 @@ class _Extras(_Input):
             appear = min(1.0, (now - since) / self.CARD_IN) if self.CARD_FRAME else 1.0
             self._overlay(self.EPISODE_CARD, player_ui.upnext_ass(
                 title, "Cambio de episodio", seconds=math.ceil(left), progress=left / self.EPISODE_WAIT,
-                actions=[("B", "Cancelar")], appear=appear))
+                actions=[("B", "Quedarme en este")], appear=appear))
             return True
 
         draw()  # ya, sin esperar al hilo: la tarjeta sale en cuanto oprimes RT
@@ -232,7 +232,7 @@ class _Extras(_Input):
         self._overlay(self.EPISODE_CARD, None)
 
     def _cancel_episode(self) -> None:
-        """B (o «Cancelar» con el dedo) durante la cuenta atrás: no cambia nada."""
+        """B (o «Quedarme en este» con el dedo) durante la cuenta atrás: no cambia nada."""
         if self._episode_timer is not None:
             self._episode_timer.cancel()
         self._episode_timer, self._episode_steps = None, 0
@@ -284,7 +284,7 @@ class _Extras(_Input):
         segment = self.segment
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
-        legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
+        legend = {"select": "Seguir viendo" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
                   "options": "Episodios y versión" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
