@@ -28,6 +28,9 @@ export function titleProgress(details) {
   return started ? { label: left(resume) ? left(resume).replace(/^q/, "Q") : "Casi terminada", fraction } : null;
 }
 
+/** «Continuar T3 E5» / «Ver T3 E6»; sin el episodio dicho, nunca «Continuar» a secas (V1, TB-44): «Continuar el episodio». */
+const resumeLabel = (started, label) => (label ? `${started ? "Continuar" : "Ver"} ${label}` : started ? "Continuar el episodio" : "Ver el episodio");
+
 /**
  * Botones de la ficha. El primero es lo más probable y lleva el foco:
  * "Continuar T3 E5" si ibas a medias, "Ver T3 E6" si terminaste el anterior, "Ver" si es nueva.
@@ -112,7 +115,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
     // lista, el que sigue lleva ▶ (antes una cápsula «Sigue» y, arriba, «Sigue: T1 E3», lo mismo dos veces).
     if (resume?.video_id) {
       const next = { id: "play", video_id: resume.video_id, primary: true, icon: "play",
-        label: `${resume.position > 0 ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() };
+        label: resumeLabel(resume.position > 0, resume.label) };
       if (plays?.line && (!plays.video_id || plays.video_id === resume.video_id)) next.hint = plays.line;
       out.push(ask && request === "ask" ? { ...ask, primary: true, video_id: resume.video_id } : next);
       if (ask && request !== "ask") out.push(ask);
@@ -134,7 +137,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
     if (resume?.video_id) {
       const started = resume.position > 0;
       out.push({ id: "play", video_id: resume.video_id, primary: true, icon: "play",
-        label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
+        label: resumeLabel(started, resume.label) });
       if (started) restart = { id: "restart", video_id: resume.video_id, icon: "fromStart", label: "Desde el principio", short: "Desde el inicio" };
     } else if (first) {
       // El primero de verdad (hay series que empiezan en la temporada 2 o en el episodio 0).
@@ -142,7 +145,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
       out.push({ id: "play", video_id: first.id, primary: true, icon: "play", label: `Ver T${firstSeason} E${first.episode ?? 1}` });
     }
   } else if (resume?.position > 0) {
-    out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });
+    out.push({ id: "play", primary: true, icon: "play", label: "Continuar la película" }); // V1 (TB-44): con su objeto
     restart = { id: "restart", icon: "fromStart", label: "Desde el principio", short: "Desde el inicio" };
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });

@@ -109,7 +109,7 @@ export const isGame = (item) => !!item && !isWatchable(item) && item.category !=
 
 /**
  * Texto del botón principal. `runningId`: lo que está abierto ahora (se vuelve a él, no se relanza).
- * Un solo vocabulario: "Volver al juego" para algo abierto; "Continuar" solo para un video a medias.
+ * Un solo vocabulario: "Volver al juego" para algo abierto; "Continuar la película" o "Continuar la serie" para un video a medias.
  */
 export const primaryLabel = (item, runningId = null) => {
   if (item && item.id === runningId) {
@@ -127,7 +127,7 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
   if (isSeries(item)) return item.progress > 0 ? "Continuar la serie" : "Ver la serie"; // X1-B: «Continuar» con su objeto (como DecideView del iPhone)
-  return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
+  return isWatchable(item) ? (item.progress > 0 ? "Continuar la película" : "Ver") : "Jugar"; // V1 (TB-44): «Continuar» con su objeto
 };
 
 /**

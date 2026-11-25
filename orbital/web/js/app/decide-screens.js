@@ -20,7 +20,7 @@ export async function saveMatch(card, add, where = null) {
   return "mylist";
 }
 
-export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints, runCommand, openMenu }) {
+export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints, runCommand, openMenu, openList = () => {} }) {
   const moved = () => { sound.play("move"); renderHints(); };
   const closed = () => { sound.play("back"); renderHints(); };
   // «Ver ya» (A), igual en las dos pestañas: una película empieza; una serie abre su ficha (para elegir el episodio).
@@ -60,7 +60,17 @@ export function createDecideScreens({ ui, glyphs, openTitle, watch, renderHints,
     onClose: closed,
     onReady: () => renderHints(),
     onDecide: () => match.close(), // «Tres que caben»: Decide sigue abierta debajo, como la dejaste
+    onShowKept: (where) => showKept(where), // TB-35: el mazo terminado ofrece lo que guardaste
   });
+
+  /** «Ver las que guardaste»: «Tu match perfecto» de Trakt (encima del mazo; B regresa) o, sin Trakt, Mi lista. */
+  async function showKept(where) {
+    if (where !== "match") return openList({ id: "mylist", title: "Mi lista", source: "stremio" });
+    const found = (await api.myLists().catch(() => ({ lists: [] }))).lists?.find((l) => l.name === "Tu match perfecto");
+    if (found) return openList({ id: `list:${found.id}`, title: found.name, source: "trakt" });
+    sound.play("error");
+    ui().toast.show("No encontré «Tu match perfecto»", failure(retry(() => showKept(where)), { detail: "Está en Trakt, en tus listas" }));
+  }
 
   function openMatch() {
     sound.play("open");

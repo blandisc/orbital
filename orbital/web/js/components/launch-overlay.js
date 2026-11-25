@@ -238,7 +238,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     // llegar la imagen se ajusta a su proporción real (posterRatio). Como mucho cuadrada: una ancha taparía el fondo.
     setRatio(item.image ? POSTER_RATIO : 1);
     setLabel("Abriendo");
-    mount(leave, KeyHint(backGlyph(), "Cancelar")); // por si lo abriste sin querer (antes «Ocultar»: seguía abriéndose)
+    mount(leave, KeyHint(backGlyph(), "No abrir")); // por si lo abriste sin querer (antes «Ocultar», que seguía abriéndose, y «Cancelar»: TB-46)
     title.textContent = item.title;
     subtitle.textContent = detail || "";
     holding = false;

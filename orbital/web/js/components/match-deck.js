@@ -21,6 +21,7 @@ import { EmptyState } from "./ui.js";
  *
  * load() → { cards: [{ meta_id, kind, title, image, hero, genres, why, year, runtime, rating }] } · save(card, add) → "match" | "none"
  * onOpen(card) · onPlay(card) · onSaved(card, where, err, { tonight }) · onMove · onClose · onReady (llegaron las cartas)
+ * onShowKept(where): al terminar el mazo, «Ver las que guardaste» (where: "match" | "mylist")
  */
 const DISCARDED = "match-discarded";
 export const DISCARD_DAYS = 30;
@@ -37,7 +38,7 @@ const WAYS = {
   keep: { label: "Guardar", stamp: "Guardar", icon: "bookmark", arrow: "right" }, // lo guardado es el marcador (Guardado); ♥ es favoritos
 };
 
-export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null }) {
+export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null, onShowKept = null }) {
   // AD-1: el mismo fondo que «Tres que caben», difuminado y más oscuro: la carta es lo importante.
   const backdrop = DecideBackdrop({ soft: true });
   const saved = h("span", { class: "match__saved", hidden: true });
@@ -56,6 +57,8 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   let cards = [];
   let kept = []; // lo que guardaste en esta vuelta
+  let keptWhere = null; // dónde quedó lo guardado: "match" (Tu match perfecto) o "mylist"
+  let ending = null; // TB-35: el mazo se acabó; lo que sigue con A («Ver las que guardaste» o «Tres que caben»)
   let last = null; // lo último (para X Deshacer): { card, how: "save" | "discard", where }
   let flying = false; // la carta va saliendo: lo siguiente espera a que llegue la otra
   let token = 0;
@@ -69,6 +72,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     glyphs = options.glyphs || glyphs;
     el.hidden = false;
     kept = [];
+    keptWhere = null;
     last = null;
     flying = false;
     await refill();
@@ -76,6 +80,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
 
   async function refill() {
     const mine = ++token;
+    ending = null;
     mount(stage, h("div", { class: "match__card match__card--skeleton", "aria-label": "Cargando tus propuestas" }));
     paintActions();
     try {
@@ -102,11 +107,17 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     head.tick();
     const [top, next, after] = cards;
     backdrop.show(top?.hero || top?.image || null);
+    ending = null;
     if (!top) {
-      mount(info);
+      // TB-35 (sin callejones): el final dice qué lograste y ofrece con A lo que sigue: lo que guardaste o, sin nada
+      // guardado, «Tres que caben» (la otra pestaña).
+      ending = kept.length && onShowKept
+        ? { label: "Ver las que guardaste", run: () => onShowKept(keptWhere) }
+        : { label: "Tres que caben", run: () => toDecide() };
+      mount(info, actions);
       mount(stage, EmptyState(kept.length
-        ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Vuelve mañana: el mazo cambia cada día.` }
-        : { icon: "list", title: "Ya viste todo el mazo", text: "Vuelve mañana: el mazo cambia cada día." }));
+        ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Mañana hay mazo nuevo.` }
+        : { icon: "list", title: "Ya viste todo el mazo", text: "Mañana hay mazo nuevo. Hoy, «Tres que caben» te propone tres para tu noche." }));
       return paintActions();
     }
     const at = Math.max(1, total - cards.length + 1);
@@ -134,6 +145,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   /** AD-6: una sola fila: «Ver ya» (A) sólido y ✕ · ★ · ♥ redondos con su botón del mando y su nombre. */
   function paintActions() {
     const top = cards[0];
+    if (!top && ending) return mount(actions, Button({ label: ending.label, glyph: glyphs.select, variant: "primary", onPress: () => ending?.run() }));
     mount(actions, top && [
       Button({ label: "Ver ya", glyph: glyphs.select, variant: "primary", onPress: () => play() }),
       ...Object.entries(WAYS).map(([way, w]) => h("span", { class: ["match__act", `match__act--${way}`] },
@@ -177,6 +189,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     try {
       const where = await save(top, true);
       last.where = where;
+      keptWhere = where;
       onSaved?.(top, where, null, { tonight });
     } catch (err) {
       // No se guardó: la carta vuelve arriba (lo dice el aviso de error de quien la guarda).
@@ -232,7 +245,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (action === "left") { decide("pass"); return true; }
     if (action === "right") { decide("keep"); return true; }
     if (action === "up") { decide("tonight"); return true; }
-    if (action === "select") { play(); return true; }
+    if (action === "select") { if (cards[0]) play(); else ending?.run(); return true; }
     if (action === "options") { if (cards[0]) onOpen?.(cards[0]); return true; }
     if (action === "alt") { undo(); return true; }
     return true;

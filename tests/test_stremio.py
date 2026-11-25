@@ -285,7 +285,7 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
     assert linked.watch.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar") == "orbital"
     exe, url, title, meta, options = played[0]
     assert url.endswith("SECRETKEY/abc") and meta["video_id"] == "tt0816692"
-    assert options["start"] == 5400 and options["audio"] == "en" and options["subtitles"] == "en"
+    assert options["start"] == 5400 and options["audio"] == "es" and options["subtitles"] == "es"  # sin Ajustes: latino (TB-43)
     assert linked.launcher.current["id"] == "media:player" and linked.launcher.current["runner"] == "Reproductor"
     # Configurado para usar el reproductor de Stremio: como antes.
     linked.config.stremio.player = "stremio"

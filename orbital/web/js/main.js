@@ -103,7 +103,8 @@ const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "to
 // ---------------------------------------------------------------- componentes
 // «Decide por mí», con sus pestañas «Tres que caben» y «Una por una» (el mazo): app/decide-screens.js.
 const { openMatch, openDecide, ...decideScreens } = createDecideScreens({ ui: () => ui, glyphs, openTitle, renderHints, runCommand,
-  watch: (...args) => watch(...args), openMenu: (...args) => openMenu(...args) });
+  watch: (...args) => watch(...args), openMenu: (...args) => openMenu(...args),
+  openList: ({ id, title, source }) => openCollection({ collection: { type: "list", source, list: { id, title, meta: source === "trakt" ? "Lo que guardas en «Una por una»" : "" } } }) });
 const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
@@ -2004,13 +2005,13 @@ function openMenu(menu, options = {}) {
 
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
-const { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer } = createListEditing({ api, ui, sound, openMenu,
+const { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer, savedInNewList } = createListEditing({ api, ui, sound, openMenu,
   renderHints, offerToastAction, UNDO_MS, mediaItems, unkeyOf, buildCuration, curatedItem, titleRef });
 
 // --- Guardado y tus listas (el gestor tipo Trakt, olas 1 y 2: app/saved-commands.js) ------------------------------------
 let savedCommandsTable = null;
 function savedTable() {
-  savedCommandsTable ??= savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, traktLinked,
+  savedCommandsTable ??= savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, traktLinked, savedInNewList,
     openCollectionList: ({ id, title }) => openCollection({ collection: { type: "list", source: "trakt", list: { id, title, meta: "Tu lista" } } }) });
   return savedCommandsTable;
 }

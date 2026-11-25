@@ -40,7 +40,7 @@ test("☰ de una lista tuya empieza con «Elegir varios» (dice su atajo, X) y �
   assert.match(off[1].hint, /X$/);
   assert.deepEqual(off[1].command, { type: "list-edit", on: true });
   const on = listEditOptions({ where: "watchlist", name: "Mi lista" }, true);
-  assert.equal(on[1].label, "Listo");
+  assert.equal(on[1].label, "Dejar de elegir"); // TB-49: el «Listo» que termina de editar es el de la lista, no este
   assert.deepEqual(on[1].command, { type: "list-edit", on: false });
   assert.equal(on[2].label, "Elegir todas");
   // Guardado no se agrega a mano: sin «Agregar a esta lista…».

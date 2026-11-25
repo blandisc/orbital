@@ -5,7 +5,7 @@
  *   Arriba, lo tuyo en el orden del Inicio del iPhone (Fernando, 31 oct 2026): Destacados → (Seguir viendo, de main.js) →
  *   Lo nuevo de lo tuyo → Porque viste X → Top 10 en Netflix → Mi lista. Abajo, las listas (en la TV se quedan aquí):
  *   lo general con su sello (Recomendadas, En tendencia, Lo más popular) →
- *   Nuevo en tus plataformas → Tus plataformas → Premios → Estudios → Lo mejor del género → Temporadas →
+ *   Nuevo en tus plataformas → Tus plataformas → Premios → Estudios → Mejor calificadas por género → Temporadas →
  *   Por año → Próximos estrenos →
  *   Listas de Trakt → Listas de Stremio → (Por género y los lanzadores, al final: la tele no tiene la pestaña Buscar).
  */
@@ -20,7 +20,7 @@ export const GROUPS = [
   { id: "spotlight", label: "Destacados" }, { id: "decide", label: "¿No sabes qué ver?" }, { id: "nuevo", label: "Lo nuevo de lo tuyo" }, { id: "because", label: "Porque viste" },
   { id: "top10", label: "Top 10" }, { id: "milista", label: "Mi lista" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
-  { id: "studios", label: "Estudios" }, { id: "genre-top", label: "Lo mejor del género" }, { id: "seasons", label: "Temporadas" },
+  { id: "studios", label: "Estudios" }, { id: "genre-top", label: "Mejor calificadas por género" }, { id: "seasons", label: "Temporadas" },
   { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
   { id: "lists", label: "Tus listas" }, { id: "genres", label: "Por género" },
 ];
@@ -222,7 +222,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   };
   collections("award", "Premios", "awards");
   collections("studio", "Estudios", "studios");
-  collections("genre", "Lo mejor del género", "genre-top");
+  collections("genre", "Mejor calificadas por género", "genre-top"); // V2 (TB-50): antes «Lo mejor del género»
   collections("season", "Temporadas", "seasons");
   collections("year", "Por año", "years");
 

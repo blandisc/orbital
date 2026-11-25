@@ -278,7 +278,8 @@ export const DEBRID_FORM = {
   id: "realdebrid", title: "Conectar Real-Debrid", submitLabel: "Usar esta clave", remote: "realdebrid",
   lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V.",
   missing: "Pega tu clave de Real-Debrid.",
-  fields: [{ name: "token", label: "Tu clave · real-debrid.com/apitoken", secret: true }],
+  // TB-52: la etiqueta dice qué es; la dirección va en el texto de ayuda (`lead`), no en el nombre del campo.
+  fields: [{ name: "token", label: "Tu clave de Real-Debrid", secret: true }],
 };
 
 /** El de tu nube: el mismo formulario, con su nombre y su página (y el código del celular para esa nube). */
@@ -392,7 +393,7 @@ function debridCancelWords(command) {
       subtitle: `${command.title || "El archivo"} se borra de tu cuenta. Para verlo otra vez habría que pedirlo de nuevo.`,
       options: [
         { icon: "close", label: "Dejarlo en tu Real-Debrid", command: { type: "back" } },
-        { icon: "trash", label: "Quitar", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true, ...(command.service ? { service: command.service } : {}) } },
+        { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true, ...(command.service ? { service: command.service } : {}) } },
       ],
     };
   }
@@ -624,7 +625,7 @@ const TORRENTIO_LANGUAGES = {
   turkish: "Turco", arabic: "Árabe", persian: "Persa", hebrew: "Hebreo", vietnamese: "Vietnamita", indonesian: "Indonesio", malay: "Malayo",
   thai: "Tailandés" };
 const TORRENTIO_QUALITIES = [
-  ["4k", "4K", "La mejor imagen; pesa mucho"], ["1080p", "1080p", "Alta definición; la más común"], ["720p", "720p", "Buena en el teléfono"],
+  ["4k", "4K", "La imagen más nítida; de 15 a 70 GB por película"], // V2: el número, no «la mejor» (web 4K ~15–25, remux ~50–70) ["1080p", "1080p", "Alta definición; la más común"], ["720p", "720p", "Buena en el teléfono"],
   ["480p", "480p", "Se ve borrosa en la TV"], ["hdrall", "HDR y Dolby Vision", "Colores intensos; solo si tu TV lo aguanta"],
   ["threed", "3D", "Para lentes 3D"], ["brremux", "Remux de Blu-ray", "Copia exacta del disco; enorme"],
   ["scr", "Screener", "Copia de prensa, a veces con marcas"],

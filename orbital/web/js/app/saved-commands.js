@@ -117,7 +117,7 @@ export function listManageOptions(editable, { online = true } = {}) {
   ];
 }
 
-export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, openCollectionList, traktLinked = () => false }) {
+export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm, openCollectionList, traktLinked = () => false, savedInNewList = () => {} }) {
   let board = null; // lo último que trajo el tablero
   let lists = []; // tus listas de Trakt: { id, name, privacy, count }
 
@@ -323,6 +323,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
         sound.play("success");
         ui.toast.show(`Hice «${made.name}»`, { tone: "success" });
         await loadLists();
+        if (command.save) return savedInNewList(made); // desde «Guardar en…» (TB-37): el título entra en ella
         if (command.then) return runBatch("move", command.then.place, screen().chosen, { to: made.id, toName: made.name });
         return after();
       } }),

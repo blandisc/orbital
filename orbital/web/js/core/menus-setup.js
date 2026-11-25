@@ -53,7 +53,7 @@ export function welcomeNotice(status = {}) {
   return { heading: "Tu consola", message: `${games ? `Encontré ${games} juego${games === 1 ? "" : "s"}` : "Aún no encontré juegos"} · lo demás, en Ajustes › Resumen` };
 }
 
-export function setupMenu(status = {}) {
+export function setupMenu(status = {}, { welcome = false } = {}) {
   const games = status.games || 0;
   return {
     title: "Tu consola",
@@ -66,7 +66,8 @@ export function setupMenu(status = {}) {
         ? { icon: "trailer", label: "Películas y series", value: "✓ Listas", command: { type: "movies-setup" } }
         : { icon: "trailer", label: "Películas y series", value: "Configurar", hint: "Tres pasos, una sola vez", command: { type: "movies-setup" } },
       paraTiRow(status.trakt),
-      { icon: "check", label: "Listo", command: { type: "close" } },
+      // TB-49: cerrar dice a dónde vas (la primera vez, a Inicio; desde Ajustes, de regreso).
+      { icon: "check", label: welcome ? "Ir a Inicio" : "Volver", command: { type: "close" } },
     ].filter(Boolean),
   };
 }
@@ -122,9 +123,10 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const last = step === steps.length - 1;
   return {
     title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, progress: `Guía ${step + 1} de ${steps.length}`,
-    subtitle: current.text,
+    // TB-36 (sin callejones): el final dice qué quedó aprendido, dónde vuelve a estar la guía y lo que sigue.
+    subtitle: last ? `${current.text}\n\nYa sabes lo esencial: jugar y volver, cerrar un juego, el Panel rápido, buscar y la voz. La guía sigue en ☰ › Cómo se usa.` : current.text,
     options: [
-      last ? { icon: "check", label: "¡Listo!", command: { type: "close" } }
+      last ? { icon: "play", label: "Ir a Inicio", hint: "Tus juegos y lo que dejaste a medias", command: { type: "section", id: "home" } }
         : { icon: "play", label: steps[step + 1].next, command: { type: "tour", step: step + 1 } },
       ...(last ? [] : [{ icon: "close", label: "Saltar la guía", command: { type: "close" } }]),
     ],

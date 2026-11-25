@@ -20,7 +20,11 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
       // Tus favoritos de Trakt (el corazón del iPhone); Trakt guarda hasta 100.
       options.push(row("Mi lista", "Trakt", s.trakt.watchlist, "watchlist"), row("Favoritos", "Trakt", !!s.trakt.favorite, "favorites"),
         { heading: true, label: "Tus listas de Trakt" });
-      if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
+      // TB-37 (sin callejones): sin listas, lo que hace falta para tener una: «Nueva lista» (la de Guardado) y el título entra.
+      if (!s.trakt.lists.length) {
+        options.push({ icon: "info", label: "Tus listas de Trakt salen aquí", command: { type: "stay" } },
+          { icon: "plus", label: "Nueva lista", hint: "Se crea en Trakt (privada) y este título entra en ella", command: { type: "list-new", save: true } });
+      }
       for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
       options.push({ heading: true, label: "Stremio" }, stremio("Biblioteca de Stremio"));
     } else options.push(stremio("Mi lista"));
@@ -170,5 +174,15 @@ export function createListEditing({ api, ui, sound, openMenu, renderHints, offer
     api.saveTo(kind, ref.meta_id, list.where, true).catch((err) => listFailed(list, err, out, () => addPicked(list, result)));
   }
 
-  return { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer };
+  /** «Nueva lista» desde «Guardar en…» (TB-37, como el iPhone): la lista nueva sale ya en la hoja y el título entra. */
+  function savedInNewList(made) {
+    const s = saving;
+    if (!s?.trakt?.trakt || !made?.id) return;
+    const id = String(made.id).replace(/^list:/, "");
+    if (!s.trakt.lists.some((l) => String(l.id) === id)) s.trakt.lists = [{ id, name: made.name, contains: false }, ...s.trakt.lists];
+    openMenu(saveMenu(s));
+    toggleSave(`list:${id}`);
+  }
+
+  return { openSave, toggleSave, removeFromList, addToList, restoreSearchLayer, savedInNewList };
 }

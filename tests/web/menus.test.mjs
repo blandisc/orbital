@@ -176,7 +176,8 @@ test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", ()
 test("tu consola: dos renglones, y películas y series abren su guía, sin Stremio (corte S4)", () => {
   const menu = setupMenu({ games: 30, stremio: false });
   assert.equal(menu.subtitle, "Encontré 30 juegos.");
-  assert.deepEqual(menu.options.map((o) => o.label), ["Ver mis juegos", "Películas y series", "Listo"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Ver mis juegos", "Películas y series", "Volver"]); // TB-49: dice a dónde va
+  assert.equal(setupMenu({ games: 30 }, { welcome: true }).options.at(-1).label, "Ir a Inicio"); // la primera vez
   assert.deepEqual(menu.options[1].command, { type: "movies-setup" });
   assert.equal(menu.options[1].value, "Configurar");
   const empty = setupMenu({ games: 0, realdebrid: true, addons: 2 });
@@ -272,7 +273,7 @@ test("actualizar: qué cambia, actualizar primero, y avisos claros si no se pued
   assert.equal(menu.title, "Hay 2 cambios nuevos");
   assert.equal(menu.subtitle, "• Panel rápido\n• Capturas\nTarda unos minutos."); // los cambios se leen, no se eligen
   assert.equal(menu.options[0].command.type, "update-apply");
-  assert.deepEqual(menu.options.map((o) => o.label), ["Actualizar ahora", "Más tarde"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Actualizar ahora", "Quizás después"]); // V6
   assert.match(updateMenu({ available: 0, changes: [] }).subtitle, /más reciente/);
   assert.match(updateMenu({ available: 3, changes: [], error: "Hay cambios sin guardar" }).subtitle, /sin guardar/);
 });
@@ -283,7 +284,7 @@ test("guía rápida: paso a paso, con el atajo del mando que tienes", () => {
   assert.deepEqual(tourMenu(0).options[0].command, { type: "tour", step: 1 });
   const last = tourMenu(4);
   assert.equal(last.options.length, 1);
-  assert.equal(last.options[0].command.type, "close");
+  assert.deepEqual(last.options[0].command, { type: "section", id: "home" }); // TB-36: lo que sigue
 });
 
 test("Alexa: ejemplos que no hacen nada al elegirlos", () => {
@@ -330,7 +331,7 @@ test("liberar memoria: la de video de Windows arriba, para liberarla o activarlo
   assert.deepEqual(setup.options[0].command, { type: "video-setup" });
   assert.match(setup.options[0].hint, /permiso una sola vez/);
   // Con poca no estorba: solo «Listo».
-  assert.deepEqual(memoryMenu({ room_mb: 6000, apps: [], video: { dwm_mb: 400, release: "ready" } }).options.map((o) => o.label), ["Listo"]);
+  assert.deepEqual(memoryMenu({ room_mb: 6000, apps: [], video: { dwm_mb: 400, release: "ready" } }).options.map((o) => o.label), ["Volver"]); // con poca no estorba: solo «Volver» (TB-49)
 });
 
 test("panel rápido: la música que suena, A pausa y ◀/▶ cambian de canción", () => {
@@ -421,7 +422,7 @@ test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» p
   assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 horas"]); // emparejado: nunca «Conectar»
   assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });
   const sheet = deviceMenu({ device_id: "a1", name: "iPhone de Fernando", platform: "iphone" });
-  assert.deepEqual(sheet.options.map((o) => o.label), ["Dejarlo conectado", "Quitar"]);
+  assert.deepEqual(sheet.options.map((o) => o.label), ["Dejarlo conectado", "Quitar el aparato"]); // TB-48: con su objeto
   const ask = deviceRemoveMenu(sheet.options[1].command);
   assert.equal(ask.title, "¿Quitar iPhone de Fernando?");
   assert.deepEqual(ask.options.map((o) => o.command.type), ["back", "device-remove"]);
@@ -559,7 +560,7 @@ test("jugadores: quién es quién; con un juego de Switch, reiniciar con estos j
   const { playersMenu, playerMenu } = await import("../../orbital/web/js/core/menus.js");
   const players = [{ player: 1, slot: 2, name: "GameSir", battery: "low" }, { player: 2, slot: 0, name: "Legion Go", battery: "wired" }];
   const idle = playersMenu({ players, game: null });
-  assert.deepEqual(idle.options.map((o) => o.label), ["Jugador 1 · GameSir", "Jugador 2 · Legion Go", "Listo"]);
+  assert.deepEqual(idle.options.map((o) => o.label), ["Jugador 1 · GameSir", "Jugador 2 · Legion Go", "Volver"]);
   assert.equal(idle.options[0].value, "Baja");
   assert.deepEqual(idle.options[0].command, { type: "player-identify", slot: 2 }); // el 1: A lo hace vibrar
   assert.equal(idle.options[1].command.type, "player-menu");
@@ -933,7 +934,8 @@ test("tu nube: Real-Debrid, TorBox o AllDebrid, con su nombre y su página (Fern
   const form = debridForm("torbox");
   assert.equal(form.title, "Conectar TorBox");
   assert.equal(form.remote, "torbox");
-  assert.equal(form.fields[0].label, "Tu clave · torbox.app/settings");
+  assert.equal(form.fields[0].label, "Tu clave de TorBox"); // TB-52: la dirección va en la ayuda
+  assert.ok(form.lead.includes("torbox.app/settings"));
   assert.equal(debridForm(undefined).remote, "realdebrid");
   // «Tu nube»: las tres, cuál usas y cuáles ya tienen su clave guardada.
   const menu = debridServiceMenu({ service: "torbox", services: [{ service: "realdebrid", linked: true }, { service: "torbox", linked: true },
