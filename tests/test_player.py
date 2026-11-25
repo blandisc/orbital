@@ -102,7 +102,9 @@ def test_a_pauses_and_shows_the_bar_with_the_legend():
     p.press("a")
     assert ("set_property", "pause", True) in mpv.sent
     hud = mpv.overlays[1]
-    assert "Interstellar" in hud and "En pausa" in hud and "Continuar" in hud and "Audio y subtítulos" in hud
+    # TB-45 (V1, 24 nov 2026): el botón de la pausa dice «Seguir viendo» (la frase de la tarjeta), no «Continuar» a secas.
+    assert "Interstellar" in hud and "En pausa" in hud and "Seguir viendo" in hud and "Audio y subtítulos" in hud
+    assert "Continuar" not in hud
     assert "Subtítulos en inglés" in hud and "10:00" in hud and "EN PAUSA" not in hud
 
 
@@ -143,7 +145,7 @@ def test_audio_menu_lists_tracks_and_switches():
     p, mpv = make_player()
     p.press("x")
     assert p.menu.kind == "tracks" and p.menu.column.key == "audio" and [o["label"] for o in p.menu.options] == [
-        "Inglés · 5.1 · E-AC3", "Español latino · Estéreo · AAC"]
+        "Inglés · 5.1 · Dolby Digital Plus", "Español latino · Estéreo · AAC"]  # TB-51 (V5): el audio con su nombre, no «E-AC3»
     assert [c.key for c in p.menu.columns] == ["audio", "sub", "size", "sync"]
     assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
     assert ("set_property", "sub-pos", 46) in mpv.sent  # con el panel abierto, los subtítulos suben y se ven encima
@@ -580,7 +582,7 @@ def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
 
 
 def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
-    """RT con un toque: la tarjeta «Cambio de episodio · Siguiente · E2» con la cuenta atrás en su anillo y «B Cancelar»;
+    """RT con un toque: la tarjeta «Cambio de episodio · Siguiente · E2» con la cuenta atrás en su anillo y «B Quedarme en este»;
     si no lo cancelas, el siguiente (antes había que mantenerlo). Mantenido cuenta una vez: no salta dos episodios."""
     import time as _t
 
@@ -591,7 +593,8 @@ def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
     p.EPISODE_WAIT = .5
     p.press("rt")
     card = mpv.overlays[p.EPISODE_CARD]
-    assert "Cambio de episodio" in card and "Siguiente · E2" in card and "Cancelar" in card
+    # TB-46 (V1, 24 nov 2026): B dice qué obtienes, «Quedarme en este», no «Cancelar» a secas.
+    assert "Cambio de episodio" in card and "Siguiente · E2" in card and "Quedarme en este" in card and "Cancelar" not in card
     p.press("b")  # te arrepentiste
     _t.sleep(.6)
     assert asked == [] and "Sigues en este episodio" in mpv.overlays[3] and mpv.overlays[p.EPISODE_CARD] is None
@@ -802,7 +805,7 @@ def test_mpv_does_not_show_its_own_osd_bar():
 
 
 def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_the_info():
-    """En pausa con el dedo: «Continuar» es el único botón de reproducir (antes también «Seguir» abajo) y la fila de abajo va
+    """En pausa con el dedo: «Seguir viendo» es el único botón de reproducir (antes también «Seguir» abajo) y la fila de abajo va
     a la derecha, sin tapar «Inglés · Subtítulos en … · 2160p» (antes iba al centro, encima)."""
     player_ui.set_touch(True)
     try:
@@ -810,7 +813,7 @@ def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_t
                             audio="Inglés 5.1", subtitles="Español (Latinoamérica)", source="2160p · HDR · Torrentio · 18.4 GB")
         ass = player_ui.hud_ass(hud)
         plays = [t for t in player_ui.targets["hud"] if t[4] == "a"]
-        assert len(plays) == 1 and "Seguir" not in ass
+        assert len(plays) == 1 and ass.count("Seguir") == 1  # solo el botón grande («Seguir viendo»), no otro abajo
         bottom = [t for t in player_ui.targets["hud"] if t[1] >= 990]
         assert bottom and max(t[0] + t[2] for t in bottom) == pytest.approx(player_ui.W - player_ui.MARGIN)
         info = player_ui.info_line(hud)
@@ -1200,7 +1203,7 @@ def test_paused_shows_the_title_logo_instead_of_plain_text():
     # Cabe en 860 × 190 del lienzo (1080 de alto): en una pantalla 4K, al doble en píxeles.
     assert (fmt, w, h, stride, x) == ("bgra", 1520, 380, 1520 * 4, player_ui.MARGIN * 2)
     assert len(open(path, "rb").read()) == w * h * 4
-    assert "Interstellar" not in mpv.overlays[1].split("En pausa", 1)[1].split("Continuar", 1)[0]  # sin el nombre en texto
+    assert "Interstellar" not in mpv.overlays[1].split("En pausa", 1)[1].split("Seguir viendo", 1)[0]  # sin el nombre en texto
     p.press("a")  # sigue: el logo se va con la barra de pausa
     assert ("overlay-remove", 0) in mpv.sent
     q, mpv2 = make_player()

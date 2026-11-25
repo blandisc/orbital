@@ -6,7 +6,8 @@ de abajo y la pausa), panels (los paneles de pistas, Más y episodios) y overlay
 tarjeta del siguiente episodio, avisos, volumen, la ventanita y el telón). Aquí, la fachada, con los mismos nombres de
 siempre (`player_ui.…`).
 
-W, TOUCH, KEYBOARD y _text_scale cambian mientras corre (set_canvas, set_input, set_text_size) y viven solo en
+W, TOUCH, KEYBOARD, _text_scale y REDUCE_MOTION cambian mientras corre (set_canvas, set_input, set_text_size,
+set_reduce_motion) y viven solo en
 canvas.py: las piezas los leen como `canvas.W`, y `player_ui.W` (lo que leen el reproductor y las pruebas) los pide a
 canvas.py en el momento (ver __getattr__ abajo). Para cambiarlos en una prueba: `monkeypatch.setattr(player_ui.canvas, …)`.
 """
@@ -39,12 +40,21 @@ from .canvas import SHADE as SHADE
 from .canvas import SOFT as SOFT
 from .canvas import TEXT as TEXT
 from .canvas import TEXT_SCALES as TEXT_SCALES
+from .canvas import TYPE_BOLD as TYPE_BOLD
+from .canvas import TYPE_DISPLAY as TYPE_DISPLAY
+from .canvas import TYPE_HERO as TYPE_HERO
+from .canvas import TYPE_LG as TYPE_LG
+from .canvas import TYPE_MD as TYPE_MD
+from .canvas import TYPE_SCALE as TYPE_SCALE
+from .canvas import TYPE_SM as TYPE_SM
+from .canvas import TYPE_XL as TYPE_XL
 from .canvas import H as H
 from .canvas import ass_color as ass_color
 from .canvas import hit as hit
 from .canvas import placed as placed
 from .canvas import set_canvas as set_canvas
 from .canvas import set_input as set_input
+from .canvas import set_reduce_motion as set_reduce_motion
 from .canvas import set_text_size as set_text_size
 from .canvas import set_touch as set_touch
 from .canvas import targets as targets
@@ -58,6 +68,7 @@ from .draw import _shape as _shape
 from .draw import arc as arc
 from .draw import circle as circle
 from .draw import fade as fade
+from .draw import figures as figures
 from .draw import fit as fit
 from .draw import glass as glass
 from .draw import glass_fill as glass_fill
@@ -168,16 +179,17 @@ from .panels import sync_options as sync_options
 from .panels import track_options as track_options
 from .panels import tracks_panel as tracks_panel
 
-_LIVE = ("W", "TOUCH", "KEYBOARD", "_text_scale")  # cambian mientras corre: viven en canvas.py
+_LIVE = ("W", "TOUCH", "KEYBOARD", "_text_scale", "REDUCE_MOTION")  # cambian mientras corre: viven en canvas.py
 if TYPE_CHECKING:  # para los tipos (en ejecución los da __getattr__)
     from .canvas import KEYBOARD as KEYBOARD
+    from .canvas import REDUCE_MOTION as REDUCE_MOTION
     from .canvas import TOUCH as TOUCH
     from .canvas import W as W
     from .canvas import _text_scale as _text_scale
 
 
 def __getattr__(name: str):
-    """`player_ui.W` (y TOUCH, KEYBOARD, _text_scale) es siempre el de ahora: se lee de canvas.py, donde vive."""
+    """`player_ui.W` (y TOUCH, KEYBOARD, _text_scale, REDUCE_MOTION) es siempre el de ahora: se lee de canvas.py, donde vive."""
     if name in _LIVE:
         return getattr(canvas, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -19,6 +19,8 @@ from .canvas import (
     SHADE,
     SOFT,
     TEXT,
+    TYPE_BOLD,
+    TYPE_SM,
     H,
     ass_color,
 )
@@ -246,7 +248,8 @@ def fade(ass: str, appear: float) -> str:
 
 def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight: str = "regular", align: int = 7,
          alpha: str = "00") -> str:
-    """Texto ya escapado (o con etiquetas). weight: regular | semi | bold."""
+    """Texto ya escapado (o con etiquetas), en un tamaño de la escala (`canvas.TYPE_*`). weight: regular | semi (Segoe UI
+    Semibold) | bold (solo en `canvas.TYPE_BOLD`, lo más grande: B5)."""
     font = FONT_SEMI if weight == "semi" else FONT
     bold = 1 if weight == "bold" else 0
     return (f"{{\\an{align}\\pos({x:.0f},{y:.0f})\\fn{font}\\fs{round(size * FS * canvas._text_scale)}\\b{bold}\\bord0\\shad0\\q2"
@@ -269,6 +272,15 @@ def text_width(value: str, size: int, weight: str = "regular") -> float:
         else:
             w += .52
     return w * size * canvas._text_scale * (1.05 if weight != "regular" else 1)
+
+
+def figures(x: float, y: float, value: str, size: int, color: str = TEXT, *, align: int = 7, alpha: str = "00") -> str:
+    """Un número que cambia (el tiempo, la hora, la cuenta atrás, el volumen, la sincronía) con cifras del mismo ancho (B7):
+    así «1:11» y «8:48» miden lo mismo y lo de al lado no baila. libass no sabe pedir las cifras tabulares
+    (`font-variant-numeric`) y la seminegrita (Segoe UI Semibold) las trae proporcionales (su «1» es más angosto); Segoe UI
+    normal y su negrita sí son tabulares (las diez cifras miden lo mismo en su tabla `hmtx`). Por eso un número que cambia
+    va en normal (o en negrita, si es de los grandes: `TYPE_BOLD`). `value` ya escapado; `align` como en `text`."""
+    return text(x, y, value, size, color, weight="bold" if size in TYPE_BOLD else "regular", align=align, alpha=alpha)
 
 
 def wrap(value: str, size: int, width: float, lines: int) -> list[str]:
@@ -349,13 +361,13 @@ def glyph(x: float, cy: float, label: str, size: int = 34, *, solid: bool = Fals
     return "\n".join(parts), w
 
 
-def hints_width(items: list[tuple[str, str]], size: int = 22) -> float:
+def hints_width(items: list[tuple[str, str]], size: int = TYPE_SM) -> float:
     """Lo que mide una fila de pistas (para que el texto de al lado no se encime)."""
     return sum(glyph(0, 0, k)[1] + 12 + text_width(v, size, "semi") for k, v in items) + 36 * max(0, len(items) - 1)
 
 
 def hints(items: list[tuple[str, str]], y: float, *, right: float | None = None, left: float | None = None,
-          size: int = 22) -> str:
+          size: int = TYPE_SM) -> str:
     """Pistas «A Pausa  X Audio y subtítulos…» en una fila, alineadas a la derecha o a la izquierda."""
     if not items or canvas.TOUCH:  # con el dedo no hay botones del mando que enseñar
         return ""

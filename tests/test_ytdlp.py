@@ -260,7 +260,7 @@ def test_the_bar_of_a_trailer_does_not_offer_versions_on_any_surface(monkeypatch
     movie = player_ui.Hud(title="Interstellar", position=30, duration=150)
     clip = player_ui.Hud(title="Interstellar · Tráiler", position=30, duration=150, clip=True)
     paused = lambda hud: player_ui.paused_ass(player_ui.Hud(**{**hud.__dict__, "paused": True}))  # noqa: E731
-    for draw, main_button in ((player_ui.hud_ass, "Pausa"), (paused, "Continuar")):
+    for draw, main_button in ((player_ui.hud_ass, "Pausa"), (paused, "Seguir viendo")):  # TB-45: la pausa dice «Seguir viendo»
         assert "Versión" in draw(movie)
         assert "Versión" not in draw(clip) and main_button in draw(clip)  # el tráiler conserva lo demás
     monkeypatch.setattr(player_ui.canvas, "TOUCH", True)  # vive en canvas.py (player_ui lo lee de ahí)

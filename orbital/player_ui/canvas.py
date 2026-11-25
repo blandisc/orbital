@@ -1,6 +1,7 @@
 """El lienzo del reproductor: su tamaño, con qué se maneja (mando, teclado o dedo), dónde quedó lo tocable, la paleta y el tamaño del texto.
 
-Dueño del estado que cambia mientras corre: W (set_canvas), TOUCH y KEYBOARD (set_input) y _text_scale (set_text_size).
+Dueño del estado que cambia mientras corre: W (set_canvas), TOUCH y KEYBOARD (set_input), _text_scale (set_text_size) y
+REDUCE_MOTION (set_reduce_motion).
 Las demás piezas los leen como `canvas.W`; ninguna los asigna. `targets` y `placed` son de quien dibuja cada capa."""
 
 from __future__ import annotations
@@ -125,6 +126,45 @@ FONT_SEMI = "Segoe UI Semibold"
 # \fs en ASS es la altura de la línea, no la del cuerpo como en CSS: con el mismo número la letra sale
 # ~25 % más chica. Los tamaños de este archivo son «como en CSS» y se convierten al dibujar.
 FS = 1.32
+
+# La escala de letra (B4, 24 nov 2026): cuatro tamaños de interfaz, con un salto de 1,2× o más entre vecinos, y dos grandes;
+# en px «como en CSS» a 1080p, los mismos números que la interfaz. Antes el reproductor usaba catorce (19, 20, 21, 22, 24,
+# 26, 28, 30, 34, 36, 44, 52, 56, 64). Todo el texto del reproductor sale de aquí; lo único fuera es la letra de un glifo del
+# mando (la «A» dentro de su disco), que es parte del ícono y se mide con él (`draw.glyph`).
+TYPE_SM = 21  # lo chico: pistas del mando, datos, notas, la cuenta de una columna, encabezados de columna
+TYPE_MD = 26  # el cuerpo: botones, opciones de un panel, avisos, el tiempo, la sinopsis, el volumen
+TYPE_LG = 32  # títulos de tarjeta, la hora, la cuenta atrás
+TYPE_XL = 40  # el episodio en pausa, el tiempo al adelantar, + y − del volumen
+TYPE_DISPLAY = 52  # el canal en vivo: su número y su nombre
+TYPE_HERO = 64  # el título en pausa (sin logo)
+TYPE_SCALE = (TYPE_SM, TYPE_MD, TYPE_LG, TYPE_XL, TYPE_DISPLAY, TYPE_HERO)
+TYPE_BOLD = (TYPE_DISPLAY, TYPE_HERO)  # B5: la negrita, solo en lo más grande; lo demás, normal o seminegrita
+
+# Reducir movimiento (B12): Ajustes › Pantalla › «Reducir movimiento» o el de Windows (Configuración › Accesibilidad › Efectos
+# de animación, el mismo que la interfaz lee con `prefers-reduced-motion`). Con él, las tarjetas entran solo con un fundido.
+REDUCE_MOTION = False
+
+
+def system_reduces_motion() -> bool:
+    """¿Windows tiene apagados los efectos de animación? (SPI_GETCLIENTAREAANIMATION; fuera de Windows, no)."""
+    try:
+        import ctypes
+
+        enabled = ctypes.c_int(1)
+        if not ctypes.windll.user32.SystemParametersInfoW(0x1042, 0, ctypes.byref(enabled), 0):  # type: ignore[attr-defined]
+            return False
+        return not enabled.value
+    except (AttributeError, OSError):
+        return False
+
+
+def set_reduce_motion(setting: bool) -> bool:
+    """El ajuste de Orbital (o el de Windows, si está apagado ahí). True si cambió."""
+    global REDUCE_MOTION
+    before = REDUCE_MOTION
+    REDUCE_MOTION = bool(setting) or system_reduces_motion()
+    return REDUCE_MOTION != before
+
 
 # Ajustes › Tamaño del texto, también en el reproductor (antes solo en la interfaz): la letra crece un poco, y los anchos
 # que se miden (fit, wrap) crecen igual, así lo que no cabe se recorta bien.

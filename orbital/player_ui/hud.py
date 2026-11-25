@@ -7,9 +7,29 @@ from dataclasses import dataclass, field
 
 from .. import flags
 from . import canvas
-from .canvas import DANGER, FLAG_GAP, FLAG_H, MARGIN, MUTED, NEXT, ON_LIGHT, SHADE, SOFT, TEXT, H, placed, targets
+from .canvas import (
+    DANGER,
+    FLAG_GAP,
+    FLAG_H,
+    MARGIN,
+    MUTED,
+    NEXT,
+    ON_LIGHT,
+    SHADE,
+    SOFT,
+    TEXT,
+    TYPE_HERO,
+    TYPE_LG,
+    TYPE_MD,
+    TYPE_SM,
+    TYPE_XL,
+    H,
+    placed,
+    targets,
+)
 from .draw import (
     circle,
+    figures,
     fit,
     glass,
     glyph,
@@ -71,7 +91,7 @@ def info_ass(hud: Hud, room: float) -> list[str]:
     if hud.audio_flag:
         out += flags.ass(hud.audio_flag, x, 1022 - FLAG_H / 2, FLAG_H)
         x += FLAG_H * flags.W / flags.H + FLAG_GAP
-    out.append(text(x, 1022, esc(fit(info_line(hud), 22, min(1200, room) - (x - MARGIN), "semi")), 22, MUTED, weight="semi", align=4))
+    out.append(text(x, 1022, esc(fit(info_line(hud), TYPE_SM, min(1200, room) - (x - MARGIN), "semi")), TYPE_SM, MUTED, weight="semi", align=4))
     return out
 
 
@@ -141,8 +161,9 @@ def scare_near(hud: Hud) -> str:
 def _times(hud: Hud, y: float) -> str:
     remaining = (hud.duration - hud.position) if hud.duration and hud.position is not None else None
     right = f"−{clock(remaining)}" if remaining is not None else clock(hud.duration)  # solo lo que falta, sin «termina a las…»
-    return "\n".join([text(MARGIN, y, clock(hud.position), 26, weight="semi"),
-                      text(canvas.W - MARGIN, y, esc(right), 26, MUTED, align=9)])
+    # B7: cifras del mismo ancho (`figures`): el tiempo ya no baila con cada segundo.
+    return "\n".join([figures(MARGIN, y, clock(hud.position), TYPE_MD),
+                      figures(canvas.W - MARGIN, y, esc(right), TYPE_MD, MUTED, align=9)])
 
 
 def chapter_at(hud: Hud) -> str:
@@ -167,24 +188,24 @@ def hud_ass(hud: Hud) -> str:
     if hud.seeking:  # adelantando: solo la barra y, sobre el punto, a dónde vas
         center = max(MARGIN + 220, min(canvas.W - MARGIN - 220, knob if knob is not None else canvas.W / 2))
         when = clock(hud.position)
-        when_w = text_width(when, 44, "bold")
-        chip_w = text_width(hud.seeking, 22, "semi") + 28
+        when_w = text_width(when, TYPE_XL)
+        chip_w = text_width(hud.seeking, TYPE_SM, "semi") + 28
         left = center - (when_w + 14 + chip_w) / 2
-        lines += [text(left, BAR_Y - 84, when, 44, weight="bold", align=4),
+        lines += [figures(left, BAR_Y - 84, when, TYPE_XL, align=4),
                   glass(left + when_w + 14, BAR_Y - 103, chip_w, 38, 19),
-                  text(left + when_w + 28, BAR_Y - 84, esc(hud.seeking), 22, weight="semi", align=4)]
+                  text(left + when_w + 28, BAR_Y - 84, esc(hud.seeking), TYPE_SM, weight="semi", align=4)]
         chapter, scare = chapter_at(hud), scare_near(hud)
         if scare:  # un susto ahí: se nombra (en su color), en lugar del capítulo
             major = scare.startswith("Susto fuerte")
-            lines.append(text(center, BAR_Y - 30, esc(fit(scare, 22, 720, "semi")), 22, DANGER if major else NEXT, weight="semi", align=2))
+            lines.append(text(center, BAR_Y - 30, esc(fit(scare, TYPE_SM, 720, "semi")), TYPE_SM, DANGER if major else NEXT, weight="semi", align=2))
         elif chapter:
-            lines.append(text(center, BAR_Y - 30, esc(fit(chapter, 22, 600, "semi")), 22, SOFT, weight="semi", align=2))
+            lines.append(text(center, BAR_Y - 30, esc(fit(chapter, TYPE_SM, 600, "semi")), TYPE_SM, SOFT, weight="semi", align=2))
         lines += [bar, _times(hud, BAR_Y + 28),
                   hints([("◀ ▶", "Mantén: más rápido"), ("A", "Pausa")], 1022, right=canvas.W - MARGIN)]
         return "\n".join(lines)
     lines.append(gradient(0, 200, 100, 255, 14))
     if hud.now:
-        lines.append(text(canvas.W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+        lines.append(figures(canvas.W - MARGIN, 56, esc(hud.now), TYPE_LG, align=9))
     if hud.pip:
         lines.append(hints([("Home", "Ver en pequeño")], 56, left=MARGIN))
     # Reproduciendo, sin título ni «Película»: eso (y la sinopsis) es de la pausa. Solo la barra; abajo a la izquierda
@@ -215,45 +236,45 @@ def paused_ass(hud: Hud) -> str:
     lines = [rrect(0, 0, canvas.W, H, 0, SHADE, "70"), side_gradient(canvas.W * .62, 90, steps=8), gradient(420, H, 255, 60, 12),
              gradient(0, 200, 140, 255, 8)]
     if hud.now:
-        lines.append(text(canvas.W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+        lines.append(figures(canvas.W - MARGIN, 56, esc(hud.now), TYPE_LG, align=9))
     if hud.pip:
         lines.append(hints([("Home", "Ver en pequeño")], 56, left=MARGIN))
     # El bloque va abajo, apoyado sobre la barra (como en las TV), no a media pantalla: se mide primero
     # y se coloca para que los botones queden justo encima de la barra de progreso.
     width = min(1180, canvas.W - 2 * MARGIN)
     # Con logo, el título va estilizado (la imagen la pone mpv encima, en `placed`); sin él, su nombre en texto.
-    title_lines = [] if hud.logo else wrap(hud.title, 64, width, 2)
+    title_lines = [] if hud.logo else wrap(hud.title, TYPE_HERO, width, 2)
     title_h = hud.logo[1] + 28 if hud.logo else 92 * len(title_lines)
     # En una serie, lo que ves es el episodio: va en su propio renglón, en blanco y más grande, bajo el logo; la línea de datos
     # queda con lo de la serie (PA-2, 2 nov 2026: «T13 E22 · Papá tiene una placa nueva» iba perdido en la línea gris).
     episode = hud.detail if hud.series and hud.detail else ""
     meta = hud.facts if episode else " · ".join(p for p in (hud.detail, hud.facts) if p)
-    about = wrap_sentences(hud.description, 26, min(1000, width), 3)
+    about = wrap_sentences(hud.description, TYPE_MD, min(1000, width), 3)
     # Bajo «En pausa», aire: con logo, una línea más (pegados, el ícono de pausa y el logo se leían como una sola pieza).
     after_pause = 78 if hud.logo else 54
     height = after_pause + title_h + (60 if episode else 0) + (52 if meta else 0) + 40 * len(about) + 30 + 62
     y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
-              text(MARGIN + 30, y, "En pausa", 26, weight="semi")]
+              text(MARGIN + 30, y, "En pausa", TYPE_MD, weight="semi")]
     y += after_pause
     if hud.logo:
         placed["logo"] = (MARGIN, y - 10, *hud.logo)
         y += title_h
     for line in title_lines:
-        lines.append(text(MARGIN, y, esc(line), 64, weight="bold"))
+        lines.append(text(MARGIN, y, esc(line), TYPE_HERO, weight="bold"))
         y += 92
     if episode:
-        lines.append(text(MARGIN, y, esc(fit(episode, 36, width, "semi")), 36, weight="semi"))
+        lines.append(text(MARGIN, y, esc(fit(episode, TYPE_XL, width, "semi")), TYPE_XL, weight="semi"))
         y += 60
     if meta:
-        lines.append(text(MARGIN, y + 4, esc(fit(meta, 26, min(1300, width))), 26, SOFT))
+        lines.append(text(MARGIN, y + 4, esc(fit(meta, TYPE_MD, min(1300, width))), TYPE_MD, SOFT))
         y += 52
     for line in about:
-        lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
+        lines.append(text(MARGIN, y + 4, esc(line), TYPE_MD, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"),
+    lines.append(buttons([("A", "Seguir viendo"), ("X", "Audio y subtítulos"),
                           *([] if hud.clip else [("Y", "Episodios y versión" if hud.series else "Versión")])], MARGIN, y))
     bar, _ = progress_bar(hud)
     # «Probar subtítulos» a la vista (regla de las cuatro superficies): mantener X con el mando, S con el teclado y, con el
@@ -281,15 +302,15 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
         primary = i == 0
         h = 76 if canvas.TOUCH else 62
         # El glifo se mide de verdad: con teclado «Espacio» es mucho más ancho que el círculo del mando y se
-        # encimaba sobre «Continuar».
+        # encimaba sobre «Seguir viendo».
         shape, gw = ("", 0.0) if canvas.TOUCH else glyph(x + 16, y + 31, key, 30, solid=primary)
         lead = 26 if canvas.TOUCH else 16 + gw + 12
-        w = lead + text_width(label, 24, "semi") + 26
+        w = lead + text_width(label, TYPE_MD, "semi") + 26
         out.append(rrect(x, y, w, h, h / 2, TEXT) if primary
                    else glass(x, y, w, h, h / 2))
         if shape:
             out.append(shape)
-        out.append(text(x + lead, y + h / 2, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
+        out.append(text(x + lead, y + h / 2, esc(label), TYPE_MD, ON_LIGHT if primary else TEXT, weight="semi", align=4))
         if canvas.TOUCH:
             targets[layer].append((x, y, w, h, key.lower()))
         x += w + 16
@@ -301,7 +322,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
     """Con el dedo: una fila de botones tocables («−10 s», «+10 s», «Salir»…), anotados en `layer`."""
     if not items:
         return ""
-    gap, size = 16, 24
+    gap, size = 16, TYPE_MD
     widths = [text_width(label, size, "semi") + 56 for label, _ in items]
     total = sum(widths) + gap * (len(items) - 1)
     x = (right - total) if right is not None else (center - total / 2) if center is not None else (left if left is not None else MARGIN)
@@ -315,7 +336,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
 
 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
-    """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo regresar, adelantar, el
+    """En pausa, Seguir viendo, Audio y Episodios ya son botones grandes del bloque: abajo regresar, adelantar, el
     siguiente episodio (si hay; lo mismo que RT) y salir."""
     if paused:
         return [("−10 s", "left"), ("+10 s", "right"), *([(f"⏭ Siguiente · {hud.next}", "next")] if hud.next else []),
@@ -324,7 +345,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
             *([] if hud.clip else [("Episodios y versión" if hud.series else "Versión", "y")]), ("Salir", "quit")]
 
 
-def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:
+def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = TYPE_MD) -> float:
     return sum(text_width(label, size, "semi") + 56 for label, _ in items) + gap * max(0, len(items) - 1)
 
 

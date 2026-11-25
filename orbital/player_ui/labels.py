@@ -14,7 +14,36 @@ LANGUAGES = {
     "cs": "Checo", "cze": "Checo", "ces": "Checo", "pl": "Polaco", "pol": "Polaco", "hu": "Húngaro", "hun": "Húngaro",
     "tr": "Turco", "tur": "Turco", "ar": "Árabe", "ara": "Árabe", "hi": "Hindi", "hin": "Hindi", "nl": "Neerlandés",
     "dut": "Neerlandés", "nld": "Neerlandés", "sv": "Sueco", "swe": "Sueco", "uk": "Ucraniano", "ukr": "Ucraniano",
+    # V5 (24 nov 2026): más idiomas con su nombre; antes, uno fuera de la tabla salía como código («HEB», «tha»).
+    "pt-br": "Portugués de Brasil", "pt-pt": "Portugués de Portugal", "ca": "Catalán", "cat": "Catalán",
+    "eu": "Euskera", "eus": "Euskera", "baq": "Euskera", "gl": "Gallego", "glg": "Gallego", "da": "Danés", "dan": "Danés",
+    "no": "Noruego", "nor": "Noruego", "nb": "Noruego", "nob": "Noruego", "nn": "Noruego", "nno": "Noruego",
+    "fi": "Finés", "fin": "Finés", "is": "Islandés", "ice": "Islandés", "isl": "Islandés", "el": "Griego", "gre": "Griego",
+    "ell": "Griego", "he": "Hebreo", "iw": "Hebreo", "heb": "Hebreo", "fa": "Persa", "per": "Persa", "fas": "Persa",
+    "th": "Tailandés", "tha": "Tailandés", "vi": "Vietnamita", "vie": "Vietnamita", "id": "Indonesio", "ind": "Indonesio",
+    "ms": "Malayo", "may": "Malayo", "msa": "Malayo", "tl": "Tagalo", "tgl": "Tagalo", "fil": "Filipino",
+    "ro": "Rumano", "rum": "Rumano", "ron": "Rumano", "bg": "Búlgaro", "bul": "Búlgaro", "hr": "Croata", "hrv": "Croata",
+    "sr": "Serbio", "srp": "Serbio", "bs": "Bosnio", "bos": "Bosnio", "sl": "Esloveno", "slv": "Esloveno",
+    "sk": "Eslovaco", "slo": "Eslovaco", "slk": "Eslovaco", "mk": "Macedonio", "mac": "Macedonio", "mkd": "Macedonio",
+    "sq": "Albanés", "alb": "Albanés", "sqi": "Albanés", "lt": "Lituano", "lit": "Lituano", "lv": "Letón", "lav": "Letón",
+    "et": "Estonio", "est": "Estonio", "be": "Bielorruso", "bel": "Bielorruso", "ka": "Georgiano", "geo": "Georgiano",
+    "kat": "Georgiano", "hy": "Armenio", "arm": "Armenio", "hye": "Armenio", "az": "Azerí", "aze": "Azerí",
+    "kk": "Kazajo", "kaz": "Kazajo", "ur": "Urdu", "urd": "Urdu", "bn": "Bengalí", "ben": "Bengalí", "ta": "Tamil",
+    "tam": "Tamil", "te": "Telugu", "tel": "Telugu", "ml": "Malayalam", "mal": "Malayalam", "kn": "Canarés", "kan": "Canarés",
+    "mr": "Maratí", "mar": "Maratí", "pa": "Panyabí", "pan": "Panyabí", "gu": "Guyaratí", "guj": "Guyaratí",
+    "zh-tw": "Chino tradicional", "zh-hant": "Chino tradicional", "zh-cn": "Chino simplificado", "zh-hans": "Chino simplificado",
+    "yue": "Cantonés", "cmn": "Mandarín", "la": "Latín", "lat": "Latín", "cy": "Galés", "wel": "Galés", "cym": "Galés",
+    "ga": "Irlandés", "gle": "Irlandés", "af": "Afrikáans", "afr": "Afrikáans", "sw": "Suajili", "swa": "Suajili",
+    "qu": "Quechua", "que": "Quechua", "gn": "Guaraní", "grn": "Guaraní", "nah": "Náhuatl", "eo": "Esperanto", "epo": "Esperanto",
 }
+
+# Sin idioma de verdad: «und» (sin decir), «mul» (varios), «zxx» (sin palabras). Mejor nada que un código.
+NO_LANGUAGE = {"und", "mul", "zxx", "mis", "qaa", "none", "unknown"}
+
+# El audio con el nombre que conoce quien lo ve (V5): «Dolby Digital Plus», no «E-AC3». Lo que no aporta (mp3, opus,
+# vorbis, flac, pcm: el oído no lo distingue y nadie elige por él) no se dice.
+CODECS = {"eac3": "Dolby Digital Plus", "e-ac3": "Dolby Digital Plus", "ac3": "Dolby Digital", "truehd": "Dolby TrueHD",
+          "mlp": "Dolby TrueHD", "dts": "DTS", "dca": "DTS", "dtshd": "DTS-HD", "dts-hd": "DTS-HD", "aac": "AAC"}
 
 
 def esc(value: str) -> str:
@@ -31,9 +60,17 @@ def clock(seconds: float | None) -> str:
 
 
 def language(code: str | None) -> str:
+    """El nombre del idioma en español («Inglés», «Español latino»). Con región que no está en la tabla («en-US», «fr_CA»), el
+    del idioma; uno que no se conoce, «Otro idioma» (V5: antes salía el código, «HEB»); sin idioma («und»), nada."""
     if not code:
         return ""
-    return LANGUAGES.get(code.lower(), code.upper() if len(code) <= 3 else code)
+    key = str(code).strip().lower().replace("_", "-")
+    if not key or key in NO_LANGUAGE:
+        return ""
+    if key in LANGUAGES:
+        return LANGUAGES[key]
+    base = key.split("-", 1)[0]
+    return LANGUAGES.get(base) or ("" if base in NO_LANGUAGE else "Otro idioma")
 
 
 def sub_kind(track: dict) -> str:
@@ -52,7 +89,7 @@ VARIANTS = {"latino", "latinoamérica", "latinoamericano", "castellano", "españ
 
 
 def track_label(track: dict) -> str:
-    """'Inglés · 5.1 · E-AC3' / 'Español latino · Estéreo' / 'Español · Forzados' / 'Pista 3'."""
+    """'Inglés · 5.1 · Dolby Digital Plus' / 'Español latino · Estéreo' / 'Español · Forzados' / 'Pista 3'."""
     parts = [language(track.get("lang"))]
     title = (track.get("title") or "").strip()
     lowered = title.lower()
@@ -69,8 +106,9 @@ def track_label(track: dict) -> str:
         channels = track.get("demux-channel-count") or track.get("audio-channels")
         if isinstance(channels, int):
             parts.append({1: "Mono", 2: "Estéreo", 6: "5.1", 8: "7.1"}.get(channels, f"{channels} canales"))
-        if track.get("codec"):
-            parts.append(str(track["codec"]).upper().replace("EAC3", "E-AC3"))
+        codec = CODECS.get(str(track.get("codec") or "").lower())
+        if codec:
+            parts.append(codec)
     if track.get("external"):
         parts.append("de tu addon")
     label = " · ".join(p for p in parts if p)

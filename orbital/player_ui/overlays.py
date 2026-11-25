@@ -22,12 +22,33 @@ from .canvas import (
     RADIUS_CARD,
     SOFT,
     TEXT,
+    TYPE_DISPLAY,
+    TYPE_LG,
+    TYPE_MD,
+    TYPE_SM,
+    TYPE_XL,
     H,
     ass_color,
     placed,
     targets,
 )
-from .draw import _shape, arc, circle, fade, fit, glass, glyph, gradient, hints, hints_width, ring, rrect, text, text_width
+from .draw import (
+    _shape,
+    arc,
+    circle,
+    fade,
+    figures,
+    fit,
+    glass,
+    glyph,
+    gradient,
+    hints,
+    hints_width,
+    ring,
+    rrect,
+    text,
+    text_width,
+)
 from .hud import pills
 from .labels import esc
 from .panels import Panel, _column, delay_label
@@ -67,7 +88,7 @@ def try_items(trial: SubTrial) -> list[tuple[str, str]]:
 
 def try_pills(trial: SubTrial) -> list[tuple[str, str]]:
     """Con el dedo o el mouse: los mismos, como botones (la rueda del mouse también cambia de subtítulo)."""
-    return [("‹ Anterior", "left"), ("Siguiente ›", "right"), *([("Otro idioma", "rb")] if trial.languages > 1 else []),
+    return [("‹ Anterior", "left"), ("Siguiente subtítulo ›", "right"), *([("Otro idioma", "rb")] if trial.languages > 1 else []),
             ("Antes", "up"), ("Después", "down"),
             *([("Velocidad", "y")] if trial.edition else []), ("Este va bien", "a"), ("Listo", "done")]
 
@@ -97,30 +118,30 @@ def sub_trial_ass(trial: SubTrial) -> str:
     if trial.flag:
         lines += flags.ass(trial.flag, x, top - FLAG_H / 2, FLAG_H)
         x += FLAG_H * flags.W / flags.H + FLAG_GAP
-    status_w = min(text_width(trial.status, 22, "semi"), (canvas.W - 2 * MARGIN) * .36) if trial.status else 0
+    status_w = min(text_width(trial.status, TYPE_SM, "semi"), (canvas.W - 2 * MARGIN) * .36) if trial.status else 0
     room = canvas.W - MARGIN - x - status_w - 48
-    lines.append(text(x, top, esc(fit(title, 28, room, "bold")), 28, weight="bold", align=4))
-    x += min(text_width(title, 28, "bold"), room) + 28
+    lines.append(text(x, top, esc(fit(title, TYPE_MD, room, "semi")), TYPE_MD, weight="semi", align=4))
+    x += min(text_width(title, TYPE_MD, "semi"), room) + 28
     if trial.badge and trial.number > 0:  # por qué está ahí, en su píldora (el turquesa de «al aire»: es lo bueno)
-        bw, bh = text_width(trial.badge, 19, "semi") + 32, 34
+        bw, bh = text_width(trial.badge, TYPE_SM, "semi") + 32, 34
         if x + bw < canvas.W - MARGIN - status_w - 48:
             lines += [rrect(x, top - bh / 2, bw, bh, bh / 2, LIVE, "C8", outline=LIVE, width=1.5),
-                      text(x + bw / 2, top, esc(trial.badge), 19, LIVE, weight="semi", align=5)]
+                      text(x + bw / 2, top, esc(trial.badge), TYPE_SM, LIVE, weight="semi", align=5)]
     if trial.status:
-        lines.append(text(canvas.W - MARGIN, top, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+        lines.append(text(canvas.W - MARGIN, top, esc(fit(trial.status, TYPE_SM, status_w + 1, "semi")), TYPE_SM, SOFT, weight="semi", align=6))
     # Segundo renglón: de dónde viene, la copia para la que se hizo y sus descargas; la sincronía va a la derecha (es lo
     # que mueves con ↑ ↓, y así el nombre largo de la copia no la empuja fuera).
     origin = "Del video" if trial.origin == "video" else ""
     parts = [p for p in (origin, trial.release, _downloads(trial.downloads)) if p] if trial.number > 0 else []
     sync = f"Sincronía: {delay_label(trial.delay)}"
-    lines.append(text(canvas.W - MARGIN, info, esc(sync), 21, SOFT if abs(trial.delay) >= .05 else MUTED, weight="semi", align=6))
+    lines.append(figures(canvas.W - MARGIN, info, esc(sync), TYPE_SM, SOFT if abs(trial.delay) >= .05 else MUTED, align=6))
     if parts:
-        room = canvas.W - 2 * MARGIN - text_width(sync, 21, "semi") - 48
-        lines.append(text(MARGIN, info, esc(fit(" · ".join(parts), 21, room, "semi")), 21, MUTED, weight="semi", align=4))
+        room = canvas.W - 2 * MARGIN - text_width(sync, TYPE_SM, "semi") - 48
+        lines.append(text(MARGIN, info, esc(fit(" · ".join(parts), TYPE_SM, room, "semi")), TYPE_SM, MUTED, weight="semi", align=4))
     if canvas.TOUCH:
         lines.append(pills(try_pills(trial), keys - 10, left=MARGIN, layer="try", h=48))
     else:
-        lines.append(hints(try_items(trial), keys, left=MARGIN, size=20))
+        lines.append(hints(try_items(trial), keys, left=MARGIN))
     return "\n".join(lines)
 
 
@@ -151,19 +172,19 @@ def live_hud_ass(hud: LiveHud) -> str:
     targets["hud"] = []
     lines = [gradient(560, H, 255, 34, 20), gradient(0, 200, 100, 255, 14)]
     if hud.now:
-        lines.append(text(canvas.W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+        lines.append(figures(canvas.W - MARGIN, 56, esc(hud.now), TYPE_LG, align=9))
     number = str(hud.number) if hud.number else "—"
-    block = max(112, text_width(number, 56, "bold") + 52)
+    block = max(112, text_width(number, TYPE_DISPLAY, "bold") + 52)
     top = 786
     x = MARGIN + block + 28
     room = canvas.W - x - MARGIN
     label, color = LIVE_STATUS.get(hud.status, LIVE_STATUS["live"])
-    lines += [rrect(MARGIN, top, block, 100, 22, TEXT), text(MARGIN + block / 2, top + 50, esc(number), 56, ON_LIGHT, weight="bold", align=5),
-              text(x, top - 2, esc(fit(hud.name, 52, min(room, 1300), "bold")), 52, weight="bold"),
-              circle(x + 9, top + 78, 7, color), text(x + 28, top + 78, esc(label), 24, color, weight="semi", align=4)]
+    lines += [rrect(MARGIN, top, block, 100, 22, TEXT), text(MARGIN + block / 2, top + 50, esc(number), TYPE_DISPLAY, ON_LIGHT, weight="bold", align=5),
+              text(x, top - 2, esc(fit(hud.name, TYPE_DISPLAY, min(room, 1300), "bold")), TYPE_DISPLAY, weight="bold"),
+              circle(x + 9, top + 78, 7, color), text(x + 28, top + 78, esc(label), TYPE_MD, color, weight="semi", align=4)]
     info = live_info_line(hud)
     if info:
-        lines.append(text(x + 28 + text_width(label, 24, "semi") + 22, top + 78, esc(fit(info, 24, max(200, room - 280), "semi")), 24, MUTED,
+        lines.append(text(x + 28 + text_width(label, TYPE_MD, "semi") + 22, top + 78, esc(fit(info, TYPE_MD, max(200, room - 280), "semi")), TYPE_MD, MUTED,
                           weight="semi", align=4))
     items = [("↑ ↓", "Canal"), ("Y", "Canales"), ("X", "Audio"), ("◀ ▶", "Volumen"), ("A", "Silencio"), ("B", "Mantén: salir")]
     while len(items) > 3 and hints_width(items) > canvas.W - 2 * MARGIN:
@@ -181,11 +202,11 @@ def muted_ass() -> str:
     se va sola a los pocos segundos y, sin esto, nadie se acuerda de que silenció."""
     label = "Sin sonido"
     x, y = MARGIN, 52
-    w = text_width(label, 24, "semi") + 98
+    w = text_width(label, TYPE_MD, "semi") + 98
     speaker = _shape(f"m {x + 24} {y + 20} l {x + 32} {y + 20} l {x + 42} {y + 11} l {x + 42} {y + 43} "
                      f"l {x + 32} {y + 34} l {x + 24} {y + 34}", TEXT)
     slash = _shape(f"m {x + 20} {y + 40} l {x + 23} {y + 43} l {x + 49} {y + 14} l {x + 46} {y + 11}", TEXT)
-    return "\n".join([glass(x, y, w, 54, 27, "glass-strong"), speaker, slash, text(x + 62, y + 27, esc(label), 24, weight="semi", align=4)])
+    return "\n".join([glass(x, y, w, 54, 27, "glass-strong"), speaker, slash, text(x + 62, y + 27, esc(label), TYPE_MD, weight="semi", align=4)])
 
 
 def channels_panel(categories: list[dict], channels: list[dict], *, focus: str = "channels") -> Panel:
@@ -202,7 +223,7 @@ def channels_panel(categories: list[dict], channels: list[dict], *, focus: str =
 
 
 # --- tarjetas y avisos -------------------------------------------------------------------------------
-CARD_RISE = 32  # lo que sube una tarjeta al entrar (aparece a la vez: PlayerScreen.CARD_IN)
+CARD_RISE = 32  # lo que sube una tarjeta al entrar (aparece a la vez: PlayerScreen.CARD_IN); con «Reducir movimiento», 0
 
 STILL_BOX = (242, 136)  # el cuadro del episodio en «Siguiente episodio» (16:9), en el lienzo; la imagen la pone mpv encima
 
@@ -213,6 +234,12 @@ def ease_out(t: float) -> float:
     return 1 - (1 - t) ** 3
 
 
+def _rise(appear: float) -> float:
+    """Lo que le falta subir a una tarjeta que entra; con «Reducir movimiento» (de Orbital o de Windows), nada: solo el
+    fundido (B12)."""
+    return 0.0 if canvas.REDUCE_MOTION else (1 - ease_out(appear)) * CARD_RISE
+
+
 def _entering(ass: str, appear: float) -> str:
     return ass if appear >= 1 else fade(ass, ease_out(appear))
 
@@ -221,19 +248,19 @@ def skip_ass(label: str, *, appear: float = 1.0) -> str:
     """«Saltar intro»: un botón claro abajo a la derecha (A); se va solo. `appear` (0 a 1): entra subiendo."""
     targets["card"] = []
     placed.pop("still", None)
-    lift = (1 - ease_out(appear)) * CARD_RISE
+    lift = _rise(appear)
     if canvas.TOUCH:
-        w = text_width(label, 24, "bold") + 56
+        w = text_width(label, TYPE_MD, "semi") + 56
         x, y = canvas.W - MARGIN - w, 780 + lift
         targets["card"].append((x, y, w, 76, "a"))
         return _entering("\n".join([rrect(x, y, w, 76, 14, TEXT),
-                                    text(x + w / 2, y + 38, esc(label), 24, ON_LIGHT, weight="bold", align=5)]), appear)
+                                    text(x + w / 2, y + 38, esc(label), TYPE_MD, ON_LIGHT, weight="semi", align=5)]), appear)
     gw = glyph(0, 0, "A", 30)[1]  # con teclado, «Espacio»: el botón crece con su glifo
-    w = 16 + gw + 12 + text_width(label, 24, "bold") + 28
+    w = 16 + gw + 12 + text_width(label, TYPE_MD, "semi") + 28
     x, y = canvas.W - MARGIN - w, 790 + lift
     shape, gw = glyph(x + 16, y + 32, "A", 30, solid=True)
     return _entering("\n".join([rrect(x, y, w, 64, 14, TEXT), shape,
-                                text(x + 16 + gw + 12, y + 32, esc(label), 24, ON_LIGHT, weight="bold", align=4)]), appear)
+                                text(x + 16 + gw + 12, y + 32, esc(label), TYPE_MD, ON_LIGHT, weight="semi", align=4)]), appear)
 
 
 def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, progress: float | None = None,
@@ -250,7 +277,7 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     short = 0 if eyebrow or circled else 32
     still = still and not short
     w, h = (880 if still else 660), (206 if canvas.TOUCH else 176) - short
-    x, y = canvas.W - MARGIN - w, 870 - h + (1 - ease_out(appear)) * CARD_RISE
+    x, y = canvas.W - MARGIN - w, 870 - h + _rise(appear)
     lines = [glass(x, y, w, h, RADIUS_CARD, "glass-strong")]
     tx, right = x + 32, x + w - 32
     if still:
@@ -272,15 +299,15 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
                 lines.append(arc(cx, cy, r - thick / 2, thick, start, start + 360 * min(1.0, length), TEXT))
         else:
             lines += [ring(cx, cy, r, thick, 1 if progress is None else progress, TEXT),
-                      text(cx, cy, str(seconds), 30 if still else 34, weight="bold", align=5)]
+                      figures(cx, cy, str(seconds), TYPE_LG, align=5)]
         if still:
             right = cx - r - 24
         else:
             tx = x + 32 + 2 * r + 28
     room = right - tx
     if eyebrow:
-        lines.append(text(tx, y + 30, esc(fit(eyebrow, 22, room, "semi")), 22, MUTED, weight="semi"))
-    lines.append(text(tx, y + 62 - short, esc(fit(title, 30, room, "bold")), 30, weight="bold"))
+        lines.append(text(tx, y + 30, esc(fit(eyebrow, TYPE_SM, room, "semi")), TYPE_SM, MUTED, weight="semi"))
+    lines.append(text(tx, y + 62 - short, esc(fit(title, TYPE_LG, room, "semi")), TYPE_LG, weight="semi"))
     if canvas.TOUCH:  # botones que se tocan: «Seguir viendo», «Salir»… (la acción: la tecla que harían)
         touch = [(label.removeprefix("Mantén: ").capitalize(), key.lower()) for key, label in actions or []]
         lines.append(pills(touch, y + h - 84, left=tx, layer="card", h=64))
@@ -321,18 +348,18 @@ def toast_ass(message: str, top: float = NOTICE_Y, *, room_for: str = "") -> str
     `room_for`: el texto más ancho que tendrá la píldora («Cargando… 100 %»), para que no cambie de ancho con la cifra."""
     title, detail = lines_of(message)
     room = canvas.W - 2 * MARGIN - 44
-    title = fit(title, 24, room, "semi")
+    title = fit(title, TYPE_MD, room, "semi")
     if not detail:
-        w = max(text_width(title, 24, "semi"), text_width(room_for, 24, "semi")) + 44
+        w = max(text_width(title, TYPE_MD, "semi"), text_width(room_for, TYPE_MD, "semi")) + 44
         x = canvas.W - MARGIN - w
         # Centrado (antes pegado a la izquierda): si el ancho medido no es exacto, el aire queda igual a los dos lados
         # (Fernando, 16 nov: «aparece descentrado el texto dentro»).
-        return "\n".join([glass(x, top, w, 54, 27, "glass-strong"), text(x + w / 2, top + 27, esc(title), 24, weight="semi", align=5)])
-    detail = fit(detail, 20, room)
-    w = max(text_width(title, 24, "semi"), text_width(detail, 20)) + 44
+        return "\n".join([glass(x, top, w, 54, 27, "glass-strong"), text(x + w / 2, top + 27, esc(title), TYPE_MD, weight="semi", align=5)])
+    detail = fit(detail, TYPE_SM, room)
+    w = max(text_width(title, TYPE_MD, "semi"), text_width(detail, TYPE_SM)) + 44
     x = canvas.W - MARGIN - w
-    return "\n".join([glass(x, top, w, 84, 24, "glass-strong"), text(x + 22, top + 28, esc(title), 24, weight="semi", align=4),
-                      text(x + 22, top + 58, esc(detail), 20, SOFT, align=4)])
+    return "\n".join([glass(x, top, w, 84, 24, "glass-strong"), text(x + 22, top + 28, esc(title), TYPE_MD, weight="semi", align=4),
+                      text(x + 22, top + 58, esc(detail), TYPE_SM, SOFT, align=4)])
 
 
 def toast_seconds(message: str, seconds: float) -> float:
@@ -350,7 +377,7 @@ def quit_hold_ass(progress: float, key: str = "B", label: str = "Salir") -> str:
     shape, gw = glyph(cx - (20 if len(key) == 1 else 26), cy, key, 40)
     return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
                       ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,
-                      text(cx - r - 16, cy, esc(label), 24, SOFT, weight="semi", align=6)])
+                      text(cx - r - 16, cy, esc(label), TYPE_MD, SOFT, weight="semi", align=6)])
 
 
 def speaker(cx: float, cy: float, level: float, muted: bool = False, color: str = TEXT) -> str:
@@ -397,10 +424,10 @@ def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
     extra = 0 if muted or level <= 100 else (track_h - normal_h) * (level - 100) / (VOLUME_TOP - 100)
     number = "—" if muted else f"{int(level)}"
     parts = [glass(x, y, w, h, w / 2, "glass-strong"),  # la cápsula, de vidrio como los paneles
-             text(x + w / 2, y + 34, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),
+             figures(x + w / 2, y + 32, number, TYPE_MD, TEXT, align=5, alpha="70" if muted else "00"),
              rrect(track_x, track_top, track_w, track_h, track_w / 2, TEXT, "D0")]  # el riel
     if extra:
-        parts.append(text(x + w / 2, y + 58, "EXTRA", 14, EXTRA, weight="semi", align=5))
+        parts.append(text(x + w / 2, y + 58, "EXTRA", TYPE_SM, EXTRA, weight="semi", align=5))
     if fill:
         parts.append(rrect(track_x, track_top + track_h - fill, track_w, fill, track_w / 2, TEXT))
     if extra:  # el Extra, en ámbar, encima de lo normal
@@ -411,7 +438,7 @@ def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
         for label, action, by in (("+", "up", y + 40), ("−", "down", y + h - 110)):
             bx, size = x - 92, 72
             parts.append(glass(bx, by, size, size, size / 2))
-            parts.append(text(bx + size / 2, by + size / 2, label, 40, TEXT, weight="semi", align=5))
+            parts.append(text(bx + size / 2, by + size / 2, label, TYPE_XL, TEXT, weight="semi", align=5))
             targets["volume"].append((bx, by, size, size, action))
     parts.append(speaker(x + w / 2 + 4, y + h - 46, level, muted))
     return "\n".join(parts)
