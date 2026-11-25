@@ -2,14 +2,26 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Las temporadas de la dona, en su propia página: se llega desde «Tus canales» (el + junto a la dona de Inicio). Antes vivía
-/// en Ajustes (revisión del 11 nov: es un detalle de Inicio, no un ajuste de la app).
+/// Las temporadas de la dona, en su propia página: se llega desde Ajustes › En este aparato (de vuelta el 25 nov 2026) y desde
+/// «Tus canales» (el + junto a la dona de Inicio).
 struct SimpsonsSeasonsPage: View {
     var body: some View {
-        Form { SimpsonsSeasonsSection() }
-            .tint(DS.accent)
-            .scrollContentBackground(.hidden).background(Backdrop())
-            .dsNavigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
+        Form {
+            // Arriba, la dona y qué hace esta página (antes solo una nota gris al pie).
+            Section {
+                VStack(spacing: DS.Space.s2) {
+                    Image(DS.Symbol.simpsonsDonut).font(DS.TextRecipe.display.font).foregroundStyle(DS.ListTint.bookmark).accessibilityHidden(true)
+                    Text("La dona de Inicio elige un episodio al azar de las temporadas que marques.").recipe(.secondary, color: DS.textMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
+            }
+            SimpsonsSeasonsSection()
+        }
+        .tint(DS.accent)
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .dsNavigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -32,7 +44,7 @@ struct SimpsonsSeasonsSection: View {
             }
             .padding(.vertical, DS.Space.s2)
             .task { available = await env.simpsons.seasonNumbers() }
-        } header: { Text("Temporadas") } footer: { Text("La dona de Inicio elige un episodio de estas temporadas.") }
+        } header: { Text("Temporadas") } footer: { let n = (selected ?? env.services.appSettings.simpsonsSeasons).count; n == 1 ? Text("1 temporada marcada") : Text("\(n) temporadas marcadas") }
         .listRowBackground(DS.surface)
     }
 

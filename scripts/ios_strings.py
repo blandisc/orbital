@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "%lld temporadas marcadas": "%lld seasons selected", "1 temporada marcada": "1 season selected", "Dónde": "Where",
+    "La dona de Inicio elige un episodio al azar de las temporadas que marques.": "The Home donut picks a random episode from the seasons you select.",
+    "Por género, época, calificación y más": "By genre, era, rating and more",
     # Ajustes con los principios del sistema base (AJ-A, 20 nov 2026).
     'Conectado a %@': 'Connected to %@',
     'Conectado a %@ · falta %@': 'Connected to %@ · %@ missing',

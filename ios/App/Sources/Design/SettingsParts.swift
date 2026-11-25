@@ -11,6 +11,8 @@ struct SettingsRow: View {
     var value: Text?
     /// Lleva a otra página (con flecha). Sin ella, el valor se corre para quedar en la misma columna.
     var linked = true
+    /// `symbol` es un símbolo propio del catálogo de la app (la dona de Los Simpson), no uno del sistema.
+    var custom = false
     @Environment(\.dynamicTypeSize) private var typeSize
     /// En la barra lateral de Ajustes (Mac y iPad ancho, AJ-A) cada renglón es solo su nombre: el valor lo dice la página.
     @Environment(\.settingsPane) private var pane
@@ -26,7 +28,7 @@ struct SettingsRow: View {
             Label {
                 Text(title).foregroundStyle(DS.text)
             } icon: {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint)
+                (custom ? Image(symbol) : Image(systemName: symbol)).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint)
                     .frame(width: DS.SettingsLook.rowIcon)
             }
         }
@@ -110,16 +112,27 @@ struct SimpsonsSeasonsPicker: View {
                 PanelChip(title: Text("Las clásicas (\(Int(classics.first ?? 0))–\(Int(classics.last ?? 0)))"), selected: chosen == Set(classics)) { change(classics) }
                 PanelChip(title: Text("Todas"), selected: Set(available).isSubset(of: chosen)) { change(available) }
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Size.touchTarget + DS.Space.s4), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
+            // Una cuadrícula pareja (Fernando, 25 nov 2026: «pule la pantalla»): todas las temporadas del mismo tamaño, sin la
+            // palomita que ensanchaba las elegidas; elegida = llena, como toda selección de la app.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.SettingsLook.seasonColumns), spacing: DS.Space.s2) {
                 ForEach(available, id: \.self) { season in
-                    PanelChip(title: Text(verbatim: "\(season)"), selected: chosen.contains(season)) {
+                    let on = chosen.contains(season)
+                    Button {
                         var next = chosen
                         if next.contains(season) { next.remove(season) } else { next.insert(season) }
                         if !next.isEmpty { change(next.sorted()) }
+                    } label: {
+                        Text(verbatim: "\(season)").font(DS.TextRecipe.labelLarge.font).monospacedDigit()
+                            .foregroundStyle(on ? DS.bg : DS.text)
+                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                            .dsCard(.row, fill: on ? DS.text : DS.fill)
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(Text("Temporada \(season)"))
+                    .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
+            .animation(DS.Motion.fade, value: selected)
         }
         .dsFeedback(.selection, trigger: selected)
         .accessibilityElement(children: .contain)   // cada temporada conserva su nombre

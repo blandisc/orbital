@@ -80,7 +80,7 @@ extension DS {
         /// abajo (OI-8, 20 nov 2026: la ✕ es solo cerrar), «Guardar» el marcador de guardar (♥ es solo favoritos) y «Para hoy»
         /// la tachuela (★ es solo calificar), como en la TV.
         static let matchPass = "hand.thumbsdown.fill", matchKeep = saved, matchTonight = "pin.fill"
-        static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", spreadDecades = "calendar.day.timeline.left"
+        static let decide = "dice", channelSeasons = "rectangle.stack.badge.play", simpsonsDonut = "simpsons.donut", spreadDecades = "calendar.day.timeline.left"
         /// MO1 (Fernando, 13 nov 2026): el mosaico, la cuadrícula de 3×3, solo para él (su puerta en la portada de Explorar).
         /// «Lo que ves» lleva sus barras (antes la misma cuadrícula, rellena) y «Todo» del selector su 2×2 (`KindGlyph.all`).
         static let mosaic = "square.grid.3x3", whatYouWatch = "chart.bar.xaxis"

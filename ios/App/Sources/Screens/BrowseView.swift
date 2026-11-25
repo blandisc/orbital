@@ -312,8 +312,8 @@ struct BrowseView: View {
         }
         let clear = { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
         return Group {
-            if let style = FilterDoorQuiet.chosen, !ThisDevice.isMac {
-                FilterDoorQuiet(style: style, context: context, count: model.count, open: open, clear: clear)
+            if !ThisDevice.isMac {
+                FilterDoorQuiet(context: context, count: model.count, open: open, clear: clear)
             } else {
                 FilterDoor(context: context, count: model.count, open: open, clear: clear)
             }

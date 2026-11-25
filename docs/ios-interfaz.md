@@ -491,6 +491,7 @@ haya caracteres de texto usados como ícono.
 | Salir del reproductor | `rectangle.portrait.and.arrow.right` (`DS.Symbol.leavePlayer`, igual a `leave`) | «¿Sigues viendo?» › «Salir» (la ✕ de la barra del reproductor) |
 | Decide por mí (el sorteo), y nada más | `dice` (`DS.Symbol.decide`) | La entrada de «Decide por mí» y su vacío por filtros |
 | Las temporadas de la dona (de cuáles sale el episodio) | `rectangle.stack.badge.play` (`DS.Symbol.channelSeasons`) | Inicio › Canales › la dona › Temporadas |
+| Un Simpson al azar (la dona) | `simpsons.donut`, símbolo propio (`DS.Symbol.simpsonsDonut`) | Ajustes › Un Simpson al azar; su página |
 | Repartido por décadas (una de cada época) | `calendar.day.timeline.left` (`DS.Symbol.spreadDecades`) | Filtro avanzado › Época |
 | Tres que caben (tres carteles lado a lado) | `rectangle.split.3x1` (`DS.Symbol.decideTrio`) | «Decide por mí», su primera pestaña |
 | Una por una (el mazo) | `rectangle.portrait.on.rectangle.portrait.angled` (`DS.Symbol.decideDeck`) | «Decide por mí», su segunda pestaña |

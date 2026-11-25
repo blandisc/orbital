@@ -117,8 +117,8 @@ struct SettingsView: View {
             // De qué temporadas sale la dona de Inicio: de vuelta en Ajustes (Fernando, 25 nov 2026), además de junto a los canales.
             if env.services.settingsEntries.simpsons {
                 SettingsLink(.simpsons) { destination(.simpsons, model) } label: {
-                    SettingsRow(title: "Un Simpson al azar", symbol: DS.Symbol.channelSeasons, tint: DS.ListTint.watching,
-                                value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+                    SettingsRow(title: "Un Simpson al azar", symbol: DS.Symbol.simpsonsDonut, tint: DS.ListTint.bookmark,
+                                value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons), custom: true)
                 }
                 .accessibilityIdentifier("settings-simpsons-seasons")
             }

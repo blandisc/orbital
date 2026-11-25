@@ -359,7 +359,7 @@ extension DS {
     }
 
     enum SettingsLook {
-        static let rowIcon: CGFloat = 28
+        static let rowIcon: CGFloat = 28, seasonColumns = 6
         /// Lo que ocupa la flecha de un renglón que lleva a otra página.
         static let chevronSlot: CGFloat = 20
         static let profileAvatar: CGFloat = 60, editBadge: CGFloat = 22

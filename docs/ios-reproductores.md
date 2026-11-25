@@ -154,6 +154,11 @@ PiP en iOS) es una envoltura Swift más cómoda; Dolby Vision, PGS y AirPlay sin
   (`canStartPictureInPictureAutomaticallyFromInline`, `Platform/PictureInPicture.swift`). Medir en el iPhone con la
   compilación Release y probar a no cambiar el dibujo de subtítulos (`setNativeSubtitleRendering`) en el mismo instante
   en que arranca la ventana.
+- **Pendiente (Fernando, 25 nov 2026):** revisión minuciosa de cuándo sale el ícono de cargar y cuándo play/pausa. La
+  carga solo mientras de verdad carga; en cuanto entra la imagen, el ícono cambia a play/pausa y la carga se quita. Hoy
+  todavía no están bien sincronizados.
+- **Pendiente (Fernando, 25 nov 2026):** al volver a la app después de estar fuera, tocar play debe reproducir de
+  inmediato; hoy hay un periodo corto de carga antes.
 
 ## 9. Contradicciones sin resolver
 
