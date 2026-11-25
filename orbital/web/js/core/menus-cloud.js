@@ -236,7 +236,6 @@ export function debridServiceMenu(rd) {
 
 function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
   const requests = rd?.requests || [];
-  const rowHidden = cloudRowHidden(requests, rowHiddenAt);
   const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
   const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
   const which = { icon: "cloud", label: "Tu nube", value: "Real-Debrid", hint: "Cámbiala por otra de las tres",
@@ -260,9 +259,6 @@ function debridAccountWords(rd, { rowHiddenAt = 0 } = {}) {
       problem && { icon: "warning", label: problem.label, hint: `${expiredOn}${problem.hint}`, warn: true, command: problem.command },
       { icon: "cloudDownload", label: "Tus pedidos", value: active ? `${active} en camino` : requests.length ? `${requests.length}` : "Ninguno",
         hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
-      // Fernando, 4 nov: el camino visible para regresar la fila que ocultaste (y para ocultarla desde aquí).
-      { icon: rowHidden ? "hide" : "show", label: "Fila en Películas y series", hint: CLOUD_ROW, value: rowHidden ? "Oculta" : "Se ve",
-        command: { type: "rd-row", hide: !rowHidden, from: "settings" } },
       !problem && rd.expires && { icon: "premium", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
@@ -323,7 +319,7 @@ const EXPLAINERS = {
   // PT13 (Fernando, 4 nov): «¿Qué es Real-Debrid?», los cuatro puntos del iPhone.
   realdebrid: [ // los textos exactos del iPhone (Explainer.swift, tema realDebrid)
     ["cloud", "series", "Guarda copias por ti", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca en segundos."],
-    ["calendar", "calendar", "Lo que no tiene, lo baja", "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte."],
+    ["calendar", "calendar", "Lo que no tiene, lo baja", "Se lo pides y lo baja: suele tardar de minutos a horas; si poca gente lo comparte, hasta días."],
     ["card", "trend", "Cuesta y vence", "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence."],
     ["key", "trophy", "Tu clave", "Conecta Orbital con tu cuenta. Vive guardada en esta TV y nunca se muestra completa."],
   ],
@@ -491,7 +487,6 @@ function debridRequestWords(req, { account = null, now = Date.now(), instead = n
         command: { type: "rd-other-version", play: { kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
       open,
       // Fernando, 4 nov: desde la fila, ocultarla entera (vuelve sola al pedir algo o desde Ajustes).
-      row && { icon: "hide", label: "Ocultar esta fila", hint: "Vuelve sola al pedir algo, o en Ajustes", command: { type: "rd-row", hide: true } },
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, ...(req.service ? { service: req.service } : {}) } }
         : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true, ...(req.service ? { service: req.service } : {}) } },
@@ -690,7 +685,7 @@ function torrentioWords(entry, languages = [], service) {
       { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: languagesLine(languages) || "Ajustes › Idiomas › Tus idiomas",
         command: { type: "languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
-      { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",
+      { icon: "bolt", label: "Solo lo que ya está en la nube", value: only ? "Sí" : "No",
         hint: only ? "Solo lo que arranca al instante" : "También lo que se puede pedir",
         command: set({ debridoptions: only ? (o.debridoptions || []).filter((d) => d !== "nodownloadlinks") : [...(o.debridoptions || []), "nodownloadlinks"] }) },
       { icon: "list", label: "Orden", value: nameOf(TORRENTIO_SORTS, o.sort || "quality", ""),

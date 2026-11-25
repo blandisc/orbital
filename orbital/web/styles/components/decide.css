@@ -26,6 +26,8 @@
 
 /* AD-2: arriba, «✦ Decide por mí», las pestañas con lo que hacen y, a la derecha, el reloj. */
 .decide-head { display: flex; align-items: center; gap: var(--space-12); }
+/* Con el dedo, «Atrás» va arriba a la derecha como en toda la TV: el encabezado le deja su lugar y el reloj se recorre (24 nov 2026). */
+[data-input="touch"] .decide-head { padding-right: var(--touch-back-room); }
 .decide-head__title { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
 .decide-head__title .icon { width: var(--icon-md); height: var(--icon-md); }
 .decide__modes { display: flex; gap: var(--space-8); margin-right: auto; }
@@ -64,7 +66,8 @@
 /* AD-7 / AD-8: abajo, las tres como tarjetas anchas (como «A continuación») y «Filtros» al final. */
 .decide__strip { --card-height: 10.25rem; display: flex; min-width: 0; align-items: flex-end; gap: var(--card-gap); padding-bottom: var(--space-2); }
 .decide__filters {
-  display: grid; align-content: space-between; justify-items: start; padding: var(--space-6); text-align: left;
+  /* Ícono arriba; nombre y su línea juntos abajo (24 nov 2026: repartidos con space-between quedaban huecos raros). */
+  display: grid; grid-template-rows: 1fr auto auto; row-gap: var(--space-1); justify-items: start; padding: var(--space-6); text-align: left;
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline); backdrop-filter: var(--filter-glass); color: var(--color-text);
 }
 .decide__filters-icon .icon { width: var(--icon-md); height: var(--icon-md); }

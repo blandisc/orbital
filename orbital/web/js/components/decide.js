@@ -210,7 +210,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
   function paintStrip() {
     const summary = filtersSummary(choice);
     mount(strip, ...picks.map((p, i) => {
-      return Card({ ...curatedItem(p), rank: undefined, trend: undefined }, { wide: true, onPress: () => press(i) });
+      return Card({ ...curatedItem(p), rank: undefined, trend: undefined }, { wide: true, onPress: () => press(i), onMore: onOptions && (() => onOptions(p)) }); // clic derecho o dedo sostenido: lo de ☰
     }), picks.length > 0 && h("button", { class: ["card", "decide__filters", "decide__reroll"], type: "button", tabindex: "-1",
       "aria-label": "Otras tres", style: { "--ratio": .9 }, onClick: () => press(REROLL()) },
       h("span", { class: "decide__filters-icon", "aria-hidden": "true" }, svg(ICONS.refresh)),
@@ -235,8 +235,7 @@ export function createDecide({ load, skip, dismiss = null, onPick, onPlay = null
     const g = glyphs();
     if (state === "loading" && !picks.length) return mount(info, h("p", { class: "decide-info__status", role: "status" }, "Buscando…"));
     if (onReroll()) {
-      return mount(info, Eyebrow("¿Ninguna te late?", { className: "decide-info__eyebrow" }),
-        h("h2", { class: "decide-info__name" }, "Otras tres"),
+      return mount(info, h("h2", { class: "decide-info__name" }, "Otras tres"),
         h("p", { class: "decide-info__facts" }, "Te propongo tres distintas con los mismos filtros"),
         h("div", { class: "button-row decide__actions" },
           Button({ label: "Otras tres", glyph: g.select, variant: "primary", icon: "refresh", onPress: reroll })));

@@ -12,7 +12,7 @@ import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMen
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { tokenMs } from "./core/tokens.js";
 import { failure, retry, serverDetail } from "./core/notices.js";
-import { cloudRow, cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, debridSignupMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
+import { cloudSay, debridForm, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, debridServiceMenu, debridSignupMenu, deviceMenu, deviceRemoveMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
@@ -1257,7 +1257,8 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || [], { hiddenAt: state.settings?.cloud_row_hidden }), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...decideRow(), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
+  // Sin la fila «Lo que pediste» (Fernando, 24 nov 2026: «no sirve ahí»); lo pedido sigue en Ajustes › Cuentas › «Tus pedidos».
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...decideRow(), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 

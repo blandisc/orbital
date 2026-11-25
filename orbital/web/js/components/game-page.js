@@ -121,7 +121,7 @@ export function createGamePage({ onAction, onShow, onMove, onClose }) {
 
   const hints = (g) => [
     { glyph: g.select, label: primaryLabel(item() || {}, options.runningId) },
-    games.length > 1 && { glyph: g.page, label: "De 5 en 5", secondary: true },
+    games.length > 1 && { glyph: g.page, label: "Saltar 5", secondary: true },
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 

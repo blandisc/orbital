@@ -200,7 +200,7 @@ Cómo se mantiene:
 
 ## Textos pendientes (`design/vocabulario.json`)
 
-**PT (4 nov), los iguala la TV:** «La nube las baja por ti: suele tardar de minutos a horas.» (PT7, con «de minutos a días» fuera)
+**PT (4 nov), los iguala la TV:** «La nube las baja por ti: suele tardar de minutos a horas.» (PT7, con «de minutos a días» fuera) — hecho en la TV el 24 nov 2026 («¿Qué es esto?» dice «de minutos a horas; si poca gente lo comparte, hasta días»)
 (PT11: «Bajando en la nube · » ya lo dicen las dos, sin el «Bajando · 42 %» suelto). Del iPhone, sin pendiente en la
 TV: «Cambiar la clave», «Muy grande», «Se preguntan en este orden» (el grupo de la TV sigue en la tabla de arriba), y solo
 del iPhone «Están en Biblioteca › Descargas», «¿Te aviso cuando esté listo?» y «Sí, avísame».

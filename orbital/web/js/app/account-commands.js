@@ -1,4 +1,4 @@
-import { CLOUD_ROW, followedMenu, languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
+import { followedMenu, languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
 import { failure, retry } from "../core/notices.js";
 
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
@@ -112,20 +112,6 @@ export function accountCommands({ UNDO_MS, openSources, cloudSay, debridLogin, d
       // Regresa a «Tus pedidos» (se sale de la confirmación y de la hoja del pedido); desde la ficha, se cierra.
       const back = context?.stack?.length > 1 ? { ...context, stack: context.stack.slice(0, -2) } : null;
       return back ? openMenu(debridRequestsMenu(res.requests || [], state.settings?.realdebrid?.service), back) : ui.sheet.close();
-    },
-    // «Ocultar esta fila» (Fernando, 4 nov): se guarda cuándo, y vuelve sola al pedir algo después (menus.cloudRowHidden).
-    "rd-row": async (command, context) => {
-      const at = command.hide ? Math.floor(Date.now() / 1000) : 0;
-      applySettings(await api.setSettings({ cloud_row_hidden: at }));
-      sound.play("select");
-      if (command.hide) {
-        ui.toast.show(`Oculté la fila «${CLOUD_ROW}»`, { duration: UNDO_MS, detail: cloudSay("Vuelve sola al pedir algo · Ajustes › Cuentas › Real-Debrid", state.settings?.realdebrid?.service),
-          action: { label: "Deshacer", onPress: async () => applySettings(await api.setSettings({ cloud_row_hidden: 0 })) } });
-      } else {
-        ui.toast.show(`Ya se ve la fila «${CLOUD_ROW}»`, { tone: "success" });
-      }
-      if (command.from !== "settings") return ui.sheet.close();
-      return openMenu(debridAccountMenu(state.settings?.realdebrid, { rowHiddenAt: state.settings?.cloud_row_hidden }), context);
     },
     // Ajustes › Complementos › Torrentio (corte S3): cada cambio se guarda al hacerlo, con «Deshacer»
     "torrentio-menu": async (command, context) => openMenu(torrentioMenus.main(torrentioEntry()), nested(context)),
