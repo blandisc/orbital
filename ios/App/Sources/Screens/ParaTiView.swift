@@ -74,7 +74,12 @@ struct ParaTiView: View {
             switch m.mode {
             case .mosaic:
                 // MO1: el mosaico crece desde la portada (arriba) y al salir regresa a ella, mientras la portada se inclina otra vez.
-                mosaicPart(m).transition(MosaicCover.mosaicTransition(reduceMotion))
+                mosaicPart(m)
+                    // MT4-A (Fernando, 25 nov 2026, captura): entre las columnas se veía el muro de Explorar todavía detrás (una
+                    // copia corrida del mosaico) al soltar; el mosaico lleva su propio fondo y va encima de todo.
+                    .background(Backdrop(tint: tint.colors).ignoresSafeArea())
+                    .zIndex(2)
+                    .transition(MosaicCover.mosaicTransition(reduceMotion))
                     // La Mac: el logo y las pestañas en su renglón, con «Actualizar» y la ✕ del mosaico (en Listas lo pone `ListsView`).
                     .macOwnTopRow {
                         HStack(spacing: DS.Space.s4) {
