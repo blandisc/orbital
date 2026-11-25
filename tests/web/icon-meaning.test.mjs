@@ -87,7 +87,7 @@ const ICON_MEANINGS = {
   refresh: {
     idea: "↻ hacerlo otra vez: reintentar, buscar de nuevo, actualizar, revisar, otras tres, y el aviso «en curso»",
     ok: [/label: "(Reintentar|Reintentar la descarga|Buscar de nuevo|Buscar otra vez|Buscar juegos nuevos|Actualizar Orbital|Actualizar ahora|Actualizaciones|Actualizar biblioteca|Revisar ahora|Otras tres)"/,
-      /label: "Buscando tus listas de Trakt…"/, /progress: "refresh"/],
+      /label: "Buscando tus listas de Trakt…"/, /progress: "refresh"/, /"decide__filters-icon".*ICONS\.refresh/], // la tarjeta «Otras tres» de Decide
   },
   undo: { idea: "↶ deshacer o volver a lo de antes", ok: [/label: "Deshacer"/, /label: `Regresar a /, /label: "Volver a lo recomendado"/] },
   fromStart: { idea: "⏮ ver desde el principio", ok: [/label: "Desde el principio"/] },
