@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import ctypes
 import logging
-import math
 import queue
 import sys
 import threading
@@ -43,22 +42,22 @@ RADIUS = 1.1  # --radius-xl (dos renglones)
 ICON = 2.2  # .toast__icon
 PAD_LEFT, PAD_RIGHT, GAP = .5, 1.5, .5  # --space-2 · --space-6 · --space-2
 TOAST_MIN_W, TOAST_MAX_W, TOAST_H = 18, 34, 4.1
-TITLE_SIZE, DETAIL_SIZE = 1.07, .98  # --text-md · --text-sm
+TITLE_SIZE, DETAIL_SIZE = 1.07, .98  # el título y el detalle del aviso (su medida propia encima del juego)
 SHADOW_Y, SHADOW_BLUR, SHADOW_ALPHA = 1.5, 4.0, .55  # --shadow-overlay: 0 1.5rem 4rem rgba(0,0,0,.55)
 RING = .16  # rem: el grueso del anillo que se llena al mantener el atajo de cerrar
 SAFE_AREA = 4  # --safe-area: margen de la tele (Ajustes › Márgenes de la TV)
 
 # El movimiento (tokens.css; tests/test_overlay.py cuida que sean los mismos). La entrada de un aviso, como toast.css:
 # el ícono (--duration-notice-icon, --ease-pop), la tarjeta que crece desde él (--delay-notice-grow, --duration-notice-grow
-# con el resorte de --ease-notice-grow, y se funde en --duration-fast) y el texto y la sombra (--delay-notice-text,
+# con la curva de --ease-notice-grow, sin pasarse, y se funde en --duration-fast) y el texto y la sombra (--delay-notice-text,
 # --duration-base, --ease-out). La acción de cerrar entra con --duration-base / --ease-out y todo sale con --duration-exit /
 # --ease-in, como toast-out.
-ENTER_MS, EXIT_MS, FADE_MS = 220, 160, 140
+ENTER_MS, EXIT_MS, FADE_MS = 220, 180, 180  # TB-19 (24 nov 2026): todo entre 180 y 300 ms
 EASE_OUT = (.16, 1, .3, 1)
 EASE_IN = (.5, 0, .75, 0)
 EASE_POP = (.22, 1.35, .42, 1)
-ICON_MS, GROW_DELAY_MS, GROW_MS, TEXT_DELAY_MS = 240, 160, 660, 320
-SPRING_RESPONSE, SPRING_BOUNCE = .45, .3  # el resorte de --ease-notice-grow: spring(duration: 0.45, bounce: 0.3)
+ICON_MS, GROW_DELAY_MS, GROW_MS, TEXT_DELAY_MS = 240, 160, 300, 400
+EASE_NOTICE_GROW = (.22, 1, .36, 1)  # --ease-notice-grow: llega y se asienta, sin pasarse (24 nov 2026: antes un resorte que rebotaba)
 REVEAL_MS = max(GROW_DELAY_MS + GROW_MS, TEXT_DELAY_MS + ENTER_MS)
 FRAME_MS = 33  # la entrada se redibuja a 30 cuadros por segundo: menos de un segundo de trabajo y luego quieta
 ICON_FROM, TEXT_FROM = .4, .5  # el ícono nace al 40 %; el texto llega desde .5 rem a la izquierda (--space-2)
@@ -80,17 +79,6 @@ def bezier(p1x: float, p1y: float, p2x: float, p2y: float):
                 hi = mid
         return at((lo + hi) / 2, p1y, p2y)
     return curve
-
-
-def spring(seconds: float, response: float = SPRING_RESPONSE, bounce: float = SPRING_BOUNCE) -> float:
-    """El resorte de SwiftUI spring(duration:bounce:) (amortiguamiento = 1 − rebote), de 0 a 1 pasando un poco: el mismo que
-    --ease-notice-grow muestrea en tokens.css."""
-    if seconds <= 0:
-        return 0.0
-    zeta = 1 - bounce
-    w0 = 2 * math.pi / response
-    wd = w0 * math.sqrt(1 - zeta * zeta)
-    return 1 - math.exp(-zeta * w0 * seconds) * (math.cos(wd * seconds) + zeta * w0 / wd * math.sin(wd * seconds))
 
 
 def _clamp(value: float) -> float:
@@ -243,21 +231,21 @@ def toast_layers(title: str, detail: str, mark: str, tone: str, rem: float) -> d
 
 def compose_toast(layers: dict, at_ms: float | None = None, grow: float = 1.12):
     """Un cuadro de la entrada, `at_ms` después de empezar (None: entera y quieta): primero el ícono con su «pop», luego
-    la tarjeta crece desde él (nace como un círculo del alto de la tarjeta y se estira con el resorte, pasándose un poco) y
+    la tarjeta crece desde él (nace como un círculo del alto de la tarjeta y se estira hasta su ancho, sin pasarse) y
     al final el texto (desde .75 rem a la izquierda) y la sombra. `grow`: el tamaño final del ícono (0: sin ícono)."""
     from PIL import Image
 
     shadow, margin, rem = layers["shadow"], layers["margin"], layers["rem"]
     width, height = layers["width"], layers["height"]
     image = Image.new("RGBA", shadow.size, (0, 0, 0, 0))
-    ease_out, pop = bezier(*EASE_OUT), bezier(*EASE_POP)
+    ease_out, pop, grow_ease = bezier(*EASE_OUT), bezier(*EASE_POP), bezier(*EASE_NOTICE_GROW)
     late = 1.0 if at_ms is None else ease_out(_clamp((at_ms - TEXT_DELAY_MS) / ENTER_MS))
     if late > 0:
         image.alpha_composite(_faded(shadow, late))
     if at_ms is None:
         image.alpha_composite(layers["plate"], (margin, margin))
     elif at_ms > GROW_DELAY_MS:
-        stretch = spring((at_ms - GROW_DELAY_MS) / 1000)
+        stretch = grow_ease(_clamp((at_ms - GROW_DELAY_MS) / GROW_MS))
         span = height + (width - height) * stretch  # del círculo alrededor del ícono a la tarjeta entera
         plate = _plate(min(span, image.width - margin), height, rem)
         image.alpha_composite(_faded(plate, ease_out(_clamp((at_ms - GROW_DELAY_MS) / FADE_MS))), (margin, margin))

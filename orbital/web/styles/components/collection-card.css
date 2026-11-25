@@ -2,7 +2,7 @@
    --card-height, ancho por su proporción) para que la fila las mida igual; el foco y el atenuado son los de .card. */
 .card--collection {
   display: block; overflow: hidden; isolation: isolate;
-  background: var(--color-surface-raised); box-shadow: var(--shadow-card);
+  background: var(--color-surface-raised); /* sin sombra: una tarjeta quieta no flota (TB-14, B10) */
 }
 /* El halo de su color (plataforma, premio, estudio): una luz baja detrás del abanico. */
 .collection__glow {

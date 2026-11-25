@@ -49,27 +49,37 @@ pueden medir (marcadas «prueba»).
 
 A 1080p, 1 rem ≈ 21,6 px (`--root-size`); «Tamaño del texto» multiplica todo por `--text-scale`. En pantalla chica (la Legion Go
 en la mano, 1280×800: alto ≤ 900 px) el texto sube un paso más con `--text-room` (×1,1, `base.css`) sin mover el lienzo de
-80 × 50 rem: así lo más chico no baja de ~17 px. Escala subida el 10 nov 2026 (T2): `caption`/`footnote`/`secondary` pasaron de
-18,6/19/21 px a 21/24/26 px, y el cuerpo y las secciones un paso arriba para no perder la jerarquía.
+80 × 50 rem: así lo más chico no baja de ~17 px; en una ventana de 700 px o menos (la raíz baja a 12 px), `--text-room` es 1,04
+para que `caption` no baje de 12 px (TB-05, 24 nov 2026; antes 11,6). Escala subida el 10 nov 2026 (T2) y **reducida a seis
+tamaños el 24 nov 2026 (TB-03, sistema base B4)**: cuatro de interfaz y dos grandes, cada uno al menos 1,2× el de abajo (antes
+nueve, con saltos de 1,04×: 21, 24, 26, 27, 30, 35, 52, 63 y 80). `--text-xs`, `--text-md` y `--text-display` ya no existen:
+`footnote`, `data` y `label` subieron de 24 a 26; `card-title` y `body` bajaron de 27 a 26; `section` subió de 30 a 32;
+`heading` de 35 a 40, y `hero` bajó de 80 a 63 (el tamaño de `display`: los dos son el título más grande de su pantalla).
 
 | Receta | Tamaño | ≈ px a 1080p | Peso | Para |
 |---|---|---|---|---|
-| `hero` | `--text-display` 3,7 rem | 80 | negrita | El título del héroe de Películas y series sin logo |
-| `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título de un destacado sin logo (Inicio, Juegos), el de una pantalla (la categoría de Ajustes) |
-| `title` | `--text-2xl` 2,4 rem | 52 | seminegrita | Un título largo que baja un paso, una pregunta grande |
-| `heading` | `--text-xl` 1,6 rem | 35 | seminegrita | El encabezado de una zona o de una hoja |
-| `section` | `--text-lg` 1,4 rem | 30 | seminegrita | El título de una fila («A continuación», «Tus 13 juegos») |
-| `card-title` · `body` | `--text-md` 1,25 rem | 27 | medium · regular | El nombre en una opción o renglón · el cuerpo |
-| `secondary` · `eyebrow` | `--text-sm` 1,2 rem | 26 | regular · medium | Datos bajo un título · el porqué |
-| `footnote` · `data` | `--text-xs` 1,11 rem | 24 | regular | Notas · números (tabulares) |
-| `caption` | `--text-2xs` 0,97 rem | 21 | medium | El nombre bajo lo enfocado, rótulos chicos, glifos |
+| `hero` · `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título del héroe de Películas y series sin logo · el de un destacado sin logo (Inicio, Juegos), el de una pantalla (la categoría de Ajustes) |
+| `title` · `stat` | `--text-2xl` 2,4 rem | 52 | seminegrita | Un título largo que baja un paso, una pregunta grande · una cifra grande (tabular) |
+| `heading` | `--text-xl` 1,85 rem | 40 | seminegrita | El encabezado de una zona o de una hoja |
+| `section` | `--text-lg` 1,48 rem | 32 | seminegrita | El título de una fila («A continuación», «Tus 13 juegos») |
+| `card-title` · `body` · `secondary` · `eyebrow` · `footnote` · `data` · `label` · `label-large` · `group-label` | `--text-sm` 1,2 rem | 26 | seminegrita o regular, según la receta | El nombre en una opción o renglón · el cuerpo · datos bajo un título · el porqué · notas · números (tabulares) · un rótulo |
+| `caption` · `badge` | `--text-2xs` 0,97 rem | 21 | regular · seminegrita | El nombre bajo lo enfocado, rótulos chicos · una placa, los glifos |
 
-**Jerarquía de grosor (D2-B, 20 nov 2026).** La negrita es solo para el título más grande de la pantalla (`hero`, `display`) y
-para placas y cifras (`badge`, `stat`); `title`, `heading`, `section` y `group-label` van en seminegrita, en la TV y en el
-iPhone. Cada pantalla tiene un solo ancla fuerte. La lista vive en `design/tokens.json › boldOnly` y
-`tests/web/design-parity.test.mjs` falla si otra receta lleva negrita en cualquiera de los dos lados. En los componentes tampoco hay negrita a
-mano: `strong`, `b` y los `h*` son seminegrita (`base.css`), y `design-system.test.mjs` falla si un componente pone 700 fuera
-de una receta permitida (OT-2, 20 nov 2026).
+Dentro del mismo tamaño, la jerarquía la ponen el grosor y la tinta (`--color-text`, `--color-text-muted`, `--color-text-faint`).
+La cifra del Top 10 (`card-ranked__number`) no es texto que se lee sino un adorno (`--color-decorative`): mide con la portada
+(`--card-height` × `--rank-figure`) y queda fuera de la escala. El nombre en una portada de respaldo (`.card--stand-in`) es
+`card-title`, o `caption` si la portada mide menos de 7 rem de ancho (antes un tamaño que seguía al alto del póster).
+
+**Jerarquía de grosor (D2-B, 20 nov 2026; TB-06, 24 nov 2026).** La negrita es solo para el título más grande de la pantalla
+(`hero`, `display`) y para la cifra del Top 10; `title`, `heading`, `section` y `group-label` van en seminegrita, en la TV y en
+el iPhone. **En la TV, desde TB-06 (sistema base B5), también las placas (`badge`) y la cifra que tecleas en TV en vivo (`stat`,
+antes 800: no es lo más grande de su pantalla, el programa va en `display`) van en seminegrita**, igual que el nombre de una
+plataforma (`.brand-name`) y la nota de la ficha (`.title__rating`); el 800 (`--weight-heavy`) ya no existe en la TV. El iPhone
+sigue con `badge` en bold y `stat` en heavy hasta que Fernando lo vea allá (`design/tokens.json › type › pesoTv` con su porqué;
+registro de paridad, «TB»). La lista vive en `design/tokens.json › boldOnly` y `tests/web/design-parity.test.mjs` falla si otra
+receta lleva negrita en cualquiera de los dos lados. En los componentes tampoco hay negrita a mano: `strong`, `b` y los `h*` son
+seminegrita (`base.css`), y `design-system.test.mjs` falla si un componente pone 700 fuera de `hero`, `display` o la cifra del
+Top 10 (OT-2, 20 nov 2026).
 
 Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--text-*` (prueba).
 
@@ -87,7 +97,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Fondo | `--color-bg`, `--color-tinted-bg` (el tono del arte) | Grafito; el color lo pone lo enfocado |
 | Superficie | `--color-surface`, `--color-surface-raised` | Paneles de una pantalla completa (Ajustes, el calendario); sobre el arte, vidrio |
 | Vidrio | `--color-glass`, `--color-glass-legible`, `--color-glass-hover`, `--color-glass-selected`, `--color-glass-strong`, `--edge-glass`, `--edge-glass-hairline`, `--edge-glass-selected` | Ver la receta. `--color-glass-legible` (P4): el vidrio que lleva nombres encima del arte (la barra de secciones y el selector de consolas), más oscuro debajo para que se lean (AA) sobre un arte claro |
-| Texto | `--color-text`, `--color-text-muted`, `--color-text-faint`, `--color-on-art-secondary` | El tenue (50 %) se lee (≥ 4,5:1); sobre el arte, `on-art-secondary` con su sombra |
+| Texto | `--color-text`, `--color-text-muted`, `--color-text-faint`, `--color-on-art-secondary` | Tres tintas (TB-13, sistema base B9): el papel, el gris de los datos (ink-250) y el tenue, un gris opaco (#868687, el blanco al 50 % ya mezclado sobre el fondo: el `tertiaryLabel` del iPhone), que se lee (≥ 4,5:1 sobre el fondo, la superficie y la superficie alta; 4,7 la más clara). El blanco al 62 % (`--color-text-faint-strong`) se fue a `--color-text-muted`. Sobre el arte, `on-art-secondary` con su sombra |
 | Principal | `--color-primary` / `--color-on-primary` | Blanco con letra negra; también el foco invertido |
 | Porqué | `--color-reason` | Turquesa; solo porqués |
 | Lo de Orbital | `--color-orbital` (la luna) | El ícono de un rótulo de sección |
@@ -96,6 +106,13 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Nuevo | `--color-new` | El listón «Nuevo», «Hoy»: el turquesa del puntito del logo (`DS.fresh`), no el verde (11 nov 2026: Fernando deshizo el puntito, «no quiero que quites la cinta de nuevo») |
 | Acento por categoría | `--rainbow-*` | El arcoíris del azul de Orbital: categorías de TV en vivo (filtros, después) |
 | Marcas | `--platform-*`, `--brand-*`, `--system-*`, `--color-source-*` | El color de cada plataforma, consola o fuente; nunca para la interfaz |
+
+**Sombras: solo lo que flota (TB-14, 24 nov 2026; sistema base B10).** Para separar se usa lo más ligero: espacio, línea, tinte,
+borde y, al final, tarjeta. La sombra de caja queda para lo que de verdad flota encima de todo (menús, hojas, avisos:
+`--shadow-overlay`) y para lo enfocado que se levanta (`--focus-lift`). `--edge-glass` es solo el filo (antes llevaba una sombra que
+despegaba cada control del arte); el botón principal resalta por su blanco, sin sombra; las portadas (`.card`), las tarjetas de
+colección y el escenario de «Porque viste» (`.shelf__stage`) quietos van sin sombra. Los halos de color se quedan (B11 no se
+aplica: Fernando, 24 nov).
 
 ### Ritmo (5 nov 2026)
 
@@ -232,27 +249,28 @@ e ink-850 en el iPhone) van en el JSON con su `porque`.
 verdad es `design/tokens.json` › `type`). Cada receta es un tamaño y un grosor que van siempre juntos: un componente pone
 `font-size: var(--type-X); font-weight: var(--type-X-weight)` y nada más. **Torcer una receta con otro grosor no se vale: si
 hace falta otro, es otra receta** (como hizo el iPhone con `label`, `labelLarge`, `badge`…). Los grosores se llaman como en el
-iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `--weight-heavy` 800.
+iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700 (el iPhone tiene además `.heavy`, 800, solo para `stat`;
+la TV no lo define desde TB-06).
 
 | Receta | iPhone | TV | Grosor | Para qué |
 |---|---|---|---|---|
 | `display` | largeTitle | 3xl | bold | El título de una pantalla grande |
 | `title` | title | 2xl | bold | El título de una pantalla o de un destacado |
 | `section` | title2 | lg | bold | El título de una fila o subsección |
-| `card-title` | headline | md | semibold | El nombre en una tarjeta, una opción de menú |
-| `body` | body | md | regular | El texto de lectura |
+| `card-title` | headline | sm | semibold | El nombre en una tarjeta, una opción de menú |
+| `body` | body | sm | regular | El texto de lectura |
 | `secondary` | subheadline | sm | regular | Lo que acompaña: datos, sinopsis corta |
-| `footnote` | footnote | xs | regular | Notas, créditos, la leyenda |
+| `footnote` | footnote | sm | regular | Notas, créditos, la leyenda |
 | `caption` | caption | 2xs | regular | Lo más chico: pie de tarjeta |
 | `eyebrow` | footnote | sm | semibold | El porqué en turquesa, sobre un título |
-| `data` | footnote | xs | regular | Números (siempre `tabular-nums`) |
-| `label` | footnote | xs | semibold | Un rótulo o botón chico |
+| `data` | footnote | sm | regular | Números (siempre `tabular-nums`) |
+| `label` | footnote | sm | semibold | Un rótulo o botón chico |
 | `label-large` | subheadline | sm | semibold | El valor de un control, un nombre en un renglón |
-| `badge` | caption | 2xs | bold | Una placa («4K», «Nuevo») y los glifos del mando |
+| `badge` | caption | 2xs | bold (TV: semibold, TB-06) | Una placa («4K», «Nuevo») y los glifos del mando |
 | `group-label` | caption | sm | bold | El rótulo de una sección, en mayúsculas (un paso más grande en la TV: se lee de lejos) |
-| `stat` | largeTitle | 2xl | heavy | Una cifra grande (siempre `tabular-nums`) |
+| `stat` | largeTitle | 2xl | heavy (TV: semibold, TB-06) | Una cifra grande (siempre `tabular-nums`) |
 | `heading` | — | xl | bold | Solo la TV: un encabezado de zona entre `section` y `title` |
-| `hero` | — | display | bold | Solo la TV: el título del destacado a pantalla completa |
+| `hero` | — | 3xl | bold | Solo la TV: el título del destacado a pantalla completa |
 
 **Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es de los tokens). Las pruebas lo vigilan:
 `design-system.test.mjs` (cada tamaño con el grosor de su receta; `data` y `stat`, tabulares) y `design-parity.test.mjs`
@@ -411,7 +429,7 @@ Lo que llega de la TV en español (las teclas del control, la sección) también
 
 **Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
 
-**Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
+**Texto tenue vs. adorno:** `--color-text-faint` (gris opaco #868687, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
 
 **Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
@@ -616,6 +634,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Token | Para qué |
 |---|---|
 | `--duration-none` | Movimiento reducido: sin transición. |
+| **La regla (TB-19, 24 nov 2026; sistema base B12)** | Un movimiento de la interfaz dura **de 180 a 300 ms** y, si va en cadena, unos **100 ms** entre pieza y pieza (`--stagger`, antes 45). Se ajustaron `--duration-instant` 90 → 180, `--duration-fast` 140 → 180, `--duration-exit` 160 → 180, `--duration-slow` 320 → 240, `--duration-enter` 520 → 300, `--duration-snap` 360 → 300, `--duration-smooth` 440 → 300 (la misma curva) y `--duration-notice-grow` 420 → 300 (con `--delay-notice-text` 480 → 400). Fuera de la regla, a propósito: el arranque y la carga (`--duration-land`, `--duration-brand-*`, `--duration-launch-*`, `--duration-enter-long`, que también usan la pantalla de carga y la primera entrada de Inicio), lo ambiental que se ve lento (`--duration-tint`, `--duration-drift`, `--duration-alive`, `--duration-ken-burns`, `--duration-glide`), los ciclos (`--duration-loop`, `-pulse`, `-breathe`) y lo que dura un aviso a la vista (`--duration-notice*`). `fast`, `slow` y `enter` valen distinto en el iPhone hasta que Fernando lo vea allá (`design/tokens.json › durationTv`). |
 | `--duration-instant` · `--duration-fast` · `--duration-base` | Salidas cortas, foco, cambios de estado. |
 | `--duration-slow` · `--duration-snap` | Paneles, secciones que entran de lado, el «salto» de una portada. |
 | `--duration-enter` · `--duration-enter-long` · `--duration-land` | Algo que aparece · la primera entrada de una pantalla · el arranque. |
@@ -631,7 +650,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | `--duration-smooth` · `--ease-smooth` | **Los resortes con nombre del iPhone** (2 nov 2026): `DS.Motion.smooth` (sin rebote) como curva `linear()`. Lo que viaja y cambia de forma: la ficha que se abre desde su tarjeta y vuelve a ella. |
 | `--duration-snappy` · `--ease-snappy` | `DS.Motion.snap` (firme, un rebote que casi no se ve): lo que se acomoda o se aprieta (el empujón del foco, el hundido de A). |
 | `--duration-ken-burns` | El fondo, quieto en un título 2,5 s, se acerca un 3 % en 16 s y ahí se queda (un tramo, no un ciclo). |
-| `--duration-notice-icon` · `--delay-notice-grow` · `--duration-notice-grow` · `--ease-notice-grow` · `--delay-notice-text` | **Cómo entra un aviso** (Fernando, 6 nov 2026): el ícono sale solo con un «pop» (`--ease-pop`); a los 160 ms la cajita crece desde él con un resorte que pasa ~4 % y regresa (0.45 s, rebote 0.3); a los 320 ms llegan el texto y la sombra (`--duration-base`). Solo transform y opacity, y al terminar (~0,8 s) queda quieto. Con movimiento reducido aparece entero de una vez. Lo mismo encima del juego (`overlay.py`, que usa estos valores: `tests/test_overlay.py`). |
+| `--duration-notice-icon` · `--delay-notice-grow` · `--duration-notice-grow` · `--ease-notice-grow` · `--delay-notice-text` | **Cómo entra un aviso** (Fernando, 6 nov 2026): el ícono sale solo con un «pop» (`--ease-pop`); a los 160 ms la cajita crece desde él en 300 ms y se asienta sin pasarse (`--ease-notice-grow`; 24 nov 2026: el rebote la hacía resbalar bajo el texto); a los 400 ms llegan el texto y la sombra (`--duration-base`). Solo transform y opacity, y al terminar (~0,6 s) queda quieto. Con movimiento reducido aparece entero de una vez. Lo mismo encima del juego (`overlay.py`, que usa estos valores: `tests/test_overlay.py`). |
 
 **Lo que hace que se sienta premium** (propuesta del 2 nov 2026, https://claude.ai/artifact/DhegvqEaNMkrsCDWHU9gfS):
 

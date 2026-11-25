@@ -82,7 +82,8 @@ strong, b, h1, h2, h3 { font-weight: var(--weight-semibold); }
 
 /* Ventanas estrechas o móviles */
 @media (max-width: 700px) {
-  :root { --root-size: 12px; --page-gutter: 16px; --text-display: calc(2.6rem * var(--text-scale)); }
+  /* TB-05: con la raíz en 12 px lo más chico (caption, .97 rem) daba 11,6 px; --text-room lo deja en 12 (sistema base B4). */
+  :root { --root-size: 12px; --page-gutter: 16px; --text-room: 1.04; }
 }
 
 /* Íconos de interfaz (js/core/icons.js): heredan el color del texto. */

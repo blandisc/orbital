@@ -19,8 +19,10 @@
   --edge-strong: inset 0 0 0 1px var(--color-hairline-strong);
   --color-text: var(--palette-paper);
   --color-text-muted: var(--palette-ink-250); /* un paso más claro: los datos en gris se leían poco (2 nov 2026) */
-  --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */
-  --color-text-faint-strong: rgba(255, 255, 255, .62);
+  /* La tercera tinta (TB-13, B9): gris opaco, el blanco al 50 % sobre el fondo ya mezclado (#868687, el mismo tertiaryLabel del
+     iPhone), para que no cambie según lo que tenga atrás. ≥ 4,5:1 sobre el fondo, la superficie y la superficie alta (4,7 la
+     más clara). Antes había cinco tintas: el blanco al 62 % (faint-strong) se fue a --color-text-muted. */
+  --color-text-faint: #868687;
   --color-decorative: var(--palette-ink-500); /* solo adornos, nunca texto que leer: la cifra grande del Top 10 */
   --color-on-art-secondary: color-mix(in oklab, var(--palette-paper) 82%, transparent); /* rótulo sobre el arte (iPhone: onArtSecondary) */
   --art-tint-neutral: rgb(24 24 28); /* sin color en la portada: grafito */
@@ -33,7 +35,7 @@
      atrás; «Jugar» y los demás principales van siempre en blanco (--color-primary), nunca del color del arte. */
   /* Liquid Glass «sutil» (Fernando, 31 oct 2026; el `.glassEffect(.regular)` del iPhone): casi transparente, una luz blanca
      que baja de arriba sobre un fondo apenas oscuro (se lee encima de un arte claro), el filo de arriba más brillante que el de
-     abajo y una sombra suave que lo despega. Todo quieto: no cuesta nada en reposo. */
+     abajo; la sombra solo la lleva lo que flota encima de todo (TB-14). Todo quieto: no cuesta nada en reposo. */
   --color-glass: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)), rgba(28, 28, 32, .3);
   /* P4: el vidrio que lleva nombres encima del arte (el selector de consolas): la misma luz de arriba sobre un fondo más
      oscuro, para que los nombres se lean (AA) aunque el arte de atrás sea claro (Hades: «PSP» quedaba en 1,7:1). */
@@ -45,11 +47,11 @@
      encima pase AA contra lo más claro del fondo («Juegos» y «Steam» daban 4,1 y 3,8). El reproductor no lo usa. */
   --color-glass-selected-legible: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .1));
   --edge-glass-selected: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 0 0 1px rgba(255, 255, 255, .14);
-  /* Un control de vidrio dentro de una fila o de un panel (teclas, versiones, chips): el mismo filo, sin la sombra que despega. */
+  /* Un control de vidrio dentro de una fila o de un panel (teclas, versiones, chips): un filo más tenue. */
   --edge-glass-hairline: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .08);
   /* Un menú o una hoja: más tapado, para leer encima de cualquier cosa. */
   --color-glass-strong: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(30, 30, 36, .74);
-  --edge-glass: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -1px 0 rgba(255, 255, 255, .04), 0 .5rem 1.4rem rgba(0, 0, 0, .22);
+  --edge-glass: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -1px 0 rgba(255, 255, 255, .04); /* solo el filo: la sombra es de lo que flota (--shadow-overlay; TB-14, B10) */
   --filter-glass: blur(var(--blur-glass)) saturate(1.8);
   /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
   --inverse-bg: var(--color-primary);

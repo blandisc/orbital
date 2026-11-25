@@ -1,4 +1,4 @@
-"""El aviso encima del juego entra como los de Orbital (toast.css): con los mismos tiempos y el mismo resorte de tokens.css,
+"""El aviso encima del juego entra como los de Orbital (toast.css): con los mismos tiempos y la misma curva de tokens.css,
 primero el ícono, luego la tarjeta que crece desde él y al final el texto."""
 
 import re
@@ -37,13 +37,13 @@ def test_the_overlay_moves_with_the_same_tokens_as_toast_css():
     assert overlay.EASE_POP == cubic("--ease-pop")
 
 
-def test_the_spring_is_the_one_sampled_in_ease_notice_grow():
-    samples = [float(v) for v in re.findall(r"[\d.]+", token("--ease-notice-grow"))]
-    length = overlay.GROW_MS / 1000
-    for i, value in enumerate(samples[:-1]):
-        assert abs(overlay.spring(length * i / (len(samples) - 1)) - value) < .002, i
-    assert max(samples) > 1.02  # rebota un poco…
-    assert abs(overlay.spring(length) - 1) < .003  # …y se asienta
+def test_the_card_grows_with_ease_notice_grow_and_does_not_overshoot():
+    """24 nov 2026: la cajita llega y se asienta, sin pasarse (al rebotar se veía resbalar bajo el texto)."""
+    assert overlay.EASE_NOTICE_GROW == cubic("--ease-notice-grow")
+    grow = overlay.bezier(*overlay.EASE_NOTICE_GROW)
+    samples = [grow(i / 20) for i in range(21)]
+    assert all(b >= a for a, b in zip(samples, samples[1:], strict=False)) and max(samples) <= 1.0001
+    assert abs(samples[-1] - 1) < .003
 
 
 def _ink(image, box=None):

@@ -30,9 +30,10 @@ const ms = (name) => {
   const v = tvValue(name);
   return v.endsWith("ms") ? Number(v.slice(0, -2)) : Number(v.replace(/s$/, "")) * 1000;
 };
-/** La opacidad de una capa: rgba(…, .09) o color-mix(… 62%, transparent). */
+/** La opacidad de una capa: rgba(…, .09), color-mix(… 62%, transparent) o la opacidad sola (--opacity-faint: .5). */
 const alpha = (name) => {
   const v = tvValue(name);
+  if (/^\d*\.?\d+$/.test(v)) return Number(v);
   const rgba = v.match(/^rgba\([^)]*,\s*([\d.]+)\)$/);
   if (rgba) return Number(rgba[1]);
   const mix = v.match(/^color-mix\(.*?\s([\d.]+)%/);
@@ -75,7 +76,8 @@ test("los papeles valen lo mismo (o la diferencia está explicada)", () => {
   for (const [role, spec] of entries(TOKENS.roles)) {
     const bg = TOKENS.palette[TOKENS.roles.background.color];
     if (spec.overlay != null) {
-      assert.match(tvValue(spec.tv), new RegExp(`^rgba\\(255,\\s*255,\\s*255,\\s*0?${String(spec.overlay).replace(/^0/, "")}\\)$`), `TV ${spec.tv}`);
+      // TB-13 (24 nov 2026, B9): la TV también la escribe como gris opaco, el mismo del iPhone (no un blanco translúcido).
+      assert.equal(tvValue(spec.tv).toLowerCase(), overWhite(spec.overlay, bg), `TV ${spec.tv}: gris opaco, el blanco al ${spec.overlay * 100} % sobre el fondo`);
       assert.equal(swiftRoleDark(role), overWhite(spec.overlay, bg), `iPhone .${role}: blanco al ${spec.overlay * 100} % sobre el fondo`);
       continue;
     }
@@ -100,8 +102,12 @@ test("espacios, radios y duraciones: los mismos números", () => {
     assert.equal(radius[name], value, `iPhone Radius.${name}`);
   }
   const motion = swiftEnum("Motion");
+  // TB-19 (24 nov 2026): la TV lleva sus movimientos a 180–300 ms (durationTv, con su porqué); el iPhone sigue con duration
+  // hasta que Fernando lo vea allá (paridad-registro).
+  const tvOnly = TOKENS.durationTv ?? {};
+  assert.ok(entries(tvOnly).length === 0 || tvOnly._, "durationTv dice por qué la TV vale distinto");
   for (const [name, value] of entries(TOKENS.duration)) {
-    assert.equal(ms(`--duration-${name}`), value, `TV --duration-${name}`);
+    assert.equal(ms(`--duration-${name}`), tvOnly[name] ?? value, `TV --duration-${name}`);
     assert.equal(Math.round(motion[name] * 1000), value, `iPhone Motion.${name} (segundos)`);
   }
 });
@@ -182,11 +188,21 @@ test("el mosaico espera lo mismo antes de subir solo", () => {
 test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y grosor (las de solo la TV, con su porqué)", () => {
   const kebab = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
   // Los grosores se llaman igual y valen lo mismo (Font.Weight del iPhone ↔ --weight-<nombre> de la TV).
-  for (const [name, value] of entries(TOKENS.weight)) assert.equal(Number(tv[`--weight-${name}`]), value, `TV --weight-${name}`);
+  // TB-06 (24 nov 2026): una receta puede pesar distinto en la TV (pesoTv) si dice por qué; el iPhone, siempre `peso`. La TV
+  // define solo los grosores que usan sus recetas (el heavy es solo del iPhone).
+  const tvPeso = (spec) => spec.pesoTv ?? spec.peso;
+  const used = new Set([TOKENS.type, TOKENS.typeTvOnly].flatMap((group) => entries(group).map(([, spec]) => tvPeso(spec))));
+  for (const [name, value] of entries(TOKENS.weight)) {
+    if (used.has(name)) assert.equal(Number(tv[`--weight-${name}`]), value, `TV --weight-${name}`);
+    else assert.ok(!(`--weight-${name}` in tv), `TV --weight-${name}: ninguna receta de la TV lo usa`);
+  }
+  for (const group of [TOKENS.type, TOKENS.typeTvOnly]) {
+    for (const [recipe, spec] of entries(group)) if (spec.pesoTv) assert.ok(spec.porqueTv, `${recipe}: si la TV pesa distinto, di por qué (porqueTv)`);
+  }
   for (const [recipe, spec] of entries(TOKENS.typeTvOnly)) {
     assert.ok(spec.porque, `${recipe}: una receta solo de la TV dice por qué`);
     assert.equal(tv[`--type-${recipe}`], `var(${spec.tv})`, `TV --type-${recipe}`);
-    assert.equal(tv[`--type-${recipe}-weight`], `var(--weight-${spec.peso})`, `TV --type-${recipe}-weight`);
+    assert.equal(tv[`--type-${recipe}-weight`], `var(--weight-${tvPeso(spec)})`, `TV --type-${recipe}-weight`);
   }
   // Toda receta de la TV está en tokens.json (en type o en typeTvOnly): nada se inventa en un solo lado sin decirlo.
   const known = new Set([...Object.keys(TOKENS.type), ...Object.keys(TOKENS.typeTvOnly)].filter((k) => k !== "_").map(kebab));
@@ -194,7 +210,7 @@ test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y gr
   assert.deepEqual(tvRecipes.filter((r) => !known.has(r)), [], "recetas de la TV que no están en design/tokens.json");
   for (const [recipe, spec] of entries(TOKENS.type)) {
     assert.equal(tv[`--type-${kebab(recipe)}`], `var(${spec.tv})`, `TV --type-${kebab(recipe)}`);
-    assert.equal(tv[`--type-${kebab(recipe)}-weight`], `var(--weight-${spec.peso})`, `TV --type-${kebab(recipe)}-weight`);
+    assert.equal(tv[`--type-${kebab(recipe)}-weight`], `var(--weight-${tvPeso(spec)})`, `TV --type-${kebab(recipe)}-weight`);
     // «case .badge, .groupLabel:» también cuenta (dos recetas con la misma letra).
     const line = SWIFT_DS.match(new RegExp(`case [^:\\n]*\\.${recipe}\\b[^:\\n]*: ([^\\n]+)`))?.[1];
     assert.ok(line, `el iPhone no tiene la receta .${recipe}`);
