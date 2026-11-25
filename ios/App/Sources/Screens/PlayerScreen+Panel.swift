@@ -413,3 +413,17 @@ struct PlayerTimeReader<Content: View>: View {
         content(time.position)
     }
 }
+
+extension PlayerScreen {
+    /// «Audio y subtítulos» entra desde donde vive (abajo de pie, a la derecha acostado), creciendo un poco con un resorte, y
+    /// se va derecho y más rápido. Antes subía siempre desde abajo con una curva plana, también acostado (Fernando, 25 nov 2026).
+    var dockTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let edge: Edge = landscape ? .trailing : .bottom
+        let anchor: UnitPoint = landscape ? .trailing : .bottom
+        return .asymmetric(
+            insertion: .move(edge: edge).combined(with: .opacity).combined(with: .scale(scale: DS.PlayerPanel.dockEnterScale, anchor: anchor))
+                .animation(DS.Motion.spring(reduceMotion)),
+            removal: .move(edge: edge).combined(with: .opacity).animation(DS.Motion.snap(reduceMotion)))
+    }
+}

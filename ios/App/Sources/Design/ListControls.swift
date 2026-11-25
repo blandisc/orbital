@@ -244,7 +244,7 @@ struct ListSortMenu: View {
     private func label(named: Bool) -> some View {
         HStack(spacing: DS.Space.s2) {
             if loading { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono (el renglón no se mueve)
-            else { Image(systemName: "arrow.up.arrow.down").foregroundStyle(DS.textMuted) }
+            else { Image(systemName: "arrow.up.arrow.down").font(DS.TextRecipe.section.font).foregroundStyle(DS.text) }   // del tamaño de los otros íconos del renglón (Fernando, 25 nov 2026)
             if named { Text(sort.label).lineLimit(1).foregroundStyle(DS.text) }
         }
         .font(DS.TextRecipe.label.font)

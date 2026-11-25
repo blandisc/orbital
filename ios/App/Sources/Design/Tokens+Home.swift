@@ -150,7 +150,7 @@ extension DS {
         /// Tocarla: se hunde a `doorPressed` y se endereza este rato antes de que entre el mosaico. La primera vez (sola, una
         /// vez): espera `doorHintDelay`, se queda derecha `doorHintHold` y regresa.
         /// La chapa «Pasea por tus 96»: cuánto baja de la orilla de abajo de la portada (MT4-A).
-        static let badgeDrop: CGFloat = 4
+        static let badgeDrop: CGFloat = 12
         static let doorPressed: CGFloat = 0.98
         /// Cuántas pide la puerta de «Decide por mí» (Inicio y Explorar, la misma): en la Mac, también las de la tira que se asoma.
         static var doorFan: Int { matchFan + (WindowMetrics.roomy ? stripCount : 0) }
