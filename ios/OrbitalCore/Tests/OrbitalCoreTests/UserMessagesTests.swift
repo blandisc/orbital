@@ -15,5 +15,11 @@ final class UserMessagesTests: XCTestCase {
         XCTAssertEqual(UserMessages.humanize("The Internet connection appears to be offline."), "Sin conexión. Revisa tu internet e intenta de nuevo.")
         XCTAssertEqual(UserMessages.humanize("Error Domain=NSURLErrorDomain Code=-1001"), "Sin conexión. Revisa tu internet e intenta de nuevo.")
         XCTAssertEqual(UserMessages.humanize("Ya está descargado."), "Ya está descargado.", "lo normal no se toca")
+        XCTAssertEqual(UserMessages.humanize("No pude leer tus carpetas: keyNotFound(CodingKeys(stringValue: \"value\"))"),
+                       "No pude leer tus carpetas. Intenta de nuevo.", "JT: un error del código no llega crudo")
+        XCTAssertEqual(UserMessages.humanize("The operation couldn’t be completed. (Orbital.OneDriveError error 1.)"),
+                       "Algo falló de nuestro lado. Intenta de nuevo.")
+        XCTAssertEqual(UserMessages.humanize("Cannot Open"), "Algo falló de nuestro lado. Intenta de nuevo.")
+        XCTAssertEqual(UserMessages.humanize("No pude marcarlo como visto"), "No pude marcarlo como visto", "un aviso en español no se toca")
     }
 }
