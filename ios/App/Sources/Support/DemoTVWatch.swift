@@ -1,4 +1,3 @@
-#if DEBUG
 import Foundation
 import OrbitalCore
 
@@ -69,4 +68,3 @@ final class DemoTVWatch: @unchecked Sendable {
                 "volume": ["level": 40, "muted": false, "extra_max": 200]]
     }
 }
-#endif
