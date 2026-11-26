@@ -1,0 +1,183 @@
+<title>Control del iPhone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna; cada decisión con sus opciones lado a lado como teléfonos (se apilan en el celular) */
+:root{
+  --bg:#eef2f3; --surface:#ffffff; --fg:#121a1d; --muted:#5a6870; --line:#d9e1e4;
+  --voice:#0e8f86; --pick:#e4f4f2; --dev:#0f1619; --devfg:#e9f0f2; --devmuted:#8fa1a8; --key:#1d282d; --keyon:#0e8f86; --tv:#2a3940;
+  --display:"Sora",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1013; --surface:#141b1f; --fg:#e6edef; --muted:#93a3aa; --line:#243036; --voice:#3fd1c3; --pick:#11302c;
+  --dev:#05090b; --key:#1a252a; --keyon:#1fa99c; --tv:#22313a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1013; --surface:#141b1f; --fg:#e6edef; --muted:#93a3aa; --line:#243036; --voice:#3fd1c3; --pick:#11302c;
+  --dev:#05090b; --key:#1a252a; --keyon:#1fa99c; --tv:#22313a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:2rem;line-height:1.15} h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:0;max-width:65ch}
+.lead{color:var(--muted);font-size:1.05rem}
+section{display:grid;gap:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.opt.rec{border-color:var(--voice);background:linear-gradient(var(--pick),var(--surface) 35%)}
+.code{font-family:var(--display);font-weight:700;font-size:1.1rem;color:var(--voice)}
+.tag{font-size:.8rem;font-weight:600;color:var(--voice)}
+ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.gana li::marker{content:"+  ";color:var(--voice)} .pierde li::marker{content:"–  ";color:var(--muted)}
+.why{border-left:3px solid var(--voice);padding:4px 0 4px 14px}
+.dictar{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:6px}
+.dictar code{font-family:var(--display);font-size:1rem;color:var(--voice)}
+.hoy{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:8px}
+.hoy ol{margin:0;padding-left:1.2em;display:grid;gap:4px}
+/* El teléfono dibujado */
+.phone{background:var(--dev);color:var(--devfg);border-radius:26px;padding:14px 12px;display:grid;gap:9px;max-width:270px;width:100%;justify-self:center;font-size:12.5px}
+.phone .tvline{background:var(--tv);border-radius:10px;padding:7px 9px;color:var(--devmuted);font-size:11px}
+.phone .tvline b{color:var(--devfg);font-weight:600}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.k{background:var(--key);border-radius:10px;padding:8px 9px;flex:1;text-align:center;min-width:0}
+.k.on{background:var(--keyon);color:#fff}
+.chip{background:var(--key);border-radius:999px;padding:6px 10px;font-size:11.5px}
+.chip.on{background:var(--keyon);color:#fff}
+.lbl{color:var(--devmuted);font-size:10.5px;letter-spacing:.04em}
+.sheet{background:var(--key);border-radius:14px;padding:10px;display:grid;gap:8px}
+.vers{display:grid;gap:5px}
+.v{background:var(--dev);border-radius:9px;padding:7px 9px;display:flex;justify-content:space-between;gap:8px}
+.v.on{outline:2px solid var(--keyon)}
+.v small{color:var(--devmuted)}
+.pad{background:var(--key);border-radius:16px;height:96px;display:grid;place-items:center;color:var(--devmuted);font-size:11px}
+.poster{display:flex;gap:9px;align-items:center;background:var(--key);border-radius:12px;padding:8px}
+.poster i{width:38px;aspect-ratio:2/3;border-radius:5px;background:linear-gradient(160deg,#3c5862,#1b2a30);flex:none}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.mini i{aspect-ratio:2/3;border-radius:5px;background:var(--tv)}
+.mini i.on{outline:2px solid var(--keyon)}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <h1>Control del iPhone</h1>
+    <p class="lead">Dos decisiones. Primero, cómo cambiar el idioma, los subtítulos o la versión de lo que se ve en la TV sin pelearte con el pad. Luego, cómo hacer que el control se acomode solo a cada pantalla de la TV.</p>
+  </header>
+
+  <div class="hoy">
+    <h3>Cómo es hoy</h3>
+    <ol>
+      <li>«Subtítulos» y «Audio» son menús chicos; si la TV no manda la lista, solo mandan una tecla y tienes que mirar la tele.</li>
+      <li>«Versión» abre un panel en la TV y el control se vuelve pad: bajas, bajas, eliges a ciegas, y vuelves.</li>
+      <li>Las pistas salen con su nombre técnico («eng · SDH · Forced»), no con lo que quieres decir («Inglés, solo cuando hablan otro idioma»).</li>
+    </ol>
+  </div>
+
+  <section>
+    <h2>1 · Idioma, subtítulos y versión</h2>
+    <div class="grid">
+      <article class="opt rec">
+        <span class="code">IV-A · Una hoja «Cómo lo ves»</span>
+        <span class="tag">Recomendada</span>
+        <div class="phone">
+          <div class="tvline">En la TV: <b>Dune: Parte dos</b> · 1:12:40</div>
+          <div class="sheet">
+            <span class="lbl">IDIOMA</span>
+            <div class="row"><span class="chip on">Español latino</span><span class="chip">Inglés</span><span class="chip">Original</span></div>
+            <span class="lbl">SUBTÍTULOS</span>
+            <div class="row"><span class="chip">No</span><span class="chip on">Español</span><span class="chip">Inglés</span></div>
+            <span class="lbl">VERSIÓN</span>
+            <div class="vers">
+              <div class="v on"><span>4K · HDR</span><small>arranca al instante</small></div>
+              <div class="v"><span>1080p</span><small>más ligera</small></div>
+            </div>
+            <div class="k on">Poner en la TV, sigue en 1:12:40</div>
+          </div>
+        </div>
+        <p>Una sola hoja en el iPhone con las tres cosas, en palabras normales. El iPhone busca las versiones por su cuenta (como ya lo hace su propio reproductor) y le dice a la TV «pon esta, con este audio y estos subtítulos, en este minuto». La TV no necesita panel.</p>
+        <ul class="gana"><li>Nada de pad: todo se elige tocando en el iPhone.</li><li>Las versiones dicen lo que importa: calidad, si arranca al instante, peso.</li><li>Ya es posible: la TV acepta versión, audio y subtítulos al pedirle que reproduzca.</li></ul>
+        <ul class="pierde"><li>Cambiar de versión corta la imagen 2–4 s (vuelve en el mismo minuto).</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">IV-B · Atajos de un toque</span>
+        <div class="phone">
+          <div class="tvline">En la TV: <b>Dune: Parte dos</b> · 1:12:40</div>
+          <div class="row"><span class="chip on">Español latino</span><span class="chip on">Subs: español</span><span class="chip">4K</span></div>
+          <div class="row"><div class="k">−10 s</div><div class="k on">Pausa</div><div class="k">+10 s</div></div>
+          <div class="pad">Mantén un atajo para ver todas las opciones</div>
+        </div>
+        <p>Tres cápsulas fijas en el control con lo que está puesto. Tocar una cambia a lo siguiente más probable (latino ↔ inglés, subtítulos sí ↔ no). Mantenerla abre la lista.</p>
+        <ul class="gana"><li>Lo más común es un solo toque.</li></ul>
+        <ul class="pierde"><li>Tocar sin ver qué sigue puede sorprender.</li><li>La versión sigue necesitando una lista aparte.</li><li>Son cápsulas de texto, que no te gustan.</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">IV-C · Elegir antes de mandar</span>
+        <div class="phone">
+          <div class="poster"><i></i><div><b>Dune: Parte dos</b><br><span class="lbl">MANDAR A LA TV</span></div></div>
+          <div class="sheet">
+            <span class="lbl">¿CÓMO LA QUIERES?</span>
+            <div class="row"><span class="chip on">Latino</span><span class="chip">Inglés + subs</span></div>
+            <div class="v on"><span>4K · HDR</span><small>al instante</small></div>
+            <div class="row"><span class="chip on">Recordar para esta serie</span></div>
+            <div class="k on">Ver en la TV</div>
+          </div>
+        </div>
+        <p>Cuando mandas algo a la TV y no tienes preferencia guardada, el iPhone pregunta una vez cómo lo quieres y lo recuerda para esa serie (o para todo).</p>
+        <ul class="gana"><li>Arranca bien desde el principio: no hay que corregir a media película.</li></ul>
+        <ul class="pierde"><li>Un paso más la primera vez.</li><li>No ayuda si ya está reproduciendo.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · Un control que se acomoda a cada pantalla</h2>
+    <p>Hoy el control ya cambia en cuatro casos (reproduciendo, en vivo, escribiendo, navegando). La idea es que reconozca más pantallas de la TV y enseñe lo de esa pantalla, no un pad genérico.</p>
+    <div class="grid">
+      <article class="opt rec">
+        <span class="code">CT-A · Tarjeta de lo que tienes enfocado</span>
+        <span class="tag">Recomendada</span>
+        <div class="phone">
+          <div class="tvline">TV: <b>Inicio › Seguir viendo</b></div>
+          <div class="poster"><i></i><div><b>The Bear</b><br><span class="lbl">T3 · E4 · 22 min</span></div></div>
+          <div class="row"><div class="k on">Ver</div><div class="k">Ficha</div><div class="k">Guardar</div></div>
+          <div class="pad">Pad para moverte</div>
+          <div class="row"><div class="k">Atrás</div><div class="k">Inicio</div><div class="k">Buscar</div></div>
+        </div>
+        <p>Arriba del pad, el póster y el nombre de lo que tienes enfocado en la TV, con sus botones de verdad (Ver, Ficha, Guardar). En la ficha: Temporadas y Episodios; en el reproductor, la hoja de IV-A; en un juego, sus botones.</p>
+        <ul class="gana"><li>Ves en el iPhone lo que la tele tiene enfocado: no hace falta levantar la vista.</li><li>Viable: la TV ya le manda al control la pantalla y lo que hace cada tecla; falta mandar lo enfocado.</li></ul>
+        <ul class="pierde"><li>Hay que enseñarle a la TV a decir qué está enfocado en cada pantalla.</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">CT-B · Espejo de la pantalla</span>
+        <div class="phone">
+          <div class="tvline">TV: <b>Episodios de The Bear</b></div>
+          <div class="mini"><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="row"><div class="k">T1</div><div class="k">T2</div><div class="k on">T3</div></div>
+          <div class="row"><div class="k">Atrás</div><div class="k on">Ver E4</div></div>
+        </div>
+        <p>El iPhone dibuja una versión simple de lo que está en la TV (la fila, la cuadrícula, la lista de episodios) y tocas directo lo que quieres.</p>
+        <ul class="gana"><li>Lo más directo: tocas el episodio, no lo buscas con flechas.</li></ul>
+        <ul class="pierde"><li>Mucho trabajo: cada pantalla de la TV tendría que mandarse completa.</li><li>Dos pantallas iguales se sienten repetidas.</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">CT-C · Pad grande y una barra que cambia</span>
+        <div class="phone">
+          <div class="tvline">TV: <b>Ficha de Dune</b></div>
+          <div class="pad" style="height:150px">Pad grande · desliza y toca</div>
+          <div class="row"><div class="k on">Ver</div><div class="k">Tráiler</div><div class="k">Versión</div><div class="k">Atrás</div></div>
+        </div>
+        <p>El pad ocupa casi todo y abajo una barra de 3–4 botones que la TV decide en cada pantalla.</p>
+        <ul class="gana"><li>Simple y siempre igual de lugar.</li><li>Lo más fácil de construir.</li></ul>
+        <ul class="pierde"><li>Sigues navegando con el pad, que es lo incómodo.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mi recomendación</h2>
+    <p class="why"><b>IV-A con lo de IV-C, y CT-A.</b> La hoja «Cómo lo ves» quita el pad de lo más incómodo (la versión) y habla en tu idioma, y la TV ya sabe recibir esa orden. Que recuerde tu elección por serie evita volver a elegir. La tarjeta de lo enfocado (CT-A) hace que el control se sienta vivo en cada pantalla sin el costo de un espejo completo. En la TV: el mismo vocabulario en su panel de versión, para que diga lo mismo que el iPhone.</p>
+    <div class="dictar">
+      <span>Para dictar:</span>
+      <code>«IV-A con recordar, y CT-A»</code>
+      <small style="color:var(--muted)">o cualquier combinación: una de idioma (IV-A, IV-B, IV-C) y una de control (CT-A, CT-B, CT-C).</small>
+    </div>
+  </section>
+</div>
