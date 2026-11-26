@@ -153,9 +153,7 @@ struct DebridExplainer: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?", cloud: service, locale: locale) : Text("¿Qué es esto?"))
-                    .padding(.bottom, DS.Space.s1)
+            DSSheet(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?", cloud: service, locale: locale) : Text("¿Qué es esto?"), spacing: DS.Space.s2) {
                 switch topic {
                 case .requests: DebridFlowStrip(); requests
                 case .torrentio: torrentio

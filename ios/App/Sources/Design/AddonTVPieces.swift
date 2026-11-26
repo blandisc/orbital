@@ -68,16 +68,3 @@ struct AddonTVStatus: View {
     }
 }
 
-/// Uno que está en tu TV y no en este iPhone (S5): «Archivos de la TV · Solo en la TV» o su nombre con «Solo en la TV».
-struct AddonTVOnlyRow: View {
-    let addon: SharedAddon
-
-    var body: some View {
-        IconBeside(symbol: "tv.and.mediabox") {
-            (addon.isTVFiles ? Text("Archivos de la TV") : Text(verbatim: addon.name))
-                .font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-            Text("Solo en la TV").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-        }
-        .accessibilityElement(children: .combine)
-    }
-}

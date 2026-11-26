@@ -68,6 +68,32 @@ struct DSSheetHeader<Trailing: View>: View {
     }
 }
 
+/// SD3-A (Fernando, 26 nov 2026): la plantilla de toda hoja con su propio título. El título (con su subtítulo y lo de la
+/// derecha) y, siempre a la misma distancia (`DS.Space.sheetHeaderGap`), el contenido con su ritmo (`spacing`). Antes cada
+/// hoja ponía su propio aire entre el título y lo de abajo (s1, s2, s4 o el de las pantallas). `DesignTests` cuida que las
+/// hojas usen esta y no un `DSSheetHeader` suelto.
+struct DSSheet<Trailing: View, Content: View>: View {
+    let title: Text
+    var subtitle: Text?
+    var spacing: CGFloat = DS.Space.s4
+    @ViewBuilder var trailing: () -> Trailing
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            DSSheetHeader(title: title, subtitle: subtitle, trailing: trailing)
+            VStack(alignment: .leading, spacing: spacing, content: content)
+                .padding(.top, DS.Space.sheetHeaderGap)
+        }
+    }
+}
+
+extension DSSheet where Trailing == EmptyView {
+    init(title: Text, subtitle: Text? = nil, spacing: CGFloat = DS.Space.s4, @ViewBuilder content: @escaping () -> Content) {
+        self.init(title: title, subtitle: subtitle, spacing: spacing, trailing: { EmptyView() }, content: content)
+    }
+}
+
 extension DSSheetHeader where Trailing == EmptyView {
     init(title: Text, subtitle: Text? = nil) {
         self.init(title: title, subtitle: subtitle) { EmptyView() }

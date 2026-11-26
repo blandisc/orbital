@@ -73,7 +73,7 @@ struct DSRow: View {
         case .chevron: Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
         case .check(let on):
             Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                .font(DS.TextRecipe.title.font.weight(DS.Weight.plain))   // la casilla del sistema va en peso regular, como en Ajustes de iOS
+                .font(DS.TextRecipe.title.font.weight(DS.Weight.plain))   // ds-exception: la casilla del sistema va en peso regular, como en Ajustes de iOS
                 .foregroundStyle(on ? DS.accent : DS.textFaint)
                 .contentTransition(.symbolEffect(.replace))
         }

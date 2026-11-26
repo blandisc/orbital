@@ -20,7 +20,7 @@ struct VersionGroupHeader: View {
 
 /// Un grupo de renglones en una sola tarjeta, con una raya fina entre uno y otro (como Música o TV de Apple).
 /// `inset`: dónde empieza la raya (bajo el texto, no bajo el ícono); los renglones de «Audio y subtítulos» llevan su columna
-/// de ícono o bandera más ancha (`SubtitleRow.separatorInset`).
+/// de ícono o bandera más ancha (`DSListRow.separatorInset`).
 struct VersionGroup<Content: View>: View {
     var inset: CGFloat = DS.Space.s2 + DS.Version.mark
     @ViewBuilder let content: Content

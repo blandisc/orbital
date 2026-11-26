@@ -209,7 +209,7 @@ extension DesignRulesTests {
     /// (402 pt) al texto de «Decide por mí» le quedan al menos los 216 pt que miden el dado y el nombre.
     func testDoorsSayTheirNameWhole() throws {
         let files = try sources()
-        let door = try file("ParaTiB.swift", in: files)
+        let door = try file("DecideDoor.swift", in: files)
         XCTAssertTrue(door.contains("PosterFan(posters: posters, width: DS.ParaTiB.doorPoster, shift: DS.ParaTiB.doorShift)"))
         XCTAssertGreaterThanOrEqual(door.components(separatedBy: ".lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)").count - 1, 3,
                                     "el nombre (con y sin pósters) y «Tres que caben · Una por una» en un renglón")

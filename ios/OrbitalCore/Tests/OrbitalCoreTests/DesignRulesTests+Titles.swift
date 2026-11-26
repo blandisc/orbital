@@ -10,7 +10,7 @@ extension DesignRulesTests {
     static let notATitle: [String: String] = [
         "addon": "un complemento", "app": "una app de la TV", "device": "un aparato", "source": "una fuente o su lista",
         "service": "una plataforma", "option": "una opción de un menú", "section": "una sección", "region": "un país",
-        "words": "un texto fijo de la app", "coach": "un consejo de la app",
+        "words": "un texto fijo de la app", "now": "lo que la TV dice que suena (su nombre tal cual)", "focus": "lo que la TV tiene enfocado (su nombre tal cual)", "coach": "un consejo de la app",
         "game": "un juego (no tiene traducción)", "list": "una lista tuya", "hub": "una plataforma", "choice": "una opción",
         "version": "una versión (archivo)", "plan": "un plan", "notice": "un aviso", "file": "un archivo", "cause": "una causa",
         "c": "una colección", "clip": "un video corto", "studio": "un estudio", "saga": "una saga de TMDB",

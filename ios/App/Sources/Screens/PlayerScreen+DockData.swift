@@ -113,17 +113,17 @@ extension PlayerScreen {
         return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    VersionGroup(inset: SubtitleRow.textInset) {
+                    VersionGroup(inset: DSListRow.textInset) {
                         ForEach(audio.tracks) { t in
-                            SubtitleRow(lead: .symbol(DS.Symbol.audioTrack), title: Text.flagged(t.title), mark: t.selected ? .check : .none,
+                            DSListRow(lead: .symbol(DS.Symbol.audioTrack), title: Text.flagged(t.title), mark: t.selected ? .check : .none,
                                         action: { if let n = Int(t.id) { Task { await model.selectAudio(n) } } }, selected: t.selected)
                         }
                     }
                     if !audio.others.isEmpty {
                         PanelGroupTitle(title: "En otra versión")
-                        VersionGroup(inset: SubtitleRow.textInset) {
+                        VersionGroup(inset: DSListRow.textInset) {
                             ForEach(audio.others) { o in
-                                SubtitleRow(lead: .symbol(DS.Symbol.switchVersion), title: Text.flagged(o.title), detail: o.detail.map { Text(verbatim: $0) },
+                                DSListRow(lead: .symbol(DS.Symbol.switchVersion), title: Text.flagged(o.title), detail: o.detail.map { Text(verbatim: $0) },
                                             mark: .opens, action: {
                                                 dockState.dockAudio = false
                                                 if let n = Int(o.id) { pickSource(n, model, language: o.code) }
@@ -156,7 +156,7 @@ extension PlayerScreen {
                     if versions.isEmpty {
                         Text(model.searchingSubtitles ? "Buscando versiones en internet…" : model.subtitlesOffline ? "Sin conexión: no hay subtítulos guardados en este idioma." : "No hay subtítulos en este idioma.").recipe(.footnote)
                     } else {
-                        VersionGroup(inset: SubtitleRow.textInset) {
+                        VersionGroup(inset: DSListRow.textInset) {
                             ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
                                 let selected = model.selectedVersionID == version.id
                                 // «Ya probaste» vive aquí, en el renglón de la que probaste (antes también suelto en el panel).

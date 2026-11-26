@@ -73,17 +73,3 @@ struct RemoteSendRow: View {
     }
 }
 
-/// Una frase para la voz (la tele en reposo y nada a medias): se toca y va como si la dijeras.
-struct RemoteHintRow: View {
-    let phrase: String
-
-    var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            Image(systemName: "mic").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .accessibilityHidden(true)
-            Text(verbatim: "«\(phrase)»").recipe(.label, color: DS.text).frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .contentShape(Rectangle())
-    }
-}

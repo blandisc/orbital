@@ -59,7 +59,10 @@ struct AddonsSettings: View {
             .listRowBackground(DS.surface)
             if tv.model.status != .off, !tv.model.tvOnly.isEmpty {
                 Section {
-                    ForEach(tv.model.tvOnly, id: \.id) { AddonTVOnlyRow(addon: $0) }
+                    ForEach(tv.model.tvOnly, id: \.id) { addon in   // está en tu TV y no en este iPhone (S5)
+                        DSListRow(lead: .symbol("tv.and.mediabox"), title: addon.isTVFiles ? Text("Archivos de la TV") : Text(verbatim: addon.name),
+                                  detail: Text("Solo en la TV"))
+                    }
                 } header: { Text("En tu TV") } footer: { Text("Viven en tu TV; este iPhone no los usa.") }
                 .listRowBackground(DS.surface)
             }

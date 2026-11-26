@@ -80,8 +80,7 @@ struct SeasonRatingSheet: View {
         let ratings = env.ratings
         let _ = ratings.track()
         let key = RatingKey.season(show: show, season: season)
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text("Temporada \(season)"), subtitle: Text(verbatim: title))
+        DSSheet(title: Text("Temporada \(season)"), subtitle: Text(verbatim: title), spacing: DS.Space.s4) {
             RatingStars(value: ratings.stars(key)) { stars in Task { await ratings.rate(imdb: key, kind: "series", stars: stars) } }
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("season-rating")

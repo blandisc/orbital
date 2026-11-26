@@ -127,8 +127,7 @@ struct CloudNoneSheet: View {
     let later: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text("Aún no tienes uno"))
+        DSSheet(title: Text("Aún no tienes uno"), spacing: DS.Space.s4) {
             Text("Hay tres y hacen lo mismo. Se contrata en su página y puedes cambiar después.")
                 .recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             VStack(spacing: DS.Space.s2) {

@@ -18,16 +18,15 @@ struct RemoteWatchSheet: View {
     var body: some View {
         let _ = model.track()
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
-                DSSheetHeader(title: Text("Cómo lo ves"))
+            DSSheet(title: Text("Cómo lo ves"), spacing: DS.Space.s4) {
                 if let now = model.now {
                     hero(now)
                     if !now.audioTracks.isEmpty {
                         section("Idioma", symbol: "waveform")
-                        VersionGroup(inset: SubtitleRow.textInset) {
+                        VersionGroup(inset: DSListRow.textInset) {
                             ForEach(now.audioTracks) { t in
                                 let p = Self.split(t.label)
-                                SubtitleRow(lead: .symbol(t.selected ? "speaker.wave.2.fill" : "speaker.wave.2"), title: Text(verbatim: p.name),
+                                DSListRow(lead: .symbol(t.selected ? "speaker.wave.2.fill" : "speaker.wave.2"), title: Text(verbatim: p.name),
                                             detail: p.rest.map { Text(verbatim: $0) }, mark: t.selected ? .check : .none,
                                             identifier: "watch-audio-\(t.id)", action: { Task { await model.control("audio", track: t.id) } }, selected: t.selected)
                             }
@@ -35,13 +34,13 @@ struct RemoteWatchSheet: View {
                     }
                     if !now.subtitleTracks.isEmpty {
                         section("Subtítulos", symbol: "captions.bubble")
-                        VersionGroup(inset: SubtitleRow.textInset) {
+                        VersionGroup(inset: DSListRow.textInset) {
                             let none = !now.subtitleTracks.contains(where: \.selected)
-                            SubtitleRow(lead: .symbol("nosign"), title: Text("Sin subtítulos"), mark: none ? .check : .none,
+                            DSListRow(lead: .symbol("nosign"), title: Text("Sin subtítulos"), mark: none ? .check : .none,
                                         identifier: "watch-subs-no", action: { Task { await model.control("subtitles", track: "no") } }, selected: none)
                             ForEach(now.subtitleTracks) { t in
                                 let p = Self.split(t.label)
-                                SubtitleRow(lead: .symbol(t.selected ? "captions.bubble.fill" : "captions.bubble"), title: Text(verbatim: p.name),
+                                DSListRow(lead: .symbol(t.selected ? "captions.bubble.fill" : "captions.bubble"), title: Text(verbatim: p.name),
                                             detail: p.rest.map { Text(verbatim: $0) }, mark: t.selected ? .check : .none,
                                             identifier: "watch-subs-\(t.id)", action: { Task { await model.control("subtitles", track: t.id) } }, selected: t.selected)
                             }
@@ -90,9 +89,9 @@ struct RemoteWatchSheet: View {
             if model.versionSwitchFailed {
                 DSNotice(text: "Tu TV no cambió de versión. Revisa que esté prendida e intenta otra vez.", tone: .warn)
             }
-            VersionGroup(inset: SubtitleRow.textInset) {
+            VersionGroup(inset: DSListRow.textInset) {
                 ForEach(Array(list.prefix(DS.Remote.versionsShown).enumerated()), id: \.element.id) { i, v in
-                    SubtitleRow(lead: .symbol(i == 0 ? "sparkles" : "film"), title: Self.quality(v), detail: Self.detail(v, first: i == 0),
+                    DSListRow(lead: .symbol(i == 0 ? "star" : "film"), title: Self.quality(v), detail: Self.detail(v, first: i == 0),
                                 identifier: "watch-version-\(i)", action: {
                                     // Se cierra cuando la TV la puso; si no, se queda abierta y lo dice.
                                     Task { if await model.switchVersion(v) { dismiss() } }
@@ -197,7 +196,7 @@ struct RemoteFocusCard: View {
         HStack(alignment: .center, spacing: DS.Space.s4) {
             PosterView(url: focus.art, title: focus.title)
                 .frame(width: DS.Remote.focusPoster)
-                .shadow(color: DS.backdropDeep.opacity(DS.Remote.focusShadow), radius: DS.Space.s2, y: DS.Space.s1)
+                .shadow(DS.Elevation.high)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Label { Text("En tu TV") } icon: { Image(systemName: "tv") }

@@ -165,6 +165,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s4 = CGFloat(DesignTokens.Space.s4)
         static let s6 = CGFloat(DesignTokens.Space.s6), s8 = CGFloat(DesignTokens.Space.s8), s12 = CGFloat(DesignTokens.Space.s12)
         static let s16 = CGFloat(DesignTokens.Space.s16)
+        /// Del título de una hoja a su contenido, en todas las hojas (SD3-A).
+        static let sheetHeaderGap = s4
         /// Margen lateral de las pantallas. En la Mac, el de una app de escritorio (17 nov 2026, Fernando: Inicio con el arte y
         /// las tiras pegados a la orilla de la ventana): con 16 pt, al 77 % salía de 12 px. C2: con espacio, `wideGutter`.
         static var gutter: CGFloat { WindowMetrics.roomy ? wideGutter : s4 }

@@ -6,7 +6,7 @@ import OrbitalModels
 
 /// «Subtítulos» del panel de abajo: versiones por idioma, el botón, la búsqueda de idioma, el panel (`SubtitleDock`), sincronizar con una línea y la vista previa.
 
-/// Una versión de subtítulos en la lista de todas las versiones: un renglón como los del panel (`SubtitleRow`), con su nombre,
+/// Una versión de subtítulos en la lista de todas las versiones: un renglón como los del panel (`DSListRow`), con su nombre,
 /// el archivo o la pista en gris, para sordos o forzados con su ícono y su palabra, si coincide con tu copia y cuántos la
 /// bajaron; la puesta con ✓ (antes un círculo de radio y placas de texto).
 struct SubtitleVersionRow: View {
@@ -23,7 +23,7 @@ struct SubtitleVersionRow: View {
     let action: () -> Void
 
     var body: some View {
-        SubtitleRow(lead: .symbol(kind?.symbol ?? DS.Symbol.subtitleVersion), title: Text.flagged(title), detail: detailText,
+        DSListRow(lead: .symbol(kind?.symbol ?? DS.Symbol.subtitleVersion), title: Text.flagged(title), detail: detailText,
                     mark: loading ? .loading : selected ? .check : .none, action: action, selected: selected)
             .pointerHover(.highlight)
     }

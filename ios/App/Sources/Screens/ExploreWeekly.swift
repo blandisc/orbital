@@ -56,7 +56,7 @@ struct ExploreWeekly: View {
                 if let still = Self.still(item) {
                     // Un capítulo (los especiales de Los Simpson): su imagen y su nombre, no el póster de la serie repetido.
                     TitleNavigationLink(route: RepisaCollectionView.titleRoute(item)) {
-                        StillCard(title: item.title, art: still, data: item.year.map { [String($0)] } ?? [], fallback: item.poster)
+                        StillCard(title: item.title, art: still, data: item.year.map { [String($0)] } ?? [], fallback: item.poster)   // no-es-título: el nombre de un capítulo de la colección, no el de la serie
                     }
                     .buttonStyle(.plain)
                 } else {

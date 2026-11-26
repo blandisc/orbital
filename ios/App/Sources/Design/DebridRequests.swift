@@ -126,8 +126,7 @@ struct DebridRequestSheet: View {
     @State private var confirmingCancel = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since))
+        DSSheet(title: Text(verbatim: name), subtitle: Text(verbatim: since), spacing: DS.Space.s4) {
             status.padding(DS.Space.s4).dsCard(.card)
             if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv, paced: true, service: service) }   // dónde y cómo (3 nov)
             if notificationsOff && !finished {

@@ -11,7 +11,7 @@ extension DesignRulesTests {
     /// Las pantallas con tarjetas de acción: deben armarlas con la pieza del catálogo.
     static let actionTileScreens = ["Screens/TitleView.swift", "Screens/TitleView+Estado.swift", "Screens/TitleView+Descargas.swift",
                                     "Screens/TitleView+Watched.swift", "Screens/MiMediaView.swift",
-                                    "Design/Remote.swift", "Screens/RemoteSheet.swift"]
+                                    "Design/Remote.swift"]   // el control arma sus teclas con `RemoteKey` (Remote.swift)
 
     func testActionTilesComeFromTheCatalog() throws {
         let files = try sources(["Design", "Screens"])

@@ -19,7 +19,7 @@ enum SubtitleMark: Equatable { case none, check, loading, opens }
 /// Un renglón de «Audio y subtítulos»: ícono o bandera, el nombre y su segunda línea gris, y a la derecha la palomita o los
 /// pasos («−» «+»). Alto mínimo de un objetivo táctil; con o sin bandera, elegido o no, mide y se alinea igual (las dos columnas
 /// son fijas). `below` es una segunda fila del mismo renglón, alineada con el nombre (‹ 1 de 2 › de las versiones).
-struct SubtitleRow: View {
+struct DSListRow: View {
     let lead: SubtitleLead
     let title: Text
     var detail: Text?
@@ -120,9 +120,9 @@ struct SubtitleRow: View {
     }
 }
 
-/// Lo que VoiceOver dice y hace con el renglón (ver `SubtitleRow.spoken`).
+/// Lo que VoiceOver dice y hace con el renglón (ver `DSListRow.spoken`).
 private struct SpokenRow: ViewModifier {
-    let row: SubtitleRow
+    let row: DSListRow
     func body(content: Content) -> some View {
         content
             .accessibilityElement(children: .combine)

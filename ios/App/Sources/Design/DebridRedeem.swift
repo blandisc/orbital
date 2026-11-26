@@ -11,8 +11,7 @@ struct DebridRedeemSheet: View {
     let close: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text("¿Canjear tus puntos?"))
+        DSSheet(title: Text("¿Canjear tus puntos?"), spacing: DS.Space.s4) {
             HStack(alignment: .top, spacing: DS.Space.s2) {
                 side("gift.fill", DS.ListTint.trophy, Text("\(points) puntos"))
                 Image(systemName: "arrow.forward").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.textMuted)

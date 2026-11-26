@@ -105,8 +105,7 @@ private struct OrbitalDeviceSheet: View {
     @State private var confirming = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text(verbatim: device.name), subtitle: detail)
+        DSSheet(title: Text(verbatim: device.name), subtitle: detail, spacing: DS.Space.s4) {
             Text("Tiene su propia conexión con tu TV.").recipe(.secondary, color: DS.textMuted)
             Button(role: .destructive) { confirming = true } label: { Label("Quitar", systemImage: "minus.circle").frame(maxWidth: .infinity) }
                 .dsSecondaryButton().dsControlSize(.large)

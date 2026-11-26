@@ -8,7 +8,7 @@ extension DesignRulesTests {
         let panel = try sources(["Design", "Screens"]).filter { $0.name.hasPrefix("SubtitlePanel") || $0.name == "PlayerScreen+DockData.swift" }
         XCTAssertGreaterThanOrEqual(panel.count, 3, "se leyeron las piezas del panel")
         check(hits(#"FlowChips\(|PanelChip\(|DisclosureGroup|Capsule\(|\.capsule\b"#, in: panel),
-              "«Audio y subtítulos» elige con renglones con palomita (SubtitleRow), no con cápsulas ni acordeones")
+              "«Audio y subtítulos» elige con renglones con palomita (DSListRow), no con cápsulas ni acordeones")
         // La bandera de un renglón: una sola forma, en la columna del ícono.
         check(hits(#"Text\(verbatim: LanguageFlags\.flagged|LanguageFlags\.flagOnly"#, in: panel),
               "La bandera de un renglón va con Text.flagMark/Text.flag, no pegada al nombre como texto")

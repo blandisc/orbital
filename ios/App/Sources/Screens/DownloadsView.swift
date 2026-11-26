@@ -504,8 +504,7 @@ struct DownloadSubtitlesSheet: View {
     @State private var saving: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : "\(titleName(item.title, id: item.metaID, kind: item.kind)) · \(item.subtitle)"))
+        DSSheet(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : "\(titleName(item.title, id: item.metaID, kind: item.kind)) · \(item.subtitle)"), spacing: DS.Space.s2) {
             if let found {
                 if found.isEmpty {
                     DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)

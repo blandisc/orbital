@@ -105,30 +105,30 @@ struct SubtitleDock: View {
 
     private var list: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            VersionGroup(inset: SubtitleRow.textInset) {
+            VersionGroup(inset: DSListRow.textInset) {
                 ForEach(choices) { choice in languageRow(choice) }
-                SubtitleRow(lead: .symbol(DS.Symbol.otherLanguage), title: Text("Otro idioma"), mark: .opens,
+                DSListRow(lead: .symbol(DS.Symbol.otherLanguage), title: Text("Otro idioma"), mark: .opens,
                             identifier: "subtitle-dock-other", action: otherLanguage)
                 if let offlineNote {
-                    SubtitleRow(lead: .symbol(DS.Symbol.offline), title: Text("Sin conexión"), detail: Text(verbatim: offlineNote),
+                    DSListRow(lead: .symbol(DS.Symbol.offline), title: Text("Sin conexión"), detail: Text(verbatim: offlineNote),
                                 identifier: "subtitle-dock-offline")
                 }
             }
             if version != nil || audioValue != nil || !videoVersion.isEmpty {
                 PanelGroupTitle(title: "Ajustes")
-                VersionGroup(inset: SubtitleRow.textInset) { settings }
+                VersionGroup(inset: DSListRow.textInset) { settings }
             }
         }
     }
 
     @ViewBuilder private func languageRow(_ choice: LanguagePick) -> some View {
         if choice.id.isEmpty {
-            SubtitleRow(lead: .symbol(DS.Symbol.subtitlesOff), title: Text(verbatim: choice.name), mark: choice.selected ? .check : .none,
+            DSListRow(lead: .symbol(DS.Symbol.subtitlesOff), title: Text(verbatim: choice.name), mark: choice.selected ? .check : .none,
                         identifier: "subtitle-dock-off", action: { pick("") }, selected: choice.selected)
         } else if choice.selected {
             selectedRow(choice)
         } else {
-            SubtitleRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: choice.detail.map { Text(verbatim: $0) },
+            DSListRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: choice.detail.map { Text(verbatim: $0) },
                         mark: choice.searching ? .loading : .none, dimmed: choice.unavailable, identifier: "subtitle-dock-\(choice.id)",
                         action: { pick(choice.id) })
         }
@@ -146,7 +146,7 @@ struct SubtitleDock: View {
         let spoken = [named.map(LanguageFlags.withoutFlags),
                       version.map { String(format: Strings.tr("versión %lld de %lld", language: language), $0.index + 1, $0.count) }]
             .compactMap { $0 }.joined(separator: ", ")
-        return SubtitleRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: named.map { Text.flagged($0) } ?? Text("Cargando subtítulos"),
+        return DSListRow(lead: .flag(choice.id), title: Text(verbatim: choice.name), detail: named.map { Text.flagged($0) } ?? Text("Cargando subtítulos"),
                            mark: loading || version == nil ? .loading : .check, opensList: version != nil, identifier: "subtitle-dock-versions",
                            action: version == nil ? nil : allVersions, below: steps,
                            selected: true, spoken: spoken, hint: "Ver todas las versiones", versionStep: several ? step : nil)
@@ -157,16 +157,16 @@ struct SubtitleDock: View {
     @ViewBuilder private var settings: some View {
         if let delay, version != nil { syncRow(delay) }
         if let sync, version != nil {
-            SubtitleRow(lead: .symbol(DS.Symbol.syncWithLine), title: Text("Sincronizar con una línea"), mark: .opens,
+            DSListRow(lead: .symbol(DS.Symbol.syncWithLine), title: Text("Sincronizar con una línea"), mark: .opens,
                         identifier: "subtitle-dock-sync", action: sync)
         }
         if version != nil { sizeRow }
         if let audioValue {
-            SubtitleRow(lead: .symbol(DS.Symbol.audioTrack), title: Text("Audio"), detail: Text.flagged(audioValue), mark: .opens,
+            DSListRow(lead: .symbol(DS.Symbol.audioTrack), title: Text("Audio"), detail: Text.flagged(audioValue), mark: .opens,
                         identifier: "subtitle-dock-audio", action: openAudio)
         }
         if !videoVersion.isEmpty {
-            SubtitleRow(lead: .symbol(DS.Symbol.videoVersion), title: Text("Versión"), detail: Text.flagged(videoVersion),
+            DSListRow(lead: .symbol(DS.Symbol.videoVersion), title: Text("Versión"), detail: Text.flagged(videoVersion),
                         mark: openVersion == nil ? .none : .opens, identifier: "player-version", action: openVersion)
         }
     }
@@ -180,7 +180,7 @@ struct SubtitleDock: View {
             : Text("\(Text(verbatim: amount + " · "))\(Image(systemName: DS.Symbol.resetDelay)) \(Text("Volver a cero"))")
         let limit = PlayerModel.subtitleMaxDelay
         let nudgeStep = { (d: Int) in nudge(Double(d) * PlayerModel.subtitleStep) }
-        return SubtitleRow(lead: .symbol(DS.Symbol.subtitleSync), title: Text("Sincronía"), detail: detail, identifier: "subtitle-dock-time",
+        return DSListRow(lead: .symbol(DS.Symbol.subtitleSync), title: Text("Sincronía"), detail: detail, identifier: "subtitle-dock-time",
                            action: value == 0 ? nil : resetDelay,
                            trailing: AnyView(SubtitleSteps(back: "minus", forward: "plus", backLabel: "Subtítulos antes", forwardLabel: "Subtítulos después",
                                                            canBack: value > -limit, canForward: value < limit, repeats: true, step: nudgeStep)),
@@ -190,7 +190,7 @@ struct SubtitleDock: View {
 
     private var sizeRow: some View {
         let change = { (d: Int) in _ = d < 0 ? smaller?() : larger?() }
-        return SubtitleRow(lead: .symbol(DS.Symbol.subtitleSize), title: Text("Tamaño"), detail: Text(verbatim: sizeName), identifier: "subtitle-dock-size",
+        return DSListRow(lead: .symbol(DS.Symbol.subtitleSize), title: Text("Tamaño"), detail: Text(verbatim: sizeName), identifier: "subtitle-dock-size",
                            trailing: AnyView(SubtitleSteps(back: "minus", forward: "plus", backLabel: "Más chico", forwardLabel: "Más grande",
                                                            canBack: smaller != nil, canForward: larger != nil, step: change)),
                            spoken: sizeName, adjust: change)

@@ -422,8 +422,7 @@ struct SourcesGlossary: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-            DSSheetHeader(title: Text("Qué significa cada etiqueta"))
+        DSSheet(title: Text("Qué significa cada etiqueta"), spacing: DS.Layout.titleToContent) {
             ForEach(shown, id: \.0) { symbol, title, detail in
                 HStack(alignment: .top, spacing: DS.Space.s2) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)

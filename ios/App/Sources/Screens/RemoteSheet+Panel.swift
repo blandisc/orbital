@@ -125,7 +125,7 @@ struct RemotePanelIdle: View {
             } else if !hints.isEmpty {
                 DSSectionHead(title: Text("Nada en la TV"), eyebrow: Text("Prueba a decirle"))
                 ForEach(hints, id: \.self) { phrase in
-                    Button { say(phrase) } label: { RemoteHintRow(phrase: phrase) }
+                    Button { say(phrase) } label: { DSListRow(lead: .symbol("mic"), title: Text(verbatim: "«\(phrase)»")) }   // una frase para la voz: se toca y va como si la dijeras
                         .buttonStyle(.plain)
                 }
             }

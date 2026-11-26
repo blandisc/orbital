@@ -122,10 +122,10 @@ extension DesignRulesTests {
         }
         XCTAssertTrue(try code("HomeView.swift").contains("} else if WindowMetrics.roomy, spotlightItems(model).count > 1 {"))
         XCTAssertTrue(try code("Collections.swift").contains("if posters.count > DS.ParaTiB.matchFan, WindowMetrics.roomy {"))
-        let paraTi = try code("ParaTiB.swift"), collections = try code("Collections.swift")
+        let paraTi = try code("DecideDoor.swift"), collections = try code("Collections.swift")
         let strip = try XCTUnwrap(paraTi.range(of: "struct DecideStrip: View {")).upperBound
         XCTAssertTrue(paraTi[strip...].prefix(900).contains("posters.suffix(fits)"), "La tira muestra solo los carteles que caben (los cuenta con su ancho)")
-        for (name, text) in [("ParaTiB.swift", paraTi), ("Collections.swift", collections)] {
+        for (name, text) in [("DecideDoor.swift", paraTi), ("Collections.swift", collections)] {
             XCTAssertTrue(text.contains(".fixedSize(horizontal: false, vertical: true)\n                .layoutPriority(1)")
                           || text.contains(".fixedSize(horizontal: false, vertical: true)\n            .layoutPriority(1)"),
                           "\(name): el texto junto a la tira tiene prioridad")
@@ -146,7 +146,7 @@ extension DesignRulesTests {
         XCTAssertTrue(home.contains("static func width(count: Int) -> CGFloat {"), "Canales llena el renglón en la Mac")
         // El puesto es el de lo que ves: con el del ranking mezclado, al quedarse con las series brincaba del 4 al 6.
         XCTAssertTrue(try code("HomeTopTen.swift").contains("RankedPosterCard(rank: i + 1,"), "El Top 10 se numera dentro de lo que ves")
-        XCTAssertTrue(try code("ParaTiB.swift").contains("struct DecideStrip: View"), "La entrada de «Decide por mí» se asoma en la Mac")
+        XCTAssertTrue(try code("DecideDoor.swift").contains("struct DecideStrip: View"), "La entrada de «Decide por mí» se asoma en la Mac")
         // «Ver todas» solo cuando ya no caben (Fernando, 22 nov 2026: «hay más espacio y todavía sale ver todas»): la repisa de
         // Colecciones cuenta los lugares a lo ancho y no se desliza.
         let repisa = try code("Repisa.swift")

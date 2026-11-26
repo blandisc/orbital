@@ -1,0 +1,70 @@
+<title>Sistema de diseño Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Dos columnas de opciones lado a lado; una tarjeta por decisión. */
+:root{--bg:#f4f6f7;--fg:#12181c;--mut:#5b6872;--card:#fff;--line:#dde3e7;--acc:#0f8f86;--rec:#e3f4f2;
+--f:"Inter",system-ui,sans-serif;--h:"Space Grotesk","Inter",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1215;--fg:#e8eef1;--mut:#93a1ab;--card:#161d21;--line:#26323a;--acc:#3cc7bb;--rec:#11302d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1215;--fg:#e8eef1;--mut:#93a1ab;--card:#161d21;--line:#26323a;--acc:#3cc7bb;--rec:#11302d;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+main{max-width:980px;margin:0 auto;display:grid;gap:28px}
+h1,h2{font-family:var(--h);text-wrap:balance;margin:0}h1{font-size:2rem}h2{font-size:1.25rem}
+p{margin:0;max-width:68ch}.mut{color:var(--mut)}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.n{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}.n b{font-family:var(--h);font-size:1.6rem;display:block}
+section{display:grid;gap:12px}.code{color:var(--acc);font-weight:700}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.o{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.o.r{border-color:var(--acc);background:var(--rec)}.tag{font-size:.75rem;font-weight:700;color:var(--acc);letter-spacing:.04em}
+.mock{border:1px dashed var(--line);border-radius:10px;padding:10px;display:grid;gap:6px;font-size:.85rem}
+.row{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg)}
+.row.x1{padding:4px 12px}.row.x2{padding:9px 6px;font-weight:600}
+ul{margin:0;padding-left:18px}
+</style>
+<main>
+<header style="display:grid;gap:8px">
+<h1>Sistema de diseño de Orbital</h1>
+<p class="mut">Revisión del 26 nov 2026. Lo que encontré y 4 decisiones. Dicta los códigos, por ejemplo «SD1-A, SD2-A, SD3-A, SD4-B».</p>
+</header>
+
+<section><h2>Cómo estamos</h2>
+<div class="nums">
+<div class="n"><b>Buena</b>En el iPhone casi no hay valores a mano: quedan ~145, y 57 son de las animaciones de la guía.</div>
+<div class="n"><b>245</b>medidas a mano en la TV (márgenes y anchos): ninguna prueba las revisa.</div>
+<div class="n"><b>34</b>tipos de fila distintos en el iPhone, casi todos «ícono, título, detalle y algo a la derecha».</div>
+<div class="n"><b>29</b>hojas que abren desde abajo, cada una armada a su modo.</div>
+</div>
+<p>Lo que más importa: hoy alguien puede crear una fila, una tarjeta o un margen nuevo y ninguna prueba lo frena. Por ahí entra la deuda.</p>
+</section>
+
+<section><h2><span class="code">SD1</span> · Cerrar la puerta a valores a mano</h2>
+<p class="mut">Para ti no cambia nada visible. Cambia que las pantallas nuevas ya no pueden traer márgenes, letras o sombras inventadas.</p>
+<div class="opts">
+<div class="o r"><span class="tag">SD1-A · RECOMIENDO</span><b>Una prueba que revise todo número de maquetación</b><p>En el iPhone y en la TV. Arreglo los ~30 casos que salgan y los anchos legítimos de la TV quedan marcados. Más o menos un día.</p></div>
+<div class="o"><span class="tag">SD1-B</span><b>Solo el iPhone</b><p>Más rápido, pero la TV sigue abierta: ahí está casi toda la deuda (245).</p></div>
+</div></section>
+
+<section><h2><span class="code">SD2</span> · Una sola fila para toda la app</h2>
+<p class="mut">Lo que notas: Ajustes, Versiones, Subtítulos y el control de la TV tienen filas que se parecen pero miden distinto.</p>
+<div class="opts">
+<div class="o"><span class="tag">HOY</span><div class="mock"><div class="row">Ajuste <span>›</span></div><div class="row x1">Versión 4K <span>✓</span></div><div class="row x2">Subtítulos <span>○</span></div></div><p>Tres alturas y tres márgenes.</p></div>
+<div class="o r"><span class="tag">SD2-A · RECOMIENDO</span><div class="mock"><div class="row">Ajuste <span>›</span></div><div class="row">Versión 4K <span>✓</span></div><div class="row">Subtítulos <span>○</span></div></div><p>Una fila con tres tamaños (normal, compacta y la del reproductor). Además, una prueba: nadie puede crear otra fila fuera del catálogo. 2 a 3 días.</p></div>
+<div class="o"><span class="tag">SD2-B</span><p>Solo unificar Ajustes y dejar lo demás para después. Es menos riesgo, pero el desorden se queda en el reproductor y el control.</p></div>
+</div></section>
+
+<section><h2><span class="code">SD3</span> · Hojas que abren desde abajo</h2>
+<p class="mut">«Cómo lo ves», versiones, filtros, listas… Todas deberían abrir, titularse y cerrar igual.</p>
+<div class="opts">
+<div class="o r"><span class="tag">SD3-A · RECOMIENDO</span><p>Una plantilla única con título, contenido y botón principal. Primero paso las hojas sencillas y luego el resto, y una prueba obliga a usarla.</p></div>
+<div class="o"><span class="tag">SD3-B</span><p>Dejarlas como están y unificar solo el encabezado, que ya es común.</p></div>
+</div></section>
+
+<section><h2><span class="code">SD4</span> · Tarjetas, chips y nombres iguales en la TV</h2>
+<p class="mut">Hay 35 tarjetas, 5 tipos de chip y piezas que se llaman distinto en la TV y en el iPhone. Es lo más grande, unos 4 a 5 días, y cambia cómo se ven las cosas.</p>
+<div class="opts">
+<div class="o"><span class="tag">SD4-A</span><p>Hacerlo ya, con capturas lado a lado antes de subir.</p></div>
+<div class="o r"><span class="tag">SD4-B · RECOMIENDO</span><p>Hacerlo después de SD1 a SD3. Cuando la puerta ya esté cerrada, reordenar las tarjetas no deja deuda nueva atrás.</p></div>
+</div></section>
+
+<p class="mut">Mi recomendación: SD1-A, SD2-A, SD3-A y SD4-B. Primero se frena la deuda nueva y luego se ordena la que ya existe.</p>
+</main>

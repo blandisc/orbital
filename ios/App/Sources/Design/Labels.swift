@@ -76,7 +76,7 @@ extension Text {
     }
     static func flag(_ code: String?) -> Text { flag(code.map { [$0] } ?? []) }
 
-    /// Solo la bandera, sin el espacio de después, para la columna fija de un renglón (`SubtitleRow`): la imagen de español y
+    /// Solo la bandera, sin el espacio de después, para la columna fija de un renglón (`DSListRow`): la imagen de español y
     /// los emojis de los demás salen del mismo lugar y del mismo tamaño. nil si el idioma no tiene bandera.
     static func flagMark(_ code: String) -> Text? {
         LanguageFlags.flag(code).map { withFlagImages($0).accessibilityLabel(Text(verbatim: "")) }

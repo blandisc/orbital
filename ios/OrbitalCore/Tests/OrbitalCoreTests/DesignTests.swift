@@ -411,6 +411,22 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(gone.isEmpty, "Quita de design/catalogo-iphone.json lo que ya no existe: \(gone)")
     }
 
+    /// SD3-A (26 nov 2026): toda hoja con su propio título usa la plantilla `DSSheet` (título, subtítulo y el contenido siempre a
+    /// la misma distancia). Las de esta lista aún arman el suyo con `DSSheetHeader` suelto: se van pasando y se quitan; nunca
+    /// se agrega una.
+    func testSheetsUseTheSheetTemplate() throws {
+        let pending: Set<String> = ["DebridCloudViews.swift","DebridRequests.swift","DecideSheet.swift","DecideView.swift","LearnView.swift","OnboardingTrakt.swift","RemoteSheet+Panel.swift","SaveView.swift","SourcesSheet.swift","TitleActions.swift","TitleView+Aparece.swift","TitleView+TusVistas.swift"]
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+        var still = Set<String>()
+        for file in files where file.lastPathComponent != "Surfaces.swift" {
+            guard try String(contentsOf: file, encoding: .utf8).contains("DSSheetHeader(") else { continue }
+            still.insert(file.lastPathComponent)
+            XCTAssertTrue(pending.contains(file.lastPathComponent), "\(file.lastPathComponent): hoja con DSSheetHeader suelto; usa DSSheet(title:…) { … }")
+        }
+        XCTAssertTrue(pending.subtracting(still).isEmpty, "Ya usan DSSheet; quítalas de la lista: \(pending.subtracting(still).sorted())")
+    }
+
     /// Regla «Las barras fijas no se salen con letra grande» (26 nov 2026: con letra de accesibilidad el dock del iPad se salía
     /// de la pantalla y el control perdía sus nombres). Cada barra fija lleva `dsChromeType()`, y el tope vive solo en el token.
     func testFixedBarsStopGrowingWithTheText() throws {
