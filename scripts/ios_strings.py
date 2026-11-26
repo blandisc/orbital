@@ -493,6 +493,7 @@ TRANSLATIONS = {
     "Hoy, %@": "Today, %@", "La vi otra vez": "I watched it again", "Listo · %@": "Done · %@",
     "Los %@ episodios anteriores tampoco los has visto.": "You haven't watched the %@ previous episodes either.",
     "Los %lld episodios anteriores tampoco los has visto.": "You haven't watched the %lld previous episodes either.",
+    "Lo que se le parece, sin lo que ya viste": "What's like it, minus what you've seen", "Because you watched %@": "Because you watched %@", "What's like it, minus what you've seen": "What's like it, minus what you've seen",
     "Marcar la temporada como vista": "Mark season as watched", "Me salté los otros": "I skipped the others", "No sé cuándo": "I don't know when",
     "Otra vista en tu historial, ahora mismo": "Another play in your history, right now", "Otro día…": "Another day…",
     "Quitar de vistas": "Remove from watched", "Se guarda en tu historial de Trakt": "Saved to your Trakt history", "Solo este": "Just this one",
