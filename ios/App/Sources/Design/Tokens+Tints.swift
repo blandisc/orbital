@@ -34,6 +34,12 @@ extension DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// «Cómo lo ves» (IV-A): cuántas versiones enseña; la tarjeta de lo enfocado (CT-A): el ancho de su póster.
+        static let versionsShown = 8, focusPoster: CGFloat = 76
+        /// La tarjeta de lo enfocado: la sombra del póster, el desenfoque del arte de fondo y el ancho mínimo de su botón.
+        static let focusShadow = 0.5, focusBlur: CGFloat = 30, focusButton: CGFloat = 96
+        /// «Cómo lo ves»: el póster de lo que suena, arriba.
+        static let watchPoster: CGFloat = 60
         /// Al tocar: la tecla se hunde a esta escala y la flecha del pad que se mandó crece a esta.
         static let keyPress: CGFloat = 0.94, arrowFlash: CGFloat = 1.3
         /// Desde qué ancho de ventana el control va en un panel fijo a la derecha (iPad horizontal, Mac) en vez de una

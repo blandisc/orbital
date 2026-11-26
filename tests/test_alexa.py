@@ -400,7 +400,14 @@ def test_the_tv_reports_its_screen_for_the_iphone(public):
     legend = {"select": "Ver", "back": "Atrás", "alt": "Mi lista", "section": "Sección"}
     assert local.post("/api/ui/state", json={"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}).status_code == 200
     ui = client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"]
-    assert ui == {"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}
+    assert ui == {"screen": "search", "text_field": True, "section": "Inicio", "legend": legend, "focus": None}
+    # CT-A: lo enfocado llega al control del iPhone; solo un IMDb de verdad y textos cortos.
+    focus = {"title": "Dune: Parte dos", "image": "https://x/p.jpg", "kind": "movie", "id": "tt15239678", "detail": "2024", "watchable": True}
+    assert local.post("/api/ui/state", json={"screen": "home", "legend": legend, "focus": {**focus, "extra": 1}}).status_code == 200
+    assert client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"]["focus"] == focus
+    local.post("/api/ui/state", json={"screen": "home", "focus": {"title": "Steam", "id": "steam:123"}})
+    got = client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"]["focus"]
+    assert got["title"] == "Steam" and got["id"] is None and got["watchable"] is False
 
 
 def test_iphone_voice_does_not_count_as_alexa(public):

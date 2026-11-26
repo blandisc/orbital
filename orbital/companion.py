@@ -255,7 +255,7 @@ def ui_state(catalog, shell, reported: dict) -> dict:
     player = catalog.watch.player
     segment = player.segment
     return {**reported, "screen": "live" if segment is not None and segment.live else "player", "text_field": False,
-            "legend": player.phone_legend()}
+            "legend": player.phone_legend(), "focus": None}
 
 
 def set_volume(delta: float | None = None, level: int | None = None) -> dict | None:

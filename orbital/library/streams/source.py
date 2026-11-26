@@ -79,7 +79,7 @@ class Source:
     def public(self) -> dict:
         """Lo que ve la interfaz: nada de URLs ni claves."""
         return {
-            "id": self.index, "addon": self.addon, "resolution": self.resolution, "hdr": self.hdr,
+            "id": self.index, "key": self.key, "addon": self.addon, "resolution": self.resolution, "hdr": self.hdr,
             "size": self.size, "seeders": self.seeders, "site": self.site, "cached": self.cached,
             "debrid": self.debrid, "languages": [LANG_NAMES.get(l, l) for l in self.languages],
             "release": self.release, "tags": self.tags, "audio": self.audio_label, "dub": self.dub,

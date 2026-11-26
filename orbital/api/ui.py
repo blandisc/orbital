@@ -164,6 +164,16 @@ def router(d: Deps) -> APIRouter:
 
     ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})
 
+    def _focus(raw: object) -> dict | None:
+        """Lo enfocado en la TV para la tarjeta del control del iPhone (CT-A): solo textos cortos y el IMDb."""
+        if not isinstance(raw, dict) or not isinstance(raw.get("title"), str) or not raw["title"].strip():
+            return None
+        text = lambda k, n: raw[k][:n] if isinstance(raw.get(k), str) and raw[k] else None  # noqa: E731
+        meta = text("id", 40)
+        return {"title": raw["title"][:80], "image": text("image", 500), "kind": text("kind", 20),
+                "id": meta if meta and meta.startswith("tt") else None, "detail": text("detail", 80),
+                "watchable": raw.get("watchable") is True}
+
     @r.post("/api/ui/state")
     def report_state(body: dict) -> dict:
         """La interfaz cuenta qué pantalla tiene al frente y si hay un campo de texto: el control del iPhone enseña
@@ -174,7 +184,8 @@ def router(d: Deps) -> APIRouter:
         ui_state.update(screen=screen if isinstance(screen, str) and len(screen) < 40 else "home",
                         text_field=body.get("text_field") is True,
                         section=section if isinstance(section, str) and len(section) < 40 else None,
-                        legend=dict(list(clean.items())[:16]))
+                        legend=dict(list(clean.items())[:16]),
+                        focus=_focus(body.get("focus")))
         return {"ok": True}
 
     @r.post("/api/ui/trace")

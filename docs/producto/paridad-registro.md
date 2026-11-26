@@ -322,3 +322,5 @@ Notas del análisis, sin propuesta: hay ocho renglones de este archivo que dicen
 «un solo nombre»); falta revisarlos uno por uno.
 
 - 25 nov 2026 · Listas de «Hoy» en Descubre (recetas de `listas/explorar.json` + «Porque viste…»): en el iPhone sí; en la TV pendiente (lee la tabla pero no arma las recetas).
+- 26 nov 2026 · Control del iPhone (IV-A «Cómo lo ves», IV-B teclas de un toque, CT-A lo enfocado arriba del pad): en el iPhone sí; la TV ya manda lo enfocado (`focus` en `/api/ui`) y la llave de cada fuente. Pendiente en la TV: su panel de versión con las mismas palabras («Ultra HD 4K», «Full HD», «La que pondría tu TV»).
+- 26 nov 2026 · «Viendo en la TV» (actividad en vivo): botones grandes sin cápsula y la línea de tiempo con lo que va y lo que falta. Solo del iPhone (la TV no tiene pantalla bloqueada).

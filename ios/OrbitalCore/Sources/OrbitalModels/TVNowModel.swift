@@ -38,6 +38,31 @@ public final class TVNowModel: ObservableModel {
     }
     /// La pantalla de la TV al frente (la manda la consola; nil en versiones viejas): el control se arma según ella.
     public private(set) var screen: String? { didSet { if oldValue != screen { changed() } } }
+    /// Lo enfocado en la TV (CT-A): la tarjeta de arriba del pad. nil: nada, un panel encima o una TV de antes.
+    public private(set) var focus: OrbitalRemote.Focus? { didSet { if oldValue != focus { changed() } } }
+    /// Las versiones de lo que se ve (IV-A), del título que las pidió; nil mientras no se piden.
+    public private(set) var versions: (id: String, list: [OrbitalRemote.Version])? { didSet { changed() } }
+    public private(set) var versionsLoading = false { didSet { if oldValue != versionsLoading { changed() } } }
+    public private(set) var versionsFailed = false { didSet { if oldValue != versionsFailed { changed() } } }
+
+    /// Pide a la TV las versiones de lo que se ve (una vez por capítulo o película).
+    public func loadVersions() async {
+        guard let now, let meta = now.metaID, !now.live else { return }
+        let id = now.videoID ?? meta
+        if versions?.id == id || versionsLoading { return }
+        versionsLoading = true; versionsFailed = false
+        defer { versionsLoading = false }
+        do { versions = (id, try await services.orbital.versions(kind: now.kind, metaID: meta, videoID: now.videoID)) }
+        catch { versionsFailed = true }
+    }
+
+    /// Pone esa versión en la TV en el mismo minuto (corta 2–4 s).
+    public func switchVersion(_ version: OrbitalRemote.Version) async {
+        guard let now else { return }
+        let at = now.paused ? now.position : now.position + max(0, Date().timeIntervalSince(fetchedAt))
+        try? await services.orbital.switchVersion(version, now: now, at: at)
+        await tick()
+    }
     /// Los sustos de la película que suena en la TV (Where's The Jump); nil: no hay mapa (o no es película).
     public private(set) var scares: [JumpScare]? { didSet { if oldValue != scares { changed() } } }
     private var scaresFor: String?
@@ -177,6 +202,7 @@ public final class TVNowModel: ObservableModel {
             legend = snapshot.legend
             section = snapshot.section
             screen = snapshot.screen
+            focus = snapshot.focus
             // F1: si la TV ya dice qué sabe hacer y no anuncia el control completo, el pad se esconde sin esperar un 404.
             let remote = services.orbital
             if remote.contract.isKnown { remoteOutdated = !remote.supports("remote_input") }

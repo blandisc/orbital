@@ -393,7 +393,7 @@ public struct OrbitalRemote: Sendable {
         /// La sección de la TV al frente («Inicio», «Juegos», «Películas y series», «Apps»).
         public var section: String?
         /// La pantalla al frente: «search», «login», «menu», «title», «sources», «player», «live» o la sección («home»…).
-        public var screen: String?
+        public var screen: String?, focus: Focus?
 
         public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil, legend: [String: String] = [:], section: String? = nil) {
             self.playing = playing; self.inbox = inbox; self.textField = textField; self.legend = legend; self.section = section
@@ -409,7 +409,7 @@ public struct OrbitalRemote: Sendable {
                                 textField: json?["ui"]?["text_field"]?.bool,
                                 legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
                                 section: json?["ui"]?["section"]?.nonEmptyString)
-        snapshot.screen = json?["ui"]?["screen"]?.nonEmptyString
+        snapshot.screen = json?["ui"]?["screen"]?.nonEmptyString; snapshot.focus = Focus.parse(json?["ui"]?["focus"], base: base)
         snapshot.volume = Volume.parse(json?["ui"]?["volume"] ?? json?["volume"])
         snapshot.game = Game.parse(json?["game"]).map(absolute)
         return snapshot

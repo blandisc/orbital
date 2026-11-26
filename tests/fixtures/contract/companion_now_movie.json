@@ -52,6 +52,7 @@
       "video_id": "tt1"
     },
     "ui": {
+      "focus": null,
       "legend": {
         "alt": "Audio y subtítulos",
         "back": "Salir",

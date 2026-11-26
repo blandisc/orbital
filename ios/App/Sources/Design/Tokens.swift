@@ -474,8 +474,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let labelShrink: CGFloat = 0.8
         /// «Aquí» y «En la TV»: el alto (y, solo el ícono, el ancho) de cada botón.
         static let button: CGFloat = 30
-        /// «Viendo en la TV»: el ancho de cada botón (−10 s, pausa, +10 s).
-        static let tvKey: CGFloat = 64
+        /// «Viendo en la TV»: el alto de cada botón (−10 s, pausa, +10 s; un objetivo táctil entero) y el círculo de la pausa.
+        static let tvKey: CGFloat = 44
         /// «Viendo en la TV» en la pantalla bloqueada: el póster a todo lo alto de la actividad (2:3, 96 pt de alto).
         static let tvPoster: CGFloat = 64
         /// D3: la barra de la tanda de descargas (alto, separación entre tramos y hasta cuántos tramos; más, una barra seguida).

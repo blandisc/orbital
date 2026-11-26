@@ -76,6 +76,7 @@ extension RemoteSheet {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             voice(model)
             volume(model)
+            if model.context == .browse, let focus = model.focus { RemoteFocusCard(model: model, focus: focus) }   // CT-A, igual que en el iPhone
             // Con el reproductor arriba, sus botones ya dicen Salir, subtítulos, audio y Versión: aquí no se repiten.
             navigation(model, growing: true, contextKeys: model.context != .player)
             typing(model, autoFocus: model.context == .typing || model.textField == true)
@@ -93,11 +94,6 @@ extension RemoteSheet {
             Spacer(minLength: DS.Space.s2)
             Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
         }
-    }
-
-    /// Lo primero del nombre de una pista («Inglés · Subtítulos · de Netflix» → «Inglés»).
-    static func shortTrack(_ label: String) -> String {
-        label.components(separatedBy: " · ").first.map { $0.trimmingCharacters(in: .whitespaces) }.flatMap { $0.isEmpty ? nil : $0 } ?? label
     }
 }
 

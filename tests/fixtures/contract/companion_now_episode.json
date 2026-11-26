@@ -52,6 +52,7 @@
       "video_id": "s1:1:1"
     },
     "ui": {
+      "focus": null,
       "legend": {
         "alt": "Audio y subtítulos",
         "back": "Salir",

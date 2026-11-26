@@ -487,11 +487,23 @@ function reportUi() {
   const screen = ui.login.isOpen ? "login" : ui.search.isOpen ? "search" : ui.sheet.isOpen ? "menu"
     : ui.title.isOpen ? "title" : ui.sources.isOpen ? "sources" : state.section;
   const body = { screen, text_field: textField, section: SECTIONS.find((s) => s.id === state.section)?.title ?? null,
-    legend: legendOf(shownLegend, glyphs()) };
+    legend: legendOf(shownLegend, glyphs()), focus: focusOf(screen) };
   const key = JSON.stringify(body);
   if (key === reportedUi) return;
   reportedUi = key;
   api.uiState(body).catch(() => { reportedUi = ""; });
+}
+
+/** Lo enfocado, para la tarjeta del control del iPhone (CT-A, Fernando, 26 nov 2026): nombre, imagen, de qué es y su IMDb.
+ *  Con un panel o el menú encima, nada (el control enseña lo de ese panel). */
+function focusOf(screen) {
+  const item = screen === "title" ? ui.title.current : ["menu", "search", "login", "sources"].includes(screen) ? null
+    : inForYou() ? ui.foryou.current ?? null : current();
+  const title = item?.title || item?.name;
+  if (!title) return null;
+  const meta = [item.meta_id, item.imdb, item.id].find((v) => typeof v === "string" && /^tt\d+/.test(v)) ?? null;
+  return { title: String(title).slice(0, 80), image: item.poster || item.image || null, kind: item.kind || null, id: meta,
+    detail: String(item.subtitle || item.year || "").slice(0, 80) || null, watchable: isWatchable(item) || !!meta };
 }
 
 /** «Escribir» del control del iPhone: al campo con foco (la cuenta de Stremio o la búsqueda); sin campo, abre la búsqueda. */

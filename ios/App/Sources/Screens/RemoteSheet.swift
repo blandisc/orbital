@@ -49,6 +49,8 @@ struct RemoteSheet: View {
     @State private var issue: ConnectionIssue?
     @State private var collapsing: Task<Void, Never>?
     @State private var pickingEpisode = false
+    /// IV-A: la hoja «Cómo lo ves» (idioma, subtítulos y versión).
+    @State private var showsWatch = false
     /// Cuál de las tres frases del momento sale de pista: otra cada vez que abres el control.
     @State private var hintIndex = Int.random(in: 0..<3)
     @State private var showsScares = false
@@ -121,6 +123,7 @@ struct RemoteSheet: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
             }
         }
+        .appSheet(isPresented: $showsWatch) { RemoteWatchSheet(model: model) }
         .appSheet(isPresented: $pickingEpisode) {
             if let now = model.now, let seriesID = now.metaID {
                 EpisodePickerSheet(title: titleName(now.title, id: now.metaID, kind: now.kind), currentVideoID: now.videoID,
@@ -333,6 +336,7 @@ struct RemoteSheet: View {
             case .browse:
                 VStack(spacing: DS.Remote.groupGap) {
                     volume(model)
+                    if let focus = model.focus { RemoteFocusCard(model: model, focus: focus).transition(Self.reveal) }   // CT-A
                     navigation(model)
                     typing(model, autoFocus: model.textField == true)
                 }
@@ -343,6 +347,7 @@ struct RemoteSheet: View {
         .animation(DS.Motion.smooth(reduceMotion), value: model.context)
         .animation(DS.Motion.smooth(reduceMotion), value: showsPad)
         .animation(DS.Motion.smooth(reduceMotion), value: model.now == nil)
+        .animation(DS.Motion.smooth(reduceMotion), value: model.focus?.title)
         .onChange(of: model.context) { _, _ in showsPad = false }   // otra pantalla en la TV: vuelve a lo suyo
     }
 
@@ -449,16 +454,17 @@ struct RemoteSheet: View {
             if series { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }
         .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
-        // Las pistas: si la consola las manda, se eligen aquí; si no, X (audio y subtítulos en la TV). Episodios o Fuentes
-        // abre ese panel en la TV y cambia el control al pad para moverte por él.
+        // IV-A e IV-B (26 nov 2026): Idioma y Subtítulos cambian con un toque; mantenerlas o Versión abre «Cómo lo ves» en el
+        // iPhone, sin el pad. Una serie suma Episodios (abre ese panel en la TV y el control cambia al pad para moverte).
         HStack(spacing: DS.Space.s2) {
-            trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
-            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
-            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(tv: $0) } ?? (series ? Text("Episodios y versión") : Text("Versión"))) {
-                Task { await model.press(.options) }
-                withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }
+            RemoteWatchKeys(model: model, now: now) { showsWatch = true }
+            if series {
+                RemoteKey(symbol: "list.bullet", title: Text("Episodios")) {
+                    Task { await model.press(.options) }
+                    withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }
+                }
+                .accessibilityIdentifier("remote-options")
             }
-            .accessibilityIdentifier("remote-options")
             // Atrás hasta la última pantalla y ahí Salir (Fernando, 6 nov): lo decide la TV (cierra el panel abierto o sale).
             let exits = (model.legend["back"] ?? "Salir") == "Salir"
             RemoteKey(symbol: exits ? DS.Symbol.leave : "chevron.backward", title: model.legend["back"].map { Text(tv: $0) } ?? Text("Salir")) {
@@ -466,34 +472,6 @@ struct RemoteSheet: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
-    }
-
-    @ViewBuilder private func trackMenu(_ model: TVNowModel, title: Text, symbol: String, action: String, tracks: [OrbitalRemote.NowPlaying.Track],
-                                        fallback: OrbitalRemote.InputAction, legendKey: String) -> some View {
-        if tracks.isEmpty {
-            key(model, symbol, legendKey, title, fallback)
-        } else {
-            Menu {
-                if action == "subtitles" {
-                    Button { Task { await model.control(action, track: "no") } } label: {
-                        if !tracks.contains(where: \.selected) { Label("Sin subtítulos", systemImage: "checkmark") } else { Text("Sin subtítulos") }
-                    }
-                }
-                ForEach(tracks) { t in
-                    Button { Task { await model.control(action, track: t.id) } } label: {
-                        if t.selected { Label(t.label, systemImage: "checkmark") } else { Text(verbatim: t.label) }
-                    }
-                }
-            } label: {
-                // Como las demás teclas: el ícono a la misma altura (antes «Salir» quedaba más abajo) y solo lo primero de la
-                // pista («Inglés», no «Inglés · Subtítulos · de…» cortado); el nombre completo está en el menú.
-                ActionTileLabel(style: .key, title: tracks.first(where: \.selected).map { Text(verbatim: Self.shortTrack($0.label)) } ?? Text("Sin subtítulos"),
-                                symbol: symbol)
-                    .foregroundStyle(DS.text)
-            }
-            .accessibilityLabel(title)
-            .accessibilityValue(tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos"))
-        }
     }
 
     /// En vivo: canal anterior y siguiente, grandes, y silencio.

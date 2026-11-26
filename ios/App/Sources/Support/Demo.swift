@@ -37,7 +37,7 @@ enum Demo {
     static var coach: Bool { has("-demo-coach") }
     static var noTV: Bool { has("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
-    static var tvNow: Bool { has("-demo-tv-now") || horror }
+    static var tvNow: Bool { has("-demo-tv-now") || horror || has("-demo-tv-focus") }
     /// `-demo-tv-horror`: en la TV suena Insidious (con mapa de sustos de verdad) y la TV está en su reproductor.
     static var horror: Bool { has("-demo-tv-horror") }
     /// `-demo-volume-extra 150`: con el reproductor de la TV (`-demo-tv-horror`), el Extra en ese nivel (V4-A).

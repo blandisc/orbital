@@ -122,3 +122,31 @@ final class ExploreListsTests: XCTestCase {
         XCTAssertEqual(Set(seen).count, seen.count, "se repitió una receta antes de que pasaran todas")
     }
 }
+
+/// IV-B: un toque en Idioma pasa al siguiente audio; en Subtítulos, los quita o pone los de tu idioma.
+final class TrackCycleTests: XCTestCase {
+    typealias T = OrbitalRemote.NowPlaying.Track
+    func testIdiomaPasaAlSiguienteYDaLaVuelta() {
+        let a = [T(id: "1", label: "Español (Latino)", selected: true), T(id: "2", label: "Inglés", selected: false)]
+        XCTAssertEqual(TrackCycle.nextAudio(a), "2")
+        XCTAssertEqual(TrackCycle.nextAudio([T(id: "1", label: "x", selected: false), T(id: "2", label: "y", selected: true)]), "1")
+        XCTAssertNil(TrackCycle.nextAudio([T(id: "1", label: "Inglés", selected: true)]))
+    }
+    func testSubtitulosSeQuitanOPonenLosTuyos() {
+        let s = [T(id: "a", label: "Inglés · SDH", selected: false), T(id: "b", label: "Español", selected: false)]
+        XCTAssertEqual(TrackCycle.toggleSubtitles(s), "b")
+        XCTAssertEqual(TrackCycle.toggleSubtitles(s, language: "en"), "a")
+        XCTAssertEqual(TrackCycle.toggleSubtitles([T(id: "a", label: "Inglés", selected: true)]), "no")
+        XCTAssertEqual(TrackCycle.toggleSubtitles([T(id: "a", label: "Francés", selected: false)]), "a")
+        XCTAssertNil(TrackCycle.toggleSubtitles([]))
+    }
+
+    /// Regla «Una tecla del control no se parte en dos renglones»: el nombre de la pista llega en una palabra.
+    func testElNombreDeLaPistaCabeEnUnaPalabra() {
+        for (label, want) in [("Español latino", "Latino"), ("Español (España)", "Castellano"), ("Inglés 5.1 · SDH", "Inglés"),
+                              ("Inglés · Subtítulos · de Netflix", "Inglés"), ("Japanese", "Japanese")] {
+            XCTAssertEqual(TrackCycle.short(label), want)
+            XCTAssertFalse(TrackCycle.short(label).contains(" "), label)
+        }
+    }
+}

@@ -104,6 +104,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if let found = try await DemoTVAddons.shared.respond(request) { return found }   // `-demo-tv-addons`: tu lista y la de la TV
         if let found = DemoCX.respond(request) { return found }   // `-demo-cx`: CX4, CX5, CX8 y «Tu TV es nueva»
         if let found = DemoDevices.respond(request) { return found }   // `-demo-keys`: las llaves por aparato (K1)
+        if url.host == "tv.demo.invalid", Demo.tvNow, let found = DemoTVWatch.shared.respond(url.path, query: url.query, body: request.body.flatMap(JSON.parse)) { return found }
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
@@ -370,6 +371,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             case "skip": nowPlayingPosition = min(Self.nowPlayingDuration, max(0, nowPlayingPosition + Double(body?["delta"]?.intValue ?? 0)))
             case "volume": demoVolume = max(0, min(100, demoVolume + Int(body?["delta"]?.doubleValue ?? 0))); demoMuted = false
             case "mute": demoMuted.toggle()
+            case "audio", "subtitles": DemoTVWatch.shared.control(body)
             default: break
             }
         }
@@ -419,12 +421,14 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         guard Demo.tvNow else {
             return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox)]).serialized())
         }
+        if let ui = DemoTVWatch.focusUI {
+            return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox), "ui": ui]).serialized())
+        }
         if Demo.horror {
             let movie: JSON = .object(["kind": .string("movie"), "live": .bool(false), "meta_id": .string("tt1591095"), "video_id": .string("tt1591095"),
                                        "title": .string("Insidious"), "poster": .string("https://images.metahub.space/poster/medium/tt1591095/img"),
                                        "position": .double(1300 + nowPlayingPosition), "duration": .double(6180), "paused": .bool(nowPlayingPaused),
-                                       "tracks": ["audio": [["id": "1", "label": "Inglés 5.1", "selected": true], ["id": "2", "label": "Español", "selected": false]],
-                                                  "subtitles": [["id": "0", "label": "Sin subtítulos", "selected": false], ["id": "3", "label": "Español", "selected": true]]]])
+                                       "tracks": DemoTVWatch.shared.tracks])
             // Con el reproductor abierto la consola dice también el Extra (100: sin Extra), como `companion.volume_state`.
             let extra = Demo.volumeExtra ?? 100
             let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Versión", "back": "Salir"],
