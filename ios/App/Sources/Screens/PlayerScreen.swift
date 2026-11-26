@@ -403,7 +403,8 @@ struct PlayerScreen: View {
                 if let aspect = engine.videoAspect, aspect != knownAspect { knownAspect = aspect }   // para cuando el motor la olvide
                 logLongLoading(model)
                 pip.update(engine.pictureInPicture)
-                nowPlaying.update(title: titleName(current.displayTitle, id: current.metaID, kind: current.kind), subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
+                nowPlaying.update(title: titleName(current.displayTitle, id: current.metaID, kind: current.kind), subtitle: current.episodeLabel,
+                                  episodeName: model.episodeText(current.videoID).1, art: model.episodeThumbnail(current.videoID), poster: current.poster, snapshot: model.snapshot)
             }
         }
         .onChange(of: scenePhase) { _, phase in

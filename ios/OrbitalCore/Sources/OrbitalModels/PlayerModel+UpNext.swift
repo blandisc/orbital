@@ -137,7 +137,7 @@ extension PlayerModel {
         localizedMeta = meta
     }
 
-    func episodeText(_ videoID: String) -> (String, String) {
+    public func episodeText(_ videoID: String) -> (String, String) {
         guard let meta = localizedMeta ?? request?.meta else { return ("", "") }
         for season in CinemetaParsing.seasons(meta) {
             if let ep = season.episodes.first(where: { $0.id == videoID }) { return (episodeLabel(season.season, ep.episode), ep.title) }
@@ -145,7 +145,7 @@ extension PlayerModel {
         return ("", "")
     }
 
-    func episodeThumbnail(_ videoID: String) -> String? {
+    public func episodeThumbnail(_ videoID: String) -> String? {
         guard let meta = request?.meta else { return nil }
         return CinemetaParsing.seasons(meta).lazy.compactMap { $0.episodes.first { $0.id == videoID } }.first?.thumbnail
     }

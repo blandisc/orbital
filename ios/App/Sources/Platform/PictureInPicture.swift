@@ -118,22 +118,35 @@ final class NowPlaying {
         }
     }
 
-    func update(title: String, subtitle: String, poster: String?, snapshot: EngineSnapshot) {
-        loadArtwork(poster)
+    /// En la pantalla bloqueada, como Apple TV: arriba el nombre del episodio («La cena») y abajo la serie con su lugar
+    /// («The Office · T4 · E13»); la imagen, la del capítulo (ancha, como el video) y si no la hay, el póster. Una película:
+    /// su nombre y nada más (Fernando, 25 nov 2026: «el reproductor… en la pantalla bloqueada no me gusta»; antes arriba
+    /// decía solo «T4 · E13» y abajo la serie, con el póster vertical recortado en cuadro).
+    static func lines(show: String, label: String, episode: String) -> (title: String, artist: String?) {
+        if label.isEmpty { return (show, nil) }
+        // Tras «Siguiente» la etiqueta ya trae el nombre («T2 · E6 · La boda»): no se repite.
+        let short = !episode.isEmpty && label.hasSuffix(" · \(episode)") ? String(label.dropLast(episode.count + 3)) : label
+        let place = "\(show) · \(short)"
+        return episode.isEmpty ? (show, label) : (episode, place)
+    }
+
+    func update(title: String, subtitle: String, episodeName: String = "", art: String? = nil, poster: String?, snapshot: EngineSnapshot) {
+        loadArtwork(art ?? poster)
         let rate = snapshot.state == .playing ? 1.0 : 0.0
-        let key = "\(title)|\(subtitle)|\(rate)|\(snapshot.duration)"
+        let key = "\(title)|\(subtitle)|\(episodeName)|\(rate)|\(snapshot.duration)"
         if let written, written.key == key {
             let expected = written.position + written.rate * Date().timeIntervalSince(written.at)
             if abs(snapshot.position - expected) < Self.driftTolerance { return }
         }
         written = (key, snapshot.position, rate, Date())
+        let lines = Self.lines(show: title, label: subtitle, episode: episodeName)
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: subtitle.isEmpty ? title : subtitle,
-            MPMediaItemPropertyArtist: title,
+            MPMediaItemPropertyTitle: lines.title,
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.video.rawValue,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: snapshot.position,
             MPNowPlayingInfoPropertyPlaybackRate: rate,
         ]
+        if let artist = lines.artist { info[MPMediaItemPropertyArtist] = artist }
         if snapshot.duration > 0 { info[MPMediaItemPropertyPlaybackDuration] = snapshot.duration }
         if let artwork { info[MPMediaItemPropertyArtwork] = artwork }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
