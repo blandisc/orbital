@@ -59,7 +59,7 @@ struct ReleaseTimeline: View {
                 // Suelta, llega a la orilla de la pantalla; en el panel, nada se sale de sus lados.
                 .rowEdge(inset == nil ? .bleeds : .inCard)
                 .contentMargins(.horizontal, inset ?? DS.Space.gutter, for: .scrollContent)
-                .rowSnap()
+                .scrollTargetBehavior(.viewAligned)
                 .pagingArrows()   // C4: ‹ › con el puntero
                 .onAppear {
                     let anchor = UnitPoint(x: DS.HomeTimeline.todayAnchor, y: UnitPoint.center.y)

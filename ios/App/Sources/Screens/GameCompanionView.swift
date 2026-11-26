@@ -38,7 +38,7 @@ struct GameCompanionView: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
         }
         .task(id: game.id) {
             notesWriter.flush()   // lo del juego anterior, antes de leer el nuevo

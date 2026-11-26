@@ -36,7 +36,7 @@ struct Shelf<Content: View>: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
             .edgeBump()   // al final de la fila, un golpe suave en la mano
         }
     }
@@ -120,7 +120,7 @@ struct PopularTodayShelf: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
             .edgeBump()   // al final de la fila, un golpe suave en la mano, como los demás estantes
         }
     }
@@ -169,10 +169,4 @@ struct RankedPosterCard: View {
         .accessibilityLabel(Text("Puesto \(rank)")).accessibilityValue(Text(title))
         .accessibilityIdentifier("ranked-poster")   // para las pruebas de interfaz
     }
-}
-
-extension View {
-    /// Cómo se desliza una fila de lado: se detiene en una tarjeta y un empujón avanza unas pocas, no la fila entera
-    /// (Fernando, 25 nov 2026: «le das tantito y ¡fum!»). Toda fila horizontal con tarjetas usa esta y no `.viewAligned` suelto.
-    func rowSnap() -> some View { scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByFew)) }
 }

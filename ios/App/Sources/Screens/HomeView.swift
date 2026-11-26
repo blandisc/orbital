@@ -471,7 +471,7 @@ struct HomeView: View {
                 .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: items.map(\.id))
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
             .rowEdge(.bleeds)
             .pagingArrows()   // C4: ‹ › con el puntero
             .edgeBump()
@@ -516,7 +516,7 @@ struct HomeView: View {
                 .scrollTargetLayout()
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
             .rowEdge(.bleeds)
             .pagingArrows()   // C4
         }
@@ -549,7 +549,7 @@ struct HomeView: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .rowSnap()
+            .scrollTargetBehavior(.viewAligned)
             .pagingArrows()   // C4
         }
     }

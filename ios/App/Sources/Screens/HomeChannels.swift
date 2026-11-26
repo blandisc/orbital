@@ -51,7 +51,7 @@ struct HomeChannels: View {
                 }
                 .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-                .rowSnap()
+                .scrollTargetBehavior(.viewAligned)
                 .pagingArrows()   // C4: ‹ › con el puntero
             }
         }
