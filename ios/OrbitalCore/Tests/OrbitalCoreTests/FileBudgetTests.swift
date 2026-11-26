@@ -17,7 +17,7 @@ final class FileBudgetTests: XCTestCase {
     /// Pendientes (ruta desde `ios/`): su tamaño el día de la auditoría (29 oct 2026). Solo puede bajar.
     /// 25 nov 2026: seis crecieron en las tandas del 24–25 nov (Mac, mosaico, guía); se anotan para que no crezcan más y se parten después.
     static let pending: [String: Int] = [
-        "App/Sources/Design/ParaTiB.swift": 687, "App/Sources/Design/Tokens.swift": 606, "App/Sources/Screens/HomeView.swift": 609,
+        "App/Sources/Design/Tokens.swift": 606, "App/Sources/Screens/HomeView.swift": 609,
         "App/Sources/Screens/RootView.swift": 610, "App/Sources/Screens/TitleView.swift": 675, "App/Sources/Support/Perf.swift": 651,
         "OrbitalCore/Sources/OrbitalCore/OrbitalRemote.swift": 602, "OrbitalCore/Sources/OrbitalModels/TitleModel.swift": 660,
     ]
