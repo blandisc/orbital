@@ -50,6 +50,8 @@ const RULES = [
   ["opacidad", /opacity:\s*0?\.\d/, KEYFRAME],
   ["radio", /border-radius:[^;]*?(?<![\w-])\d*\.?\d+(px|rem|em)\b/], // --radius-*
   ["borde fino", /inset 0 0 0 1px var\(--color-hairline/], // --edge-hairline / --edge-strong
+  // SD1-A (26 nov 2026): los espacios entre piezas son --space-*. En `em` quedan libres (ajuste óptico de la letra); 0 no cuenta.
+  ["espacio", /(?:^|[;{\s])(?:padding|margin|gap|inset|top|left|right|bottom|row-gap|column-gap)[\w-]*:[^;]*?(?<![\w.-])\d*\.?\d*[1-9]\d*(?:px|rem)\b/, KEYFRAME],
 ];
 
 test("CSS de componentes: colores, tiempos, capas, letra, opacidad, radios y bordes siempre con tokens", () => {

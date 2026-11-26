@@ -1778,6 +1778,21 @@ def varies_by_device(key: str) -> bool:
     return iphone or mac_touch(key, MAC_TOUCH_ES) != key
 
 
+def swift_text(key: str) -> str:
+    """Cómo se ve un texto del catálogo escrito en Swift («%@» y «%lld» son una interpolación): su primer trozo fijo."""
+    return max(re.split(r"%(?:\d+\$)?(?:@|lld|ld|d|f|\.\d+f)|%%", key), key=len)
+
+
+def source_without_comments() -> str:
+    """Todo el Swift de la app sin comentarios: un texto que solo vive en un comentario ya no se usa."""
+    parts = []
+    for path in sorted(p for p in (ROOT / "ios").rglob("*.swift") if "Tests" not in p.parts and "UITests" not in p.parts):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.lstrip().startswith("//"):
+                parts.append(line.split(" // ")[0])
+    return "\n".join(parts)
+
+
 def build() -> dict:
     strings = {}
     for key, english in sorted(TRANSLATIONS.items()):
@@ -1795,6 +1810,11 @@ def build() -> dict:
     if OUT.exists():
         for key, entry in json.loads(OUT.read_text(encoding="utf-8")).get("strings", {}).items():
             strings.setdefault(key, entry)
+    # Solo lo que la app usa hoy: un texto viejo que sigue en TRANSLATIONS (o en el catálogo) arrastraba palabras que ya se
+    # cambiaron («Pedirlo y avisarme» en vez de «Pedir a la nube») y la prueba de vocabulario lo marcaba.
+    code = source_without_comments()
+    used = set(used_literals())
+    strings = {k: v for k, v in strings.items() if k in used or swift_text(k) in code}
     return {"sourceLanguage": "es", "strings": dict(sorted(strings.items())), "version": "1.0"}
 
 

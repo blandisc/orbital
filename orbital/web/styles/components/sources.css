@@ -33,7 +33,7 @@
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
 }
 /* Elegir versión abierta: el aviso sale abajo, sobre el pie, y no tapa las tarjetas de arriba (revisión 2, punto 11). */
-body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6) + var(--safe-y) + 3rem + var(--space-4)); }
+body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6) + var(--safe-y) + var(--space-status-bar) + var(--space-4)); }
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
 .sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); max-width: 64rem; }
@@ -127,7 +127,7 @@ body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-6)
 .versions__skeleton-facts { width: 8.5rem; max-width: 100%; height: var(--type-footnote); }
 
 /* Lo que trae la enfocada y cómo lo sabemos: una línea, para leer desde el sillón. */
-.sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-6) + var(--space-2)) var(--space-2); } /* bajo las calidades */
+.sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-6) + var(--space-2)) var(--space-2); } /* bajo las calidades */ /* ds-exception: geometría de una pieza dibujada */
 .sources__why:empty { display: none; }
 .sources__why-langs { font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .sources__why-more { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }

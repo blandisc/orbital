@@ -27,7 +27,7 @@
   margin-top: .1em; animation: boot-moon var(--duration-brand-moon) var(--ease-brand-moon) var(--delay-brand-moon) both;
 }
 #boot .boot__status {
-  position: absolute; left: 0; right: 0; top: calc(50% + 6rem); text-align: center; color: var(--color-text-muted);
+  position: absolute; left: 0; right: 0; top: calc(50% + 6rem); text-align: center; color: var(--color-text-muted); /* ds-exception: geometría de una pieza dibujada */
   font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); opacity: 0; transition: opacity var(--duration-slow) var(--ease-out);
 }
 #boot .boot__status:not(:empty) { opacity: 1; }

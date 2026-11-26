@@ -24,6 +24,7 @@ def test_regenerating_keeps_existing_translations():
 
     import ios_strings
 
-    catalog = json.loads(ios_strings.OUT.read_text(encoding="utf-8"))["strings"]
+    used = set(ios_strings.used_literals())
+    catalog = {k for k in json.loads(ios_strings.OUT.read_text(encoding="utf-8"))["strings"] if k in used}
     built = ios_strings.build()["strings"]
-    assert set(catalog) <= set(built), sorted(set(catalog) - set(built))[:10]
+    assert catalog <= set(built), sorted(catalog - set(built))[:10]

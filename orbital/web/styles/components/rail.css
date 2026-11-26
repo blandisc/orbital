@@ -36,7 +36,7 @@
 /* Un grupo («Series y películas», «Juegos»): cerrado, una raya corta; abierto, su nombre. */
 .rail__heading { position: relative; display: flex; align-items: center; min-height: 1.4rem; margin-top: var(--space-2); }
 .rail__heading::before {
-  content: ""; position: absolute; left: calc(var(--rail-width) / 2 - .8rem); width: 1.6rem; height: 2px; border-radius: var(--radius-pill);
+  content: ""; position: absolute; left: calc(var(--rail-width) / 2 - .8rem); width: 1.6rem; height: 2px; border-radius: var(--radius-pill); /* ds-exception: geometría de una pieza dibujada */
   background: var(--color-hairline-strong); transition: opacity var(--duration-fast) var(--ease-out);
 }
 .rail__heading:first-child { margin-top: 0; }

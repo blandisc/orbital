@@ -50,7 +50,7 @@
   -webkit-mask-image: radial-gradient(closest-side, var(--mask-solid), transparent); mask-image: radial-gradient(closest-side, var(--mask-solid), transparent);
 }
 .backdrop__layer--poster .backdrop__box {
-  display: block; position: absolute; top: 5.2rem; right: calc(var(--page-gutter) + 3rem);
+  display: block; position: absolute; top: 5.2rem; right: calc(var(--page-gutter) + 3rem); /* ds-exception: geometría de una pieza dibujada */
   height: 19rem; width: auto; max-width: 26rem; object-fit: contain;
   border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay);
   transform: translateY(.6rem); transition: transform var(--duration-tint) var(--ease-out);
