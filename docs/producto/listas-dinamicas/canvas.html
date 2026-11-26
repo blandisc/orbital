@@ -1,0 +1,128 @@
+<title>Listas que cambian cada día</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna de lectura; las opciones lado a lado como teléfonos chicos que se apilan en el celular */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --fg:#13191c; --muted:#5b6870; --line:#dde3e6;
+  --voice:#0e8f86; --poster1:#c9d4d8; --poster2:#b3c3c9; --poster3:#9fb2b9; --pick:#e6f5f3;
+  --display:"Sora",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1114; --surface:#151c20; --fg:#e8eef0; --muted:#94a3aa; --line:#25313700;
+  --line:#253137; --voice:#3fd1c3; --poster1:#24323a; --poster2:#2c3d46; --poster3:#354953; --pick:#12302d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1114; --surface:#151c20; --fg:#e8eef0; --muted:#94a3aa; --line:#253137;
+  --voice:#3fd1c3; --poster1:#24323a; --poster2:#2c3d46; --poster3:#354953; --pick:#12302d; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:2rem;line-height:1.15}
+h2{font-size:1.35rem}
+h3{font-size:1.05rem}
+p{margin:0;max-width:65ch}
+.lead{color:var(--muted);font-size:1.05rem}
+.voice{color:var(--voice)}
+section{display:grid;gap:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.opt.rec{border-color:var(--voice);background:linear-gradient(var(--pick),var(--surface) 40%)}
+.code{font-family:var(--display);font-weight:700;font-size:1.1rem;color:var(--voice)}
+.tag{font-size:.8rem;font-weight:600;color:var(--voice)}
+.phone{background:var(--bg);border-radius:14px;padding:12px;display:grid;gap:12px}
+.row{display:grid;gap:6px}
+.row b{font-family:var(--display);font-weight:500;font-size:.92rem}
+.row small{color:var(--muted);font-size:.78rem}
+.posters{display:flex;gap:6px}
+.posters i{flex:1;aspect-ratio:2/3;border-radius:6px;background:var(--poster2)}
+.posters i:nth-child(odd){background:var(--poster1)}
+.posters i:nth-child(3n){background:var(--poster3)}
+ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.gana li::marker{content:"+  ";color:var(--voice)}
+.pierde li::marker{content:"–  ";color:var(--muted)}
+.why{border-left:3px solid var(--voice);padding:4px 0 4px 14px}
+.dictar{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:6px}
+.dictar code{font-family:var(--display);font-size:1rem;color:var(--voice)}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <h1>Listas que cambian cada día</h1>
+    <p class="lead">Hoy Descubre trae listas famosas que rotan cada lunes. La idea: que además Orbital arme listas nuevas, como «Comedias inolvidables de los 2000» un día y «El terror mejor calificado de la década» otro. Son dos decisiones: de dónde salen las listas y dónde se ven.</p>
+  </header>
+
+  <section>
+    <h2>1 · De dónde salen las listas</h2>
+    <div class="grid">
+      <article class="opt">
+        <span class="code">LD-A · Recetas</span>
+        <div class="phone">
+          <div class="row"><b>Comedias inolvidables de los 2000</b><small>Comedia · 2000–2009 · de 7 para arriba</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+          <div class="row"><b>Terror que da miedo de verdad</b><small>Terror · última década · lo mejor calificado</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+        </div>
+        <p>Orbital junta un género, una época, una calificación y a veces una plataforma, y le pone un nombre con gracia. Cada día sale otra.</p>
+        <ul class="gana"><li>Cientos de combinaciones: casi nunca se repite.</li><li>Igual para todos, fácil de tener también en la TV.</li></ul>
+        <ul class="pierde"><li>No sabe lo que tú ya viste ni lo que te gusta.</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">LD-B · Hechas para ti</span>
+        <div class="phone">
+          <div class="row"><b>Lo mejor de los 90 que te falta</b><small>Sin lo que ya viste en Trakt</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+          <div class="row"><b>Más de Denis Villeneuve</b><small>Porque le diste 5 a «Arrival»</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+        </div>
+        <p>Parte de tu historial: tus calificaciones, tus directores y actores, lo que dejaste a medias.</p>
+        <ul class="gana"><li>Se siente tuya: nada que ya viste.</li><li>Te ayuda a decidir más rápido.</li></ul>
+        <ul class="pierde"><li>Si no hay Trakt, no sale.</li><li>Puede volverse repetitiva (siempre lo mismo que te gusta).</li></ul>
+      </article>
+      <article class="opt rec">
+        <span class="code">LD-C · Las dos, mezcladas</span>
+        <span class="tag">Recomendada</span>
+        <div class="phone">
+          <div class="row"><b>Comedias inolvidables de los 2000</b><small>Receta · ya sin las que viste</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+          <div class="row"><b>Menos de 90 minutos para hoy</b><small>Para ti · es martes en la noche</small><div class="posters"><i></i><i></i><i></i><i></i></div></div>
+        </div>
+        <p>Cada día, dos recetas y una hecha para ti. Las recetas esconden lo que ya viste, y hay algunas según el momento: duración, día de la semana, temporada o aniversarios («Hace 25 años se estrenó…»).</p>
+        <ul class="gana"><li>Variedad de las recetas con el toque personal.</li><li>Funciona sin Trakt (solo recetas).</li></ul>
+        <ul class="pierde"><li>Más trabajo de armar (los nombres con gracia se escriben a mano).</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · Dónde se ven</h2>
+    <div class="grid">
+      <article class="opt rec">
+        <span class="code">LV-A · En Descubre</span>
+        <span class="tag">Recomendada</span>
+        <div class="phone"><div class="row"><small>Explorar › Descubre</small><b>Hoy · 3 listas nuevas</b><div class="posters"><i></i><i></i><i></i></div></div></div>
+        <p>Las nuevas entran al carrusel de Descubre, antes de las listas famosas de la semana. Cada una abre con su filtro, como toda lista.</p>
+        <ul class="gana"><li>Ya existe el lugar: no se agrega otra sección.</li></ul>
+        <ul class="pierde"><li>Hay que entrar a Explorar para verlas.</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">LV-B · Una fila en Inicio</span>
+        <div class="phone"><div class="row"><small>Inicio</small><b>Hoy toca: Comedias de los 2000</b><div class="posters"><i></i><i></i><i></i><i></i></div></div></div>
+        <p>Una sola fila en Inicio con la lista del día, que cambia cada mañana.</p>
+        <ul class="gana"><li>La ves sin buscarla.</li></ul>
+        <ul class="pierde"><li>Inicio se alarga; ahí ya está «Seguir viendo».</li></ul>
+      </article>
+      <article class="opt">
+        <span class="code">LV-C · Las dos</span>
+        <div class="phone"><div class="row"><small>Inicio + Descubre</small><b>La del día arriba, el resto en Descubre</b><div class="posters"><i></i><i></i><i></i></div></div></div>
+        <p>La mejor del día como fila en Inicio y las demás en Descubre.</p>
+        <ul class="gana"><li>Lo mejor de las dos.</li></ul>
+        <ul class="pierde"><li>La misma lista en dos lugares.</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mi recomendación</h2>
+    <p class="why"><b>LD-C con LV-A.</b> Las recetas dan la variedad tipo Netflix sin que tengas que tener nada conectado, y la lista hecha para ti evita que veas lo que ya viste. Ponerlas en Descubre aprovecha un lugar que ya existe y que ya rota, sin alargar Inicio. Dos detalles: una lista no se repite en 30 días, y la TV saca las mismas el mismo día.</p>
+    <div class="dictar">
+      <span>Para dictar:</span>
+      <code>«LD-C y LV-A»</code>
+      <small style="color:var(--muted)">o cualquier combinación: una letra de cada parte.</small>
+    </div>
+  </section>
+</div>
