@@ -11,6 +11,15 @@ final class DesignTests: XCTestCase {
     }
 
     /// Ritmo (Fernando, 5 nov 2026): una esquina chica, una de tarjeta y la cápsula, como la TV.
+    /// Una cápsula que se queda con una sola pieza lleva el mismo aire a los dos lados (Fernando, 25 nov 2026: con la TV
+    /// reproduciendo, la de Inicio quedaba solo con tu foto y le sobraba aire a la izquierda, el del control que ya no estaba).
+    func testCapsuleWithOnePieceHasEvenAir() throws {
+        let code = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/HomeHeader.swift"), encoding: .utf8)
+        XCTAssertTrue(code.contains("remote ? DS.Space.s4 : DS.Space.s1"), "sin el control, el aire de la izquierda debe ser el de la derecha (s1)")
+        XCTAssertTrue(code.contains(".padding(.leading, Self.leadingAir(remote: showsRemote && !kindOpen)).padding(.trailing, DS.Space.s1)"),
+                      "la cápsula de Inicio debe pedir su aire izquierdo según si lleva el control")
+    }
+
     func testRadiiFollowTheRhythm() {
         let radii: Set<Double> = [DesignTokens.Radius.xs, DesignTokens.Radius.sm, DesignTokens.Radius.md,
                                   DesignTokens.Radius.lg, DesignTokens.Radius.xl, DesignTokens.Radius.xxl]

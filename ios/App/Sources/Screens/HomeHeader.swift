@@ -75,6 +75,9 @@ struct HomeHeader: View {
         return .asymmetric(insertion: shrink.animation(fold.delay(DS.KindPill.returnDelay)), removal: shrink.animation(fold))
     }
 
+    /// El aire a la izquierda de la cápsula: con el control, el suyo; con tu foto sola, el mismo que a la derecha.
+    static func leadingAir(remote: Bool) -> CGFloat { remote ? DS.Space.s4 : DS.Space.s1 }
+
     /// La cápsula: el control y tu foto (se hace a un lado mientras eliges en el selector, SX1).
     private var capsule: some View {
         HStack(spacing: 0) {
@@ -96,7 +99,9 @@ struct HomeHeader: View {
             ProfileButton(avatar: avatar)
         }
         .buttonStyle(.plain).foregroundStyle(DS.text)
-        .padding(.leading, DS.Space.s4).padding(.trailing, DS.Space.s1)   // el control con aire a su izquierda; tu foto, a la misma distancia de la orilla que de arriba
+        // El control con aire a su izquierda; tu foto, a la misma distancia de la orilla que de arriba. Sola (la TV reproduce y el
+        // control vive abajo, o mientras eliges), el mismo aire a los dos lados: antes sobraba a la izquierda (Fernando, 25 nov 2026).
+        .padding(.leading, Self.leadingAir(remote: showsRemote && !kindOpen)).padding(.trailing, DS.Space.s1)
         .frame(height: DS.Size.touchTarget)   // SZ1: del alto de los demás selectores (44), no más
         .macTopGlass(Capsule())   // el vidrio del renglón de arriba, como las pestañas y «Buscar» (en el iPhone, el de siempre)
     }
