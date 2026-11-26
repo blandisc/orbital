@@ -96,8 +96,9 @@ extension DS {
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
         static let swipeStep: CGFloat = 56
         /// Inercia del pad: desde qué velocidad al soltar (pt/s) sigue solo, cuántos pt/s vale cada flecha más, cuántas
-        /// (mínimo y máximo), la pausa antes de la primera (s) y cuánto crece cada pausa.
-        static let glideSpeed: CGFloat = 700, glideSpeedPerArrow: CGFloat = 300, glideMin = 3, glideMax = 15
+        /// (mínimo y máximo), la pausa antes de la primera (s) y cuánto crece cada pausa. Menos sensible desde el 25 nov 2026
+        /// (Fernando: «le das tantito y ¡fum!»): antes un deslizón normal ya seguía solo, con 3 a 15 flechas de más.
+        static let glideSpeed: CGFloat = 1400, glideSpeedPerArrow: CGFloat = 700, glideMin = 1, glideMax = 6
         static let glideFirstGap: Double = 0.07, glideSlowdown: Double = 1.22
         /// Lo que se puede mover el dedo y seguir contando como toque (A).
         static let tapSlop: CGFloat = 10
