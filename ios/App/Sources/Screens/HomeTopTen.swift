@@ -59,7 +59,7 @@ struct HomeTopTen: View {
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 // Un riel: solo de lado. Antes la fila tenía unos puntos de más y se podía mover arriba y abajo.
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-                .scrollTargetBehavior(.viewAligned)
+                .rowSnap()
                 // Un riel fijo: tocar una pastilla no recorre la fila (antes saltaba para dejarla al borde). Solo al abrir, si la
                 // guardada está lejos, se acerca.
                 .onAppear { proxy.scrollTo(pillAnchor(service.brand), anchor: .leading) }
@@ -82,7 +82,7 @@ struct HomeTopTen: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
+            .rowSnap()
             .pagingArrows()   // C4: ‹ › con el puntero
             .id("\(service.brand)-\(movies)")   // al cambiar, desde el n.º 1
             .transition(.opacity)

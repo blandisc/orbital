@@ -51,7 +51,7 @@ struct DSWeekStrip<Cell: View>: View {
             }
             .rowEdge(.inCard)   // va dentro de la tarjeta de «Día por día»: no se sale a los lados
             .scrollPosition($position, anchor: .trailing)
-            .scrollTargetBehavior(.viewAligned)
+            .rowSnap()
             .scrollDisabled(!fit.scrolls)
             .onChange(of: weeks) { _, now in position.scrollTo(id: now - 1, anchor: .trailing) }   // llegó más historial: sigue en hoy
             .edgeFade()   // lo que queda atrás (y adelante, si te regresas) se desvanece en la orilla: hay más

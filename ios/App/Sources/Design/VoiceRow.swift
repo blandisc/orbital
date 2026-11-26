@@ -240,7 +240,7 @@ struct VoiceChoicesCarousel: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
+            .rowSnap()
             .scrollPosition(id: $current, anchor: .center)
             .contentMargins(.horizontal, DS.Space.s6, for: .scrollContent)
             .scrollIndicators(.hidden)

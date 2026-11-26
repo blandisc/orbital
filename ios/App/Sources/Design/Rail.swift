@@ -39,7 +39,7 @@ struct Rail<Content: View>: View {
             }
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
+            .rowSnap()
             .pagingArrows()   // C4: ‹ › con el puntero
             .edgeBump()   // al final de la fila, un golpe suave en la mano
         }

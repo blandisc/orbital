@@ -20,6 +20,19 @@ final class DesignTests: XCTestCase {
                       "la cápsula de Inicio debe pedir su aire izquierdo según si lleva el control")
     }
 
+    /// Las filas de lado no salen disparadas: un empujón avanza unas pocas tarjetas (Fernando, 25 nov 2026: «le das tantito
+    /// y ¡fum!»). Todas pasan por `rowSnap()`; un `.viewAligned` suelto deja la fila con todo el impulso.
+    func testRowsDoNotFlyWithOneFlick() throws {
+        let sources = repo.appendingPathComponent("ios/App/Sources")
+        let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil)?.compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" } ?? []
+        for file in files {
+            let code = try String(contentsOf: file, encoding: .utf8)
+            XCTAssertFalse(code.contains("scrollTargetBehavior(.viewAligned)"), "\(file.lastPathComponent): usa .rowSnap() (con límite), no .viewAligned suelto")
+        }
+        let shelf = try String(contentsOf: sources.appendingPathComponent("Design/Shelf.swift"), encoding: .utf8)
+        XCTAssertTrue(shelf.contains(".viewAligned(limitBehavior: .alwaysByFew)"))
+    }
+
     func testRadiiFollowTheRhythm() {
         let radii: Set<Double> = [DesignTokens.Radius.xs, DesignTokens.Radius.sm, DesignTokens.Radius.md,
                                   DesignTokens.Radius.lg, DesignTokens.Radius.xl, DesignTokens.Radius.xxl]
