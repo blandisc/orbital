@@ -112,7 +112,7 @@ struct TouchPad: View {
             .minimumScaleFactor(DS.Size.statScale)
             // Entre las flechas, sin encimarse: con letra de accesibilidad «Reproducir» tapaba las de arriba y abajo.
             .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s6)
-            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)   // ds-exception: los letreros del pad, un paso más que las barras
         }
         .padding(DS.Space.s4)
         .allowsHitTesting(false)

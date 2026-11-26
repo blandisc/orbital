@@ -604,3 +604,16 @@ extension MatchedTransitionSourceConfiguration {
         shadow(color: elevation.color, radius: elevation.radius, y: elevation.y)
     }
 }
+
+
+/// Regla «Las barras fijas no se salen con letra grande» (26 nov 2026): el renglón de arriba, el dock y el control de la TV
+/// crecen hasta la letra más grande que no es de accesibilidad y ahí se quedan (sus textos no se esconden ni se salen); el
+/// contenido sigue creciendo sin tope. DesignTests lo vigila.
+extension DS {
+    static let chromeTypeMax: DynamicTypeSize = .xxxLarge
+}
+
+extension View {
+    /// Una barra fija: crece con la letra hasta `DS.chromeTypeMax`.
+    func dsChromeType() -> some View { dynamicTypeSize(...DS.chromeTypeMax) }
+}

@@ -362,7 +362,7 @@ private struct MosaicTileCell: View {
             .accessibilityHint(focused ? Text("Abre la ficha") : Text("Elegir"))
             .accessibilityLabel(Text(verbatim: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind)))
         .accessibilityIdentifier("mosaic-tile")
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
+        .dsChromeType()   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
     }
 
     private var content: some View {

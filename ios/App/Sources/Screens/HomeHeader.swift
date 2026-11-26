@@ -60,6 +60,7 @@ struct HomeHeader: View {
         .overlay { if TopRow.tabsInLogoRow && MacTabStrip.centered { MacTabStrip() } }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
+        .dsChromeType()   // regla «Las barras fijas no se salen con letra grande»
         // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad
         // acostado con el control abierto (que encoge Inicio) el encabezado era más ancho que su columna y empujaba todo
         // fuera de la pantalla: «bital», «iendo» (revisión 2 del 11 nov).

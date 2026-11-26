@@ -87,6 +87,7 @@ struct RemoteSheet: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
+        .dsChromeType()   // regla «Las barras fijas no se salen con letra grande»: el control no pierde sus nombres ni el volumen
         .presentationContentInteraction(.resizes)   // deslizar mueve la hoja primero y luego el contenido (antes se peleaban)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.

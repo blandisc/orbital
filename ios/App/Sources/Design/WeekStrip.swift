@@ -57,7 +57,7 @@ struct DSWeekStrip<Cell: View>: View {
             .edgeFade()   // lo que queda atrás (y adelante, si te regresas) se desvanece en la orilla: hay más
             .frame(width: fit.width, alignment: .leading)
         }
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // los rótulos de una gráfica: crecen, pero no más que sus casillas
+        .dsChromeType()   // los rótulos de una gráfica: crecen, pero no más que sus casillas
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -111,7 +111,7 @@ struct DSHeatLegend: View {
             Text("Más").recipe(.caption, color: DS.textMuted)
         }
         .lineLimit(1)
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // como los rótulos del mapa: crece, sin aplastar sus cuadritos
+        .dsChromeType()   // como los rótulos del mapa: crece, sin aplastar sus cuadritos
         .accessibilityHidden(true)   // cada casilla ya dice su día y cuánto viste
     }
 }

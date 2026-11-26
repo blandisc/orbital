@@ -201,7 +201,7 @@ struct RemoteFocusCard: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Label { Text("En tu TV") } icon: { Image(systemName: "tv") }
-                    .recipe(.eyebrow, color: DS.accent).foregroundStyle(DS.accent)
+                    .recipe(.eyebrow, color: DS.eyebrow).foregroundStyle(DS.eyebrow)
                 Text(verbatim: focus.title).recipe(.sectionQuiet, color: DS.text).lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail = focus.detail { Text(verbatim: detail).recipe(.footnote, color: DS.textMuted).lineLimit(1) }

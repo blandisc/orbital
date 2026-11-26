@@ -192,6 +192,7 @@ struct MacTopRow<Trailing: View>: View {
         .overlay { if MacTabStrip.centered { MacTabStrip() } }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
+        .dsChromeType()   // regla «Las barras fijas no se salen con letra grande»
         .containerRelativeFrame(.horizontal)   // ds-exception: en la barra de arriba (safeAreaBar) el panel no cuenta, como en Inicio
     }
 }

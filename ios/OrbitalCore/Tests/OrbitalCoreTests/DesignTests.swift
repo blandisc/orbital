@@ -373,6 +373,23 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(rootView.contains("FloatingRatingReminder("), "La pastilla flota en la raíz, sobre todas las pestañas")
     }
 
+    /// Regla «Las barras fijas no se salen con letra grande» (26 nov 2026: con letra de accesibilidad el dock del iPad se salía
+    /// de la pantalla y el control perdía sus nombres). Cada barra fija lleva `dsChromeType()`, y el tope vive solo en el token.
+    func testFixedBarsStopGrowingWithTheText() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        for file in ["Screens/HomeHeader.swift", "Design/MacTabStrip.swift", "Screens/RemoteSheet.swift"] {
+            let text = try String(contentsOf: root.appendingPathComponent(file), encoding: .utf8)
+            XCTAssertTrue(text.contains(".dsChromeType()"), "\(file): barra fija sin tope de letra")
+        }
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+        for file in files where file.lastPathComponent != "Tokens.swift" {
+            for (i, line) in try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n").enumerated()
+            where line.contains(".dynamicTypeSize(...") && !line.contains("ds-exception") && !line.contains("DS.") {
+                XCTFail("\(file.lastPathComponent):\(i + 1): el tope de letra va con un token (DS.chromeTypeMax) o dsChromeType()")
+            }
+        }
+    }
+
     /// Revisión del 11 nov: «12:47 AM» en Historial y «8:00 p.m.» en Inicio. Una sola manera de escribir la hora, en el idioma
     /// de la app (`Strings.date(_, .time, language:)`), no la del teléfono.
     func testOneClockFormatterInTheAppLanguage() throws {

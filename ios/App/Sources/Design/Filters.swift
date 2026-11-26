@@ -160,7 +160,7 @@ struct DSTextTabs<ID: Hashable>: View {
         Text(verbatim: "\(count)").recipe(.badge, color: DS.onFresh).monospacedDigit()
             .padding(.horizontal, DS.Space.s1)
             .background(DS.fresh, in: Capsule())
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .dsChromeType()
             .scaleEffect(DS.Filter.tabBadgeScale)   // chico: tapa solo la esquina del ícono, como en iOS
             .fixedSize()
             .offset(x: DS.Space.s1, y: -DS.Space.s2)
@@ -340,7 +340,7 @@ struct KindPill: View {
         .padding(DS.Space.s1 / 2)
         // Los círculos son de tamaño fijo: el ícono crece hasta xxxLarge y no más (con letra de accesibilidad se salía del
         // círculo); el nombre lo dice VoiceOver y la vista grande al mantener el dedo.
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .dsChromeType()
         .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Capsule())
         .macPillBase(Capsule())
@@ -482,7 +482,7 @@ struct DSFiltersButton: View {
         }
         .buttonStyle(KindPillPress())
         .padding(DS.Space.s1 / 2)
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // círculo de tamaño fijo, como los del tipo
+        .dsChromeType()   // círculo de tamaño fijo, como los del tipo
         .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Circle())
         .macPillBase(Circle())

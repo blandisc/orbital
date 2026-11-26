@@ -115,7 +115,7 @@ struct UpNextCard: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
         // Sobre el video, con la letra más grande ya no cabía y empujaba la barra de la ✕ fuera de alcance: crece hasta aquí
         // (VoiceOver la lee completa).
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .dsChromeType()
         .accessibilityElement(children: .contain)
     }
 

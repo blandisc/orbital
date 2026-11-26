@@ -31,7 +31,7 @@ struct HomeHeroSlide: View {
             }
             // La portada es arte de alto fijo: con letra de accesibilidad su texto se salía por arriba de la tarjeta (bordes,
             // SE con letra grande). Crece hasta xxxLarge, como las piezas del mosaico; el visor de contenido grande lo amplía.
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .dsChromeType()
             .accessibilityShowsLargeContentViewer()
             // Los puntos (en ventana ancha van debajo) y, en oscuro, lo que se encima. En el tablero (Mac, iPad) «Ver» va más
             // cerca de la orilla de abajo: se veía flotando a media tarjeta (Fernando, 24 nov 2026).
