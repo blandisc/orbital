@@ -188,7 +188,7 @@ struct WelcomeLanguageMenu: View {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "globe")
                 Text(verbatim: language == "en" ? "English" : "Español")
-                Image(systemName: "chevron.down").font(DS.styled(.caption).weight(.semibold))
+                Image(systemName: "chevron.down").font(DS.styled(.caption).weight(DS.Weight.strong))
             }
             .foregroundStyle(DS.textMuted)
         }

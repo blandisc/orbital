@@ -165,7 +165,7 @@ struct GuideShowCard: View {
                 .overlay(Circle().fill(DS.danger.opacity(0.8)).frame(width: 14).offset(y: -4))   // ds-exception: dibujo de la escena de la guía
                 .frame(width: 28, height: 42)   // ds-exception: dibujo de la escena de la guía
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: "Shōgun").font(DS.styled(.subheadline).weight(.semibold)).foregroundStyle(DS.text)
+                Text(verbatim: "Shōgun").font(DS.styled(.subheadline).weight(DS.Weight.strong)).foregroundStyle(DS.text)
                 if watches {
                     Text("T1 E7 · quedan 18 min").font(DS.styled(.caption)).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     Capsule().fill(DS.text.opacity(0.14)).frame(height: 3)   // ds-exception: dibujo de la escena de la guía
@@ -203,9 +203,9 @@ struct TraktRecognized: View {
                 Circle()
                     .fill(AngularGradient(colors: [DS.brandMoon, DS.ListTint.library, DS.ListTint.calendar, DS.brandMoon], center: .center, angle: .degrees(210)))
                     .overlay(Circle().fill(DS.surfaceRaised).padding(3))   // ds-exception: dibujo de la escena de la guía
-                    .overlay(Text(verbatim: String((name ?? "T").prefix(1)).uppercased()).font(DS.styled(.largeTitle).weight(.semibold)).foregroundStyle(DS.text))
+                    .overlay(Text(verbatim: String((name ?? "T").prefix(1)).uppercased()).font(DS.styled(.largeTitle).weight(DS.Weight.strong)).foregroundStyle(DS.text))
                     .frame(width: DS.Guide.avatar, height: DS.Guide.avatar)
-                Image(systemName: "checkmark").font(DS.styled(.subheadline).weight(.heavy)).foregroundStyle(DS.onPrimary)
+                Image(systemName: "checkmark").font(DS.styled(.subheadline).weight(DS.Weight.heavy)).foregroundStyle(DS.onPrimary)
                     .frame(width: DS.Guide.avatarBadge, height: DS.Guide.avatarBadge)
                     .background(DS.brandMoon, in: Circle())
                     .overlay(Circle().strokeBorder(DS.bg, lineWidth: 3))
@@ -250,7 +250,7 @@ struct TraktRecognized: View {
         VStack(spacing: DS.Space.s1) {
             if let value {
                 Text(counted ? value : 0, format: .number)
-                    .font(DS.styled(.title).weight(.semibold)).monospacedDigit().foregroundStyle(DS.text)
+                    .font(DS.styled(.title).weight(DS.Weight.strong)).monospacedDigit().foregroundStyle(DS.text)
                     .contentTransition(.numericText(value: Double(counted ? value : 0)))
             } else {
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.fill).frame(width: 44, height: 30)   // ds-exception: espacio del número mientras llega

@@ -50,7 +50,7 @@ struct LetterboxdReviewRow: View {
         HStack(alignment: .top, spacing: DS.Space.s2) {
             PosterView(url: entry.imdb.map { String(format: ForYou.metahubPoster, $0) }, title: titleName(entry.title, id: entry.imdb, kind: entry.kind)).frame(width: DS.Letterboxd.poster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("\(Text(verbatim: titleName(entry.title, id: entry.imdb, kind: entry.kind)).fontWeight(.semibold))\(Text(verbatim: entry.year.map { "  \($0)" } ?? "").foregroundStyle(DS.textMuted))")
+                Text("\(Text(verbatim: titleName(entry.title, id: entry.imdb, kind: entry.kind)).fontWeight(DS.Weight.strong))\(Text(verbatim: entry.year.map { "  \($0)" } ?? "").foregroundStyle(DS.textMuted))")
                     .recipe(.body).lineLimit(1)
                 LetterboxdStars(rating: entry.rating, liked: entry.liked)
                 if let review = entry.review { Text(verbatim: review).recipe(.footnote, color: DS.textMuted).lineLimit(2) }

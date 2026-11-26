@@ -87,9 +87,9 @@ struct IPodScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: DS.Space.s2) {
-                Image(systemName: playing ? "play.fill" : "pause.fill").font(DS.TextRecipe.caption.font.weight(.bold))
-                Text(status).font(DS.TextRecipe.footnote.font.weight(.bold)).frame(maxWidth: .infinity)
-                Image(systemName: "play.fill").font(DS.TextRecipe.caption.font.weight(.bold)).hidden()   // equilibra el de la izquierda
+                Image(systemName: playing ? "play.fill" : "pause.fill").font(DS.TextRecipe.caption.font.weight(DS.Weight.bold))
+                Text(status).font(DS.TextRecipe.footnote.font.weight(DS.Weight.bold)).frame(maxWidth: .infinity)
+                Image(systemName: "play.fill").font(DS.TextRecipe.caption.font.weight(DS.Weight.bold)).hidden()   // equilibra el de la izquierda
             }
             .foregroundStyle(face.lcdText)
             .padding(.horizontal, DS.Space.s2)
@@ -106,7 +106,7 @@ struct IPodScreen: View {
                     Spacer()
                     Text(verbatim: "−" + Self.clock(max(0, duration - position)))
                 }
-                .font(DS.TextRecipe.data.font.weight(.semibold)).foregroundStyle(face.lcdText)
+                .font(DS.TextRecipe.data.font.weight(DS.Weight.strong)).foregroundStyle(face.lcdText)
             }
             .padding(.horizontal, DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.IPod.infoHeight, maxHeight: DS.IPod.infoHeight, alignment: .leading)
@@ -174,7 +174,7 @@ struct IPodWheel: View {
                 // Un botón (con un toque suelto, el giro de la rueda se lo comía); mantenerlo bloquea y el toque de
                 // soltar ya no cierra.
                 Button { if held { held = false } else { click(menu) } } label: {
-                    Text(verbatim: "MENU").font(DS.TextRecipe.footnote.font.weight(.bold)).tracking(DS.IPod.menuTracking)
+                    Text(verbatim: "MENU").font(DS.TextRecipe.footnote.font.weight(DS.Weight.bold)).tracking(DS.IPod.menuTracking)
                         .foregroundStyle(face.label)
                         .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget).contentShape(Rectangle())
                 }
@@ -227,7 +227,7 @@ struct IPodWheel: View {
 
     private func key(_ symbol: String, _ label: LocalizedStringKey, _ action: @escaping () -> Void) -> some View {
         Button { click(action) } label: {
-            Image(systemName: symbol).font(DS.TextRecipe.body.font.weight(.bold)).foregroundStyle(face.label)
+            Image(systemName: symbol).font(DS.TextRecipe.body.font.weight(DS.Weight.bold)).foregroundStyle(face.label)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
         }
         .buttonStyle(.plain)

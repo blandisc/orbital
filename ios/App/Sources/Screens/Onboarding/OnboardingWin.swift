@@ -61,7 +61,7 @@ struct OnboardingWin: View {
                         Text("Para esta noche").recipe(.caption, color: DS.textMuted)
                         Text(verbatim: pick).recipe(.cardTitle, color: DS.text).lineLimit(2)
                         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
-                            Image(systemName: "sparkles").scaleEffect(max(0, M.spring(t - WinMosaic.highlight - 0.04, 0.55, 0.45)))
+                            Image(systemName: "sparkles").scaleEffect(max(0, M.spring(t - WinMosaic.highlight - 0.04, 0.55, 0.45)))   // ds-exception: coreografía de la bienvenida
                             Text("Porque viste \(seed)").lineLimit(2)
                         }
                         .font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon)
@@ -84,7 +84,7 @@ struct OnboardingWin: View {
             } icon: {
                 Image(systemName: symbol).foregroundStyle(DS.brandMoon)
             }
-            .font(DS.styled(.title2).weight(.semibold)).foregroundStyle(DS.text)
+            .font(DS.styled(.title2).weight(DS.Weight.strong)).foregroundStyle(DS.text)
             label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
         }
         .frame(maxWidth: .infinity)

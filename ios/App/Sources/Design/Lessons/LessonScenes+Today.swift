@@ -25,7 +25,7 @@ struct LessonTodayWhy: View {
                     .sceneAt(CGFloat(102 + (i % 3) * 70), CGFloat(6 + (i / 3) * 93))
                     .scenePut(e.o * (picked ? 1 : M.lerp(1, DS.Opacity.faint, hi)), 0, e.y - (picked ? hi * 6 : 0))
             }
-            LessonChip { Image(systemName: "sparkles").foregroundStyle(DS.fresh); Text("Porque viste \(Text(art.movie(5).title).fontWeight(.semibold))") }
+            LessonChip { Image(systemName: "sparkles").foregroundStyle(DS.fresh); Text("Porque viste \(Text(art.movie(5).title).fontWeight(DS.Weight.strong))") }
                 .scaleEffect(M.lerp(0.9, 1, chip)).sceneWidth(402).sceneAt(0, 196)
                 .scenePut(M.clamp((t - 0.85) / 0.2), 0, (1 - chip) * -8)
         }
@@ -272,7 +272,7 @@ struct LessonTodayTry: View {
                 .accessibilityIdentifier("lesson-try-decide")
             }
             if let chosen {
-                LessonChip { Image(systemName: DS.Symbol.matchTonight).foregroundStyle(DS.Match.tonight); Text("Para hoy: \(Text(LessonTodayTrio(art: art, fan: 1).item(chosen).title).fontWeight(.semibold))") }
+                LessonChip { Image(systemName: DS.Symbol.matchTonight).foregroundStyle(DS.Match.tonight); Text("Para hoy: \(Text(LessonTodayTrio(art: art, fan: 1).item(chosen).title).fontWeight(DS.Weight.strong))") }
                     .sceneWidth(402).sceneAt(0, 2).id(chosen).transition(.scale(scale: DS.Scene.pressed).combined(with: .opacity))
             }
         }

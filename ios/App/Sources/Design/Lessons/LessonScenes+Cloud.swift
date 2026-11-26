@@ -59,7 +59,7 @@ struct LessonCloudWhat: View {
             .sceneAt(62, 120).scenePut(phone.o, 0, phone.y)
             ZStack(alignment: .topLeading) {
                 Image(systemName: "cloud.fill").resizable().scaledToFit().foregroundStyle(DS.surfaceRaised).sceneBox(170, 120)
-                Image(systemName: "cloud").resizable().scaledToFit().fontWeight(.ultraLight).foregroundStyle(DS.fresh).sceneBox(170, 120)
+                Image(systemName: "cloud").resizable().scaledToFit().fontWeight(DS.Weight.hairline).foregroundStyle(DS.fresh).sceneBox(170, 120)
                 LessonPoster(item: art.movie(1), w: 34, h: 51).sceneAt(34, 48)
                 LessonPoster(item: art.movie(0), w: 34, h: 51).sceneAt(68, 40).opacity(k > 0.02 ? DS.Opacity.faint : 1)
                 LessonPoster(item: art.show(0), w: 34, h: 51).sceneAt(102, 50)

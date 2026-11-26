@@ -90,7 +90,7 @@ struct OnboardingTV: View {
                 detail.recipe(.caption, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: DS.Space.s2)
-            Image(systemName: done ? "checkmark" : "circle.dashed").font(DS.styled(.body).weight(.semibold))
+            Image(systemName: done ? "checkmark" : "circle.dashed").font(DS.styled(.body).weight(DS.Weight.strong))
                 .foregroundStyle(done ? DS.success : DS.textMuted).accessibilityHidden(true)
         }
         .padding(DS.Space.s2).dsCard()

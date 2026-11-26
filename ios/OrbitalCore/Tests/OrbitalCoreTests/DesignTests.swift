@@ -257,6 +257,10 @@ final class DesignTests: XCTestCase {
     }
 
     /// Los archivos de pantalla (todo lo que no es el sistema de diseño) no pintan nada «suelto».
+    /// Lo que una escena animada sí puede escribir a mano: sus medidas y su movimiento (los colores y la letra, nunca).
+    static let sceneFree: Set<String> = ["espacio a mano", "separación a mano", "radio a mano", "trazo a mano", "desplazamiento a mano",
+                                         "escala a mano", "sombra a mano", "medida a mano", "opacidad a mano"]
+
     func testScreensUseOnlyDesignSystemTokens() throws {
         // Las pantallas y la extensión de widgets (que usa los mismos tokens: `Sources/Design/Tokens.swift`).
         let sources = repo.appendingPathComponent("ios/App")
@@ -282,14 +286,25 @@ final class DesignTests: XCTestCase {
             // Lenguaje de diseño (30 oct 2026): el velo bajo el texto sobre arte es una pieza; lo que se mueve solo se pausa.
             (#"LinearGradient\(.*(scrim|backdropDeep)"#, "velo armado a mano: ArtVeil"),
             (#"TimelineView\(\.animation\)"#, "animación continua sin pausa: TimelineView(.animation(paused: reduceMotion…))"),
+            // SD1-A (26 nov 2026): los números que se colaban por la forma de escribirlos. Ninguna pantalla nueva trae medidas propias.
+            (#"\.padding\(\.[a-zA-Z]+,\s*-?[0-9]"#, "espacio a mano"),
+            (#"\b(VStack|HStack|LazyVStack|LazyHStack|LazyVGrid|LazyHGrid|Grid|GridItem)\([^)]*spacing:\s*[1-9]"#, "separación a mano"),
+            (#"cornerRadius:\s*[0-9]"#, "radio a mano"), (#"lineWidth:\s*[0-9]"#, "trazo a mano"),
+            (#"\.offset\((x|y):\s*-?[0-9]*\.?[0-9]*[1-9]|\.offset\(x:[^)]*\by:\s*-?[0-9]*\.?[0-9]*[1-9]"#, "desplazamiento a mano"),
+            (#"\.scaleEffect\([^)]*\b[0-9]*\.[0-9]+"#, "escala a mano"), (#"\.shadow\([^)]*radius:\s*[1-9]"#, "sombra a mano"),
+            (#"\.font\(\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|footnote|caption|caption2)\b"#, "letra del sistema: usa una receta"),
+            (#"\.fontWeight\(\.|\.weight\(\.(semibold|bold|medium|regular|heavy|light)"#, "peso a mano: DS.Weight o una receta"),
         ]
         var problems: [String] = []
         for case let file as URL in files where file.pathExtension == "swift" {
             let relative = file.path.replacingOccurrences(of: sources.path + "/", with: "")
             if relative.hasPrefix("Sources/Design/Tokens") { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
+            // Las escenas animadas de la guía y las lecciones son coreografía (dibujos que se mueven), no pantallas: sus números
+            // son la animación. Toda escena nueva va en un archivo BrandGuide*, LessonScenes* o StoryScenes* (SD1-A).
+            let scene = ["BrandGuide", "LessonScenes", "StoryScenes"].contains { file.lastPathComponent.hasPrefix($0) }
             let text = try String(contentsOf: file, encoding: .utf8)
             for (index, line) in text.components(separatedBy: "\n").enumerated() where !line.contains("ds-exception:") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
-                for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil {
+                for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil && !(scene && Self.sceneFree.contains(what)) {
                     problems.append("\(relative):\(index + 1): \(what): \(line.trimmingCharacters(in: .whitespaces))")
                 }
                 // La app (no el widget, que tiene sus propios tamaños) solo escribe texto con las recetas de Proyección.

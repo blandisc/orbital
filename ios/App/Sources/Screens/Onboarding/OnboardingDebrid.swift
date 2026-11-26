@@ -87,7 +87,7 @@ struct OnboardingSeeHere: View {
     private func fact(_ symbol: String, _ bold: Text, _ rest: Text) -> some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.styled(.body)).foregroundStyle(DS.text).frame(width: DS.Guide.slot).accessibilityHidden(true)
-            Text("\(bold.foregroundStyle(DS.text).fontWeight(.semibold)) \(rest.foregroundStyle(DS.textMuted))")
+            Text("\(bold.foregroundStyle(DS.text).fontWeight(DS.Weight.strong)) \(rest.foregroundStyle(DS.textMuted))")
                 .font(DS.TextRecipe.secondary.font).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)

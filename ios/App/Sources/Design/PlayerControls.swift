@@ -23,7 +23,7 @@ struct PlayerCircleButton: View {
 struct PlayerCircleGlyph: View {
     let symbol: String
     var body: some View {
-        Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+        Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong)).foregroundStyle(DS.text)
             .frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle)
             .glassEffect(.regular.interactive(), in: Circle())
             .contentShape(Circle())
@@ -41,12 +41,12 @@ struct PlayerLockNotice: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold))
+            Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(DS.Weight.bold))
             if !collapsed {
-                Text("Pantalla bloqueada").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                Text("Pantalla bloqueada").font(DS.TextRecipe.footnote.font.weight(DS.Weight.strong))
                 if showsUnlock {
                     Button(action: unlock) {
-                        Text("Desbloquear").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                        Text("Desbloquear").font(DS.TextRecipe.footnote.font.weight(DS.Weight.strong))
                     }
                     .dsPrimaryButton(size: .small)
                     .accessibilityIdentifier("player-unlock")
@@ -96,7 +96,7 @@ struct UpNextCard: View {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Siguiente episodio").recipe(.caption)
                     Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
-                        .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+                        .recipe(.secondary, color: DS.text).fontWeight(DS.Weight.strong).lineLimit(2)
                     if let percent = card.downloading {
                         Label { Text("Bajando en la nube · \(Text(verbatim: "\(percent) %"))") } icon: { Image(systemName: DS.Symbol.cloud) }
                             .recipe(.caption, color: DS.textMuted)
@@ -123,11 +123,11 @@ struct UpNextCard: View {
         if card.downloading != nil {
             // No hay qué poner todavía: avisar cuando esté, o quedarse viendo los créditos.
             Button(action: notify ?? cancel) {
-                Label("Avisarme", systemImage: "bell").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+                Label("Avisarme", systemImage: "bell").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong)).frame(maxWidth: .infinity)
             }
             .dsPrimaryButton()
             Button(action: cancel) {
-                Text("Ver créditos").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+                Text("Ver créditos").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong)).frame(maxWidth: .infinity)
             }
             .buttonStyle(.glass)
         } else {
@@ -141,13 +141,13 @@ struct UpNextCard: View {
                 if card.secondsLeft > 0 { countdown }
                 Text("Ver ahora").lineLimit(1).fixedSize()   // sin cortar: si no cabe, van uno bajo el otro
             }
-            .font(DS.TextRecipe.secondary.font.weight(.semibold))
+            .font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong))
             .frame(maxWidth: .infinity)
         }
         .dsPrimaryButton()
         .accessibilityValue(card.secondsLeft > 0 ? Text("Empieza en \(card.secondsLeft) s") : Text(verbatim: ""))
         Button(action: cancel) {
-            Text("Ahora no").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+            Text("Ahora no").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong)).frame(maxWidth: .infinity)
         }
         .buttonStyle(.glass)
     }
@@ -190,9 +190,9 @@ struct PanelChip: View {
         Button(action: action) {
             HStack(spacing: DS.Space.s1) {
                 if let symbol {
-                    Image(systemName: symbol).font(font.weight(.semibold)).symbolVariant(selected ? .fill : .none)
-                } else if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
-                title.font(font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
+                    Image(systemName: symbol).font(font.weight(DS.Weight.strong)).symbolVariant(selected ? .fill : .none)
+                } else if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(DS.Weight.bold)) }
+                title.font(font).fontWeight(selected ? DS.Weight.strong : DS.Weight.plain).lineLimit(1)
             }
             .foregroundStyle(selected ? DS.bg : DS.text)   // elegida: en el color del texto, con letra del fondo (blanca en oscuro), como toda selección
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
@@ -311,10 +311,10 @@ struct Toast: View {
         // Una píldora (como los avisos de iOS): el ícono en su tono, lo que pasó y su dato, y a la derecha la salida en su cápsula
         // (sin «›»: la flecha es para ir a otra pantalla).
         HStack(spacing: DS.Space.s2) {
-            Image(systemName: symbol ?? Self.symbol(tone)).font(DS.TextRecipe.body.font.weight(.semibold)).foregroundStyle(color ?? Self.color(tone))
+            Image(systemName: symbol ?? Self.symbol(tone)).font(DS.TextRecipe.body.font.weight(DS.Weight.strong)).foregroundStyle(color ?? Self.color(tone))
                 .scaleEffect(iconIn ? 1 : DS.Toast.iconStart)
             VStack(alignment: .leading, spacing: 0) {
-                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                title.recipe(.footnote, color: DS.text).fontWeight(DS.Weight.strong).lineLimit(1)
                 // El dato en dos renglones si hace falta (en un iPhone angosto se cortaba justo lo que importa).
                 if let detail { detail.recipe(.caption).lineLimit(2).fixedSize(horizontal: false, vertical: true) }
             }
@@ -323,8 +323,8 @@ struct Toast: View {
             if let actionTitle, let action {
                 let button = Button { action(); dismiss() } label: {
                     HStack(spacing: DS.Space.s1) {
-                        if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
-                        Text(actionTitle).fontWeight(.semibold)
+                        if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(DS.Weight.bold)) }
+                        Text(actionTitle).fontWeight(DS.Weight.strong)
                     }
                     .font(DS.TextRecipe.footnote.font)
                 }
@@ -337,7 +337,7 @@ struct Toast: View {
             }
             if let second {
                 Button { second.run(); dismiss() } label: {
-                    Image(systemName: second.symbol).font(DS.TextRecipe.footnote.font.weight(.semibold))
+                    Image(systemName: second.symbol).font(DS.TextRecipe.footnote.font.weight(DS.Weight.strong))
                         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                         .contentShape(Rectangle())
                 }
@@ -509,7 +509,7 @@ struct PlayerMenuRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Space.s2) {
-                Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(width: DS.Size.touchTarget / 2)
+                Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(DS.Weight.strong)).frame(width: DS.Size.touchTarget / 2)
                 Text(title).recipe(.secondary, color: DS.text).lineLimit(1)
                 Spacer(minLength: DS.Space.s2)
                 if let detail { detail.recipe(.footnote).lineLimit(1) }

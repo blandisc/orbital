@@ -217,7 +217,7 @@ struct DeviceCodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text("Escribe este código en \(Text(verbatim: Self.site(url)).fontWeight(.semibold))").recipe(.secondary, color: DS.textMuted)
+            Text("Escribe este código en \(Text(verbatim: Self.site(url)).fontWeight(DS.Weight.strong))").recipe(.secondary, color: DS.textMuted)
             GuideCode(code: code)
             if showsOpen, let url {
                 Button("Copiar y abrir \(service)", systemImage: "arrow.up.forward.app") { Self.copyAndOpen(code, url, openURL) }

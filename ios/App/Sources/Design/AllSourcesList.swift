@@ -329,7 +329,7 @@ struct AllSourcesList: View {
         let ui = uiLanguage
         let items = prefs.map { AllSources.languageEvidence(source, playingFirst: $0) } ?? AllSources.languageEvidence(source)
         guard let first = items.first else { return Text(verbatim: "") }
-        var text = Text("\(Text.flag(first.code))\(Text(verbatim: rowName(first.code)).foregroundStyle(DS.text).fontWeight(.semibold))")
+        var text = Text("\(Text.flag(first.code))\(Text(verbatim: rowName(first.code)).foregroundStyle(DS.text).fontWeight(DS.Weight.strong))")
         let rest = items.dropFirst()
         if !rest.isEmpty {
             text = Text("\(text)\(Text(verbatim: " · "))\(Text("también"))\(Text(verbatim: " "))")

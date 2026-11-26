@@ -55,7 +55,7 @@ struct OnboardingPlatforms: View {
         let prev = M.item(t, 0, 12)
         VStack(alignment: .leading, spacing: DS.Space.s6) {
             preview(model.candidates.first, shown: shown, dash: max(0, M.spring(t - 0.62, 0.55, 0.45)))
-                .scaleEffect(0.96 + 0.04 * M.spring(t, 0.55, 0.45), anchor: .bottom)
+                .scaleEffect(0.96 + 0.04 * M.spring(t, 0.55, 0.45), anchor: .bottom)   // ds-exception: coreografía de la bienvenida
                 .opacity(prev.opacity).offset(y: prev.rise)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 let title = M.item(t, 0.08, 14), lead = M.item(t, 0.16, 10)
@@ -194,7 +194,7 @@ struct OnboardingPlatforms: View {
         .frame(width: DS.Guide.slot, height: DS.Guide.slot)
         .shadow(DS.Elevation.high)
         .rotationEffect(.degrees(-10 * arc))
-        .scaleEffect(1 + 0.14 * arc)
+        .scaleEffect(1 + 0.14 * arc)   // ds-exception: coreografía de la bienvenida
         .position(x: x, y: y)
         .allowsHitTesting(false)
         .accessibilityHidden(true)

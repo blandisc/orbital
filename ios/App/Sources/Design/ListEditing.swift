@@ -99,7 +99,7 @@ struct ListEditToolbar: ToolbarContent {
                 .shownKeyboardShortcut("n", modifiers: .command)
                 .accessibilityIdentifier("list-add")
             Button { withAnimation(DS.Motion.base(reduceMotion)) { editing.toggle() } } label: {
-                Text(editing ? "Listo" : "Editar").fontWeight(editing ? .semibold : .regular)
+                Text(editing ? "Listo" : "Editar").fontWeight(editing ? DS.Weight.strong : DS.Weight.plain)
             }
             .shownKeyboardShortcut("e", modifiers: .command)
             .accessibilityIdentifier("list-edit")

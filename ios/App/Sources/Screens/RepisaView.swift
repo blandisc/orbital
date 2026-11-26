@@ -301,7 +301,7 @@ struct RepisaCollectionView: View {
             }
             Spacer(minLength: 0)
             // «Ver» la reproduce; tocar el resto del renglón abre su ficha (Fernando, 31 oct 2026).
-            Button { watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
+            Button { watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(DS.Weight.strong) }
                 .dsSolidPrimaryButton(shape: .capsule)   // en línea, dentro de un renglón: cápsula
         }
         .contentShape(Rectangle())
@@ -338,7 +338,7 @@ struct RepisaCollectionView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("repisa-open-title")
             HStack(spacing: DS.Space.s2) {
-                Button { picked = nil; watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
+                Button { picked = nil; watch(item) } label: { Label("Ver", systemImage: "play.fill").fontWeight(DS.Weight.strong).frame(maxWidth: .infinity) }
                     .dsSolidPrimaryButton().dsControlSize(.large)
                 if !seen, item.episode == nil {   // un capítulo no se marca desde aquí: aún no se cuenta su avance
                     Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }

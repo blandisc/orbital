@@ -617,3 +617,17 @@ extension View {
     /// Una barra fija: crece con la letra hasta `DS.chromeTypeMax`.
     func dsChromeType() -> some View { dynamicTypeSize(...DS.chromeTypeMax) }
 }
+
+/// El peso para resaltar una parte de un texto (el nombre dentro de una frase, la opción elegida). La letra en sí sale de las
+/// recetas; esto solo la marca (SD1-A, 26 nov 2026).
+extension DS {
+    enum Weight {
+        static let strong: Font.Weight = .semibold
+        static let medium: Font.Weight = .medium
+        static let plain: Font.Weight = .regular
+        /// Los íconos chicos sobre un color (la palomita, el rayo): más gruesos para que se lean.
+        static let bold: Font.Weight = .bold
+        static let heavy: Font.Weight = .heavy
+        static let hairline: Font.Weight = .ultraLight
+    }
+}

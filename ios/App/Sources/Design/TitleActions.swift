@@ -117,7 +117,7 @@ struct ActionTileLabel: View {
 
     private var iconFont: Font {
         if style == .key { return DS.TextRecipe.cardTitle.font }   // como las teclas de siempre
-        return (progress == nil ? DS.TextRecipe.cardTitle : DS.TextRecipe.caption).font.weight(.semibold)   // ds-exception: es el trazo del ícono, no letra
+        return (progress == nil ? DS.TextRecipe.cardTitle : DS.TextRecipe.caption).font.weight(DS.Weight.strong)   // ds-exception: es el trazo del ícono, no letra
     }
 
     @ViewBuilder private var names: some View {

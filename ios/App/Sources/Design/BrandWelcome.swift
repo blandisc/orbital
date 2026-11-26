@@ -141,7 +141,7 @@ struct WelcomeRowView: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: row.symbol)
-                .font(DS.styled(.body).weight(.semibold))
+                .font(DS.styled(.body).weight(DS.Weight.strong))
                 .foregroundStyle(DS.brandMoon)
                 .frame(width: DS.Welcome.rowIcon, height: DS.Welcome.rowIcon)
                 .background(DS.brandMoon.opacity(0.14), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))   // ds-exception: dibujo de la escena de la guía

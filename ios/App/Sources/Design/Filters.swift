@@ -172,10 +172,10 @@ struct DSTextTabs<ID: Hashable>: View {
             // El numerito va siempre sobre la esquina del ícono (sobre el nombre tapaba la «s» de «Descargas»).
             let badge = option.badge.flatMap { $0 > 0 ? $0 : nil }
             if icons, let symbol = option.symbol {
-                Image(systemName: symbol).fontWeight(.semibold)   // ds-exception: el trazo fijo del ícono de la pestaña
+                Image(systemName: symbol).fontWeight(DS.Weight.strong)   // ds-exception: el trazo fijo del ícono de la pestaña
                     .overlay(alignment: .topTrailing) { if let badge { countBadge(badge) } }
             }
-            if titles { option.title.lineLimit(1).fontWeight(bold ? .bold : .medium) }   // ds-exception: la pestaña elegida se distingue por el peso
+            if titles { option.title.lineLimit(1).fontWeight(bold ? .bold : DS.Weight.medium) }   // ds-exception: la pestaña elegida se distingue por el peso
         }
     }
 }
@@ -306,7 +306,7 @@ struct KindPill: View {
                     HStack(spacing: 0) {
                         Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(KindGlyph.variant)   // el mismo dibujo abierta y cerrada
                             .font(DS.TextRecipe.section.font)
-                            .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // el de series es más ancho: se ve del mismo peso que los otros
+                            .scaleEffect(option.0 == "series" ? DS.KindPill.seriesOptical : 1)   // ds-exception: corrección óptica (token); el de series es más ancho: se ve del mismo peso que los otros
                             // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                             .frame(width: cell, height: cell)
                     }
@@ -432,7 +432,7 @@ struct KindPill: View {
 private struct KindName: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(DS.TextRecipe.label.font).fontWeight(.semibold)   // ds-exception: el nombre de lo elegido, como la elegida del selector
+            .font(DS.TextRecipe.label.font).fontWeight(DS.Weight.strong)   // ds-exception: el nombre de lo elegido, como la elegida del selector
             .foregroundStyle(DS.text)
             .lineLimit(1).fixedSize()
             .padding(.horizontal, DS.KindPill.nameInset / 2)   // aire igual a los dos lados: el nombre queda centrado en su lugar

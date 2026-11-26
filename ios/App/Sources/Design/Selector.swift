@@ -124,8 +124,8 @@ struct DSSelector<ID: Hashable>: View {
     /// para que nada brinque al cambiar.
     private func weighted(_ title: Text, on: Bool) -> some View {
         ZStack {
-            title.fontWeight(.semibold).hidden()   // ds-exception: la elegida se distingue por el peso
-            title.fontWeight(on ? .semibold : .regular)   // ds-exception: la elegida se distingue por el peso
+            title.fontWeight(DS.Weight.strong).hidden()   // ds-exception: la elegida se distingue por el peso
+            title.fontWeight(on ? DS.Weight.strong : DS.Weight.plain)   // ds-exception: la elegida se distingue por el peso
         }
         .lineLimit(1)
     }
