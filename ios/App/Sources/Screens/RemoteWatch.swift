@@ -91,7 +91,7 @@ struct RemoteWatchSheet: View {
             }
             VersionGroup(inset: DSListRow.textInset) {
                 ForEach(Array(list.prefix(DS.Remote.versionsShown).enumerated()), id: \.element.id) { i, v in
-                    DSListRow(lead: .symbol(i == 0 ? "star" : "film"), title: Self.quality(v), detail: Self.detail(v, first: i == 0),
+                    DSListRow(lead: .symbol(i == 0 ? DS.Symbol.recommended : "film"), title: Self.quality(v), detail: Self.detail(v, first: i == 0),
                                 identifier: "watch-version-\(i)", action: {
                                     // Se cierra cuando la TV la puso; si no, se queda abierta y lo dice.
                                     Task { if await model.switchVersion(v) { dismiss() } }
