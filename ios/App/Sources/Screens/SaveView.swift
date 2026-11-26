@@ -44,14 +44,14 @@ struct SaveView: View {
     @ViewBuilder private func rows(_ m: TitleModel) -> some View {
         if m.traktAvailable { PanelGroupTitle(title: "Principales") }
         ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
-            CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
-                     color: SaveDestinationName.tint(destination), checked: m.isSaved(in: destination)) { Task { await m.toggle(destination) } }
+            DSRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
+                     tint: SaveDestinationName.tint(destination), accessory: .check(m.isSaved(in: destination))) { Task { await m.toggle(destination) } }
                 .accessibilityIdentifier("save-fixed-\(destination.rawValue)")
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if index == 0 { rowHeight = $0 } }
         }
         if m.canFavorite {
             // I7 · Favoritos entra por aquí (antes era un corazón suelto arriba de la ficha): la misma puerta para guardar.
-            CheckRow(title: Text("Favoritos"), symbol: DS.Favorites.symbol, color: DS.Favorites.filled, checked: m.isFavorite) {
+            DSRow(title: Text("Favoritos"), symbol: DS.Favorites.symbol, tint: DS.Favorites.filled, accessory: .check(m.isFavorite)) {
                 Task { _ = await m.toggleFavorite() }
             }
             .dsFeedback(.success, trigger: m.isFavorite) { _, now in now }
@@ -92,7 +92,7 @@ struct SaveView: View {
                 ForEach(rows) { row in
                     switch row {
                     case .list(let list):
-                        CheckRow(title: Text(verbatim: list.name), symbol: "list.bullet", color: DS.ListTint.list, checked: list.contains) { Task { await m.toggleList(list.id) } }
+                        DSRow(title: Text(verbatim: list.name), symbol: "list.bullet", tint: DS.ListTint.list, accessory: .check(list.contains)) { Task { await m.toggleList(list.id) } }
                             .accessibilityIdentifier("save-list-\(list.id)")
                     case .skeleton:
                         CheckRowSkeleton()

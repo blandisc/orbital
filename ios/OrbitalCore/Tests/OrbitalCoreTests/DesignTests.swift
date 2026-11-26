@@ -388,6 +388,29 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(rootView.contains("FloatingRatingReminder("), "La pastilla flota en la raíz, sobre todas las pestañas")
     }
 
+    /// SD2-A (26 nov 2026): catálogo cerrado. Ninguna pantalla crea su propia fila, tarjeta, encabezado, chip, mosaico u hoja:
+    /// salen de las piezas DS*. Las que ya existían están en «heredadas» de design/catalogo-iphone.json y solo pueden salir de
+    /// la lista (al pasarse a una pieza DS*); una nueva falla aquí.
+    func testNoNewRowsCardsOrSheetsOutsideTheCatalog() throws {
+        let data = try Data(contentsOf: repo.appendingPathComponent("design/catalogo-iphone.json"))
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let allowed = Set((json["piezas"] as? [String] ?? []) + (json["heredadas"] as? [String] ?? []))
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+        let pattern = try NSRegularExpression(pattern: #"^\s*(?:private |fileprivate )?struct ([A-Za-z0-9]*(?:Row|Card|Header|Head|Chip|Tile|Sheet))\b"#, options: .anchorsMatchLines)
+        var found = Set<String>()
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            for m in pattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                let name = String(text[Range(m.range(at: 1), in: text)!])
+                found.insert(name)
+                XCTAssertTrue(allowed.contains(name), "\(file.lastPathComponent): «\(name)» es una pieza nueva fuera del catálogo: usa DSRow, DSCard, DSSectionHead, DSSheetHeader, DSChip o FittedSheet")
+            }
+        }
+        let gone = allowed.subtracting(found).sorted()
+        XCTAssertTrue(gone.isEmpty, "Quita de design/catalogo-iphone.json lo que ya no existe: \(gone)")
+    }
+
     /// Regla «Las barras fijas no se salen con letra grande» (26 nov 2026: con letra de accesibilidad el dock del iPad se salía
     /// de la pantalla y el control perdía sus nombres). Cada barra fija lleva `dsChromeType()`, y el tope vive solo en el token.
     func testFixedBarsStopGrowingWithTheText() throws {

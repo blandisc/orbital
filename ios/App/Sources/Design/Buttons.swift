@@ -252,20 +252,9 @@ struct DSToggleRow: View {
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            if let symbol {
-                Label { text } icon: {
-                    if let tint {
-                        Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
-                    } else { Image(systemName: symbol) }
-                }
-            } else { text }
-        }
-    }
-
-    @ViewBuilder private var text: some View {
-        VStack(alignment: .leading, spacing: 0) {   // como el subtítulo de un renglón del sistema
-            Text(title).foregroundStyle(DS.text)
-            if let detail { Text(detail).recipe(.footnote, color: DS.textMuted) }
+            // Con `tint`, el ícono en su columna y color (como `SettingsRow`); sin él, el del sistema.
+            if let symbol, tint == nil { Label { DSRowLabel(title: Text(title), detail: detail.map { Text($0) }) } icon: { Image(systemName: symbol) } }
+            else { DSRowLabel(title: Text(title), detail: detail.map { Text($0) }, symbol: symbol, tint: tint ?? DS.textMuted) }
         }
     }
 }

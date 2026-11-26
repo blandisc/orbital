@@ -25,12 +25,7 @@ struct SettingsRow: View {
             if let value { value.lineLimit(typeSize.isAccessibilitySize ? nil : 2).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing)
                 .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading).padding(.trailing, linked ? 0 : DS.SettingsLook.chevronSlot) }
         } label: {
-            Label {
-                Text(title).foregroundStyle(DS.text)
-            } icon: {
-                (custom ? Image(symbol) : Image(systemName: symbol)).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint)
-                    .frame(width: DS.SettingsLook.rowIcon)
-            }
+            DSRowLabel(title: Text(title), symbol: symbol, custom: custom, tint: tint)
         }
     }
 }
@@ -63,37 +58,6 @@ struct ProfileCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Cambiar avatar"))
-    }
-}
-
-/// Un renglón con palomita (en qué listas está un título, «Guardar en…»): su glifo de color, el nombre y ✓ si está.
-struct CheckRow: View {
-    let title: Text
-    let symbol: String
-    let color: Color
-    let checked: Bool
-    let action: () -> Void
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                PanelIcon(symbol: symbol, color: color)
-                title.recipe(.labelLarge, color: DS.text).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // con letra grande no se corta
-                Spacer(minLength: DS.Space.s2)
-                Image(systemName: checked ? "checkmark.circle.fill" : "circle")
-                    .font(DS.TextRecipe.title.font.weight(.regular))   // ds-exception: la casilla del sistema va en peso regular, como en Ajustes de iOS
-                    .foregroundStyle(checked ? DS.accent : DS.textFaint)
-                    .contentTransition(.symbolEffect(.replace))
-            }
-            .padding(DS.Space.s2)
-            .frame(minHeight: DS.Size.touchTarget)   // todo el renglón se toca, nunca menos que un objetivo táctil
-            .dsCard(.row, translucent: true)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(checked ? .isSelected : [])
-        .dsFeedback(.selection, trigger: checked)
     }
 }
 
@@ -293,9 +257,7 @@ struct SettingsMenuRow<ID: Hashable, Options: View>: View {
 
     var body: some View {
         Picker(selection: $selection, content: options) {
-            Label { Text(title).foregroundStyle(DS.text) } icon: {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
-            }
+            DSRowLabel(title: Text(title), symbol: symbol, tint: tint)
         }
     }
 }
@@ -326,19 +288,7 @@ struct SettingsChoiceRow<ID: Hashable>: View {
 
     /// Un `Label` como `SettingsRow` y `DSToggleRow`: con un `HStack` propio el nombre empezaba más a la derecha que el de los
     /// renglones de al lado (23 nov 2026, «Fondo» y «Posición» bajo «Tamaño»).
-    @ViewBuilder private var label: some View {
-        if let symbol {
-            Label { name } icon: {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).frame(width: DS.SettingsLook.rowIcon)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        } else { name.fixedSize(horizontal: false, vertical: true) }
-    }
-
-    private var name: some View {
-        VStack(alignment: .leading, spacing: 0) {   // como `DSToggleRow`
-            Text(title).foregroundStyle(DS.text)
-            if let detail { Text(detail).recipe(.footnote, color: DS.textMuted) }
-        }
+    private var label: some View {
+        DSRowLabel(title: Text(title), detail: detail.map { Text($0) }, symbol: symbol, tint: tint).fixedSize(horizontal: false, vertical: true)
     }
 }

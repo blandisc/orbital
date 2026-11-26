@@ -15,11 +15,11 @@ struct SaveDestinationName: View {
     static func tint(_ destination: SaveDestination) -> Color { DS.ListTint.bookmark }
 }
 
-/// El lugar de una lista que todavía no llega: el mismo `CheckRow` (mismo alto, mismo relleno) en modo de marcador, sin
+/// El lugar de una lista que todavía no llega: el mismo `DSRow` (mismo alto, mismo relleno) en modo de marcador, sin
 /// interacción. Así, al llegar las listas, cada renglón cambia en su lugar y nada se recorre.
 struct CheckRowSkeleton: View {
     var body: some View {
-        CheckRow(title: Text(verbatim: "Lista de Trakt"), symbol: "list.bullet", color: DS.textFaint, checked: false) {}
+        DSRow(title: Text(verbatim: "Lista de Trakt"), symbol: "list.bullet", tint: DS.textFaint, accessory: .check(false)) {}
             .redacted(reason: .placeholder)
             .disabled(true)
             .allowsHitTesting(false)
