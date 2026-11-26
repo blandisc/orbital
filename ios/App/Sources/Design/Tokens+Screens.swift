@@ -404,6 +404,9 @@ extension DS {
     enum Collections {
         /// Pósters en abanico de cada tarjeta de Estudios, Temporadas y Géneros.
         static let coversPerCard = 3
+        /// Descubre: una lista de hasta tantos títulos sale como tira de pósters (sin tarjeta); las más largas, en tarjeta
+        /// (Fernando, 26 nov 2026: «las listas más cortas… que sean solamente la tira»).
+        static let stripMax = 40
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
         static var emblem: CGFloat { 70 * PlatformFan.scale }   // crece con la tarjeta en la Mac

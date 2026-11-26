@@ -376,7 +376,9 @@ struct RepisaCollectionView: View {
         .accessibilityIdentifier("repisa-moment")
     }
 
-    private func route(_ item: CanonCollection.Item) -> TitleRoute {
+    private func route(_ item: CanonCollection.Item) -> TitleRoute { Self.titleRoute(item) }
+    /// La ficha de una pieza de colección (también las tiras de Descubre, `ExploreWeekly`).
+    static func titleRoute(_ item: CanonCollection.Item) -> TitleRoute {
         // Un capítulo (los especiales de Los Simpson): la ficha de su serie, ya con «Versión» abierta en ese capítulo.
         if let episode = item.episode { return TitleRoute(kind: "series", metaID: episode.show, title: item.title, poster: item.poster, versionsFor: episode.video) }
         return TitleRoute(kind: item.kind, metaID: item.imdb, title: item.title, poster: item.poster)

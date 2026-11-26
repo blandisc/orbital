@@ -12,9 +12,11 @@ struct ExploreWeekly: View {
     var body: some View {
         let model = env.repisa
         let _ = model.track()
+        let cards = model.weekly.filter { !Self.isStrip($0) }, strips = model.weekly.filter(Self.isStrip)
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: CollectionSection.weekly.title, symbol: CollectionSection.weekly.symbol)
-            CenteredCarousel(items: model.weekly, id: \.id, cardWidth: DS.PlatformFan.width) { collection in
+            if !cards.isEmpty {
+            CenteredCarousel(items: cards, id: \.id, cardWidth: DS.PlatformFan.width) { collection in
                 let list = model.weeklyList(collection.id)
                 let words = list?.words(env.services.appSettings.uiLanguage)
                 let name = words?.title ?? collection.id
@@ -29,7 +31,40 @@ struct ExploreWeekly: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("weekly-\(collection.id)")
             }
+            }
+            // Las cortas: solo su tira (el encabezado abre la colección entera).
+            ForEach(strips, id: \.id) { collection in strip(collection) }
         }
+    }
+
+    static func isStrip(_ collection: CanonCollection) -> Bool {
+        !collection.items.isEmpty && collection.total <= DS.Collections.stripMax
+    }
+
+    /// La imagen de un capítulo («serie:temporada:episodio»), la misma fuente que el resto de los capítulos.
+    static func still(_ item: CanonCollection.Item) -> String? {
+        let parts = item.imdb.split(separator: ":")
+        guard parts.count == 3 else { return nil }
+        return "https://episodes.metahub.space/\(parts[0])/\(parts[1])/\(parts[2])/w780.jpg"
+    }
+
+    private func strip(_ collection: CanonCollection) -> some View {
+        let words = env.repisa.weeklyList(collection.id)?.words(env.services.appSettings.uiLanguage)
+        return Shelf(title: Text(verbatim: words?.title ?? collection.id), destination: RepisaCollectionRoute(id: collection.id)) {
+            ForEach(collection.items) { item in
+                if let still = Self.still(item) {
+                    // Un capítulo (los especiales de Los Simpson): su imagen y su nombre, no el póster de la serie repetido.
+                    TitleNavigationLink(route: RepisaCollectionView.titleRoute(item)) {
+                        StillCard(title: item.title, art: still, data: item.year.map { [String($0)] } ?? [], fallback: item.poster)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    TitleLink(route: RepisaCollectionView.titleRoute(item), detail: item.year.map { Text(verbatim: String($0)) })
+                }
+            }
+        }
+        .padding(.top, DS.Space.s2)
+        .accessibilityIdentifier("weekly-strip-\(collection.id)")
     }
 
     /// Los primeros pósters sin repetir (los capítulos de una serie comparten el de su serie: sale una vez).
