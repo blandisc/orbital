@@ -506,6 +506,12 @@ final class DriftView: UIView {
         return nil
     }
 
+    /// A cuántos puntos por segundo baja ahora (negativo si sube; cero si está quieta).
+    var fall: CGFloat {
+        guard enabled, running, duration > 0 else { return 0 }
+        return (rising ? -1 : 1) * loop / CGFloat(duration)
+    }
+
     func set(enabled: Bool, running: Bool) {
         guard enabled != self.enabled || running != self.running else { return }
         (self.enabled, self.running) = (enabled, running)
@@ -546,7 +552,9 @@ final class DriftView: UIView {
 
 /// MT4-A: dónde quedó cada columna del muro derecho, para que el mosaico arranque con esos mismos pósters en ese lugar.
 struct MosaicHandoff {
-    struct Column { let minX: CGFloat; let width: CGFloat; let firstTop: CGFloat; let posters: [String] }
+    /// `fall`: a qué velocidad iba bajando la columna (puntos por segundo; negativo si subía), para que el mosaico siga
+    /// con ese mismo movimiento al entrar (Fernando, 26 nov 2026: «que no se pause y luego vuelva a avanzar»).
+    struct Column { let minX: CGFloat; let width: CGFloat; let firstTop: CGFloat; let posters: [String]; var fall: CGFloat = 0 }
     let columns: [Column]
     let pitch: CGFloat
     @MainActor static var live: [WeakDrift] = []
@@ -563,7 +571,7 @@ struct MosaicHandoff {
             let rect = view.convert(view.bounds, to: nil)
             let layer = view.host.view.layer
             let drift = (layer.presentation() ?? layer).transform.m42
-            out.append(Column(minX: rect.minX, width: rect.width, firstTop: rect.minY + drift, posters: view.key))
+            out.append(Column(minX: rect.minX, width: rect.width, firstTop: rect.minY + drift, posters: view.key, fall: view.fall))
             pitch = rect.width / DS.Poster.aspect + DS.Space.s2
         }
         // Al tocar la chapa (el muro dentro de un botón) cada columna reporta el ancho de toda su tira, no el suyo: el ancho
@@ -571,7 +579,7 @@ struct MosaicHandoff {
         let xs = out.map(\.minX).sorted()
         if xs.count > 1, let step = zip(xs, xs.dropFirst()).map({ $1 - $0 }).min(), step > DS.Space.s2 {
             let width = step - DS.Space.s2
-            out = out.map { Column(minX: $0.minX, width: width, firstTop: $0.firstTop, posters: $0.posters) }
+            out = out.map { Column(minX: $0.minX, width: width, firstTop: $0.firstTop, posters: $0.posters, fall: $0.fall) }
             pitch = width / DS.Poster.aspect + DS.Space.s2
         }
         pending = out.isEmpty ? nil : MosaicHandoff(columns: out, pitch: pitch)

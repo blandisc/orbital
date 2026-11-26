@@ -42,6 +42,8 @@ struct Mosaic: View {
     @State private var configuredIDs: Set<String> = []
     /// MT4-A: lo que el muro quedó corrido de lado al entrar; el mosaico arranca ahí y se acomoda suave a su lugar.
     @State private var entryShift: CGFloat = 0
+    /// Al entrar desde el muro, cada columna sigue a la velocidad y hacia donde iba la del muro (sin pausa); nil: las de siempre.
+    @State private var entrySpeeds: [Double]?
 
     var body: some View {
         #if DEBUG
@@ -89,6 +91,8 @@ struct Mosaic: View {
                     var quiet = Transaction(); quiet.disablesAnimations = true
                     withTransaction(quiet) { seed(from: handoff, top: geo.frame(in: .global).minY, left: geo.frame(in: .global).minX, height: geo.size.height) }
                     if entryShift != 0 { DispatchQueue.main.async { withAnimation(DS.Motion.spring(reduceMotion)) { entryShift = 0 } } }
+                    // El muro venía moviéndose: el mosaico entra ya andando, sin esperar a estar quieto.
+                    if entrySpeeds != nil, !reduceMotion, ThisDevice.ambientMotion { withTransaction(quiet) { runtime.goAmbient() } }
                 }
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
@@ -146,6 +150,8 @@ struct Mosaic: View {
             // El ambiente es lo único que se mueve solo: en foco no hay temporizador (ni se invalida nada cada segundo).
             // En la Mac el muro se queda quieto: bajar solo costaba ~25 % de CPU con Explorar en reposo (22 nov 2026).
             guard runtime.mode == .ambient, !reduceMotion, ThisDevice.ambientMotion else { return }
+            // Cada paso anima el segundo que sigue: el primero de una vez (antes esperaba un segundo quieto al arrancar).
+            withAnimation(.linear(duration: DS.Mosaic.driftTick)) { runtime.driftTick(DS.Mosaic.driftTick, speeds: driftSpeeds) }
             var last = Date()
             while !Task.isCancelled {
                 guard (try? await Task.sleep(nanoseconds: DS.Timing.mosaicDrift)) != nil else { break }
@@ -198,11 +204,14 @@ struct Mosaic: View {
         let frames = runtime.columnFrames
         var plan: [(items: [Suggestion], offset: Double)] = []
         var shifts: [CGFloat] = []
+        var speeds: [Double] = []
         // MT4-A (Fernando, 25 nov 2026: «hace el switch violento con el mosaico real»): antes, si una sola columna no
         // empataba se dejaba todo el acomodo de siempre; ahora cada columna toma la del muro más cercana y la que no tenga,
         // se llena como siempre.
         for f in frames {
             let x = left + CGFloat(f.x)
+            // La deriva del mosaico sube con `offset` positivo; la del muro baja con `fall` positivo.
+            speeds.append(-Double(handoff.columns.min(by: { abs($0.minX - x) < abs($1.minX - x) })?.fall ?? 0))
             guard let wall = handoff.columns.min(by: { abs($0.minX - x) < abs($1.minX - x) }),
                   abs(wall.minX - x) < handoff.pitch / 2, abs(wall.width - CGFloat(f.width)) < 2, !wall.posters.isEmpty else {
                 plan.append(([], 0)); continue
@@ -221,6 +230,7 @@ struct Mosaic: View {
         }
         guard plan.contains(where: { !$0.items.isEmpty }) else { return }
         runtime.seed(plan)
+        entrySpeeds = speeds.contains(where: { $0 != 0 }) ? speeds : nil
         entryShift = shifts.isEmpty ? 0 : shifts.reduce(0, +) / CGFloat(shifts.count)
     }
 
@@ -234,6 +244,7 @@ struct Mosaic: View {
     private var aliveToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)" }
     /// «Marea lenta» (Fernando, 1 nov 2026): todas casi a la misma velocidad, despacio, y una sube mientras la de al lado baja.
     private var driftSpeeds: [Double] {
+        if let entrySpeeds, entrySpeeds.count == runtime.columns.count { return entrySpeeds }
         let pattern: [Double] = DesignTokens.Mosaic.driftPattern
         let alternates: Bool = DesignTokens.Mosaic.driftAlternates
         return (0..<max(1, runtime.columns.count)).map { (c: Int) -> Double in
