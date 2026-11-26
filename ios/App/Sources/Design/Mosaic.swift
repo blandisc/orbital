@@ -127,7 +127,9 @@ struct Mosaic: View {
         #endif
         .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
-            guard runtime.mode == .focus, !reduceMotion else { return }
+            // Con una pieza elegida no se vuelve a mover solo: su pie (Ver, «Más» con Guardar…) se queda hasta que hagas
+            // otra cosa (Fernando, 25 nov 2026: el menú se escondía si no le picabas de inmediato).
+            guard runtime.mode == .focus, runtime.focus == nil, !reduceMotion else { return }
             #if DEBUG
             if Demo.noIdle { return }
             #endif

@@ -27,8 +27,9 @@ struct MosaicCover: View {
     /// `CoverOpening`.
     @State private var opening: CGFloat
     @State private var walking: Task<Void, Never>?
-    /// MT4-A: dónde empieza el muro en la pantalla, sin inclinar.
-    @State private var wallX: CGFloat = 0
+    /// MT4-A: dónde está la portada en la pantalla (su orilla izquierda y su ancho). Se mide la portada, que no se mueve, y no
+    /// el muro: medir el muro mientras se recorría lo volvía a recorrer sin fin (Fernando, 25 nov 2026: «brinco al final»).
+    @State private var coverFrame = CGRect.zero
     /// Cuántas columnas del muro ya están armadas. La primera vez entran una por una (`coverColumnStep`): armarlas todas
     /// juntas (unos 200 pósters, cada columna con su motor) trababa medio segundo el cambio a Explorar (17 nov 2026). Las
     /// siguientes veces, todas desde el primer cuadro.
@@ -50,12 +51,17 @@ struct MosaicCover: View {
         guard isDoor else { return 0 }
         return max(opening, (pull?.entering ?? false) ? 1 : (pull?.doorProgress ?? 0))
     }
-    /// MT4-A: lo que hay que recorrer el muro (a lo más media columna) para que una columna empiece donde la primera del mosaico.
+    /// MT4-A: lo que hay que recorrer el muro para que sus columnas caigan justo donde van las del mosaico. El muro va
+    /// centrado en la portada, así que se sabe dónde empieza sin medirlo. Siempre hacia la derecha (menos de una columna):
+    /// con el número de columnas del muro, centrado queda a media columna exacta y medio punto de diferencia lo mandaba a un
+    /// lado o al otro.
     private var alignShift: CGFloat {
-        guard matchedWidth != nil else { return 0 }
+        guard matchedWidth != nil, coverFrame.width > 0 else { return 0 }
         let pitch = columnWidth + DS.Space.s2
-        var d = (DS.Space.s2 - wallX).truncatingRemainder(dividingBy: pitch)
-        if d > pitch / 2 { d -= pitch } else if d < -pitch / 2 { d += pitch }
+        let wallWidth = CGFloat(columns) * columnWidth + DS.Space.s2 * CGFloat(columns - 1)
+        let start = coverFrame.minX + (coverFrame.width - wallWidth) / 2
+        var d = (DS.Space.s2 - start).truncatingRemainder(dividingBy: pitch)
+        if d < 0 { d += pitch }
         return d
     }
     /// Ya se vio que la portada se abre sola (una vez, en los ajustes locales).
@@ -148,6 +154,8 @@ struct MosaicCover: View {
                 if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(Double(1 - reach)) }
             }
             .contentShape(Rectangle())
+            // Solo lo de lado: al deslizar la página cambia el alto en pantalla y no debe volver a pintar la portada.
+            .onGeometryChange(for: CGRect.self) { g in let f = g.frame(in: .global); return CGRect(x: f.minX, y: 0, width: f.width, height: 0) } action: { coverFrame = $0 }
     }
 
     /// Tocarla: el muro se endereza y crece (`DS.Motion.grow`) y entonces entra el mosaico. Con «Reducir movimiento», de una vez.
@@ -225,7 +233,6 @@ struct MosaicCover: View {
         .frame(width: CGFloat(columns) * columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
         // MT4-A: dónde empieza el muro (sin la inclinación); al enderezarse se recorre lo que le falta para que sus columnas
         // caigan justo donde van las del mosaico (si no, al cambiar brincaban de lado).
-        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { wallX = $0 }
         .offset(x: alignShift * reach)
         // MT4-A: en la puerta se endereza aquí mismo (un solo giro). Antes giraba aquí y se desgiraba en `CoverOpening` sobre
         // otro centro: derecho quedaba corrido de lado y el mosaico no podía tomar sus pósters (salían dos mosaicos).
