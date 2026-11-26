@@ -1789,7 +1789,12 @@ def build() -> dict:
         else:
             localizations = {"en": unit(english)}
         strings[key] = {"extractionState": "manual", "localizations": localizations}
-    return {"sourceLanguage": "es", "strings": strings, "version": "1.0"}
+    # Nunca se pierde lo que ya estaba traducido en el catálogo (26 nov 2026: al regenerarlo se borraron 1026 textos en
+    # inglés que otras sesiones habían puesto directo ahí, y la app volvió a salir en español).
+    if OUT.exists():
+        for key, entry in json.loads(OUT.read_text(encoding="utf-8")).get("strings", {}).items():
+            strings.setdefault(key, entry)
+    return {"sourceLanguage": "es", "strings": dict(sorted(strings.items())), "version": "1.0"}
 
 
 def main() -> int:

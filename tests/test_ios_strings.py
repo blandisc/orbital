@@ -15,3 +15,15 @@ def test_every_iphone_text_has_english():
     run = subprocess.run([sys.executable, str(ROOT / "scripts/ios_strings.py"), "--check"], capture_output=True, text=True, encoding="utf-8",
                          env=env)
     assert run.returncode == 0, run.stdout + run.stderr
+
+
+def test_regenerating_keeps_existing_translations():
+    """Regenerar el catálogo no borra textos ya traducidos que no estén en TRANSLATIONS (26 nov 2026: se perdieron 1026)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import json
+
+    import ios_strings
+
+    catalog = json.loads(ios_strings.OUT.read_text(encoding="utf-8"))["strings"]
+    built = ios_strings.build()["strings"]
+    assert set(catalog) <= set(built), sorted(set(catalog) - set(built))[:10]

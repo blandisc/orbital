@@ -46,3 +46,5 @@ Aplica a cualquier pantalla o pieza que se toque en `ios/App`.
 Lo que se corrige y puede repetirse se vuelve regla del repo con su prueba (regla 16 de la casa); las reglas de diseño
 viven en `docs/ios-interfaz.md`. Para quien dirige agentes: todo en primer plano con tiempo límite y, a lo más, tres
 agentes con simulador a la vez.
+
+- **Ningún texto vuelve al español.** Regenerar el catálogo de textos (`scripts/ios_strings.py`) conserva lo ya traducido; `tests/test_ios_strings.py` falla si algo se pierde (26 nov 2026).
