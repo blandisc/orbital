@@ -62,11 +62,46 @@ public struct ExploreList: Sendable, Equatable, Codable, Identifiable {
     }
 }
 
+/// Una receta de «Hoy» (LD-C, Fernando, 25 nov 2026): un nombre con gracia y un filtro de TMDB (género, época, calificación,
+/// duración…). Cada día salen `daily` distintas; la app esconde lo que ya viste. Como Netflix con sus filas temáticas.
+public struct ExploreRecipe: Sendable, Equatable, Codable, Identifiable {
+    public var id: String
+    public var title: String, full: String?, about: String
+    public var art: String?
+    public var en: ExploreList.Words?
+    public var filter: AdvancedFilter
+    public init(id: String, title: String, about: String, art: String? = nil, filter: AdvancedFilter) {
+        self.id = id; self.title = title; self.about = about; self.art = art; self.filter = filter
+    }
+    /// Como lista de Explorar (su tarjeta y su pantalla usan lo mismo que las listas famosas). Su id lleva «hoy-».
+    public var list: ExploreList {
+        var l = ExploreList(id: "hoy-\(id)", title: title, full: full ?? title, about: about, art: art)
+        l.en = en
+        return l
+    }
+}
+
 public struct ExploreTable: Sendable, Equatable, Codable {
     /// Cuántas de las que rotan salen a la vez.
     public var rotate: Int
     public var lists: [ExploreList]
-    public init(rotate: Int, lists: [ExploreList]) { self.rotate = rotate; self.lists = lists }
+    /// Las recetas de «Hoy» y cuántas salen cada día (sin el campo, 2).
+    public var recipes: [ExploreRecipe]?
+    public var daily: Int?
+    public init(rotate: Int, lists: [ExploreList], recipes: [ExploreRecipe]? = nil, daily: Int? = nil) {
+        self.rotate = rotate; self.lists = lists; self.recipes = recipes; self.daily = daily
+    }
+
+    /// Las recetas de hoy: cada día (a medianoche UTC, igual en la TV) avanza la rueda `daily` lugares; ninguna se repite
+    /// antes de que pasen todas.
+    public func recipesToday(_ date: Date) -> [ExploreRecipe] {
+        let all = recipes ?? [], n = max(0, daily ?? 2)
+        guard !all.isEmpty, n > 0 else { return [] }
+        if all.count <= n { return all }
+        let day = Int(floor(date.timeIntervalSince1970 / 86400))
+        let start = ((day * n) % all.count + all.count) % all.count
+        return (0..<n).map { all[(start + $0) % all.count] }
+    }
 
     public static func parse(_ data: Data) -> ExploreTable? { try? JSONDecoder().decode(ExploreTable.self, from: data) }
 

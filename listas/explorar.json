@@ -1069,5 +1069,573 @@
     }
    ]
   }
+ ],
+ "daily": 2,
+ "recipes": [
+  {
+   "id": "comedias-2000",
+   "title": "Comedias inolvidables de los 2000",
+   "about": "Las que todos citan, de 2000 a 2009",
+   "art": "comedia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "comedia"
+    ],
+    "years": [
+     2000,
+     2009
+    ],
+    "minRating": 6.8,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "Unforgettable 2000s comedies",
+    "full": "Unforgettable 2000s comedies",
+    "about": "The ones everyone quotes, 2000–2009"
+   }
+  },
+  {
+   "id": "terror-decada",
+   "title": "El terror mejor calificado de la década",
+   "about": "Lo que de verdad da miedo, de los últimos diez años",
+   "art": "terror",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "terror"
+    ],
+    "years": [
+     2016,
+     2026
+    ],
+    "sort": "rating"
+   },
+   "en": {
+    "title": "The decade's best-rated horror",
+    "full": "The decade's best-rated horror",
+    "about": "What's actually scary, last ten years"
+   }
+  },
+  {
+   "id": "cortas-hoy",
+   "title": "Menos de 90 minutos para hoy",
+   "about": "Buenas y cortas, para no desvelarte",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "length": "short",
+    "minRating": 7.0,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "Under 90 minutes tonight",
+    "full": "Under 90 minutes tonight",
+    "about": "Good and short, so you're not up late"
+   }
+  },
+  {
+   "id": "joyas-escondidas",
+   "title": "Joyas que casi nadie vio",
+   "about": "Muy bien calificadas y poco conocidas",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "fame": "gems"
+   },
+   "en": {
+    "title": "Gems hardly anyone saw",
+    "full": "Gems hardly anyone saw",
+    "about": "Highly rated, little known"
+   }
+  },
+  {
+   "id": "clasicos-80",
+   "title": "Clásicos de los 80",
+   "about": "Las que definieron una década",
+   "art": "aventura",
+   "filter": {
+    "format": "movie",
+    "years": [
+     1980,
+     1989
+    ],
+    "fame": "classics"
+   },
+   "en": {
+    "title": "80s classics",
+    "full": "80s classics",
+    "about": "The ones that defined a decade"
+   }
+  },
+  {
+   "id": "thrillers-90",
+   "title": "Suspenso de los 90",
+   "about": "Giros, persecuciones y finales que no ves venir",
+   "art": "suspenso",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "suspenso"
+    ],
+    "years": [
+     1990,
+     1999
+    ],
+    "minRating": 6.8
+   },
+   "en": {
+    "title": "90s thrillers",
+    "full": "90s thrillers",
+    "about": "Twists and endings you won't see coming"
+   }
+  },
+  {
+   "id": "cine-mexicano",
+   "title": "Lo mejor del cine mexicano",
+   "about": "De la época de oro a hoy",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "countries": [
+     "MX"
+    ],
+    "sort": "rating"
+   },
+   "en": {
+    "title": "The best of Mexican cinema",
+    "full": "The best of Mexican cinema",
+    "about": "From the golden age to today"
+   }
+  },
+  {
+   "id": "coreanas",
+   "title": "Cine coreano que hay que ver",
+   "about": "Thrillers, dramas y todo lo de en medio",
+   "art": "suspenso",
+   "filter": {
+    "format": "movie",
+    "countries": [
+     "KR"
+    ],
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Korean films to see",
+    "full": "Korean films to see",
+    "about": "Thrillers, dramas and everything between"
+   }
+  },
+  {
+   "id": "animacion-adultos",
+   "title": "Animación que no es solo para niños",
+   "about": "Para verla con o sin niños",
+   "art": "animacion",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "animacion"
+    ],
+    "minRating": 7.5,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Animation not just for kids",
+    "full": "Animation not just for kids",
+    "about": "With or without kids"
+   }
+  },
+  {
+   "id": "ciencia-ficcion",
+   "title": "Ciencia ficción para pensar",
+   "about": "Ideas grandes, de las que te quedas pensando",
+   "art": "ciencia-ficcion",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "ciencia-ficcion"
+    ],
+    "minRating": 7.0,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Sci-fi to think about",
+    "full": "Sci-fi to think about",
+    "about": "Big ideas that stay with you"
+   }
+  },
+  {
+   "id": "romcom",
+   "title": "Comedias románticas para una noche tranquila",
+   "about": "Ligeras y con final feliz",
+   "art": "romance",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "romance",
+     "comedia"
+    ],
+    "minRating": 6.5
+   },
+   "en": {
+    "title": "Rom-coms for a quiet night",
+    "full": "Rom-coms for a quiet night",
+    "about": "Light, with a happy ending"
+   }
+  },
+  {
+   "id": "crimen-real",
+   "title": "Crimen de los buenos",
+   "about": "Mafias, robos y detectives",
+   "art": "crimen",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "crimen"
+    ],
+    "fame": "classics"
+   },
+   "en": {
+    "title": "Crime at its best",
+    "full": "Crime at its best",
+    "about": "Mobs, heists and detectives"
+   }
+  },
+  {
+   "id": "series-cortas",
+   "title": "Series que se terminan en un fin de semana",
+   "about": "Terminadas y bien calificadas",
+   "art": "drama",
+   "filter": {
+    "format": "series",
+    "seriesStatus": "ended",
+    "minRating": 7.8,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Shows you can finish in a weekend",
+    "full": "Shows you can finish in a weekend",
+    "about": "Ended and well rated"
+   }
+  },
+  {
+   "id": "series-comedia",
+   "title": "Series de comedia para reír seguido",
+   "about": "Capítulos cortos, risa segura",
+   "art": "comedia",
+   "filter": {
+    "format": "series",
+    "genres": [
+     "comedia"
+    ],
+    "minRating": 7.5
+   },
+   "en": {
+    "title": "Comedy shows for steady laughs",
+    "full": "Comedy shows for steady laughs",
+    "about": "Short episodes, sure laughs"
+   }
+  },
+  {
+   "id": "series-crimen",
+   "title": "Series de crimen para engancharte",
+   "about": "Una temporada y ya no puedes parar",
+   "art": "crimen",
+   "filter": {
+    "format": "series",
+    "genres": [
+     "crimen"
+    ],
+    "minRating": 7.8,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Crime shows to get hooked",
+    "full": "Crime shows to get hooked",
+    "about": "One season and you can't stop"
+   }
+  },
+  {
+   "id": "documentales",
+   "title": "Documentales que te vuelan la cabeza",
+   "about": "Historias reales difíciles de creer",
+   "art": "documental",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "documental"
+    ],
+    "minRating": 7.5,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Mind-blowing documentaries",
+    "full": "Mind-blowing documentaries",
+    "about": "True stories hard to believe"
+   }
+  },
+  {
+   "id": "familia",
+   "title": "Para ver en familia",
+   "about": "Que gustan a chicos y grandes",
+   "art": "familia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "familia"
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "Family night",
+    "full": "Family night",
+    "about": "Loved by kids and grown-ups"
+   }
+  },
+  {
+   "id": "aventura-epica",
+   "title": "Aventuras épicas",
+   "about": "Viajes grandes, de las de pantalla grande",
+   "art": "aventura",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "aventura"
+    ],
+    "fame": "blockbusters"
+   },
+   "en": {
+    "title": "Epic adventures",
+    "full": "Epic adventures",
+    "about": "Big journeys, made for the big screen"
+   }
+  },
+  {
+   "id": "estrenos-buenos",
+   "title": "Lo mejor de este año",
+   "about": "Lo nuevo que sí vale la pena",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "years": [
+     2026,
+     2026
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "This year's best",
+    "full": "This year's best",
+    "about": "New releases worth it"
+   }
+  },
+  {
+   "id": "misterio",
+   "title": "Misterios para resolver",
+   "about": "¿Quién lo hizo? Adivina antes del final",
+   "art": "misterio",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "misterio"
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "Mysteries to solve",
+    "full": "Mysteries to solve",
+    "about": "Whodunit? Guess before the end"
+   }
+  },
+  {
+   "id": "westerns",
+   "title": "Westerns para una tarde",
+   "about": "Duelos al sol y pueblos sin ley",
+   "art": "aventura",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "western"
+    ],
+    "minRating": 7.0,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "Westerns for an afternoon",
+    "full": "Westerns for an afternoon",
+    "about": "Duels and lawless towns"
+   }
+  },
+  {
+   "id": "belicas",
+   "title": "Películas de guerra que marcan",
+   "about": "Dramas en medio del conflicto",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "belica"
+    ],
+    "minRating": 7.3,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "War films that stay with you",
+    "full": "War films that stay with you",
+    "about": "Drama in the middle of conflict"
+   }
+  },
+  {
+   "id": "largas-domingo",
+   "title": "Para un domingo largo",
+   "about": "Películas de más de dos horas que valen cada minuto",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "length": "long",
+    "minRating": 7.8,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "For a long Sunday",
+    "full": "For a long Sunday",
+    "about": "Over two hours, worth every minute"
+   }
+  },
+  {
+   "id": "nicho",
+   "title": "Rarezas de culto",
+   "about": "Pocas personas las vieron, muchas las aman",
+   "art": "fantasia",
+   "filter": {
+    "format": "movie",
+    "fame": "niche"
+   },
+   "en": {
+    "title": "Cult oddities",
+    "full": "Cult oddities",
+    "about": "Few saw them, many love them"
+   }
+  },
+  {
+   "id": "accion-2010",
+   "title": "Acción de los 2010",
+   "about": "Persecuciones, golpes y explosiones",
+   "art": "accion",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "accion"
+    ],
+    "years": [
+     2010,
+     2019
+    ],
+    "minRating": 6.8
+   },
+   "en": {
+    "title": "2010s action",
+    "full": "2010s action",
+    "about": "Chases, fights and explosions"
+   }
+  },
+  {
+   "id": "drama-70",
+   "title": "Dramas de los 70",
+   "about": "El cine que cambió Hollywood",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "drama"
+    ],
+    "years": [
+     1970,
+     1979
+    ],
+    "fame": "classics"
+   },
+   "en": {
+    "title": "70s dramas",
+    "full": "70s dramas",
+    "about": "The films that changed Hollywood"
+   }
+  },
+  {
+   "id": "espanol",
+   "title": "Series en español",
+   "about": "De México, España y Latinoamérica",
+   "art": "drama",
+   "filter": {
+    "format": "series",
+    "countries": [
+     "MX",
+     "ES",
+     "AR",
+     "CO"
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "Spanish-language shows",
+    "full": "Spanish-language shows",
+    "about": "From Mexico, Spain and Latin America"
+   }
+  },
+  {
+   "id": "musicales",
+   "title": "Musicales para cantar",
+   "about": "Con canciones que se quedan",
+   "art": "comedia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "musical"
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "Musicals to sing along",
+    "full": "Musicals to sing along",
+    "about": "Songs that stick"
+   }
+  },
+  {
+   "id": "fantasia",
+   "title": "Mundos de fantasía",
+   "about": "Magia, dragones y otros universos",
+   "art": "fantasia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "fantasia"
+    ],
+    "minRating": 7.0
+   },
+   "en": {
+    "title": "Fantasy worlds",
+    "full": "Fantasy worlds",
+    "about": "Magic, dragons and other universes"
+   }
+  },
+  {
+   "id": "historia",
+   "title": "Historia contada en cine",
+   "about": "Lo que pasó, como película",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "historia"
+    ],
+    "minRating": 7.2,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "History on film",
+    "full": "History on film",
+    "about": "What happened, as a movie"
+   }
+  }
  ]
 }

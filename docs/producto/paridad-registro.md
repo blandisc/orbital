@@ -320,3 +320,5 @@ PA4-A, PA5-A, PA6-A, PA7-A y PA7-B. PA2 (Aprende en la TV) sigue sin decidir.
 Notas del análisis, sin propuesta: hay ocho renglones de este archivo que dicen «pendiente» en un lugar y «hecho» en otro
 (los de RX2/RX3, los 32/33 escenarios, 34/35 y N5-A, UX-37, el de la L108, «lo decide» de Biblioteca, «Lo que pediste» y
 «un solo nombre»); falta revisarlos uno por uno.
+
+- 25 nov 2026 · Listas de «Hoy» en Descubre (recetas de `listas/explorar.json` + «Porque viste…»): en el iPhone sí; en la TV pendiente (lee la tabla pero no arma las recetas).

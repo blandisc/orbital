@@ -78,6 +78,7 @@ public final class RepisaModel: ObservableModel {
             }
         }
         // Nunca una tarjeta vacía: la que no llegó y no tiene copia guardada no sale.
+        await loadToday(table)
         weekly.removeAll { $0.items.isEmpty }
         weeklyAt = clock()
         await loadEpisodesSeen()
@@ -97,6 +98,47 @@ public final class RepisaModel: ObservableModel {
         }
         episodesSeen = seen
         watched.formUnion(seen)
+    }
+
+    /// Cuántos títulos lleva una lista de «Hoy».
+    public nonisolated static let todayCount = 20
+
+    /// «Hoy» (LD-C y LV-A, Fernando, 25 nov 2026: «no sé qué ver»): las recetas del día y una hecha para ti («Porque viste…»),
+    /// antes de las listas famosas. Sin lo que ya viste. Se guardan el día: mañana salen otras.
+    private func loadToday(_ table: ExploreTable) async {
+        let watchedNow = watched
+        let hide: ([CanonCollection.Item]) -> [CanonCollection.Item] = { items in
+            Array(items.filter { !watchedNow.contains($0.imdb) }.prefix(Self.todayCount)).enumerated().map { i, it in var x = it; x.rank = i + 1; return x }
+        }
+        do { let tmdb = services.tmdb
+            await withTaskGroup(of: (String, [CanonCollection.Item]?).self) { group in
+                for recipe in table.recipesToday(clock()) where cached(recipe.list.id, fresh: true, ttl: 86400) == nil {
+                    group.addTask {
+                        guard let rows = try? await tmdb.discover(recipe.filter) else { return (recipe.list.id, nil) }
+                        let found = await ForYou.suggestions(rows, reason: .popular, tmdb: tmdb)
+                        return (recipe.list.id, found.map { .init(imdb: $0.imdb, kind: $0.kind, title: $0.title, year: $0.year) })
+                    }
+                }
+                for await (id, items) in group { if let items, !items.isEmpty { save(id, items) } }
+            }
+        }
+        var today: [(ExploreList, [CanonCollection.Item])] = table.recipesToday(clock()).compactMap { r in
+            let items = hide(cached(r.list.id, fresh: false) ?? [])
+            return items.isEmpty ? nil : (r.list, items)
+        }
+        if services.trakt != nil, let because = await services.forYou.becauseYouWatched() {
+            let items = hide(because.items.map { .init(imdb: $0.imdb, kind: $0.kind, title: $0.title, year: $0.year) })
+            if !items.isEmpty {
+                var list = ExploreList(id: "hoy-para-ti", title: "Porque viste \(because.seed.title)", about: "Lo que se le parece, sin lo que ya viste", art: "drama")
+                list.en = .init(title: "Because you watched \(because.seed.title)", full: "Because you watched \(because.seed.title)", about: "What's like it, minus what you've seen")
+                today.insert((list, items), at: min(1, today.count))
+            }
+        }
+        weeklyLists.removeAll { $0.id.hasPrefix("hoy-") }
+        weekly.removeAll { $0.id.hasPrefix("hoy-") }
+        let at = weeklyLists.firstIndex { !$0.dated } ?? weeklyLists.count
+        weeklyLists.insert(contentsOf: today.map(\.0), at: at)
+        weekly.insert(contentsOf: today.map { CanonCollection(id: $0.0.id, family: .list, grouping: .rank, items: $0.1) }, at: at)
     }
 
     /// Las de esta semana con lo que ya se tiene (escritas en la tabla o guardadas).
@@ -166,11 +208,11 @@ public final class RepisaModel: ObservableModel {
         collections[i].total = max(collections[i].total, items.count)
     }
 
-    private func cached(_ id: String, fresh: Bool) -> [CanonCollection.Item]? {
+    private func cached(_ id: String, fresh: Bool, ttl: TimeInterval = RepisaModel.listTTL) -> [CanonCollection.Item]? {
         guard let data = services.caches.data(Self.cacheKey(id)), let saved = try? JSONDecoder().decode(Cached.self, from: data) else { return nil }
         // Las que vienen de tus listas se quedan fijas: no caducan.
         let fixed = Canon.lists.first { $0.id == id }.map { if case .mine = $0.source { true } else { false } } ?? false
-        if fresh, !fixed, clock().timeIntervalSince(saved.at) > Self.listTTL { return nil }
+        if fresh, !fixed, clock().timeIntervalSince(saved.at) > ttl { return nil }
         return saved.rows.compactMap { r in
             guard r.count == 5 else { return nil }
             return .init(imdb: r[0], kind: r[1], title: r[2], year: Int(r[3]), rank: Int(r[4]))

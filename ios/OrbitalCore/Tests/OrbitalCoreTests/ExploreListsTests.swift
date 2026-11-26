@@ -99,4 +99,26 @@ final class ExploreListsTests: XCTestCase {
         XCTAssertEqual(item.poster, String(format: ForYou.metahubPoster, "tt0096697"))
         XCTAssertNil(CanonCollection.Item(imdb: "tt0111161", kind: "movie", title: "Sueño de fuga", year: 1994).episode)
     }
+
+    /// «Hoy» (LD-C, 25 nov 2026): cada receta tiene nombre en los dos idiomas, un ícono que existe, géneros que el filtro
+    /// conoce, y cada día salen dos distintas; ninguna se repite antes de que pasen todas.
+    func testLasRecetasDeHoyRotanYEstanBien() throws {
+        let table = try repoTable()
+        let recipes = try XCTUnwrap(table.recipes)
+        XCTAssertGreaterThanOrEqual(recipes.count, 20)
+        XCTAssertEqual(Set(recipes.map(\.id)).count, recipes.count, "dos recetas con el mismo id")
+        let slugs = Set(Tmdb.filterGenres.map(\.slug))
+        for r in recipes {
+            XCTAssertNotNil(r.en, "\(r.id) sin inglés")
+            XCTAssertTrue(r.filter.genres.isSubset(of: slugs), "\(r.id): género que no existe")
+        }
+        var seen: [String] = []
+        let day = 86400.0
+        for d in 0..<(recipes.count / 2) {
+            let today = table.recipesToday(Date(timeIntervalSince1970: Double(d) * day + 3600))
+            XCTAssertEqual(today.count, 2)
+            seen += today.map(\.id)
+        }
+        XCTAssertEqual(Set(seen).count, seen.count, "se repitió una receta antes de que pasaran todas")
+    }
 }
