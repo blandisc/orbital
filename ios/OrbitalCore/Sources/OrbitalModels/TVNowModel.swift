@@ -56,12 +56,20 @@ public final class TVNowModel: ObservableModel {
         catch { versionsFailed = true }
     }
 
-    /// Pone esa versión en la TV en el mismo minuto (corta 2–4 s).
-    public func switchVersion(_ version: OrbitalRemote.Version) async {
-        guard let now else { return }
+    /// Si la última versión pedida no se pudo poner (la TV no contestó o ya era otro capítulo).
+    public private(set) var versionSwitchFailed = false { didSet { if oldValue != versionSwitchFailed { changed() } } }
+    private var switching = false
+
+    /// Pone esa versión en la TV en el mismo minuto (corta 2–4 s). true: la TV la puso.
+    /// Solo si la lista es de lo que suena ahora: una versión del capítulo anterior abriría el archivo equivocado.
+    @discardableResult public func switchVersion(_ version: OrbitalRemote.Version) async -> Bool {
+        guard let now, !switching, versions?.id == (now.videoID ?? now.metaID) else { versionSwitchFailed = true; return false }
+        switching = true; defer { switching = false }
         let at = now.paused ? now.position : now.position + max(0, Date().timeIntervalSince(fetchedAt))
-        try? await services.orbital.switchVersion(version, now: now, at: at)
+        do { try await services.orbital.switchVersion(version, now: now, at: at); versionSwitchFailed = false }
+        catch { versionSwitchFailed = true }
         await tick()
+        return !versionSwitchFailed
     }
     /// Los sustos de la película que suena en la TV (Where's The Jump); nil: no hay mapa (o no es película).
     public private(set) var scares: [JumpScare]? { didSet { if oldValue != scares { changed() } } }

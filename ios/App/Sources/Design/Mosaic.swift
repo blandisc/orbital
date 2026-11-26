@@ -192,6 +192,7 @@ struct Mosaic: View {
     private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { _ = runtime.wake() } }
 
     private func configure(items: [Suggestion], columnCount: Int) {
+        entrySpeeds = nil   // la velocidad del muro es solo para la entrada; una lista nueva va con la deriva de siempre
         configuredIDs = Set(items.map(\.imdb))
         runtime.configure(items: items, columnCount: columnCount, gap: Double(DS.Space.s2), ring: Double(DS.Space.s2), growRatio: Double(DS.Mosaic.growRatio), focusedRowRatio: Double(DS.Mosaic.focusedRowRatio))
     }
@@ -230,7 +231,9 @@ struct Mosaic: View {
         }
         guard plan.contains(where: { !$0.items.isEmpty }) else { return }
         runtime.seed(plan)
-        entrySpeeds = speeds.contains(where: { $0 != 0 }) ? speeds : nil
+        // Una columna del muro quieta no deja quieta a la del mosaico: toma la deriva de siempre.
+        let usual = Self.usualSpeeds(count: speeds.count)
+        entrySpeeds = speeds.contains(where: { $0 != 0 }) ? speeds.enumerated().map { $1 == 0 ? usual[$0] : $1 } : nil
         entryShift = shifts.isEmpty ? 0 : shifts.reduce(0, +) / CGFloat(shifts.count)
     }
 
@@ -245,9 +248,13 @@ struct Mosaic: View {
     /// «Marea lenta» (Fernando, 1 nov 2026): todas casi a la misma velocidad, despacio, y una sube mientras la de al lado baja.
     private var driftSpeeds: [Double] {
         if let entrySpeeds, entrySpeeds.count == runtime.columns.count { return entrySpeeds }
+        return Self.usualSpeeds(count: runtime.columns.count)
+    }
+
+    static func usualSpeeds(count: Int) -> [Double] {
         let pattern: [Double] = DesignTokens.Mosaic.driftPattern
         let alternates: Bool = DesignTokens.Mosaic.driftAlternates
-        return (0..<max(1, runtime.columns.count)).map { (c: Int) -> Double in
+        return (0..<max(1, count)).map { (c: Int) -> Double in
             let speed: Double = pattern[c % pattern.count]
             let sign: Double = alternates && c % 2 == 1 ? -1 : 1
             return speed * sign

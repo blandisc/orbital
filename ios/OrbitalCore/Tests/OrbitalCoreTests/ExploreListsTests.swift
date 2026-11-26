@@ -147,6 +147,13 @@ final class TrackCycleTests: XCTestCase {
         XCTAssertNil(TrackCycle.toggleSubtitles([]))
     }
 
+    /// Palabras completas: «Estonio» no cuenta como español ni «Endonesio» como inglés (26 nov 2026).
+    func testSubtitulosBuscanElIdiomaPorPalabraCompleta() {
+        let s = [T(id: "et", label: "Estonio", selected: false), T(id: "es", label: "Español", selected: false), T(id: "en", label: "English", selected: false)]
+        XCTAssertEqual(TrackCycle.toggleSubtitles(s), "es")
+        XCTAssertEqual(TrackCycle.toggleSubtitles([T(id: "x", label: "Endonesio", selected: false), s[2]], language: "en"), "en")
+    }
+
     /// Regla «Una tecla del control no se parte en dos renglones»: el nombre de la pista llega en una palabra.
     func testElNombreDeLaPistaCabeEnUnaPalabra() {
         for (label, want) in [("Español latino", "Latino"), ("Español (España)", "Castellano"), ("Inglés 5.1 · SDH", "Inglés"),

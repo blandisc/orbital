@@ -38,7 +38,8 @@ struct ExploreWeekly: View {
     }
 
     static func isStrip(_ collection: CanonCollection) -> Bool {
-        !collection.items.isEmpty && collection.total <= DS.Collections.stripMax
+        // Las de «Hoy» (por ánimo y recetas) traen un tope de títulos, no son cortas: van en tarjeta, en su rueda.
+        !collection.items.isEmpty && collection.total <= DS.Collections.stripMax && !collection.id.hasPrefix(RepisaModel.todayPrefix)
     }
 
     /// La imagen de un capítulo («serie:temporada:episodio»), la misma fuente que el resto de los capítulos.

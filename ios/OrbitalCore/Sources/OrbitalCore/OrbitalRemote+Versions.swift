@@ -68,7 +68,11 @@ public enum TrackCycle {
     public static func toggleSubtitles(_ tracks: [OrbitalRemote.NowPlaying.Track], language: String = "es") -> String? {
         if tracks.contains(where: \.selected) { return "no" }
         let words = language == "en" ? ["english", "inglés", "eng", "en"] : ["español", "spanish", "spa", "es", "latino"]
-        let mine = tracks.first { t in let l = t.label.lowercased(); return words.contains { l.hasPrefix($0) || l.contains(" \($0)") } }
+        // Palabras completas: «Estonio» no es «es», ni «Endonesio» «en».
+        let mine = tracks.first { t in
+            let l = t.label.lowercased().components(separatedBy: CharacterSet.letters.inverted).filter { !$0.isEmpty }
+            return l.contains { words.contains($0) }
+        }
         return (mine ?? tracks.first)?.id
     }
 

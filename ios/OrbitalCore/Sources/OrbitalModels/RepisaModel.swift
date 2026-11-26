@@ -5,6 +5,8 @@ import OrbitalCore
 /// semana en el iPhone), con lo que ya viste para pintar cada póster. Marcar algo como visto se ve al momento.
 @MainActor
 public final class RepisaModel: ObservableModel {
+    /// Las listas de «Hoy» (por ánimo y recetas): llevan un tope de títulos, no son listas cortas.
+    public static let todayPrefix = "hoy-"
     public private(set) var collections: [CanonCollection] { didSet { changed() } }
     public private(set) var watched: Set<String> = [] { didSet { changed() } }
     public private(set) var loaded = false { didSet { changed() } }
@@ -126,8 +128,8 @@ public final class RepisaModel: ObservableModel {
             let items = hide(cached(r.list.id, fresh: false) ?? [])
             return items.isEmpty ? nil : (r.list, items)
         }
-        weeklyLists.removeAll { $0.id.hasPrefix("hoy-") }
-        weekly.removeAll { $0.id.hasPrefix("hoy-") }
+        weeklyLists.removeAll { $0.id.hasPrefix(Self.todayPrefix) }
+        weekly.removeAll { $0.id.hasPrefix(Self.todayPrefix) }
         let at = weeklyLists.firstIndex { !$0.dated } ?? weeklyLists.count
         weeklyLists.insert(contentsOf: today.map(\.0), at: at)
         weekly.insert(contentsOf: today.map { CanonCollection(id: $0.0.id, family: .list, grouping: .rank, items: $0.1) }, at: at)

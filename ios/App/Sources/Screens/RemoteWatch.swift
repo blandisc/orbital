@@ -47,12 +47,16 @@ struct RemoteWatchSheet: View {
                             }
                         }
                     }
-                    versions
+                    // En vivo o sin ficha (un juego, un archivo propio) no hay otras versiones: sin sección vacía.
+                    if !now.live, now.metaID != nil { versions }
                 }
             }
             .dsSheetContent()
         }
-        .task { await model.loadVersions() }
+        // Por capítulo: si la TV pasa al siguiente con la hoja abierta, se piden las suyas (no se pone una del anterior).
+        .task(id: model.now.map { $0.videoID ?? $0.metaID ?? $0.title }) { await model.loadVersions() }
+        // Si en la TV se acaba lo que suena, la hoja ya no tiene de qué hablar.
+        .onChange(of: model.now == nil) { _, gone in if gone { dismiss() } }
         .accessibilityIdentifier("remote-watch-sheet")
     }
 
@@ -83,12 +87,15 @@ struct RemoteWatchSheet: View {
         } else if model.versionsFailed {
             DSNotice(text: "No pude traer las versiones de tu TV. Revisa que esté prendida.", tone: .warn)
         } else if let list = model.versions?.list, !list.isEmpty {
+            if model.versionSwitchFailed {
+                DSNotice(text: "Tu TV no cambió de versión. Revisa que esté prendida e intenta otra vez.", tone: .warn)
+            }
             VersionGroup(inset: SubtitleRow.textInset) {
                 ForEach(Array(list.prefix(DS.Remote.versionsShown).enumerated()), id: \.element.id) { i, v in
                     SubtitleRow(lead: .symbol(i == 0 ? "sparkles" : "film"), title: Self.quality(v), detail: Self.detail(v, first: i == 0),
                                 identifier: "watch-version-\(i)", action: {
-                                    Task { await model.switchVersion(v) }
-                                    dismiss()
+                                    // Se cierra cuando la TV la puso; si no, se queda abierta y lo dice.
+                                    Task { if await model.switchVersion(v) { dismiss() } }
                                 }, trailing: AnyView(QualityBadges(items: Self.badges(v)).padding(.trailing, DS.Space.s2)))
                 }
             }
@@ -105,7 +112,7 @@ struct RemoteWatchSheet: View {
         var head = parts[0].split(separator: " ").map(String.init)
         var extra = Array(parts.dropFirst())
         // Lo técnico del final del nombre («5.1», «Atmos», «SDH») baja a la segunda línea.
-        while let last = head.last, head.count > 1, last.first?.isNumber == true || last == last.uppercased() || last == "Atmos" {
+        while let last = head.last, head.count > 1, last.first?.isNumber == true || (last == last.uppercased() && last != last.lowercased()) || last == "Atmos" {
             extra.insert(head.removeLast(), at: 0)
         }
         return (head.joined(separator: " "), extra.isEmpty ? nil : extra.joined(separator: " · "))
@@ -152,7 +159,9 @@ struct RemoteWatchKeys: View {
         let audio = now.audioTracks.first(where: \.selected)
         let subs = now.subtitleTracks.first(where: \.selected)
         RemoteKey(symbol: "waveform", title: audio.map { Text(verbatim: RemoteWatchKeys.short($0.label)) } ?? Text("Idioma"), longPress: open) {
-            if let next = TrackCycle.nextAudio(now.audioTracks) { Task { await model.control("audio", track: next) } } else { open() }
+            // Una TV de antes no manda sus pistas: la tecla de la TV las cambia allá, como siempre.
+            if now.audioTracks.isEmpty { Task { await model.press(.alt) } }
+            else if let next = TrackCycle.nextAudio(now.audioTracks) { Task { await model.control("audio", track: next) } } else { open() }
         }
         .accessibilityLabel(Text("Idioma"))
         .accessibilityValue(audio.map { Text(verbatim: $0.label) } ?? Text("Sin elegir"))
@@ -160,7 +169,8 @@ struct RemoteWatchKeys: View {
         .accessibilityIdentifier("remote-audio")
         RemoteKey(symbol: subs == nil ? "captions.bubble" : "captions.bubble.fill",
                   title: subs.map { Text(verbatim: RemoteWatchKeys.short($0.label)) } ?? Text("Sin subtítulos"), longPress: open) {
-            if let next = TrackCycle.toggleSubtitles(now.subtitleTracks, language: env.services.appSettings.uiLanguage) {
+            if now.subtitleTracks.isEmpty { Task { await model.press(.alt) } }
+            else if let next = TrackCycle.toggleSubtitles(now.subtitleTracks, language: env.services.appSettings.uiLanguage) {
                 Task { await model.control("subtitles", track: next) }
             } else { open() }
         }

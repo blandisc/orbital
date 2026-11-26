@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Tu TV no cambió de versión. Revisa que esté prendida e intenta otra vez.": "Your TV didn't switch versions. Check that it's on and try again.",
     "Sí, avísame": "Yes, let me know", "La búsqueda de versiones no contesta": "The version search isn't answering",
     "¿Te aviso cuando esté listo?": "Should I let you know when it's ready?",
     "Aún no hay versiones de esta película. Prueba más tarde.": "There are no versions of this movie yet. Try again later.",
