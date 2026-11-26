@@ -237,6 +237,21 @@ def test_with_the_player_in_front_the_iphone_sees_the_player_legend(library):
     assert companion.ui_state(library, orbital_front, {"screen": "home"}) == {"screen": "home"}
 
 
+def test_home_from_the_iphone_brings_the_small_video_back(library):
+    """Con el video en pequeño y Orbital al frente, Inicio del control del iPhone hace lo del mando: lo regresa a pantalla
+    completa (antes iba a la interfaz y el video se quedaba en la esquina)."""
+    p, _ = _play_episode(library)
+    homes, events = [], []
+    library.events.publish = events.append
+    shell = SimpleNamespace(win=SimpleNamespace(foreground=lambda: 1), is_orbital=lambda hwnd: True, home=lambda: homes.append(True))
+    p.pip = True
+    assert companion.remote_input(library, shell, "home") == "player"
+    assert homes == [True] and events == []
+    p.pip = False
+    assert companion.remote_input(library, shell, "home") == "ui"
+    assert homes == [True] and events == [{"type": "input", "action": "home"}]
+
+
 def test_text_can_replace_the_whole_field(library):
     events = []
     library.events.publish = events.append

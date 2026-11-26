@@ -179,9 +179,12 @@ def remote_input(catalog, shell, action: str) -> str:
     if action not in REMOTE_ACTIONS:
         raise ValueError("Ese botón no existe")
     front = _front(catalog, shell)
-    if action == "home" and front != "ui":
-        shell.home()  # como el botón Home del mando: Orbital al frente (el juego o el video se pausan)
-        return front
+    if action == "home" and (front != "ui" or _video_in_corner(catalog)):
+        # Como el botón Home del mando: Orbital al frente (el juego o el video se pausan o se van a la esquina) y, con el
+        # video en pequeño, de vuelta a pantalla completa. Antes, en pequeño, Inicio del iPhone iba a la interfaz y el video
+        # se quedaba en la esquina sin salida desde el control (Fernando, 25 nov 2026).
+        shell.home()
+        return "player" if front == "ui" else front
     if front == "player":
         catalog.watch.player.phone_button(action)
     elif front == "ui":
@@ -195,6 +198,12 @@ def remote_text(catalog, text: str, submit: bool, replace: bool = False) -> None
     iPhone manda el campo entero en cada cambio); si no, se agrega letra por letra."""
     text = str(text or "")[:REMOTE_TEXT_MAX]
     catalog.events.publish({"type": "text", "text": text, "submit": bool(submit), "replace": bool(replace)})
+
+
+def _video_in_corner(catalog) -> bool:
+    """El video sigue en pequeño en una esquina (Home durante un video, «En pequeño») con Orbital al frente."""
+    watch = getattr(catalog, "watch", None)
+    return bool(getattr(getattr(watch, "player", None), "pip", False))
 
 
 def _front(catalog, shell) -> str:
