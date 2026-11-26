@@ -341,7 +341,7 @@ struct WatchingRatedView: View {
                     if !group.isEmpty {
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSSectionHead(title: Text(verbatim: String(repeating: "★", count: star)), count: group.count, level: .section)
-                            DSPosterGrid(items: group) { item, width in
+                            DSPosterGrid(items: group) { item, width in   // ds-exception: filtro propio (las estrellas de arriba eligen el grupo)
                                 Button {
                                     onOpenTitle(TitleRoute(kind: item.kind, metaID: item.id, title: item.title, poster: String(format: ForYou.metahubPoster, item.id)))
                                 } label: {

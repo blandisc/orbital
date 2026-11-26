@@ -54,8 +54,10 @@ struct ListGridView: View {
                     } else if items.isEmpty && !model.isLoading(shelf: plan) {
                         DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"))
                     } else if plan.style == .top10 {
-                        // Un ranking se lee en su orden: sin ordenar ni filtrar.
-                        DSPosterGrid(items: items) { s, width in poster(s, plan, width: width) }
+                        // Un ranking se lee en su orden: sin ordenar, pero sí se filtra (cada uno guarda su puesto).
+                        FilteredRanking(items: items, collections: collections.model) { shown in
+                            DSPosterGrid(items: shown) { s, width in poster(s, plan, width: width) }
+                        }
                     } else {
                         SortableGrid(listID: plan.id, items: items, collections: collections.model, watched: { await collections.model.watchedIDs() },
                              imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
@@ -81,6 +83,7 @@ struct PlatformRoute: Hashable { var brand: String }
 /// series y películas), los pósters con su número grande en el color de la plataforma. Tocar uno abre su ficha.
 struct PlatformRankingsView: View {
     @Environment(\.titleName) var titleName
+    @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<ParaTiModel>
     let hub: PlatformHub
     private var model: ParaTiModel { observer.model }
@@ -154,9 +157,10 @@ struct PlatformRankingsView: View {
         if items.isEmpty && !model.isLoading(ranking: ranking) {
             DSEmptyState(symbol: "tray", title: Text("Hoy no hay ranking de este servicio."))
         }
+        FilteredRanking(items: items, collections: env.collections, showsKindFilter: false) { shown in
         LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2, wideMin: DS.Poster.rankedWideMin), spacing: DS.Space.s6) {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, s in
                 TitleNavigationLink(route: s.route) {
                     RankedPosterCard(rank: s.rank ?? index + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint, zoom: s.route)
                 }
@@ -164,6 +168,7 @@ struct PlatformRankingsView: View {
             }
         }
         .padding(.horizontal, DS.Space.gutter)
+        }
         .id(ranking.id)
         .transition(.opacity)
     }

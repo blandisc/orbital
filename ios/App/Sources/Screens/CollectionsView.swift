@@ -71,7 +71,7 @@ struct CollectionGridView: View {
                     DSKindFilter(kind: $kind, includeAll: false).padding(.horizontal, DS.Space.gutter)
                 }
                 if route.kind == .genre {
-                    rankedGrid   // un Top: en su orden, con el puesto (como la TV), sin ordenar ni filtrar
+                    rankedGrid   // un Top: en su orden, con el puesto (como la TV), sin ordenar pero con filtro
                 } else {
                     // Un año ya trae su Películas · Series arriba: el menú no repite ese filtro.
                     SortableGrid(listID: "\(route.kind):\(route.id)", items: items, collections: collections.model, watched: { await collections.model.watchedIDs() },
@@ -168,8 +168,9 @@ struct CollectionGridView: View {
             if isLoading { DSLoadingState() }
             else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
         } else {
+            FilteredRanking(items: items, collections: collections.model) { shown in
             LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s2, wideMin: DS.Poster.rankedWideMin), spacing: DS.Space.s6) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
+                ForEach(Array(shown.enumerated()), id: \.element.id) { index, s in
                     TitleNavigationLink(route: s.route) {
                         RankedPosterCard(rank: s.rank ?? index + 1, title: titleName(s.title, id: s.imdb, kind: s.kind), poster: s.poster, zoom: s.route)
                     }
@@ -177,6 +178,7 @@ struct CollectionGridView: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
+            }
         }
     }
 

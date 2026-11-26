@@ -455,6 +455,23 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, "El aire de arriba de una hoja es uno solo (dsSheetContent / DS.Space.sheetTop):\n" + problems.joined(separator: "\n"))
     }
 
+    /// Toda lista de títulos abierta trae el filtro de la app (Fernando, 25 nov 2026: «en todo lugar donde hay una lista le
+    /// pongas filtro»): una cuadrícula de pósters va dentro de `SortableGrid` (ordena y filtra), `FilteredRanking` (un ranking:
+    /// filtra sin perder el puesto) o junto a un `ListFilterMenu`. Las filas de lado no cuentan: su «Ver todo» ya filtra.
+    func testEveryTitleListHasTheFilter() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources/Screens")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
+            .filter { $0.pathExtension == "swift" }
+        var problems: [String] = []
+        for url in files {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            let isList = text.contains("DSPosterGrid(") || (text.contains("LazyVGrid(") && text.contains("RankedPosterCard("))
+            let filtered = ["SortableGrid(", "FilteredRanking(", "ListFilterMenu(", "ds-exception: filtro propio"].contains { text.contains($0) }
+            if isList && !filtered { problems.append(url.lastPathComponent) }
+        }
+        XCTAssertTrue(problems.isEmpty, "Una lista de títulos sin el filtro de la app:\n" + problems.sorted().joined(separator: "\n"))
+    }
+
     /// Los premios del iPhone son los de design/awards.json (los mismos que lee la TV): si cambia uno, se regenera con
     /// scripts/ios_awards.py.
     func testAwardsMatchTheSharedJSON() throws {

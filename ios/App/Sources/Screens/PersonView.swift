@@ -39,6 +39,8 @@ struct PersonView: View {
     @State private var bioCut = false
     @State private var bioFull: CGFloat = 0
     @State private var bioShown: CGFloat = 0
+    /// El mismo filtro que toda lista, sobre la filmografía.
+    @State private var creditFilter = ListFilter()
 
     init(route: PersonRoute) {
         self.route = route
@@ -61,7 +63,22 @@ struct PersonView: View {
                 }
                 .padding(.horizontal, DS.Space.gutter)
                 if let credits = person?.credits, !credits.isEmpty {
-                    DSPosterGrid(items: credits) { title, width in TmdbPoster(title: title, width: width) }
+                    // La filmografía con el filtro de toda lista: series o películas y década (de TMDB no llegan géneros ni calificación).
+                    let shown = credits.filter { creditFilter.keeps(kind: $0.kind, genres: [], rating: nil, year: $0.year, watched: false) }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        if creditFilter.isActive { ListFilterChips(filter: $creditFilter) }
+                        if shown.isEmpty {
+                            DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Quita alguno de arriba para ver más."))
+                        } else {
+                            DSPosterGrid(items: shown) { title, width in TmdbPoster(title: title, width: width) }
+                        }
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            ListFilterMenu(sort: .constant(.added), filter: $creditFilter, sorts: [], genres: [], decades: ListFilter.decades(credits.map(\.year)),
+                                           showsKindFilter: Set(credits.map(\.kind)).count > 1, hideWatchedAvailable: false, showsRatingFilter: false)
+                        }
+                    }
                 } else if person != nil {
                     DSEmptyState(symbol: "film", title: Text("Sin filmografía"), message: Text("TMDB no tiene títulos de esta persona."))
                 }

@@ -265,6 +265,8 @@ struct ListFilterMenu: View {
     /// «Estado»: Por ver · A medias · Vistas (donde se sabe cuánto llevas de cada título).
     var showsStateFilter = false
     var hideWatchedAvailable = true
+    /// Sin «Calificación» donde no hay de dónde sacarla (la filmografía de una persona, que viene de TMDB).
+    var showsRatingFilter = true
     /// Mientras llegan las calificaciones o los géneros: la ruedita en el botón.
     var loading = false
     /// «A mano…» al final de «Ordenar» (tu orden queda en Trakt); nil donde la lista no es tuya.
@@ -313,11 +315,13 @@ struct ListFilterMenu: View {
                 } label: { Label("Género", systemImage: "theatermasks") }
                 .pickerStyle(.menu)
             }
-            Picker(selection: $filter.minRating) {
-                Text("Cualquiera").tag(Double?.none)
-                ForEach([6.0, 7.0, 8.0], id: \.self) { ratingName($0).tag(Double?.some($0)) }
-            } label: { Label("Calificación", systemImage: "star") }
-            .pickerStyle(.menu)
+            if showsRatingFilter {
+                Picker(selection: $filter.minRating) {
+                    Text("Cualquiera").tag(Double?.none)
+                    ForEach([6.0, 7.0, 8.0], id: \.self) { ratingName($0).tag(Double?.some($0)) }
+                } label: { Label("Calificación", systemImage: "star") }
+                .pickerStyle(.menu)
+            }
             if decades.count > 1 {
                 Picker(selection: $filter.decade) {
                     Text("Todas").tag(Int?.none)
@@ -446,4 +450,50 @@ extension View {
 
     /// La lista: sin el alto mínimo de renglón del sistema (44 pt), que dejaba aire arriba y abajo del rótulo.
     func listHeadRows() -> some View { environment(\.defaultMinListRowHeight, 0) }
+}
+
+/// Un ranking (Top 10, una plataforma, el Top de un género) con el mismo filtro que toda lista, pero sin ordenar: se lee en
+/// su orden y cada título guarda su puesto aunque el filtro esconda los de arriba (Fernando, 25 nov 2026: «en todo lugar
+/// donde hay una lista le pongas filtro»). El botón va arriba a la derecha y lo filtrado en cápsulas, como en `SortableGrid`.
+struct FilteredRanking<Content: View>: View {
+    let items: [Suggestion]
+    let collections: CollectionsModel
+    /// Sin «Series o películas» en el menú cuando la pantalla ya trae sus pestañas.
+    var showsKindFilter = true
+    @ViewBuilder var content: ([Suggestion]) -> Content
+    @State private var filter = ListFilter()
+    @State private var seen: Set<String> = []
+    @State private var imdb: [String: Double] = [:]
+    @State private var rating = false
+
+    /// Cada título con su puesto de la lista entera (el que traiga o su lugar).
+    static func ranked(_ items: [Suggestion]) -> [Suggestion] {
+        items.enumerated().map { i, s in var s = s; if s.rank == nil { s.rank = i + 1 }; return s }
+    }
+
+    var body: some View {
+        let shown = filter.apply(Self.ranked(items), sort: .added, watched: seen, imdb: imdb)
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            if filter.isActive { ListFilterChips(filter: $filter) }
+            if !items.isEmpty, shown.isEmpty {
+                DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Quita alguno de arriba para ver más."))
+            } else {
+                content(shown)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ListFilterMenu(sort: .constant(.added), filter: $filter, sorts: [], genres: ListFilter.commonGenres(items.map(\.genres)),
+                               decades: ListFilter.decades(items.map(\.year)), showsKindFilter: showsKindFilter && Set(items.map(\.kind)).count > 1,
+                               hideWatchedAvailable: collections.traktLinked, loading: rating)
+            }
+        }
+        .task(id: filter.hideWatched) { if filter.hideWatched { seen = await collections.watchedIDs() } }
+        .task(id: filter.minRating == nil ? -1 : items.count) {
+            guard filter.minRating != nil, !items.isEmpty else { return }
+            rating = true
+            defer { rating = false }
+            imdb = await collections.imdbRatings(items.map { ($0.kind, $0.imdb) })
+        }
+    }
 }
