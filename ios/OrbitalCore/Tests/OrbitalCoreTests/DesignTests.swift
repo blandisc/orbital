@@ -455,6 +455,13 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, "El aire de arriba de una hoja es uno solo (dsSheetContent / DS.Space.sheetTop):\n" + problems.joined(separator: "\n"))
     }
 
+    /// Cada estreno de la línea de Inicio dice cuándo sale (Fernando, 25 nov 2026: el de El Señor de los Anillos salía sin
+    /// fecha): sin hora conocida dice «Hoy», nunca un rótulo en blanco.
+    func testEveryUpcomingCardSaysWhen() throws {
+        let text = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/HomeTimeline.swift"), encoding: .utf8)
+        XCTAssertFalse(text.contains("return Text(verbatim: \" \")"), "Una tarjeta de la línea de estrenos quedó sin fecha")
+    }
+
     /// Toda lista de títulos abierta trae el filtro de la app (Fernando, 25 nov 2026: «en todo lugar donde hay una lista le
     /// pongas filtro»): una cuadrícula de pósters va dentro de `SortableGrid` (ordena y filtra), `FilteredRanking` (un ranking:
     /// filtra sin perder el puesto) o junto a un `ListFilterMenu`. Las filas de lado no cuentan: su «Ver todo» ya filtra.

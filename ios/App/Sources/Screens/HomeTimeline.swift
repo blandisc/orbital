@@ -145,12 +145,13 @@ struct ReleaseTimeline: View {
     }
 
     /// «Ayer», «Mañana» o el día de la semana. Lo de hoy dice su hora («21:00»): «Hoy» ya lo dice la marca de la línea, y
-    /// repetido en cada tarjeta sobraba (I13, revisión del 10 nov). Sin hora conocida (medianoche o de madrugada), nada.
+    /// repetido en cada tarjeta sobraba (I13, revisión del 10 nov). Sin hora conocida (medianoche o de madrugada), «Hoy»: antes
+    /// quedaba en blanco y parecía que no tenía fecha (Fernando, 25 nov 2026, con El Señor de los Anillos).
     private func when(_ a: Airing) -> Text {
         let calendar = Calendar.current
         if calendar.isDateInToday(a.day) {
             let parts = calendar.dateComponents([.hour, .minute], from: a.aired)
-            guard !a.atDawn, calendar.isDateInToday(a.aired), parts.hour != 0 || parts.minute != 0 else { return Text(verbatim: " ") }
+            guard !a.atDawn, calendar.isDateInToday(a.aired), parts.hour != 0 || parts.minute != 0 else { return Text("Hoy") }
             return Text(verbatim: Strings.date(a.aired, .time, language: env.services.appSettings.uiLanguage))
         }
         return calendar.isDateInYesterday(a.day) ? Text("Ayer") : dayName(a.day, locale: env.uiLocale)
