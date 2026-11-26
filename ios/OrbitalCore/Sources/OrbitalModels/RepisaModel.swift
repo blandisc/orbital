@@ -103,8 +103,8 @@ public final class RepisaModel: ObservableModel {
     /// Cuántos títulos lleva una lista de «Hoy».
     public nonisolated static let todayCount = 20
 
-    /// «Hoy» (LD-C y LV-A, Fernando, 25 nov 2026: «no sé qué ver»): las recetas del día y una hecha para ti («Porque viste…»),
-    /// antes de las listas famosas. Sin lo que ya viste. Se guardan el día: mañana salen otras.
+    /// «Hoy» (LD-C y LV-A, Fernando, 25 nov 2026: «no sé qué ver»): las recetas del día, antes de las listas famosas. Sin
+    /// «Porque viste…» (Fernando, 26 nov 2026: ya vive en Inicio; aquí van grupos hechos por ánimo, «MOOD» en la tabla). Sin lo que ya viste. Se guardan el día: mañana salen otras.
     private func loadToday(_ table: ExploreTable) async {
         let watchedNow = watched
         let hide: ([CanonCollection.Item]) -> [CanonCollection.Item] = { items in
@@ -125,14 +125,6 @@ public final class RepisaModel: ObservableModel {
         var today: [(ExploreList, [CanonCollection.Item])] = table.recipesToday(clock()).compactMap { r in
             let items = hide(cached(r.list.id, fresh: false) ?? [])
             return items.isEmpty ? nil : (r.list, items)
-        }
-        if services.trakt != nil, let because = await services.forYou.becauseYouWatched() {
-            let items = hide(because.items.map { .init(imdb: $0.imdb, kind: $0.kind, title: $0.title, year: $0.year) })
-            if !items.isEmpty {
-                var list = ExploreList(id: "hoy-para-ti", title: "Porque viste \(because.seed.title)", about: "Lo que se le parece, sin lo que ya viste", art: "drama")
-                list.en = .init(title: "Because you watched \(because.seed.title)", full: "Because you watched \(because.seed.title)", about: "What's like it, minus what you've seen")
-                today.insert((list, items), at: min(1, today.count))
-            }
         }
         weeklyLists.removeAll { $0.id.hasPrefix("hoy-") }
         weekly.removeAll { $0.id.hasPrefix("hoy-") }

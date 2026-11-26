@@ -1,5 +1,5 @@
 {
- "_": "Las listas de «Descubre» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). «art» es el ícono y el color de su tarjeta (uno de Temporadas o Géneros: halloween, navidad, terror, drama…). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/. «en» lleva el nombre, el completo y el «de qué se trata» en inglés, para quien usa la app en inglés.",
+ "_": "Las listas de «Descubre» en Explorar (iPhone, iPad, Mac y la TV). Las que tienen fechas (MM-DD, de from a to) salen en su temporada y van primero; las demás rotan: cada semana salen «rotate» distintas, en el orden de esta tabla. Una lista sale de MDBList («usuario/lista»), de Trakt («trakt»: «usuario/lista») o va escrita aquí («items»: id de IMDb, o «serie:temporada:episodio» para un capítulo). «art» es el ícono y el color de su tarjeta (uno de Temporadas o Géneros: halloween, navidad, terror, drama…). Cambiar esta tabla en main cambia Explorar en un día, sin instalar nada. Ver docs/producto/explorar-listas-2026-11-23/. «en» lleva el nombre, el completo y el «de qué se trata» en inglés, para quien usa la app en inglés. Las recetas «animo-…» son grupos por ánimo («Para cuando andas triste»): cada día sale primero una de ellas y luego las demás (Fernando, 26 nov 2026).",
  "rotate": 4,
  "lists": [
   {
@@ -1070,8 +1070,37 @@
    ]
   }
  ],
- "daily": 2,
+ "daily": 3,
  "recipes": [
+  {
+   "id": "animo-triste",
+   "title": "Para cuando andas triste",
+   "about": "Las que te dejan de buenas",
+   "art": "comedia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "comedia",
+     "familia",
+     "animacion",
+     "musical"
+    ],
+    "excluded": [
+     "terror",
+     "belica",
+     "crimen",
+     "suspenso",
+     "drama"
+    ],
+    "minRating": 7.0,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "For when you're feeling down",
+    "full": "For when you're feeling down",
+    "about": "The ones that leave you smiling"
+   }
+  },
   {
    "id": "comedias-2000",
    "title": "Comedias inolvidables de los 2000",
@@ -1118,6 +1147,28 @@
    }
   },
   {
+   "id": "animo-miedo",
+   "title": "Una buena de terror para hoy",
+   "about": "Para ver con la luz apagada",
+   "art": "terror",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "terror"
+    ],
+    "excluded": [
+     "comedia"
+    ],
+    "minRating": 6.8,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "A good horror movie tonight",
+    "full": "A good horror movie tonight",
+    "about": "Best watched with the lights off"
+   }
+  },
+  {
    "id": "cortas-hoy",
    "title": "Menos de 90 minutos para hoy",
    "about": "Buenas y cortas, para no desvelarte",
@@ -1147,6 +1198,30 @@
     "title": "Gems hardly anyone saw",
     "full": "Gems hardly anyone saw",
     "about": "Highly rated, little known"
+   }
+  },
+  {
+   "id": "animo-reir",
+   "title": "Para reírte a carcajadas",
+   "about": "Comedia pura, sin dramas",
+   "art": "comedia",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "comedia"
+    ],
+    "excluded": [
+     "drama",
+     "romance",
+     "terror"
+    ],
+    "minRating": 6.8,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "For a good laugh",
+    "full": "For a good laugh",
+    "about": "Pure comedy, no drama"
    }
   },
   {
@@ -1191,6 +1266,31 @@
    }
   },
   {
+   "id": "animo-llorar",
+   "title": "Para llorar a gusto",
+   "about": "Ten los pañuelos cerca",
+   "art": "drama",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "drama",
+     "romance"
+    ],
+    "excluded": [
+     "comedia",
+     "terror",
+     "accion"
+    ],
+    "minRating": 7.6,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "For a good cry",
+    "full": "For a good cry",
+    "about": "Keep the tissues close"
+   }
+  },
+  {
    "id": "cine-mexicano",
    "title": "Lo mejor del cine mexicano",
    "about": "De la época de oro a hoy",
@@ -1224,6 +1324,29 @@
     "title": "Korean films to see",
     "full": "Korean films to see",
     "about": "Thrillers, dramas and everything between"
+   }
+  },
+  {
+   "id": "animo-tension",
+   "title": "Para no despegarte del asiento",
+   "about": "Tensión de principio a fin",
+   "art": "suspenso",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "suspenso"
+    ],
+    "excluded": [
+     "comedia",
+     "familia"
+    ],
+    "minRating": 7.0,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "Edge of your seat",
+    "full": "Edge of your seat",
+    "about": "Tension from start to finish"
    }
   },
   {
@@ -1265,6 +1388,29 @@
    }
   },
   {
+   "id": "animo-pareja",
+   "title": "Para una noche en pareja",
+   "about": "Románticas que no empalagan",
+   "art": "romance",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "romance"
+    ],
+    "excluded": [
+     "terror",
+     "belica"
+    ],
+    "minRating": 7.0,
+    "sort": "popular"
+   },
+   "en": {
+    "title": "For a night in, together",
+    "full": "For a night in, together",
+    "about": "Romance that isn't too sweet"
+   }
+  },
+  {
    "id": "romcom",
    "title": "Comedias románticas para una noche tranquila",
    "about": "Ligeras y con final feliz",
@@ -1302,6 +1448,25 @@
    }
   },
   {
+   "id": "animo-desconectar",
+   "title": "Para apagar el cerebro",
+   "about": "Acción y aventura sin pensarle",
+   "art": "accion",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "accion",
+     "aventura"
+    ],
+    "fame": "blockbusters"
+   },
+   "en": {
+    "title": "To switch your brain off",
+    "full": "To switch your brain off",
+    "about": "Action and adventure, no thinking required"
+   }
+  },
+  {
    "id": "series-cortas",
    "title": "Series que se terminan en un fin de semana",
    "about": "Terminadas y bien calificadas",
@@ -1334,6 +1499,26 @@
     "title": "Comedy shows for steady laughs",
     "full": "Comedy shows for steady laughs",
     "about": "Short episodes, sure laughs"
+   }
+  },
+  {
+   "id": "animo-pensar",
+   "title": "Para quedarte pensando",
+   "about": "Las que no te sueltas al terminar",
+   "art": "ciencia-ficcion",
+   "filter": {
+    "format": "movie",
+    "genres": [
+     "ciencia-ficcion",
+     "misterio"
+    ],
+    "minRating": 7.6,
+    "sort": "rating"
+   },
+   "en": {
+    "title": "To keep you thinking",
+    "full": "To keep you thinking",
+    "about": "The ones that stay with you"
    }
   },
   {

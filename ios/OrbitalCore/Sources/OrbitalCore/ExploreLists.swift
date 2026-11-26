@@ -94,14 +94,24 @@ public struct ExploreTable: Sendable, Equatable, Codable {
 
     /// Las recetas de hoy: cada día (a medianoche UTC, igual en la TV) avanza la rueda `daily` lugares; ninguna se repite
     /// antes de que pasen todas.
+    /// Cada día, primero una por ánimo («animo-…»: «Para cuando andas triste», Fernando, 26 nov 2026) y luego las demás, cada
+    /// grupo en su propia rueda (todas pasan antes de repetirse).
     public func recipesToday(_ date: Date) -> [ExploreRecipe] {
         let all = recipes ?? [], n = max(0, daily ?? 2)
         guard !all.isEmpty, n > 0 else { return [] }
-        if all.count <= n { return all }
         let day = Int(floor(date.timeIntervalSince1970 / 86400))
-        let start = ((day * n) % all.count + all.count) % all.count
-        return (0..<n).map { all[(start + $0) % all.count] }
+        func wheel(_ pool: [ExploreRecipe], _ k: Int) -> [ExploreRecipe] {
+            guard !pool.isEmpty, k > 0 else { return [] }
+            if pool.count <= k { return pool }
+            let start = ((day * k) % pool.count + pool.count) % pool.count
+            return (0..<k).map { pool[(start + $0) % pool.count] }
+        }
+        let moods = all.filter { $0.id.hasPrefix(Self.moodPrefix) }, rest = all.filter { !$0.id.hasPrefix(Self.moodPrefix) }
+        let mood = wheel(moods, 1)
+        return mood + wheel(rest, n - mood.count)
     }
+    /// Las recetas por ánimo llevan este id al principio.
+    public static let moodPrefix = "animo-"
 
     public static func parse(_ data: Data) -> ExploreTable? { try? JSONDecoder().decode(ExploreTable.self, from: data) }
 

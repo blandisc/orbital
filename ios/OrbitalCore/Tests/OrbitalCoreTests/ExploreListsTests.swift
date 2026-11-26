@@ -112,14 +112,20 @@ final class ExploreListsTests: XCTestCase {
             XCTAssertNotNil(r.en, "\(r.id) sin inglés")
             XCTAssertTrue(r.filter.genres.isSubset(of: slugs), "\(r.id): género que no existe")
         }
-        var seen: [String] = []
-        let day = 86400.0
-        for d in 0..<(recipes.count / 2) {
+        // Cada día una por ánimo primero (Fernando, 26 nov 2026: «cuando te sientas triste, películas feel good»), y cada rueda
+        // pasa todas antes de repetir.
+        let n = table.daily ?? 2, day = 86400.0
+        let moods = recipes.filter { $0.id.hasPrefix(ExploreTable.moodPrefix) }
+        XCTAssertGreaterThanOrEqual(moods.count, 6, "pocas listas por ánimo")
+        var seenMoods: [String] = [], seenRest: [String] = []
+        for d in 0..<moods.count {
             let today = table.recipesToday(Date(timeIntervalSince1970: Double(d) * day + 3600))
-            XCTAssertEqual(today.count, 2)
-            seen += today.map(\.id)
+            XCTAssertEqual(today.count, n)
+            XCTAssertTrue(today.first?.id.hasPrefix(ExploreTable.moodPrefix) ?? false, "el día \(d) no empieza con una por ánimo")
+            seenMoods += today.prefix(1).map(\.id); seenRest += today.dropFirst().map(\.id)
         }
-        XCTAssertEqual(Set(seen).count, seen.count, "se repitió una receta antes de que pasaran todas")
+        XCTAssertEqual(Set(seenMoods).count, seenMoods.count, "se repitió una por ánimo antes de que pasaran todas")
+        XCTAssertEqual(Set(seenRest).count, seenRest.count, "se repitió una receta antes de que pasaran todas")
     }
 }
 
