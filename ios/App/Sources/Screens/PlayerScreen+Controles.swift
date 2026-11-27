@@ -369,8 +369,9 @@ extension PlayerScreen {
 
     @ViewBuilder func upNextCard(_ model: PlayerModel, _ up: UpNext, edge: Bool = false) -> some View {
         UpNextCard(card: up, total: PlaybackRules.upNextCountdown, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() },
-                   notify: { Task { await notifyWhenReady() } })
-            .transition(.opacity)
+                   notify: { Task { await notifyWhenReady() } }, edge: edge)
+            // La cinta entra desde el borde derecho (como en la TV); con «Reducir movimiento», solo aparece.
+            .transition(edge && !reduceMotion ? .move(edge: .trailing).combined(with: .opacity) : .opacity)
     }
 
     /// El otro modo de imagen (Completa ↔ Llenar pantalla).
