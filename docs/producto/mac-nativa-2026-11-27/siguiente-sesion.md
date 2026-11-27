@@ -54,14 +54,41 @@ El plan acordado tiene dos pasos:
   comprobar / no hecho).
 - No reproducir videos en la cuenta real de la Mac (marca vistos en Trakt).
 
+
+## Paso 1 hecho (27 nov 2026, noche)
+
+- **La prueba compila y abre** como app de Mac de verdad (Mac Catalyst, idioma Mac, al 100 %), sin AetherEngine, con bundle id
+  `mx.iracheta.orbital.macprueba` y firma local (ad hoc). Quedó instalada como **«Orbital Mac (prueba)»** en `/Applications`:
+  abre sola en modo demostración (no toca la cuenta). Si Fernando elige TL2-B, se borra.
+- **Cómo se armó** (para rehacerla o para el paso 2):
+  - `prueba-paso1-project.catalyst.yml`: copia de `project.yml` con `SUPPORTS_MACCATALYST`, familia `1,2,6`, sin AetherEngine,
+    sin widgets, sin entitlements y sin `LSSupportsOpeningDocumentsInPlace` (en macOS no se permite en `NO`). Se copia a
+    `ios/App/` y se corre `xcodegen generate --spec project.catalyst.yml` (crea `OrbitalCatalyst.xcodeproj`, esquema `Orbital`).
+  - `prueba-paso1.patch` (`git apply`): lo que se cambió en el código, solo para la prueba:
+    - `isiOSAppOnMac` → `isiOSAppOnMac || isMacCatalystApp` en los 14 archivos (en el paso 2 conviene un solo ayudante).
+    - `DS.Mac.typeScale` = 1.25 × 0.77 solo en Catalyst. Pósters, márgenes y botones **no** se ajustaron (salen ~30 % grandes).
+    - Lo que no existe en Mac Catalyst, tapado con `#if !targetEnvironment(macCatalyst)`: ActivityKit (actividades en vivo de
+      descargas y de la TV), `BGContinuedProcessingTask` (DownloadContinuation) y `DataScannerViewController` (QRScanner).
+    - `Demo.arguments`: con el bundle id de la prueba arranca con `-demo` (para abrirla con doble clic).
+  - Compilar: `xcodebuild build -project OrbitalCatalyst.xcodeproj -scheme Orbital -configuration Debug -destination
+    'platform=macOS,variant=Mac Catalyst' -derivedDataPath /tmp/dd-orbital-catalyst` (con `'OTHER_SWIFT_FLAGS=$(inherited)
+    -DMAC_DRIVE'` si se quiere `-macDrive`).
+- **Comparación:** Canvas https://claude.ai/artifact/TEZmW6ThthTXRSKtZVUr8o (códigos TL2-A seguir al paso 2, TL2-B parar,
+  TL2-C verlas en persona primero; recomendada TL2-C). Es una **simulación** con la misma letra y los mismos números: la Mac estaba
+  bloqueada (de madrugada), `screencapture` no tiene permiso y computer-use se negó solo. Con la pantalla bloqueada la app no
+  dibuja, así que tampoco sirvió `MacDrive.snap`. El monitor de Fernando es el ultrawide MG801 de 3440 × 1440 **sin Retina**:
+  ahí el 77 % se nota más que en una pantalla Retina.
+- **Falta:** la elección de Fernando (TL2). Si es TL2-A: compilar las xcframeworks de AetherEngine para Catalyst, un ayudante
+  único para «es la Mac», `DS.Mac` ×0.77 completo y revisar pantalla por pantalla.
+- **La Orbital normal ya está reinstalada** en la Mac: 2638, sin `-DMAC_DRIVE` (Release de aparato, `instalar-en-mac.sh`).
+
 ## Lo que quedó pendiente de la sesión anterior
 
-- **La app instalada en la Mac es la 2615 de medición** (`-DMAC_DRIVE`; sus órdenes solo se activan con `-macDrive`). Hay que
-  reinstalar una normal: la misma línea de `xcodebuild` sin `-DMAC_DRIVE`, un número mayor e
-  `ios/scripts/instalar-en-mac.sh`.
+- ~~La app instalada en la Mac es la 2615 de medición~~: hecho, la normal 2638 quedó instalada (27 nov).
 - **Deslizar en la Mac por debajo de 5** («tirones» = ms atrasados por segundo, a 120 Hz). Fernando lo pidió el 27 nov: «todas
   te tienen que dar debajo de 5». Quedó interrumpido por TL1-B. Al volverse app de Mac al 100 % puede cambiar todo, así que
-  conviene medirlo de nuevo ahí. Lo último medido (con Instruments grabando, que también atrasa):
+  conviene medirlo de nuevo ahí. **Sigue pendiente** (27 nov): medirlo en la app de Mac de verdad (la prueba compilada con
+  `-DMAC_DRIVE`, ver «Paso 1 hecho») si Fernando elige TL2-A, o en la de iPad si elige TL2-B. Lo último medido (con Instruments grabando, que también atrasa):
 
   | Pantalla | Bajando | Subiendo |
   |---|---|---|
