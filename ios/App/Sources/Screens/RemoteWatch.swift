@@ -52,6 +52,8 @@ struct RemoteWatchSheet: View {
             }
             .dsSheetContent()
         }
+        // A la medida de lo que trae: sin pistas ni versiones, la hoja no ocupa toda la pantalla con un hueco abajo.
+        .fittedScrollSheet()
         // Por capítulo: si la TV pasa al siguiente con la hoja abierta, se piden las suyas (no se pone una del anterior).
         .task(id: model.now.map { $0.videoID ?? $0.metaID ?? $0.title }) { await model.loadVersions() }
         // Si en la TV se acaba lo que suena, la hoja ya no tiene de qué hablar.
@@ -68,7 +70,7 @@ struct RemoteWatchSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: now.title).recipe(.sectionQuiet, color: DS.text).lineLimit(2)
                 if !now.episodeLabel.isEmpty { Text(verbatim: now.episodeLabel).recipe(.footnote, color: DS.textMuted).lineLimit(1) }
-                Text(verbatim: Self.summary(now)).recipe(.label, color: DS.accent).lineLimit(2)
+                Self.summary(now).recipe(.label, color: DS.accent).lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -117,11 +119,13 @@ struct RemoteWatchSheet: View {
         return (head.joined(separator: " "), extra.isEmpty ? nil : extra.joined(separator: " · "))
     }
 
-    /// «Inglés 5.1 · Español · 4K HDR»: el audio, los subtítulos (o «Sin subtítulos») y la calidad de lo puesto.
-    static func summary(_ now: OrbitalRemote.NowPlaying) -> String {
+    /// Cómo lo ves ahora, cada cosa con su ícono para no confundir el audio con los subtítulos: «🔊 Inglés · 💬 Español».
+    static func summary(_ now: OrbitalRemote.NowPlaying) -> Text {
         let audio = now.audioTracks.first(where: \.selected).map { split($0.label).name }
-        let subs = now.subtitleTracks.first(where: \.selected).map { split($0.label).name } ?? String(localized: "Sin subtítulos")
-        return [audio, subs].compactMap { $0 }.joined(separator: " · ")
+        let sub = now.subtitleTracks.first(where: \.selected).map { split($0.label).name }
+        let subs = sub.map { Text("\(Image(systemName: "captions.bubble.fill")) \($0)") } ?? Text("\(Image(systemName: "nosign")) \(Text("Sin subtítulos"))")
+        guard let audio else { return subs }
+        return Text("\(Image(systemName: "speaker.wave.2.fill")) \(audio)\(Text(verbatim: "   "))\(subs)")
     }
 
     /// La calidad en palabras: «Ultra HD 4K», «Full HD», «HD».
@@ -135,9 +139,11 @@ struct RemoteWatchSheet: View {
         }
     }
 
+    /// Solo lo que el nombre no dice: «Ultra HD 4K» ya dice 4K (antes salía también la insignia «4K», repetida).
     static func badges(_ v: OrbitalRemote.Version) -> [String] {
-        [["4k", "2160p"].contains(v.resolution.lowercased()) ? "4K" : nil, v.hdr ? "HDR" : nil].compactMap { $0 }   // las de disco; 1080p ya lo dice el nombre
+        v.hdr ? ["HDR"] : []
     }
+
 
     /// «La que pondría tu TV · Español, Inglés · Atmos · 2.1 GB».
     static func detail(_ v: OrbitalRemote.Version, first: Bool) -> Text {

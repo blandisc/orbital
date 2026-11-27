@@ -208,6 +208,7 @@ TRANSLATIONS = {
     "Toca para pedirla. Mantén presionado para más.": "Tap to request it. Touch and hold for more.",
     "Toca para verla. Mantén presionado para más.": "Tap to watch it. Touch and hold for more.",
     "Toca para ver · mantén presionado para más": "Tap to watch · touch and hold for more",
+    "Toca para ver · mantén para más": "Tap to watch · hold for more",
     "Sí, desde aquí": "Yes, from here on",
     "¿Para el resto de la serie también?": "For the rest of the series too?",
     "Los siguientes episodios, en %@.": "The next episodes, in %@.",

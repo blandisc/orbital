@@ -171,7 +171,7 @@ struct SourcesSheet: View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una") : Text("Toca para ver · mantén presionado para más")) {
+            DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una") : Text("Toca para ver · mantén para más")) {
                 // Qué quiere decir cada ícono y etiqueta (⚡, ☁︎, 4K, DV, REMUX…).
                 Button { showsGlossary = true } label: { Image(systemName: "info.circle").font(DS.TextRecipe.section.font) }
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)   // el ícono al ras del margen, el toque sigue de 44

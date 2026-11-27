@@ -438,6 +438,9 @@ final class DesignRulesTests: XCTestCase {
         let before: Set<String> = ["SettingsView.swift", "PlayerScreen+Panel.swift", "RatingReminderHost.swift"]
         var problems = hits(#"presentationDetents\(\[\.medium"#, in: files, skip: { before.contains($0.name) }).map { $0 + " (usa fittedSheet o fittedScrollSheet)" }
         problems += hits(#"DebridExplainer\([^\n]*presentationDetents"#, in: files).map { $0 + " (DebridExplainer ya se mide sola)" }
+        // Una hoja de la plantilla (`DSSheet`) sin medida abre a pantalla completa: «Cómo lo ves» dejaba media hoja vacía (26 nov).
+        problems += files.filter { f in f.lines.contains { $0.contains("DSSheet(") } && !f.lines.contains { $0.contains("fittedSheet") || $0.contains("fittedScrollSheet") || $0.contains("presentationDetents") } }   // también «quien la abre la mide (`fittedSheet`)»
+            .map { "\($0.path): DSSheet sin fittedSheet ni fittedScrollSheet" }
         check(problems, "Hoja con hueco abajo")
     }
 

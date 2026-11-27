@@ -32522,7 +32522,7 @@
         }
       }
     },
-    "Toca para ver · mantén presionado para más": {
+    "Toca para ver · mantén para más": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -32531,25 +32531,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tap to watch · touch and hold for more"
+                  "value": "Tap to watch · hold for more"
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tap to watch · touch and hold for more"
+                  "value": "Tap to watch · hold for more"
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Click to watch · touch and hold for more"
+                  "value": "Click to watch · hold for more"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tap to watch · touch and hold for more"
+                  "value": "Tap to watch · hold for more"
                 }
               }
             }
@@ -32561,25 +32561,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Toca para ver · mantén presionado para más"
+                  "value": "Toca para ver · mantén para más"
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Toca para ver · mantén presionado para más"
+                  "value": "Toca para ver · mantén para más"
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Haz clic para ver · mantén presionado para más"
+                  "value": "Haz clic para ver · mantén para más"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Toca para ver · mantén presionado para más"
+                  "value": "Toca para ver · mantén para más"
                 }
               }
             }
