@@ -1,0 +1,295 @@
+<title>Tus consolas en el iPhone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; los dos caminos lado a lado con su recorrido en pasos; decisiones con código; detalle técnico plegado al final. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64;
+  --line:#dcd9d1; --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6;
+  --bad:#a3322b; --bad-soft:#f5dedb; --screen:#0c0c0e; --screen-fg:#f2f1ec; --step:#26262b;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{font-size:1.15rem;color:var(--muted)}
+.why{color:var(--teal);font-weight:500}
+section{display:grid;gap:18px}
+.code{font-family:var(--f-mono);font-size:.85rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap;justify-self:start}
+.tag{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--teal-soft);color:var(--teal)} .mid{background:var(--warn-soft);color:var(--warn)} .no{background:var(--bad-soft);color:var(--bad)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.opt{display:grid;gap:14px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.opt.rec{border:2px solid var(--teal)}
+.opt header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gain b{color:var(--teal)} .lose b{color:var(--bad)}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+/* recorrido: lo que ve Fernando, paso por paso */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.st{display:grid;gap:6px;justify-items:center;text-align:center;font-size:.82rem;color:var(--muted)}
+.mini{width:100%;max-width:92px;aspect-ratio:9/16;border-radius:14px;border:4px solid var(--fg);background:var(--screen);color:var(--screen-fg);display:grid;place-items:center;font-size:10px;font-weight:600;padding:6px;line-height:1.2}
+.mini.or{background:linear-gradient(160deg,#5a3d8f,#111 70%)}
+.mini.jit{background:var(--step)}
+.mini.gc{background:linear-gradient(160deg,#4b2a85,#111)}
+.mini.sw{background:linear-gradient(160deg,#e60012,#111)}
+.mini.ghost{border-style:dashed;opacity:.55}
+.state{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.95rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+tr:last-child td{border-bottom:0}
+.once{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.once div{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:4px}
+.once b{font-family:var(--f-display)}
+.dec{display:grid;gap:14px;padding:22px;border-radius:18px;background:var(--raised)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.choice{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:6px;min-width:0}
+.choice.rec{border:2px solid var(--teal)}
+.recline{font-weight:600}
+.recline span{color:var(--teal)}
+.plan{display:grid;gap:10px;counter-reset:p;padding:0;margin:0;list-style:none}
+.plan li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.plan li::before{counter-increment:p;content:counter(p);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--teal);width:1.4em}
+details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+.tech{display:grid;gap:10px;font-size:.92rem}
+.tech code{font-family:var(--f-mono);font-size:.82rem;overflow-wrap:anywhere}
+.src{font-size:.85rem;color:var(--muted)} .src a{color:inherit}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:420px){.flow{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style>
+/* Extras de esta página: matriz de consolas y maquetas del iPhone con su barra de pestañas. */
+.verdict{display:grid;gap:10px;padding:22px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.verdict p{font-size:1.1rem}
+.verdict b{font-family:var(--f-display)}
+.matrix td:first-child{font-weight:600;white-space:nowrap}
+.matrix .tag{display:inline-block}
+.matrix small{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.phone{display:grid;gap:8px;justify-items:center;text-align:center;font-size:.85rem;color:var(--muted)}
+.ph{width:100%;max-width:150px;aspect-ratio:9/19;border-radius:22px;border:5px solid var(--fg);background:var(--screen);color:var(--screen-fg);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;font-size:10px;text-align:left}
+.ph .top{padding:12px 10px 4px;font-weight:700;font-size:12px}
+.ph .body{padding:4px 10px;display:grid;gap:6px;align-content:start}
+.ph .row{display:flex;gap:4px}
+.ph .card{flex:1;aspect-ratio:3/4;border-radius:5px;background:#2e2e34}
+.ph .card.gc{background:linear-gradient(160deg,#5b3a9a,#222)}
+.ph .card.sw{background:linear-gradient(160deg,#e60012,#2a0b0d)}
+.ph .card.xb{background:linear-gradient(160deg,#107c10,#0b1d0b)}
+.ph .card.gba{background:linear-gradient(160deg,#3d3dbf,#141433)}
+.ph .lbl{color:#a5a5ad;font-size:9px}
+.ph .band{border-radius:6px;background:#1d1d22;padding:6px;display:grid;gap:4px}
+.ph .hl{outline:2px solid #5fd3c3;outline-offset:1px}
+.ph .tabs{display:flex;justify-content:space-around;padding:6px 4px 10px;background:#141417;font-size:8px;color:#8d8d95}
+.ph .tabs span.on{color:#5fd3c3;font-weight:700}
+.ph .sheet{margin-top:auto;border-radius:10px;background:#26262b;padding:8px;display:grid;gap:5px}
+.ph .btn{border-radius:999px;background:#f2f1ec;color:#111;text-align:center;padding:4px;font-weight:700}
+.ph .btn.ghost{background:transparent;color:#f2f1ec;border:1px solid #55555d}
+.ph.land{aspect-ratio:19/9;max-width:100%;grid-template-rows:1fr}
+.ph .game{background:linear-gradient(160deg,#e60012,#111 75%);display:grid;place-items:center;font-size:12px;font-weight:700;position:relative}
+.ph .pad{position:absolute;bottom:8px;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.5)}
+.ph .pad.l{left:10px} .ph .pad.r{right:10px}
+.watch{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.watch div{padding:14px;border-radius:12px;border:1px dashed var(--line);display:grid;gap:4px}
+.watch b{font-family:var(--f-display)}
+</style>
+<div class="wrap">
+
+<header style="display:grid;gap:14px">
+  <p class="src">Orbital Ultra · investigación · 27 nov 2026 (tarde) · reemplaza la propuesta de la mañana (transmitir)</p>
+  <h1>Tus consolas, corriendo en el iPhone</h1>
+  <p class="lede">Sin transmitir desde la Legion Go: cada juego corre en el propio iPhone. Revisamos consola por consola qué existe hoy, qué tan bien va y cómo se integra a Orbital.</p>
+</header>
+
+<section class="verdict">
+  <p><b>Casi todo se puede.</b> GameCube, Wii, PS2, Xbox 360, Wii U, Xbox, Switch y God of War III ya tienen un emulador o un port para iPhone.</p>
+  <p><b>PS4 no</b>, salvo God of War III. <b>Switch 2</b> solo corre en la Mac por ahora; lo vigilamos.</p>
+  <p class="why">Antes de construir, un día de prueba en tu iPhone para medir de verdad qué tan bien corre cada uno.</p>
+</section>
+
+<section>
+  <h2>Dos correcciones a lo de esta mañana</h2>
+  <div class="once">
+    <div><b>El modo rápido sí funciona en iOS 27</b>Es el permiso que los emuladores pesados necesitan para ir a buena velocidad. StikDebug lo da desde el 8 nov y ya se prepara en el propio iPhone. Los fallos que te conté eran de configuración.</div>
+    <div><b>«Compilar los juegos» es de Switch, no de Xbox</b>Se llama nxnative: en la Mac convierte un juego de Switch en una app de iPhone donde corre directo, sin emular y sin modo rápido. Para Xbox 360, GameCube y Wii hay lo mismo, pero juego por juego.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Consola por consola</h2>
+  <p>Varios son los mismos emuladores que ya usa tu TV, pasados al iPhone.</p>
+  <div class="state">
+    <table class="matrix">
+      <thead><tr><th>Consola</th><th>Con qué</th><th>Cómo está hoy en iPhone</th></tr></thead>
+      <tbody>
+        <tr><td>GameCube, Wii</td><td>iCube <small>Dolphin, el de tu TV</small></td><td><span class="tag ok">Listo</span><small>Sin medir en el 17 Pro. En Wii, los juegos de mover el control se juegan con mando o botones</small></td></tr>
+        <tr><td>PS2</td><td>iPSX2 <small>PCSX2, el de tu TV</small></td><td><span class="tag ok">Versión 1.0</span><small>Del 12 nov; en iOS 27 por medir</small></td></tr>
+        <tr><td>Xbox 360</td><td>XeniOS <small>Xenia, el de tu TV</small></td><td><span class="tag ok">El más activo</span><small>Versión de ayer; Sonic Generations jugable en un iPhone 16</small></td></tr>
+        <tr><td>Wii U</td><td>MeloCafe <small>Cemu, el de tu TV</small></td><td><span class="tag mid">Temprano</span><small>Versión 1.2; los juegos de dos pantallas se ven en una</small></td></tr>
+        <tr><td>Xbox</td><td>DukeX <small>xemu, el de tu TV</small></td><td><span class="tag mid">Temprano</span><small>Funciona en iPhone; en el chip del 17 Pro sin confirmar</small></td></tr>
+        <tr><td>Switch</td><td>nxnative y MeloNX</td><td><span class="tag ok">Sí</span><small>nxnative: Mario Odyssey, Wonder, Zelda BotW y TotK, Animal Crossing, Pokémon Z-A, Silksong. MeloNX: todos, con modo rápido</small></td></tr>
+        <tr><td>PS3</td><td>RPCS3 iOS</td><td><span class="tag mid">Con tirones</span><small>God of War III a ~25 cuadros por segundo</small></td></tr>
+        <tr><td>GBA, DS, PS1, PSP</td><td>mGBA, melonDS, SwanStation, PPSSPP</td><td><span class="tag ok">Maduro</span><small>No piden modo rápido</small></td></tr>
+        <tr><td>Switch 2</td><td>nxnative</td><td><span class="tag no">Solo en la Mac</span><small>Lo vigilamos</small></td></tr>
+        <tr><td>PS4</td><td>—</td><td><span class="tag no">No</span><small>Salvo God of War III</small></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>God of War III</h2>
+  <p>Hay dos caminos y los dos ya se juegan. Depende de qué copia tengas.</p>
+  <div class="opts">
+    <article class="opt">
+      <header><span class="code">K3-A</span><h3>Tu copia de PS3, con RPCS3</h3></header>
+      <p class="gain"><b>Ganas:</b> usa la copia que ya tienes. Unos 25 cuadros por segundo en un 17 Pro Max (mismo chip que el tuyo): 32 en frío, 22 caliente.</p>
+      <p class="lose"><b>Pierdes:</b> tirones. Tu 17 Pro es más chico y se calentará antes. Sus autores no publican el código, así que es una app que instalas tú y Orbital abre. Ocupa ~40 GB.</p>
+    </article>
+    <article class="opt">
+      <header><span class="code">K3-B</span><h3>El Remastered de PS4, con Olympus</h3></header>
+      <p class="gain"><b>Ganas:</b> hecho solo para este juego, con botones táctiles pensados para él y menos piezas que fallen. ~25 cuadros (tope 30) en un iPhone 17, ya jugable desde el principio.</p>
+      <p class="lose"><b>Pierdes:</b> necesitas la copia de PS4. ~35 GB.</p>
+    </article>
+  </div>
+  <p class="recline">Si solo tienes la de PS3, <span>K3-A</span>. Si tienes las dos, <span>K3-B</span>.</p>
+</section>
+
+<section>
+  <h2>Cómo se integra a Orbital</h2>
+  <div class="opts">
+    <article class="opt rec">
+      <header><span class="code">K1-A</span><h3>Orbital al centro, una app por consola</h3><span class="tag ok">Recomendado</span></header>
+      <div class="flow">
+        <div class="st"><div class="mini or">Orbital · Juegos</div>Eliges Wind Waker</div>
+        <div class="st"><div class="mini gc">Orbital GameCube</div>Se abre directo en el juego</div>
+        <div class="st"><div class="mini gc">Juego</div>Juegas</div>
+        <div class="st"><div class="mini or">Orbital</div>Sales, la partida va a la TV</div>
+      </div>
+      <p>Orbital tiene tu catálogo, baja los juegos de la consola y guarda las partidas. Cada consola es una app «Orbital GameCube», «Orbital PS2», «Orbital 360»… con nuestro nombre, ícono y botones. Sus íconos se van a la Biblioteca de apps.</p>
+      <p class="gain"><b>Ganas:</b> si un juego truena, Orbital y tu película siguen. Cada consola se arregla y se actualiza sola. 1–2 semanas por consola.</p>
+      <p class="lose"><b>Pierdes:</b> un salto corto entre apps al entrar y al salir.</p>
+    </article>
+    <article class="opt">
+      <header><span class="code">K1-B</span><h3>Todo dentro de una sola Orbital</h3></header>
+      <div class="flow">
+        <div class="st"><div class="mini or">Orbital · Juegos</div>Eliges Wind Waker</div>
+        <div class="st"><div class="mini gc">Juego</div>Juegas dentro de Orbital</div>
+        <div class="st"><div class="mini ghost">—</div>Sin salto</div>
+        <div class="st"><div class="mini or">Orbital</div>Sales</div>
+      </div>
+      <p>Todos los emuladores dentro de Orbital.</p>
+      <p class="gain"><b>Ganas:</b> una sola app, sin saltos.</p>
+      <p class="lose"><b>Pierdes:</b> si un juego truena o iOS lo cierra por memoria, se cae toda Orbital. Los emuladores traen piezas repetidas que chocan entre sí y el modo rápido se complica con varios juntos. Meses, y cada arreglo es nuestro.</p>
+    </article>
+  </div>
+  <p class="recline">Recomiendo <span>K1-A</span>. Es «integrado» donde importa (catálogo, partidas, diseño) sin poner en riesgo lo demás. Más adelante podemos probar meter GameCube dentro, que ya viene preparado para eso.</p>
+</section>
+
+<section>
+  <h2>Lo que vas a vivir</h2>
+  <div class="once">
+    <div><b>El modo rápido</b>Se prepara una vez. Después, al abrir un juego pesado se enciende solo; pide wifi y una VPN local gratis prendida. Con cada iOS grande, esperamos a que StikDebug lo confirme antes de actualizar.</div>
+    <div><b>El espacio</b>GameCube 1–1.5 GB, PS2 2–4 GB, Switch 5–15 GB, Xbox 360 7–8 GB, PS3 ~40 GB. Orbital te dice cuánto ocupa y te ofrece borrar el juego al terminar; la partida queda en la TV.</div>
+    <div><b>Bajar un juego</b>Solo en casa, por wifi. Uno de 40 GB tarda unos 10–20 minutos.</div>
+    <div><b>Calor y batería</b>Switch, Xbox 360, Wii U y PS3 calientan y gastan rápido. En la prueba medimos cuánto.</div>
+    <div><b>Switch con nxnative</b>Cada juego se arma en la Mac (30–60 minutos la primera vez); eso lo hago yo. Se renueva una vez al año.</div>
+    <div><b>Instalación</b>Desde la Mac, nunca por TestFlight: TestFlight no deja usar el modo rápido.</div>
+  </div>
+</section>
+
+<section class="dec">
+  <h2>Lo que te pido hoy</h2>
+  <h3>P1 · ¿Hacemos el día de prueba?</h3>
+  <div class="choices">
+    <div class="choice rec"><span class="code">P1-A</span><b>Sí</b>Con tu iPhone conectado a la Mac compilo desde su código iCube, iPSX2, XeniOS, MeloCafe y DukeX, y armo Mario Wonder con nxnative. RPCS3 la instalas tú (no publica su código) y yo la mido con God of War III. Mido cuadros, calor y batería de cada uno.</div>
+    <div class="choice"><span class="code">P1-B</span><b>No, construir de una vez</b>Empezamos por GameCube sin saber cómo va lo demás en tu iPhone.</div>
+  </div>
+  <p class="recline">Recomiendo <span>P1-A</span>. Con un día, las decisiones de abajo llevan números de tu iPhone, no de otros.</p>
+  <h3>Y cuatro datos</h3>
+  <ol class="plan">
+    <li><div>¿Tu God of War III es de PS3 o el Remastered de PS4?</div></li>
+    <li><div>¿Cuánto espacio libre tiene tu iPhone?</div></li>
+    <li><div>¿Qué 3 juegos de Switch quieres primero?</div></li>
+    <li><div>¿Qué mando tienes (Xbox, PlayStation, otro)?</div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Después de la prueba (mi recomendación de hoy)</h2>
+  <div class="dec">
+    <h3>K2 · Switch</h3>
+    <div class="choices">
+      <div class="choice"><span class="code">K2-A</span><b>nxnative</b>Sin modo rápido y corre mejor, pero una app por juego y solo los que ya funcionan.</div>
+      <div class="choice"><span class="code">K2-B</span><b>MeloNX</b>Todos tus juegos en una app, con modo rápido.</div>
+      <div class="choice rec"><span class="code">K2-C</span><b>Los dos</b>nxnative para tus favoritos, MeloNX para el resto.</div>
+    </div>
+  </div>
+  <div class="dec">
+    <h3>K4 · Juegos convertidos sueltos</h3>
+    <p>Wind Waker, Sunshine, Mario Kart Wii, Twilight Princess, Sonic Unleashed, GTA IV: cada uno como app propia, corriendo directo.</p>
+    <div class="choices">
+      <div class="choice rec"><span class="code">K4-A</span><b>Sí, los que tengas</b>Orbital los muestra en la misma pestaña.</div>
+      <div class="choice"><span class="code">K4-B</span><b>No</b>Solo emuladores.</div>
+    </div>
+  </div>
+  <div class="dec">
+    <h3>K5 · Por cuál empezamos</h3>
+    <div class="choices">
+      <div class="choice rec"><span class="code">K5-A</span><b>GameCube y Wii</b>Lo que más has pedido y el más listo. Los juegos de Switch se arman en paralelo.</div>
+      <div class="choice"><span class="code">K5-B</span><b>Switch</b>Con nxnative; cada juego cuesta horas de armado en la Mac.</div>
+    </div>
+  </div>
+  <p class="src">Siguen en pie de la mañana: un mando Bluetooth solo dentro del juego (excepción a tu regla del 29 oct de no usar mando en el iPhone) y una quinta pestaña «Juegos» solo en tu versión.</p>
+</section>
+
+<section>
+  <h2>Qué tienes en la mano en cada etapa</h2>
+  <div class="state">
+    <table>
+      <thead><tr><th>Etapa</th><th>Qué tienes</th><th>Tiempo</th></tr></thead>
+      <tbody>
+        <tr><td>Día de prueba</td><td>La lista real de qué corre en tu iPhone; God of War III ya jugable</td><td>1 día</td></tr>
+        <tr><td>Pestaña «Juegos»</td><td>Tu catálogo de la TV en el iPhone y bajar juegos</td><td>2–3 semanas</td></tr>
+        <tr><td>Orbital GameCube</td><td>GameCube y Wii, con partidas que van y vienen con la TV</td><td>1–2 semanas</td></tr>
+        <tr><td>Orbital PS2 y Orbital 360</td><td>PS2 y Xbox 360</td><td>1–2 semanas cada una</td></tr>
+        <tr><td>Wii U, Xbox, Switch y las ligeras</td><td>El resto</td><td>1–2 semanas cada una</td></tr>
+        <tr><td>En paralelo</td><td>Tus juegos de Switch y los convertidos</td><td>Horas por juego</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><b>Unos 3–4 meses para todo.</b> GameCube, a las 3–5 semanas.</p>
+</section>
+
+<p class="src">Solo en tu versión (Ultra), instalada desde la Mac. Nada de esto entra a Plus ni a la App Store; iPad y Mac no lo llevan. Juegos, firmware y llaves salen de tu consola, nunca de internet. La TV solo gana servirle los juegos al iPhone.</p>
+
+<details>
+  <summary>Detalle técnico (para la sesión que lo construya)</summary>
+  <div class="tech">
+    <p><b>Modo rápido con TXM (A19 Pro).</b> Protocolo universal de <a href="https://github.com/StikDebug/StikJIT/blob/main/INTEGRATION.md">StikJIT</a>: esperar <code>CS_DEBUGGED</code>; <code>brk #0xf00d</code> con x16=1 por región (x0, x1) y x16=0 para soltar; regiones reservadas antes de soltar. Ya lo hacen iCube, XeniOS, MeloNX, MeloCafe, DukeX y RPCS3; iPSX2 usa <code>legacy.js</code>. <a href="https://github.com/StikDebug/StikDebug">StikDebug</a> 3.2.2 (AGPL-3), túnel LocalDevVPN <code>10.7.0.1:49152</code>; issues de 27.x cerrados (#471, #476, #497). Respaldo: lldb con <code>dolphin_jit_lldb.py</code> de iCube.</p>
+    <p><b>Apps hermanas.</b> App Group con Ultra (juegos, partidas, BIOS, firmware, llaves); esquema de URL por app para «abre este juego» y volver; ID y perfil de desarrollo de un año por app. Entitlements <code>increased-memory-limit</code>, <code>extended-virtual-addressing</code>, <code>get-task-allow</code> (solo firma de desarrollo).</p>
+    <p><b>Plus y App Store.</b> Las ediciones son <code>ORBITAL_EDITION</code> del mismo target; la pestaña y el puente a las hermanas van tras <code>Edition.ultra</code>; ningún núcleo GPL se enlaza a Orbital.</p>
+    <p><b>Núcleos.</b> <a href="https://github.com/Provenance-Emu/iCube">iCube</a> (GPL-2, <code>BuildiOSXCFramework.py</code>) · <a href="https://github.com/iPSX2/iPSX2">iPSX2</a> (GPL-3) · <a href="https://github.com/xenios-jp/XeniOS">XeniOS</a> (BSD-3) · <a href="https://github.com/stossy11/MeloCafe">MeloCafe</a> (MPL-2) · <a href="https://github.com/MaftyManicEMU/DukeX">DukeX</a> (GPL-2) · MeloNX 2.7 (GPL-3, .NET) · <a href="https://github.com/seedds/nxnative">nxnative</a> (MIT; <code>build_ipa_from_nsp.py</code>, Xcode 27.2, A17 Pro+; modo anfitrión sin uso) · <a href="https://github.com/XITRIX/RPCS3-iOS-Releases">RPCS3 iOS</a> (sin código publicado) · <a href="https://github.com/MohinShaikh5689/god-of-war-3-ios">Olympus</a> (GPL-3, FEXCore + video de shadPS4).</p>
+    <p><b>Partidas.</b> Dolphin (tarjetas), PCSX2 (tarjetas <code>.ps2</code>), Cemu (<code>mlc01</code>) y Xenia (<code>content/</code>) usan los formatos de Windows; los guardados rápidos no se cruzan.</p>
+    <p><b>Compilar.</b> Regla 15: máximo 2 a la vez y carpeta <code>/tmp/dd-…</code> propia.</p>
+  </div>
+</details>
+
+<p class="src">Fuentes: <a href="https://github.com/wangxiaoxiang5599/recompiled-games-list">lista de juegos convertidos</a> · <a href="https://xitrix.github.io/RPCS3-iOS-Releases/data/performance.json">mediciones de RPCS3 iOS</a> · <a href="https://github.com/KoreanSeats1/Theft4">Theft4 (GTA IV)</a> · <a href="https://github.com/tbittech/gow3-nx">gow3-nx</a> · documento completo en el repo: <code>docs/producto/emulacion-iphone/nativo-2026-11-27.md</code></p>
+
+</div>

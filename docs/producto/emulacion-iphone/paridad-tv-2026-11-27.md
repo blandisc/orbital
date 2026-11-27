@@ -1,6 +1,6 @@
 # Juegos en Orbital Ultra: los mismos que en la TV (27 nov 2026)
 
-Sigue a `investigacion.md` (3 nov, G1–G3, D1–D6, que esta propuesta reemplaza). Fer pidió (27 nov): «que Orbital iOS
+**27 nov (tarde): reemplazada por `nativo-2026-11-27.md` (Fer descartó transmitir).** Sigue a `investigacion.md` (3 nov, G1–G3, D1–D6, que esta propuesta reemplaza). Fer pidió (27 nov): «que Orbital iOS
 tenga las mismas funcionalidades que Orbital pantalla… Switch 2, Game Boy Advance, GameCube, Xbox». Estado:
 **investigación, nada construido**. Canvas: `paridad-tv.html`. Revisada por dos agentes (producto y técnica) antes de
 entregarla.
