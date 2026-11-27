@@ -89,6 +89,7 @@ extension DesignRulesTests {
         XCTAssertFalse(screen.contains("ScrollView {"), "los botones nunca se van fuera de la pantalla")
         let decide = code(try XCTUnwrap(files.first { $0.name == "DecideView.swift" }))
         XCTAssertTrue(decide.contains("edges: mode == .trio ? .bottom : []"), "el mazo, sobre el área segura")
+        XCTAssertTrue(decide.contains(".lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(DS.Size.statScale)"), "«Nada con…»: el botón que quita un filtro no se corta (Duo cerrado, SE)")
     }
 
     /// Cambiar de tipo no vuelve a barajar (Fernando, 13 nov 2026): la pastilla de Decide usa `switchKind`, que regresa los

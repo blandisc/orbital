@@ -421,21 +421,26 @@ struct DecideView: View {
                 Image(systemName: DS.Symbol.decide).font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted)
                 Text(verbatim: String(format: Strings.tr("Nada con %@", language: language), words.activeSummary(m))).recipe(.cardTitle).multilineTextAlignment(.center)
                 Text("Prueba quitando un filtro.").recipe(.footnote).multilineTextAlignment(.center)
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(Array(relax.enumerated()), id: \.offset) { index, item in
-                        let title = Text(verbatim: "\(words.relaxName(item.relax, m)) · \(item.count)")
-                        if index == 0 {
-                            Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsPrimaryButton()
-                        } else {
-                            Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsGlassButton()
-                        }
-                    }
-                }
+                HStack(spacing: DS.Space.s2) { relaxButtons(relax, m) }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Space.s6)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("decide-nothing")
+        }
+    }
+
+    @ViewBuilder private func relaxButtons(_ relax: [(relax: DecideModel.Relax, count: Int)], _ m: DecideModel) -> some View {
+        ForEach(Array(relax.enumerated()), id: \.offset) { index, item in
+            // El nombre dice qué filtro se quita: en lo angosto (el Duo cerrado, el SE) baja a otra línea y se achica tantito,
+            // nunca «Quitar Ciencia f…». Sin ViewThatFits: la hoja de Decide no mide formas (DesignRulesTests+Layout).
+            let title = Text(verbatim: "\(words.relaxName(item.relax, m)) · \(item.count)")
+                .lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(DS.Size.statScale)
+            if index == 0 {
+                Button { Task { await m.relax(item.relax) } } label: { title }.dsPrimaryButton()
+            } else {
+                Button { Task { await m.relax(item.relax) } } label: { title }.dsGlassButton()
+            }
         }
     }
 }
