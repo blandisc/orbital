@@ -467,7 +467,7 @@ struct PlayerScrubBar: View {
                 // Arrastrando: la burbuja arriba de la barra, centrada sobre el dedo (sin salirse de la barra ni tapar los tiempos).
                 if active {
                     let delta = value - (previewFrom ?? startValue)
-                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)), scare: nearest)
+                    DSSeekBubble(time: clock(value), delta: delta, clock: clock, scare: nearest)
                         .fixedSize()
                         .position(x: min(max(x(value), DS.Gesture.seekBubbleSideMargin), width - DS.Gesture.seekBubbleSideMargin),
                                   y: DS.PlayerPanel.scrubHit / 2 - DS.PlayerPanel.scrubBubbleLift)

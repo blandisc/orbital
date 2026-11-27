@@ -93,7 +93,9 @@ def sign(d: int, message: bytes) -> bytes:
     z = int.from_bytes(h, "big")
     while True:
         k = _nonce(d, h)
-        r = _mul(k)[0] % _N
+        point = _mul(k)
+        assert point is not None  # k va de 1 a N-1: nunca da el punto al infinito
+        r = point[0] % _N
         s = pow(k, -1, _N) * (z + r * d) % _N
         if r and s:
             return r.to_bytes(32, "big") + s.to_bytes(32, "big")

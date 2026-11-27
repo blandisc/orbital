@@ -124,7 +124,7 @@ public final class RepisaModel: ObservableModel {
                 for await (id, items) in group { if let items, !items.isEmpty { save(id, items) } }
             }
         }
-        var today: [(ExploreList, [CanonCollection.Item])] = table.recipesToday(clock()).compactMap { r in
+        let today: [(ExploreList, [CanonCollection.Item])] = table.recipesToday(clock()).compactMap { r in
             let items = hide(cached(r.list.id, fresh: false) ?? [])
             return items.isEmpty ? nil : (r.list, items)
         }

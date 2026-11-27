@@ -166,7 +166,7 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(search.results.first?.metaID, "tt0133093", "«Mejor resultado»: The Matrix, no la serie de 1993")
     }
 
-    func testSearchShowsEachKindAsItArrivesAndKeepsOneWhenTheOtherFails() async throws {
+    func testSearchShowsBothKindsTogetherAndKeepsOneWhenTheOtherFails() async throws {
         let rig = try ServicesRig()
         let movies = try Fixtures.json("cinemeta/search_movie_dune.json"), series = try Fixtures.json("cinemeta/search_series_dune.json")
         let movieURL = "https://v3-cinemeta.strem.io/catalog/movie/top/search=dune.json", seriesURL = "https://v3-cinemeta.strem.io/catalog/series/top/search=dune.json"
@@ -176,9 +176,9 @@ final class ScreenModelsTests: XCTestCase {
         let search = SearchModel(rig.services)
         let running = Task { await search.search("dune") }
         try await Task.sleep(nanoseconds: 200_000_000)
-        XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" }, "las películas no esperan a las series")
+        XCTAssertTrue(search.results.isEmpty, "nada a medias: las películas esperan a las series (si no tardan) para no saltar")
         await running.value
-        XCTAssertTrue(search.results.contains { $0.kind == "series" }, "las series se suman al llegar")
+        XCTAssertTrue(search.results.contains { $0.kind == "series" }, "películas y series llegan juntas")
 
         // Series falla (las dos veces): las películas se quedan y no hay error.
         rig.http.json[seriesURL.replacingOccurrences(of: "dune", with: "duna")] = nil

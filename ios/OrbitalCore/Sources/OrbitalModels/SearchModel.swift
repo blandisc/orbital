@@ -144,8 +144,9 @@ public final class SearchModel: ObservableModel {
                     return .trakt(found.map { SearchResult(kind: $0.kind, metaID: $0.imdb, title: $0.title,
                                                            poster: String(format: ForYou.metahubPoster, $0.imdb), year: $0.year.map(String.init) ?? "") })
                 }
-                group.addTask { try? await Task.sleep(nanoseconds: Self.hedgeDelay); return .hedge }
             }
+            // Si un tipo de Cinemeta tarda, lo que ya llegó se enseña pasado este rato (con o sin Trakt).
+            group.addTask { try? await Task.sleep(nanoseconds: Self.hedgeDelay); return .hedge }
             for await piece in group {
                 switch piece {
                 case .trakt(let found): traktSettled = true; fromTrakt = found
@@ -161,6 +162,10 @@ public final class SearchModel: ObservableModel {
                     let candidates = CinemetaParsing.fameCandidates(movies: parts["movie"] ?? [], series: parts["series"] ?? [])
                     popularity = candidates.isEmpty ? [:] : await Self.fame(of: candidates, cinemeta: cinemeta)
                 }
+                // Nada se enseña a medias (Fer, 27 nov 2026: «el Chavo del 8» ponía un resultado y luego otro): ni las
+                // películas antes que las series ni el orden antes de la fama; todo junto en cuanto contesta Cinemeta, o lo
+                // que haya si tarda `hedgeDelay`.
+                guard cinemetaSettled || waited else { continue }
                 let fromCinemeta = parts.isEmpty ? [] : CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [],
                                                                                          limit: Self.resultLimit, fame: popularity ?? [:])
                 // Lo de Trakt entra cuando ya está Cinemeta (o tardó): así no salta el orden al llegar.

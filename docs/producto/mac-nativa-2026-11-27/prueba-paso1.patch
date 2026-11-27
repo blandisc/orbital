@@ -1,0 +1,517 @@
+diff --git a/ios/App/Shared/DownloadActivity.swift b/ios/App/Shared/DownloadActivity.swift
+index ae4eb80b..50bea071 100644
+--- a/ios/App/Shared/DownloadActivity.swift
++++ b/ios/App/Shared/DownloadActivity.swift
+@@ -3,7 +3,10 @@ import Foundation
+ 
+ /// La actividad en vivo de las descargas (pantalla bloqueada y Dynamic Island). La comparten la app, que la arranca y
+ /// la actualiza, y la extensión de widgets, que la dibuja.
+-struct DownloadActivityAttributes: ActivityAttributes, Sendable {
++#if !targetEnvironment(macCatalyst)
++extension DownloadActivityAttributes: ActivityAttributes {}
++#endif
++struct DownloadActivityAttributes: Sendable {
+     struct ContentState: Codable, Hashable, Sendable {
+         /// Lo que está bajando ahora («The Office · T2 · E5»).
+         var title: String
+diff --git a/ios/App/Shared/TVActivity.swift b/ios/App/Shared/TVActivity.swift
+index a3edbf66..a6cd08dd 100644
+--- a/ios/App/Shared/TVActivity.swift
++++ b/ios/App/Shared/TVActivity.swift
+@@ -4,7 +4,10 @@ import Foundation
+ 
+ /// «Viendo en la TV»: lo que tu Orbital está reproduciendo, en la pantalla bloqueada y en la isla, con pausa y ±30 s. La barra
+ /// avanza sola (de la posición y la hora en que se supo), así no hace falta mandar un avance por segundo.
+-struct TVActivityAttributes: ActivityAttributes, Sendable {
++#if !targetEnvironment(macCatalyst)
++extension TVActivityAttributes: ActivityAttributes {}
++#endif
++struct TVActivityAttributes: Sendable {
+     struct ContentState: Codable, Hashable, Sendable {
+         var title: String
+         /// «T1 · E4» o el canal en vivo; vacío en una película.
+diff --git a/ios/App/Sources/Design/QRScanner.swift b/ios/App/Sources/Design/QRScanner.swift
+index 23c73f89..47503bad 100644
+--- a/ios/App/Sources/Design/QRScanner.swift
++++ b/ios/App/Sources/Design/QRScanner.swift
+@@ -11,11 +11,13 @@ struct QRScanner: View {
+ 
+     var body: some View {
+         ZStack {
+-            if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
++            if false {
++                #if !targetEnvironment(macCatalyst)
+                 ScannerView(found: found).ignoresSafeArea()
+                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(DS.paper, lineWidth: DS.Stroke.selected)
+                     .frame(width: DS.Guide.scanFrame, height: DS.Guide.scanFrame)
+                     .accessibilityHidden(true)
++                #endif
+             } else {
+                 VStack(spacing: DS.Space.s4) {
+                     Image(systemName: "camera.metering.unknown").font(DS.TextRecipe.display.font).foregroundStyle(DS.textMuted)
+@@ -43,6 +45,7 @@ struct QRScanner: View {
+     }
+ }
+ 
++#if !targetEnvironment(macCatalyst)
+ /// La cámara de VisionKit, solo códigos QR; avisa cada código nuevo.
+ private struct ScannerView: UIViewControllerRepresentable {
+     let found: (String) -> Void
+@@ -74,3 +77,5 @@ private struct ScannerView: UIViewControllerRepresentable {
+         }
+     }
+ }
++
++#endif
+diff --git a/ios/App/Sources/Design/Sky.swift b/ios/App/Sources/Design/Sky.swift
+index ff2cd0e8..8992fe25 100644
+--- a/ios/App/Sources/Design/Sky.swift
++++ b/ios/App/Sources/Design/Sky.swift
+@@ -203,7 +203,7 @@ final class SkyTilt {
+     func start() {
+         // La Mac no tiene sensor de movimiento, y soltar su `CMMotionManager` al irse el cielo (salir de Ajustes) dejaba la app
+         // trabada para siempre: CoreMotion se queda esperando en el hilo principal (17 nov 2026). En la Mac ni se crea.
+-        guard !ProcessInfo.processInfo.isiOSAppOnMac else { return }
++        guard !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) else { return }
+         let motion = self.motion ?? CMMotionManager()
+         self.motion = motion
+         guard motion.isDeviceMotionAvailable, !motion.isDeviceMotionActive else { return }
+diff --git a/ios/App/Sources/Design/Tokens+Home.swift b/ios/App/Sources/Design/Tokens+Home.swift
+index 8412ea0d..36c94a5a 100644
+--- a/ios/App/Sources/Design/Tokens+Home.swift
++++ b/ios/App/Sources/Design/Tokens+Home.swift
+@@ -26,13 +26,13 @@ extension DS {
+                 let fitted = max(base, size.width / (size.height * maxHeightShare))
+                 // En la Mac no hay tope: más apaisada, el arte va a la derecha sobre su copia difuminada (`PosterView`,
+                 // `sideFade`), así en un monitor ultrawide la portada no pasa de su parte del alto (antes llenaba la ventana).
+-                return ProcessInfo.processInfo.isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)
++                return (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? fitted : min(aspectWideMax, fitted)
+             }
+             return size.height < shortScreen ? aspectShort : aspect
+         }
+         /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
+         /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
+-        static let maxHeightShare: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
++        static let maxHeightShare: CGFloat = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
+         /// Un arte a sangre mucho más angosto que su marco (la Mac, sobre todo un monitor ultrawide) va a la derecha y se funde
+         /// hacia la izquierda en su copia difuminada (`PosterView`): esta parte de su ancho, desde la izquierda, se funde.
+         static let sideFade: CGFloat = 0.45
+@@ -190,7 +190,7 @@ extension DS {
+         static var logo: CGFloat { 34 * scale }
+         static var glow: CGFloat { 18 * scale }
+         /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
+-        static var pickLogo: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? 60 : WindowMetrics.roomy ? 52 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
++        static var pickLogo: CGFloat { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? 60 : WindowMetrics.roomy ? 52 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
+         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
+         /// El logo grande de la página de la plataforma y su halo.
+         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
+diff --git a/ios/App/Sources/Design/Tokens+Mac.swift b/ios/App/Sources/Design/Tokens+Mac.swift
+index 8201a0d0..891a751d 100644
+--- a/ios/App/Sources/Design/Tokens+Mac.swift
++++ b/ios/App/Sources/Design/Tokens+Mac.swift
+@@ -6,7 +6,7 @@ extension DS {
+     /// SF Pro en su estilo: en iPhone y iPad, con Dynamic Type; en la Mac (que no tiene Dynamic Type), al tamaño del estilo
+     /// por `DS.Mac.typeScale`, porque macOS dibuja la app al 77 % y la letra salía de 13 (MAC-A, 16 nov 2026).
+     static func styled(_ style: Font.TextStyle) -> Font {
+-        guard ProcessInfo.processInfo.isiOSAppOnMac else { return .system(style, design: .default) }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) else { return .system(style, design: .default) }
+         return .system(size: (Mac.styleSizes[style] ?? Mac.bodySize) * Mac.typeScale, design: .default)
+     }
+ 
+@@ -14,7 +14,11 @@ extension DS {
+     /// de las tiras crecen (MAC-A, Fernando, 16 nov 2026: «los botones están muy pequeños»). iPhone y iPad no los usan.
+     enum Mac {
+         /// Cuánto crece la letra: con 1.25 el cuerpo de 17 pt sale de ~16 en pantalla en vez de 13.
++        #if targetEnvironment(macCatalyst)
++        static let typeScale: CGFloat = 1.25 * 0.77   // PRUEBA TL1-B: al 100 %, el mismo tamaño en pantalla que al 77 %
++        #else
+         static let typeScale: CGFloat = 1.25
++        #endif
+         /// Cuántos pósters lleva cada fila de Biblioteca (`LibraryHome`): el resto, en su pantalla completa.
+         static let libraryRow = 30
+         /// Los tamaños de cada estilo del iPhone (letra «Grande», la de fábrica): en la Mac se parte de estos.
+@@ -37,14 +41,14 @@ extension DS {
+         /// pequeño… hacían sentido en el iPhone los tamaños, pero aquí ya no»). En la Mac, del estilo `barTitle` con la escala.
+         static let barTitle: Font.TextStyle = .title2
+         @MainActor static func styleBarTitles() {
+-            guard ProcessInfo.processInfo.isiOSAppOnMac else { return }
++            guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) else { return }
+             let size = (styleSizes[barTitle] ?? bodySize) * typeScale
+             let bar = UINavigationBar.appearance()
+             bar.titleTextAttributes = [.font: UIFont.systemFont(ofSize: size, weight: .bold)]
+             bar.largeTitleTextAttributes = [.font: UIFont.systemFont(ofSize: (styleSizes[.largeTitle] ?? size) * typeScale, weight: .bold)]
+         }
+         static func control(_ size: ControlSize) -> ControlSize {
+-            guard ProcessInfo.processInfo.isiOSAppOnMac else { return size }
++            guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) else { return size }
+             switch size {
+             case .mini: return .small
+             case .small: return .regular
+@@ -121,7 +125,7 @@ extension DS {
+         /// RN2: el puntito de Biblioteca (algo bajando) en la cápsula de pestañas.
+         static let tabBadge: CGFloat = 8
+         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
+-        static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
++        static func sized(_ points: CGFloat) -> CGFloat { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? points * typeScale : points }
+     }
+ }
+ 
+diff --git a/ios/App/Sources/Design/Tokens+Player.swift b/ios/App/Sources/Design/Tokens+Player.swift
+index 3a406534..931b194d 100644
+--- a/ios/App/Sources/Design/Tokens+Player.swift
++++ b/ios/App/Sources/Design/Tokens+Player.swift
+@@ -77,11 +77,11 @@ extension DS {
+         /// `padScale` (con el tamaño del iPhone se veían chicos en 11 y 13 pulgadas); en el iPhone, igual.
+         static let padScale: CGFloat = 1.2
+         static func big(_ points: CGFloat) -> CGFloat {
+-            ProcessInfo.processInfo.isiOSAppOnMac ? Mac.sized(points) : isPad ? points * padScale : points
++            (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? Mac.sized(points) : isPad ? points * padScale : points
+         }
+         /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal y no existe en los widgets).
+         private static let isPad: Bool = {
+-            if ProcessInfo.processInfo.isiOSAppOnMac { return false }
++            if (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) { return false }
+             if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
+             var info = utsname()
+             uname(&info)
+diff --git a/ios/App/Sources/Design/Tokens+Sky.swift b/ios/App/Sources/Design/Tokens+Sky.swift
+index 8179d258..d2797afd 100644
+--- a/ios/App/Sources/Design/Tokens+Sky.swift
++++ b/ios/App/Sources/Design/Tokens+Sky.swift
+@@ -38,7 +38,7 @@ extension DS {
+         /// fugaz, 30. `tiltStill`: cuánto le falta a la inclinación para alcanzar tu mano (de -1 a 1) y contar como quieta.
+         /// En la Mac, quieto va a 2: a 6 el cielo era casi todo el CPU de Inicio quieto (~9 % de 10 %, 17 nov 2026), y la capa de
+         /// cerca avanza medio punto por cuadro, que no se nota.
+-        static let calmFrame: TimeInterval = ProcessInfo.processInfo.isiOSAppOnMac ? 1.0 / 2 : 1.0 / 6
++        static let calmFrame: TimeInterval = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? 1.0 / 2 : 1.0 / 6
+         static let frame: TimeInterval = 1.0 / 12, shootFrame: TimeInterval = 1.0 / 30
+         static let tiltStill: CGFloat = 0.02
+         /// El sensor: cada cuánto lee, qué tan rápido el reposo sigue a tu mano, cuánto se nota y qué tan suave.
+diff --git a/ios/App/Sources/Design/Tokens+Tints.swift b/ios/App/Sources/Design/Tokens+Tints.swift
+index 23dc4865..d3e3dfb1 100644
+--- a/ios/App/Sources/Design/Tokens+Tints.swift
++++ b/ios/App/Sources/Design/Tokens+Tints.swift
+@@ -6,7 +6,7 @@ extension DS {
+     /// Tu avatar: en Inicio (junto al saludo) y en Ajustes.
+     enum Avatar {
+         /// En la Mac crece con la letra (17 nov 2026): de 34 pt salía de ~26 px junto a las pestañas; DK (22 nov) un paso más.
+-        static let toolbar: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? DS.Mac.sized(38) : 34, picker: CGFloat = 64
++        static let toolbar: CGFloat = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? DS.Mac.sized(38) : 34, picker: CGFloat = 64
+         /// La esquina de un ícono de app (la curva de iOS: 22.37 % del lado).
+         static let iconCorner: CGFloat = 0.2237
+     }
+diff --git a/ios/App/Sources/Design/Tokens.swift b/ios/App/Sources/Design/Tokens.swift
+index d5225218..fc796e1a 100644
+--- a/ios/App/Sources/Design/Tokens.swift
++++ b/ios/App/Sources/Design/Tokens.swift
+@@ -430,7 +430,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil,
+         static let rankTracking = -rankNumber * 0.08
+         /// El «10»: sus cifras más juntas y el póster encima de parte del cero (no empuja el póster ni se achata).
+         static let rankTwoDigitsOverlap = rankNumber * 0.42
+-        static let logoHero = CGFloat(DesignTokens.Size.logoHero) * (ProcessInfo.processInfo.isiOSAppOnMac ? Mac.heroScale : 1)
++        static let logoHero = CGFloat(DesignTokens.Size.logoHero) * ((ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? Mac.heroScale : 1)
+         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
+         static let focusRing: CGFloat = 2.5, hairline = Stroke.hairline
+         /// El alto del logo en la franja del mosaico.
+@@ -534,10 +534,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil,
+         static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96
+         /// En la Mac el arte a sangre mide la ventana (con 800 la portada se veía pixeleada, 16 nov 2026); iPhone y iPad, 800
+         /// (más era casi el triple de memoria por imagen en el iPad sin que se notara).
+-        static var bleed: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(bleedPhone, WindowMetrics.column.width) : bleedPhone }
++        static var bleed: CGFloat { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? max(bleedPhone, WindowMetrics.column.width) : bleedPhone }
+         static let bleedPhone: CGFloat = 800
+         /// Una tarjeta ancha de lado a lado (la portada de un estreno, `CoverCard`): con `card` se pedía la versión chica (480 px).
+-        static var wide: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(widePhone, WindowMetrics.column.width / 2) : widePhone }   // en la Mac la tarjeta crece con la columna
++        static var wide: CGFloat { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? max(widePhone, WindowMetrics.column.width / 2) : widePhone }   // en la Mac la tarjeta crece con la columna
+         static let widePhone: CGFloat = 420
+         /// El desenfoque de la copia que rellena el marco cuando la imagen va completa (`ArtFit.whole`).
+         static let wholeBlur: CGFloat = 28
+@@ -555,7 +555,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil,
+         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
+         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
+         static var railWidth: CGFloat {   // con espacio, C5 (`filling`); si no, sin el panel de la derecha
+-            let wide = ProcessInfo.processInfo.isiOSAppOnMac ? Mac.railWidth : railWidthWide
++            let wide = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? Mac.railWidth : railWidthWide
+             return WindowMetrics.roomy ? filling(target: wide, columns: railColumns) : WindowMetrics.column.width >= gridWideWidth ? wide : railWidthCompact
+         }
+         static let railWidthCompact: CGFloat = 112, railWidthWide: CGFloat = 148
+diff --git a/ios/App/Sources/Platform/DeviceInfo.swift b/ios/App/Sources/Platform/DeviceInfo.swift
+index 4dc987e9..8b066c0f 100644
+--- a/ios/App/Sources/Platform/DeviceInfo.swift
++++ b/ios/App/Sources/Platform/DeviceInfo.swift
+@@ -67,7 +67,7 @@ enum ThisDevice {
+     /// se conecta con la TV para nada») y el iPad también (18 nov, confirmada el 23 nov en PA5-A: «El iPad no se conecta a la
+     /// TV»): sin control, voz, «Ver en la TV», invitación ni acompañante de juegos. Los dos reciben tu clave de Real-Debrid por
+     /// iCloud (CX2-A). `MacNeverTalksToTheTVTests` cuida que esto no cambie.
+-    static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac && !runsOnIPad
++    static let talksToOrbital = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) && !runsOnIPad
+     /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal; esto se lee al armar `Services`).
+     private static let runsOnIPad: Bool = {
+         if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
+@@ -77,12 +77,12 @@ enum ThisDevice {
+         return machine.hasPrefix("iPad")
+     }()
+     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
+-    static let isMac = ProcessInfo.processInfo.isiOSAppOnMac || macLookForDemo
++    static let isMac = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) || macLookForDemo
+     /// Adornos que se mueven solos (el cielo, el muro de Explorar, los canales que se deslizan): en la Mac, quietos. Su pantalla
+     /// va a 165 Hz y a todo lo ancho: el compositor de la Mac (WindowServer) se iba a 60–95 % con Orbital en reposo y ni la
+     /// ventana se dejaba mover (Fernando, 22 nov 2026: «está inusable»). En la Mac se mueve lo que tocas, nada más.
+     /// `DesignRulesTests` cuida que todo adorno en movimiento pregunte por esto.
+-    static let ambientMotion = !ProcessInfo.processInfo.isiOSAppOnMac
++    static let ambientMotion = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp)
+     /// `-demo-mac-look` (solo Debug): el acomodo de la Mac (pestañas en cápsula, ficha en filas, Buscar grande, ▶ ＋) en el
+     /// simulador del iPad, para recorrer los flujos de la Mac con XCUITest cuando nadie está frente a la Mac (allí la app de
+     /// iPad se queda dormida si no se ve). Solo cambia `isMac`; la letra y los tamaños siguen siendo los del iPad.
+@@ -97,17 +97,17 @@ enum ThisDevice {
+     static let capabilities = Capabilities(edition: .bundled(), talksToOrbital: talksToOrbital)
+     /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, y quién quita a quién (CX5).
+     @MainActor static var platform: String {
+-        ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
++        (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+     }
+     /// El símbolo de este aparato («Para ver sin internet», RX1-A).
+     @MainActor static var symbol: String { ["mac": "laptopcomputer", "ipad": "ipad"][platform] ?? "iphone" }
+     /// Brillo y volumen con el dedo sobre el video (iPhone, iPad). En la Mac no aplican.
+-    static let hasTouchScreenControls = !ProcessInfo.processInfo.isiOSAppOnMac
++    static let hasTouchScreenControls = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp)
+     /// Las descargas en la pantalla bloqueada y la Dynamic Island. En la Mac no existen.
+-    static let supportsLiveActivities = !ProcessInfo.processInfo.isiOSAppOnMac
++    static let supportsLiveActivities = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp)
+ 
+     /// El nombre de este aparato en lo que se anota (quién pidió algo a Real-Debrid, R12): «iPhone», «iPad» o «Mac».
+-    @MainActor static var name: String { ProcessInfo.processInfo.isiOSAppOnMac ? "Mac" : UIDevice.current.name }
++    @MainActor static var name: String { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? "Mac" : UIDevice.current.name }
+ 
+     @MainActor static var forOrbital: OrbitalRemote.Device {
+         let device = UIDevice.current
+diff --git a/ios/App/Sources/Platform/DownloadContinuation.swift b/ios/App/Sources/Platform/DownloadContinuation.swift
+index a7665dd7..6e1f88dc 100644
+--- a/ios/App/Sources/Platform/DownloadContinuation.swift
++++ b/ios/App/Sources/Platform/DownloadContinuation.swift
+@@ -3,6 +3,7 @@ import Foundation
+ import UIKit
+ import OrbitalCore
+ 
++#if !targetEnvironment(macCatalyst)
+ /// Que las descargas sigan a toda velocidad con la app cerrada: una tarea continua de iOS 26 (`BGContinuedProcessingTask`).
+ /// Se pide con la app a la vista cuando empieza a bajar algo; mientras dura, la app sigue viva en segundo plano y el carril
+ /// rápido del transporte (`BackgroundDownloadTransport`) no se suelta. iOS enseña su avance en su propia actividad y ahí la
+@@ -98,3 +99,16 @@ final class DownloadContinuation {
+     private static func title(_ name: String, language: String) -> String { String(format: Strings.tr("Descargando «%@»", language: language), name) }
+     private static let units: Int64 = 1000
+ }
++
++#else
++@MainActor
++final class DownloadContinuation {
++    static let identifier = "mx.iracheta.orbital.downloads.keep"
++    var onStarted: () async -> Void = {}
++    var onExpired: () async -> Void = {}
++    var onEnded: () async -> Void = {}
++    var language: () -> String = { "es" }
++    var isRunning: Bool { false }
++    func update(_ items: [DownloadItem]) {}
++}
++#endif
+diff --git a/ios/App/Sources/Platform/DownloadLiveActivityController.swift b/ios/App/Sources/Platform/DownloadLiveActivityController.swift
+index 223b94cc..d15261e9 100644
+--- a/ios/App/Sources/Platform/DownloadLiveActivityController.swift
++++ b/ios/App/Sources/Platform/DownloadLiveActivityController.swift
+@@ -3,6 +3,7 @@ import Foundation
+ import UIKit
+ import OrbitalCore
+ 
++#if !targetEnvironment(macCatalyst)
+ /// Arranca, actualiza y termina la actividad en vivo de las descargas según la cola. iOS limita cuántas
+ /// actualizaciones acepta: se manda una cuando cambia el título, el estado o avanza al menos un punto.
+ @MainActor
+@@ -145,3 +146,14 @@ final class DownloadLiveActivityController {
+         return (try? data.write(to: target, options: .atomic)) != nil ? name : nil
+     }
+ }
++
++#else
++@MainActor
++final class DownloadLiveActivityController {
++    var language: () -> String = { "es" }
++    func setBackgrounded(_ value: Bool) async {}
++    func follow(_ downloads: Downloads) async {}
++    func setSuppressed(_ value: Bool) async {}
++    func update(_ items: [DownloadItem]) async {}
++}
++#endif
+diff --git a/ios/App/Sources/Platform/Haptics.swift b/ios/App/Sources/Platform/Haptics.swift
+index cb8154aa..1bfd72fd 100644
+--- a/ios/App/Sources/Platform/Haptics.swift
++++ b/ios/App/Sources/Platform/Haptics.swift
+@@ -8,7 +8,7 @@ import UIKit
+ /// `PlatformBoundaryTests.testHapticsGoThroughDSFeedback` lo cuida.
+ enum Haptics {
+     /// ¿Este aparato vibra? Solo el iPhone (la Mac «Diseñada para iPad» se presenta como iPad).
+-    @MainActor static let isAvailable = UIDevice.current.userInterfaceIdiom == .phone && !ProcessInfo.processInfo.isiOSAppOnMac
++    @MainActor static let isAvailable = UIDevice.current.userInterfaceIdiom == .phone && !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp)
+ }
+ 
+ private struct DSFeedback<Trigger: Equatable>: ViewModifier {
+diff --git a/ios/App/Sources/Platform/ImagePipeline.swift b/ios/App/Sources/Platform/ImagePipeline.swift
+index 643131d9..7b7db9b9 100644
+--- a/ios/App/Sources/Platform/ImagePipeline.swift
++++ b/ios/App/Sources/Platform/ImagePipeline.swift
+@@ -31,7 +31,7 @@ final class ImagePipeline: @unchecked Sendable {
+     /// se llenaban de a poco (Fernando, 22 nov 2026: «se sigue sintiendo muy lenta»). Esperar la red no ocupa hilos.
+     /// En el iPhone, 24 desde el 25 nov 2026 (MP1, Fernando: «se tardan mucho en cargar los pósters del mosaico»): con 12 la
+     /// versión buena de cada póster esperaba turno. `ios/scripts/medir-posters.py` lo mide.
+-    private static let maxDownloads = ProcessInfo.processInfo.isiOSAppOnMac ? 32 : 24
++    private static let maxDownloads = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? 32 : 24
+     /// Las decodificaciones, 4 también en la Mac: corren en los hilos de Swift, y con 8 podían ocuparlos todos (lo mismo que
+     /// atoraba la ficha con Vision, 22 nov 2026).
+     private static let maxDecodes = 4
+@@ -43,7 +43,7 @@ final class ImagePipeline: @unchecked Sendable {
+         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+         let scale = scene?.screen.scale ?? 3
+         // La Mac: la ventana puede pasar a una pantalla Retina aunque arranque en un monitor de 1x; con 2 se ve nítida en las dos.
+-        return ProcessInfo.processInfo.isiOSAppOnMac ? max(scale, 2) : scale
++        return (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? max(scale, 2) : scale
+     }()
+ 
+     nonisolated(unsafe) private let memory = NSCache<NSString, UIImage>()   // NSCache es seguro entre hilos
+diff --git a/ios/App/Sources/Platform/MacStrings.swift b/ios/App/Sources/Platform/MacStrings.swift
+index 7b242272..fd844334 100644
+--- a/ios/App/Sources/Platform/MacStrings.swift
++++ b/ios/App/Sources/Platform/MacStrings.swift
+@@ -14,7 +14,7 @@ import ObjectiveC
+ /// búsqueda en un diccionario por texto después. `DeviceWordsOnMacTests.testTheMacReadsItsOwnVariant` lo cuida.
+ enum MacStrings {
+     static func install() {
+-        guard ProcessInfo.processInfo.isiOSAppOnMac, !installed else { return }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp), !installed else { return }
+         installed = true
+         for name in ["localizedStringForKey:value:table:localization:", "localizedStringForKey:value:table:localizations:",
+                      "_localizedStringForKey:value:table:localizations:"] { hook(name, attributed: false) }
+diff --git a/ios/App/Sources/Platform/TVLiveActivityController.swift b/ios/App/Sources/Platform/TVLiveActivityController.swift
+index 4ba50864..26f766df 100644
+--- a/ios/App/Sources/Platform/TVLiveActivityController.swift
++++ b/ios/App/Sources/Platform/TVLiveActivityController.swift
+@@ -4,6 +4,7 @@ import UIKit
+ import OrbitalCore
+ import OrbitalModels
+ 
++#if !targetEnvironment(macCatalyst)
+ /// «Viendo en la TV»: arranca, actualiza y termina la actividad en vivo de lo que reproduce tu Orbital, siguiendo lo que la
+ /// app sabe de la TV (`TVNowModel`). La barra avanza sola en la pantalla bloqueada; solo se manda una actualización cuando
+ /// cambia el título, la pausa o la posición se aleja de lo esperado (iOS limita cuántas acepta).
+@@ -118,3 +119,11 @@ final class TVLiveActivityController {
+         return nil
+     }
+ }
++
++#else
++@MainActor
++final class TVLiveActivityController {
++    var language: () -> String = { "es" }
++    func follow(_ tv: TVNowModel) {}
++}
++#endif
+diff --git a/ios/App/Sources/Platform/WindowMetrics.swift b/ios/App/Sources/Platform/WindowMetrics.swift
+index e2b11767..c3b558c5 100644
+--- a/ios/App/Sources/Platform/WindowMetrics.swift
++++ b/ios/App/Sources/Platform/WindowMetrics.swift
+@@ -29,13 +29,13 @@ final class WindowMetrics {
+     /// el tamaño más chico en el que la app está probada. Así ningún acomodo se rompe al achicar la ventana. En la Mac, 560 de
+     /// ancho: más angosta, la barra de arriba (logo, «Buscar», pestañas, «Todo» y tu foto) no cabía y se salía por los dos
+     /// lados (17 nov 2026, `MacSelfCheck.tour`).
+-    static let minimum = CGSize(width: ProcessInfo.processInfo.isiOSAppOnMac ? 560 : 375, height: 667)
++    static let minimum = CGSize(width: (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? 560 : 375, height: 667)
+ 
+     /// Pantalla con espacio: la Mac, o una columna desde `roomyWidth` (el iPad de 13" de pie, cualquier iPad acostado). Lo que
+     /// en la Mac crece hasta llenar el renglón (tarjetas, canales, la tira de «Decide por mí», el muro de Buscar) crece igual
+     /// aquí: en el iPad dejaba media pantalla vacía (Fernando, 17 nov 2026: «tráete de Mac a iPad lo que haga sentido»). Lo del
+     /// puntero y la ventana de la Mac (pestañas en el renglón del logo, buscador propio) sigue siendo solo de la Mac.
+-    nonisolated static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }
++    nonisolated static var roomy: Bool { (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) || column.width >= roomyWidth }
+     nonisolated static let roomyWidth: CGFloat = 900
+ 
+     func update(_ new: CGSize) {
+diff --git a/ios/App/Sources/Screens/HomeBoard.swift b/ios/App/Sources/Screens/HomeBoard.swift
+index 64909d98..655a5bdd 100644
+--- a/ios/App/Sources/Screens/HomeBoard.swift
++++ b/ios/App/Sources/Screens/HomeBoard.swift
+@@ -178,7 +178,7 @@ extension DS {
+     /// El tablero de Inicio (MI2 · II1).
+     enum HomeBoard {
+         /// Desde este ancho de columna (y acostada): en la Mac, con su letra más grande, un poco más.
+-        static let from: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? 1200 : 1100
++        static let from: CGFloat = (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? 1200 : 1100
+         static let panelShare: CGFloat = 0.34, panelMin: CGFloat = 340, panelMax: CGFloat = 520
+         static let gap = DS.Space.s6, heightShare: CGFloat = 0.6, heroAspectMin: CGFloat = 1.1
+         /// Hasta cuántos de lo que tienes a medias van en el panel (los que quepan; «Ver todo» abre los demás) y el ancho de su imagen.
+diff --git a/ios/App/Sources/Support/Demo.swift b/ios/App/Sources/Support/Demo.swift
+index a05f323f..cd5dd71e 100644
+--- a/ios/App/Sources/Support/Demo.swift
++++ b/ios/App/Sources/Support/Demo.swift
+@@ -11,7 +11,7 @@ import OrbitalAddons
+ enum Demo {
+     /// Los argumentos de arranque, leídos una sola vez (F10): las pantallas preguntan aquí (`has`, `value(after:)`), nunca a
+     /// `ProcessInfo`. Solo existe en Debug; en Release la app no lee argumentos.
+-    static let arguments = ProcessInfo.processInfo.arguments
++    static let arguments = ProcessInfo.processInfo.arguments + (Bundle.main.bundleIdentifier == "mx.iracheta.orbital.macprueba" ? ["-demo", "-demo-no-idle", "-demo-mute", "-demo-free-tabs"] : [])   // PRUEBA TL1-B
+     static func has(_ flag: String) -> Bool { arguments.contains(flag) }
+ 
+     static var isOn: Bool { has("-demo") }
+diff --git a/ios/App/Sources/Support/Perf.swift b/ios/App/Sources/Support/Perf.swift
+index 9d2b5892..4d902abf 100644
+--- a/ios/App/Sources/Support/Perf.swift
++++ b/ios/App/Sources/Support/Perf.swift
+@@ -209,14 +209,14 @@ extension View {
+     /// qué gasta). Se lee una vez, al arrancar.
+     nonisolated static let off: Set<String> = {
+         let request = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("mac-check-request")
+-        guard ProcessInfo.processInfo.isiOSAppOnMac || simulator, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) || simulator, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
+         return Set(text.split(separator: "\n").compactMap { line in line.hasPrefix("off ") ? String(line.dropFirst(4)) : nil })
+     }()
+ 
+     static func runIfRequested() async {
+         _ = off
+         // La Mac, o el simulador (el iPad: la misma revisión sin manos, en su tamaño).
+-        guard ProcessInfo.processInfo.isiOSAppOnMac || Self.simulator else { return }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) || Self.simulator else { return }
+         let request = tmp.appendingPathComponent("mac-check-request")
+         guard let text = try? String(contentsOf: request, encoding: .utf8) else { return }
+         try? FileManager.default.removeItem(at: request)
+@@ -269,14 +269,14 @@ extension View {
+ 
+     /// La ventana fija a ese tamaño (en la Mac, mínimo = máximo); `free` la deja libre otra vez.
+     static func resize(_ size: CGSize) {
+-        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp), let limits = AppWindows.scene?.sizeRestrictions else { return }
+         limits.minimumSize = CGSize(width: min(size.width, WindowMetrics.minimum.width), height: min(size.height, WindowMetrics.minimum.height))
+         limits.maximumSize = size
+         limits.minimumSize = size
+     }
+ 
+     static func free() {
+-        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
++        guard (ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp), let limits = AppWindows.scene?.sizeRestrictions else { return }
+         limits.minimumSize = WindowMetrics.minimum
+         limits.maximumSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+     }
+@@ -437,7 +437,7 @@ extension View {
+         let folder = tmp.appendingPathComponent("mac-fichas")
+         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+         let full = screenSize, before = window?.bounds.size ?? full
+-        let sizes: [CGSize] = !ProcessInfo.processInfo.isiOSAppOnMac ? [window?.bounds.size ?? full] : [
++        let sizes: [CGSize] = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? [window?.bounds.size ?? full] : [
+             CGSize(width: 760, height: 1000), CGSize(width: 1100, height: 760), CGSize(width: 1440, height: 900),
+             CGSize(width: 1920, height: 1080), CGSize(width: full.width * 0.75, height: full.height), full,
+         ]
+@@ -471,7 +471,7 @@ extension View {
+         }
+         let full = screenSize
+         // En el iPad, su tamaño de siempre (la ventana no se cambia desde aquí).
+-        let sizes: [(String, CGSize)] = !ProcessInfo.processInfo.isiOSAppOnMac ? [("ipad", window?.bounds.size ?? full)] : [
++        let sizes: [(String, CGSize)] = !(ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp) ? [("ipad", window?.bounds.size ?? full)] : [
+             ("1-chica", CGSize(width: 560, height: 720)),
+             ("2-mediana", CGSize(width: 960, height: 680)),
+             ("3-grande", CGSize(width: 1440, height: 900)),

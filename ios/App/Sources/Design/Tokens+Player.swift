@@ -54,6 +54,8 @@ extension DS {
         static let pinchMinDuration: TimeInterval = 0.15, pinchTapGuard: TimeInterval = 0.6
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
         static let seekBubbleSideMargin: CGFloat = 64
+        /// El ancho mínimo del contenido de la burbuja: con su orilla, cabe justo en ese margen y no brinca al cambiar de cifras.
+        static let seekBubbleWidth: CGFloat = 88
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance
