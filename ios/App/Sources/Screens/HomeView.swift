@@ -7,7 +7,7 @@ struct HomeView: View {
     @Environment(AppEnvironment.self) private var env
     @State var home: ModelObserver<HomeModel>
     @State var tvNow: ModelObserver<TVNowModel>
-    @State var heroKindOpen = false   // HB1-B: la pastilla del tipo en la portada (Duo, en prueba)
+    @State var heroKindOpen = false   // HB1-B: la pastilla del tipo en la portada (Duo)
     @State private var inbox: ModelObserver<InboxModel>
     /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
     @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
@@ -32,7 +32,7 @@ struct HomeView: View {
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openRemote) var openRemote
     @Environment(\.scenePhase) private var scenePhase

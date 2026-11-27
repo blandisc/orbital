@@ -124,7 +124,7 @@ salía ~20 pt más ancha, recorrida a la izquierda y cortada de los dos lados.
   que pone iOS (LD1-B, 27 nov 2026, `Platform/DuoBars.swift`). `-demo-duo-bars-side` (solo Debug) deja la franja para comparar.
 - En la pantalla de afuera del Duo, Inicio va en el renglón de la hora: el logo completo, el control y tu foto a la izquierda;
   la hora y la señal, pegadas a la cámara de la esquina derecha (LD2-B, 27 nov 2026, `HomeView+BarHeader.swift`). Del lado
-  derecho iOS los escondería en «…». La portada es más baja (`aspectShortPhone`) y va al centro (`artCentered`). Solo cuando
+  derecho iOS los escondería en «…». El filtro de Inicio va recogido en la esquina de arriba de la portada, a la distancia del texto de la portada (HB1-B). La portada es más baja (`aspectShortPhone`) y va al centro (`artCentered`). Solo cuando
   `WindowMetrics.shortPhone`: en el 17 Pro no cambia nada. Lo cuidan `DuoHomeBarUITests` y `DesignRulesTests+DuoHome`.
 
 ### Lo que se desplaza a lo ancho (13 nov 2026)

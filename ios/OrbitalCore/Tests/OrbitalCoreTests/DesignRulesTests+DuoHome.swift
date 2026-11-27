@@ -15,6 +15,7 @@ extension DesignRulesTests {
         XCTAssertTrue(bar.contains("static var headerInBar: Bool { WindowMetrics.shortPhone }"), "solo en el iPhone ancho y bajo (el Duo cerrado)")
         XCTAssertTrue(bar.contains("AppMark(small: true)"), "con el logo completo, no solo el ícono")
         XCTAssertFalse(bar.contains(".topBarTrailing"), "nada del lado de la hora: iOS lo mete en «…»")
+        XCTAssertTrue(bar.contains("if Self.headerInBar {\n            DSKindFilter(kind: kindBinding, menu: true"), "HB1-B: el filtro de Inicio, en la portada del Duo")
     }
 
     /// El carrusel de Inicio en un marco ancho (el Duo) recorta al centro, sin correrse hacia las caras: corrido se veía chueco.

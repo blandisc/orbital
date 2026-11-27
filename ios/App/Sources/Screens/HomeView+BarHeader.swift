@@ -13,16 +13,6 @@ extension HomeView {
     /// Sin nada en la TV, el control de tu Orbital vive en el encabezado (con algo reproduciéndose, en el accesorio de abajo).
     var showsRemote: Bool { openRemote != nil && (tvNow.model.now == nil || !Self.hasTabAccessory) }
 
-    /// HB1 (en prueba, 27 nov 2026): dónde van el filtro de Inicio y Ajustes en el Duo. «a»: tu foto abre un menú con el filtro
-    /// y Ajustes; «b»: el filtro en la esquina de la portada. Sin bandera, como hoy (sin filtro en el Duo).
-    static var hb: String {
-        #if DEBUG
-        Demo.isOn ? Demo.value(after: "-demo-hb") ?? "" : ""
-        #else
-        ""
-        #endif
-    }
-
     var kindBinding: Binding<String> {
         Binding(get: { home.model.spotlightKind ?? "" }, set: { home.model.spotlightKind = $0.isEmpty ? nil : $0 })
     }
@@ -30,7 +20,7 @@ extension HomeView {
     @ToolbarContentBuilder var barHeader: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) { AppMark(small: true).fixedSize() }.sharedBackgroundVisibility(.hidden)
         ToolbarItem(placement: .topBarLeading) {
-            HStack(spacing: DS.Space.s2) {
+            HStack(spacing: DS.Space.s2) {   // con más aire ya no cabe junto a la hora: iOS manda el renglón a «…» (probado)
                 if showsRemote {
                     Button { openRemote?() } label: {
                         Image(systemName: "av.remote").font(DS.TextRecipe.section.font)
@@ -38,7 +28,7 @@ extension HomeView {
                     }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
-                if Self.hb == "a" { profileMenu } else { ProfileButton(avatar: look.avatar) }
+                ProfileButton(avatar: look.avatar)
             }
             .buttonStyle(.plain).foregroundStyle(DS.text)
             .fixedSize()
@@ -46,59 +36,15 @@ extension HomeView {
         .sharedBackgroundVisibility(.hidden)
     }
 
-    /// HB1-A: tu foto abre un panelito: arriba, qué ver en Inicio (el filtro de siempre); abajo, Ajustes. Con un `Menu` de iOS
-    /// el renglón entero se iba a «…» (probado 27 nov 2026); con un botón y su globo, no.
-    private var profileMenu: some View {
-        HomeProfilePopover(kind: kindBinding, avatar: look.avatar)
-    }
-
-    /// HB1-B: el filtro de siempre (`DSKindFilter`, recogido: solo lo que ves) en la esquina de la portada.
+    /// HB1-B (Fernando, 27 nov 2026: «vamos con el filtro en la portada»): en el Duo el filtro de Inicio no cabe en el renglón
+    /// de la hora; va recogido (solo lo que ves) en la esquina de arriba de la portada, a la misma distancia de la orilla que el
+    /// texto de la portada. Se abre hacia la izquierda con los tres. Es la misma pastilla del 17 Pro.
     @ViewBuilder var heroKind: some View {
-        if Self.headerInBar && Self.hb == "b" {
+        if Self.headerInBar {
             DSKindFilter(kind: kindBinding, menu: true, open: $heroKindOpen).accessibilityIdentifier("home-kind-filter")
-                .padding(.top, DS.Space.s4).padding(.trailing, DS.Space.gutter + DS.Space.s4)
-        }
-    }
-}
-
-/// HB1-A (en prueba): tu foto en Inicio del Duo; al tocarla, un globo con el filtro de Inicio y Ajustes.
-struct HomeProfilePopover: View {
-    @Binding var kind: String
-    let avatar: String
-    @State private var open = false
-
-    var body: some View {
-        Button { open = true } label: {
-            AvatarImage(id: avatar)
-                .overlay(alignment: .bottomTrailing) {
-                    // Con un filtro puesto, su ícono chiquito sobre tu foto: se sabe que Inicio está filtrado.
-                    if !kind.isEmpty {
-                        Image(systemName: KindGlyph.symbol(kind)).symbolVariant(KindGlyph.variant)
-                            .font(DS.TextRecipe.badge.font).foregroundStyle(DS.bg)
-                            .padding(DS.Space.s1).background(DS.text, in: Circle())
-                            .offset(x: DS.Space.s1, y: DS.Space.s1)
-                    }
-                }
-        }
-        .accessibilityLabel(Text("Tu perfil: qué ver en Inicio y Ajustes"))
-        .accessibilityIdentifier("home-profile-menu")
-        .popover(isPresented: $open) {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
-                Text("Qué ver en Inicio").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                DSKindFilter(kind: $kind)
-                Divider()
-                Button {
-                    open = false
-                    AppEnvironment.shared.ui.openSettings = true
-                } label: {
-                    Label("Ajustes", systemImage: "gearshape").font(DS.TextRecipe.body.font)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).foregroundStyle(DS.text)
-                .accessibilityIdentifier("home-profile-settings")
-            }
-            .padding(DS.Space.s6)
-            .presentationCompactAdaptation(.popover)
+                // A la misma distancia de la orilla que el texto de la portada: en claro es tarjeta (su orilla + su margen); en
+                // oscuro el arte llega a la orilla (solo el margen).
+                .padding(.top, DS.Space.gutter).padding(.trailing, scheme == .dark ? DS.Space.gutter : DS.Space.gutter * 2)
         }
     }
 }
