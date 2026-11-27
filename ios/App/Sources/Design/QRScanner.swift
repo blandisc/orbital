@@ -9,21 +9,27 @@ struct QRScanner: View {
     let found: (String) -> Void
     @Environment(\.dismiss) private var dismiss
 
+    private var cannotScan: some View {
+        VStack(spacing: DS.Space.s4) {
+            Image(systemName: "camera.metering.unknown").font(DS.TextRecipe.display.font).foregroundStyle(DS.textMuted)
+            Text("Este aparato no puede leer el código.").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
+            Text("Ábrelo con la cámara del iPhone: apúntale al código de tu TV.").recipe(.secondary).multilineTextAlignment(.center)
+        }
+        .padding(DS.Space.s6)
+    }
+
     var body: some View {
         ZStack {
+            #if !targetEnvironment(macCatalyst)   // la app de Mac de verdad no tiene VisionKit para la cámara: dice que no puede
             if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
                 ScannerView(found: found).ignoresSafeArea()
                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(DS.paper, lineWidth: DS.Stroke.selected)
                     .frame(width: DS.Guide.scanFrame, height: DS.Guide.scanFrame)
                     .accessibilityHidden(true)
-            } else {
-                VStack(spacing: DS.Space.s4) {
-                    Image(systemName: "camera.metering.unknown").font(DS.TextRecipe.display.font).foregroundStyle(DS.textMuted)
-                    Text("Este aparato no puede leer el código.").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                    Text("Ábrelo con la cámara del iPhone: apúntale al código de tu TV.").recipe(.secondary).multilineTextAlignment(.center)
-                }
-                .padding(DS.Space.s6)
-            }
+            } else { cannotScan }
+            #else
+            cannotScan
+            #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Backdrop())
@@ -43,6 +49,7 @@ struct QRScanner: View {
     }
 }
 
+#if !targetEnvironment(macCatalyst)
 /// La cámara de VisionKit, solo códigos QR; avisa cada código nuevo.
 private struct ScannerView: UIViewControllerRepresentable {
     let found: (String) -> Void
@@ -74,3 +81,4 @@ private struct ScannerView: UIViewControllerRepresentable {
         }
     }
 }
+#endif

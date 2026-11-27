@@ -635,7 +635,7 @@ export function addonMenu(entry, { first = false, last = false, lastSource = fal
 
 // --- Torrentio con tus opciones («La TV sin Stremio», corte S3) ------------------------------------------------------
 // Los nombres son los del iPhone (TorrentioWords) y los de la dirección, los del contrato (design/addons-contract.json).
-export const TORRENTIO_RECOMMENDED = { language: ["latino", "spanish"], qualityfilter: ["cam", "scr", "unknown"] };
+export const TORRENTIO_RECOMMENDED = { language: ["latino", "spanish"], qualityfilter: ["cam", "scr"] };
 const TORRENTIO_LANGUAGES = {
   latino: "Latino", spanish: "Español de España", portuguese: "Portugués", french: "Francés", italian: "Italiano", german: "Alemán",
   japanese: "Japonés", korean: "Coreano", chinese: "Chino", taiwanese: "Taiwanés", russian: "Ruso", dutch: "Neerlandés", hindi: "Hindi",

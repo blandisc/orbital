@@ -4,7 +4,10 @@ import Foundation
 
 /// «Viendo en la TV»: lo que tu Orbital está reproduciendo, en la pantalla bloqueada y en la isla, con pausa y ±30 s. La barra
 /// avanza sola (de la posición y la hora en que se supo), así no hace falta mandar un avance por segundo.
-struct TVActivityAttributes: ActivityAttributes, Sendable {
+#if !targetEnvironment(macCatalyst)
+extension TVActivityAttributes: ActivityAttributes {}
+#endif
+struct TVActivityAttributes: Sendable {
     struct ContentState: Codable, Hashable, Sendable {
         var title: String
         /// «T1 · E4» o el canal en vivo; vacío en una película.

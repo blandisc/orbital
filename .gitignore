@@ -20,3 +20,7 @@ ios/App/Secrets.xcconfig
 .playwright-mcp/
 orbital/mpv-input.conf
 orbital/orbital-mouse.lua
+
+# Las bibliotecas del motor de video con su rebanada de Mac Catalyst (ios/scripts/catalyst_bibliotecas.py)
+ios/Vendor/
+ios/App/project.catalyst.yml

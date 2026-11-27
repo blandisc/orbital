@@ -31,6 +31,26 @@ public final class AddonList: @unchecked Sendable {
         }
         purgeRemoved()   // si la app se cerró durante «Deshacer», la dirección de lo quitado no se queda
         dropTVOnly()
+        moreSources()
+    }
+
+    /// Más fuentes (Fer, 27 nov 2026: «El Chapulín Colorado» no salía en TorBox). Una sola vez, en lo ya instalado: Torrentio
+    /// deja de esconder «sin calidad» (las series viejas casi siempre vienen así; T11 ya no la esconde) y Comet se prende.
+    /// Si después vuelves a esconderla o lo apagas, se respeta.
+    private func moreSources() {
+        guard !readFailed, vault.data(AddonKeys.moreSourcesDone) == nil else { return }
+        vault.setData(AddonKeys.moreSourcesDone, Data([1]))   // sin lista todavía (recién instalada): ya nace con todo esto
+        guard items != nil else { return }
+        update { list in
+            for i in list.indices {
+                if list[i].origin == .recommended(AddonCatalog.torrentio.id), var options = list[i].options,
+                   options.excludedQualities.contains("unknown") {
+                    options.excludedQualities.removeAll { $0 == "unknown" }
+                    list[i].options = options
+                }
+                if list[i].origin == .recommended(AddonCatalog.comet.id) { list[i].enabled = true }
+            }
+        }
     }
 
     /// Lo traído de Stremio que solo vive en la computadora de la TV (Local Files, `AddonShare.livesOnTV`) no es de este

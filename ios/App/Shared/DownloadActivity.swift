@@ -3,7 +3,10 @@ import Foundation
 
 /// La actividad en vivo de las descargas (pantalla bloqueada y Dynamic Island). La comparten la app, que la arranca y
 /// la actualiza, y la extensión de widgets, que la dibuja.
-struct DownloadActivityAttributes: ActivityAttributes, Sendable {
+#if !targetEnvironment(macCatalyst)
+extension DownloadActivityAttributes: ActivityAttributes {}
+#endif
+struct DownloadActivityAttributes: Sendable {
     struct ContentState: Codable, Hashable, Sendable {
         /// Lo que está bajando ahora («The Office · T2 · E5»).
         var title: String

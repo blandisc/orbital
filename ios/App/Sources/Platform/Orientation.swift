@@ -5,12 +5,16 @@ import UIKit
 /// decide y aquí no se fuerza nada. Lo usan `AppDelegate` y el reproductor (`PlayerScreen+CicloDeVida.swift`).
 @MainActor
 enum Orientation {
-    /// ¿La app manda en el giro? Solo en el iPhone (en la Mac «Diseñada para iPad» el idioma es `.pad`).
-    static let isControlled = UIDevice.current.userInterfaceIdiom == .phone
+    /// ¿La app manda en el giro? Solo en un iPhone de tamaño de iPhone (en la Mac «Diseñada para iPad» el idioma es `.pad`).
+    /// En una pantalla grande de iPhone (la de adentro del iPhone Duo, `WindowMetrics.isLarge`) gira libre, como el iPad; al
+    /// cerrarlo y pasar a la de afuera vuelve a mandar la app (la raíz avisa del cambio con `refreshSupported`).
+    static var isControlled: Bool { isPhone && !WindowMetrics.large }
+    private static let isPhone = UIDevice.current.userInterfaceIdiom == .phone
 
-    /// Lo que se permite ahora (en el iPhone: vertical fuera del reproductor). En iPad y Mac, todas.
+    /// Lo que se permite ahora (en el iPhone: vertical fuera del reproductor). En iPad y Mac, todas; en la pantalla grande de un
+    /// iPhone (el Duo abierto), todas menos de cabeza, como pide el Info.plist del iPhone.
     static var mask: UIInterfaceOrientationMask = .portrait
-    static var supported: UIInterfaceOrientationMask { isControlled ? mask : .all }
+    static var supported: UIInterfaceOrientationMask { isControlled ? mask : isPhone ? .allButUpsideDown : .all }
 
     /// La orientación del teléfono al abrir el reproductor (con el candado de rotación, la última que iOS conoce).
     static var opening: UIInterfaceOrientationMask {
@@ -102,6 +106,8 @@ enum Orientation {
 @MainActor
 enum AppWindows {
     static var scene: UIWindowScene? { UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first }
+    /// La ventana principal (la que recibe el teclado): para lo que mide o captura la ventana entera (`Perf`).
+    static var keyWindow: UIWindow? { UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first }
     static var all: [UIWindow] { UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows) }
 
     /// Pone en la escena el tamaño mínimo de ventana (`WindowMetrics.minimum`): en la Mac y en el iPad. En el iPhone no hace
@@ -112,7 +118,7 @@ enum AppWindows {
 
     /// Los márgenes seguros de la ventana principal (el video en horizontal ignora el área segura y no los trae su `GeometryReader`).
     static var safeArea: UIEdgeInsets {
-        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
+        keyWindow?.safeAreaInsets ?? .zero
     }
 }
 

@@ -32,7 +32,7 @@ final class TorrentioProbeTests: XCTestCase {
                                 providers: ["yts"], debridOptions: ["nodownloadlinks", "nocatalog"], verbatim: ["futuro=1"])
         let back = TorrentioProbe.recommended(keeping: mine)
         XCTAssertEqual(back.languages, ["latino", "spanish"])
-        XCTAssertEqual(back.excludedQualities, ["cam", "scr", "unknown"])
+        XCTAssertEqual(back.excludedQualities, ["cam", "scr"])
         XCTAssertNil(back.sort); XCTAssertNil(back.limit); XCTAssertNil(back.sizeFilter); XCTAssertEqual(back.providers, [])
         XCTAssertEqual(back.debridOptions, ["nocatalog"], "«sin catálogo» no tiene pantalla: se queda")
         XCTAssertEqual(back.verbatim, ["futuro=1"])

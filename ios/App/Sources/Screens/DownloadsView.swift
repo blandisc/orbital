@@ -150,9 +150,11 @@ struct DownloadsView: View {
         if on { Task { await DebridRequestNotifier.clearDelivered() } }
     }
 
-    /// Biblioteca en filas (BI-A): en la Mac y en el iPad ancho. Fernando, 22 nov 2026: «esta pantalla también me gusta para el
-    /// iPad». En el iPhone (y el iPad angosto, en pantalla dividida) siguen las pestañas de arriba.
-    @MainActor static var rows: Bool { ThisDevice.isMac || (ThisDevice.platform == "ipad" && WindowMetrics.roomy) }
+    /// Biblioteca en filas (BI-A): en la Mac y en cualquier pantalla grande con espacio (el iPad ancho; el iPhone Duo abierto y
+    /// acostado). Fernando, 22 nov 2026: «esta pantalla también me gusta para el iPad». En el iPhone (y el iPad angosto, en
+    /// pantalla dividida) siguen las pestañas de arriba; un iPhone Pro Max acostado (detrás del reproductor) llega a 956 de
+    /// ancho, pero su pantalla no es grande (`WindowMetrics.large`) y la Biblioteca no cambia de forma por debajo.
+    @MainActor static var rows: Bool { ThisDevice.isMac || (WindowMetrics.roomy && (ThisDevice.platform != "iphone" || WindowMetrics.large)) }
 
     @ViewBuilder private func macSplit(_ content: some View) -> some View {
         if Self.rows {

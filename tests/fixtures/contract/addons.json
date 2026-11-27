@@ -16,8 +16,7 @@
           ],
           "qualityfilter": [
             "cam",
-            "scr",
-            "unknown"
+            "scr"
           ]
         },
         "order": 0,

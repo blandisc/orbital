@@ -29,18 +29,31 @@ final class WindowMetrics {
     /// el tamaño más chico en el que la app está probada. Así ningún acomodo se rompe al achicar la ventana. En la Mac, 560 de
     /// ancho: más angosta, la barra de arriba (logo, «Buscar», pestañas, «Todo» y tu foto) no cabía y se salía por los dos
     /// lados (17 nov 2026, `MacSelfCheck.tour`).
-    static let minimum = CGSize(width: ProcessInfo.processInfo.isiOSAppOnMac ? 560 : 375, height: 667)
+    static let minimum = CGSize(width: ProcessInfo.onMac ? 560 : 375, height: 667)
 
     /// Pantalla con espacio: la Mac, o una columna desde `roomyWidth` (el iPad de 13" de pie, cualquier iPad acostado). Lo que
     /// en la Mac crece hasta llenar el renglón (tarjetas, canales, la tira de «Decide por mí», el muro de Buscar) crece igual
     /// aquí: en el iPad dejaba media pantalla vacía (Fernando, 17 nov 2026: «tráete de Mac a iPad lo que haga sentido»). Lo del
     /// puntero y la ventana de la Mac (pestañas en el renglón del logo, buscador propio) sigue siendo solo de la Mac.
-    nonisolated static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }
+    nonisolated static var roomy: Bool { ProcessInfo.onMac || column.width >= roomyWidth }
     nonisolated static let roomyWidth: CGFloat = 900
+
+    /// Pantalla grande: 600 puntos o más por su lado corto. La de adentro del iPhone Duo (≈ 669 × 951) lo es; la de afuera
+    /// (≈ 466 × 678) y todos los demás iPhone (el más ancho, 440) no. Ahí el iPhone se porta como el iPad: gira libre
+    /// (`Orientation.isControlled`) y los controles del reproductor crecen (`DS.PlayerPanel.big`). El lado corto no cambia
+    /// al girar, así que la respuesta es la misma de pie y acostado. En el iPad y la Mac no se usa (ya son grandes).
+    nonisolated static let largeSide: CGFloat = 600
+    nonisolated static func isLarge(_ size: CGSize) -> Bool { min(size.width, size.height) >= largeSide }
+    nonisolated static var large: Bool { isLarge(size) }
 
     func update(_ new: CGSize) {
         guard new.width > 0, new.height > 0, new != size else { return }
+        let wasLarge = Self.isLarge(size)
         size = new
+        #if !WIDGET_EXTENSION
+        // iPhone Duo: abrirlo suelta el giro y cerrarlo lo vuelve a fijar; UIKit vuelve a preguntar las orientaciones.
+        if Self.isLarge(new) != wasLarge { Orientation.refreshSupported() }
+        #endif
     }
 
     /// Lo que de verdad queda para las pantallas: la ventana menos el panel de la derecha (el control de la TV en el iPad

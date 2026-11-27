@@ -20,7 +20,7 @@ final class MacTourTests: XCTestCase {
     private var env: AppEnvironment { AppEnvironment.shared }
 
     override func setUp() async throws {
-        try XCTSkipUnless(ProcessInfo.processInfo.isiOSAppOnMac, "solo en la Mac")
+        try XCTSkipUnless(ProcessInfo.onMac, "solo en la Mac")
         continueAfterFailure = true
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         print("MAC-TOUR folder \(folder.path)")
@@ -146,7 +146,7 @@ final class MacTourTests: XCTestCase {
 @MainActor
 final class MacPerformanceTests: XCTestCase {
     func testFiveMetrics() async throws {
-        try XCTSkipUnless(ProcessInfo.processInfo.isiOSAppOnMac, "solo en la Mac")
+        try XCTSkipUnless(ProcessInfo.onMac, "solo en la Mac")
         try? await Task.sleep(for: .seconds(8))
         await MacSelfCheck.perf(label: "prueba")
     }

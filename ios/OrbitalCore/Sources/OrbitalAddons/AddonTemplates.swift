@@ -36,11 +36,11 @@ public enum AddonCatalog {
     public static let cometBase = "https://comet.elfhosted.com"
 
     /// Comet (la instancia pública de ElfHosted) con Real-Debrid: su configuración va en la URL como JSON en base64
-    /// (`/{base64}/manifest.json`), como la arma su página. Solo lo cacheado en tu Real-Debrid. Viene apagado en la guía
-    /// hasta probarlo con una cuenta real.
+    /// (`/{base64}/manifest.json`), como la arma su página. Solo lo cacheado en tu nube. Viene prendido desde el 27 nov 2026
+    /// (más fuentes para lo que Torrentio casi no tiene).
     public static let comet = AddonTemplate(
         id: "comet", name: "Comet", summary: "Más fuentes de video, también de tu nube", resources: ["stream"],
-        usesDebrid: true, onByDefault: false
+        usesDebrid: true, onByDefault: true
     ) { token, _, service in
         guard let token else { return nil }
         let settings: [String: Any] = ["debridServices": [["service": service.cometService, "apiKey": token]], "cachedOnly": true]

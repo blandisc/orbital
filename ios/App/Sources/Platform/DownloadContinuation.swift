@@ -3,6 +3,7 @@ import Foundation
 import UIKit
 import OrbitalCore
 
+#if !targetEnvironment(macCatalyst)
 /// Que las descargas sigan a toda velocidad con la app cerrada: una tarea continua de iOS 26 (`BGContinuedProcessingTask`).
 /// Se pide con la app a la vista cuando empieza a bajar algo; mientras dura, la app sigue viva en segundo plano y el carril
 /// rápido del transporte (`BackgroundDownloadTransport`) no se suelta. iOS enseña su avance en su propia actividad y ahí la
@@ -98,3 +99,16 @@ final class DownloadContinuation {
     private static func title(_ name: String, language: String) -> String { String(format: Strings.tr("Descargando «%@»", language: language), name) }
     private static let units: Int64 = 1000
 }
+
+#else
+@MainActor
+final class DownloadContinuation {
+    static let identifier = "mx.iracheta.orbital.downloads.keep"
+    var onStarted: () async -> Void = {}
+    var onExpired: () async -> Void = {}
+    var onEnded: () async -> Void = {}
+    var language: () -> String = { "es" }
+    var isRunning: Bool { false }
+    func update(_ items: [DownloadItem]) {}
+}
+#endif

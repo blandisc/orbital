@@ -116,7 +116,7 @@ public struct InstalledAddon: Codable, Equatable, Sendable, Identifiable {
 public struct AddonOptions: Codable, Equatable, Sendable {
     /// Las de hoy. Se escriben en cada complemento al armarlo (no se dejan «vacías = las de la app»), para que cambiarlas
     /// en una versión nueva no cambie en silencio la URL de quien ya lo tenía.
-    public static let defaultExcludedQualities = ["cam", "scr", "unknown"]
+    public static let defaultExcludedQualities = ["cam", "scr"]   // «sin calidad» se ve desde el 27 nov (series viejas)
     public static let defaultLanguages = ["latino", "spanish"]
 
     /// Calidades que no quieres ver («cam», «scr», «480p»…): `qualityfilter`.

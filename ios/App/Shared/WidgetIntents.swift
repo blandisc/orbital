@@ -68,12 +68,12 @@ struct WidgetTVStatus: Codable, Equatable {
 
     static func save(_ status: WidgetTVStatus) {
         guard let data = try? JSONEncoder().encode(status) else { return }
-        UserDefaults(suiteName: WidgetStore.groupID)?.set(data, forKey: key)
+        WidgetStore.defaults?.set(data, forKey: key)
     }
 
     /// Lo de `metaID` si pasó hace menos de `ttl` (y lo de «va en camino», solo un minuto: si la app no contestó, ya no va).
     static func current(for metaID: String, now: Date = Date()) -> State? {
-        guard let data = UserDefaults(suiteName: WidgetStore.groupID)?.data(forKey: key),
+        guard let data = WidgetStore.defaults?.data(forKey: key),
               let status = try? JSONDecoder().decode(WidgetTVStatus.self, from: data), status.metaID == metaID else { return nil }
         let age = now.timeIntervalSince(status.at)
         if status.state == .sending { return age < 60 ? .sending : nil }

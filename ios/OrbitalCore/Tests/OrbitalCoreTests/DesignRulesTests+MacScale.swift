@@ -28,3 +28,20 @@ extension DesignRulesTests {
         }
     }
 }
+
+extension DesignRulesTests {
+    /// TL1-B (27 nov 2026): «¿es la Mac?» se pregunta en un solo lugar, `ProcessInfo.onMac` (o `macNative`, solo la app de Mac
+    /// de verdad), en Tokens+Mac.swift. En Mac Catalyst `isiOSAppOnMac` es falso: quien lo preguntara por su cuenta dejaría
+    /// esa pantalla con el acomodo y la letra del iPad.
+    func testTheMacIsAskedInOnePlace() throws {
+        let all = try sources(["App", "Design", "Platform", "Screens", "Support", "../Shared", "../Widgets"])
+        let found = hits(#"\.(isiOSAppOnMac|isMacCatalystApp)\b"#, in: all, unless: "nonisolated static let")
+        XCTAssertEqual(found, [], "Pregunta con ProcessInfo.onMac (o macNative), no a ProcessInfo por tu cuenta")
+        // El App Group (lo que se comparte con los widgets) se abre solo en WidgetStore: en la app de Mac de verdad no existe y
+        // abrir el de la Orbital de iPad congelaba la app al arrancar, esperando un aviso del sistema que no se veía.
+        let group = hits(#"containerURL\(forSecurityApplicationGroupIdentifier|suiteName: (WidgetStore\.groupID|"group\.)"#, in: all,
+                         skip: { $0.path.hasSuffix("WidgetStore.swift") })
+        XCTAssertEqual(group, [], "El App Group va por WidgetStore.directory / WidgetStore.defaults")
+    }
+}
+

@@ -3,6 +3,7 @@ import Foundation
 import UIKit
 import OrbitalCore
 
+#if !targetEnvironment(macCatalyst)
 /// Arranca, actualiza y termina la actividad en vivo de las descargas según la cola. iOS limita cuántas
 /// actualizaciones acepta: se manda una cuando cambia el título, el estado o avanza al menos un punto.
 @MainActor
@@ -145,3 +146,14 @@ final class DownloadLiveActivityController {
         return (try? data.write(to: target, options: .atomic)) != nil ? name : nil
     }
 }
+
+#else
+@MainActor
+final class DownloadLiveActivityController {
+    var language: () -> String = { "es" }
+    func setBackgrounded(_ value: Bool) async {}
+    func follow(_ downloads: Downloads) async {}
+    func setSuppressed(_ value: Bool) async {}
+    func update(_ items: [DownloadItem]) async {}
+}
+#endif

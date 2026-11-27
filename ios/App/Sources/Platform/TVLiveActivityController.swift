@@ -4,6 +4,7 @@ import UIKit
 import OrbitalCore
 import OrbitalModels
 
+#if !targetEnvironment(macCatalyst)
 /// «Viendo en la TV»: arranca, actualiza y termina la actividad en vivo de lo que reproduce tu Orbital, siguiendo lo que la
 /// app sabe de la TV (`TVNowModel`). La barra avanza sola en la pantalla bloqueada; solo se manda una actualización cuando
 /// cambia el título, la pausa o la posición se aleja de lo esperado (iOS limita cuántas acepta).
@@ -118,3 +119,11 @@ final class TVLiveActivityController {
         return nil
     }
 }
+
+#else
+@MainActor
+final class TVLiveActivityController {
+    var language: () -> String = { "es" }
+    func follow(_ tv: TVNowModel) {}
+}
+#endif

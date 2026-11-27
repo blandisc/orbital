@@ -76,14 +76,15 @@ extension DS {
         static let dockEnterScale: CGFloat = 0.94
         /// Los controles del reproductor en pantallas grandes (Fernando, 16 nov 2026: «hacer más grandes los iconos para tanto
         /// pantalla de Mac como para pantalla de iPad»): en la Mac crecen como la letra (`DS.Mac.typeScale`); en el iPad,
-        /// `padScale` (con el tamaño del iPhone se veían chicos en 11 y 13 pulgadas); en el iPhone, igual.
+        /// `padScale` (con el tamaño del iPhone se veían chicos en 11 y 13 pulgadas), y también en la pantalla grande de un iPhone
+        /// (la de adentro del Duo, `WindowMetrics.large`); en los demás iPhone, igual.
         static let padScale: CGFloat = 1.2
         static func big(_ points: CGFloat) -> CGFloat {
-            ProcessInfo.processInfo.isiOSAppOnMac ? Mac.sized(points) : isPad ? points * padScale : points
+            ProcessInfo.onMac ? Mac.sized(points) : isPad || WindowMetrics.large ? points * padScale : points
         }
         /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal y no existe en los widgets).
         private static let isPad: Bool = {
-            if ProcessInfo.processInfo.isiOSAppOnMac { return false }
+            if ProcessInfo.onMac { return false }
             if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
             var info = utsname()
             uname(&info)

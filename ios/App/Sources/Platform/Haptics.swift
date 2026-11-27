@@ -8,7 +8,7 @@ import UIKit
 /// `PlatformBoundaryTests.testHapticsGoThroughDSFeedback` lo cuida.
 enum Haptics {
     /// ¿Este aparato vibra? Solo el iPhone (la Mac «Diseñada para iPad» se presenta como iPad).
-    @MainActor static let isAvailable = UIDevice.current.userInterfaceIdiom == .phone && !ProcessInfo.processInfo.isiOSAppOnMac
+    @MainActor static let isAvailable = UIDevice.current.userInterfaceIdiom == .phone && !ProcessInfo.onMac
 }
 
 private struct DSFeedback<Trigger: Equatable>: ViewModifier {
