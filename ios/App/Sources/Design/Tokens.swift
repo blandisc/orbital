@@ -479,7 +479,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// «Viendo en la TV»: el alto de cada botón (−10 s, pausa, +10 s; un objetivo táctil entero) y el círculo de la pausa.
         static let tvKey: CGFloat = 44
         /// En la isla abierta (alto fijo de iOS): póster y botones más chicos para que la pausa no se corte.
-        static let islandKey: CGFloat = 36, islandTVPoster: CGFloat = 34
+        static let islandKey: CGFloat = 32, islandTVPoster: CGFloat = 34, islandKeyFill = 0.16
         /// «Viendo en la TV» en la pantalla bloqueada: el póster a todo lo alto de la actividad (2:3, 96 pt de alto).
         static let tvPoster: CGFloat = 64
         /// D3: la barra de la tanda de descargas (alto, separación entre tramos y hasta cuántos tramos; más, una barra seguida).

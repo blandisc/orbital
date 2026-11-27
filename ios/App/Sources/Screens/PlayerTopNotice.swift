@@ -24,8 +24,18 @@ extension PlayerScreen {
 
     /// La píldora de arriba, la misma para todos los avisos breves (sin tocar su forma: `DSToastPill`).
     func topPill(_ text: LocalizedStringKey, detail: Text? = nil) -> some View {
-        VStack { DSToastPill(text: text, detail: detail); Spacer() }
-            .padding(.top, DS.Space.s16)
+        noticeSlot(DSToastPill(text: text, detail: detail), top: DS.Space.s16)
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+    }
+
+    /// Dónde va un aviso: en horizontal (y en el iPod), arriba; en vertical, en el espacio libre de abajo. En vertical,
+    /// arriba caía sobre el video y se encimaba con la ruedita de carga y el botón grande (Fernando, 26 nov 2026: «Probando
+    /// otra versión» tapaba la carga). Regla: un aviso nunca tapa un botón ni la carga.
+    @ViewBuilder func noticeSlot(_ content: some View, top: CGFloat) -> some View {
+        if landscape || ipod != nil {
+            VStack { content; Spacer() }.padding(.top, top)
+        } else {
+            VStack { Spacer(); content }.padding(.bottom, DS.Space.s16)
+        }
     }
 }

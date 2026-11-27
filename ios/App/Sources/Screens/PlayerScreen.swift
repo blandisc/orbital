@@ -389,7 +389,10 @@ struct PlayerScreen: View {
                 }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
-                    if state == "padlock.locked" { lock() } else if !demoQuestion(state, model) { model.demoState(state) }
+                    // `retry-notice`: el aviso «Probando otra versión» mientras carga (para revisar que no se encime en vertical).
+                    if state == "retry-notice" {
+                        show(PlayerNotice(title: "Probando otra versión (2 de 3)…", detail: "Esa no abrió. Sigue en el mismo punto.", tone: .info))
+                    } else if state == "padlock.locked" { lock() } else if !demoQuestion(state, model) { model.demoState(state) }
                 }
                 if Demo.isOn, let gesture = Demo.gesture {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)

@@ -239,7 +239,7 @@ extension PlayerScreen {
         // (Fernando, 23 nov 2026). Cada uno conserva su forma; solo se decide cuál se ve.
         switch topNotice {
         case .notice(let notice)?:
-            VStack {
+            noticeSlot(
                 Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
                       actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : notice.opensNotificationSettings ? "Ajustes"
                         : notice.opensVersion ? "Versión" : nil),
@@ -249,12 +249,10 @@ extension PlayerScreen {
                             : notice.opensVersion ? { openDock(version: true) } : nil),
                       seconds: Toast.duration(notice.tone, hasAction: notice.hasAction) ?? DS.Timing.toastAction,
                       dismiss: { withAnimation(DS.Motion.base(reduceMotion)) { if notices.notice?.id == notice.id { notices.notice = nil } } })
-                    .id(notice.id)
-                Spacer()
-            }
-            // Bajo la barra de arriba con aire (antes quedaba pegado a ella).
-            .padding(.top, DS.Space.s16 + DS.Space.s4)
-            .transition(.move(edge: .top).combined(with: .opacity))
+                    .id(notice.id),
+                // En horizontal, bajo la barra de arriba con aire (antes quedaba pegado a ella).
+                top: DS.Space.s16 + DS.Space.s4)
+            .transition(.move(edge: landscape || ipod != nil ? .top : .bottom).combined(with: .opacity))
         case .pinch?:
             // Mientras pellizcas: qué pasa si sueltas ahora, o hacia dónde mover los dedos.
             if let target = framing.pinchPreview, target != zoom {

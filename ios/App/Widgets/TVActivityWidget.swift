@@ -51,7 +51,7 @@ struct TVLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: DS.Space.s1) {
                         if !context.state.live { TVTimeline(state: context.state) }
-                        TVButtons(state: context.state, size: DS.Widget.islandKey)
+                        TVButtons(state: context.state, size: DS.Widget.islandKey, wide: true)
                     }
                     .padding(.horizontal, DS.Space.s1)
                 }
@@ -132,8 +132,10 @@ private struct TVButtons: View {
     /// El alto de cada botón y el círculo de la pausa: entero en la pantalla bloqueada, más chico en la isla, que tiene un alto
     /// fijo y cortaba la pausa por abajo (Fernando, 26 nov 2026).
     var size: CGFloat = DS.Widget.tvKey
+    /// En la isla: cápsulas anchas y bajas que llenan el ancho (Fernando, 26 nov 2026: «más anchos, no tan altos»).
+    var wide = false
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: wide ? DS.Space.s2 : 0) {
             if !state.live { key("gobackward.10", action: "back", label: Text("−10 s")) }
             key(state.paused ? "play.fill" : "pause.fill", action: "toggle", label: state.paused ? Text("Continuar") : Text("Pausa"), solid: true)
             if !state.live { key("goforward.10", action: "forward", label: Text("+10 s")) }
@@ -145,7 +147,8 @@ private struct TVButtons: View {
     private func key(_ symbol: String, action: String, label: Text, solid: Bool = false) -> some View {
         Button(intent: TVControlIntent(action: action)) {
             ZStack {
-                if solid { Circle().fill(DS.accent).frame(width: size, height: size) }
+                if wide { Capsule().fill(solid ? DS.accent : DS.paper.opacity(DS.Widget.islandKeyFill)) }
+                else if solid { Circle().fill(DS.accent).frame(width: size, height: size) }
                 Image(systemName: symbol).font(DS.font(solid || size < DS.Widget.tvKey ? .lg : .xl, weight: .semibold))
                     .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
             }

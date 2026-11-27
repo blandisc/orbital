@@ -22,7 +22,7 @@ extension DesignRulesTests {
 
         let widget = try String(contentsOf: repo.appendingPathComponent("ios/App/Widgets/TVActivityWidget.swift"), encoding: .utf8)
         let island = try XCTUnwrap(widget.range(of: "DynamicIsland {").map { widget[$0.upperBound...] }?.components(separatedBy: "compactLeading").first)
-        XCTAssertTrue(island.contains("TVButtons(state: context.state, size: DS.Widget.islandKey)"), "en la isla, los botones con su medida de isla")
+        XCTAssertTrue(island.contains("TVButtons(state: context.state, size: DS.Widget.islandKey, wide: true)"), "en la isla, botones anchos y bajos con su medida de isla")
         XCTAssertTrue(island.contains("DS.Widget.islandTVPoster"), "en la isla, el póster con su medida de isla")
     }
 }

@@ -26,4 +26,16 @@ extension DesignRulesTests {
         XCTAssertEqual(pills, 1, "Una sola píldora de arriba (`topPill`) para todos los avisos breves del reproductor")
         XCTAssertEqual(wrong, [], "Los avisos de arriba del reproductor salen de uno en uno por `topNotice`")
     }
+
+    /// Regla (26 nov 2026): un aviso del reproductor nunca tapa un botón ni la carga. En vertical va abajo, en el espacio libre
+    /// (`noticeSlot`); arriba caía sobre la ruedita de carga.
+    func testPlayerNoticesNeverCoverTheLoadingButton() throws {
+        let files = try sources(["Screens"])
+        let slot = try XCTUnwrap(files.first { $0.name == "PlayerTopNotice.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(slot.contains("VStack { Spacer(); content }"), "en vertical, el aviso va abajo")
+        XCTAssertTrue(slot.contains("noticeSlot(DSToastPill("), "las píldoras pasan por el mismo lugar")
+        let gestures = try XCTUnwrap(files.first { $0.name == "PlayerScreen+Gestos.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(gestures.contains("noticeSlot(\n                Toast("), "el aviso con botones pasa por el mismo lugar")
+    }
 }
+
