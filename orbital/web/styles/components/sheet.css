@@ -96,6 +96,8 @@
 .sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .sheet__label { min-width: 0; line-height: var(--leading-snug); }
 .sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Una pista que es una tecla («También con X», MN-A): con el dedo no hay teclas, no se enseña. */
+[data-input="touch"] .sheet__hint--key { display: none; }
 .sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; overflow-wrap: anywhere; line-height: var(--leading-normal); text-align: left; }
 /* Ajustes: el valor en una píldora con flechas suaves (A o ◀/▶ lo cambian). */
 .sheet__item--setting { align-items: flex-start; }

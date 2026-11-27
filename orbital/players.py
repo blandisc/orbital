@@ -41,7 +41,8 @@ class Players:
         if watcher is None:
             return {}
         arrived = dict(getattr(watcher, "connected_at", {}))
-        return {slot: arrived.get(slot, float("inf")) for slot in watcher.devices}
+        # Una copia: el hilo de los mandos cambia `devices` mientras la barra pregunta (cada 30 s y con cada aviso «pads»).
+        return {slot: arrived.get(slot, float("inf")) for slot in dict(watcher.devices)}
 
     def sync(self) -> list[int]:
         """Quita los que se fueron y suma al final los que llegaron (en el orden en que llegaron)."""

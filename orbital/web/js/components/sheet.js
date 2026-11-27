@@ -99,7 +99,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, ...Flags(option.flags), option.label),
-      below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint),
+      below(option) && h("small", { class: ["sheet__hint", "sheet__hint--below", option.keyHint && "sheet__hint--key"] }, option.hint),
       // FI-13 (25 nov 2026, C8): cuánto lleva lo de este renglón (un pedido en «Tus pedidos»), dibujado bajo su línea (`progress`: 0–1).
       option.progress > 0 && Progress(option.progress, { className: "sheet__progress", label: option.progressLabel || "Cuánto lleva" })),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
@@ -112,7 +112,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
           option.valueFlag && Flag(option.valueFlag), option.value,
           h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
         : option.value),
-    option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));
+    option.hint && !below(option) && h("small", { class: ["sheet__hint", option.keyHint && "sheet__hint--key"] }, option.hint))));
   }
 
   function tapChev(event, i, side) {

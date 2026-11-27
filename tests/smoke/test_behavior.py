@@ -232,3 +232,69 @@ def test_the_title_page_name_is_the_one_the_rows_show(browser, server):  # noqa:
     assert after["at"] == before["at"] and "en español" in after["label"], (before, after)
     assert not page.errors, page.errors
     page.close()
+
+
+# --- Menos ruido (MN-A, 27 nov 2026) -------------------------------------------------------------------------------------
+
+def _with_players(browser, server, players):  # noqa: F811
+    """Una página cuyo /api/system dice estos jugadores (la demo no lee mandos: dice null)."""
+    import json
+
+    from test_ui_flows import ready
+
+    page = browser.new_page(viewport={"width": 1920, "height": 1080})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.errors = errors
+
+    def system(route):
+        response = route.fetch()
+        route.fulfill(response=response, body=json.dumps({**response.json(), "players": players}))
+
+    page.route("**/api/system", system)
+    page.goto(server)
+    ready(page)
+    page.wait_for_timeout(600)
+    return page
+
+
+TABS_LEFT = "() => Math.round(document.querySelector('.status-bar__tabs').getBoundingClientRect().left)"
+
+
+def test_controllers_hide_without_moving_the_sections(browser, server):  # noqa: F811
+    """Sin controles el indicador no se ve; con uno, sí. Las secciones de en medio no se mueven entre una y otra (auditoría:
+    se recorrían 43 px al llegar el primero o irse el último)."""
+    none = _with_players(browser, server, [])
+    assert none.locator(".pad-lights").is_hidden()
+    left_none = none.evaluate(TABS_LEFT)
+    one = _with_players(browser, server, [{"player": 1, "battery": "low"}])
+    assert one.locator(".pad-lights").is_visible()
+    assert one.locator(".pad-lights").get_attribute("aria-label") == "1 control · batería baja · Jugadores"
+    assert abs(one.evaluate(TABS_LEFT) - left_none) <= 1
+    assert not none.errors and not one.errors, none.errors + one.errors
+
+
+HERO_BUTTONS = "() => [...document.querySelectorAll('.hero .button-row button, .feature-hero__actions button')].map((b) => b.getAttribute('aria-label') || b.textContent.trim())"
+CUE = "() => { const c = document.querySelector('.shelf__cue'); return c && !c.hidden ? c.textContent.trim() : null; }"
+CURRENT_ROW = "() => document.querySelector('.shelf__row--current .shelf__heading')?.textContent || ''"
+
+
+def test_shelf_says_what_comes_next_instead_of_peeking(browser, server):  # noqa: F811
+    """Películas y series: el destacado ya no lleva el redondo de «Episodios»/«Ficha» (está en ··· y en el pie); abajo, la
+    señal dice el nombre de la fila siguiente, un clic baja a ella, y en la última fila no hay señal."""
+    page = open_at(browser, server)
+    to_media(page)
+    buttons = page.evaluate(HERO_BUTTONS)
+    assert not any(label.endswith(("Episodios", "Ficha")) for label in buttons), buttons
+    first = page.evaluate(CUE)
+    assert first, "sin señal en la primera fila"
+    page.locator(".shelf__cue").click()
+    page.wait_for_timeout(900)
+    assert page.evaluate(CURRENT_ROW).startswith(first), (first, page.evaluate(CURRENT_ROW))
+    for _ in range(40):  # hasta la última fila
+        before = page.evaluate(CURRENT_ROW)
+        press(page, "ArrowDown", wait=250)
+        if page.evaluate(CURRENT_ROW) == before:
+            break
+    assert page.evaluate(CUE) is None
+    assert not page.errors, page.errors

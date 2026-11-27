@@ -19,8 +19,6 @@ const art = (src, className) => {
   return img;
 };
 
-/** «Episodios» y «Ficha» del destacado van redondos (su ícono); otra alternativa («Con Ryujinx») sigue con su nombre. */
-
 /** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
 function featureLogo(src, title) {
   const img = h("img", { class: "feature-hero__logo", src, alt: title, decoding: "async" });

@@ -576,7 +576,8 @@ class GamepadWatcher:
                     self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
                 if was_connected[slot] and not connected:
                     self.connected_at.pop(slot, None)
-                    self._pad_changed(slot, False, self.devices.get(slot), quiet=False)
+                    # Primero fuera de la lista y luego el aviso: quien lo oiga (la barra pregunta /api/system) ya no lo cuenta.
+                    self._pad_changed(slot, False, self.devices.pop(slot, None), quiet=False)
                 if not connected:
                     self.devices.pop(slot, None)
                 was_connected[slot] = connected

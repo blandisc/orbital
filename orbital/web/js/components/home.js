@@ -417,9 +417,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     get focusId() { return focusId; },
     get visible() { return !el.hidden; },
     get hasConsoles() { return (model?.consoles.length ?? 0) > 0; },
-    /** IN1-A: la señal de abajo está a la vista (ya dice a dónde lleva RT: el pie no lo repite). */
+    /** IN1-A: la señal de abajo está a la vista (ya dice qué sigue: el pie no repite «LT RT»). */
     get cueShown() { return !cue.el.hidden; },
-    /** El nombre de la fila a la que lleva RT desde aquí (el pie lo dice); null si no hay más abajo. */
+    /** El nombre de la fila a la que lleva RT desde aquí (el pie lo dice si la señal no está a la vista); null si no hay más abajo. */
     get nextRow() {
       const shown = visibleRows();
       const to = shown[shown.findIndex((r) => r.key === rowKey(focusId)) + 1];

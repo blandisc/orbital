@@ -99,8 +99,11 @@ test("los focos de los controles dicen cuántos hay y quién tiene la batería b
   assert.equal(padsLabel([{ player: 1, battery: "wired" }]), "1 control");
   assert.equal(padsLabel([{ player: 1, battery: "low" }]), "1 control · batería baja");
   assert.equal(padsLabel([{ player: 1, battery: "full" }, { player: 2, battery: null }]), "2 controles");
-  assert.equal(padsLabel([{ player: 1, battery: "empty" }, { player: 2, battery: "medium" }, { player: 3, battery: "low" }]),
+  assert.equal(padsLabel([{ player: 1, battery: "empty" }]), "1 control · casi sin batería");
+  assert.equal(padsLabel([{ player: 1, battery: "low" }, { player: 2, battery: "medium" }, { player: 3, battery: "low" }]),
     "3 controles · Jugador 1 y 3 con batería baja");
+  assert.equal(padsLabel([{ player: 1, battery: "empty" }, { player: 2, battery: "low" }]),
+    "2 controles · Jugador 1 casi sin batería · Jugador 2 con batería baja");
 });
 
 test("aviso de voz: «No era eso» con B (cierra y busca lo que oyó) y «Lo que puedes decir» con ☰", async () => {
@@ -142,11 +145,21 @@ test("MN-A: «Menú» queda en su tecla en el pie de todas las pantallas", async
   for (const menu of menus) assert.deepEqual(menu && { end: menu.end, collapsible: menu.collapsible }, { end: true, collapsible: true });
 });
 
-test("MN-A: lo que sale de la pantalla lo dice el menú (la ficha con su X, saltar de fila con LT/RT)", async () => {
+test("MN-A: lo que sale de la pantalla lo dice el menú (la ficha con su X, saltar con LT/RT)", async () => {
   const { gameMenu, controlsMenu } = await import("../../orbital/web/js/core/menus.js");
   const movie = { id: "cinemeta:movie:tt1", title: "Thunderbolts*", source: "cinemeta", kind: "movie", extra: { kind: "movie", meta_id: "tt1" } };
   const ficha = gameMenu(movie).options.find((o) => o.label === "Ver ficha");
   assert.equal(ficha?.hint, "También con X");
+  assert.equal(ficha?.keyHint, true); // con el dedo no se enseña (no hay X)
   const rows = JSON.stringify(controlsMenu([{ kind: "xbox", close: "Start + Select + Home" }]).options);
-  assert.ok(rows.includes("Saltar de fila") && rows.includes("LT / RT"));
+  assert.ok(rows.includes("Saltar (fila, grupo, consola o categoría)") && rows.includes("LT / RT"));
+});
+
+test("MN-A: la X de una película o serie la dice el pie (su redondo salió del destacado); «Con Ryujinx» no", async () => {
+  const { homeHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = GLYPHS.gamepad;
+  const show = (list) => list.filter((i) => !i.offscreen).map((i) => `${i.glyph} ${i.label}`);
+  assert.ok(show(homeHints(g, { kind: "item", item: {} }, { onScreen: true, alt: "Episodios" })).includes("X Episodios"));
+  assert.ok(show(footerHints(g, { primary: "Ver la serie", alt: "Ficha", heroButtons: true })).includes("X Ficha"));
+  assert.ok(!show(footerHints(g, { primary: "Jugar", alt: "Con Ryujinx", heroButtons: true })).includes("X Con Ryujinx"));
 });

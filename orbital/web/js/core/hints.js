@@ -28,9 +28,10 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     // D5-A: arriba también están Guardado, Colecciones y Filtro avanzado.
     kinds === "above" && { glyph: glyphs.up, label: "Mostrar y Guardado", secondary: true },
     // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
-    // Con el héroe a la vista, sus botones ya dicen A y X («Ver la serie», «Episodios»): el pie no los repite.
+    // Con el héroe a la vista, su botón ya dice A («Ver la serie»): el pie no lo repite. La X de una película o serie
+    // («Episodios», «Ficha») ya no tiene botón en el héroe (MN-A, 27 nov 2026): el pie la dice, chica; «Con Ryujinx» sí lo tiene.
     primary && { glyph: glyphs.select, label: primary, offscreen: heroButtons },
-    alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true, offscreen: heroButtons },
+    alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true, offscreen: heroButtons && !SHEET_ALTS.has(alt) },
     rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila", offscreen: true },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", offscreen: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", offscreen: true },
@@ -96,6 +97,9 @@ export function shortTitle(title = "") {
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
  * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
  */
+/** La X de una película o serie (su ficha): desde MN-A no tiene botón en el destacado, así que el pie la dice. */
+const SHEET_ALTS = new Set(["Episodios", "Ficha"]);
+
 export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false, jump = null, cue = false } = {}) {
   const list = [];
   if (target?.kind === "console") {
@@ -112,10 +116,12 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   } else if (target?.kind === "decide") {
     if (!onScreen) list.push({ glyph: glyphs.select, label: "Decide por mí" }); // NQ-1: lo de arriba ya enseña su botón
   } else if (target?.kind === "item") {
-    if (!onScreen) { // el destacado ya enseña sus botones (A, X, Y): el pie no los repite
+    if (!onScreen) {
       list.push({ glyph: glyphs.select, label: primary });
       if (alt) list.push({ glyph: glyphs.alt, label: alt });
       list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
+    } else if (alt && SHEET_ALTS.has(alt)) { // el destacado enseña A y ···; su ficha (X) ya no tiene botón (MN-A): la dice el pie
+      list.push({ glyph: glyphs.alt, label: alt, secondary: true });
     }
   } else {
     // El vacío del Inicio ya enseña su botón con este glifo (EmptyState): el pie no lo repite.
@@ -123,7 +129,7 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   }
   if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   // LT/RT saltan entre lo de arriba y Tus consolas (`jump`: a dónde llevan desde aquí).
-  // IN1-A: con la señal de abajo a la vista (`cue`), ella ya lo dice con su tecla: el pie no lo repite.
+  // IN1-A: con la señal de abajo a la vista (`cue`) el pie no lo repite; la tecla la dice «Cómo se usa» (MN-A: la señal va sin tecla).
   if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true, ...(cue && { offscreen: true }) });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   // IN3-A (Fernando, 26 nov 2026; MN-A, 27 nov: en todas las pantallas): «Menú» queda en su tecla; la palabra sale al señalarla.

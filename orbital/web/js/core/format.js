@@ -185,7 +185,9 @@ export function textLanguage(text) {
 export function padsLabel(players) {
   if (!players.length) return "Sin controles";
   const count = `${players.length} ${players.length === 1 ? "control" : "controles"}`;
-  const low = players.filter((p) => p.battery === "low" || p.battery === "empty");
-  if (!low.length) return count;
-  return players.length === 1 ? `${count} · batería baja` : `${count} · Jugador ${low.map((p) => p.player).join(" y ")} con batería baja`;
+  const who = (level) => players.filter((p) => p.battery === level).map((p) => p.player);
+  const one = players.length === 1;
+  const say = (list, phrase) => (!list.length ? null : one ? phrase : `Jugador ${list.join(" y ")} ${phrase === "batería baja" ? "con batería baja" : phrase}`);
+  // «empty» se pinta rojo: se dice distinto de «low» (ámbar).
+  return [count, say(who("empty"), "casi sin batería"), say(who("low"), "batería baja")].filter(Boolean).join(" · ");
 }

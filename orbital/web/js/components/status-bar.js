@@ -55,6 +55,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa, onPads 
   const pads = h("button", { class: "pad-lights", type: "button", hidden: true, "data-focus-id": "pads", onClick: () => onPads?.() },
     h("span", { class: "pad-lights__mark", "aria-hidden": "true" }, h("span", { class: "pad-lights__lights" }, ...lights), svg(ICONS.gamepad)),
     h("span", { class: "pad-lights__label" }, padsName));
+  // Su hueco se queda aunque no haya controles: si no, las secciones (centradas) se recorrían al llegar el primero o irse
+  // el último (auditoría, 27 nov 2026). Sin nadie que lea los mandos (fuera de Windows), tampoco el hueco.
+  const padsSlot = h("span", { class: "status-bar__pads-slot", hidden: true }, pads);
   const time = h("span", { class: "status-bar__clock" });
 
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
@@ -63,7 +66,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa, onPads 
       svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital", h("i", { class: "status-bar__moon", "aria-hidden": "true" }))),
     searchSlot,
     tabs,
-    h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, pads, time));
+    h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, padsSlot, time));
 
   // La píldora de la sección activa es una sola: al cambiar de sección viaja hasta la nueva y se ajusta a ella mientras
   // su nombre se despliega.
@@ -197,6 +200,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa, onPads 
   /** Los focos: `players` es [{ player, battery }] o null (nadie lee los mandos). MN-A (Fernando, 27 nov 2026): sin
    *  controles no se enseñan (la silueta apagada era ruido); aparecen cuando llega uno. */
   function setPlayers(players) {
+    padsSlot.hidden = !Array.isArray(players);
     pads.hidden = !Array.isArray(players) || !players.length;
     if (pads.hidden) return fit();
     lights.forEach((light, i) => {

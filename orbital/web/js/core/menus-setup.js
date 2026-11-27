@@ -147,12 +147,13 @@ function gameRows(legion, close = "Start + Select + Home") {
 
 /** Con teclado: Ctrl + Inicio es el Home de la consola (atajo global, orbital/hotkey.py), aunque el juego tenga el foco. */
 const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["Video en pequeño", "Ctrl + Inicio"],
-  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Saltar de fila", "RePág · AvPág"], ["Buscar", "S"], ["Decide por mí", "D"], ["Menú", "M"]];
+  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Saltar (fila, grupo, consola o categoría)", "RePág · AvPág"], ["Buscar", "S"], ["Decide por mí", "D"], ["Menú", "M"]];
 
-// MN-A (27 nov 2026): «Saltar de fila» ya no se enseña en la pantalla (la señal de abajo va sin tecla); aquí sí.
+// MN-A (27 nov 2026): el salto ya no se enseña siempre en la pantalla (la señal de abajo va sin tecla); aquí sí. Lo que salta
+// depende de la pantalla: la fila en el Inicio, el grupo en Películas y series, la consola en Juegos, la categoría en TV en vivo.
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
-    ["Cambiar de sección", "LB / RB"], ["Saltar de fila", "LT / RT"], ["Buscar", "Vista ⧉"], ["Decide por mí", "R3 (clic del stick derecho)"], ["Menú", "☰"]],
+    ["Cambiar de sección", "LB / RB"], ["Saltar (fila, grupo, consola o categoría)", "LT / RT"], ["Buscar", "Vista ⧉"], ["Decide por mí", "R3 (clic del stick derecho)"], ["Menú", "☰"]],
   player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y versión", "Y"],
     ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
