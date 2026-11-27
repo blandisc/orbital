@@ -1,0 +1,861 @@
+<title>Orbital en el iPhone Duo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: una columna de lectura; cada pantalla y cada decisión, una fila de maquetas del Duo lado a lado. Oscuro a propósito: es la sala de Orbital. */
+:root {
+  --sala: #0b0e10; --panel: #13181b; --linea: #263036; --texto: #eef2f1; --suave: #9aa7a6;
+  --voz: #4fd1c5; --papel: #f3f1ea; --ambar: #e8a650; --rojo: #ff6b6b; --pliegue: #e8a650;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif; --cuerpo: "Inter", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--sala); color: var(--texto); font-family: var(--cuerpo); font-size: 15px; line-height: 1.55; }
+.page { max-width: 1180px; margin: 0 auto; padding-block: 40px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.1; }
+h2 { font-size: 26px; }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--voz); }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--voz); outline-offset: 3px; }
+.porque { color: var(--voz); font-size: 13px; font-weight: 600; }
+.suave { color: var(--suave); }
+section { display: grid; gap: 22px; }
+.intro { display: grid; gap: 16px; }
+.intro p { color: var(--suave); font-size: 16px; }
+.caja { display: grid; gap: 10px; padding: 20px 22px; background: var(--panel); border: 1px solid var(--linea); border-radius: 14px; }
+.caja ul, .caja ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.caja li { color: var(--suave); }
+.caja b { color: var(--texto); }
+.reco-box { padding: 22px; border-radius: 16px; background: color-mix(in oklab, var(--voz) 10%, var(--panel)); border: 1px solid color-mix(in oklab, var(--voz) 45%, transparent); display: grid; gap: 10px; }
+.dictado { font-family: var(--display); font-size: clamp(17px, 2.4vw, 21px); color: var(--voz); letter-spacing: .01em; }
+.tabla-wrap { overflow-x: auto; border: 1px solid var(--linea); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { color: var(--suave); font-weight: 600; font-size: 12px; letter-spacing: .04em; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sello { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; letter-spacing: .03em; white-space: nowrap; }
+.s-apple { background: color-mix(in oklab, var(--voz) 22%, transparent); color: var(--voz); }
+.s-medido { background: color-mix(in oklab, var(--ambar) 22%, transparent); color: var(--ambar); }
+.s-resena { background: var(--linea); color: var(--suave); }
+.s-alto { background: color-mix(in oklab, var(--rojo) 25%, transparent); color: var(--rojo); }
+.s-medio { background: color-mix(in oklab, var(--ambar) 25%, transparent); color: var(--ambar); }
+.s-bien { background: color-mix(in oklab, var(--voz) 22%, transparent); color: var(--voz); }
+.hallazgos { display: grid; gap: 12px; }
+.hallazgo { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--linea); }
+.hallazgo > div { min-width: 0; display: grid; gap: 4px; }
+.hallazgo p { color: var(--suave); font-size: 14px; }
+.principios { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.principio { display: grid; gap: 6px; padding: 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--linea); align-content: start; }
+.principio p { font-size: 14px; color: var(--suave); }
+.fuente { font-size: 12px; color: var(--suave); }
+
+/* Opciones lado a lado */
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; }
+.opcion { display: grid; gap: 12px; align-content: start; min-width: 0; padding: 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--linea); }
+.opcion.reco { border-color: var(--voz); box-shadow: 0 0 0 1px var(--voz) inset; }
+.cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.codigo { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--voz); }
+.reco-sello { font-size: 11px; font-weight: 700; color: var(--sala); background: var(--voz); padding: 2px 8px; border-radius: 6px; }
+.pro, .contra { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.pro li::marker { content: "+  "; color: var(--voz); }
+.contra li::marker { content: "–  "; color: var(--rojo); }
+.decision { display: grid; gap: 18px; padding-top: 8px; border-top: 1px solid var(--linea); }
+.decision > p { color: var(--suave); }
+
+/* Pantallas: tres poses de cada una */
+.poses { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; align-items: end; }
+.pose { display: grid; gap: 8px; min-width: 0; justify-items: center; }
+.pose .etq { font-size: 12px; color: var(--suave); text-align: center; max-width: 34ch; }
+.pose .etq b { color: var(--texto); }
+.pantalla { display: grid; gap: 18px; padding: 20px; border-radius: 18px; background: var(--panel); border: 1px solid var(--linea); }
+.pantalla .texto { display: grid; gap: 8px; }
+.pantalla .texto p { color: var(--suave); font-size: 14px; }
+.pantalla ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--suave); font-size: 14px; }
+.pantalla ul b { color: var(--texto); }
+
+/* ——— El aparato dibujado. Medidas en puntos derivadas de los píxeles de Apple: afuera ≈466×678, adentro ≈890×626 ——— */
+.dev { position: relative; width: 100%; max-width: 100%; overflow: hidden; background: #050708; border: 2px solid #34404a; border-radius: 7cqi; container-type: inline-size; }
+.dev.fuera { aspect-ratio: 466 / 678; max-width: 190px; }
+.dev.abierto { aspect-ratio: 890 / 626; max-width: 360px; border-radius: 4.5cqi; }
+.dev.alto { aspect-ratio: 626 / 890; max-width: 230px; border-radius: 5cqi; }
+.dev.mitad { aspect-ratio: 626 / 445; max-width: 260px; border-radius: 4cqi 4cqi 1cqi 1cqi; }
+.dev.mitad.baja { border-radius: 1cqi 1cqi 4cqi 4cqi; }
+/* el pliegue: franja de 40 pt (≈4.5 % del ancho abierto) que nada interactivo debe tocar */
+.dev.v::after, .dev.h::after { content: ""; position: absolute; pointer-events: none; z-index: 5; }
+.dev.v::after { top: 0; bottom: 0; left: 50%; width: 4.5%; transform: translateX(-50%); background: repeating-linear-gradient(180deg, color-mix(in oklab, var(--pliegue) 55%, transparent) 0 6px, transparent 6px 12px); opacity: .35; border-inline: 1px dashed color-mix(in oklab, var(--pliegue) 70%, transparent); }
+.dev.h::after { left: 0; right: 0; top: 50%; height: 4.5%; transform: translateY(-50%); background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pliegue) 55%, transparent) 0 6px, transparent 6px 12px); opacity: .35; border-block: 1px dashed color-mix(in oklab, var(--pliegue) 70%, transparent); }
+.camara { position: absolute; top: 2.2cqi; right: 3cqi; width: 3.2cqi; height: 3.2cqi; border-radius: 50%; background: #000; box-shadow: 0 0 0 .6cqi #1b2226; z-index: 6; }
+/* a medio abrir: la mitad de arriba de pie y la de abajo acostada sobre la mesa */
+.mesa { display: grid; justify-items: center; width: 100%; max-width: 260px; perspective: 600px; }
+.mesa .dev.mitad.baja { transform: rotateX(58deg); transform-origin: top center; margin-top: -1px; }
+.mesa .sombra { width: 90%; height: 10px; margin-top: -32%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); }
+.libro { display: flex; justify-content: center; width: 100%; max-width: 300px; perspective: 700px; }
+.libro .hoja { position: relative; width: 50%; aspect-ratio: 445 / 626; overflow: hidden; background: #050708; border: 2px solid #34404a; container-type: inline-size; }
+.libro .hoja.izq { border-radius: 9cqi 1cqi 1cqi 9cqi; transform: rotateY(24deg); transform-origin: right center; }
+.libro .hoja.der { border-radius: 1cqi 9cqi 9cqi 1cqi; transform: rotateY(-24deg); transform-origin: left center; }
+
+/* piezas de las pantallas */
+.b { position: absolute; }
+.arte { background:
+  radial-gradient(circle at 62% 34%, #d9b48a 0 6%, transparent 6.5%),
+  radial-gradient(ellipse at 62% 66%, #2f4b52 0 17%, transparent 17.5%),
+  radial-gradient(circle at 80% 40%, #b98f6a 0 4.5%, transparent 5%),
+  radial-gradient(ellipse at 80% 70%, #3b3b2e 0 12%, transparent 12.5%),
+  linear-gradient(160deg, #5f8a8a 0%, #2c4a50 48%, #172529 100%); }
+.velo { background: linear-gradient(180deg, transparent 40%, rgba(11,14,16,.9) 85%, var(--sala) 100%); }
+.velo-izq { background: linear-gradient(90deg, rgba(11,14,16,.95) 0%, rgba(11,14,16,.5) 45%, transparent 70%); }
+.ln { height: 1.6cqi; border-radius: 1cqi; background: var(--texto); opacity: .55; }
+.ln.t { height: 3.2cqi; opacity: .9; }
+.ln.s { opacity: .3; }
+.btn { height: 6cqi; border-radius: 1.4cqi; background: var(--papel); }
+.btn.voz { background: var(--voz); }
+.btn.gris { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.12); }
+.fila { display: flex; gap: 2cqi; }
+.fila i { display: block; flex: 1; aspect-ratio: 2 / 3; border-radius: 1.4cqi; background: #2a3a40; }
+.fila i:nth-child(3n+1) { background: linear-gradient(170deg, #6b4f3a, #2b2520); }
+.fila i:nth-child(3n+2) { background: linear-gradient(170deg, #3d5a6b, #1d2a33); }
+.fila i:nth-child(3n) { background: linear-gradient(170deg, #5b6b45, #232a1c); }
+.fila.ancha i { aspect-ratio: 16 / 9; }
+.rejilla { display: grid; gap: 2cqi; }
+.rejilla i { display: block; aspect-ratio: 2 / 3; border-radius: 1.2cqi; background: #2a3a40; }
+.rejilla i:nth-child(3n+1) { background: linear-gradient(170deg, #6b4f3a, #2b2520); }
+.rejilla i:nth-child(3n+2) { background: linear-gradient(170deg, #3d5a6b, #1d2a33); }
+.rejilla i:nth-child(4n) { background: linear-gradient(170deg, #5b6b45, #232a1c); }
+.barra { display: flex; justify-content: space-around; align-items: center; background: rgba(19,24,27,.92); border-top: 1px solid var(--linea); }
+.barra b { display: block; width: 7cqi; height: 7cqi; border-radius: 2cqi; background: var(--suave); opacity: .45; }
+.barra b.on { background: var(--voz); opacity: 1; }
+.barra-arriba { display: flex; gap: 3cqi; align-items: center; }
+.barra-arriba b { display: block; height: 2.2cqi; width: 9cqi; border-radius: 1cqi; background: var(--suave); opacity: .5; }
+.barra-arriba b.on { background: var(--voz); opacity: 1; }
+.barra-arriba .logo { width: 6cqi; height: 6cqi; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--voz), #1a5f59); opacity: 1; }
+.lado { display: grid; align-content: center; gap: 4cqi; justify-items: center; background: rgba(19,24,27,.92); border-left: 1px solid var(--linea); }
+.lado b { display: block; width: 4.5cqi; height: 4.5cqi; border-radius: 1.4cqi; background: var(--suave); opacity: .45; }
+.lado b.on { background: var(--voz); opacity: 1; }
+.pest { display: flex; gap: 3cqi; }
+.pest b { display: block; height: 1.8cqi; width: 12cqi; border-radius: 1cqi; background: var(--suave); opacity: .45; }
+.pest b.on { background: var(--voz); opacity: 1; }
+.ep { display: grid; gap: 2cqi; }
+.ep div { display: grid; grid-template-columns: 30% 1fr; gap: 2cqi; align-items: center; }
+.ep div i { display: block; aspect-ratio: 16 / 9; border-radius: 1cqi; background: linear-gradient(160deg, #3f5c5e, #1d2c30); }
+.ep div span { display: grid; gap: 1.2cqi; }
+.ep div span::before, .ep div span::after { content: ""; display: block; height: 1.6cqi; border-radius: 1cqi; background: var(--texto); opacity: .5; }
+.ep div span::after { width: 70%; opacity: .25; }
+.vid { background: radial-gradient(ellipse at 55% 45%, #4c6f73 0 18%, transparent 40%), linear-gradient(150deg, #23393d, #0d1517); border-radius: .6cqi; }
+.vid::before { content: ""; position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translate(-30%, -50%); border-style: solid; border-width: 2.4cqi 0 2.4cqi 4cqi; border-color: transparent transparent transparent rgba(255,255,255,.75); }
+.progreso { height: 1cqi; border-radius: 1cqi; background: linear-gradient(90deg, var(--voz) 0 38%, rgba(255,255,255,.2) 38%); }
+.ctrl { display: flex; justify-content: center; align-items: center; gap: 6cqi; }
+.ctrl b { display: block; width: 7cqi; height: 7cqi; border-radius: 50%; background: rgba(255,255,255,.18); }
+.ctrl b.grande { width: 11cqi; height: 11cqi; background: var(--papel); }
+.chips { display: flex; gap: 2cqi; flex-wrap: wrap; }
+.chips b { display: block; height: 5cqi; width: 16cqi; border-radius: 1.4cqi; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); }
+.chips b.on { background: color-mix(in oklab, var(--voz) 35%, transparent); border-color: var(--voz); }
+.dpad { border-radius: 50%; background: radial-gradient(circle, #1d2629 0 30%, transparent 31%), conic-gradient(from 45deg, #2a3539 0 25%, #222c30 0 50%, #2a3539 0 75%, #222c30 0); border: 1px solid var(--linea); }
+.dpad::after { content: ""; position: absolute; inset: 36%; border-radius: 50%; background: var(--voz); opacity: .85; }
+.sub { text-align: center; font-size: 2.6cqi; color: var(--papel); font-weight: 600; text-shadow: 0 1px 2px #000; }
+.aviso { display: flex; align-items: center; justify-content: center; font-size: 2.6cqi; font-weight: 600; color: var(--sala); background: var(--ambar); border-radius: 1.4cqi; }
+.negro { background: #000; }
+.franja { background: repeating-linear-gradient(135deg, #0f1416 0 8px, #141b1e 8px 16px); }
+.flecha { font-size: 3.2cqi; color: var(--suave); text-align: center; font-weight: 600; }
+
+/* diagrama de las poses */
+.poses-aparato { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; align-items: end; }
+.mini { display: grid; gap: 8px; justify-items: center; text-align: center; }
+.mini .etq { font-size: 13px; color: var(--suave); max-width: 26ch; }
+.mini .etq b { color: var(--texto); display: block; }
+.medida { font-variant-numeric: tabular-nums; font-family: var(--display); color: var(--ambar); font-size: 13px; }
+
+.etapas { display: grid; gap: 14px; }
+.etapa { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 16px; padding: 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--linea); }
+.etapa .n { font-family: var(--display); font-weight: 700; color: var(--voz); font-size: 18px; }
+.etapa .n span { display: block; font-size: 12px; color: var(--suave); font-weight: 500; font-family: var(--cuerpo); margin-top: 4px; }
+.etapa > div { min-width: 0; display: grid; gap: 8px; }
+.etapa ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--suave); font-size: 14px; }
+.etapa ul b { color: var(--texto); }
+@media (max-width: 560px) { .etapa { grid-template-columns: 1fr; } }
+.funciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.funcion { display: grid; gap: 10px; padding: 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--linea); align-content: start; }
+.funcion p { font-size: 14px; color: var(--suave); }
+.veredicto { font-size: 12px; font-weight: 700; }
+details { background: var(--panel); border: 1px solid var(--linea); border-radius: 14px; padding: 16px 20px; }
+summary { cursor: pointer; font-family: var(--display); font-weight: 700; font-size: 17px; }
+details[open] summary { margin-bottom: 14px; }
+details .cuerpo { display: grid; gap: 10px; font-size: 14px; color: var(--suave); }
+details code { font-size: 13px; color: var(--texto); background: #0b0f11; padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.fuentes { columns: 2 300px; gap: 28px; font-size: 13px; color: var(--suave); margin: 0; padding-left: 18px; }
+.fuentes li { margin-bottom: 6px; break-inside: avoid; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .mesa .dev.mitad.baja, .libro .hoja { transform: none; } }
+</style>
+
+<main class="page">
+
+<header class="intro">
+  <span class="porque">Propuesta · 26 nov 2026 · iPhone, iPad y Mac (la TV no cambia)</span>
+  <h1>Orbital en el iPhone Duo</h1>
+  <p>El Duo es el primer iPhone que se dobla. Cerrado es un teléfono ancho y corto. Abierto es una pantalla de casi tablet con un pliegue en medio. A medio abrir se para sola sobre la mesa. Esta propuesta revisa qué le pasaría hoy a Orbital ahí, qué aprendieron Apple y los demás, y cómo debería verse y funcionar cada pantalla en cada forma.</p>
+  <p>La idea en una línea: <b style="color:var(--texto)">cerrado es el bolsillo, abierto es la sala y a medio abrir es la tele en la mesa.</b> La misma Orbital en las tres formas, sin perder nada al doblar o desdoblar.</p>
+</header>
+
+<div class="reco-box">
+  <span class="porque">Lo que recomiendo, para dictar</span>
+  <span class="dictado">DU1-A · DU2-B · DU3-A · DU4-A · DU5-A · DU6-A · DU7-A · DU8-A</span>
+  <p class="suave">En resumen: la pantalla de afuera es Orbital completa, acomodada a lo corto. La de adentro se usa a dos páginas, con el pliegue como separador. A medio abrir, el reproductor y el control de la TV se parten: lo que se ve va arriba y los botones abajo. Antes de diseñar nada nuevo hay cuatro arreglos de base. Sin ellos, hoy Orbital se vería encogida en el Duo.</p>
+</div>
+
+<!-- ——— 1. El aparato ——— -->
+<section>
+  <span class="porque">1 · El aparato</span>
+  <h2>Dos pantallas con la misma forma, una del doble de la otra</h2>
+  <p class="suave">Las dos pantallas tienen la misma proporción, como una hoja tamaño carta y su mitad. Al abrir, cada mitad de la pantalla grande mide casi lo mismo que la de afuera. Por eso el «modo libro» se siente natural: dos páginas del tamaño del teléfono cerrado.</p>
+
+  <div class="poses-aparato">
+    <div class="mini">
+      <div class="dev fuera" style="max-width:120px"><span class="camara"></span></div>
+      <span class="etq"><b>Cerrado</b>Pantalla de afuera, 5.4"<br><span class="medida">≈ 466 × 678 pt</span></span>
+    </div>
+    <div class="mini">
+      <div class="dev abierto v" style="max-width:220px"></div>
+      <span class="etq"><b>Abierto, acostado</b>Como se abre normalmente: pliegue vertical, 7.6"<br><span class="medida">≈ 890 × 626 pt · cada página 445 × 626</span></span>
+    </div>
+    <div class="mini">
+      <div class="dev alto h" style="max-width:150px"></div>
+      <span class="etq"><b>Abierto, de pie</b>Girado: el pliegue queda horizontal<br><span class="medida">≈ 626 × 890 pt</span></span>
+    </div>
+    <div class="mini">
+      <div class="mesa" style="max-width:170px"><div class="dev mitad"></div><div class="dev mitad baja"></div></div>
+      <span class="etq"><b>A medio abrir, sobre la mesa</b>Mitad de arriba de pie y mitad de abajo acostada (como laptop)</span>
+    </div>
+    <div class="mini">
+      <div class="libro" style="max-width:190px"><div class="hoja izq"></div><div class="hoja der"></div></div>
+      <span class="etq"><b>A medio abrir, como libro</b>Dos páginas, una a cada lado del pliegue</span>
+    </div>
+  </div>
+
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr><th>Dato</th><th>Valor</th><th>De dónde</th></tr></thead>
+      <tbody>
+        <tr><td>Salida</td><td>Anunciado el 9 sep 2026, a la venta desde el 23 oct. Desde 1,999 dólares. Llega con iOS 27.1</td><td><span class="sello s-apple">Apple</span></td></tr>
+        <tr><td>Pantalla de afuera</td><td class="num">5.4" · 1398 × 2034 px · ≈ 466 × 678 pt</td><td><span class="sello s-apple">Apple</span> <span class="sello s-medido">puntos calculados</span></td></tr>
+        <tr><td>Pantalla de adentro</td><td class="num">7.6" · 1878 × 2670 px · ≈ 626 × 890 pt · hasta 120 Hz</td><td><span class="sello s-apple">Apple</span> <span class="sello s-medido">puntos calculados</span></td></tr>
+        <tr><td>Proporción</td><td>Las dos 1 : 1.42. No es casi cuadrada como los Samsung Fold: un video 16:9 llena ≈ 80 % de la pantalla abierta</td><td><span class="sello s-apple">Apple</span> <span class="sello s-medido">calculado</span></td></tr>
+        <tr><td>Cómo la ve la app</td><td>Afuera: como cualquier iPhone (angosta). Adentro: «ancha y alta», como un iPad</td><td><span class="sello s-apple">Apple</span></td></tr>
+        <tr><td>Pliegue</td><td>Franja de ≈ 40 pt. Se ve con luz de lado sobre fondo oscuro y se siente al deslizar el dedo; con el uso se marca más (48 → 167 µm tras 3,000 dobleces)</td><td><span class="sello s-resena">reseñas y pruebas</span></td></tr>
+        <tr><td>Cámaras de enfrente</td><td>Afuera, en una esquina y siempre visible. Adentro, debajo de la pantalla</td><td><span class="sello s-apple">Apple</span></td></tr>
+        <tr><td>Multitarea</td><td>Dos apps lado a lado en la pantalla de adentro (la primera vez en un iPhone), y dos ventanas de la misma app. Todas las apps entran</td><td><span class="sello s-apple">Apple</span></td></tr>
+        <tr><td>Giro</td><td>La pantalla de adentro <b>no respeta</b> el candado de «solo vertical» de las apps</td><td><span class="sello s-apple">Apple</span></td></tr>
+        <tr><td>Fecha que obliga</td><td>Desde abril 2027, capturas del Duo obligatorias en la App Store para apps hechas con Xcode 27.1. Adaptarse no tiene fecha límite</td><td><span class="sello s-apple">Apple</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="fuente">Apple no publica los tamaños en puntos. Los calculé de los píxeles a 3× y sirven para diseñar, no para fijarlos en el código. La app mide su ventana de verdad.</p>
+</section>
+
+<!-- ——— 2. Qué pasa hoy ——— -->
+<section>
+  <span class="porque">2 · Qué pasa hoy</span>
+  <h2>Si hoy abrieras Orbital en un Duo</h2>
+  <p class="suave">Lo revisé en el código de <code style="color:var(--texto)">main</code> de hoy. Sin un Duo ni su simulador (pide Xcode 27.1, y en la Mac hay 27.0), esto es lo que se puede predecir. La regla del 28 de octubre ayuda: cada pantalla se acomoda según el espacio que tiene, no según el aparato. Eso hace que media app ya crezca sola. La otra media choca.</p>
+
+  <div class="poses">
+    <div class="pose">
+      <div class="dev abierto v">
+        <div class="b negro" style="inset:0"></div>
+        <div class="b" style="left:20%;top:0;width:60%;bottom:0;overflow:hidden;border-inline:1px solid #222">
+          <div class="b arte" style="inset:0 0 55% 0"></div><div class="b velo" style="inset:0 0 55% 0"></div>
+          <div class="b fila" style="left:5%;right:5%;top:50%"><i></i><i></i><i></i></div>
+          <div class="b barra" style="left:0;right:0;bottom:0;height:10%"><b class="on"></b><b></b><b></b><b></b></div>
+        </div>
+      </div>
+      <span class="etq"><b>Probable hoy, acostada:</b> Orbital pide al menos 667 pt de alto y la pantalla abierta mide 626. iOS no puede darle su tamaño y la encoge, con bandas a los lados.</span>
+    </div>
+    <div class="pose">
+      <div class="dev abierto v">
+        <div class="b" style="inset:0 4% 0 0;overflow:hidden">
+          <div class="b arte" style="inset:0 0 50% 0"></div><div class="b velo" style="inset:0 0 50% 0"></div>
+          <div class="b fila" style="left:3%;right:3%;top:52%"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="b barra" style="left:0;right:0;bottom:0;height:10%"><b class="on"></b><b></b><b></b><b></b></div>
+        </div>
+        <div class="b franja" style="top:0;bottom:0;right:0;width:4%"></div>
+      </div>
+      <span class="etq"><b>Con solo recompilar en Xcode 27.0:</b> según las reseñas llena casi todo y deja una franja a la derecha. Es un teléfono estirado, con pósters cortados por el pliegue.</span>
+    </div>
+    <div class="pose">
+      <div class="dev fuera"><span class="camara"></span>
+        <div class="b arte" style="inset:0 0 62% 0"></div><div class="b velo" style="inset:0 0 62% 0"></div>
+        <div class="b ln t" style="left:6%;top:31%;width:50%"></div>
+        <div class="b fila" style="left:6%;right:6%;top:42%"><i></i><i></i><i></i></div>
+        <div class="b fila" style="left:6%;right:6%;top:68%"><i></i><i></i><i></i></div>
+        <div class="b barra" style="left:0;right:0;bottom:0;height:9%"><b class="on"></b><b></b><b></b><b></b></div>
+      </div>
+      <span class="etq"><b>Afuera casi funciona:</b> es el iPhone de siempre, más ancho y más corto. Entra en el modo de «pantalla corta» del SE, y la cámara de la esquina tapa un pedazo.</span>
+    </div>
+  </div>
+
+  <div class="hallazgos">
+    <div class="hallazgo"><span class="sello s-alto">Rompe</span><div><b>La ventana más chica permitida es más alta que la pantalla abierta</b><p>Orbital no deja que su ventana mida menos de 375 × 667 pt (el tamaño del SE). Abierto y acostado, el Duo mide ≈ 626 de alto, y con dos apps lado a lado cada una mide ≈ 445 × 626. En la forma más común de abrirlo, iOS no puede darle a Orbital su tamaño mínimo. El arreglo es de una línea: bajar ese mínimo.</p></div></div>
+    <div class="hallazgo"><span class="sello s-alto">Rompe</span><div><b>«Solo vertical» deja de existir</b><p>En el iPhone, todo menos el reproductor va siempre de pie. La pantalla de adentro ignora ese candado, así que Inicio, Explorar, la ficha, Biblioteca, Buscar, la guía y Ajustes se verán acostadas en un iPhone por primera vez. Ninguna prueba de hoy lo revisa: la de «el iPhone no cambia» da por hecho que siempre va de pie.</p></div></div>
+    <div class="hallazgo"><span class="sello s-alto">Rompe</span><div><b>El reproductor pelea con el giro</b><p>En el iPhone, el reproductor gira la pantalla por su cuenta y al salir la regresa a vertical. En el iPad no lo hace. En el Duo abierto esas órdenes no sirven y pueden dejar la imagen chueca o brincando. Hay que tratarlo como en el iPad: que gire iOS.</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">Se ve mal</span><div><b>Se queda a 10 puntos del modo «con espacio»</b><p>Inicio, Buscar y Biblioteca llenan el renglón y abren orillas amplias desde 900 pt de ancho. El Duo abierto mide ≈ 890. Quedaría como un iPhone estirado, justo lo que más critican las reseñas («espacio desperdiciado»).</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">Se ve mal</span><div><b>Nada sabe dónde está el pliegue</b><p>Una fila de pósters, el botón «Ver» o el control de la TV pueden caer justo en la franja del pliegue. Ahí cuesta leer y tocar. Con el teléfono a medio abrir, quedarían doblados.</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">Se ve mal</span><div><b>Lo «de iPad» depende de que sea un iPad</b><p>Las pestañas en el renglón del logo (C1) y los controles 1.2× más grandes del reproductor solo se encienden si el aparato es iPad. El Duo es iPhone, así que no los tendría aunque le sobre espacio.</p></div></div>
+    <div class="hallazgo"><span class="sello s-bien">Ya sirve</span><div><b>Lo que se acomoda por tamaño crece solo</b><p>Con la pantalla de adentro «ancha y alta» se encienden la ficha ancha (FE1, con las pestañas FE2-B), el panel fijo de «Audio y subtítulos» bajo el video, el mosaico de 210 pt y la portada ancha de Inicio. El control de la TV aparece como tarjeta. Y como es un iPhone, el Duo sí se conecta a la TV y vibra.</p></div></div>
+  </div>
+</section>
+
+<!-- ——— 3. Lo que aprendimos afuera ——— -->
+<section>
+  <span class="porque">3 · Lo que dice Apple y lo que hicieron los demás</span>
+  <h2>Ocho principios, cada uno con quién lo dice</h2>
+  <div class="principios">
+    <div class="principio"><b>Una sola app que cambia de tamaño</b><p>Apple pide hacer la app para que cambie de tamaño, no un diseño por cada forma. Lo angosto de afuera y lo ancho de adentro bastan para todas las poses. Es nuestra regla del 28 de octubre.</p><span class="fuente">HIG «Designing for iPhone Duo» · Tech Talk 111461</span></div>
+    <div class="principio"><b>Adentro, un nivel más</b><p>La pantalla grande muestra un nivel más de la jerarquía: la lista y su detalle juntos. Apple lo hace en Mail (lista y correo lado a lado) y en Notas (mitad y mitad al doblar).</p><span class="fuente">HIG · Google «canonical layouts» · Microsoft Surface Duo</span></div>
+    <div class="principio"><b>Mismas funciones en cada forma</b><p>Nada se pierde al cerrarlo. Lo de afuera es la misma app, no una versión recortada.</p><span class="fuente">HIG · NN/g (Liu, 2025)</span></div>
+    <div class="principio"><b>Al doblar, sin sustos ni pérdidas</b><p>Abrir o cerrar no debe cambiar la app de golpe. Tiene que seguir en la misma pantalla, el mismo lugar de la lista, el mismo minuto del video y la misma hoja abierta. Samsung lo vuelve requisito.</p><span class="fuente">HIG · Samsung One UI · NN/g (Outlook en el Surface Duo confundía)</span></div>
+    <div class="principio"><b>El pliegue separa; no se toca</b><p>Nada que se toque ni texto encima del pliegue. Los avisos y menús, en una sola mitad. En las cuadrículas, un número par de columnas para que el pliegue caiga entre dos.</p><span class="fuente">HIG («prefer an even number of columns») · Samsung · Google · Microsoft</span></div>
+    <div class="principio"><b>A medio abrir, video arriba y botones abajo</b><p>Es el uso estrella de los plegables. Apple TV, Prime Video (con el reparto abajo), Netflix, MLB y YouTube en Android lo hacen así. Google lo pone como prueba de calidad de primer nivel.</p><span class="fuente">Tech Talk 111463 · Android «Foldables_Postures» · reseñas</span></div>
+    <div class="principio"><b>Los botones junto a lo que mueven</b><p>Los controles van cerca del contenido que afectan, y cada botón de barra lleva ícono y nombre. Si iOS pasa la barra a un costado, un botón sin ícono desaparece.</p><span class="fuente">HIG</span></div>
+    <div class="principio"><b>Nada de bandas negras</b><p>Es la queja número uno del Duo: Disney+ con bandas enormes y YouTube con una tira. Android ya no deja bloquear el giro en pantallas grandes. Las reseñas dicen «espera unos meses a que las apps se adapten».</p><span class="fuente">Tom's Guide · WIRED · MKBHD · Android 16</span></div>
+  </div>
+
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr><th>App</th><th>Qué hace en un plegable</th><th>Qué tomamos</th></tr></thead>
+      <tbody>
+        <tr><td>Apple TV (Duo)</td><td>A medio abrir: video arriba, controles y navegación abajo</td><td>El reproductor partido (DU3)</td></tr>
+        <tr><td>Netflix (Duo, socio de lanzamiento)</td><td>Clips cortos afuera; al abrir sigue el video en grande</td><td>«Abrir para ver en grande» (F3)</td></tr>
+        <tr><td>Prime Video (Duo)</td><td>A medio abrir: video arriba y reparto (X-Ray) abajo</td><td>Panel de abajo con pestañas</td></tr>
+        <tr><td>MLB (Duo)</td><td>Juego arriba, estadísticas en la mitad acostada</td><td>«Lo que suena en la TV» arriba, el control abajo (F2)</td></tr>
+        <tr><td>Mail y Notas (Duo)</td><td>Lista y detalle lado a lado; mitad y mitad al doblar</td><td>Biblioteca y la ficha a dos páginas (DU2)</td></tr>
+        <tr><td>Música (Duo)</td><td>Acostado, la navegación pasa a un riel a la derecha</td><td>Dejar la barra donde la ponga iOS (DU1)</td></tr>
+        <tr><td>JioHotstar (Android, Google lo pone de ejemplo)</td><td>Diseño por tamaño; foto de portada distinta para cada tamaño, no una estirada; reproductor 1:1 sobre la mesa</td><td>Portada de Inicio elegida para cada forma</td></tr>
+        <tr><td>Disney+ y YouTube (Duo)</td><td>Bandas negras o una tira de app de teléfono. Las reseñas los castigan</td><td>Lo que no hay que hacer</td></tr>
+        <tr><td>Controles de TV (Google TV y otros)</td><td>No encontré ninguno adaptado a un plegable</td><td>Hueco libre: Orbital puede ser la primera (F2)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="caja">
+    <b>Lo que los datos no dicen todavía</b>
+    <ul>
+      <li>No hay cifras públicas de cuántas veces la gente abre su plegable ni de cuánto tiempo pasa en cada pantalla. Las reseñas coinciden: afuera, lo rápido; adentro, video, lectura y fotos. Y con los meses, mucha gente vuelve a usarlo cerrado.</li>
+      <li>En Android, el 47 % de los dueños de un Pixel Fold usa dos apps lado a lado (Google, 2024). Orbital debe verse bien a media pantalla.</li>
+      <li>El Duo lleva cinco semanas en la calle. Lo de las reseñas puede cambiar con iOS 27.2.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ——— 4. Pantalla por pantalla ——— -->
+<section>
+  <span class="porque">4 · Pantalla por pantalla</span>
+  <h2>Cómo se vería cada parte en las tres formas</h2>
+  <p class="suave">La línea ámbar punteada es el pliegue. Las maquetas muestran el acomodo; los colores y las letras son los de siempre (sistema base D1-B).</p>
+
+  <!-- Inicio -->
+  <div class="pantalla">
+    <div class="texto"><h3>Inicio</h3><p>Afuera, el Inicio del iPhone, ajustado a lo corto: la portada un poco más baja para que se vea «Seguir viendo» sin desplazar. Adentro y acostado, el tablero que ya existe para el iPad acostado (MI2), con dos condiciones: que arranque desde 890 pt y que el pliegue caiga entre columnas. A la izquierda, la portada y «Seguir viendo»; a la derecha, «Hoy en tus series» y lo nuevo.</p></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b arte" style="inset:0 0 58% 0"></div><div class="b velo" style="inset:0 0 58% 0"></div>
+          <div class="b ln t" style="left:6%;top:30%;width:46%"></div><div class="b btn" style="left:6%;top:36%;width:28%;height:4.5%"></div>
+          <div class="b ln" style="left:6%;top:46%;width:30%"></div>
+          <div class="b fila ancha" style="left:6%;right:-20%;top:49%"><i></i><i></i><i></i></div>
+          <div class="b ln" style="left:6%;top:66%;width:30%"></div>
+          <div class="b fila" style="left:6%;right:6%;top:69%"><i></i><i></i><i></i></div>
+          <div class="b barra" style="left:0;right:0;bottom:0;height:9%"><b class="on"></b><b></b><b></b><b></b></div>
+        </div>
+        <span class="etq"><b>Cerrado.</b> El de siempre, con la portada más baja: «Seguir viendo» a la vista sin desplazar.</span>
+      </div>
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b barra-arriba" style="left:3%;right:3%;top:3%;height:8%"><b class="logo"></b><b class="on"></b><b></b><b></b><b></b></div>
+          <div class="b arte" style="left:3%;top:13%;width:43%;height:44%;border-radius:2cqi"></div>
+          <div class="b velo" style="left:3%;top:13%;width:43%;height:44%;border-radius:2cqi"></div>
+          <div class="b ln t" style="left:6%;top:44%;width:24%;height:2.4cqi"></div><div class="b btn" style="left:6%;top:50%;width:13%;height:4.5%"></div>
+          <div class="b ln" style="left:3%;top:62%;width:16%;height:1.2cqi"></div>
+          <div class="b fila ancha" style="left:3%;width:43%;top:66%;gap:1.2cqi"><i></i><i></i></div>
+          <div class="b ln" style="left:54%;top:14%;width:18%;height:1.2cqi"></div>
+          <div class="b ep" style="left:54%;right:3%;top:19%;gap:1.4cqi"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div>
+          <div class="b ln" style="left:54%;top:62%;width:14%;height:1.2cqi"></div>
+          <div class="b fila" style="left:54%;right:3%;top:66%;gap:1.2cqi"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="etq"><b>Abierto, acostado.</b> Dos páginas: lo tuyo a la izquierda y lo de hoy a la derecha. El pliegue no corta ninguna tarjeta.</span>
+      </div>
+      <div class="pose">
+        <div class="dev alto h">
+          <div class="b barra-arriba" style="left:4%;right:4%;top:2.5%;height:5%"><b class="logo"></b><b class="on"></b><b></b><b></b><b></b></div>
+          <div class="b arte" style="left:0;right:0;top:8%;height:38%"></div><div class="b velo" style="left:0;right:0;top:8%;height:38%"></div>
+          <div class="b ln t" style="left:5%;top:36%;width:40%"></div><div class="b btn" style="left:5%;top:41%;width:20%;height:3.4%"></div>
+          <div class="b ln" style="left:5%;top:53%;width:22%"></div>
+          <div class="b fila ancha" style="left:5%;right:5%;top:56%"><i></i><i></i><i></i></div>
+          <div class="b ln" style="left:5%;top:70%;width:22%"></div>
+          <div class="b fila" style="left:5%;right:5%;top:73%"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="etq"><b>Abierto, de pie.</b> La «sala» del iPad de pie (II1): portada ancha y renglones de cuatro.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Explorar -->
+  <div class="pantalla">
+    <div class="texto"><h3>Explorar y Colecciones</h3><p>El mosaico ya calcula sus columnas por ancho. Solo falta una regla: adentro, el número de columnas siempre par, y la línea entre las dos del centro sobre el pliegue. Acostado caben 6 pósters por renglón (3 por página); de pie, 4. Afuera se quedan los 3 de hoy.</p></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b ln t" style="left:6%;top:8%;width:40%"></div>
+          <div class="b chips" style="left:6%;right:6%;top:15%"><b class="on"></b><b></b><b></b></div>
+          <div class="b rejilla" style="left:6%;right:6%;top:24%;grid-template-columns:repeat(3,1fr)"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="b barra" style="left:0;right:0;bottom:0;height:9%"><b></b><b class="on"></b><b></b><b></b></div>
+        </div>
+        <span class="etq"><b>Cerrado.</b> 3 columnas, como hoy.</span>
+      </div>
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b barra-arriba" style="left:3%;right:3%;top:3%;height:8%"><b class="logo"></b><b></b><b class="on"></b><b></b><b></b></div>
+          <div class="b rejilla" style="left:3%;right:3%;top:14%;grid-template-columns:repeat(6,1fr);column-gap:5.5%;row-gap:2cqi"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="etq"><b>Abierto, acostado.</b> 6 columnas; el hueco del centro, más ancho, cae sobre el pliegue.</span>
+      </div>
+      <div class="pose">
+        <div class="dev alto h">
+          <div class="b barra-arriba" style="left:4%;right:4%;top:2.5%;height:5%"><b class="logo"></b><b></b><b class="on"></b><b></b><b></b></div>
+          <div class="b rejilla" style="left:4%;right:4%;top:9%;grid-template-columns:repeat(4,1fr);row-gap:2cqi"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="b rejilla" style="left:4%;right:4%;top:53%;grid-template-columns:repeat(4,1fr);row-gap:2cqi"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="etq"><b>Abierto, de pie.</b> 4 columnas. El pliegue cae entre dos renglones, nunca a media portada.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ficha -->
+  <div class="pantalla">
+    <div class="texto"><h3>La ficha de una película o serie</h3><p>Es la pantalla que más gana. Abierta y acostada se vuelve un libro: a la izquierda el arte, los datos y «Ver»; a la derecha las pestañas de la ficha ancha (Episodios · Reparto y equipo · Más como esto · Detalles) con su contenido. Así ves los episodios sin perder el arte ni el botón. De pie se queda la ficha ancha del iPad de pie, tal como está. Las temporadas siguen en la lista desplegable (regla del 1 nov).</p></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b arte" style="inset:0 0 55% 0"></div><div class="b velo" style="inset:0 0 55% 0"></div>
+          <div class="b ln t" style="left:6%;top:36%;width:55%"></div>
+          <div class="b ln s" style="left:6%;top:42%;width:40%"></div>
+          <div class="b btn" style="left:6%;top:47%;width:60%;height:5.5%"></div>
+          <div class="b pest" style="left:6%;top:57%"><b class="on"></b><b></b><b></b></div>
+          <div class="b ep" style="left:6%;right:6%;top:62%"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div>
+        </div>
+        <span class="etq"><b>Cerrado.</b> La ficha de una columna de hoy.</span>
+      </div>
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b arte" style="left:0;top:0;width:48%;height:58%"></div><div class="b velo" style="left:0;top:0;width:48%;height:58%"></div>
+          <div class="b ln t" style="left:4%;top:46%;width:30%;height:2.6cqi"></div>
+          <div class="b ln s" style="left:4%;top:54%;width:22%;height:1.2cqi"></div>
+          <div class="b btn" style="left:4%;top:60%;width:22%;height:6%"></div>
+          <div class="b fila" style="left:28%;top:60.5%;gap:1cqi;width:14%"><i style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.14)"></i><i style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.14)"></i></div>
+          <div class="b" style="left:4%;top:72%;width:40%;display:grid;gap:1.2cqi"><span class="ln" style="height:1cqi"></span><span class="ln" style="height:1cqi"></span><span class="ln s" style="height:1cqi;width:70%"></span></div>
+          <div class="b pest" style="left:54%;top:6%;gap:2cqi"><b class="on" style="width:8cqi;height:1.2cqi"></b><b style="width:8cqi;height:1.2cqi"></b><b style="width:8cqi;height:1.2cqi"></b><b style="width:8cqi;height:1.2cqi"></b></div>
+          <div class="b btn gris" style="left:54%;top:12%;width:16%;height:5%"></div>
+          <div class="b ep" style="left:54%;right:3%;top:21%;gap:1.6cqi"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div>
+        </div>
+        <span class="etq"><b>Abierto, acostado (DU2-B).</b> Página izquierda: la película. Página derecha: sus episodios, el reparto o lo parecido.</span>
+      </div>
+      <div class="pose">
+        <div class="dev alto h">
+          <div class="b arte" style="left:0;right:0;top:0;height:42%"></div><div class="b velo" style="left:0;right:0;top:0;height:42%"></div>
+          <div class="b ln t" style="left:5%;top:30%;width:45%"></div>
+          <div class="b btn" style="left:5%;top:37%;width:30%;height:4%"></div>
+          <div class="b pest" style="left:5%;top:55%;gap:2cqi"><b class="on"></b><b></b><b></b><b></b></div>
+          <div class="b ep" style="left:5%;right:5%;top:60%"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div>
+        </div>
+        <span class="etq"><b>Abierto, de pie.</b> La ficha ancha del iPad de pie (FE2-B). «Ver» queda arriba del pliegue.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Biblioteca y Buscar -->
+  <div class="pantalla">
+    <div class="texto"><h3>Biblioteca y Buscar</h3><p>El patrón de lista y detalle de Mail. En <b style="color:var(--texto)">Biblioteca</b>, acostado: tus listas a la izquierda y la elegida a la derecha, sin la ida y vuelta que hoy pide el teléfono. En <b style="color:var(--texto)">Buscar</b>: resultados a la izquierda y, al tocar uno, su vistazo a la derecha («Ver», «Mi lista», a qué servicio está). El resultado se abre en la ficha completa solo si lo pides. Afuera y de pie, todo queda igual que hoy.</p></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b" style="left:3%;top:5%;width:43%;display:grid;gap:2.4cqi">
+            <span class="ln t" style="width:40%;height:2.2cqi"></span>
+            <div class="ep" style="gap:2cqi"><div style="grid-template-columns:18% 1fr"><i style="aspect-ratio:2/3"></i><span></span></div><div style="grid-template-columns:18% 1fr;outline:1px solid var(--voz);outline-offset:.8cqi;border-radius:1cqi"><i style="aspect-ratio:2/3"></i><span></span></div><div style="grid-template-columns:18% 1fr"><i style="aspect-ratio:2/3"></i><span></span></div><div style="grid-template-columns:18% 1fr"><i style="aspect-ratio:2/3"></i><span></span></div></div>
+          </div>
+          <div class="b ln t" style="left:54%;top:6%;width:22%;height:2.2cqi"></div>
+          <div class="b rejilla" style="left:54%;right:3%;top:15%;grid-template-columns:repeat(3,1fr)"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="etq"><b>Biblioteca, abierto.</b> Lista a la izquierda (marcada la elegida), contenido a la derecha.</span>
+      </div>
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b btn gris" style="left:3%;top:4%;width:43%;height:8%"></div>
+          <div class="b rejilla" style="left:3%;top:16%;width:43%;grid-template-columns:repeat(3,1fr)"><i></i><i style="outline:2px solid var(--voz)"></i><i></i><i></i><i></i><i></i></div>
+          <div class="b arte" style="left:54%;top:4%;right:3%;height:42%;border-radius:2cqi"></div>
+          <div class="b ln t" style="left:54%;top:51%;width:26%;height:2.4cqi"></div>
+          <div class="b ln s" style="left:54%;top:58%;width:20%;height:1.2cqi"></div>
+          <div class="b btn" style="left:54%;top:64%;width:18%;height:6%"></div><div class="b btn gris" style="left:74%;top:64%;width:12%;height:6%"></div>
+          <div class="b" style="left:54%;right:3%;top:76%;display:grid;gap:1.2cqi"><span class="ln" style="height:1cqi"></span><span class="ln s" style="height:1cqi;width:80%"></span></div>
+        </div>
+        <span class="etq"><b>Buscar, abierto.</b> Resultados y vistazo del elegido, a una página cada uno.</span>
+      </div>
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b btn gris" style="left:6%;right:6%;top:7%;height:6%"></div>
+          <div class="b rejilla" style="left:6%;right:6%;top:17%;grid-template-columns:repeat(3,1fr)"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="b barra" style="left:0;right:0;bottom:0;height:9%"><b></b><b></b><b></b><b class="on"></b></div>
+        </div>
+        <span class="etq"><b>Cerrado.</b> Igual que hoy: tocar abre la ficha completa.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reproductor -->
+  <div class="pantalla">
+    <div class="texto"><h3>El reproductor</h3><p>Aquí está la experiencia nueva. Apple usa este caso de ejemplo en su documentación: <b style="color:var(--texto)">abierto y plano, los controles flotan sobre el video como hoy; a medio abrir, el video sube y los controles bajan</b> a la mitad acostada. En Orbital, esa mitad no lleva solo «pausa»: es el panel de «Audio y subtítulos» que ya existe, con una pestaña más para los episodios. Lo de hoy se queda: el aviso «Orbital ajustó la imagen» y quitar las franjas pintadas. En el Duo, el pellizco sirve también de pie.</p>
+    <ul>
+      <li><b>Cuánto llena el video:</b> un 16:9 ocupa ≈ 80 % de la pantalla abierta (bandas arriba y abajo) y ≈ 79 % de la mitad de arriba a medio abrir. Afuera, de pie, el video es más chico que en un iPhone normal por lo ancho de la pantalla.</li>
+      <li><b>Las bandas abiertas se aprovechan:</b> con el video plano en 890 × 626, sobran ≈ 63 pt arriba y abajo. Ahí pueden ir los subtítulos, fuera de la imagen, como en el cine.</li>
+      <li><b>Sin vibrar mientras ves,</b> como ya se decidió.</li>
+    </ul></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b negro" style="inset:0"></div>
+          <div class="b vid" style="left:0;right:0;top:10%;height:80%"></div>
+          <div class="b sub" style="left:10%;right:10%;bottom:3%">Subtítulo debajo de la imagen</div>
+        </div>
+        <span class="etq"><b>Abierto, plano.</b> Pantalla completa; el subtítulo va en la banda de abajo y no tapa la imagen.</span>
+      </div>
+      <div class="pose">
+        <div class="mesa">
+          <div class="dev mitad"><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:11%;height:78%"></div></div>
+          <div class="dev mitad baja">
+            <div class="b progreso" style="left:6%;right:6%;top:12%"></div>
+            <div class="b ctrl" style="left:0;right:0;top:22%"><b></b><b class="grande"></b><b></b></div>
+            <div class="b pest" style="left:6%;top:56%;gap:2cqi"><b class="on"></b><b></b><b></b></div>
+            <div class="b chips" style="left:6%;right:6%;top:66%"><b class="on"></b><b></b><b></b><b></b></div>
+          </div>
+        </div>
+        <span class="etq"><b>A medio abrir, en la mesa (DU3-A).</b> Video arriba. Abajo: avance, controles y pestañas de Audio · Subtítulos · Episodios.</span>
+      </div>
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b negro" style="inset:0"></div>
+          <div class="b vid" style="left:0;right:0;top:14%;height:22%"></div>
+          <div class="b progreso" style="left:6%;right:6%;top:40%"></div>
+          <div class="b ctrl" style="left:0;right:0;top:45%"><b></b><b class="grande"></b><b></b></div>
+          <div class="b pest" style="left:6%;top:66%"><b class="on"></b><b></b><b></b></div>
+          <div class="b chips" style="left:6%;right:6%;top:72%"><b class="on"></b><b></b><b></b></div>
+        </div>
+        <span class="etq"><b>Cerrado, de pie.</b> El reproductor de pie de hoy, con el panel fijo debajo.</span>
+      </div>
+      <div class="pose">
+        <div class="libro">
+          <div class="hoja izq"><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:36%;height:28%"></div></div>
+          <div class="hoja der"><div class="b ep" style="left:8%;right:8%;top:10%"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div></div>
+        </div>
+        <span class="etq"><b>A medio abrir, como libro.</b> El video queda chico a la izquierda. Sirve para elegir el siguiente episodio; para ver, mejor de pie o plano.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control de la TV -->
+  <div class="pantalla">
+    <div class="texto"><h3>El control de la TV («En la TV»)</h3><p>Es lo que Orbital tiene y nadie más: no encontré ningún control de TV adaptado a un plegable. Hoy, en el iPhone, es una hoja que tapa lo que estabas viendo. En el Duo abierto puede vivir en la página derecha, con la ficha o Inicio a la izquierda: escoges en el teléfono y lo controlas en la TV sin cerrar nada. A medio abrir, en la mesa, se vuelve un control de verdad: arriba, lo que suena en la TV (portada, nombre, minuto); abajo, las flechas y los botones grandes al alcance del pulgar. El iPad y la Mac siguen sin hablar con la TV (PA5-A).</p></div>
+    <div class="poses">
+      <div class="pose">
+        <div class="dev abierto v">
+          <div class="b arte" style="left:0;top:0;width:48%;height:55%"></div><div class="b velo" style="left:0;top:0;width:48%;height:55%"></div>
+          <div class="b ln t" style="left:4%;top:44%;width:28%;height:2.4cqi"></div>
+          <div class="b btn voz" style="left:4%;top:52%;width:26%;height:6%"></div>
+          <div class="b ep" style="left:4%;width:40%;top:66%;gap:1.4cqi"><div><i></i><span></span></div><div><i></i><span></span></div></div>
+          <div class="b" style="left:52%;right:0;top:0;bottom:0;background:#101518;border-left:1px solid var(--linea)"></div>
+          <div class="b ln" style="left:56%;top:6%;width:14%;height:1.2cqi"></div>
+          <div class="b fila ancha" style="left:56%;width:18%;top:11%"><i></i></div>
+          <div class="b ln t" style="left:76%;top:12%;width:16%;height:1.6cqi"></div>
+          <div class="b progreso" style="left:56%;right:4%;top:24%"></div>
+          <div class="b dpad" style="left:62%;top:32%;width:28%;aspect-ratio:1"></div>
+          <div class="b ctrl" style="left:52%;right:0;top:78%;gap:3cqi"><b style="width:4.5cqi;height:4.5cqi"></b><b class="grande" style="width:6cqi;height:6cqi"></b><b style="width:4.5cqi;height:4.5cqi"></b></div>
+        </div>
+        <span class="etq"><b>Abierto (DU4-A).</b> La ficha a la izquierda; el control vive en la página derecha. «Ver en la TV» y el control, a la vista juntos.</span>
+      </div>
+      <div class="pose">
+        <div class="mesa">
+          <div class="dev mitad"><div class="b arte" style="inset:0"></div><div class="b velo" style="inset:0"></div>
+            <div class="b ln t" style="left:6%;top:62%;width:44%"></div><div class="b progreso" style="left:6%;right:6%;top:78%"></div>
+            <div class="b ln s" style="left:6%;top:85%;width:26%"></div></div>
+          <div class="dev mitad baja" style="background:#0e1315">
+            <div class="b dpad" style="left:30%;top:8%;width:40%;aspect-ratio:1"></div>
+            <div class="b ctrl" style="left:0;right:0;top:72%"><b></b><b class="grande"></b><b></b></div>
+          </div>
+        </div>
+        <span class="etq"><b>A medio abrir, en la mesa (F2).</b> Arriba, lo que suena en la TV. Abajo, flechas y pausa, grandes para el pulgar.</span>
+      </div>
+      <div class="pose">
+        <div class="dev fuera"><span class="camara"></span>
+          <div class="b arte" style="inset:0 0 60% 0;opacity:.5"></div>
+          <div class="b" style="left:0;right:0;top:30%;bottom:0;background:#101518;border-radius:5cqi 5cqi 0 0;border-top:1px solid var(--linea)"></div>
+          <div class="b ln t" style="left:8%;top:35%;width:40%"></div>
+          <div class="b dpad" style="left:25%;top:44%;width:50%;aspect-ratio:1"></div>
+          <div class="b ctrl" style="left:0;right:0;top:82%"><b></b><b class="grande"></b><b></b></div>
+        </div>
+        <span class="etq"><b>Cerrado.</b> La hoja de hoy, medida para que quepa en lo corto (678 pt).</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lo demás -->
+  <div class="pantalla">
+    <div class="texto"><h3>Lo demás: Aprende, la guía, Ajustes, Tu nube y los widgets</h3>
+    <ul>
+      <li><b>Aprende y la guía:</b> adentro, la lección a una página y su ilustración en la otra, como un libro. Nunca una sola columna estirada de 890 pt; el texto se queda en su ancho legible (720).</li>
+      <li><b>Ajustes y Tu nube:</b> la lista con su detalle que ya tiene la Mac, a dos páginas. «Pegar» la clave de TorBox, AllDebrid o Real-Debrid funciona igual.</li>
+      <li><b>Teclado:</b> a medio abrir y de pie, iOS pone el teclado en la mitad acostada. En Buscar, el campo debe quedar arriba del pliegue.</li>
+      <li><b>Widgets y Actividad en vivo:</b> los pone iOS en sus tamaños. Solo hay que revisar que «Lo siguiente» y la actividad de la TV se vean bien en la pantalla de afuera, que es más ancha.</li>
+      <li><b>Dos apps lado a lado:</b> Orbital debe verse bien en media pantalla (≈ 445 × 626 pt): es casi la pantalla de afuera y no pide un diseño nuevo.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ——— 5. Funciones nuevas ——— -->
+<section>
+  <span class="porque">5 · Funciones nuevas</span>
+  <h2>Lo que el Duo permite y hoy no existe</h2>
+  <div class="funciones">
+    <div class="funcion"><span class="veredicto" style="color:var(--voz)">Sí, en la etapa 2</span><h3>F1 · Cine de mesa</h3><p>Dejas el Duo a medio abrir en la mesa (en la cocina, en el avión). El video se pone arriba solo y los controles, subtítulos y episodios abajo. No hay que sostenerlo ni tapar la imagen con el dedo. Es lo que más alaban las reseñas de plegables.</p></div>
+    <div class="funcion"><span class="veredicto" style="color:var(--voz)">Sí, en la etapa 2</span><h3>F2 · Control de mesa</h3><p>Lo mismo para la TV: arriba lo que suena, abajo un control grande. Ninguna app lo hace todavía. Para Orbital Ultra es el uso de todas las noches.</p></div>
+    <div class="funcion"><span class="veredicto" style="color:var(--voz)">Sí, en la etapa 1</span><h3>F3 · Abrir para ver en grande</h3><p>Estás en la ficha afuera y abres el teléfono: sigues en la misma ficha, en el mismo lugar, ahora a dos páginas. Si estabas viendo, el video continúa en grande sin cortarse. Lo hace Netflix y es lo que Apple más pide.</p></div>
+    <div class="funcion"><span class="veredicto" style="color:var(--voz)">Sí, en la etapa 1</span><h3>F4 · Ver y escoger a la vez</h3><p>En el iPad ya existe el video a media pantalla con el panel fijo. En el Duo abierto y de pie, el video va arriba del pliegue y abajo la lista de episodios, sin salir del reproductor.</p></div>
+    <div class="funcion"><span class="veredicto" style="color:var(--ambar)">Después, si hace falta</span><h3>F5 · Arrastrar a tus listas</h3><p>En la vista de dos páginas, arrastras un póster de Buscar o Explorar a una de tus listas, o un enlace a Mensajes. Google lo pide en su nivel más alto, pero NN/g vio que la gente no lo descubre si no funciona en todos lados.</p></div>
+    <div class="funcion"><span class="veredicto" style="color:var(--rojo)">No por ahora (DU7)</span><h3>F6 · Dos ventanas de Orbital</h3><p>El Duo deja abrir dos Orbital lado a lado, por ejemplo para comparar dos fichas. Pide cambiar cómo arranca la app y lo usaría muy poca gente. La vista de dos páginas ya da casi todo eso.</p></div>
+  </div>
+</section>
+
+<!-- ——— 6. Decisiones ——— -->
+<section>
+  <span class="porque">6 · Lo que te toca decidir</span>
+  <h2>Ocho decisiones, cada una con su código</h2>
+  <p class="suave">Las que no aparecen aquí no se deciden. La pantalla de adentro gira sí o sí (Apple lo impone), el pliegue no se toca, y la TV no cambia.</p>
+
+  <div class="decision">
+    <h3>DU1 · Dónde van las pestañas en la pantalla grande</h3>
+    <p>Inicio, Explorar, Biblioteca y Buscar. Afuera van abajo, como en todo iPhone; la duda es adentro.</p>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU1-A</span><span class="reco-sello">Recomendada</span><b>Donde las ponga iOS</b></div>
+        <div class="dev abierto v"><div class="b barra-arriba" style="left:3%;right:3%;top:3%;height:8%"><b class="logo"></b><b class="on"></b><b></b><b></b><b></b></div><div class="b rejilla" style="left:3%;right:3%;top:15%;grid-template-columns:repeat(6,1fr);column-gap:5.5%"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <ul class="pro"><li>Es lo que pide Apple («no cambies la barra de lugar») y se ve como en el iPad (DK1)</li><li>Si iOS la pasa a un costado acostado, como en Música, Orbital la sigue sin trabajo extra</li></ul>
+        <ul class="contra"><li>Arriba queda lejos del pulgar si lo sostienes con una mano</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU1-B</span><b>Abajo, como el iPhone</b></div>
+        <div class="dev abierto v"><div class="b rejilla" style="left:3%;right:3%;top:6%;grid-template-columns:repeat(6,1fr);column-gap:5.5%"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="b barra" style="left:0;right:0;bottom:0;height:11%"><b class="on" style="width:4cqi;height:4cqi"></b><b style="width:4cqi;height:4cqi"></b><b style="width:4cqi;height:4cqi"></b><b style="width:4cqi;height:4cqi"></b></div></div>
+        <ul class="pro"><li>Igual que en la pantalla de afuera</li></ul>
+        <ul class="contra"><li>Va contra la guía de Apple y contra el iPad</li><li>Una barra abajo de 890 pt deja los íconos lejísimos entre sí</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU1-C</span><b>Riel fijo al costado</b></div>
+        <div class="dev abierto v"><div class="b rejilla" style="left:3%;right:13%;top:6%;grid-template-columns:repeat(6,1fr);column-gap:5%"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="b lado" style="right:0;top:0;bottom:0;width:9%"><b class="on"></b><b></b><b></b><b></b></div></div>
+        <ul class="pro"><li>Al alcance del pulgar derecho</li></ul>
+        <ul class="contra"><li>Le quita ancho a las dos páginas: el «espacio desperdiciado» que critica WIRED</li><li>Un diseño que no existe en ninguna otra Orbital</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU2 · La ficha con el teléfono abierto y acostado</h3>
+    <p>De pie no se discute: es la ficha ancha del iPad. La duda es acostado, que es como se abre normalmente.</p>
+    <div class="opciones">
+      <div class="opcion"><div class="cab"><span class="codigo">DU2-A</span><b>La ficha ancha del iPad, tal cual</b></div>
+        <div class="dev abierto v"><div class="b arte" style="left:0;right:0;top:0;height:60%"></div><div class="b velo" style="left:0;right:0;top:0;height:60%"></div><div class="b ln t" style="left:5%;top:40%;width:30%;height:2.6cqi"></div><div class="b btn" style="left:5%;top:48%;width:16%;height:6%"></div><div class="b pest" style="left:5%;top:66%;gap:2cqi"><b class="on" style="width:9cqi"></b><b style="width:9cqi"></b><b style="width:9cqi"></b><b style="width:9cqi"></b></div><div class="b fila ancha" style="left:5%;right:5%;top:74%;gap:1.4cqi"><i></i><i></i><i></i><i></i></div></div>
+        <ul class="pro"><li>Ya existe, cero trabajo</li><li>Igual al iPad acostado</li></ul>
+        <ul class="contra"><li>El pliegue cruza el título, el arte y la fila de episodios</li><li>Con 626 pt de alto, los episodios quedan hasta abajo y hay que desplazar</li></ul></div>
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU2-B</span><span class="reco-sello">Recomendada</span><b>Dos páginas</b></div>
+        <div class="dev abierto v"><div class="b arte" style="left:0;top:0;width:48%;height:58%"></div><div class="b velo" style="left:0;top:0;width:48%;height:58%"></div><div class="b ln t" style="left:4%;top:46%;width:30%;height:2.6cqi"></div><div class="b btn" style="left:4%;top:60%;width:22%;height:6%"></div><div class="b pest" style="left:54%;top:6%;gap:2cqi"><b class="on" style="width:8cqi;height:1.2cqi"></b><b style="width:8cqi;height:1.2cqi"></b><b style="width:8cqi;height:1.2cqi"></b></div><div class="b ep" style="left:54%;right:3%;top:16%;gap:1.6cqi"><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div><div><i></i><span></span></div></div></div>
+        <ul class="pro"><li>El pliegue separa la película de sus episodios; no corta nada</li><li>Ves «Ver» y la lista de episodios a la vez, sin desplazar</li><li>Es lo que hacen Mail y Notas en el Duo</li></ul>
+        <ul class="contra"><li>Un acomodo nuevo que mantener (su mitad derecha reutiliza las pestañas de la ficha ancha)</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU3 · El reproductor a medio abrir, sobre la mesa</h3>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU3-A</span><span class="reco-sello">Recomendada</span><b>Video arriba, panel completo abajo</b></div>
+        <div class="mesa" style="max-width:220px"><div class="dev mitad"><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:11%;height:78%"></div></div><div class="dev mitad baja"><div class="b progreso" style="left:6%;right:6%;top:12%"></div><div class="b ctrl" style="left:0;right:0;top:22%"><b></b><b class="grande"></b><b></b></div><div class="b chips" style="left:6%;right:6%;top:64%"><b class="on"></b><b></b><b></b></div></div></div>
+        <ul class="pro"><li>Como Apple TV, Prime Video y YouTube</li><li>Es el panel de «Audio y subtítulos» que ya existe, más los episodios</li><li>Nada tapa la imagen</li></ul>
+        <ul class="contra"><li>Más trabajo que no hacer nada</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU3-B</span><b>Video arriba, solo pausa y avance abajo</b></div>
+        <div class="mesa" style="max-width:220px"><div class="dev mitad"><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:11%;height:78%"></div></div><div class="dev mitad baja"><div class="b progreso" style="left:6%;right:6%;top:30%"></div><div class="b ctrl" style="left:0;right:0;top:45%"><b></b><b class="grande"></b><b></b></div></div></div>
+        <ul class="pro"><li>Más simple, menos cosas que fallar</li></ul>
+        <ul class="contra"><li>Media pantalla vacía</li><li>Para cambiar subtítulos hay que volver a abrir el panel encima</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU3-C</span><b>Sin cambio: el video cruza el pliegue</b></div>
+        <div class="mesa" style="max-width:220px"><div class="dev mitad"><div class="b vid" style="inset:0;border-radius:0"></div></div><div class="dev mitad baja"><div class="b vid" style="inset:0;border-radius:0;opacity:.8"></div></div></div>
+        <ul class="pro"><li>Cero trabajo</li></ul>
+        <ul class="contra"><li>Media imagen queda acostada en la mesa, doblada. Es el error que señalan NN/g y Google</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU4 · El control de la TV con el teléfono abierto</h3>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU4-A</span><span class="reco-sello">Recomendada</span><b>En la página derecha</b></div>
+        <div class="dev abierto v"><div class="b arte" style="left:0;top:0;width:48%;height:55%"></div><div class="b velo" style="left:0;top:0;width:48%;height:55%"></div><div class="b btn voz" style="left:4%;top:52%;width:26%;height:6%"></div><div class="b" style="left:52%;right:0;top:0;bottom:0;background:#101518;border-left:1px solid var(--linea)"></div><div class="b dpad" style="left:62%;top:26%;width:28%;aspect-ratio:1"></div><div class="b ctrl" style="left:52%;right:0;top:78%;gap:3cqi"><b style="width:4.5cqi;height:4.5cqi"></b><b class="grande" style="width:6cqi;height:6cqi"></b><b style="width:4.5cqi;height:4.5cqi"></b></div></div>
+        <ul class="pro"><li>Escoges y controlas sin abrir ni cerrar nada</li><li>Es el panel del iPad (CT2), a una página</li></ul>
+        <ul class="contra"><li>Mientras está abierto, la ficha usa solo una página</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU4-B</span><b>La tarjeta flotante de hoy</b></div>
+        <div class="dev abierto v"><div class="b arte" style="inset:0;opacity:.45"></div><div class="b" style="left:30%;right:30%;top:8%;bottom:8%;background:#101518;border:1px solid var(--linea);border-radius:3cqi"></div><div class="b dpad" style="left:40%;top:22%;width:20%;aspect-ratio:1"></div><div class="b ctrl" style="left:30%;right:30%;top:72%;gap:2cqi"><b style="width:4cqi;height:4cqi"></b><b class="grande" style="width:5.5cqi;height:5.5cqi"></b><b style="width:4cqi;height:4cqi"></b></div></div>
+        <ul class="pro"><li>Ya existe</li></ul>
+        <ul class="contra"><li>Queda encima del pliegue y tapa lo que estabas viendo</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU5 · Si cierras el teléfono mientras ves algo</h3>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU5-A</span><span class="reco-sello">Recomendada</span><b>Sigue en la pantalla de afuera</b></div>
+        <div class="dev fuera" style="max-width:150px"><span class="camara"></span><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:14%;height:22%"></div><div class="b ctrl" style="left:0;right:0;top:45%"><b></b><b class="grande"></b><b></b></div></div>
+        <ul class="pro"><li>Lo que pide Apple: seguir donde te quedaste</li><li>Sirve para escuchar mientras caminas</li></ul>
+        <ul class="contra"><li>Si cerraste para dejar de ver, tienes que tocar pausa</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU5-B</span><b>Se pausa</b></div>
+        <div class="dev fuera" style="max-width:150px"><span class="camara"></span><div class="b negro" style="inset:0"></div><div class="b vid" style="left:0;right:0;top:14%;height:22%;opacity:.4"></div><div class="b ctrl" style="left:0;right:0;top:45%"><b class="grande"></b></div></div>
+        <ul class="pro"><li>Cerrar es como cerrar un libro</li></ul>
+        <ul class="contra"><li>Cerrar deja de ser cambiar de pantalla y se vuelve un botón escondido; Apple pide no cambiar de golpe al doblar</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU5-C</span><b>Pasa a la imagen dentro de imagen</b></div>
+        <div class="dev fuera" style="max-width:150px"><span class="camara"></span><div class="b arte" style="inset:0 0 60% 0;opacity:.6"></div><div class="b fila" style="left:6%;right:6%;top:45%"><i></i><i></i><i></i></div><div class="b vid" style="right:5%;bottom:5%;width:50%;aspect-ratio:16/9;outline:1px solid var(--linea)"></div></div>
+        <ul class="pro"><li>Sigues viendo y usas la app</li></ul>
+        <ul class="contra"><li>Ventanita en una pantalla ya chica</li><li>Es un cambio de golpe al doblar</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU6 · La pantalla de afuera</h3>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU6-A</span><span class="reco-sello">Recomendada</span><b>Orbital completa</b></div>
+        <div class="dev fuera" style="max-width:150px"><span class="camara"></span><div class="b arte" style="inset:0 0 60% 0"></div><div class="b fila" style="left:6%;right:6%;top:45%"><i></i><i></i><i></i></div><div class="b fila" style="left:6%;right:6%;top:70%"><i></i><i></i><i></i></div><div class="b barra" style="left:0;right:0;bottom:0;height:9%"><b class="on"></b><b></b><b></b><b></b></div></div>
+        <ul class="pro"><li>Apple pide las mismas funciones en cada forma</li><li>Casi no hay trabajo: es el iPhone, ajustado a lo corto</li></ul>
+        <ul class="contra"><li>Más cosas en una pantalla chica</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU6-B</span><b>Versión rápida</b></div>
+        <div class="dev fuera" style="max-width:150px"><span class="camara"></span><div class="b ln t" style="left:8%;top:10%;width:50%"></div><div class="b fila ancha" style="left:8%;right:8%;top:20%"><i></i></div><div class="b dpad" style="left:25%;top:45%;width:50%;aspect-ratio:1"></div><div class="b flecha" style="left:0;right:0;bottom:6%">Ábrelo para ver más</div></div>
+        <ul class="pro"><li>Muy enfocada: seguir viendo y el control</li></ul>
+        <ul class="contra"><li>Te obliga a abrirlo para lo demás</li><li>Dos apps distintas que mantener</li><li>Las reseñas dicen que con el tiempo la gente usa más el teléfono cerrado</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU7 · Dos ventanas de Orbital a la vez</h3>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU7-A</span><span class="reco-sello">Recomendada</span><b>No por ahora</b></div>
+        <ul class="pro"><li>Orbital puede ir junto a otra app (Mensajes, Safari), pero no junto a otra Orbital</li><li>La ficha a dos páginas cubre casi todo el caso</li></ul>
+        <ul class="contra"><li>No puedes comparar dos fichas lado a lado</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU7-B</span><b>Sí</b></div>
+        <ul class="pro"><li>Comparar dos películas, o ver una lista mientras tienes otra ficha abierta</li></ul>
+        <ul class="contra"><li>Cambia cómo arranca la app en iPhone, iPad y Mac; el reproductor y el control de la TV no están hechos para dos a la vez</li></ul></div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>DU8 · Con qué arrancamos</h3>
+    <p>Tu iPhone es un 17 Pro, así que para ti el Duo hoy es algo por venir. Pero hay dos razones para no esperar. Las etapas 0 y 1 también arreglan el iPad en Split View. Y si un día subes Orbital a la App Store, desde abril 2027 piden capturas del Duo.</p>
+    <div class="opciones">
+      <div class="opcion reco"><div class="cab"><span class="codigo">DU8-A</span><span class="reco-sello">Recomendada</span><b>Etapas 0 y 1 ya, en el simulador</b></div>
+        <ul class="pro"><li>Se instala Xcode 27.1, que trae el simulador del Duo, y se prueba ahí con toques</li><li>No cambia nada en tu iPhone (lo cuidan las pruebas de «el iPhone no cambia»)</li></ul>
+        <ul class="contra"><li>El simulador no enseña cómo se siente el pliegue ni la mesa: la etapa 2 sí pide un Duo de verdad</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU8-B</span><b>Esperar a tener un Duo</b></div>
+        <ul class="pro"><li>Se diseña con el aparato en la mano</li></ul>
+        <ul class="contra"><li>Si lo compras, el primer día Orbital se ve encogida</li></ul></div>
+      <div class="opcion"><div class="cab"><span class="codigo">DU8-C</span><b>Todo de una vez</b></div>
+        <ul class="pro"><li>Una sola entrega</li></ul>
+        <ul class="contra"><li>Lo de la mesa (F1, F2) sin probar en un aparato real es adivinar</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ——— 7. Plan ——— -->
+<section>
+  <span class="porque">7 · Plan por etapas</span>
+  <h2>De «no se rompe» a «es mejor que en el iPhone»</h2>
+  <p class="suave">Las etapas siguen los tres niveles de calidad que usa Google para pantallas grandes: primero que no se vea mal, luego que esté bien acomodada, y al final lo que solo el plegable puede hacer.</p>
+  <div class="etapas">
+    <div class="etapa"><div class="n">Etapa 0<span>Que no se rompa · unos días</span></div><div>
+      <p>Lo que notas: Orbital llena las dos pantallas, sin bandas, en cualquier giro.</p>
+      <ul><li><b>Xcode 27.1</b> en la Mac, para el simulador del Duo y para que iOS deje a Orbital usar las dos pantallas completas.</li>
+      <li><b>Tamaño mínimo</b> que quepa en 445 × 626 (media pantalla acostada). Hoy pide 375 × 667.</li>
+      <li><b>Giro:</b> en la pantalla grande, la app y el reproductor dejan girar a iOS, como en el iPad. Afuera, igual que el iPhone de hoy.</li>
+      <li><b>Lo «de iPad»</b> (pestañas en el renglón del logo, controles 1.2×) pasa a depender del espacio, no de que sea un iPad.</li>
+      <li><b>Revisión acostada</b> de cada pantalla en 890 × 626, que en un iPhone nunca se había visto.</li></ul></div></div>
+    <div class="etapa"><div class="n">Etapa 1<span>Bien acomodada · 1 a 2 semanas</span></div><div>
+      <p>Lo que notas: abierto, cada pantalla aprovecha las dos páginas y nada cae en el pliegue; al abrir o cerrar sigues donde estabas.</p>
+      <ul><li><b>El pliegue</b> como separador en todas las cuadrículas: columnas pares y nada que se toque encima.</li>
+      <li><b>Modo «con espacio» desde 880 pt,</b> para que el Duo abierto (890) entre.</li>
+      <li><b>Dos páginas:</b> la ficha (DU2-B), Biblioteca, Buscar con vistazo, Ajustes y Aprende.</li>
+      <li><b>El control de la TV</b> en la página derecha (DU4-A).</li>
+      <li><b>Continuidad</b> al doblar y desdoblar: misma pantalla, mismo lugar de la lista, mismo minuto, misma hoja (F3), y el video sigue al cerrar (DU5-A).</li>
+      <li><b>Pantalla de afuera</b> ajustada a lo corto: portada, la hoja del control y la cámara de la esquina.</li></ul></div></div>
+    <div class="etapa"><div class="n">Etapa 2<span>Lo que solo el Duo puede · con un Duo real</span></div><div>
+      <p>Lo que notas: lo dejas en la mesa y Orbital se vuelve cine o control remoto.</p>
+      <ul><li><b>Cine de mesa</b> (F1, DU3-A) y <b>Control de mesa</b> (F2), con el acomodo que Apple ofrece para partir la pantalla en el pliegue.</li>
+      <li><b>Ver y escoger a la vez</b> (F4).</li>
+      <li>Probado a mano en un Duo: luz, pliegue, alcance del pulgar.</li></ul></div></div>
+    <div class="etapa"><div class="n">Etapa 3<span>Opcional</span></div><div>
+      <ul><li>Arrastrar pósters a tus listas (F5). Dos ventanas (DU7-B), solo si cambias de opinión.</li>
+      <li>Capturas del Duo para la App Store si se publica la versión «Orbital» (abril 2027).</li></ul></div></div>
+  </div>
+</section>
+
+<!-- ——— 8. Pruebas ——— -->
+<section>
+  <span class="porque">8 · Cómo sabremos que quedó</span>
+  <h2>Pruebas, siguiendo «Antes de decir listo»</h2>
+  <div class="caja">
+    <ul>
+      <li><b>Se mide, no a ojo:</b> cada pantalla en cuatro tamaños fijos: afuera (466 × 678), abierto acostado (890 × 626), abierto de pie (626 × 890) y media pantalla (445 × 626). Con pruebas que revisan que nada se salga ni quede cortado.</li>
+      <li><b>Se toca:</b> una suite nueva de pruebas del Duo en el simulador de Xcode 27.1, que cierra, abre y dobla el aparato a mitad de cada recorrido (Inicio → ficha → reproductor → control) y revisa que sigas en el mismo lugar.</li>
+      <li><b>El pliegue se vigila:</b> una prueba que falle si algo que se toca cae en la franja del pliegue. Cuando quede construida, entra como regla del repo: «nada que se toque sobre el pliegue».</li>
+      <li><b>El iPhone no cambia:</b> las pruebas de hoy del 17 Pro con iOS 27, el SE y el más grande siguen igual; el Duo no debe mover nada en tu iPhone.</li>
+      <li><b>El informe</b> distingue «comprobado con toques», «hecho sin comprobar» y «no hecho». La etapa 2 dirá «sin comprobar en un Duo real» mientras no haya uno.</li>
+      <li><b>La TV:</b> no cambia. Entra al registro de paridad como «solo iPhone, a propósito: la TV no se dobla».</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ——— 9. Riesgos ——— -->
+<section>
+  <span class="porque">9 · Riesgos y lo que no sabemos</span>
+  <h2>Lo que puede salir distinto</h2>
+  <div class="hallazgos">
+    <div class="hallazgo"><span class="sello s-medio">No sabemos</span><div><b>Si iOS conserva todo al pasar de una pantalla a otra</b><p>Apple dice «sigue donde te quedaste», pero no dice si la app se rearma. Si se rearma, Orbital tendría que guardar el lugar de cada lista y la hoja abierta. La etapa 1 lo prueba primero.</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">No sabemos</span><div><b>Los tamaños exactos</b><p>Apple no publica los puntos, y en la App Store pide capturas de la pantalla de adentro de 2007 × 2853, distinto de su ficha técnica (1878 × 2670). Por eso todo se acomoda por la medida real de la ventana y nada lleva un número fijo del Duo.</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">Riesgo</span><div><b>Nuestro motor de video no es el de Apple</b><p>El reproductor de Apple quizá se acomode solo al pliegue, pero el nuestro (el que abre MKV y Dolby Vision) no. El cine de mesa hay que hacerlo a mano, y por eso va en la etapa 2 con aparato real.</p></div></div>
+    <div class="hallazgo"><span class="sello s-medio">Riesgo</span><div><b>Mostrar algo en la pantalla de afuera con el teléfono abierto</b><p>Sería lindo dejar «lo que suena en la TV» en la pantalla de afuera mientras el teléfono está abierto, pero Apple solo lo permite para la cámara. No está en la propuesta.</p></div></div>
+    <div class="hallazgo"><span class="sello s-resena">Ojo</span><div><b>Las reseñas son de cinco semanas</b><p>Lo que hoy hace iOS 27.1 con apps viejas (bandas, la franja) puede cambiar en 27.2. Las decisiones de esta propuesta no dependen de eso.</p></div></div>
+  </div>
+</section>
+
+<details>
+  <summary>Anexo técnico (para quien lo construya)</summary>
+  <div class="cuerpo">
+    <p><b style="color:var(--texto)">APIs de Apple (iOS 27.1, revisadas en su documentación):</b> <code>ArrangementView { primary } secondary: { … }</code> con <code>.arrangementViewStyle(.split)</code> u <code>.overlay</code>; su ejemplo de la documentación es justo controles sobre video. <code>ReservedRegion</code> con <code>GeometryProxy.reservedRegions(kind:)</code>: <code>.division</code> es el pliegue (solo activo a medio abrir) y <code>.occlusion</code> las cámaras. Bisagra: <code>onHingeChange(isEnabled:_:)</code> / <code>DeviceHingeContext</code> / <code>UIHingeInteraction</code>. Apple pide no usarla para acomodar, solo como entrada. Barras verticales: <code>toolbarVerticalBehavior(_:)</code>, <code>visibilityPriority(_:)</code>. Cada botón de barra necesita ícono y título.</p>
+    <p><b style="color:var(--texto)">Puntos del código que tocar (main, 26 nov):</b> <code>WindowMetrics.minimum</code> 375×667 → que quepa en 445×626 (<code>Platform/WindowMetrics.swift</code>, aplicado en <code>Orientation.applyMinimumSize</code>). <code>Orientation.isControlled = idiom == .phone</code> → que dependa de si la ventana respeta el giro (pantalla de afuera sí, de adentro no). <code>requestGeometryUpdate</code>, <code>UIDevice.orientation</code> y <code>unlockPortrait</code> en el reproductor (<code>PlayerScreen+CicloDeVida.swift</code>) → apagados en la pantalla de adentro, como en el iPad. <code>TopRow.tabsInLogoRow</code> (pide <code>.pad</code>) y <code>DS.PlayerPanel.big</code> (modelo «iPad») → por espacio. <code>WindowMetrics.roomyWidth</code> 900 → 880. <code>DS.Poster.gridColumns</code> y <code>Mosaic</code> → columnas pares cuando hay un pliegue activo, gutter central ≥ 40 pt. <code>HomeBoard</code> (1100 pt) → caso de 890 a dos páginas. <code>RootView.remoteAsPanel</code> (≥1000) → panel de página cuando hay espacio para dos páginas. <code>IPhoneUnchangedUITests</code> da por hecho «siempre vertical»: limitarla a la pantalla de afuera.</p>
+    <p><b style="color:var(--texto)">Sin cambio:</b> la frontera <code>Platform/</code> sigue: nada de «¿es un Duo?» fuera de ahí. Las pantallas preguntan por la ventana y por las regiones reservadas, no por el modelo. La app sigue con un solo <code>WindowGroup</code> y sin múltiples escenas (DU7-A).</p>
+  </div>
+</details>
+
+<section>
+  <span class="porque">Fuentes</span>
+  <ol class="fuentes">
+    <li>Apple Newsroom, «Apple unveils iPhone Duo» (9 sep 2026) · apple.com/newsroom/2026/09/apple-unveils-iphone-duo/</li>
+    <li>Apple, ficha técnica · <a href="https://www.apple.com/iphone-duo/specs/" target="_blank" rel="noopener">apple.com/iphone-duo/specs</a></li>
+    <li>Apple Developer, «Preparing your app for iPhone Duo» · developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo</li>
+    <li>Human Interface Guidelines, «Designing for iPhone Duo» · developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo</li>
+    <li>Tech Talks 111461, 111463 y 111464 · developer.apple.com/videos/play/tech-talks/</li>
+    <li>Apple Newsroom, apps de desarrolladores para el Duo (oct 2026) · apple.com/newsroom/2026/10/</li>
+    <li>App Store Connect, especificaciones de capturas</li>
+    <li>Android, calidad de apps para pantallas grandes y plegables · developer.android.com/docs/quality-guidelines/large-screen-app-quality</li>
+    <li>Android, «canonical layouts» y medios en pantallas grandes · developer.android.com/develop/adaptive-apps/guides/canonical-layouts</li>
+    <li>Android 16, cambios de orientación y tamaño · android-developers.googleblog.com/2025/01/</li>
+    <li>Google, caso JioHotstar (ene 2026) · developer.android.com/blog</li>
+    <li>Samsung One UI, diseño para plegables · developer.samsung.com/one-ui/largescreen-and-foldable/</li>
+    <li>Microsoft, patrones de dos pantallas del Surface Duo · devblogs.microsoft.com/surface-duo/large-screen-design-patterns/</li>
+    <li>NN/g, «Foldable smartphones» (Liu, ene 2025) · nngroup.com/articles/foldable-smartphones/</li>
+    <li>Reseñas del Duo: 9to5Mac, Macworld, MacRumors, Tom's Guide, WIRED, The Verge, Gizmodo, Engadget, Android Central, TapSmart (oct–nov 2026)</li>
+    <li>Pruebas del pliegue: HTX Studio y Tim Pan, vía Digital Trends y Notebookcheck</li>
+    <li>Ejemplos de desarrolladores: foldhunt.com/guides/iphone-duo-fold · github.com/artemnovichkov/iPhone-Duo-by-Examples</li>
+    <li>Nuestro código: <code style="color:var(--texto)">main</code> del 26 nov 2026 y docs/producto/ipad-y-mac-2026-10.md, ios-interfaz.md, paridad-registro.md</li>
+  </ol>
+</section>
+
+</main>
