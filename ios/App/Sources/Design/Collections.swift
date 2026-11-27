@@ -241,6 +241,7 @@ struct BecauseCard<Related: View>: View {
                         LazyHStack(spacing: DS.Space.s2) { related() }
                             .environment(\.posterCaptions, false)
                     }
+                    .pagingArrows()   // C4: ‹ › con el puntero
                     .rowEdge(.inCard)   // dentro de la tarjeta: los pósters no se salen a los lados (Mac, 22 nov 2026)
                 case .loading:
                     HStack(spacing: DS.Space.s2) {

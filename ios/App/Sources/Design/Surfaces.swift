@@ -169,7 +169,7 @@ struct DSSeasonPicker: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: temporadas en cápsulas
             HStack(spacing: DS.Space.s2) {
                 ForEach(seasons, id: \.self) { season in
                     let label = season == 0 ? Text("Especiales") : Text("T\(season)")

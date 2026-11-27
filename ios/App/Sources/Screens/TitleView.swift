@@ -100,7 +100,7 @@ struct TitleView: View {
         // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
         // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
         // En el iPad y la Mac la barra de pestañas ocupa ese renglón: el nombre no sube a la barra (se encimaba).
-        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: sizeClass == .regular ? nil : model.logo,
+        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: sizeClass == .regular ? nil : model.logo(shown: titleName(model.title, id: model.metaID, kind: model.kind)),
                                     title: sizeClass == .regular ? "" : model.title,
                                     buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda. En el iPad y
@@ -269,7 +269,7 @@ struct TitleView: View {
                         // La sinopsis arranca a la altura de «Ver» (`.bandAnchor`), no flota por la base.
                         HStack(alignment: .bandAnchor, spacing: DS.TitleAction.bandGap) {
                             VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                                TitleLogo(url: model.logo, title: name, size: .hero, grow: stage.grow)
+                                TitleLogo(url: model.logo(shown: name), title: name, size: .hero, grow: stage.grow)
                                     .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: .leading)
                                 facts(model, leading: true)
                                 TitleLayoutHost { AnyView(actions(model)) }.alignmentGuide(.bandAnchor) { $0[.top] }
@@ -283,7 +283,7 @@ struct TitleView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         VStack(alignment: stage.portrait ? .center : .leading, spacing: DS.Layout.betweenSubsections) {
-                            TitleLogo(url: model.logo, title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
+                            TitleLogo(url: model.logo(shown: name), title: name, size: .hero, centered: stage.portrait, grow: stage.grow)
                                 .frame(maxWidth: DS.TitleAction.wideLogoWidth * stage.grow, alignment: stage.portrait ? .center : .leading)
                             facts(model, leading: !stage.portrait)
                             TitleLayoutHost { AnyView(actions(model)) }
@@ -587,6 +587,7 @@ struct TitleView: View {
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, side, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .pagingArrows()   // C4: ‹ › con el puntero
             .padding(.horizontal, -side)
         } else {
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez

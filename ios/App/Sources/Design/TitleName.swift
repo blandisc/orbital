@@ -15,6 +15,13 @@ struct TitleDoor {
     @MainActor func callAsFunction(_ raw: String, id: String?, kind: String? = nil) -> String {
         names?.name(raw, id: id, kind: kind) ?? DisplayTitle.resolve(raw: raw, known: nil)
     }
+
+    /// El logo de un título solo si dice lo mismo que su nombre aquí (`DisplayTitle.logoFits`, PU2-A); si no, nil y
+    /// `TitleLogo` escribe el nombre en letra. Todo logo junto a un nombre pasa por aquí (`testLogosSayTheShownName`).
+    @MainActor func logo(_ url: String?, for raw: String, id: String?, kind: String? = nil) -> String? {
+        guard let url else { return nil }
+        return DisplayTitle.logoFits(source: raw, shown: callAsFunction(raw, id: id, kind: kind)) ? url : nil
+    }
 }
 
 extension EnvironmentValues {

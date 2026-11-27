@@ -82,4 +82,13 @@ final class TitleNamesTests: XCTestCase {
         language = "pt-BR"
         XCTAssertEqual(names.name("Dune", id: "tt1160419"), "Dune")
     }
+
+    /// PU2-A: el letrero del título solo va si dice lo mismo que el nombre que se enseña; si no, el nombre en letra.
+    func testLogoOnlyWhenItSaysTheShownName() {
+        XCTAssertFalse(DisplayTitle.logoFits(source: "MobLand", shown: "Tierra de Mafia"))
+        XCTAssertFalse(DisplayTitle.logoFits(source: "The Simpsons", shown: "Los Simpson"))
+        XCTAssertTrue(DisplayTitle.logoFits(source: "Dune", shown: "Dune"))
+        XCTAssertTrue(DisplayTitle.logoFits(source: "Spider-Man: No Way Home", shown: "SPIDER-MAN NO WAY HOME"))
+        XCTAssertTrue(DisplayTitle.logoFits(source: "Amélie", shown: "Amelie"))
+    }
 }

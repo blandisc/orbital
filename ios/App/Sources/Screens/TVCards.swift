@@ -161,7 +161,7 @@ struct FromTVCard: View {
                             .font(DS.TextRecipe.label.font)
                     }
                     Spacer(minLength: DS.Space.s2)
-                    TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: titleName(item.title, id: item.metaID, kind: item.kind))
+                    TitleLogo(url: titleName.logo(Artwork.logoURL(metaID: item.metaID), for: item.title, id: item.metaID, kind: item.kind), title: titleName(item.title, id: item.metaID, kind: item.kind))
                     DataLine(parts: [detail], color: DS.onArtSecondary)
                     HeroActions {
                         Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).dsControlSize(.large)

@@ -664,10 +664,13 @@ En «Una por una», al tocar «Paso» la carta salía volando pero debajo seguí
 arriba. **Lo que describe una pieza que se va cambia en cuanto se va, no cuando el modelo la quita**: el mazo marca la que
 va volando (`leaving`) y los datos son de la primera que no se está yendo. Lo cuida `testCardInfoFollowsTheVisibleCard`.
 
-### VoiceOver dice el nombre que se lee (13 nov 2026)
+### VoiceOver y el logo dicen el nombre que se lee (13 nov 2026; el logo, 26 nov 2026)
 
 El cartel elegido de «Tres que caben» se anunciaba «The Office» y debajo se leía «La Oficina». **La etiqueta de accesibilidad
 de un título usa `titleName`, igual que el texto que se ve**, nunca `.title` crudo. Lo cuida `testSpokenTitleIsTheShownTitle`.
+**El letrero (logo) de un título también dice el nombre que se lee** (PU2-A): el logo llega con el nombre de la fuente, casi
+siempre en inglés («MOBLAND» sobre «Tierra de Mafia»); si no coincide, va el nombre en letra (`titleName.logo(…)`; en la ficha `model.logo(shown:)`, que compara con `originalTitle`;
+`DisplayTitle.logoFits`). Ficha, portada, mosaico, tarjetas y canales. Lo cuida `testLogosSayTheShownName`.
 
 ### Ninguna tarea sobrevive a su vista (13 nov 2026)
 
@@ -1265,10 +1268,17 @@ Inicio replanteado para Mac e iPad (MI2 · II1 · C1–C6, `docs/producto/inicio
 
 - **La orilla crece con la ventana (C2).** Con espacio (`WindowMetrics.roomy`) `DS.Space.gutter` es el 5 % de la columna, de 40 a
   160 pt (`DS.Space.wideGutter`), como la orilla de la ficha ancha; en el iPhone y el iPad angosto, 16. Nunca un margen fijo nuevo.
+  También la lista de Ajustes en la Mac (PU3-A), que iba pegada a la orilla.
+- **Lo elegido se nota de un vistazo.** La sección abierta, el filtro puesto: el relleno de lo elegido (`DS.Opacity.selectedFill`
+  sobre el texto) y su nombre en seminegrita, nunca una superficie apenas distinta (`surfaceRaised`). La sección abierta de
+  Ajustes en la Mac casi no se veía (PU3-A, 26 nov 2026). `testSettingsSidebarKeepsTheGutterAndShowsWhereYouAre`.
 - **Las tiras cuentan columnas (C5).** Con espacio, pósters y tarjetas anchas llenan el renglón (`DS.Poster.filling`: de 5 a 10
   pósters, de 3 a 6 tarjetas anchas) con un pedazo de la siguiente asomando. «Lo nuevo de lo tuyo» toma el ancho de un póster.
-- **Toda fila horizontal lleva ‹ › con el puntero (C4).** `.pagingArrows()` en su `ScrollView`: salen al pasar el mouse o el
-  trackpad y avanzan casi una pantalla; con el dedo no salen. `DesignRulesTests+WideHome` lo cuida.
+- **Toda fila horizontal lleva ‹ › con el puntero (C4).** `.pagingArrows()` en su `ScrollView`, en toda la app (Inicio,
+  Explorar, Biblioteca, la ficha, Lo que ves): salen al pasar el mouse o el trackpad y avanzan casi una pantalla; con el dedo
+  no salen. Las que no llevan (cápsulas, selectores, carruseles de página completa) lo dicen en su renglón: «sin flechas:
+  <motivo>». `testEveryRowHasPointerArrows` revisa todos los archivos (antes solo los de Inicio, y Explorar y Biblioteca se
+  quedaron sin flechas hasta el 26 nov 2026).
 - **Una sola barra arriba en el iPad con espacio (C1).** Como la Mac: el logo, «Buscar», las pestañas y tu foto en el renglón de
   la pantalla (`TopRow.tabsInLogoRow`, `macOwnTopRow`); la barra de pestañas del sistema se esconde. Angosto, la de siempre.
 - **Inicio: tablero o cine (MI2 · II1).** Ventana acostada y ancha (1100 pt en el iPad, 1200 en la Mac; `HomeBoard.isOn`):

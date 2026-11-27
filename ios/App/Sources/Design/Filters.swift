@@ -109,7 +109,7 @@ struct DSTextTabs<ID: Hashable>: View {
             if options.allSatisfy({ $0.symbol == nil }) {
                 // Sin íconos a dónde bajar (Semana · Mes · Año · Siempre): se deslizan enteras en vez de cortarse en «Se…»
                 // (revisión 2 del 11 nov, letra grande en el SE).
-                ScrollView(.horizontal, showsIndicators: false) { tabs(titles: true, icons: false, spacing: DS.Space.s2) }
+                ScrollView(.horizontal, showsIndicators: false) { tabs(titles: true, icons: false, spacing: DS.Space.s2) }   // sin flechas: pestañas que no caben
                 .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             } else {
                 tabs(titles: false)

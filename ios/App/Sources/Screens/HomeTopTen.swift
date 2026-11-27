@@ -42,7 +42,7 @@ struct HomeTopTen: View {
             // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color). Ancladas: al deslizar se
             // detienen en el borde de una pastilla (nunca a la mitad) y la elegida siempre queda a la vista.
             ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: pastillas de servicio
                     HStack(spacing: DS.Space.s2) {
                         ForEach(HomeModel.topServices) { s in
                             PlatformPill(name: s.name, logo: s.logo, brand: s.brand, selected: s.brand == service.brand) {

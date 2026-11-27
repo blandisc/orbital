@@ -230,8 +230,10 @@ struct SettingsLink<Destination: View, Label: View>: View {
             let on = pane.current == page
             // El renglón abierto, marcado hasta las orillas de su grupo (el fondo de la sección gana a `listRowBackground`).
             Button { pane.open(page) } label: {
+                // PU3-A (26 nov 2026): la sección abierta se nota de un vistazo, con el relleno de lo elegido de toda la app.
                 label().contentShape(Rectangle())
-                    .background { if on { DS.surfaceRaised.padding(.horizontal, -DS.Space.s6).padding(.vertical, -DS.Space.s2) } }
+                    .fontWeight(on ? .semibold : nil)
+                    .background { if on { DS.text.opacity(DS.Opacity.selectedFill).padding(.horizontal, -DS.Space.s6).padding(.vertical, -DS.Space.s2) } }
             }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])

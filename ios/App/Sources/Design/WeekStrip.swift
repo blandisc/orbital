@@ -33,7 +33,7 @@ struct DSWeekStrip<Cell: View>: View {
         let fit = DS.WeekStrip.fit(available: available - dayColumn - DS.WeekStrip.gap, weeks: weeks)
         HStack(alignment: .top, spacing: DS.WeekStrip.gap) {
             days(fit.cell)
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: calendario
                 LazyHStack(alignment: .top, spacing: DS.WeekStrip.gap) {
                     ForEach(0..<weeks, id: \.self) { w in
                         VStack(spacing: DS.WeekStrip.gap) {

@@ -22,7 +22,7 @@ struct HomeHeroSlide: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     if let reason = Self.reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
-                    TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: titleName(s.title, id: s.imdb, kind: s.kind), size: .hero)
+                    TitleLogo(url: titleName.logo(s.logo ?? Artwork.logoURL(metaID: s.imdb), for: s.title, id: s.imdb, kind: s.kind), title: titleName(s.title, id: s.imdb, kind: s.kind), size: .hero)
                     DataLine(parts: Self.data(s, language: env.services.appSettings.uiLanguage), color: DS.onArtSecondary, trakt: TraktRatings.shown(s.imdb, fallback: s.traktRating))
                 }
                 .accessibilityElement(children: .combine)

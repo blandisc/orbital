@@ -402,7 +402,7 @@ private struct MosaicTileCell: View {
                     // «En Mi lista» con su ícono, como en un póster (D10: íconos, no cápsulas de texto).
                     if inWatchlist { DSIconBadge(symbol: "bookmark.fill", label: "En Mi lista") }
                     else if let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: badgeKey(tile.item.reason)) }
-                    TitleLogo(url: tile.item.logo, title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind))
+                    TitleLogo(url: titleName.logo(tile.item.logo, for: tile.item.title, id: tile.item.imdb, kind: tile.item.kind), title: titleName(tile.item.title, id: tile.item.imdb, kind: tile.item.kind))
                     let facts = factStrings(tile.item, language: language)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in Text(verbatim: fact).lineLimit(1).fixedSize(horizontal: true, vertical: false) }

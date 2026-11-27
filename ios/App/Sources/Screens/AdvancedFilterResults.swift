@@ -24,7 +24,7 @@ struct FilterResultsView: View {
                     ResultCountHeader(count: count, beforeWatched: model.filter.hideWatched && model.filter.awards.isEmpty, language: language)
                         .padding(.horizontal, DS.Space.gutter)
                 }
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: cuadros del filtro
                     HStack(spacing: DS.Space.s2) {
                         ForEach(squares(language), id: \.id) { s in
                             FilterSummarySquare(symbol: s.symbol, title: s.title, hue: s.hue, edit: { edit(s.page) }, remove: s.remove)   // no-es-título: el resumen de un filtro

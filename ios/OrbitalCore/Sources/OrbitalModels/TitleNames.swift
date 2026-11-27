@@ -19,6 +19,18 @@ public enum DisplayTitle {
         return base.count > 2 ? String(base) : nil
     }
 
+    /// ¿El logo (siempre llega con el nombre de la fuente, casi siempre en inglés) dice lo mismo que el nombre que enseñamos?
+    /// Si no, va el nombre en letra (PU2-A, Fernando, 26 nov 2026: el póster decía «Tierra de Mafia» y la ficha «MOBLAND»).
+    /// Se comparan sin mayúsculas, acentos, espacios ni signos: «Spider-Man» y «SPIDERMAN» son el mismo letrero.
+    public static func logoFits(source: String, shown: String) -> Bool {
+        letters(source) == letters(shown)
+    }
+
+    private static func letters(_ s: String) -> String {
+        String(s.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
+            .unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }.map(Character.init))
+    }
+
     /// «movie»/«series» (y lo que mandan Trakt y la TV: «show», «episode», «tv»); nil si no se sabe.
     public static func kind(_ kind: String?) -> String? {
         switch kind?.lowercased() {

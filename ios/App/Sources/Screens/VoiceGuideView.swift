@@ -148,7 +148,7 @@ private struct VoiceTopicsView: View {
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     if query.isEmpty {
                         // Los temas, para saltar sin bajar todo.
-                        ScrollView(.horizontal, showsIndicators: false) {
+                        ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: cápsulas de temas
                             HStack(spacing: DS.Space.s2) {
                                 topicChip("Cómo pedirlo", id: "how", proxy: proxy)
                                 topicChip("Solo en el iPhone", id: "phone", proxy: proxy)

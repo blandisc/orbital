@@ -37,6 +37,7 @@ struct Shelf<Content: View>: View {
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .pagingArrows()   // C4: ‹ › con el puntero
             .edgeBump()   // al final de la fila, un golpe suave en la mano
         }
     }
@@ -121,6 +122,7 @@ struct PopularTodayShelf: View {
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .pagingArrows()   // C4: ‹ › con el puntero
             .edgeBump()   // al final de la fila, un golpe suave en la mano, como los demás estantes
         }
     }

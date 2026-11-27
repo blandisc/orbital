@@ -355,7 +355,7 @@ struct ListFilterChips: View {
     private func ratingName(_ r: Double) -> Text { Self.ratingName(r) }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: cápsulas de filtros
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(Text("\(Text(Image(systemName: KindGlyph.symbol(kind))))\(Text(verbatim: " "))\((kind == "movie" ? Text("Películas") : Text("Series")))")) { filter.kind = nil } }
                 if let state = filter.state { chip(Text("\(Text(Image(systemName: WatchStateName.symbol(state))))\(Text(verbatim: " "))\(WatchStateName.text(state))")) { filter.state = nil } }

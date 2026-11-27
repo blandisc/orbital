@@ -60,6 +60,7 @@ struct YearView: View {
                                 }
                             }
                             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
+                            .pagingArrows()   // C4: ‹ › con el puntero
                             .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                         }
                     }

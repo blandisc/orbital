@@ -13,6 +13,8 @@ extension SettingsView {
             HStack(spacing: 0) {
                 list
                     .frame(width: DS.Mac.settingsListWidth)
+                    // PU3-A (26 nov 2026): la lista deja el margen de la app como las demás pantallas (iba pegada a la orilla).
+                    .padding(.leading, DS.Space.gutter)
                     .environment(\.settingsPane, SettingsPane(current: macPage, open: { macPage = $0; macStack = [] }))
                     .overlay(alignment: .trailing) { Rectangle().fill(DS.hairline).frame(width: DS.Stroke.hairline) }
                 // MA2: su nombre arriba y, si vino de otra página, «‹» para volver; lo que abre se queda aquí (`PaneLink`).

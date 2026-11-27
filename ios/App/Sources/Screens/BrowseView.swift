@@ -229,7 +229,7 @@ struct BrowseView: View {
         if let top = shown.first, top.metaID.hasPrefix("tt") {
             let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
             TitleNavigationLink(route: route) {
-                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: titleName(top.title, id: top.metaID, kind: top.kind),
+                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: titleName.logo(Artwork.logoURL(metaID: top.metaID), for: top.title, id: top.metaID, kind: top.kind), title: titleName(top.title, id: top.metaID, kind: top.kind),
                           why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: ThisDevice.isMac ? DS.Mac.searchTopHeight : DS.Size.searchTopHeight)
             }
             .perfTag("search.top")
@@ -327,7 +327,7 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             // El mismo encabezado de subsección que «Por género» (y que la TV en su caja vacía), no una nota gris.
             DSSectionHead(title: Text("Buscaste hace poco")).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: cápsulas de lo que buscaste
                 HStack(spacing: DS.Space.s2) {
                     ForEach(search.model.recent, id: \.self) { text in
                         PanelChip(title: Text(verbatim: text), selected: false, symbol: "clock.arrow.circlepath") { query = text }

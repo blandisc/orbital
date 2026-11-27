@@ -112,7 +112,7 @@ struct HomeChannels: View {
                     DSProgress(fraction: air.progress).padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s2)
                 }
                 .overlay(alignment: .topLeading) {
-                    TitleLogo(url: channel.logo, title: name(channel.pick))
+                    TitleLogo(url: DisplayTitle.logoFits(source: channel.pick.title, shown: name(channel.pick)) ? channel.logo : nil, title: name(channel.pick))   // PU2-A
                         .frame(maxWidth: DS.HomeChannels.logoWidth, maxHeight: DS.HomeChannels.logoHeight, alignment: .topLeading)
                         .padding(DS.Space.s2).onArt()
                 }

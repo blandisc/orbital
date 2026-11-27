@@ -399,7 +399,7 @@ struct HomeView: View {
     }
 
     private func heroScroller(_ items: [Suggestion], index: Int) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {   // recorta: carrusel de página completa (lo de al lado no debe asomar)
+        ScrollView(.horizontal, showsIndicators: false) {   // recorta: carrusel de página completa (lo de al lado no debe asomar) · sin flechas: página completa
             LazyHStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
                     HomeHeroSlide(s: s, aspect: heroAspect, overlap: heroOverlap, tile: board) { openTitle = $0 }.containerRelativeFrame(.horizontal).id(i)   // ds-exception: mide el carrusel (ya del ancho de la página). Mantener y mover: se inclina

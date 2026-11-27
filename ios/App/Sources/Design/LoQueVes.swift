@@ -309,8 +309,9 @@ struct WatchingFiveStars: View {
                 }
             }
         }
-        .padding(.horizontal, -DS.Space.gutter)
         .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .rowEdge(.bleeds)
+        .pagingArrows()   // C4: ‹ › con el puntero
+        .padding(.horizontal, -DS.Space.gutter)
     }
 }

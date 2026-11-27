@@ -59,7 +59,7 @@ struct DSSelector<ID: Hashable>: View {
         ViewThatFits(in: .horizontal) {
             track(names: true, equal: true)
             if options.allSatisfy({ $0.symbol != nil }) { track(names: false, equal: true) }
-            ScrollView(.horizontal, showsIndicators: false) { track(names: true, equal: false) }
+            ScrollView(.horizontal, showsIndicators: false) { track(names: true, equal: false) }   // sin flechas: selector que no cabe
                 .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
         }
     }

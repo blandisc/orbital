@@ -41,7 +41,7 @@ struct ParaTiView: View {
         .overlay(alignment: .bottom) {
             if DS.Mosaic.uniform, let item = focused {
                 // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
-                MosaicCaption(reason: Text(badgeKey(item.reason)), title: titleName(item.title, id: item.imdb, kind: item.kind), logo: item.logo,
+                MosaicCaption(reason: Text(badgeKey(item.reason)), title: titleName(item.title, id: item.imdb, kind: item.kind), logo: titleName.logo(item.logo, for: item.title, id: item.imdb, kind: item.kind),
                               data: (factStrings(item, language: env.language).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
                               open: { openTitle = item.route },
                               watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {

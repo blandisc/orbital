@@ -124,6 +124,7 @@ extension TitleView {
             .rowEdge(.bleeds)   // lo que crece al picarlo (o al dejarlo apretado) no se corta en la orilla del listón
             .contentMargins(.horizontal, side, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .pagingArrows()   // C4: ‹ › con el puntero
         }
     }
 

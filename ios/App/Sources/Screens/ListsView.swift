@@ -190,7 +190,7 @@ struct ListsView: View {
                         Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios y películas recién llegados")) {
                             ForEach(model.newOnPlatforms) { s in
                                 TitleNavigationLink(route: s.route) {
-                                    WideCard(art: s.wide, logo: s.logo, title: titleName(s.title, id: s.imdb, kind: s.kind), badge: Text(badgeKey(s.reason)),
+                                    WideCard(art: s.wide, logo: titleName.logo(s.logo, for: s.title, id: s.imdb, kind: s.kind), title: titleName(s.title, id: s.imdb, kind: s.kind), badge: Text(badgeKey(s.reason)),
                                              caption: Text(verbatim: titleName(s.title, id: s.imdb, kind: s.kind)), platform: s.platformName)
                                 }
                                 .buttonStyle(.plain)

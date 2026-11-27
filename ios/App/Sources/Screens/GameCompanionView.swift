@@ -24,7 +24,7 @@ struct GameCompanionView: View {
                         onHome: { Task { await m.game("home") } },
                         onClose: { Task { await m.game("close") } })
                 .padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: false) {   // sin flechas: paneles de la consola
                 LazyHStack(alignment: .top, spacing: DS.Space.s2) {
                     ConsoleStatePanel(state: m.console,
                                       setPower: { mode in Task { await m.setConsole(powerMode: mode) } },
