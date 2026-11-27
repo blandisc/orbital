@@ -128,7 +128,11 @@ extension DS {
         static let quickMinWidth: CGFloat = 120 * native
         /// RN2: desde este ancho de ventana la cápsula de pestañas va al centro con sus nombres; más angosta, junto al logo y
         /// solo con íconos (con la letra de la Mac, las tres con nombre miden ~330 pt y se encimaban con el logo y tu foto).
-        static let centeredTabsFrom: CGFloat = 980 * native
+        /// En la de verdad la cápsula (letra ×0.96) crece más que los espacios (×0.77): a 1024 tapaba «Buscar». Medido en
+        /// la ventana: logo + «Buscar» llegan a ~390 pt y la cápsula mide ~435 pt, así que al centro cabe desde ~1260.
+        static let centeredTabsFrom: CGFloat = ProcessInfo.macNative ? 1260 : 980
+        /// El tamaño de la ventana la primera vez que se abre la app de Mac de verdad (después la Mac recuerda el que dejaste).
+        static let firstWindow = CGSize(width: 1440, height: 900)
         /// Más angosta que esto, la barra de arriba lleva solo el planeta, sin «orbital» (`AppMark`).
         static let markOnlyBelow: CGFloat = 760 * native
         /// RB2: qué parte del alto de la ventana ocupa un aviso vacío (`DSEmptyState`) en la Mac: queda al centro de lo visible.

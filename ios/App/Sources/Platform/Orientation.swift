@@ -114,6 +114,27 @@ enum AppWindows {
     /// nada (la ventana es la pantalla).
     static func applyMinimumSize() {
         scene?.sizeRestrictions?.minimumSize = WindowMetrics.minimum
+        openWideOnce()
+    }
+
+    /// En la app de Mac de verdad la ventana nacía de 1024 × 768 (lo que el sistema le da a una app de iPad): la primera vez
+    /// abre de `DS.Mac.firstWindow` (o lo que quepa). Se fija un instante a ese tamaño y se suelta (`requestGeometryUpdate`
+    /// tan temprano no hace caso); después la Mac recuerda el tamaño que le dejes.
+    private static func openWideOnce() {
+        let key = "mac.window.sized"
+        guard ProcessInfo.macNative, !UserDefaults.standard.bool(forKey: key), let screen = scene?.screen.bounds.size else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        let size = CGSize(width: min(DS.Mac.firstWindow.width, (screen.width * 0.9).rounded()),
+                          height: min(DS.Mac.firstWindow.height, (screen.height * 0.9).rounded()))
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard let limits = scene?.sizeRestrictions else { return }
+            limits.maximumSize = size
+            limits.minimumSize = size
+            try? await Task.sleep(for: .milliseconds(500))
+            limits.minimumSize = WindowMetrics.minimum
+            limits.maximumSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+        }
     }
 
     /// Los márgenes seguros de la ventana principal (el video en horizontal ignora el área segura y no los trae su `GeometryReader`).
