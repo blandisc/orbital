@@ -108,6 +108,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
+        // IN2-A: dos controles en la TV, uno con la pila baja (`-demo-no-controllers`: ninguno).
+        if url.host == "tv.demo.invalid", url.path == "/api/system" {
+            let players: JSON = Demo.has("-demo-no-controllers") ? [] : [["player": 1, "battery": "full"], ["player": 2, "battery": "low"]]
+            return HTTPResponse(status: 200, data: JSON.object(["players": players]).serialized())
+        }
         if url.host == "tv.demo.invalid", url.path == "/api/voice" || url.path == "/api/voice/hints" || url.path == "/api/ping" {
             // `-demo-voice-fail hang`: tu Orbital no contesta (apagada, otra red) y la orden espera hasta vencerse.
             if Demo.voiceFail == "hang", url.path == "/api/voice" {

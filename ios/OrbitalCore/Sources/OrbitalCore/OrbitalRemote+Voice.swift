@@ -67,6 +67,28 @@ extension OrbitalRemote {
     }
 
     /// Qué se puede decir ahora según lo que se ve en la TV. Una consola vieja no tiene la ruta: `Failure.outdated`.
+    /// Un control conectado a la TV (IN2-A): su foco (1–4) y su batería («wired», «full», «medium», «low», «empty» o nil).
+    public struct ConnectedPlayer: Equatable, Sendable {
+        public let player: Int
+        public let battery: String?
+        public init(player: Int, battery: String?) { self.player = player; self.battery = battery }
+    }
+
+    /// Los controles conectados a la TV (`/api/system › players`); nil: la TV no los sabe (sin mandos que sondear o versión vieja).
+    public func connectedPlayers() async throws -> [ConnectedPlayer]? {
+        let json = try await send("api/system", method: "GET", body: nil, timeout: 5)
+        return Self.players(json?["players"])
+    }
+
+    static func players(_ json: JSON?) -> [ConnectedPlayer]? {
+        guard let list = json?.array else { return nil }
+        return list.compactMap { item in
+            guard let slot = item["player"]?.intValue else { return nil }
+            return ConnectedPlayer(player: slot, battery: item["battery"]?.string)
+        }
+        .sorted { $0.player < $1.player }
+    }
+
     public func voiceHints() async throws -> VoiceHints {
         let json = try await send("api/voice/hints", method: "GET", body: nil, timeout: 5)
         return VoiceHints(moment: json?["moment"]?.string ?? "home", hints: Self.phrases(json?["hints"]))

@@ -77,4 +77,12 @@ final class VoiceRemoteTests: XCTestCase {
         let unconfigured = await OrbitalRemote(http: FakeHTTP(), address: "", token: "").diagnose()
         XCTAssertNil(unconfigured)
     }
+
+    /// IN2-A: los controles de la TV en orden de foco; `null` (la TV no los sabe) no es «ninguno».
+    func testConnectedPlayersAreReadInOrderAndNullMeansUnknown() {
+        let json = JSON.parse(Data(#"[{"player": 2, "battery": "low"}, {"player": 1, "battery": null}, {"battery": "full"}]"#.utf8))
+        XCTAssertEqual(OrbitalRemote.players(json), [.init(player: 1, battery: nil), .init(player: 2, battery: "low")])
+        XCTAssertNil(OrbitalRemote.players(nil))
+        XCTAssertEqual(OrbitalRemote.players(JSON.parse(Data("[]".utf8))), [])
+    }
 }

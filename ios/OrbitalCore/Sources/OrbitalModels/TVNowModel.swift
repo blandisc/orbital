@@ -315,6 +315,14 @@ public final class TVNowModel: ObservableModel {
     public private(set) var momentHints: VoiceMoment = .home { didSet { if oldValue != momentHints { changed() } } }
 
     /// Las frases del momento: las de la consola, o las fijas según lo que se sabe que suena (sin consola o una vieja).
+    /// Los controles conectados a la TV (IN2-A); vacío o nil: no se enseña nada (MN-A).
+    public private(set) var players: [OrbitalRemote.ConnectedPlayer]? { didSet { if oldValue != players { changed() } } }
+
+    public func loadPlayers() async {
+        guard let found = try? await services.orbital.connectedPlayers() else { return }
+        players = found
+    }
+
     public func loadHints() async {
         let local: VoiceMoment = context == .live ? .live : VoiceMoment(now)
         if let reply = try? await services.orbital.voiceHints() {

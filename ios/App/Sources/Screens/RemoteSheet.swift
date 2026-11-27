@@ -113,6 +113,7 @@ struct RemoteSheet: View {
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
         .task(id: "\(model.context)·\(model.now?.metaID ?? "")·\(model.now?.live == true)") { await model.loadHints() }   // las frases del momento
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
+        .task(id: model.context) { await model.loadPlayers() }   // los controles conectados (IN2-A), al abrir y al cambiar de pantalla
         .background { if let scares = model.scares, let now = model.now { ScareWatcher(now: now, fetchedAt: model.fetchedAt, scares: scares) } }
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
         .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
@@ -267,7 +268,11 @@ struct RemoteSheet: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                         .remoteMorph("title", in: morph)
-                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
+                    HStack(spacing: DS.Space.s2) {
+                        Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
+                        // IN2-A: los controles de la TV y su batería, como junto a su hora; sin controles, nada (MN-A).
+                        if let players = model.players, !players.isEmpty { RemoteControllers(players: players) }
+                    }
                 }
                 Spacer(minLength: DS.Space.s2)
                 if model.context == .player || model.context == .live {
@@ -332,6 +337,8 @@ struct RemoteSheet: View {
     @ViewBuilder private func full(_ model: TVNowModel) -> some View {
         VStack(spacing: DS.Remote.groupGap) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
+            // Sin nada en la TV no hay renglón de «En la TV»: los controles van aquí arriba (IN2-A; sin controles, nada).
+            if model.now == nil, let players = model.players, !players.isEmpty { RemoteControllers(players: players).frame(maxWidth: .infinity, alignment: .leading) }
             voice(model).remoteMorph("voice", in: morph)
             switch editing && model.context == .browse ? .typing : model.context {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):

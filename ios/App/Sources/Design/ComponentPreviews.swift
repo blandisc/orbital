@@ -53,6 +53,7 @@ private struct CatalogSample: View {
                 HStack(spacing: DS.Space.s2) {
                     DSGestureIndicator(symbol: "sun.max.fill", value: 0.6)
                     DSSeekBubble(time: "1:24:10", delta: 80, clock: { _ in "1:20" })
+                    RemoteControllers(players: [.init(player: 1, battery: "full"), .init(player: 2, battery: "low")])
                     DSLoader()
                 }
             }
