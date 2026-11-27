@@ -38,9 +38,22 @@ final class WindowMetrics {
     nonisolated static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }
     nonisolated static let roomyWidth: CGFloat = 900
 
+    /// Pantalla grande: 600 puntos o más por su lado corto. La de adentro del iPhone Duo (≈ 669 × 951) lo es; la de afuera
+    /// (≈ 466 × 678) y todos los demás iPhone (el más ancho, 440) no. Ahí el iPhone se porta como el iPad: gira libre
+    /// (`Orientation.isControlled`) y los controles del reproductor crecen (`DS.PlayerPanel.big`). El lado corto no cambia
+    /// al girar, así que la respuesta es la misma de pie y acostado. En el iPad y la Mac no se usa (ya son grandes).
+    nonisolated static let largeSide: CGFloat = 600
+    nonisolated static func isLarge(_ size: CGSize) -> Bool { min(size.width, size.height) >= largeSide }
+    nonisolated static var large: Bool { isLarge(size) }
+
     func update(_ new: CGSize) {
         guard new.width > 0, new.height > 0, new != size else { return }
+        let wasLarge = Self.isLarge(size)
         size = new
+        #if !WIDGET_EXTENSION
+        // iPhone Duo: abrirlo suelta el giro y cerrarlo lo vuelve a fijar; UIKit vuelve a preguntar las orientaciones.
+        if Self.isLarge(new) != wasLarge { Orientation.refreshSupported() }
+        #endif
     }
 
     /// Lo que de verdad queda para las pantallas: la ventana menos el panel de la derecha (el control de la TV en el iPad

@@ -669,7 +669,7 @@ final class MainPing: @unchecked Sendable {
     /// `scroll <puntos> <segundos>`: desliza la lista que se ve (la más grande de la ventana) a paso parejo, como la rueda del
     /// mouse sostenida; negativo sube. Para medir los tirones al deslizar sin permiso de accesibilidad (25 nov 2026).
     static func scroll(by distance: Double, seconds: Double) async {
-        guard let window = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first,
+        guard let window = AppWindows.keyWindow,
               let view = biggestScroll(in: window) else { log.notice("scroll sin lista"); return }
         let start = view.contentOffset.y
         let top = -view.adjustedContentInset.top, bottom = max(top, view.contentSize.height - view.bounds.height + view.adjustedContentInset.bottom)
@@ -732,7 +732,7 @@ final class MainPing: @unchecked Sendable {
     /// `snap <nombre>`: la ventana a un PNG en la carpeta temporal de la app (para comparar cómo se ve antes y después sin
     /// permiso de grabar la pantalla; el vidrio sale sin su refracción).
     static func snap(_ name: String) {
-        guard let window = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first else { return }
+        guard let window = AppWindows.keyWindow else { return }
         let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("macsnap-\(name).png")
         try? image.pngData()?.write(to: url)

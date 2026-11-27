@@ -1,0 +1,83 @@
+<title>Liberar espacio en la Mac</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Una lista para decidir: barra de disco arriba, luego cada cosa con su código, cuánto libera y si se recupera sola. */
+:root { --bg:#f5f7f8; --card:#ffffff; --fg:#14202a; --muted:#5b6b78; --line:#dbe3e8; --accent:#0d8f8a; --ok:#1d7a3e; --warn:#a15c00; --no:#a3332b;
+  --display:"Space Grotesk", system-ui, sans-serif; --body:"Inter", system-ui, sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f161b; --card:#172129; --fg:#e6edf1; --muted:#9aaab6; --line:#2a3741; --accent:#3cc6bf; --ok:#5fcf86; --warn:#f0b259; --no:#f08a80; color-scheme:dark } }
+:root[data-theme="dark"] { --bg:#0f161b; --card:#172129; --fg:#e6edf1; --muted:#9aaab6; --line:#2a3741; --accent:#3cc6bf; --ok:#5fcf86; --warn:#f0b259; --no:#f08a80; color-scheme:dark }
+body { background:var(--bg); color:var(--fg); font-family:var(--body); line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:760px; margin:0 auto; display:grid; gap:22px; }
+h1 { font-family:var(--display); font-size:1.9rem; margin:0; text-wrap:balance; }
+h2 { font-family:var(--display); font-size:1.15rem; margin:0; }
+p { margin:0; }
+.muted { color:var(--muted); }
+.disk { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:10px; }
+.bar { display:flex; height:22px; border-radius:6px; overflow:hidden; border:1px solid var(--line); }
+.bar span { display:block; height:100%; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+.dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.reco { border-left:4px solid var(--accent); background:var(--card); padding:14px 16px; border-radius:0 10px 10px 0; display:grid; gap:6px; }
+.dict { font-family:var(--display); font-weight:700; font-size:1.1rem; color:var(--accent); }
+.list { display:grid; gap:10px; }
+.item { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:auto 1fr auto; gap:4px 14px; align-items:baseline; }
+.code { font-family:var(--display); font-weight:700; color:var(--accent); }
+.size { font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+.item .desc { grid-column:2 / 4; color:var(--muted); font-size:.92rem; min-width:0; }
+.tag { font-size:.78rem; font-weight:600; }
+.tag.ok { color:var(--ok); } .tag.warn { color:var(--warn); } .tag.no { color:var(--no); }
+.done { opacity:.75 }
+</style>
+<main>
+  <h1>Liberar espacio en la Mac</h1>
+  <p class="muted">Para instalar Xcode 27.2 y el simulador del iPhone Duo hacen falta unos 30 GB libres: Xcode se descomprime junto al viejo antes de reemplazarlo (~15 GB) y el simulador de iOS 27.2 pesa ~8–11 GB. Medido el 27 nov 2026.</p>
+
+  <section class="disk" aria-label="Disco">
+    <h2>Hoy: 15 GB libres de 460</h2>
+    <div class="bar" role="img" aria-label="Libre 15 GB, se puede liberar unos 29 GB más con la recomendación">
+      <span style="width:6%;background:var(--ok)"></span>
+      <span style="width:6.5%;background:var(--accent)"></span>
+      <span style="width:87.5%;background:var(--line)"></span>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--ok)"></i>Libre hoy · 15 GB</span>
+      <span><i class="dot" style="background:var(--accent)"></i>Con mi recomendación · +29 GB → ~44 GB</span>
+      <span><i class="dot" style="background:var(--line)"></i>Lo demás</span>
+    </div>
+  </section>
+
+  <section class="reco">
+    <h2>Mi recomendación</h2>
+    <p class="dict">B1 · B2 · B3 · B4</p>
+    <p>Son copias que Xcode y las herramientas vuelven a crear solas si algún día hacen falta. No tocan tus apps, tus simuladores ni el trabajo de otras sesiones. Con eso quedan ~44 GB libres, de sobra para la App Store y el simulador.</p>
+  </section>
+
+  <section class="list" aria-label="Qué se puede borrar">
+    <h2>Lo que se puede borrar</h2>
+
+    <div class="item"><span class="code">B1</span><strong>Símbolos de compilaciones viejas de Orbital</strong><span class="size">~10 GB</span>
+      <p class="desc">81 compilaciones guardadas (de la 2263 a la 2628), ~140 MB cada una. Sirven para leer un cierre inesperado de esa compilación exacta. Me quedo con las 5 más nuevas. <span class="tag ok">Seguro · no se recupera, pero nadie usa las viejas</span></p></div>
+
+    <div class="item"><span class="code">B2</span><strong>Copia de iOS 27.2 de tu iPhone (la anterior)</strong><span class="size">6.8 GB</span>
+      <p class="desc">Xcode guarda una copia del sistema de tu iPhone por cada versión. Tienes la de 27.2 y la de 27.2.1; tu iPhone ya está en la nueva. <span class="tag ok">Seguro · se vuelve a crear sola al conectar</span></p></div>
+
+    <div class="item"><span class="code">B3</span><strong>Copia de watchOS 26.3 de un reloj viejo</strong><span class="size">5.3 GB</span>
+      <p class="desc">De un Apple Watch con watchOS 26.3. El de hoy usa 27.0.1 y esa copia se queda. <span class="tag ok">Seguro · se vuelve a crear sola</span></p></div>
+
+    <div class="item"><span class="code">B4</span><strong>Cachés de herramientas</strong><span class="size">~7 GB</span>
+      <p class="desc">npm 1.5, paquetes de Swift 1.3, Homebrew 0.8, pip 0.7, uv 0.6, Playwright 0.6, más otras chicas. Se vuelven a bajar cuando haga falta (la primera compilación tarda un poco más). <span class="tag ok">Seguro</span></p></div>
+
+    <div class="item"><span class="code">B5</span><strong>Adelgazar los simuladores grandes</strong><span class="size">~10–20 GB</span>
+      <p class="desc">El «iPhone 17 Pro» pesa 17.9 GB y el «iPhone 18 Pro Max» 9.1 GB por apps y datos acumulados. Se borran sus apps y datos de prueba; el simulador se queda. <span class="tag warn">Con cuidado · otras sesiones pueden estar usándolos</span></p></div>
+
+    <div class="item"><span class="code">B6</span><strong>Carpetas de compilación de otras sesiones</strong><span class="size">~8 GB</span>
+      <p class="desc">dd-cenit 2.7, dd-orbital-vp 2.0, dd-orbital-release 2.0, dd-orbital-catalyst 1.2 (esta se está usando ahora). Se recrean, pero la siguiente compilación de esa sesión tarda unos 10 minutos más. <span class="tag no">No lo recomiendo · son de otras sesiones</span></p></div>
+
+    <div class="item done"><span class="code">✓</span><strong>Mi copia de Xcode 27.2 en /tmp</strong><span class="size">7.5 GB</span>
+      <p class="desc">Ya la borré: era mía y la App Store instala la buena.</p></div>
+  </section>
+
+  <p class="muted">Después: cancela el «mas» atorado en la terminal (Ctrl+C) y dale «Actualizar» a Xcode en la App Store.</p>
+</main>
