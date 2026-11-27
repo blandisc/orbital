@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtítulos automáticos</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1c1c1e;--muted:#5f5f66;--line:#e2e0da;--accent:#0f8f86;--rec:#0f8f86;--rec-bg:#e3f4f2;--warn:#a5521a;--screen:#111318;--screen-ink:#f2f2f2;--sub:#ffffff;--chip:#2a2d35}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121316;--card:#1c1d21;--ink:#ececef;--muted:#a3a3ab;--line:#2e2f35;--accent:#3cc2b6;--rec:#3cc2b6;--rec-bg:#16302d;--warn:#e39a62;--screen:#05060a;--chip:#2a2d35}}
+:root[data-theme="dark"]{--bg:#121316;--card:#1c1d21;--ink:#ececef;--muted:#a3a3ab;--line:#2e2f35;--accent:#3cc2b6;--rec:#3cc2b6;--rec-bg:#16302d;--warn:#e39a62;--screen:#05060a;--chip:#2a2d35}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.9rem;line-height:1.2;margin:.2em 0}
+h2{font-size:1.35rem;margin:2em 0 .5em}
+h3{font-size:1.1rem;margin:.2em 0}
+p,li{color:var(--ink)}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.code{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.rec{border:2px solid var(--rec);background:var(--rec-bg)}
+.badge{display:inline-block;background:var(--rec);color:var(--card);border-radius:6px;padding:2px 8px;font-size:.8rem;font-weight:700}
+.screen{background:var(--screen);color:var(--screen-ink);border-radius:10px;aspect-ratio:16/9;position:relative;overflow:hidden;margin:10px 0;font-size:.8rem}
+.screen .subline{position:absolute;left:0;right:0;bottom:10%;text-align:center;color:var(--sub);font-weight:600;text-shadow:0 1px 2px #000;padding:0 8px}
+.screen .toast{position:absolute;top:8px;left:8px;background:var(--chip);border-radius:8px;padding:4px 8px;font-size:.72rem}
+.screen .menu{position:absolute;right:8px;top:8px;background:var(--chip);border-radius:8px;padding:6px 8px;font-size:.72rem;line-height:1.5}
+.menu .on{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+dl{margin:0}dt{font-weight:600;margin-top:6px}dd{margin:0 0 4px}
+a{color:var(--accent);overflow-wrap:anywhere}
+ol li,ul li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<p class="muted">Orbital · estudio de producto · 26 nov 2026</p>
+<h1>Que los subtítulos se pongan solos, bien, o no se pongan</h1>
+<p>Fer: hoy Orbital ya tiene buenas piezas (busca por la huella del archivo, ordena por versión, nombra «Forzados», corrige un caso de desfase). Lo que falla es <b>la decisión</b>: el reproductor pregunta «¿hay subtítulos en tu idioma?» en vez de «¿los necesitas?». Abajo, por qué pasa, cuatro caminos con su código para dictar y mi recomendación.</p>
+
+<h2>1. Diagnóstico: por qué salen mal hoy</h2>
+<div class="card">
+<ol>
+<li><b>La película en español arranca con subtítulos.</b> <span class="badge">Ya corregido hoy</span> Ahora, si el audio está en tu idioma, solo salen los forzados, en la TV y en el iPhone. Antes: Con tu idioma de subtítulos en «Español», la TV le dice a mpv «pon subtítulos en español aunque el audio también sea español» (en <code>playback.py</code>, la opción <i>subs-with-matching-audio=yes</i>). El iPhone hace lo mismo: <code>TrackChooser.subtitle</code> en modo idioma nunca mira en qué idioma suena el audio. Si el archivo no dice el idioma del audio («und»), ninguno de los dos puede saberlo.</li>
+<li><b>Dos «Español» que no se distinguen.</b> El archivo suele traer tres pistas españolas: completa, forzada y para sordos, pero muchas veces mal etiquetadas (la forzada sin su marca, sin título). Hoy solo se les pone «Opción 1 / Opción 2»: se ven distintas pero no se sabe cuál es cuál. Contar cuántas líneas trae cada pista lo revelaría (una forzada trae decenas, una completa más de mil).</li>
+<li><b>Subtítulos desfasados.</b> Solo se corrige el caso de la edición europea a 25 cuadros (y solo cuando el subtítulo dura más que el video). El retraso fijo de unos segundos (otra versión con distinto inicio, publicidad cortada) y el que se va abriendo poco a poco no se detectan. El autor de alass midió que cerca de la mitad de los subtítulos bajados al azar de OpenSubtitles venían desfasados.</li>
+<li><b>Subtítulos que faltan.</b> Si ni el archivo ni los complementos ni tu cuenta de OpenSubtitles tienen tu idioma, se acabó: no hay plan B (traducir uno en inglés o generarlo del audio).</li>
+<li><b>No recuerda por título.</b> Se recuerda el idioma por serie, pero no «en esta película elegí sin subtítulos» ni «esta pista estaba a tiempo».</li>
+</ol>
+</div>
+
+<h2>2. Qué hacen otros</h2>
+<div class="card">
+<table>
+<tr><th>Quién</th><th>Qué hace</th></tr>
+<tr><td>Netflix / Apple TV</td><td>Controlan sus archivos: siempre traen la pista «forzada» (solo carteles y diálogos en otro idioma) y se muestra sola cuando los subtítulos están apagados. Es el ideal: «nada, salvo lo que no entenderías».</td></tr>
+<tr><td>Plex</td><td>Modo «Mostrar con audio extranjero»: subtítulos solo si el audio no está en tu idioma; los foros muestran que a veces se equivoca con los forzados.</td></tr>
+<tr><td>Jellyfin</td><td>Modo «Inteligente»: igual idea, decide según el idioma del audio.</td></tr>
+<tr><td>Infuse</td><td>«Automático» respeta la marca de pista por defecto; «Solo forzados». Sus foros están llenos de quejas de forzados mal marcados: el mismo problema que Orbital.</td></tr>
+<tr><td>Stremio</td><td>OpenSubtitles v3 (oficial) busca por huella del archivo. Complementos de la comunidad agregan una fila «AUTO» con el más probable de ir a tiempo (huella, nombre de versión, cuadros por segundo) y otros resincronizan con ffsubsync o traducen con IA cuando falta tu idioma.</td></tr>
+<tr><td>VLC / Kodi</td><td>Búsqueda en OpenSubtitles por huella (VLSub, complementos de Kodi) y ajuste manual del retraso. VLC mostró en el CES 2025 subtítulos generados y traducidos con IA local, sin internet.</td></tr>
+</table>
+<p><b>Lo que recuerdas, Fer:</b> casi seguro es <b>VLC (VideoLAN)</b>: en enero de 2025 enseñó en el CES subtítulos creados en tu propia máquina con modelos abiertos y traducidos a más de 100 idiomas, sin nube; se espera en VLC 4 y aún no sale. El otro candidato es <b>OpenSubtitles</b>, que desde 2023 tiene <i>ai.opensubtitles.com</i>: transcribe y traduce con IA (créditos de paga) y una app de escritorio gratuita. La combinación «buscar, poner y si no existe, generarlo» es la de los complementos de Stremio tipo StremioSubMaker.</p>
+</div>
+
+<h2>3. Las técnicas, en simple</h2>
+<div class="grid">
+<div class="card"><h3>Huella del archivo</h3><p>Un número sacado del tamaño y de los extremos del archivo. Si un subtítulo se hizo con la misma huella, va a tiempo casi seguro. Orbital ya la usa.</p></div>
+<div class="card"><h3>Nombre de la versión</h3><p>«WEB-DL», «BluRay», el grupo. Misma versión = probablemente a tiempo. Orbital ya lo usa.</p></div>
+<div class="card"><h3>Sincronía automática</h3><p>alass y ffsubsync escuchan dónde hay voz en el audio y acomodan el subtítulo. Toman segundos en una PC; ffsubsync con un subtítulo de referencia ya a tiempo tarda menos de un segundo.</p></div>
+<div class="card"><h3>Transcribir con Whisper</h3><p>Escribe lo que se dice. En la PC de la TV con GPU, una película en pocos minutos. En iPhone y Mac existe (whisper.cpp con Core ML, WhisperKit), pero gasta batería y no es para toda una película al momento.</p></div>
+<div class="card"><h3>Traducir con IA</h3><p>Tomar el subtítulo en inglés (que casi siempre existe y está a tiempo) y traducirlo. Más barato y mejor que transcribir.</p></div>
+<div class="card"><h3>Detectar el idioma del audio</h3><p>Whisper reconoce el idioma con 30 segundos de audio. Sirve cuando el archivo dice «und».</p></div>
+</div>
+
+<h2>4. Propuestas</h2>
+<p class="muted">Cada maqueta muestra lo que verías al darle Reproducir a una película en español y luego a una en inglés sin subtítulos en español disponibles.</p>
+<div class="grid">
+
+<div class="card">
+<h3><span class="code">ST1</span> · Decidir bien, sin internet</h3>
+<div class="screen"><div class="toast">Audio: Español · Sin subtítulos</div><div class="subline"></div></div>
+<div class="screen"><div class="menu">Subtítulos<br>Ninguno<br><span class="on">● Español completo</span><br>Español solo carteles<br>Español para sordos</div><div class="subline">¿Dónde estabas anoche?</div></div>
+<dl><dt>Qué ves</dt><dd>Audio en tu idioma: nada, salvo carteles. Pistas con nombres claros («completo», «solo carteles», «para sordos»). Recuerda lo que elijas por título.</dd>
+<dt>Gana</dt><dd>Corrige los dos errores más visibles. Igual en TV e iPhone.</dd>
+<dt>Pierde</dt><dd>No arregla desfases ni los que faltan.</dd>
+<dt>Costo / esfuerzo</dt><dd>$0 · pequeño (1–2 entregas).</dd>
+<dt>Depende de</dt><dd>Nada externo.</dd></dl>
+</div>
+
+<div class="card rec">
+<h3><span class="code">ST2</span> · ST1 + a tiempo siempre <span class="badge">Recomendada</span></h3>
+<div class="screen"><div class="toast">Audio: Español · Sin subtítulos</div></div>
+<div class="screen"><div class="toast">Subtítulos ajustados a tu copia ✓</div><div class="subline">¿Dónde estabas anoche?</div></div>
+<dl><dt>Qué ves</dt><dd>Lo de ST1 y, al elegir uno de internet, la TV lo acomoda al audio en segundos. Un aviso discreto lo dice. Si quedó mal, «Probar otro» a un toque.</dd>
+<dt>Gana</dt><dd>Se acaba el «van adelantados». Funciona con cualquier subtítulo.</dd>
+<dt>Pierde</dt><dd>Unos segundos de espera la primera vez; el iPhone fuera de casa depende de que la TV esté prendida (o usa solo la huella).</dd>
+<dt>Costo / esfuerzo</dt><dd>$0 (alass y ffsubsync son gratis) · mediano (3–4 entregas).</dd>
+<dt>Depende de</dt><dd>OpenSubtitles como hoy; nada nuevo.</dd></dl>
+</div>
+
+<div class="card">
+<h3><span class="code">ST3</span> · ST2 + crearlos con IA si no existen</h3>
+<div class="screen"><div class="toast">Audio: Español · Sin subtítulos</div></div>
+<div class="screen"><div class="toast">Traducidos con IA del inglés</div><div class="subline">¿Dónde estabas anoche?</div></div>
+<dl><dt>Qué ves</dt><dd>Si no hay en español, la TV traduce el inglés o, si no hay nada, transcribe el audio con su GPU y lo marca «hecho con IA».</dd>
+<dt>Gana</dt><dd>Nunca te quedas sin subtítulos.</dd>
+<dt>Pierde</dt><dd>Errores de IA (nombres, chistes); minutos de espera al transcribir; la PC trabaja más.</dd>
+<dt>Costo / esfuerzo</dt><dd>$0 local o centavos por película con un modelo en la nube · grande.</dd>
+<dt>Depende de</dt><dd>Modelos abiertos locales; opcional un traductor en la nube.</dd></dl>
+</div>
+
+<div class="card">
+<h3><span class="code">ST4</span> · Confiar en servicios de fuera</h3>
+<div class="screen"><div class="menu">Subtítulos<br><span class="on">● AUTO · Español</span><br>Español (OpenSubtitles)<br>Español IA (servicio)</div><div class="subline">¿Dónde estabas anoche?</div></div>
+<dl><dt>Qué ves</dt><dd>Una fila «AUTO» que viene de un complemento de la comunidad o de OpenSubtitles IA.</dd>
+<dt>Gana</dt><dd>Poco trabajo de nuestro lado.</dd>
+<dt>Pierde</dt><dd>No arregla la película en español con subtítulos; complementos que desaparecen; créditos de paga; no es para la versión de App Store.</dd>
+<dt>Costo / esfuerzo</dt><dd>Créditos de OpenSubtitles IA · pequeño.</dd>
+<dt>Depende de</dt><dd>Mucho de terceros.</dd></dl>
+</div>
+</div>
+
+<h2>5. Recomendación: <span class="code">ST2</span>, y ST3 después</h2>
+<div class="card rec">
+<p>El dolor de hoy no es que falten subtítulos: es que salen cuando no hacen falta, no se distinguen y van desfasados. ST1 resuelve lo primero y ST2 lo tercero, sin costo ni nuevas dependencias, y sirve en las tres versiones de Orbital. La IA (ST3) vale la pena, pero como red de seguridad, no como base: ganas poco si antes no se decide bien. ST4 no la recomiendo: deja el error principal igual.</p>
+<h3>Plan por etapas</h3>
+<ol>
+<li><b>Etapa 1 (ST1):</b> <i>hecho hoy:</i> regla «audio en tu idioma = solo carteles» en TV e iPhone, con su prueba. Falta: nombrar pistas por cuántas líneas traen; recordar la elección por título.</li>
+<li><b>Etapa 2:</b> cuando el audio dice «und», detectarlo con 30 s de Whisper pequeño en la TV.</li>
+<li><b>Etapa 3 (ST2):</b> sincronía automática con alass en la TV (ffsubsync de respaldo), aviso «ajustados a tu copia» y «Probar otro». El iPhone pide a la TV el subtítulo ya ajustado.</li>
+<li><b>Etapa 4 (ST3, opcional):</b> traducir del inglés con IA si falta tu idioma; transcribir con la GPU solo si no hay ninguno.</li>
+</ol>
+</div>
+
+<div class="card" style="border-style:dashed"><b>Para dictar:</b> «ST1», «ST2», «ST3» o «ST4». Recomiendo <span class="code">ST2</span>.</div>
+
+<h2>6. Fuentes</h2>
+<div class="card"><ul>
+<li><a href="https://www.techradar.com/computing/artificial-intelligence/ai-will-start-subtitling-your-videos-thanks-to-vlc">TechRadar: VLC y los subtítulos con IA</a> · <a href="https://www.tomshardware.com/software/vlc-demoes-ai-generated-subtitles-as-it-hits-new-milestone-of-6-billion-downloads">Tom's Hardware: demo en CES 2025</a> · <a href="https://heise.de/-10233749">heise: subtítulos multilingües con IA local</a></li>
+<li><a href="https://ai.opensubtitles.com/faq">OpenSubtitles IA: preguntas frecuentes</a> · <a href="https://ai.opensubtitles.com/info/app">App de escritorio</a> · <a href="https://alternativeto.net/news/2024/6/opensubtitles-launches-ai-tool-for-rapid-subtitle-generation-and-translation">AlternativeTo: lanzamiento</a></li>
+<li><a href="https://www.npmjs.com/package/stremio-opensubtitles">Stremio OpenSubtitles</a> · <a href="https://stremio-addons.net/addons/ultimate-smart-subs">Ultimate Smart Subs</a> · <a href="https://stremio-addons.net/addons/subtitle-sync">Subtitle Sync</a> · <a href="https://stremio-addons.net/addons/subsync">SubSync</a> · <a href="https://github.com/xtremexq/StremioSubMaker">StremioSubMaker</a></li>
+<li><a href="https://support.plex.tv/articles/204985278-account-audio-subtitle-language-settings/">Plex: idiomas de audio y subtítulos</a> · <a href="https://forums.plex.tv/t/subtitles-shown-with-foreign-audio-not-working-logically/663483">Plex: «con audio extranjero» falla</a> · <a href="https://forum.jellyfin.org/t-forced-internal-audio-track">Jellyfin: modo inteligente</a></li>
+<li><a href="https://community.firecore.com/t/not-automatically-selecting-forced-subtitle-tracks/38812">Infuse: no elige forzados</a> · <a href="https://community.firecore.com/t/default-to-forced-subtitles/60557">Infuse: pedido «preferir forzados»</a></li>
+<li><a href="https://backlothelp.netflix.com/hc/en-us/articles/217558918">Netflix: subtítulos forzados</a></li>
+<li><a href="https://github.com/kaegi/alass">alass</a> · <a href="https://github.com/smacke/ffsubsync">ffsubsync</a> · <a href="https://github.com/dyphire/autosubsync-mpv">autosubsync para mpv</a></li>
+<li><a href="https://github.com/ggml-org/whisper.cpp">whisper.cpp</a> · <a href="https://arxiv.org/html/2507.10860v1">WhisperKit: Whisper en el iPhone</a></li>
+</ul></div>
+</main>
+</body>
+</html>
