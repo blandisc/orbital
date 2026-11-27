@@ -1,4 +1,4 @@
-<title>Juegos en el iPhone Duo</title>
+<title>Juegos en el iPhone y en el Duo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Sora:wght@600&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -182,515 +182,802 @@ a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offs
 .ov .dpad{left:14px;bottom:14px}.ov .abxy{right:14px;bottom:10px}
 .ov .menu{position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:50%;background:rgba(42,42,48,.8);display:grid;place-items:center;font-size:9px;color:var(--o-sec)}
 .corner{position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:50%;background:rgba(42,42,48,.8);display:grid;place-items:center;font-size:9px;color:var(--o-sec)}
-.lock{position:absolute;right:4px;top:4px;width:12px;height:12px;border-radius:50%;background:rgba(12,12,14,.8);display:grid;place-items:center;font-size:7px;color:var(--o-sec)}
+.lock{position:absolute;right:4px;top:4px;width:13px;height:13px;border-radius:50%;background:rgba(12,12,14,.8);display:grid;place-items:center;font-size:7px;color:var(--o-sec)}
 .cv.dimd{opacity:.45}
 .minis{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
 .mini2{display:grid;gap:6px;justify-items:start;font-size:.82rem;color:var(--muted)}
 .dev.s{width:150px}.dev.s.land{width:220px}.dev.s.half{width:150px}
 .note{font-size:.88rem;padding:12px 14px;border-radius:12px;background:var(--warn-soft);color:var(--fg)}
 .note b{color:var(--warn)}
+/* iPhone normal (17 Pro, 402×874 pt) vertical y horizontal */
+.dev.ip{width:220px;aspect-ratio:402/874;border-radius:32px}
+.dev.ipl{width:460px;aspect-ratio:874/402;border-radius:32px}
+.dev.ip::before,.dev.ipl::before{content:"";position:absolute;background:#000;border-radius:9px;z-index:6}
+.dev.ip::before{top:7px;left:50%;transform:translateX(-50%);width:56px;height:15px}
+.dev.ipl::before{left:7px;top:50%;transform:translateY(-50%);width:15px;height:56px}
+.dev.ip .bar{padding-top:30px}
+.dev.ip.s{width:140px}.dev.ipl.s{width:250px}
+.vcol{position:absolute;inset:0;display:grid;grid-template-rows:auto auto 1fr;padding-top:30px;background:#000}
+.vcol .gsc{aspect-ratio:3/2;display:grid;place-items:center;font-weight:800;color:#fff;font-size:12px;text-shadow:0 2px 8px #000}
+.vcol .ds{aspect-ratio:4/3;display:grid;place-items:center;font-size:9px;color:#fff;border-bottom:2px solid #000}
+.vcol .padbox{position:relative;background:#0c0c0e}
+.gba{background:linear-gradient(160deg,#7a3cff,#14082e 80%)} .dsa{background:linear-gradient(160deg,#3a5a8a,#0d1726)}
+.bo2{background:linear-gradient(160deg,#c8a24a,#1d1606 80%)} .dan{background:linear-gradient(160deg,#c43a10,#1c0602 80%)}
+.xbx{background:linear-gradient(160deg,#5aa02c,#0b1a05 80%)}
+.pair{display:grid;gap:6px}
+.lab{font-size:.78rem;font-weight:600;color:var(--muted)}
+.svst{display:flex;gap:5px;align-items:center;font-size:8.5px;color:var(--o-sec)}
+.svst::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--o-text)}
+.svst.wait::before{background:var(--o-amber)} .svst.off::before{background:transparent;border:1.5px solid var(--o-ter)}
+.list{display:grid;gap:5px}
+.list .r{font-size:9px;padding:6px 8px;border-radius:9px;background:var(--o-surface);display:flex;justify-content:space-between;gap:6px}
+.list .r small{color:var(--o-ter)}
+.list .h{font-size:8.5px;color:var(--o-ter);margin-top:4px}
+.scope{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.scope div{padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:2px;min-width:0}
+.scope div.outx{opacity:.6}
+.scope b{font-family:var(--f-display)}
+/* v3: palancas y gatillos, círculos con ícono, selector que se desliza, línea de la TV, carga */
+.stick{position:absolute;width:40px;height:40px;border-radius:50%;background:#2a2a30;box-shadow:inset 0 0 0 9px #1e1e23}
+.ov .stick{opacity:.45}
+.trig{position:absolute;top:8px;font-size:7px;padding:2px 9px;border-radius:5px;background:rgba(42,42,48,.85);color:var(--o-sec)}
+.circ{display:grid;place-items:center;font-size:11px;color:var(--o-text)}
+.sel{overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+.steps div.done::before{background:var(--o-text);border-color:var(--o-text)}
+.tvline{font-size:.88rem;color:var(--muted)} .tvline b{color:var(--fg)}
+.spin{width:22px;height:22px;border-radius:50%;border:2.5px solid #2a2a30;border-top-color:var(--o-text)}
+.center{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:8px;text-align:center;padding:16px}
+.center .t{font-size:11px;font-weight:700}
+.center p{font-size:8.5px;color:var(--o-sec);max-width:24ch}
+.svst.bad::before{background:transparent;border:1.5px solid var(--o-amber)}
 </style>
 <div class="wrap">
 
 <header style="display:grid;gap:14px">
-  <p class="src">Orbital Ultra · plan y pantallas · 27 nov 2026 · sigue a «Tus consolas en el iPhone»</p>
-  <h1>Juegos en el iPhone Duo</h1>
-  <p class="lede">Cómo se verían tus juegos en Orbital con el Duo cerrado, abierto y medio abierto, y en qué orden lo construimos. Todavía no hay nada construido: primero quiero que veas las pantallas.</p>
-  <p class="src">Los números dentro de las maquetas (horas, tamaños, minutos) son ejemplos.</p>
+  <p class="src">Orbital Ultra · todas las pantallas · 27 nov 2026 · versión 3, después de dos revisiones</p>
+  <h1>Juegos en el iPhone y en el Duo</h1>
+  <p class="lede">Cada pantalla en el iPhone normal y en el iPhone Duo, más cómo van y vienen tus partidas con la TV. No se construye nada hasta que las apruebes.</p>
+  <p class="note"><b>Los números de las maquetas son ejemplos</b> (horas, tamaños, fechas, «Cómo corre»). Los únicos datos reales son los de tus juegos de Xbox 360 y de God of War III. El iPhone normal es tu 17 Pro. «La TV» es tu Legion Go con Orbital; «consola» es Switch, GameCube, Xbox…</p>
 </header>
 
 <section>
-  <h2>Tus respuestas, y lo que salió</h2>
+  <h2>Qué entra y qué no</h2>
+  <div class="scope">
+    <div><b>Portátiles</b><span class="src">GBA, Game Boy y DS, con Delta. No pide el modo rápido de iOS.</span></div>
+    <div><b>Switch</b><span class="src">nxnative para los 263 juegos que ya tiene listos (los tuyos incluidos, y algunas ediciones de Switch 2); MeloNX para el resto.</span></div>
+    <div><b>GameCube y Wii</b><span class="src">iCube. Con el modo rápido va a velocidad completa; sin él abre, pero lento.</span></div>
+    <div><b>Xbox</b><span class="src">DukeX.</span></div>
+    <div><b>Xbox 360</b><span class="src">XeniOS. Decides en X1.</span></div>
+    <div><b>God of War III</b><span class="src">Olympus, con tu copia de PS4: la de EE. UU. con la actualización 1.02, la que pide.</span></div>
+    <div class="outx"><b>Fuera por ahora</b><span class="src">PS2, Wii U y PS3.</span></div>
+  </div>
+  <p class="src">Corrijo algo que te dije antes: nxnative no tiene «unos 50» juegos, tiene 263. Ojo: pide la versión exacta del juego (por ejemplo Luigi's Mansion 3 en la 1.4.0); si tu copia es otra, corre con MeloNX (P8).</p>
+</section>
+
+<section>
+  <h2>Xbox 360: qué tan estable es</h2>
   <div class="answers">
-    <div><b>God of War III: el de PS4</b>Le pregunté a la Lenovo: tienes el Remastered de PS4, lo jugaste 5.7 horas y la última vez fue el 24 nov. No hay versión de PS3. Así que va <b>K3-B, Olympus</b>, y sí, es el más estable porque está hecho solo para ese juego. Tu copia en la TV parece traer los archivos que pide; para confirmarlo tengo que mirar esa carpeta, y te pido permiso abajo.</div>
-    <div><b>Espacio: disco externo si hace falta</b>Nadie ha probado todavía jugar desde un disco USB-C en el iPhone. Lo pruebo aparte. Mientras, los juegos se copian al Duo (God of War pide unos 35 GB libres).</div>
-    <div><b>Switch: Luigi's Mansion 3, Mario Kart 8 y Mario Odyssey</b>Los tres ya funcionan con nxnative. Luigi's va a 60 cuadros por segundo (en la Switch, a 30). Mario Kart sale sin las cabezas de los Mii. Elegí Odyssey porque es de los más probados.</div>
-    <div><b>Mando GameSir por Bluetooth</b>iOS lo reconoce como un mando normal. Mientras está conectado no hay botones en la pantalla, y si se desconecta aparecen solos.</div>
+    <div><b>Tus dos juegos: van bien, con poca prueba</b>Black Ops II y Dante's Inferno (los dos que tienes en la TV) salen como jugables y fluidos. Pero es un solo reporte por juego, de una persona, en un iPhone 16 Pro Max con iOS 27. Black Ops II a veces hay que abrirlo varias veces. Lo confirmo en tu Duo el día de prueba.</div>
+    <div><b>En general: a medias</b>De 336 juegos con reportes en iPhone, unos 185 se juegan bien (55%). El resto entra con fallas, se queda en menús o no arranca. El propio XeniOS dice que todavía es una versión temprana.</div>
+    <div><b>Se mueve muy rápido</b>Doce versiones en noviembre. Lo que hoy falla puede ir bien en un mes, y también se puede romper algo que ya iba.</div>
   </div>
 </section>
 
 <section>
-  <h2>nxnative y MeloNX, en simple</h2>
-  <div class="cards">
-    <article class="card rec">
-      <header><h3>nxnative: el libro ya traducido</h3><span class="tag ok">Tus 3 juegos</span></header>
-      <p>Antes de jugar, la Mac «traduce» el juego una sola vez (de 30 a 60 minutos) al idioma del iPhone. Después, el iPhone lo lee directo, como cualquier app.</p>
-      <p class="gain"><b>Ganas:</b> corre más rápido y más fresco, y no necesita el modo rápido de iOS, así que no se rompe cuando Apple cambia algo.</p>
-      <p class="lose"><b>Pierdes:</b> solo sirve con los juegos que alguien ya hizo funcionar (unos 50 hoy), y cada juego nuevo pasa por la Mac.</p>
-    </article>
-    <article class="card">
-      <header><h3>MeloNX: el intérprete en vivo</h3><span class="tag mid">El resto</span></header>
-      <p>Imita una Switch completa y traduce el juego mientras juegas.</p>
-      <p class="gain"><b>Ganas:</b> abre cualquier juego de Switch sin preparar nada en la Mac.</p>
-      <p class="lose"><b>Pierdes:</b> necesita el modo rápido de iOS, gasta más batería, calienta más y algunos juegos fallan o van lentos.</p>
-    </article>
+  <h2>Cómo funciona por dentro, en simple</h2>
+  <div class="answers">
+    <div><b>Cada app de juego se ve como Orbital</b>En la etapa 1, cada motor es su propia app escondida. Como las compilamos nosotros, les ponemos por dentro los botones, la pausa y los avisos de Orbital (P12 a P25). Para ti es una sola experiencia; la etapa 2 junta todo en una app.</div>
+    <div><b>Una carpeta compartida para las partidas</b>Todas nuestras apps comparten una carpeta. Ahí cada motor guarda tus partidas, y Orbital las manda y las trae de la TV. Los motores que traen su propia sincronización o su propio menú (nxnative, DukeX) se apagan para que mande Orbital.</div>
+    <div><b>Los juegos de nxnative llegan distinto</b>La parte que corre se prepara en la Mac y se instala una vez desde ahí; los datos del juego (los GB) sí se bajan de la TV, como cualquier otro. Esto último hay que probarlo.</div>
   </div>
-  <p class="why">Por eso: nxnative para los que más juegas y MeloNX para todo lo demás.</p>
-</section>
-
-<section>
-  <h2>De varias apps a una sola, en tres etapas</h2>
-  <p>Empezamos con K1-A y juntamos cuando cada pieza esté bien hecha. En todas las etapas entras solo por Orbital: los demás íconos se van a la Biblioteca de apps y no los tocas.</p>
-  <div class="stages">
-    <div class="stage">
-      <span class="n">1</span><h3>Cada motor, su app</h3>
-      <div class="apps">
-        <span class="app"><span class="ico or">orbital</span>Orbital</span>
-        <span class="app"><span class="ico sw">LM3</span>Luigi's</span>
-        <span class="app"><span class="ico sw">MK8</span>Mario Kart</span>
-        <span class="app"><span class="ico sw">SMO</span>Odyssey</span>
-        <span class="app"><span class="ico gw">GoW</span>God of War</span>
-        <span class="app"><span class="ico gc">GC</span>GameCube</span>
-      </div>
-      <p>Orbital tiene el catálogo y abre cada juego en su app. <b>Ojo:</b> hoy nxnative arma una app por juego, así que tus 3 juegos de Switch son 3 apps escondidas. Para ti se ven como parte de Orbital; por dentro todavía no lo son.</p>
-      <p class="src">Lo que ganamos: si algo truena, no tumba nada más, y cada pieza la afinamos sola.</p>
-    </div>
-    <div class="stage">
-      <span class="n">2</span><h3>Todas en «Orbital Juegos»</h3>
-      <div class="apps">
-        <span class="app"><span class="ico or">orbital</span>Orbital</span>
-        <span class="app"><span class="ico all">▶</span>Orbital Juegos</span>
-      </div>
-      <p>Juntamos los motores y los juegos convertidos en una sola app. Abre un juego a la vez y al salir se cierra sola, así nada choca. Es lo que pediste para los juegos convertidos; nxnative no lo trae listo y hay que probarlo.</p>
-      <p class="src">Lo que ganamos: dos íconos y nada más.</p>
-    </div>
-    <div class="stage">
-      <span class="n">3</span><h3>Dentro de Orbital</h3>
-      <div class="apps"><span class="app"><span class="ico or">orbital</span>Orbital</span></div>
-      <p>Si la etapa 2 sale estable, probamos meterlo todo en Orbital, siempre que un juego que truena no pueda cerrar la película que estés viendo.</p>
-    </div>
-  </div>
-  <p class="src">Las pantallas de abajo son iguales en las tres etapas. Para ti, lo único que cambia es si se ve un salto corto al entrar al juego.</p>
 </section>
 
 <section class="row">
   <h2>1 · La pestaña «Juegos»</h2>
-  <p>Igual que en la TV: lo reciente y tus consolas. Solo en tu versión de Orbital.</p>
+  <p class="tvline"><b>En la TV:</b> ya existe. Las consolas, los órdenes y los nombres son los mismos.</p>
   <div class="shots">
     <div class="shot">
       <span class="code">P1</span>
-      <div class="dev in"><div class="scr">
-        <div class="bar"><span class="t">Juegos</span><span class="s">12 en tu iPhone</span></div>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span><span class="s">9 en tu iPhone</span></div>
         <div class="body">
           <div class="sec">Recientes <small>aquí o en la TV</small></div>
-          <div class="strip"><div class="cv w lm"><i>Luigi's Mansion 3</i></div><div class="cv w gw3"><i>God of War III</i></div><div class="cv w mk"><i>Mario Kart 8</i></div></div>
+          <div class="strip"><div class="cv w lm"><i>Luigi's Mansion 3</i></div><div class="cv w bo2"><i>Black Ops II</i></div></div>
           <div class="sec">Tus consolas</div>
-          <div class="cons">
-            <div class="con"><b>Switch</b>3 listos · 24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>Wii</b>9</div>
-            <div class="con"><b>PS2</b>31</div><div class="con"><b>Xbox 360</b>12</div><div class="con"><b>PS4</b>1</div>
+          <div class="cons" style="grid-template-columns:1fr 1fr">
+            <div class="con"><b>Switch</b>24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>Wii</b>9</div>
+            <div class="con"><b>Portátiles</b>40</div><div class="con"><b>Xbox</b>6</div><div class="con"><b>Xbox 360</b>2</div><div class="con"><b>PS4</b>1</div>
           </div>
           <div class="sec">Favoritos</div>
-          <div class="strip"><div class="cv ww"><i>Wind Waker</i></div><div class="cv od"><i>Odyssey</i></div><div class="cv halo"><i>Halo 3</i></div><div class="cv gt"><i>GT4</i></div></div>
+          <div class="strip"><div class="cv ww"></div><div class="cv od"></div><div class="cv gw3"></div><div class="cv gba"></div></div>
         </div>
         <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
       </div></div>
-      <span class="cap"><b>Abierto.</b> La pantalla grande, con aire, como la TV.</span>
+      <span class="cap"><b>iPhone.</b> Pestañas abajo, como el resto de Orbital.</span>
     </div>
     <div class="shot">
-      <span class="code">P2</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span><span class="s">9 en tu iPhone</span></div>
+        <div class="body">
+          <div class="sec">Recientes <small>aquí o en la TV</small></div>
+          <div class="strip"><div class="cv w lm"><i>Luigi's Mansion 3</i></div><div class="cv w bo2"><i>Black Ops II</i></div><div class="cv w gw3"><i>God of War III</i></div></div>
+          <div class="sec">Tus consolas</div>
+          <div class="cons">
+            <div class="con"><b>Switch</b>24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>Wii</b>9</div>
+            <div class="con"><b>Portátiles</b>40</div><div class="con"><b>Xbox</b>6</div><div class="con"><b>Xbox 360</b>2</div><div class="con"><b>PS4</b>1</div>
+          </div>
+          <div class="sec">Favoritos</div>
+          <div class="strip"><div class="cv ww"></div><div class="cv od"></div><div class="cv gw3"></div><div class="cv gba"></div><div class="cv halo"></div></div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Duo abierto.</b> Tres columnas.</span>
+    </div>
+    <div class="shot">
       <div class="dev out"><div class="scr side">
         <div style="display:grid;grid-template-rows:auto 1fr">
           <div class="bar"><span class="t">Juegos</span></div>
           <div class="body">
             <div class="sec">Recientes</div>
             <div class="strip"><div class="cv w lm" style="width:100%"><i>Luigi's Mansion 3</i></div></div>
-            <div class="strip"><div class="cv mk"><i>MK8</i></div><div class="cv ww"><i>WW</i></div><div class="cv od"><i>SMO</i></div></div>
             <div class="sec">Tus consolas</div>
-            <div class="cons" style="grid-template-columns:1fr 1fr"><div class="con"><b>Switch</b>24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>PS2</b>31</div><div class="con"><b>Xbox 360</b>12</div></div>
+            <div class="cons" style="grid-template-columns:1fr 1fr"><div class="con"><b>Switch</b>24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>Portátiles</b>40</div><div class="con"><b>Xbox 360</b>2</div></div>
           </div>
         </div>
         <div class="sidebar"><span></span><span></span><span class="on"></span><span></span><span></span></div>
       </div></div>
-      <span class="cap"><b>Cerrado.</b> Lo mismo, más apretado. Las pestañas van en la franja de la derecha, como ya está el Duo.</span>
+      <span class="cap"><b>Duo cerrado.</b> Pestañas en la franja derecha, como ya está el Duo. Las demás pantallas cerradas siguen esta misma forma.</span>
+    </div>
+  </div>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P2</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Switch</span><span class="s">24 juegos</span></div>
+        <div class="body">
+          <div class="sel"><span class="on">Recientes</span><span>Añadidos</span><span>Favoritos</span><span>A–Z</span><span>Sin jugar</span><span>En tu iPhone</span></div>
+          <div class="strip" style="flex-wrap:wrap;gap:6px">
+            <div class="cv lm" style="width:56px"></div><div class="cv mk" style="width:56px"></div><div class="cv od" style="width:56px"></div>
+            <div class="cv" style="width:56px;background:linear-gradient(160deg,#ff6a2a,#2a0c02)"></div><div class="cv" style="width:56px;background:linear-gradient(160deg,#6fc2ff,#0b2238)"></div><div class="cv dimd" style="width:56px;background:linear-gradient(160deg,#c86bff,#200b33)"><span class="lock">⊘</span></div>
+          </div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>iPhone.</b> Los órdenes de la TV, más «En tu iPhone»; la fila se desliza. Los que no corren todavía, apagados con ⊘ (E6-A).</span>
     </div>
     <div class="shot">
-      <span class="code">P3</span>
       <div class="dev in"><div class="scr">
         <div class="bar"><span class="t">Switch</span><span class="s">24 juegos</span></div>
         <div class="body">
-          <div class="sel"><span class="on">Recientes</span><span>Favoritos</span><span>A–Z</span><span>Sin jugar</span><span>En tu iPhone</span></div>
+          <div class="sel" style="-webkit-mask-image:none;mask-image:none"><span class="on">Recientes</span><span>Añadidos</span><span>Favoritos</span><span>A–Z</span><span>Sin jugar</span><span>En tu iPhone</span></div>
           <div class="strip" style="flex-wrap:wrap;gap:8px">
-            <div class="cv lm" style="width:78px"><i>Luigi's</i></div><div class="cv mk" style="width:78px"><i>MK8</i></div><div class="cv od" style="width:78px"><i>Odyssey</i></div>
-            <div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#9bd14a,#16300b)"><i>Zelda TotK</i><span class="lock">◷</span></div><div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#6fc2ff,#0b2238)"><i>Animal Crossing</i><span class="lock">◷</span></div><div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#c86bff,#200b33)"><i>Kirby</i><span class="lock">◷</span></div>
+            <div class="cv lm" style="width:78px"></div><div class="cv mk" style="width:78px"></div><div class="cv od" style="width:78px"></div>
+            <div class="cv" style="width:78px;background:linear-gradient(160deg,#ff6a2a,#2a0c02)"></div><div class="cv" style="width:78px;background:linear-gradient(160deg,#6fc2ff,#0b2238)"></div><div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#c86bff,#200b33)"><span class="lock">⊘</span></div>
           </div>
-          <p class="voice">3 listos para jugar · los demás llegan con la etapa de MeloNX</p>
         </div>
         <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
       </div></div>
-      <span class="cap"><b>Una consola.</b> Los órdenes de la TV, más «En tu iPhone». Lo que todavía no corre se ve apagado, con un relojito (E6).</span>
+      <span class="cap"><b>Duo abierto.</b> Caben todos los órdenes.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P3</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span></div>
+        <div class="body" style="align-content:center;justify-items:center;text-align:center;gap:10px">
+          <div class="ft" style="font-size:12px">Tus juegos viven en la TV</div>
+          <p class="fm" style="font-size:9px;max-width:22ch">Prende Orbital en la TV y conéctate a la misma wifi para ver tu catálogo.</p>
+          <div class="btn" style="width:70%">Buscar de nuevo</div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Sin catálogo.</b> La primera vez, o con la TV apagada y nada bajado. En el Duo, igual y centrado.</span>
     </div>
     <div class="shot">
       <span class="code">P4</span>
-      <div class="dev in"><div class="scr">
-        <div class="bar"><span class="t">Juegos</span></div>
-        <div class="body" style="align-content:center;justify-items:center;text-align:center;gap:10px">
-          <div class="ft" style="font-size:13px">Tus juegos viven en tu consola</div>
-          <p class="fm" style="font-size:9.5px;max-width:24ch">Prende la Legion Go y conéctate a la misma wifi para ver tu catálogo.</p>
-          <div class="btn" style="width:60%">Buscar de nuevo</div>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero" style="height:36%;background:linear-gradient(160deg,#c86bff,#200b33);opacity:.6"></div>
+        <div class="fbody" style="top:28%">
+          <div class="ft">Kirby Fighters 2</div>
+          <div class="fm">Switch · 2020 · 1.4 GB</div>
+          <div class="svst off">Todavía no corre en el iPhone</div>
+          <p class="fm">Abre, pero se cierra en el primer combate (ejemplo). Puedes intentarlo igual; tu partida de la TV no se toca.</p>
+          <div class="btn g">Intentar de todos modos</div>
         </div>
-        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
       </div></div>
-      <span class="cap"><b>Sin catálogo todavía.</b> La primera vez, o con la consola apagada y nada bajado.</span>
+      <span class="cap"><b>Si tocas uno apagado.</b> Te dice por qué y te deja probar (M1-A).</span>
     </div>
   </div>
 </section>
 
 <section class="row">
-  <h2>2 · La ficha del juego y bajarlo</h2>
-  <p>Todo lo que necesitas antes de jugar: dónde está el juego, tu partida y cuánto llevas.</p>
+  <h2>2 · La ficha y bajar el juego</h2>
+  <p class="tvline"><b>En la TV:</b> la ficha agrega «En tu iPhone» y el punto de la partida (pendiente en el registro).</p>
   <div class="shots">
     <div class="shot">
       <span class="code">P5</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero lm" style="height:36%"></div>
+        <div class="fbody" style="top:28%">
+          <div class="ft">Luigi's Mansion 3</div>
+          <div class="fm">Switch · 2019 · 7.1 GB</div>
+          <div class="btns"><div class="btn">Jugar</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="svst">Partida al día con la TV</div>
+          <div class="info">
+            <div><span>Dónde</span><b>En tu iPhone</b></div>
+            <div><span>Jugado</span><b>9 h 40 min</b></div>
+            <div><span>Cómo corre</span><b>Va bien</b></div>
+            <div><span>Mando</span><b>GameSir · conectado</b></div>
+            <div><span>Partidas</span><b>Ver todas ›</b></div>
+          </div>
+        </div>
+      </div></div>
+      <span class="cap"><b>iPhone, listo.</b> ⋯ abre los ajustes del juego y «Quitar del iPhone».</span>
+    </div>
+    <div class="shot">
       <div class="dev in"><div class="scr" style="display:block">
         <div class="hero lm"></div>
         <div class="fbody">
           <div class="ft">Luigi's Mansion 3</div>
           <div class="fm">Switch · 2019 · 7.1 GB</div>
-          <div class="btns"><div class="btn">Jugar</div><div class="circ"></div><div class="circ"></div></div>
-          <p class="voice">Tu partida de la TV, de hace 3 días, ya está aquí</p>
+          <div class="btns"><div class="btn">Jugar</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="svst">Partida al día con la TV</div>
           <div class="info">
             <div><span>Dónde</span><b>En tu iPhone</b></div>
             <div><span>Jugado</span><b>9 h 40 min</b></div>
-            <div><span>Velocidad</span><b>60 cuadros por segundo</b></div>
-            <div><span>Mando</span><b>Tu GameSir · conectado</b></div>
+            <div><span>Cómo corre</span><b>Va bien</b></div>
+            <div><span>Partidas</span><b>Ver todas ›</b></div>
           </div>
         </div>
       </div></div>
-      <span class="cap"><b>Listo para jugar.</b> «Jugar» lo abre. Los círculos son Favorito y los ajustes del juego.</span>
+      <span class="cap"><b>Duo abierto.</b></span>
     </div>
     <div class="shot">
-      <span class="code">P6</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero gw3"></div>
-        <div class="fbody">
-          <div class="ft">God of War III Remastered</div>
-          <div class="fm">PS4 · 2015 · 34.6 GB</div>
-          <div class="btns"><div class="btn">Bajar de tu consola</div><div class="circ"></div><div class="circ"></div></div>
-          <div class="info">
-            <div><span>Dónde</span><b>En tu consola</b></div>
-            <div><span>Necesita</span><b>35 GB libres · tienes 61</b></div>
-            <div><span>Jugado</span><b>5 h 42 min en la TV</b></div>
-          </div>
-          <p class="fm">Se baja solo en casa, por wifi. Puedes salir de aquí: te avisamos al terminar.</p>
-        </div>
-      </div></div>
-      <span class="cap"><b>Todavía en la consola.</b> Orbital te dice cuánto pesa y si cabe antes de empezar.</span>
-    </div>
-    <div class="shot">
-      <span class="code">P7</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero gw3"></div>
-        <div class="fbody">
-          <div class="ft">God of War III Remastered</div>
-          <div class="fm">Bajando de tu consola · 21.4 de 34.6 GB</div>
-          <div class="bigprog"><span></span></div>
-          <div class="btns" style="grid-template-columns:1fr"><div class="btn g">Pausar</div></div>
-          <p class="fm">Faltan unos 6 minutos. Si sales de casa se pausa y sigue al volver.</p>
-        </div>
-      </div></div>
-      <span class="cap"><b>Bajando.</b> Se puede pausar; si se corta, sigue donde iba.</span>
-    </div>
-    <div class="shot">
-      <span class="code">P8</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero gw3" style="height:100%;opacity:.35"></div>
-        <div class="sheet low">
-          <h4>Tu consola no responde</h4>
-          <p>Lo que ya bajó (21.4 GB) se queda. Prende la Legion Go y seguimos donde íbamos.</p>
-          <div class="btn">Intentar de nuevo</div>
-          <div class="btn g">Más tarde</div>
-        </div>
-      </div></div>
-      <span class="cap"><b>Si la consola se apaga o se duerme.</b> No se pierde lo bajado.</span>
-    </div>
-    <div class="shot">
-      <span class="code">P9</span>
       <div class="dev out"><div class="scr side">
         <div style="position:relative">
-          <div class="hero lm" style="height:36%"></div>
-          <div class="fbody" style="top:28%;padding:0 10px">
-            <div class="ft" style="font-size:13px">Luigi's Mansion 3</div>
-            <div class="fm">Switch · 7.1 GB · en tu iPhone</div>
+          <div class="hero lm" style="height:34%"></div>
+          <div class="fbody" style="top:26%;padding:0 10px">
+            <div class="ft" style="font-size:12px">Luigi's Mansion 3</div>
             <div class="btn">Jugar</div>
-            <p class="voice">Se ve mejor con el Duo abierto</p>
-            <div class="info"><div><span>Jugado</span><b>9 h 40 min</b></div></div>
+            <div class="svst">Partida al día con la TV</div>
+            <div class="info"><div><span>Jugado</span><b>9 h 40 min</b></div><div><span>Partidas</span><b>›</b></div></div>
           </div>
         </div>
         <div class="sidebar"><span></span><span></span><span class="on"></span><span></span><span></span></div>
       </div></div>
-      <span class="cap"><b>Cerrado.</b> Se puede jugar aquí, pero Orbital sugiere abrirlo.</span>
+      <span class="cap"><b>Duo cerrado.</b> Lo esencial; lo demás, al abrir.</span>
+    </div>
+  </div>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P6</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero gw3" style="height:36%"></div>
+        <div class="fbody" style="top:28%">
+          <div class="ft">God of War III Remastered</div>
+          <div class="fm">PS4 · 2015 · 34.6 GB</div>
+          <div class="btns"><div class="btn">Bajar de la TV</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="info">
+            <div><span>Dónde</span><b>En la TV</b></div>
+            <div><span>Necesita</span><b>35 GB libres · tienes 61</b></div>
+            <div><span>Jugado</span><b>5 h 42 min en la TV</b></div>
+          </div>
+          <p class="fm">Igual para cualquier juego. Se baja en casa, por wifi, aunque cierres Orbital; te avisa al terminar.</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Todavía en la TV.</b> Antes de empezar dice cuánto pesa y si cabe.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P7</span>
+      <div class="pair" style="grid-template-columns:repeat(3,auto)">
+        <div class="dev ip s"><div class="scr" style="display:block">
+          <div class="hero gw3" style="height:36%"></div>
+          <div class="fbody" style="top:28%;padding:0 8px">
+            <div class="ft" style="font-size:10px">God of War III</div>
+            <div class="fm">21.4 de 34.6 GB · faltan 6 min</div>
+            <div class="bigprog"><span></span></div>
+            <div class="btn g" style="font-size:8px">Pausar</div>
+            <div class="btn g" style="font-size:8px">Cancelar</div>
+          </div>
+        </div></div>
+        <div class="dev ip s"><div class="scr" style="display:block">
+          <div class="hero gw3" style="height:100%;opacity:.3"></div>
+          <div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">La TV no responde</h4><p style="font-size:7.5px">Lo que ya bajó se queda. Prende Orbital en la TV y sigue donde iba.</p><div class="btn" style="font-size:8px;padding:5px">Intentar de nuevo</div></div>
+        </div></div>
+        <div class="dev ip s"><div class="scr" style="display:block">
+          <div class="hero gw3" style="height:100%;opacity:.3"></div>
+          <div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">No cabe</h4><p style="font-size:7.5px">Faltan 9 GB. Quita juegos que ya no juegas; tus partidas se quedan en la TV.</p><div class="btn" style="font-size:8px;padding:5px">Ver qué quitar</div></div>
+        </div></div>
+      </div>
+      <span class="cap"><b>Bajando, si se corta y si no cabe.</b> «Ver qué quitar» lleva a P35.</span>
+    </div>
+  </div>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P8</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero od" style="height:36%"></div>
+        <div class="fbody" style="top:28%">
+          <div class="ft">Super Mario Odyssey</div>
+          <div class="fm">Switch · 2017 · 5.7 GB</div>
+          <div class="btns"><div class="btn">Jugar</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="info">
+            <div><span>Cómo corre</span><b>Con MeloNX · Con fallas</b></div>
+          </div>
+          <p class="voice">Tu copia es la 1.3.0. Con la 1.4.1 correría preparado en la Mac: más rápido y más fresco.</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si tu versión no es la que pide nxnative (ejemplo).</b> Corre igual, con MeloNX, y Orbital te dice cómo mejorarlo.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P9</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero" style="height:36%;background:linear-gradient(160deg,#ff6a2a,#2a0c02)"></div>
+        <div class="fbody" style="top:28%">
+          <div class="ft">Splatoon 3</div>
+          <div class="fm">Switch · 2022 · 6.2 GB</div>
+          <div class="btns"><div class="btn">Jugar</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="info">
+            <div><span>Cómo corre</span><b>Con MeloNX · Con fallas</b></div>
+            <div><span>Qué se sabe</span><b>Baja de velocidad en partidas grandes</b></div>
+            <div><span>Primera vez</span><b>Pide el modo rápido</b></div>
+          </div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Un juego que nxnative no tiene.</b> Corre con MeloNX, con su etiqueta: Va bien, Con fallas o No corre todavía (M1-A).</span>
+    </div>
+    <div class="shot">
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero bo2"></div>
+        <div class="fbody">
+          <div class="ft">Call of Duty: Black Ops II</div>
+          <div class="fm">Xbox 360 · 2012</div>
+          <div class="btns"><div class="btn">Bajar de la TV</div><div class="circ">♡</div><div class="circ">⋯</div></div>
+          <div class="info">
+            <div><span>Cómo corre</span><b>Va bien (un reporte en iPhone)</b></div>
+            <div><span>Qué se sabe</span><b>A veces hay que abrirlo varias veces</b></div>
+            <div><span>Jugado</span><b>3 h 30 min en la TV</b></div>
+          </div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Duo abierto, Xbox 360 (dato real).</b> «Cómo corre» dice de dónde sale.</span>
     </div>
   </div>
 </section>
 
 <section class="row">
   <h2>3 · La primera vez</h2>
-  <p>Solo para lo que pide el modo rápido de iOS: GameCube, PS2, Xbox 360, Wii U, Xbox, MeloNX y también God of War. Tus 3 juegos de Switch no lo piden.</p>
+  <p>Solo para lo que pide el modo rápido de iOS: GameCube y Wii, Xbox, Xbox 360, God of War y los juegos de Switch con MeloNX. Portátiles y Switch con nxnative no lo piden.</p>
+  <p class="tvline"><b>En la TV:</b> no aplica.</p>
   <div class="shots">
     <div class="shot">
       <span class="code">P10</span>
-      <div class="dev in"><div class="scr">
+      <div class="dev ip"><div class="scr">
         <div class="bar"><span class="t">Antes de tu primer juego</span></div>
         <div class="body">
-          <p class="fm" style="font-size:9.5px">Una sola vez. Orbital revisa cada paso por ti.</p>
+          <p class="fm" style="font-size:9px">Algunos juegos necesitan el modo rápido de iOS para ir a buena velocidad. Se prepara una vez; luego Orbital lo prende solo cada vez que abres un juego.</p>
           <div class="steps">
-            <div class="done"><span><b>Prender el modo desarrollador</b><br>Ajustes › Privacidad y seguridad</span></div>
-            <div class="done"><span><b>Conectar Orbital con tu iPhone</b><br>Lo hace Orbital; tú solo aceptas</span></div>
-            <div><span><b>Prender la conexión local</b><br>Una app gratis que queda prendida</span></div>
+            <div class="done"><span><b>Modo desarrollador</b><br>Orbital te lleva a Ajustes y revisa que esté prendido (pide reiniciar)</span></div>
+            <div class="done"><span><b>Conectar Orbital con tu iPhone</b><br>Una vez, con el cable a la Mac</span></div>
+            <div><span><b>Conexión local</b><br>Una app gratis que se queda prendida; sin ella, el modo rápido no prende</span></div>
           </div>
           <div class="btn" style="margin-top:6px">Seguir</div>
-          <p class="fm">Después, cada vez que juegas, se enciende solo.</p>
         </div>
         <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
       </div></div>
-      <span class="cap"><b>Asistente.</b> Tres pasos con su palomita.</span>
+      <span class="cap"><b>iPhone.</b> Cada paso con su palomita; si uno falla, dice qué hacer. En el Duo abierto, igual.</span>
     </div>
     <div class="shot">
       <span class="code">P11</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero ww" style="height:100%;opacity:.35"></div>
-        <div class="sheet low">
-          <h4>Falta la conexión local</h4>
-          <p>Wind Waker necesita que esté prendida para ir a buena velocidad.</p>
-          <div class="btn">Prenderla</div>
-          <div class="btn g">Ahora no</div>
-        </div>
-      </div></div>
+      <div class="pair" style="grid-template-columns:repeat(2,auto)">
+        <div class="dev ip s"><div class="scr" style="display:block">
+          <div class="hero ww" style="height:100%;opacity:.3"></div>
+          <div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">Falta la conexión local</h4><p style="font-size:7.5px">Sin ella, Wind Waker abre pero lento.</p><div class="btn" style="font-size:8px;padding:5px">Prenderla</div><div class="btn g" style="font-size:8px;padding:5px">Jugar lento</div></div>
+        </div></div>
+        <div class="dev ip s"><div class="scr" style="display:block">
+          <div class="hero gw3" style="height:100%;opacity:.3"></div>
+          <div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">El modo rápido no prendió</h4><p style="font-size:7.5px">God of War no abre sin él. Puede ser una actualización de iOS; revisa Ajustes › Juegos.</p><div class="btn" style="font-size:8px;padding:5px">Intentar de nuevo</div></div>
+        </div></div>
+      </div>
       <span class="cap"><b>Si falta algo.</b> Te avisa antes de abrir el juego, no después de que truene.</span>
     </div>
   </div>
 </section>
 
 <section class="row">
-  <h2>4 · Jugando, en las posiciones del Duo</h2>
-  <p>El Duo es casi una consola portátil. Lo aprovechamos según cómo lo tengas.</p>
+  <h2>4 · Abrir y jugar en el iPhone normal</h2>
+  <p>De lado para las consolas de TV; parado para las portátiles, como una Game Boy.</p>
+  <p class="tvline"><b>En la TV:</b> no cambia; se juega con su mando.</p>
   <div class="shots">
     <div class="shot">
       <span class="code">P12</span>
-      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div></div>
-      <span class="cap"><b>Abierto, de lado, con tu GameSir.</b> El juego llena la pantalla y nada lo tapa.</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero lm" style="height:100%;opacity:.35"></div>
+        <div class="center"><div class="spin"></div><div class="t">Luigi's Mansion 3</div><p>Trayendo tu partida de la TV…</p></div>
+      </div></div>
+      <span class="cap"><b>Al tocar «Jugar».</b> Un momento con la portada mientras trae tu partida y abre el juego. Igual en el Duo.</span>
     </div>
     <div class="shot">
       <span class="code">P13</span>
-      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div>
-        <div class="ov"><div class="dpad"></div><div class="abxy"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><span class="menu">☰</span></div>
-      </div>
-      <span class="cap"><b>Abierto, sin mando.</b> Botones encima del juego, medio transparentes; arriba a la derecha, el menú de Orbital.</span>
+      <div class="dev ipl"><div class="lbx"><div class="g169 lm" style="width:auto;height:100%">Luigi's Mansion 3</div></div></div>
+      <span class="cap"><b>De lado, con tu GameSir.</b> El juego a todo lo alto, con franjas negras a los lados.</span>
     </div>
     <div class="shot">
       <span class="code">P14</span>
-      <div class="dev half">
-        <div class="top"><div class="lbx"><div class="g169 mk">Mario Kart 8</div></div></div>
-        <div class="hinge"></div>
-        <div class="bot"><div class="pad"><div class="dpad"></div><div class="abxy"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="shoulders"><span>L · ZL</span><span>R · ZR</span></div><div class="pmid"><span>−</span><span>☰</span><span>+</span></div></div></div>
+      <div class="dev ipl"><div class="lbx"><div class="g169 bo2" style="width:auto;height:100%">Black Ops II</div></div>
+        <div class="ov"><span class="trig" style="left:30px">LT · LB</span><span class="trig" style="right:44px">RB · RT</span><div class="stick" style="left:30px;top:52px"></div><div class="dpad" style="left:70px;bottom:6px"></div><div class="abxy" style="right:26px;top:40px"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="stick" style="right:96px;bottom:12px"></div><span class="menu">☰</span></div>
       </div>
-      <span class="cap"><b>Medio abierto, sin mando.</b> El juego arriba y los botones abajo, como una portátil: tus dedos no tapan nada.</span>
+      <span class="cap"><b>De lado, sin mando (E2-A).</b> Botones medio transparentes con palancas y gatillos, según la consola; se mueven y se aclaran en P36.</span>
     </div>
+  </div>
+  <div class="shots">
     <div class="shot">
       <span class="code">P15</span>
-      <div class="dev half">
-        <div class="top"><div class="lbx"><div class="g169" style="background:linear-gradient(160deg,#2a7fd6,#0b2238)">Pantalla de arriba</div></div></div>
-        <div class="hinge"></div>
-        <div class="bot"><div class="ds2"><div>Pantalla táctil (DS) · control de Wii U</div></div></div>
-      </div>
-      <span class="cap"><b>Medio abierto, DS y Wii U.</b> Las consolas de dos pantallas usan las dos mitades.</span>
+      <div class="dev ip"><div class="vcol">
+        <div class="gsc gba">Juego de GBA</div>
+        <div style="height:6px"></div>
+        <div class="padbox"><div class="pad"><div class="dpad"></div><div class="abxy"><span class="a">A</span><span class="b">B</span></div><div class="shoulders"><span>L</span><span>R</span></div><div class="pmid"><span>Select</span><span>☰</span><span>Start</span></div></div></div>
+      </div></div>
+      <span class="cap"><b>Parado, GBA.</b> Juego arriba y botones abajo. Con mando, el juego crece.</span>
     </div>
     <div class="shot">
       <span class="code">P16</span>
-      <div class="dev out"><div class="lbx"><div class="g169 od" style="font-size:11px">Odyssey</div></div><div class="toast">Se ve mejor con el Duo abierto</div></div>
-      <span class="cap"><b>Cerrado.</b> Se puede, pero chiquito. Si cierras el Duo jugando, el juego pasa a esta pantalla sin pararse.</span>
+      <div class="dev ip"><div class="vcol" style="grid-template-rows:auto auto 1fr">
+        <div class="ds dsa">Pantalla de arriba</div>
+        <div class="ds dsa" style="opacity:.85">Pantalla táctil</div>
+        <div class="padbox"><div class="pad" style="padding:4px"><div class="dpad" style="transform:scale(.7)"></div><div class="abxy" style="transform:scale(.7)"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="shoulders" style="top:2px"><span>L</span><span>R</span></div><div class="pmid" style="bottom:3px"><span>Select</span><span>☰</span><span>Start</span></div></div></div>
+      </div></div>
+      <span class="cap"><b>Parado, DS.</b> Las dos pantallas una sobre otra; la de abajo se toca.</span>
     </div>
   </div>
 </section>
 
 <section class="row">
-  <h2>5 · Pausa, salir y tu partida</h2>
-  <p>El menú es de Orbital, igual en todas las consolas: mantén el botón de inicio de tu GameSir, o toca ☰ sin mando.</p>
+  <h2>5 · Jugando en el Duo</h2>
+  <p>Ya aprobado: medio abierto como portátil (E1-A), botones encima sin mando (E2-A) y cerrado con aviso (E5-A). Si doblas o cierras el Duo jugando, el juego se acomoda sin pararse.</p>
+  <p class="tvline"><b>En la TV:</b> no aplica.</p>
   <div class="shots">
     <div class="shot">
       <span class="code">P17</span>
-      <div class="dev land"><div class="lbx"><div class="g169 gw3">God of War III</div></div><div class="dim"></div>
-        <div class="sheet" style="width:50%">
-          <h4>God of War III · en pausa</h4>
-          <div class="r">Seguir</div>
-          <div class="r">Guardar y salir <small>la partida va a tu consola</small></div>
-          <div class="r">Guardado rápido <small>solo en este iPhone</small></div>
-          <div class="r">Ajustes del juego</div>
-          <div class="r">Botones en pantalla <small>apagados</small></div>
-        </div>
-      </div>
-      <span class="cap"><b>Pausa.</b> Deja claro qué viaja a la TV y qué no.</span>
+      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div></div>
+      <span class="cap"><b>Abierto de lado, con mando.</b></span>
     </div>
     <div class="shot">
       <span class="code">P18</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero lm"></div>
-        <div class="toast">Partida guardada · ya está en tu consola</div>
-        <div class="fbody">
-          <div class="ft">Luigi's Mansion 3</div>
-          <div class="fm">Switch · 7.1 GB</div>
-          <div class="btns"><div class="btn">Seguir jugando</div><div class="circ"></div><div class="circ"></div></div>
-          <div class="info"><div><span>Jugado</span><b>10 h 25 min</b></div><div><span>Hoy</span><b>45 min</b></div></div>
-        </div>
-      </div></div>
-      <span class="cap"><b>Al salir.</b> Regresas a la ficha. Si no estás en casa, dice «Se manda a tu consola al volver».</span>
+      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div>
+        <div class="ov"><span class="trig" style="left:22px">L · ZL</span><span class="trig" style="right:40px">R · ZR</span><div class="stick" style="left:22px;top:60px"></div><div class="dpad" style="left:60px;bottom:8px"></div><div class="abxy" style="right:20px;top:48px"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="stick" style="right:88px;bottom:14px"></div><span class="menu">☰</span></div>
+      </div>
+      <span class="cap"><b>Abierto de lado, sin mando.</b></span>
     </div>
+  </div>
+  <div class="shots">
     <div class="shot">
       <span class="code">P19</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero ww" style="height:100%;opacity:.35"></div>
-        <div class="sheet low">
-          <h4>Jugaste en los dos lados</h4>
-          <p>Wind Waker tiene una partida en la TV y otra en tu iPhone.</p>
-          <div class="r">En la TV <small>ayer 22:10 · 14 h</small></div>
-          <div class="r">En tu iPhone <small>hoy 8:40 · 13 h 20 min</small></div>
-          <p>La que no elijas se guarda aparte, por si acaso.</p>
-        </div>
-      </div></div>
-      <span class="cap"><b>Si las dos cambiaron.</b> Tú eliges y nada se pierde.</span>
+      <div class="dev half">
+        <div class="top"><div class="lbx"><div class="g169 mk">Mario Kart 8</div></div></div>
+        <div class="hinge"></div>
+        <div class="bot"><div class="pad"><div class="dpad"></div><div class="abxy"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="shoulders"><span>L · ZL</span><span>R · ZR</span></div><div class="stick" style="left:42%;top:38%;transform:scale(.8)"></div><div class="pmid"><span>−</span><span>☰</span><span>+</span></div></div></div>
+      </div>
+      <span class="cap"><b>Medio abierto, sin mando.</b> Juego arriba, botones abajo. Con mando, la mitad de abajo queda en negro. GBA se ve igual.</span>
     </div>
     <div class="shot">
       <span class="code">P20</span>
-      <div class="dev in"><div class="scr" style="display:block">
-        <div class="hero halo" style="height:100%;opacity:.35"></div>
-        <div class="sheet low">
-          <h4>Halo 3 se cerró</h4>
-          <p>Tu última partida guardada (hace 12 min) está a salvo.</p>
-          <div class="btn">Abrir otra vez</div>
-          <div class="btn g">Qué puedo probar</div>
+      <div class="dev half">
+        <div class="top"><div class="lbx"><div class="g169 dsa" style="aspect-ratio:4/3;width:auto;height:100%">Pantalla de arriba</div></div></div>
+        <div class="hinge"></div>
+        <div class="bot" style="background:#000"><div class="ds2"><div style="width:58%">Pantalla táctil</div></div>
+          <div class="ov"><div class="dpad" style="left:-4px;bottom:30%;transform:scale(.55)"></div><div class="abxy" style="right:-6px;bottom:28%;transform:scale(.55)"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div>
         </div>
-      </div></div>
-      <span class="cap"><b>Si un juego truena.</b> Orbital sigue abierta, te dice qué se salvó y cómo intentarlo.</span>
+      </div>
+      <span class="cap"><b>Medio abierto, DS.</b> Cada pantalla en su mitad, como un DS de verdad; sin mando, los botones a los lados de abajo. Abierto parado, igual.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P21</span>
+      <div class="dev out"><div class="lbx"><div class="g169 od" style="font-size:10px">Odyssey</div></div>
+        <div class="ov"><div class="dpad" style="left:2px;bottom:2px;transform:scale(.55)"></div><div class="abxy" style="right:0;bottom:0;transform:scale(.55)"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><span class="menu">☰</span></div>
+        <div class="toast" style="top:10px">Se ve mejor con el Duo abierto</div></div>
+      <span class="cap"><b>Cerrado (E5-A).</b> Se puede, con el aviso una vez por partida. Sin mando, botones encima.</span>
     </div>
   </div>
 </section>
 
 <section class="row">
-  <h2>6 · Ajustes › Juegos</h2>
+  <h2>6 · Pausa, salir y si algo truena</h2>
+  <p>El menú es de Orbital, igual en todas las consolas: botón de inicio de tu GameSir, ☰ en la pantalla o toque con dos dedos.</p>
+  <p class="tvline"><b>En la TV:</b> la pausa de la TV ya existe; los textos «va a la TV» y «solo este iPhone» se alinean con ella.</p>
   <div class="shots">
     <div class="shot">
-      <span class="code">P21</span>
-      <div class="dev in"><div class="scr">
-        <div class="bar"><span class="t">Juegos</span></div>
-        <div class="body">
-          <div class="info" style="font-size:9px">
-            <div><span>Mando</span><b>GameSir · conectado</b></div>
-            <div><span>Modo rápido</span><b>Listo</b></div>
-            <div><span>En tu iPhone</span><b>48 GB · 9 juegos</b></div>
-            <div><span>Partidas</span><b>Al día con tu consola</b></div>
+      <span class="code">P22</span>
+      <div class="dev ipl"><div class="lbx"><div class="g169 gw3" style="width:auto;height:100%">God of War III</div></div><div class="dim"></div>
+        <div class="sheet" style="width:46%">
+          <h4>God of War III · en pausa</h4>
+          <div class="r">Seguir</div>
+          <div class="r">Guardar y salir <small>va a la TV</small></div>
+          <div class="r">Guardado rápido <small>solo este iPhone</small></div>
+          <div class="r">Ajustes del juego</div>
+        </div>
+      </div>
+      <span class="cap"><b>iPhone.</b> Deja claro qué viaja a la TV y qué no.</span>
+    </div>
+    <div class="shot">
+      <div class="dev half">
+        <div class="top"><div class="lbx"><div class="g169 mk" style="opacity:.4">Mario Kart 8</div></div></div>
+        <div class="hinge"></div>
+        <div class="bot" style="background:var(--o-bg)"><div class="sheet" style="width:86%"><h4>Mario Kart 8 · en pausa</h4><div class="r">Seguir</div><div class="r">Guardar y salir <small>va a la TV</small></div><div class="r">Guardado rápido <small>solo este iPhone</small></div></div></div>
+      </div>
+      <span class="cap"><b>Duo medio abierto.</b> La pausa en la mitad de abajo; el juego se queda visible arriba. Abierto o cerrado, centrada como en el iPhone.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P23</span>
+      <div class="pair" style="grid-template-columns:repeat(3,auto)">
+        <div class="dev ip s"><div class="scr" style="display:block"><div class="hero lm" style="height:36%"></div><div class="toast" style="top:26px;font-size:6.5px">Partida guardada · ya está en la TV</div></div></div>
+        <div class="dev ip s"><div class="scr" style="display:block"><div class="hero lm" style="height:36%"></div><div class="toast" style="top:26px;font-size:6.5px">Partida guardada · va a la TV al volver</div></div></div>
+        <div class="dev ip s"><div class="scr" style="display:block"><div class="hero lm" style="height:36%"></div><div class="toast" style="top:26px;font-size:6.5px">Guardada aquí · no se pudo mandar</div></div></div>
+      </div>
+      <span class="cap"><b>Al salir (E3-A).</b> Regresas a la ficha con uno de tres avisos: mandada, por mandar (fuera de casa) o con error (se reintenta solo).</span>
+    </div>
+    <div class="shot">
+      <span class="code">P24</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero bo2" style="height:100%;opacity:.3"></div>
+        <div class="sheet low">
+          <h4>Black Ops II se cerró</h4>
+          <p>Tu última partida guardada es de hace 12 min.</p>
+          <div class="btn">Abrir otra vez</div>
+          <div class="btn g">Abrir sin mis ajustes del juego</div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si un juego truena.</b> Te regresa a Orbital y te dice cuál es tu última partida guardada.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>7 · Tus partidas con la TV</h2>
+  <p>Juegas en la TV, tomas el iPhone y sigues donde ibas, y al revés. Al abrir un juego, Orbital trae la partida de la TV; al guardar y salir, la manda (S1-A). Guarda las anteriores por si acaso y solo pregunta cuando las dos cambiaron (E4-A).</p>
+  <p class="tvline"><b>En la TV:</b> pendiente. La TV necesita lo mismo: la lista «Partidas» de cada juego, el aviso cuando el iPhone tiene una partida que todavía no llega y «se está jugando en tu iPhone».</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P25</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Cómo va tu partida</span></div>
+        <div class="body" style="gap:12px">
+          <div class="list">
+            <div class="h">En la ficha sale uno de estos</div>
+            <div class="r"><span class="svst">Partida al día con la TV</span></div>
+            <div class="r"><span class="svst wait">Va a la TV cuando vuelvas a casa</span></div>
+            <div class="r"><span class="svst bad">No se pudo mandar · se reintenta solo</span></div>
+            <div class="r"><span class="svst off">Esta consola todavía no comparte partidas</span></div>
           </div>
-          <div class="sec" style="margin-top:6px">Consolas</div>
-          <div class="info" style="font-size:9px">
-            <div><span>Switch</span><b>3 juegos listos</b></div><div><span>God of War III</span><b>Listo</b></div><div><span>GameCube y Wii</span><b>Listo</b></div><div><span>PS2</span><b>Pronto</b></div>
+          <p class="fm">El último es para Xbox mientras no resolvamos sus partidas (están dentro de un disco virtual).</p>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Los estados.</b> Un punto y una frase; nada que configurar.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P26</span>
+      <div class="pair" style="grid-template-columns:repeat(2,auto)">
+        <div class="dev ip s"><div class="scr" style="display:block"><div class="hero ww" style="height:100%;opacity:.3"></div><div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">No vemos la TV</h4><p style="font-size:7.5px">Sigues con la partida de este iPhone (hoy 8:40). Al volver a casa, la mandamos.</p><div class="btn" style="font-size:8px;padding:5px">Jugar</div></div></div></div>
+        <div class="dev ip s"><div class="scr" style="display:block"><div class="hero ww" style="height:100%;opacity:.3"></div><div class="sheet low" style="padding:8px;gap:5px"><h4 style="font-size:9px">Wind Waker está abierto en la TV</h4><p style="font-size:7.5px">Ciérralo allá para traer tu partida, o juega aquí con la de este iPhone.</p><div class="btn" style="font-size:8px;padding:5px">Ya lo cerré</div><div class="btn g" style="font-size:8px;padding:5px">Jugar con la de aquí</div></div></div></div>
+      </div>
+      <span class="cap"><b>Fuera de casa, o la TV lo está jugando.</b> Nunca se queda trabado: siempre puedes jugar con la de aquí.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P27</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Partidas</span><span class="s">Wind Waker</span></div>
+        <div class="body">
+          <div class="list">
+            <div class="h">Ahora</div>
+            <div class="r"><span>En tu iPhone</span><small>hoy 8:40 · 13 h 20 min</small></div>
+            <div class="r"><span>En la TV</span><small>igual</small></div>
+            <div class="h">Anteriores</div>
+            <div class="r"><span>Ayer 22:10</span><small>TV · 12 h 50 min</small></div>
+            <div class="r"><span>Lunes 19:30</span><small>iPhone · 11 h 5 min</small></div>
+            <div class="r"><span>Sábado 13:02</span><small>TV · 9 h 40 min</small></div>
+            <div class="h">Guardados rápidos · solo este iPhone</div>
+            <div class="r"><span>Hoy 8:35</span><small>antes del jefe</small></div>
           </div>
         </div>
         <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
       </div></div>
-      <span class="cap"><b>Todo en un lugar.</b> Si algo falla (el mando, el modo rápido), aquí dice qué es y cómo arreglarlo.</span>
+      <span class="cap"><b>Partidas de un juego (iPhone).</b> Tocas una anterior para recuperarla.</span>
+    </div>
+    <div class="shot">
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Partidas</span><span class="s">Wind Waker</span></div>
+        <div class="body" style="grid-template-columns:1fr 1fr;gap:10px">
+          <div class="list">
+            <div class="h">Ahora</div>
+            <div class="r"><span>En tu iPhone</span><small>hoy 8:40</small></div>
+            <div class="r"><span>En la TV</span><small>igual</small></div>
+            <div class="h">Guardados rápidos</div>
+            <div class="r"><span>Hoy 8:35</span><small>antes del jefe</small></div>
+          </div>
+          <div class="list">
+            <div class="h">Anteriores</div>
+            <div class="r"><span>Ayer 22:10</span><small>TV</small></div>
+            <div class="r"><span>Lunes 19:30</span><small>iPhone</small></div>
+            <div class="r"><span>Sábado 13:02</span><small>TV</small></div>
+          </div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Duo abierto.</b> Ahora a la izquierda, anteriores a la derecha.</span>
+    </div>
+  </div>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P28</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero ww" style="height:100%;opacity:.3"></div>
+        <div class="sheet low">
+          <h4>Jugaste en los dos lados</h4>
+          <p>Desde la última vez que se juntaron, las dos avanzaron.</p>
+          <div class="r">En la TV <small>13 h 50 min jugadas · hoy 7:50</small></div>
+          <div class="r">En tu iPhone <small>13 h 20 min jugadas · hoy 8:40</small></div>
+          <p>La que no elijas queda en «Anteriores».</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si las dos cambiaron (E4-A).</b> Lo primero es cuánto jugaste, no la hora, porque los relojes pueden no coincidir.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P29</span>
+      <div class="dev ip"><div class="scr" style="display:block">
+        <div class="hero ww" style="height:100%;opacity:.3"></div>
+        <div class="sheet low">
+          <h4>¿Recuperar la de ayer 22:10?</h4>
+          <p>Seguirás desde ahí, aquí y en la TV. La de ahora pasa a «Anteriores», así que puedes regresar.</p>
+          <div class="btn">Recuperar</div>
+          <div class="btn g">Cancelar</div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Recuperar una anterior.</b> Siempre se puede deshacer.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>8 · Ajustes › Juegos</h2>
+  <p class="tvline"><b>En la TV:</b> pendiente ver «En tu iPhone» de cada juego.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P30</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span></div>
+        <div class="body">
+          <div class="list">
+            <div class="r"><span>Mando</span><small>GameSir · conectado ›</small></div>
+            <div class="r"><span>Botones en pantalla</span><small>›</small></div>
+            <div class="r"><span>Modo rápido</span><small>Listo ›</small></div>
+            <div class="r"><span>En tu iPhone</span><small>48 GB · 9 juegos ›</small></div>
+            <div class="r"><span>Partidas</span><small>Al día · ocupan 310 MB ›</small></div>
+            <div class="r"><span>La TV</span><small>Sala · conectada ›</small></div>
+          </div>
+          <div class="sec" style="margin-top:6px">Consolas</div>
+          <div class="info" style="font-size:8.5px">
+            <div><span>Portátiles</span><b>Lista</b></div><div><span>Switch</span><b>Lista</b></div><div><span>GameCube y Wii</span><b>Lista</b></div><div><span>Xbox</span><b>Lista</b></div><div><span>Xbox 360</span><b>Lista</b></div><div><span>God of War III</span><b>Listo</b></div>
+          </div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>iPhone.</b> Cada renglón abre su detalle; si algo falla, ahí dice qué y cómo arreglarlo. En el Duo abierto, el detalle sale a la derecha.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P31</span>
+      <div class="dev ip"><div class="scr">
+        <div class="bar"><span class="t">En tu iPhone</span><span class="s">48 GB</span></div>
+        <div class="body">
+          <div class="list">
+            <div class="r"><span>God of War III</span><small>34.6 GB · hace 2 días ›</small></div>
+            <div class="r"><span>Luigi's Mansion 3</span><small>7.1 GB · hoy ›</small></div>
+            <div class="r"><span>Black Ops II</span><small>3.9 GB · nunca ›</small></div>
+            <div class="r"><span>Wind Waker</span><small>1.4 GB · hoy ›</small></div>
+            <div class="r"><span>5 portátiles</span><small>0.2 GB ›</small></div>
+          </div>
+          <p class="fm">Al quitar un juego, tus partidas se quedan en la TV y vuelven si lo bajas otra vez.</p>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Lo que ocupa espacio.</b> Del más pesado al más ligero, con la última vez que lo jugaste.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P32</span>
+      <div class="dev ipl"><div class="lbx"><div class="g169 lm" style="width:auto;height:100%;opacity:.5">Vista previa</div></div>
+        <div class="ov" style="opacity:1"><div class="dpad" style="left:30px;bottom:14px;outline:1px dashed var(--o-sec)"></div><div class="abxy" style="right:28px;bottom:12px"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div>
+        <div class="sheet" style="width:40%;top:40%"><h4>Botones en pantalla</h4><div class="r">Transparencia <small>45%</small></div><div class="r">Tamaño <small>Normal</small></div><div class="r">Arrastra un botón para moverlo</div></div>
+      </div>
+      <span class="cap"><b>Acomodar los botones.</b> Por consola; también se llega desde la pausa.</span>
     </div>
   </div>
 </section>
 
 <section>
-  <h2>Lo que decidiste</h2>
-  <p class="why">27 nov: E1-A, E2-A, E3-A, E4-A, E5-A y E6-A. Sincronizar las partidas con la TV se diseña aparte, con sus pantallas, antes de construirlo.</p>
+  <h2>Lo que falta decidir</h2>
+  <p class="src">Ya decidiste E1-A a E6-A.</p>
 
   <div class="dec">
-    <h3>E1 · La medio abierta</h3>
+    <h3>X1 · Xbox 360</h3>
     <div class="minis">
-      <div class="mini2"><div class="dev half s"><div class="top"><div class="lbx"><div class="g169 mk" style="font-size:9px">Juego</div></div></div><div class="hinge"></div><div class="bot"><div class="pad" style="padding:4px"><div class="dpad" style="transform:scale(.6)"></div><div class="abxy" style="transform:scale(.6)"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div></div></div><span class="code">E1-A</span></div>
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="lbx" style="background:linear-gradient(160deg,#e60012,#2e0306 80%)"><div style="font-weight:800;color:#fff;font-size:9px">Juego en las dos mitades</div></div><div style="position:absolute;left:0;right:0;top:50%;height:3px;background:var(--o-frame)"></div></div><span class="code">E1-B</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:10px">Juegos</span></div><div class="body"><div class="cons" style="grid-template-columns:1fr 1fr"><div class="con"><b>Switch</b></div><div class="con"><b>GameCube</b></div><div class="con"><b>Xbox</b></div><div class="con"><b>Xbox 360</b></div></div></div></div></div><span class="code">X1-A</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:10px">Juegos</span></div><div class="body"><div class="cons" style="grid-template-columns:1fr 1fr"><div class="con"><b>Switch</b></div><div class="con"><b>GameCube</b></div><div class="con"><b>Xbox</b></div></div></div></div></div><span class="code">X1-B</span></div>
     </div>
     <div class="choices">
-      <div class="choice rec"><span class="code">E1-A</span><b>Juego arriba, botones abajo</b>Como una portátil. Con el mando, abajo queda en negro; en DS y Wii U, la segunda pantalla.</div>
-      <div class="choice"><span class="code">E1-B</span><b>El juego en las dos mitades</b>Más grande, pero el doblez cruza la imagen y los botones van encima.</div>
+      <div class="choice rec"><span class="code">X1-A</span><b>Entra ya</b>Tus dos juegos tienen reportes de que van bien; se confirma en tu Duo el día de prueba. Los demás, con su «Cómo corre».</div>
+      <div class="choice"><span class="code">X1-B</span><b>Esperar unos meses</b>Que XeniOS madure. Mientras, Xbox 360 no aparece en el iPhone.</div>
     </div>
-    <p class="recline">Recomiendo <span>E1-A</span>. Es lo que el Duo hace mejor que cualquier iPhone, y nxnative ya lo hace así.</p>
+    <p class="recline">Recomiendo <span>X1-A</span>: si un día se rompe, solo afecta a esa consola.</p>
   </div>
 
   <div class="dec">
-    <h3>E2 · Sin mando, con el Duo abierto de lado</h3>
+    <h3>M1 · Los juegos de Switch que corren con MeloNX</h3>
     <div class="minis">
-      <div class="mini2"><div class="dev s land"><div class="lbx"><div class="g169 lm" style="font-size:9px">Juego</div></div><div class="ov"><div class="dpad" style="transform:scale(.5);left:0;bottom:0"></div><div class="abxy" style="transform:scale(.5);right:0;bottom:-4px"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div></div><span class="code">E2-A</span></div>
-      <div class="mini2"><div class="dev s land"><div class="lbx"><div class="g169 lm" style="font-size:9px;opacity:.35">Juego</div></div><div class="sheet" style="width:70%;padding:6px"><p style="font-size:7px">Conecta tu mando o dobla el Duo a la mitad</p></div></div><span class="code">E2-B</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr" style="display:block"><div class="hero" style="height:36%;background:linear-gradient(160deg,#ff6a2a,#2a0c02)"></div><div class="fbody" style="top:28%;padding:0 8px"><div class="ft" style="font-size:10px">Splatoon 3</div><div class="btn" style="font-size:7px;padding:4px">Jugar</div><div class="info" style="font-size:7px"><div><span>Cómo corre</span><b>Con fallas</b></div></div></div></div></div><span class="code">M1-A</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr" style="display:block"><div class="hero" style="height:36%;background:linear-gradient(160deg,#ff6a2a,#2a0c02);opacity:.5"></div><div class="fbody" style="top:28%;padding:0 8px"><div class="ft" style="font-size:10px">Splatoon 3</div><div class="svst off" style="font-size:7px">Pronto</div></div></div></div><span class="code">M1-B</span></div>
     </div>
     <div class="choices">
-      <div class="choice rec"><span class="code">E2-A</span><b>Botones encima del juego</b>Medio transparentes. Se pueden mover y hacer más claros desde la pausa.</div>
-      <div class="choice"><span class="code">E2-B</span><b>Pedir mando o medio abierto</b>Nada tapa el juego, pero sin mando no se juega de lado.</div>
+      <div class="choice rec"><span class="code">M1-A</span><b>Todos se pueden abrir, con su etiqueta</b>Va bien, Con fallas o No corre todavía. Los de «No corre» salen apagados (E6-A), pero puedes intentarlo (P4).</div>
+      <div class="choice"><span class="code">M1-B</span><b>Solo los que yo probé</b>Los demás dicen «Pronto» hasta que los pruebe uno por uno.</div>
     </div>
-    <p class="recline">Recomiendo <span>E2-A</span>: que siempre se pueda jugar, aunque olvides el mando.</p>
+    <p class="recline">Recomiendo <span>M1-A</span>: son demasiados para probarlos todos, y la etiqueta te avisa antes.</p>
   </div>
 
   <div class="dec">
-    <h3>E3 · Al salir de un juego</h3>
+    <h3>S1 · Cuándo viaja la partida a la TV</h3>
     <div class="minis">
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="hero lm"></div><div class="toast" style="font-size:6px">Partida guardada</div><div class="fbody" style="padding:0 8px"><div class="ft" style="font-size:9px">Luigi's Mansion 3</div><div class="btn" style="font-size:7px;padding:4px">Seguir jugando</div></div></div></div><span class="code">E3-A</span></div>
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="bar"><span class="t" style="font-size:10px">Juegos</span></div><div class="body"><div class="strip"><div class="cv lm" style="width:34px"></div><div class="cv mk" style="width:34px"></div><div class="cv od" style="width:34px"></div></div></div><div class="tabs" style="font-size:6px"><span>Inicio</span><span class="on">Juegos</span><span>Buscar</span></div></div></div><span class="code">E3-B</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr" style="display:block"><div class="hero lm" style="height:36%"></div><div class="fbody" style="top:28%;padding:0 8px"><div class="ft" style="font-size:10px">Luigi's Mansion 3</div><div class="btn" style="font-size:7px;padding:4px">Jugar</div><div class="svst" style="font-size:7px">Al día con la TV</div></div></div></div><span class="code">S1-A</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr" style="display:block"><div class="hero lm" style="height:36%"></div><div class="fbody" style="top:28%;padding:0 8px"><div class="ft" style="font-size:10px">Luigi's Mansion 3</div><div class="btn" style="font-size:7px;padding:4px">Jugar</div><div class="btn g" style="font-size:7px;padding:4px">Mandar a la TV</div></div></div></div><span class="code">S1-B</span></div>
     </div>
     <div class="choices">
-      <div class="choice rec"><span class="code">E3-A</span><b>A la ficha del juego</b>Ves que se guardó, cuánto jugaste y «Seguir jugando».</div>
-      <div class="choice"><span class="code">E3-B</span><b>A la pestaña «Juegos»</b>Directo a elegir otro.</div>
+      <div class="choice rec"><span class="code">S1-A</span><b>Sola</b>Trae al abrir, manda al guardar y salir. No tienes que acordarte de nada; la ficha solo te dice cómo va.</div>
+      <div class="choice"><span class="code">S1-B</span><b>Con un botón</b>«Mandar a la TV» en la ficha. Más control, pero es fácil que se te olvide.</div>
     </div>
-    <p class="recline">Recomiendo <span>E3-A</span>: confirmar que tu partida está a salvo vale más que un toque menos.</p>
+    <p class="recline">Recomiendo <span>S1-A</span>: el chiste es tomar el iPhone y seguir.</p>
   </div>
 
   <div class="dec">
-    <h3>E4 · Si jugaste en la TV y en el iPhone</h3>
+    <h3>S2 · Cuántas partidas anteriores se guardan (cambia P27)</h3>
     <div class="minis">
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="sheet low" style="padding:6px;gap:4px"><h4 style="font-size:8px">Jugaste en los dos lados</h4><div class="r" style="font-size:7px;padding:4px">En la TV</div><div class="r" style="font-size:7px;padding:4px">En tu iPhone</div></div></div></div><span class="code">E4-A</span></div>
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="hero ww" style="height:100%;opacity:.35"></div><div class="toast" style="font-size:6px">Seguimos con la más nueva</div></div></div><span class="code">E4-B</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:9px">Partidas</span></div><div class="body"><div class="list"><div class="h">Anteriores</div><div class="r" style="font-size:7px"><span>Ayer</span></div><div class="r" style="font-size:7px"><span>Lunes</span></div><div class="r" style="font-size:7px"><span>Sábado</span></div><div class="r" style="font-size:7px"><span>Jueves</span></div><div class="r" style="font-size:7px"><span>…hasta 10</span></div></div></div></div></div><span class="code">S2-A</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:9px">Partidas</span></div><div class="body"><div class="list"><div class="h">Anterior</div><div class="r" style="font-size:7px"><span>Ayer</span></div></div></div></div></div><span class="code">S2-B</span></div>
     </div>
     <div class="choices">
-      <div class="choice rec"><span class="code">E4-A</span><b>Orbital pregunta</b>Las dos con su fecha y sus horas; la otra se guarda aparte.</div>
-      <div class="choice"><span class="code">E4-B</span><b>Gana la más nueva</b>Sin preguntar; la otra también se guarda aparte.</div>
+      <div class="choice rec"><span class="code">S2-A</span><b>Las últimas 10 de cada juego</b>Las de portátiles y Xbox 360 pesan poco; GameCube y Switch, unos MB cada una. Ajustes dice cuánto ocupan (P30).</div>
+      <div class="choice"><span class="code">S2-B</span><b>Solo la anterior</b>Más simple, pero si algo sale mal dos veces, ya no hay a dónde regresar.</div>
     </div>
-    <p class="recline">Recomiendo <span>E4-A</span>. Pasa poco y es tu partida: mejor que decidas tú.</p>
+    <p class="recline">Recomiendo <span>S2-A</span>.</p>
   </div>
 
   <div class="dec">
-    <h3>E5 · Jugar con el Duo cerrado</h3>
+    <h3>S3 · Los guardados rápidos (cambia P22 y P27)</h3>
     <div class="minis">
-      <div class="mini2"><div class="dev s" style="aspect-ratio:466/678"><div class="lbx"><div class="g169 od" style="font-size:8px">Juego</div></div><div class="toast" style="font-size:6px">Se ve mejor abierto</div></div><span class="code">E5-A</span></div>
-      <div class="mini2"><div class="dev s" style="aspect-ratio:466/678"><div class="scr" style="display:block"><div class="sheet" style="width:80%;padding:6px"><p style="font-size:7px">Abre el Duo para jugar</p></div></div></div><span class="code">E5-B</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:9px">Partidas</span></div><div class="body"><div class="list"><div class="r" style="font-size:7px"><span>En la TV</span></div><div class="h">Guardados rápidos · solo aquí</div><div class="r" style="font-size:7px"><span>Hoy 8:35</span></div></div></div></div></div><span class="code">S3-A</span></div>
+      <div class="mini2"><div class="dev ip s"><div class="scr"><div class="bar"><span class="t" style="font-size:9px">Partidas</span></div><div class="body"><div class="list"><div class="r" style="font-size:7px"><span>En la TV</span></div><div class="h">Guardados rápidos · también en la TV</div><div class="r" style="font-size:7px"><span>Hoy 8:35</span><small>puede no abrir</small></div></div></div></div></div><span class="code">S3-B</span></div>
     </div>
     <div class="choices">
-      <div class="choice rec"><span class="code">E5-A</span><b>Se puede, con un aviso</b>Una vez por partida.</div>
-      <div class="choice"><span class="code">E5-B</span><b>Solo abierto</b>Con el Duo cerrado, «Jugar» pide abrirlo.</div>
+      <div class="choice rec"><span class="code">S3-A</span><b>Solo en el iPhone</b>Lo que viaja es la partida que guardas dentro del juego, que siempre abre del otro lado.</div>
+      <div class="choice"><span class="code">S3-B</span><b>También a la TV</b>Solo abre allá si la TV usa exactamente el mismo motor y la misma versión.</div>
     </div>
-    <p class="recline">Recomiendo <span>E5-A</span>: para una carrera de Mario Kart en la fila del súper, chiquito está bien.</p>
+    <p class="recline">Recomiendo <span>S3-A</span>: lo que viaja siempre funciona del otro lado.</p>
   </div>
 
   <div class="dec">
-    <h3>E6 · Los juegos que todavía no corren</h3>
-    <div class="minis">
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="body" style="padding-top:12px"><div class="strip" style="flex-wrap:wrap"><div class="cv lm" style="width:38px"></div><div class="cv mk" style="width:38px"></div><div class="cv dimd" style="width:38px;background:#3a5a2a"><span class="lock">◷</span></div><div class="cv dimd" style="width:38px;background:#2a3a5a"><span class="lock">◷</span></div></div></div></div></div><span class="code">E6-A</span></div>
-      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="body" style="padding-top:12px"><div class="strip"><div class="cv lm" style="width:38px"></div><div class="cv mk" style="width:38px"></div></div></div></div></div><span class="code">E6-B</span></div>
-    </div>
-    <div class="choices">
-      <div class="choice rec"><span class="code">E6-A</span><b>Se ven apagados</b>Con un relojito: «llega con la etapa de MeloNX». Ves todo tu catálogo, como en la TV.</div>
-      <div class="choice"><span class="code">E6-B</span><b>Se esconden</b>Solo ves lo que ya se puede jugar.</div>
-    </div>
-    <p class="recline">Recomiendo <span>E6-A</span>: el catálogo es el mismo que en la TV, y sabes qué viene.</p>
-  </div>
-
-  <div class="dec">
-    <h3>Y dos cosas más</h3>
-    <ol class="plan">
-      <li><div><b>¿Cambiarías algo de las pantallas?</b> Díctame el código (P1 a P21).</div></li>
-      <li><div><b>¿Me das permiso de mirar la carpeta de God of War en la Lenovo?</b> Solo esa carpeta, para confirmar que trae lo que pide Olympus (y qué actualización tiene). No toco nada más.</div></li>
-    </ol>
+    <h3>¿Cambiarías algo?</h3>
+    <p>Díctame el código de la pantalla (P1 a P32).</p>
   </div>
 </section>
 
 <section>
   <h2>El plan</h2>
   <ol class="plan">
-    <li><div><b>Día de prueba en tu Duo.</b> Compilo desde su código Olympus (God of War), iCube (GameCube) y Luigi's Mansion 3 con nxnative. Mido cuadros, calor y batería, que tu GameSir funcione en los tres y el modo rápido. Aparte, si se puede jugar desde un disco externo.</div></li>
-    <li><div><b>La pestaña «Juegos» y la ficha</b> (P1 a P9 y P21), con tu catálogo de la consola y bajar juegos. La TV aprende a mandarle los juegos al iPhone.</div></li>
-    <li><div><b>Tus 3 juegos de Switch y God of War.</b> El menú de pausa de Orbital, los botones y la medio abierta (P12 a P18). Cada motor trae su propio menú: lo cambiamos por el de Orbital.</div></li>
-    <li><div><b>GameCube y Wii</b>, con la primera vez del modo rápido (P10, P11) y las partidas que van y vienen con la TV (P19).</div></li>
-    <li><div><b>PS2, Xbox 360, Wii U, Xbox y MeloNX</b> para el resto de Switch, una por una.</div></li>
-    <li><div><b>Etapa 2: «Orbital Juegos».</b> Juntar todo, juegos convertidos incluidos, cuando cada pieza esté bien.</div></li>
+    <li><div><b>Apruebas las pantallas y las decisiones de arriba.</b></div></li>
+    <li><div><b>Día de prueba en tu Duo.</b> Preparo y pruebo cada motor (portátiles, GameCube, God of War, Luigi's Mansion 3 y Black Ops II). Mido cuadros, calor y batería, tu GameSir (incluido si iOS deja libre su botón de inicio) y el modo rápido. Reviso qué formato de partida usa la TV en cada consola y si los datos de nxnative pueden llegar desde la TV. Aparte, el disco externo.</div></li>
+    <li><div><b>La pestaña «Juegos», la ficha y bajar juegos</b> (P1 a P9, P30 y P31). La TV aprende a mandar juegos y partidas.</div></li>
+    <li><div><b>Portátiles</b> (P15, P16, P20), la más ligera, junto con las partidas (P23 y P25 a P29).</div></li>
+    <li><div><b>Tus juegos de Switch con nxnative</b>, con la pausa y los botones de Orbital (P12 a P14, P17 a P24, P32).</div></li>
+    <li><div><b>God of War III, con la primera vez del modo rápido</b> (P10, P11).</div></li>
+    <li><div><b>GameCube y Wii, Xbox 360, Xbox y MeloNX</b>, una por una.</div></li>
+    <li><div><b>Etapa 2: «Orbital Juegos».</b> Juntar todo en una sola app.</div></li>
   </ol>
 </section>
 
@@ -699,15 +986,14 @@ a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offs
 <details>
   <summary>Detalle técnico (para la sesión que lo construya)</summary>
   <div class="tech">
-    <p><b>Duo.</b> Afuera 466×678 pt (pestañas en la franja lateral, DU1-A); adentro ≈669×951 pt (<code>WindowMetrics</code>). Postura: iOS 27.1, <code>onHingeChange</code> (<code>.closed</code>, <code>.partiallyOpen</code>, <code>.fullyOpen</code> y ángulo) y <code>GeometryProxy.reservedRegions(kind: .division)</code> para el doblez (<a href="https://dev.classmethod.jp/en/articles/ios27-1-iphone-duo-new-apis/">classmethod</a>, <a href="https://developer.apple.com/forums/thread/848054">foro de Apple</a>; sin documentación oficial). Orbital hoy no usa ninguna. nxnative ya pone la imagen en la mitad de arriba medio abierto.</p>
-    <p><b>nxnative, etapa 1.</b> El motor se compila por juego (perfil por juego; <code>Gen/embed.S</code> mete los módulos al enlazar; <code>main.m</code> lee un solo <code>Documents/romfs.img</code>). Una app por juego, íconos escondidos, abierta desde Orbital por esquema de URL con App Group para partidas. Usar <code>--romfs separate</code> + <code>push_romfs.sh</code>: la app queda en ~1 GB y reinstalar no manda los GB del juego. Etapa 2: <code>dm_set_game_image_header</code> (framework con los módulos) asume un solo motor y no tiene pruebas; cada framework llevaría su motor y rutas propias de romfs/msl/pso/aoc.</p>
-    <p><b>Olympus.</b> FEXCore con JIT: necesita modo rápido (trae <code>Gow3JITRequest.swift</code>, StikJIT y emparejamiento propio en iOS 27). App Expo/React Native (<code>build-ios.sh</code>, <code>expo prebuild</code>, <code>xcodebuild</code>). <code>tools/prepare</code>: Python 3.10, corre en la Mac. Pide el volcado de PS4 con la 01.02 fusionada; el port de la Lenovo casi seguro es <a href="https://github.com/FelipePrado0/gow3_pc">gow3_pc</a>, cuya <code>out/</code> trae los mismos tres archivos (acepta 01.00: confirmar). Entitlements: increased-memory-limit, extended-virtual-addressing; 8 GB de RAM.</p>
-    <p><b>Menú de Orbital.</b> Ningún motor lo trae: nxnative tiene su rueda (textos por <code>DM_GAME_MENU_TEXT</code>), Olympus R3+L2 y doble toque con dos dedos. Hay que conectarlo en cada motor. GameSir funciona por GameController en los dos.</p>
-    <p><b>Etapa 2.</b> Frameworks firmados del propio paquete cargados con <code>dlopen</code>, uno por proceso: permitido fuera de la App Store. Al salir: <code>open(url)</code> a Orbital y <code>exit(0)</code> en su respuesta.</p>
-    <p><b>Disco externo.</b> Sin probar por nadie: Olympus espera <code>Documents/gow3</code> y nxnative <code>Documents/romfs.img</code>; un USB-C con marcador de seguridad, mmap, velocidad y desconexión a media partida están por medir.</p>
+    <p><b>Tamaños y postura.</b> iPhone 17 Pro 402×874 pt. Duo afuera 466×678 pt (DU1-A), adentro ≈669×951 pt. SwiftUI <code>onHingeChange</code> (SwiftUICore, iOS 27.1, recibe <code>DeviceHingeContext</code> anterior y nuevo); UIKit <code>UIView.reservedRegions(kind: .division)</code> (iOS 27.1). DS en el Duo abierto parado: dos 4:3 apilados no caben con botones (2×502 &gt; 951), así que usa el mismo arreglo de medio abierto.</p>
+    <p><b>Etapa 1, apps de motor.</b> Forks propios firmados con el equipo B7KRCF776Z: interfaz de Orbital dentro (botones, pausa, P12, P21-P24), App Group común para partidas, catálogo y datos del juego. Al cerrar o tronar: <code>open(url)</code> a Orbital con el estado. Apagar lo propio: nxnative (<code>save.dmsync</code> por iCloud, 10 respaldos, menú de mantener Home 2 s: <code>DM_SAVE_SYNC</code>, <code>DM_SAVE_BACKUPS</code>; partidas en <code>save/</code> de cada app) y el «cloud sync» de DukeX. El botón de inicio del mando puede estar tomado por iOS: probarlo.</p>
+    <p><b>nxnative.</b> MIT, sin JIT, A17 Pro o más nuevo; 263 perfiles en <code>dm/games</code>, cada uno con su versión exacta (Luigi's Mansion 3 1.4.0, MK8D 4.0.0/4.0.1, Odyssey 1.4.1). Una app por juego. Con <code>--romfs separate</code> la app queda en ~1 GB; falta probar que el romfs llegue al App Group desde la TV en vez de <code>push_romfs.sh</code>.</p>
+    <p><b>Otros motores.</b> Delta: AGPL-3, sin JIT; núcleos GBA, GBC, melonDS, N64, SNES, NES y GPGX; DeltaCore trae Package.swift pero sus repos no tienen archivo de licencia (uso personal). MeloNX: necesita JIT y más memoria; licencia por confirmar (GPL o AGPL). iCube: GPL-2, sin JIT usa intérprete con caché (lento). DukeX: interfaz de iOS para xemu, con JIT. XeniOS: BSD-3, 2.3.5 del 26 nov; compatibilidad en <code>data/compatibility.json</code> de xenios-jp/game-compatibility (tomar solo reportes de iPhone). Olympus: FEXCore con JIT (integrado en iOS 27 o StikDebug, LocalDevVPN); copia CUSA01623 con APP_VER 01.02 (de <code>out/analysis.json</code> en la Lenovo; el volcado vive aparte del port); <code>tools/prepare</code> genera <code>boot-linked.bin</code>, <code>content.bin</code> y <code>patches.bin</code> antes de mandarlo. JIT en cada arranque, no una sola vez.</p>
+    <p><b>Partidas.</b> La TV es la fuente; canal autenticado de <code>OrbitalRemote.swift</code>. Comparar por huella del contenido contra la última versión juntada, no por reloj; mostrar tiempo jugado. Mover cada partida como bloque (carpeta de Switch, NAND de Wii, varios GCI, carpeta de Xenia), nunca a medias; guardar copia antes de escribir. Formatos: Delta <code>.sav</code> (GBA/GB) y <code>.dsv</code> (DS), nombrados por la huella del ROM, hay que mapearlos al nombre del juego de la TV. Switch: carpeta por título y usuario. Dolphin: tarjeta <code>.raw</code> (8 a 16 MB) o GCI, NAND por título. Xenia: <code>content/&lt;perfil&gt;/&lt;titleid&gt;</code>; la TV y el iPhone deben usar el mismo perfil (XUID) copiado. DukeX: dentro del disco duro virtual de xemu, por eso P25 «no comparte» al principio. Olympus contra gow3_pc: carpeta <code>user/</code>, por confirmar que es compatible. Si el motor de la TV no es el mismo (por ejemplo Ryujinx contra nxnative), la consola sale como «no comparte» hasta probarlo. Bloqueo: si la TV tiene el juego abierto (<code>tele.lock</code>, <code>/api/status</code>), P26.</p>
   </div>
 </details>
 
-<p class="src">Fuentes: <a href="https://github.com/seedds/nxnative">nxnative</a> · <a href="https://nxnative.net/games/luigis-mansion-3">Luigi's Mansion 3 en nxnative</a> · <a href="https://github.com/MohinShaikh5689/god-of-war-3-ios">Olympus</a> · <a href="https://github.com/Provenance-Emu/iCube">iCube</a> · investigación completa: <code>docs/producto/emulacion-iphone/nativo-2026-11-27.md</code></p>
+<p class="src">Fuentes: <a href="https://github.com/xenios-jp/game-compatibility">compatibilidad de XeniOS</a> · <a href="https://github.com/xenios-jp/XeniOS/releases">versiones de XeniOS</a> · <a href="https://github.com/seedds/nxnative/blob/main/dm/games/README.md">juegos de nxnative</a> · <a href="https://github.com/rileytestut/Delta">Delta</a> · <a href="https://github.com/MohinShaikh5689/god-of-war-3-ios">Olympus</a> · <a href="https://github.com/Provenance-Emu/iCube">iCube</a> · <a href="https://github.com/MaftyManicEMU/DukeX">DukeX</a></p>
 
 </div>
