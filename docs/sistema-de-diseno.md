@@ -490,7 +490,7 @@ vigila.
 | **Toda lista de títulos se puede filtrar** (Fernando, 25 nov 2026): «Ver todo», colecciones, Descubre, Top 10, rankings de plataformas y filmografías traen el mismo botón de filtro arriba a la derecha y lo filtrado en cápsulas; un ranking no se reordena y cada título guarda su puesto | `SortableGrid`, `FilteredRanking`, `ListFilterMenu` | `testEveryTitleListHasTheFilter` |
 | Lo que es una acción de un solo ícono va en un botón redondo | `DSIconButton` (el calendario de Lo nuevo, el «+» de Canales) | — |
 | Sin reflejos bajo pósters ni tarjetas | se quitaron de `Rail`, `Shelf` y los carruseles; el color de una tarjeta de colección es `cardWeight` | `testNoReflections` |
-| La barra de pestañas siempre completa | `.tabBarMinimizeBehavior(.never)`; ninguna pantalla la esconde | `testTabBarAlwaysFull` |
+| La barra de pestañas se encoge a un botón al bajar y se abre al tocarla (DK-B, 27 nov 2026) | `.tabBarMinimizeBehavior(.onScrollDown)`; ninguna pantalla la esconde | `testTabBarShrinksOnScroll` |
 | Los rótulos en letra normal, con su ícono gris | `DSGroupLabel` / `DSChapterLabel` sin mayúsculas espaciadas | `testNoNewSpacedCaps` |
 | De dónde viene una lista lo dice su porqué («Recomendadas por Trakt»); un sello solo si califica la lista (el jitomate) | `DSSectionHead` ignora `.trakt` | `testTraktIsNotATitleStamp` |
 | Lo nuevo y lo de hoy en el turquesa del puntito del logo | `DS.fresh` / `DSFreshMark` / `DSCornerRibbon`; el verde (`DS.success`) es solo «listo, conectado» | `testNewAndTodayAreFresh` |

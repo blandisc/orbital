@@ -4,12 +4,13 @@ import SwiftUI
 /// de la hora a una franja al costado. `toolbarVerticalBehavior(.disabled)` (iOS 27.1) las regresa abajo y arriba, como en
 /// cualquier iPhone. En los demás aparatos no hace nada. La decisión vive en `DuoBars.below`.
 enum DuoBars {
-    /// ¿Van las barras abajo y arriba (DU1-B)? Hasta que Fernando decida DU1, solo en Debug con `-demo-duo-bars-below`.
+    /// ¿Van las barras abajo y arriba? Sí (LD1-B, Fernando, 27 nov 2026: «vamos con LD1B»): la hora arriba y las pestañas
+    /// abajo, como en cualquier iPhone. En Debug, `-demo-duo-bars-side` deja la franja del costado para comparar.
     static var below: Bool {
         #if DEBUG
-        Demo.isOn && Demo.has("-demo-duo-bars-below")
+        !(Demo.isOn && Demo.has("-demo-duo-bars-side"))
         #else
-        false
+        true
         #endif
     }
 }

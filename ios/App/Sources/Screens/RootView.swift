@@ -368,9 +368,9 @@ struct MainTabs: View {
         .inspector(isPresented: sidePanelShown) { if sidePanelShown.wrappedValue { sidePanel.environment(env) } }   // como las hojas: la app a mano (Screens/AppSheet.swift)
         .modifier(SideTitle(host: titleHost, enabled: titleAsPanel))
         .environment(\.titlePanel, titleOpener)
-        // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
-        // (Fernando, 2 nov 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»).
-        .tabBarMinimizeBehavior(.never)
+        // Al bajar, la barra se encoge a un botón con la sección en la que estás; al tocarlo se abre y al arrastrar dice cada
+        // sección (DK-B, Fernando, 27 nov 2026; antes, desde el 2 nov, siempre completa). La del sistema: igual en todo iPhone.
+        .tabBarMinimizeBehavior(.onScrollDown)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
             let requests = env.services.debridRequests

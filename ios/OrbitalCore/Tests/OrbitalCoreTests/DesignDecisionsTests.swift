@@ -16,10 +16,11 @@ extension DesignRulesTests {
         check(hits(#"scaleEffect\(x: 1, y: -1\)|[Rr]eflection\b|reflected\b"#, in: try sources()), "Sin reflejos (se quitaron de toda la app)")
     }
 
-    /// La barra de pestañas siempre completa: nunca se encoge ni se esconde al bajar.
-    func testTabBarAlwaysFull() throws {
+    /// La barra de pestañas se encoge a un botón al bajar y se abre al tocarla (DK-B, Fernando, 27 nov 2026: «vamos con LD1B y
+    /// DKB»; antes, desde el 2 nov, siempre completa). La misma en el iPhone normal y en el Duo: es la del sistema. Nunca se esconde.
+    func testTabBarShrinksOnScroll() throws {
         let files = try sources(["Design", "Screens", "App"])
-        check(hits(#"tabBarMinimizeBehavior\("#, in: files, unless: #"\(\.never\)"#), "La barra de pestañas no se encoge (.never)")
+        check(hits(#"tabBarMinimizeBehavior\("#, in: files, unless: #"\(\.onScrollDown\)"#), "La barra de pestañas se encoge al bajar (.onScrollDown, DK-B)")
         // En la Mac y en el iPad con espacio sí: sus pestañas van en el renglón del logo (`MacTabStrip`, MAC-A, 16 nov 2026; C1, 18 nov).
         check(hits(#"for: \.tabBar"#, in: files, unless: #"toolbarVisibility\(TopRow\.tabsInLogoRow \? \.hidden : \.automatic, for: \.tabBar\)"#), "La barra de pestañas no se esconde")
     }
