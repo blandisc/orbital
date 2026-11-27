@@ -50,7 +50,7 @@ markers = [
 [tool.ruff]
 line-length = 130
 target-version = "py311"
-extend-exclude = ["alexa"]
+extend-exclude = ["alexa", "tools/sistema-base"]  # sistema-base: copia de ~/code/interoperabilidad (LEEME.txt), se arregla allá
 
 [tool.ruff.lint]
 # Errores reales y orden de imports; el estilo fino no bloquea.

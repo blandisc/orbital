@@ -1,6 +1,11 @@
 """Lee una grabación de Instruments de Orbital (medir-clics-mac.sh) y dice, por clic, cuánto trabajó el hilo de la pantalla,
 cuándo quedó quieta y el congelamiento más largo. Uso: medir_clics.py <grabación.trace> [clics.txt]"""
-import collections, datetime, re, subprocess, sys, xml.etree.ElementTree as ET
+import collections
+import datetime
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
 
 trace = sys.argv[1]
 clicks = sys.argv[2] if len(sys.argv) > 2 else None

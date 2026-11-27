@@ -8,7 +8,14 @@ y la buena (w500, a lo más DL a la vez). Usa la clave de TMDB de ios/App/Secret
 ids.txt: ids de IMDb («tt…»), uno por renglón; se usan los primeros 96. Dice cuándo se ve la mitad, cuándo todos y cuándo
 termina todo.
 """
-import sys,time,json,re,urllib.request,concurrent.futures as cf,threading
+import concurrent.futures as cf
+import json
+import re
+import sys
+import threading
+import time
+import urllib.request
+
 key=re.search(r'ORBITAL_TMDB_KEY\s*=\s*(\S+)',open(__import__('pathlib').Path(__file__).resolve().parent.parent/'App/Secrets.xcconfig').read()).group(1)
 ids=open(sys.argv[1]).read().split()[:96]
 gate=int(sys.argv[2]); sizes=(sys.argv[3] if len(sys.argv)>3 else 'w342,w500').split(','); lang=sys.argv[4] if len(sys.argv)>4 else 'es-MX'

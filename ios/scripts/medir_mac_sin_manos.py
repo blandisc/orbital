@@ -1,6 +1,12 @@
 """Lee lo que graba medir-mac-sin-manos.sh: el arranque en frío y, por orden, cuánto trabajó el hilo de la pantalla, cuándo
 quedó quieta y el congelamiento más largo. Uso: medir_mac_sin_manos.py <carpeta> <epoch del open> <pid de la app>"""
-import collections, datetime, json, re, subprocess, sys, xml.etree.ElementTree as ET
+import collections
+import datetime
+import json
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
 
 out, t_open, pid = sys.argv[1], float(sys.argv[2]), sys.argv[3]
 mine = f"pid: {pid})"   # solo la de la Mac: la Orbital de un simulador también se llama así
