@@ -41,6 +41,7 @@ figcaption { font-size: .75rem; color: var(--muted); letter-spacing: .02em; }
 .finds li b { font-family: var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
 .finds .sev-must { border-color: var(--must); } .finds .sev-must b { color: var(--must); }
 .finds .sev-should { border-color: var(--should); } .finds .sev-should b { color: var(--should); }
+.finds .sev-ok { border-color: var(--accent); opacity: .7; } .finds .sev-ok b { color: var(--accent); }
 .clean { margin: 0; font-size: .85rem; color: var(--muted); }
 body.only-finds .screen:not(:has(.finds)) { display: none; }
 input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -56,7 +57,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   </section>
   <div class="bar">
     <label for="only"><input type="checkbox" id="only"> Solo las que tienen hallazgos</label>
-    <span class="legend"><span><i class="dot" style="background:var(--must)"></i>Se ve mal</span> <span><i class="dot" style="background:var(--should)"></i>Mejorable</span> <span><i class="dot" style="background:var(--nit)"></i>Detalle</span></span>
+    <span class="legend"><span><i class="dot" style="background:var(--must)"></i>Se ve mal</span> <span><i class="dot" style="background:var(--should)"></i>Mejorable</span> <span><i class="dot" style="background:var(--nit)"></i>Detalle</span> <span><i class="dot" style="background:var(--accent)"></i>Resuelto o falsa alarma</span></span>
   </div>
   <div class="grid">
 <article class="screen" id="C01">
@@ -177,7 +178,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C15-light.jpg" alt="Guardar en lista en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C15-dark.jpg" alt="Guardar en lista en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C15-1</b> El título «Guardar en…» aparece cortado con puntos suspensivos porque el botón «+ Nueva lista…» le quita el espacio; el botón además queda pegado a la orilla derecha sobre la franja.</li><li class="sev-should"><b>C15-2</b> Las filas de listas son translúcidas y se mezclan con el fondo borroso, sobre todo en claro, donde los renglones se ven sucios; los círculos de selección son delgados y grises.</li></ul>
+  <ul class="finds"><li class="sev-ok"><b>C15-1</b> Falsa alarma: El título «Guardar en…» aparece cortado con puntos suspensivos porque el botón «+ Nueva lista…» le quita el espacio; el botón además queda pegado a la orilla derecha sobre la franja.</li><li class="sev-should"><b>C15-2</b> Las filas de listas son translúcidas y se mezclan con el fondo borroso, sobre todo en claro, donde los renglones se ven sucios; los círculos de selección son delgados y grises.</li></ul>
 </article>
 <article class="screen" id="C16">
   <header><span class="code">C16</span><h2>Calificar</h2><span class="count">2</span></header>
@@ -289,7 +290,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C29-light.jpg" alt="Consola (jugando) en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C29-dark.jpg" alt="Consola (jugando) en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C29-1</b> En el selector de modo de energía la tercera opción se corta con «Rendimien…».</li><li class="sev-should"><b>C29-2</b> La tarjeta «Guía» que asoma a la derecha queda cortada a mitad de texto («Para el jefe que t…», «Guías en», «Buscar en») y se lee como cortado y no como una invitación a deslizar.</li><li class="sev-nit"><b>C29-3</b> Los íconos de «Legion», «Xbox» y «Casa 5G» y su texto son diminutos.</li></ul>
+  <ul class="finds"><li class="sev-ok"><b>C29-1</b> Corregido (27 nov): En el selector de modo de energía la tercera opción se corta con «Rendimien…».</li><li class="sev-should"><b>C29-2</b> La tarjeta «Guía» que asoma a la derecha queda cortada a mitad de texto («Para el jefe que t…», «Guías en», «Buscar en») y se lee como cortado y no como una invitación a deslizar.</li><li class="sev-nit"><b>C29-3</b> Los íconos de «Legion», «Xbox» y «Casa 5G» y su texto son diminutos.</li></ul>
 </article>
 <article class="screen" id="C30">
   <header><span class="code">C30</span><h2>Ajustes</h2><span class="count">4</span></header>
@@ -321,7 +322,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C33-light.jpg" alt="Ajustes · Cuentas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C33-dark.jpg" alt="Ajustes · Cuentas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C33-1</b> En Ajustes · Cuentas la tarjeta flotante «¿Qué tal Duna?» tapa la fila de Letterboxd (en claro apenas se lee «No conectado»; en oscuro el texto de abajo se transparenta a través de la tarjeta y queda ilegible).</li><li class="sev-should"><b>C33-2</b> En Cuentas la franja del sistema y el botón de regreso quedan flotando junto a las filas; las filas largas terminan justo antes de la franja y el espacio entre el borde derecho de las tarjetas y la franja es muy angosto.</li><li class="sev-nit"><b>C33-3</b> En oscuro el título de grupo «OneDrive · tus archivos» se ve cortado por un punto brillante de fondo encima de las letras, y los títulos de grupo grises tienen poco contraste sobre el fondo claro.</li></ul>
+  <ul class="finds"><li class="sev-ok"><b>C33-1</b> Corregido (27 nov): En Ajustes · Cuentas la tarjeta flotante «¿Qué tal Duna?» tapa la fila de Letterboxd (en claro apenas se lee «No conectado»; en oscuro el texto de abajo se transparenta a través de la tarjeta y queda ilegible).</li><li class="sev-should"><b>C33-2</b> En Cuentas la franja del sistema y el botón de regreso quedan flotando junto a las filas; las filas largas terminan justo antes de la franja y el espacio entre el borde derecho de las tarjetas y la franja es muy angosto.</li><li class="sev-nit"><b>C33-3</b> En oscuro el título de grupo «OneDrive · tus archivos» se ve cortado por un punto brillante de fondo encima de las letras, y los títulos de grupo grises tienen poco contraste sobre el fondo claro.</li></ul>
 </article>
 <article class="screen" id="C34">
   <header><span class="code">C34</span><h2>Ajustes · Trakt</h2><span class="count">2</span></header>
@@ -337,7 +338,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C35-light.jpg" alt="Ajustes · Series que sigues en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C35-dark.jpg" alt="Ajustes · Series que sigues en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C35-1</b> En Series que sigues (claro) la tarjeta flotante tapa por completo una fila de la lista, y la barra gris de inicio del sistema se encima sobre el interruptor de Chernobyl.</li><li class="sev-should"><b>C35-2</b> En Series que sigues (claro) el título «Series que sigues» está en una barra lila distinta del resto del fondo, y el buscador queda pegado muy cerca de esa barra.</li></ul>
+  <ul class="finds"><li class="sev-ok"><b>C35-1</b> Corregido (27 nov): En Series que sigues (claro) la tarjeta flotante tapa por completo una fila de la lista, y la barra gris de inicio del sistema se encima sobre el interruptor de Chernobyl.</li><li class="sev-should"><b>C35-2</b> En Series que sigues (claro) el título «Series que sigues» está en una barra lila distinta del resto del fondo, y el buscador queda pegado muy cerca de esa barra.</li></ul>
 </article>
 <article class="screen" id="C36">
   <header><span class="code">C36</span><h2>Ajustes · Tu perfil</h2><span class="count">3</span></header>
@@ -385,7 +386,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C41-light.jpg" alt="Guía · tu nube en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C41-dark.jpg" alt="Guía · tu nube en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C41-1</b> En Guía · tu nube los tres botones («Ya tengo uno», «Aún no tengo», «Ahora no») cubren con un panel opaco el final del texto: el párrafo «Es aparte de Orbital…» queda pegado/cortado contra el panel y probablemente continúa debajo sin poderse leer.</li><li class="sev-should"><b>C41-2</b> En Guía · tu nube el dibujo de arriba y sus pies de foto («Tú eliges», «Tu servicio la tiene», «Aquí, al instante») son muy pequeños; «Ahora no» es un texto gris chico, difícil de tocar.</li></ul>
+  <ul class="finds"><li class="sev-should"><b>C41-1</b> En Guía · tu nube los tres botones («Ya tengo uno», «Aún no tengo», «Ahora no») cubren con un panel opaco el final del texto: el párrafo «Es aparte de Orbital…» queda pegado/cortado contra el panel y probablemente continúa debajo sin poderse leer.</li><li class="sev-should"><b>C41-2</b> En Guía · tu nube el dibujo de arriba y sus pies de foto («Tú eliges», «Tu servicio la tiene», «Aquí, al instante») son muy pequeños; «Ahora no» es un texto gris chico, difícil de tocar.</li></ul>
 </article>
 <article class="screen" id="C42">
   <header><span class="code">C42</span><h2>Guía · subtítulos</h2><span class="count">3</span></header>
@@ -433,7 +434,7 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <figure><img src="img/C47-light.jpg" alt="Lección · Tu TV en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
     <figure><img src="img/C47-dark.jpg" alt="Lección · Tu TV en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
   </div>
-  <ul class="finds"><li class="sev-must"><b>C47-1</b> En Lección · Tu TV el botón «Cerrar» queda pegado justo debajo del círculo negro de la cámara y casi pegado a la franja del sistema, apretado arriba a la derecha.</li><li class="sev-should"><b>C47-2</b> En Lección · Tu TV el dibujo del celular y la TV llega hasta el borde izquierdo sin margen igual al del texto, y la TV casi toca la franja de la derecha.</li><li class="sev-nit"><b>C47-3</b> En Lección · Tu TV el renglón «práctica.» queda solo en el último renglón del texto.</li></ul>
+  <ul class="finds"><li class="sev-ok"><b>C47-1</b> Falsa alarma: En Lección · Tu TV el botón «Cerrar» queda pegado justo debajo del círculo negro de la cámara y casi pegado a la franja del sistema, apretado arriba a la derecha.</li><li class="sev-should"><b>C47-2</b> En Lección · Tu TV el dibujo del celular y la TV llega hasta el borde izquierdo sin margen igual al del texto, y la TV casi toca la franja de la derecha.</li><li class="sev-nit"><b>C47-3</b> En Lección · Tu TV el renglón «práctica.» queda solo en el último renglón del texto.</li></ul>
 </article>
   </div>
 </main>
