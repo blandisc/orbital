@@ -905,6 +905,7 @@ TRANSLATIONS = {
     "No pude buscar versiones. Intenta de nuevo.": "I couldn't look for versions. Try again.",
     "Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.": "We tried the available versions and none responded. Sometimes it's temporary.",
     "Probando otra versión (%lld de %lld)…": "Trying another version (%lld of %lld)…",
+    "Probando otra versión (2 de 3)…": "Trying another version (2 of 3)…", "Esa no abrió. Sigue en el mismo punto.": "That one didn't open. It stays at the same spot.",
     # Real-Debrid y complementos, Fase 1 (3 nov 2026).
     "Venció hoy": "Expired today", "Tomé tu clave de Real-Debrid de tu Torrentio": "I took your Real-Debrid key from your Torrentio",
     "Real-Debrid todavía no lo tiene.": "Real-Debrid doesn't have it yet.",

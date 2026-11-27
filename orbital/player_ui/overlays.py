@@ -240,6 +240,11 @@ def _rise(appear: float) -> float:
     return 0.0 if canvas.REDUCE_MOTION else (1 - ease_out(appear)) * CARD_RISE
 
 
+def _slide(appear: float, width: float) -> float:
+    """Lo que le falta entrar a una cinta que sale del marco derecho; con «Reducir movimiento», nada: solo el fundido."""
+    return 0.0 if canvas.REDUCE_MOTION else (1 - ease_out(appear)) * width
+
+
 def _entering(ass: str, appear: float) -> str:
     return ass if appear >= 1 else fade(ass, ease_out(appear))
 
@@ -277,9 +282,11 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     short = 0 if eyebrow or circled else 32
     still = still and not short
     w, h = (880 if still else 660), (206 if canvas.TOUCH else 176) - short
-    x, y = canvas.W - MARGIN - w, 870 - h + _rise(appear)
-    lines = [glass(x, y, w, h, RADIUS_CARD, "glass-strong")]
-    tx, right = x + 32, x + w - 32
+    # Una cinta, no una tarjeta que flota (Fernando, 26 nov 2026: «que salga del marco de la tele»): pegada al borde
+    # derecho, sin esquinas de ese lado (el vidrio sigue fuera de la pantalla) y entra deslizándose desde el marco.
+    x, y = canvas.W - w + _slide(appear, w), 870 - h
+    lines = [glass(x, y, w + RADIUS_CARD, h, RADIUS_CARD, "glass-strong")]
+    tx, right = x + 32, x + w - MARGIN
     if still:
         sw, sh = STILL_BOX
         sx, sy = x + 20, y + (h - sh) / 2

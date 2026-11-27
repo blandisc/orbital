@@ -124,19 +124,31 @@ def test_numbers_that_change_use_tabular_figures(monkeypatch):
 
 @pytest.mark.parametrize("reduce", [False, True])
 def test_cards_only_fade_in_with_reduce_motion(reduce, monkeypatch):
-    """TB-20 (B12): con «Reducir movimiento» (Ajustes o el de Windows) las tarjetas entran solo con un fundido; sin él, además
-    suben CARD_RISE."""
+    """TB-20 (B12): con «Reducir movimiento» (Ajustes o el de Windows) las tarjetas entran solo con un fundido; sin él,
+    «Saltar intro» sube CARD_RISE y la cinta del siguiente episodio entra desde el marco derecho."""
     monkeypatch.setattr(player_ui.canvas, "REDUCE_MOTION", reduce)
 
-    def top(ass: str) -> float:  # la orilla de arriba de la tarjeta (su primera figura)
-        return float(re.search(r"\\p1}m [\d.]+ ([\d.]+)", ass).group(1))
+    def corner(ass: str) -> tuple[float, float]:  # la esquina de arriba a la izquierda (su primera figura)
+        m = re.search(r"\\p1}m ([\d.]+) ([\d.]+)", ass)
+        return float(m.group(1)), float(m.group(2))
 
-    cards = (lambda a: player_ui.upnext_ass("¿Sigues viendo?", "T1 E2", appear=a),
-             lambda a: player_ui.skip_ass("Saltar intro", appear=a))
-    for card in cards:
-        rise = top(card(0.0)) - top(card(1.0))
-        assert rise == pytest.approx(0 if reduce else player_ui.CARD_RISE, abs=1)
+    skip = lambda a: player_ui.skip_ass("Saltar intro", appear=a)  # noqa: E731
+    rise = corner(skip(0.0))[1] - corner(skip(1.0))[1]
+    assert rise == pytest.approx(0 if reduce else player_ui.CARD_RISE, abs=1)
+    ribbon = lambda a: player_ui.upnext_ass("¿Sigues viendo?", "T1 E2", appear=a)  # noqa: E731
+    slide = corner(ribbon(0.0))[0] - corner(ribbon(1.0))[0]
+    assert (slide == pytest.approx(0, abs=1)) if reduce else slide > 300
+    for card in (skip, ribbon):
         assert card(0.0) != card(1.0)  # el fundido sigue: al empezar, más transparente
+
+
+def test_next_episode_is_a_ribbon_from_the_right_edge():
+    """Fernando, 26 nov 2026: el aviso del siguiente capítulo sale del marco de la tele, como cinta, no como botón que
+    flota: llega hasta la orilla derecha (y sigue fuera, sin esquinas de ese lado)."""
+    for still in (False, True):
+        ass = player_ui.upnext_ass("Pilot", "Siguiente episodio · T1 E2", seconds=8, progress=.5, still=still)
+        xs = [float(x) for x in re.findall(r"(?:m|l|b) ([\d.]+) [\d.]+", ass.split("\n")[0])]
+        assert max(xs) > player_ui.canvas.W, "la cinta se sale del marco: sin esquina redonda a la derecha"
 
 
 def test_reduce_motion_follows_orbital_or_windows(monkeypatch):
