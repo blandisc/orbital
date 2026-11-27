@@ -162,9 +162,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Space {
         /// Siete pasos y nada más (D3-B, Fernando, 20 nov 2026): 4 y 8 dentro de un grupo, 16 y 24 entre piezas, 32, 48 y 64
         /// entre grupos. `tests/web/design-parity.test.mjs` falla si aparece otro (12, 20, 40 y 56 ya no existen).
-        static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s4 = CGFloat(DesignTokens.Space.s4)
-        static let s6 = CGFloat(DesignTokens.Space.s6), s8 = CGFloat(DesignTokens.Space.s8), s12 = CGFloat(DesignTokens.Space.s12)
-        static let s16 = CGFloat(DesignTokens.Space.s16)
+        static let s1 = Mac.fit(DesignTokens.Space.s1), s2 = Mac.fit(DesignTokens.Space.s2), s4 = Mac.fit(DesignTokens.Space.s4)
+        static let s6 = Mac.fit(DesignTokens.Space.s6), s8 = Mac.fit(DesignTokens.Space.s8), s12 = Mac.fit(DesignTokens.Space.s12)
+        static let s16 = Mac.fit(DesignTokens.Space.s16)
         /// Del título de una hoja a su contenido, en todas las hojas (SD3-A).
         static let sheetHeaderGap = s4
         /// Margen lateral de las pantallas. En la Mac, el de una app de escritorio (17 nov 2026, Fernando: Inicio con el arte y
@@ -182,9 +182,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Sheet { static let maxShare: CGFloat = 0.86, versionStart: CGFloat = 0.6 }   // versionStart: «Versión» abre a este alto y ahí espera a que lleguen
 
     enum Radius {
-        static let xs = CGFloat(DesignTokens.Radius.xs), sm = CGFloat(DesignTokens.Radius.sm), md = CGFloat(DesignTokens.Radius.md)
-        static let lg = CGFloat(DesignTokens.Radius.lg), xl = CGFloat(DesignTokens.Radius.xl), xxl = CGFloat(DesignTokens.Radius.xxl)
-        static let pill = CGFloat(DesignTokens.Radius.pill)
+        static let xs = Mac.fit(DesignTokens.Radius.xs), sm = Mac.fit(DesignTokens.Radius.sm), md = Mac.fit(DesignTokens.Radius.md)
+        static let lg = Mac.fit(DesignTokens.Radius.lg), xl = Mac.fit(DesignTokens.Radius.xl), xxl = Mac.fit(DesignTokens.Radius.xxl)
+        static let pill = Mac.fit(DesignTokens.Radius.pill)
         /// Las placas chicas de texto o ícono (calidad, fuente, «4K»): una sola esquina (antes 4, 5 y 7).
         static let tag = xs
         /// El logo de una app o plataforma: la esquina del ícono de iOS, en proporción a su lado (antes 4, 8 y 10 fijos).

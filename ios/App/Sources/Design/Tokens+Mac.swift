@@ -27,6 +27,9 @@ extension DS {
         /// para compensar ese 77 % va por `native` (0.77 en la de verdad, 1 en la otra): así sale del mismo tamaño en pantalla.
         static let native: CGFloat = ProcessInfo.macNative ? 0.77 : 1
         static let typeScale: CGFloat = 1.25 * native
+        /// Los espacios y las esquinas (`DS.Space`, `DS.Radius`) también, para que el aire alrededor no crezca un 30 % y
+        /// la cápsula de pestañas no se monte sobre el logo (27 nov 2026).
+        static func fit(_ points: Double) -> CGFloat { CGFloat(points) * native }
         /// Cuántos pósters lleva cada fila de Biblioteca (`LibraryHome`): el resto, en su pantalla completa.
         static let libraryRow = 30
         /// Los tamaños de cada estilo del iPhone (letra «Grande», la de fábrica): en la Mac se parte de estos.
@@ -68,7 +71,7 @@ extension DS {
         /// los botones muy pequeños»): a lo más esta parte del alto de la ventana, y su logo y sus botones crecen `heroScale` sobre
         /// la letra de la Mac. Antes el tope de proporción (`aspectWideMax`) la dejaba en ~67 % (y en el ultrawide, más alta que
         /// la ventana); sin él manda esta parte, con el arte a la derecha cuando hace falta (`HomeHero.sideFade`).
-        static let heroHeightShare: CGFloat = 0.56, heroScale: CGFloat = 1.5
+        static let heroHeightShare: CGFloat = 0.56, heroScale: CGFloat = 1.5 * native
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
         static let railWidth: CGFloat = 188 * native
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la
@@ -94,7 +97,7 @@ extension DS {
         /// (antes la de un nombre en tarjeta), más aire y el logo `markScale` (antes crecía como la letra, 1.25).
         static let topBarText = TextRecipe.sectionQuiet
         static let topBarPadV = Space.s2 + Space.s1
-        static let markScale: CGFloat = 1.45
+        static let markScale: CGFloat = 1.45 * native
         /// La lista de Ajustes (MA1), como Ajustes del Sistema: desde AJ-A (22 nov 2026) una barra lateral angosta, un renglón
         /// por página sin su valor; la página de la derecha llena lo demás hasta `settingsPageWidth`.
         static let settingsListWidth: CGFloat = 340 * native, settingsPageWidth: CGFloat = 1200 * native

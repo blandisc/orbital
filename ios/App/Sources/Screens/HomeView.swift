@@ -165,10 +165,10 @@ struct HomeView: View {
                 continueRail(model, items: continuing).perfTag("home.rail")
                     // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                     // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                    .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+                    .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -heroLift : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
             } else if WindowMetrics.roomy, spotlightItems(model).count > 1 {
                 // RI2: en la Mac, sin nada a medias, lo que sigue en la portada va en esa misma fila encimada (como la tele).
-                upNextRail(model).padding(.top, scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
+                upNextRail(model).padding(.top, scheme == .dark ? -heroLift : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                 DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
             }
@@ -341,6 +341,9 @@ struct HomeView: View {
 
     /// Cuánto se encima «Seguir viendo» sobre la portada: solo en oscuro (en claro la portada es una tarjeta y no se leería).
     private var heroOverlap: CGFloat { scheme == .dark && !board ? DS.HomeHero.overlap : 0 }
+    /// Cuánto sube la fila de abajo sobre la portada (en oscuro). Con puntero (Mac, iPad ancho) los puntos van en su renglón bajo
+    /// la portada: subir lo mismo los tapaba con «Lo que tienes a medias» (27 nov 2026); ahí sube solo hasta quedar bajo ellos.
+    private var heroLift: CGFloat { WindowMetrics.roomy ? DS.Layout.betweenSections - DS.Space.s2 : DS.Layout.betweenSections + heroOverlap }
 
     /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
     @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {

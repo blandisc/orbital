@@ -11,7 +11,10 @@ import OrbitalAddons
 enum Demo {
     /// Los argumentos de arranque, leídos una sola vez (F10): las pantallas preguntan aquí (`has`, `value(after:)`), nunca a
     /// `ProcessInfo`. Solo existe en Debug; en Release la app no lee argumentos.
-    static let arguments = ProcessInfo.processInfo.arguments
+    static let arguments = ProcessInfo.processInfo.arguments + (macTrial ? ["-demo", "-demo-no-idle", "-demo-mute"] : [])
+    /// «Orbital Mac (prueba)» (TL1-B, la app de Mac de verdad con su propio identificador): abre con doble clic en modo
+    /// demostración, sin tocar tu cuenta, para verla junto a la instalada. La Orbital de siempre nunca lleva este identificador.
+    private static var macTrial: Bool { Bundle.main.bundleIdentifier == "mx.iracheta.orbital.macprueba" }
     static func has(_ flag: String) -> Bool { arguments.contains(flag) }
 
     static var isOn: Bool { has("-demo") }

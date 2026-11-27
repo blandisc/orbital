@@ -140,8 +140,18 @@ El plan acordado tiene dos pasos:
 - **Comprobado** (registro y capturas de la propia app): compila para Mac Catalyst con AetherEngine; carga las 9 bibliotecas de
   FFmpeg; dibuja Inicio, Explorar y Biblioteca al 100 %; **el reproductor reproduce** los videos de demostración (`motor: playing`,
   cambia de versión cuando una falla). La compilación de iPhone sigue en verde.
-- **Visto en las capturas, por arreglar:** la cápsula de pestañas tapa «orbital» del logo (ventana de 1024); los puntitos y
-  flechas del carrusel de «Seguir viendo» quedan encima de «Lo que tienes a medias»; la ventana arranca de 1024 × 768.
+- **Arreglado al revisar** (capturas de la propia app y el recorrido `tour` en cinco tamaños, `$TMPDIR/mac-tour/`):
+  - Los espacios y las esquinas (`DS.Space`, `DS.Radius`) y el logo de la barra (`markScale`, `heroScale`) también van
+    ×`native`: con ellos a 100 % la cápsula de pestañas se montaba sobre el logo.
+  - Los puntitos de la portada (con puntero van en su renglón, bajo la portada) quedaban tapados por «Lo que tienes a
+    medias», que sube sobre la portada. Ahora sube solo hasta quedar bajo ellos (`heroLift`). Pasaba también en el iPad ancho y
+    en la Mac de hoy.
+- **Visto, sin arreglar todavía:**
+  - En 1024 de ancho, la cápsula de pestañas al centro tapa «Buscar» (junto al logo): falta subir `centeredTabsFrom` en la de verdad.
+  - Biblioteca sale solo con sus dos puertas en la demostración (hay que ver si es la demostración o la Mac).
+  - La ventana arranca de 1024 × 768.
+- **Instalada para que Fernando la vea:** `/Applications/Orbital Mac (prueba).app` (Debug, ad hoc), abre sola en modo
+  demostración por su identificador (`Demo.macTrial`). La de siempre sigue siendo la 2638 («Diseñada para iPad»).
 - **Falta:**
   - Revisar pantalla por pantalla (Inicio, Explorar, Biblioteca, Buscar, ficha, reproductor, Ajustes) y decidir lo genérico ×0.77.
   - Firmar con el equipo (hoy es ad hoc): sin `application-identifier` no hay descargas en segundo plano
