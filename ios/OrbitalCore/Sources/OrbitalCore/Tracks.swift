@@ -77,6 +77,19 @@ public enum TrackChooser {
         return lang == "es-es" || ["castellano", "castilian", "españa", "spain", "european"].contains { name.contains($0) }
     }
 
+    /// Con el audio en tu idioma (`home`) o en el de los subtítulos que pediste, los subtítulos completos sobran: solo los
+    /// forzados (carteles y lo que se dice en otro idioma). Igual en la TV (`player/tracks.py`, `_audio_needs_no_subtitles`).
+    public static func modeFor(_ mode: SubtitleMode, audioLanguage: String, home: String) -> SubtitleMode {
+        guard case .language(let wanted) = mode else { return mode }
+        func base(_ code: String) -> String {
+            let raw = code.lowercased().replacingOccurrences(of: "_", with: "-")
+            if let known = ["es", "en"].first(where: { codes($0).contains(raw) }) { return known }
+            return raw.split(separator: "-").first.map(String.init) ?? ""
+        }
+        let heard = base(audioLanguage)
+        return !heard.isEmpty && [base(home), base(wanted)].contains(heard) ? .forced : mode
+    }
+
     /// Los subtítulos según el modo; nil = sin subtítulos.
     public static func subtitle(_ tracks: [MediaTrack], mode: SubtitleMode, audioLanguage: String) -> MediaTrack? {
         let subs = tracks.filter { $0.kind == .subtitle }

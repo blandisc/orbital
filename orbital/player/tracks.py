@@ -128,6 +128,12 @@ class _Tracks(_UpNext):
             self.mpv.command("set_property", "aid", audio["id"])
         if "off" not in pick:
             return False  # solo el audio: los subtítulos, con la regla de siempre
+        picked_with = base_language((pick.get("audio") or {}).get("lang")) if isinstance(pick.get("audio"), dict) else None
+        now = self.mpv.get("track-list") or tracks
+        if not pick.get("off") and self._audio_needs_no_subtitles(now if isinstance(now, list) else tracks, "") \
+                and picked_with != base_language(next((t.get("lang") for t in tracks if isinstance(t, dict)
+                                                       and t.get("type") == "audio" and t.get("selected")), None)):
+            return False  # subtítulos de cuando sonaba otro idioma: ahora el audio va en el tuyo (la regla de siempre)
         if pick.get("off"):
             self.mpv.command("set_property", "sid", "no")
             return True
@@ -148,7 +154,31 @@ class _Tracks(_UpNext):
             return True
         return False
 
+    # El idioma de la interfaz: un audio en tu idioma no lleva subtítulos (26 nov 2026: una película en español arrancaba
+    # con subtítulos en inglés). Los forzados, los que traduce solo lo que se dice en otro idioma, sí se quedan.
+    HOME_LANGUAGE = "es"
+
+    def _audio_needs_no_subtitles(self, tracks: list, lang: str) -> bool:
+        """¿Lo que suena ya está en un idioma que entiendes (el tuyo o el de los subtítulos que pediste)?"""
+        audio = next((t for t in tracks if isinstance(t, dict) and t.get("type") == "audio" and t.get("selected")), None)
+        spoken = base_language((audio or {}).get("lang"))
+        return bool(spoken) and spoken in {self.HOME_LANGUAGE, base_language(lang)}
+
+    def _drop_full_subtitles(self, tracks: list) -> None:
+        """Quita los subtítulos completos que mpv puso solo (por --slang); deja los forzados."""
+        chosen = next((t for t in tracks if isinstance(t, dict) and t.get("type") == "sub" and t.get("selected")), None)
+        if chosen is None or chosen.get("forced") or "forced" in str(chosen.get("title") or "").lower():
+            return
+        forced = next((t for t in tracks if isinstance(t, dict) and t.get("type") == "sub" and "id" in t
+                       and (t.get("forced") or "forced" in str(t.get("title") or "").lower())
+                       and base_language(t.get("lang")) == self.HOME_LANGUAGE), None)
+        self.mpv.command("set_property", "sid", forced["id"] if forced else "no")
+
     def _ensure_subtitles(self, lang: str, fallback_subs) -> None:
+        tracks = self.mpv.get("track-list") or []
+        if self._audio_needs_no_subtitles(tracks if isinstance(tracks, list) else [], lang):
+            self._drop_full_subtitles(tracks)
+            return
         if not lang or fallback_subs is None:
             return
         codes = {c.lower() for c in build_lang_list(lang)}

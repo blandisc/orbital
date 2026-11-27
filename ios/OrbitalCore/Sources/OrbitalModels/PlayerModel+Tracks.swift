@@ -87,7 +87,10 @@ extension PlayerModel {
         offerVersionInYourLanguage(s, prefs: langs.prefs)
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
         if picked { Self.note("subtítulos: los que elegiste en este título"); return }
-        let mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)
+        var mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)
+        // Lo que suena ya está en tu idioma (o en el de los subtítulos): solo los carteles, como en la TV (26 nov 2026: una
+        // película en español arrancaba con subtítulos).
+        mode = TrackChooser.modeFor(mode, audioLanguage: audioLanguage, home: settings.value.uiLanguage)
         var sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         // Apagados, pero el audio es de otro idioma (ni el tuyo ni inglés): los carteles en tu idioma, si el video los trae.

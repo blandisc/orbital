@@ -247,7 +247,7 @@ def subtitle_options(subtitles: str, audio: str) -> list[str]:
                 "--subs-fallback=no", "--subs-fallback-forced=always"]
     if not subtitles:
         return ["--sid=no"]
-    return [f"--slang={','.join(build_lang_list(subtitles))}"]
+    return [f"--slang={','.join(build_lang_list(subtitles))}", "--subs-with-matching-audio=forced"]
 
 
 def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
@@ -260,7 +260,7 @@ def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
                         ("subs-fallback", "no"), ("subs-fallback-forced", "always")]
     if not subtitles:
         return props + [("sid", "no")]
-    return props + [("sid", "auto"), ("slang", ",".join(build_lang_list(subtitles))), ("subs-with-matching-audio", "yes"),
+    return props + [("sid", "auto"), ("slang", ",".join(build_lang_list(subtitles))), ("subs-with-matching-audio", "forced"),
                     ("subs-fallback", "default"), ("subs-fallback-forced", "yes")]
 
 

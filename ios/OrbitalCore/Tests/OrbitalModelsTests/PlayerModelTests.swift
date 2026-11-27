@@ -324,7 +324,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, audio: [eng, spa], subs: [subEn, subEs], selectedAudio: 1))
         XCTAssertTrue(rig.engine.calls.contains("audio 2"))
-        XCTAssertTrue(rig.engine.calls.contains("sub 10"), "subtítulos en el idioma de Ajustes (distinto del audio)")
+        // 26 nov 2026: suena en español (tu idioma), así que sin los subtítulos en inglés de Ajustes.
+        XCTAssertFalse(rig.engine.calls.contains("sub 10"), "con el audio en tu idioma, sin subtítulos completos")
         await rig.model.selectAudio(1)   // cambias al inglés viendo esta serie
         let remembered = rig.titlePrefs.languages(for: "tt0386676", settings: rig.settings.value)
         XCTAssertEqual(remembered.prefs.audio, "en")

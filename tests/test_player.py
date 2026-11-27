@@ -1598,3 +1598,24 @@ def test_version_cells_say_their_state_with_icons_and_a_legend(canvas, size, can
     if canvas[0] / canvas[1] > 1.5:  # en 4:3 (no es la TV ni la Legion) solo va lo que cabe entero, o nada
         assert any(t.startswith("Latino · 1080p · Idioma dudoso") for t in drawn), "la enfocada, en palabras"
     assert player_ui.cell_states(_GRID[0]["cells"][1]) == [player_ui.CELL_STATES[1], player_ui.CELL_STATES[2]]
+
+
+def test_audio_in_your_language_starts_without_subtitles():
+    """Regla (26 nov 2026): una película que suena en tu idioma no arranca con subtítulos (Mario en español salía con los
+    de inglés de tu complemento). Los forzados en español sí se quedan; con audio en otro idioma, los subtítulos siguen."""
+    spanish = [{"id": 1, "type": "audio", "lang": "spa", "selected": True},
+               {"id": 1, "type": "sub", "lang": "eng", "selected": True}, {"id": 2, "type": "sub", "lang": "spa", "forced": True}]
+    p, mpv = make_player()
+    mpv.props["track-list"] = spanish
+    asked = []
+    p._ensure_subtitles("en", lambda: asked.append(1) or ["https://subs/en.srt"])
+    assert ("set_property", "sid", 2) in mpv.sent and not asked  # los forzados en español, sin buscar más
+    mpv.props["track-list"] = [dict(t, forced=False) if t["type"] == "sub" else t for t in spanish]
+    mpv.sent.clear()
+    p._ensure_subtitles("es", lambda: asked.append(1) or [])
+    assert ("set_property", "sid", "no") in mpv.sent and not asked
+    # Audio en inglés con subtítulos en español: se buscan, como siempre.
+    mpv.props["track-list"] = [{"id": 1, "type": "audio", "lang": "eng", "selected": True}]
+    p.fetch_subtitle = lambda url: "C:/cache/subs/es.srt"
+    p._ensure_subtitles("es", lambda: asked.append(1) or ["https://subs/es.srt"])
+    assert asked == [1]
