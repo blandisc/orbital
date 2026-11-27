@@ -76,36 +76,53 @@ section.decision { display: grid; gap: 14px; }
 <main>
   <div class="intro">
     <h1>Control, Ajustes y filtro en el Duo</h1>
-    <p>En el renglón de arriba del Duo cerrado caben tres cosas junto a «orbital». Hoy son el control y tu foto (Ajustes), y el filtro «Todo» se quedó fuera. Tres formas de que quepan las tres. «Hoy» es una captura real; las opciones son maquetas sobre esa captura.</p>
+    <p>Ahora son capturas reales del Duo cerrado, con los íconos que ya usa Orbital: la pastilla de vidrio del filtro (cuadritos, rollo y pantallas), el control y el engrane de Ajustes. Las dos opciones están construidas y las probé tocando.</p>
   </div>
   <section class="decision">
-    <div class="dhead"><span class="code">HB1</span><h2>Dónde va cada cosa</h2></div>
+    <div class="dhead"><h2>El problema, visto como diseño</h2></div>
+    <div class="notes">
+      <p><b>El renglón no se estira.</b> iOS fija la hora y la señal junto a la cámara. A la izquierda caben «orbital» y dos botones chicos; un tercero o un menú de iOS manda todo a «…» (lo probé).</p>
+      <p><b>Las tres cosas no pesan igual.</b> El control lo usas muchas veces al día, el filtro de vez en cuando y Ajustes casi nunca. Lo frecuente va a un toque y lo raro puede ir a dos.</p>
+      <p><b>El filtro cambia toda la página</b> (portada, «Seguir viendo», canales), no solo la portada.</p>
+    </div>
+  </section>
+  <section class="decision">
+    <div class="dhead"><span class="code">HB1</span><h2>Dónde va el filtro (y Ajustes)</h2></div>
     <div class="options">
-      <article class="opt today">
-        <header><h3>Hoy</h3><span class="tag grey">así está</span></header>
-        <img src="img/hoy.jpg" alt="Inicio en el Duo hoy: logo, control y tu foto arriba; sin el filtro" loading="lazy">
-        <ul><li class="plus">El control y Ajustes, a un toque.</li><li class="minus">No hay forma de ver solo películas o solo series.</li></ul>
-      </article>
       <article class="opt pick">
         <header><span class="code">HB1-B</span><h3>El filtro en la portada</h3><span class="tag">recomendada</span></header>
-        <div class="pair"><figure><img src="img/b-reposo.jpg" alt="El botón Todo en la esquina de la portada" loading="lazy"><figcaption>En reposo.</figcaption></figure><figure><img src="img/b-abierto.jpg" alt="El menú Todo, Películas, Series abierto sobre la portada" loading="lazy"><figcaption>Al tocar «Todo».</figcaption></figure></div>
-        <ul><li class="plus">Arriba no cambia nada: el control y Ajustes siguen a un toque.</li><li class="plus">El filtro va justo sobre lo que filtra: la portada «En tendencia». Se entiende solo.</li><li class="minus">Tapa un poco la esquina de la imagen (por eso va oscuro, como los botones de la portada).</li></ul>
+        <div class="pair">
+          <figure><img src="img/b-reposo.jpg" alt="La pastilla del filtro, recogida, en la esquina de la portada" loading="lazy"><figcaption>En reposo: un ícono en la esquina.</figcaption></figure>
+          <figure><img src="img/b-abierto.jpg" alt="La pastilla abierta con Todo, Películas y Series" loading="lazy"><figcaption>Al tocarla se abre con los tres.</figcaption></figure>
+        </div>
+        <img src="img/b-peliculas.jpg" alt="Inicio filtrado a películas: la pastilla muestra el rollo y Seguir viendo cambia" loading="lazy">
+        <ul>
+          <li class="plus">El control y tu foto siguen a un toque. Tu foto abre Ajustes, igual que en las otras pestañas.</li>
+          <li class="plus">Es la misma pastilla que el 17 Pro tiene arriba: nada nuevo que aprender. El ícono de la esquina siempre dice qué estás viendo.</li>
+          <li class="minus">Va encima del arte. Se lee bien porque es de vidrio, pero tapa un poco la esquina.</li>
+          <li class="minus">Parece que filtra solo la portada, aunque filtra toda la página.</li>
+        </ul>
       </article>
       <article class="opt">
-        <header><span class="code">HB1-A</span><h3>Todo en tu foto</h3></header>
-        <div class="pair"><figure><img src="img/a-reposo.jpg" alt="Arriba solo el logo y tu foto" loading="lazy"><figcaption>En reposo.</figcaption></figure><figure><img src="img/a-abierto.jpg" alt="Menú de tu foto con el control de la TV, el filtro y Ajustes" loading="lazy"><figcaption>Al tocar tu foto.</figcaption></figure></div>
-        <ul><li class="plus">El renglón más limpio: solo «orbital» y tu foto.</li><li class="minus">El control, que es lo que más usas, pasa a dos toques.</li><li class="minus">El filtro queda escondido en un menú que no dice que está ahí.</li></ul>
-      </article>
-      <article class="opt">
-        <header><span class="code">HB1-C</span><h3>El control abajo, el filtro arriba</h3></header>
-        <img src="img/c-reposo.jpg" alt="Arriba logo, Todo y tu foto chocando con la hora; abajo una barra del control" loading="lazy">
-        <ul><li class="plus">El control, cerca del pulgar, como cuando algo se reproduce en la TV.</li><li class="minus">Arriba no cabe: «Todo» y tu foto chocan con la hora (en la maqueta se ve), e iOS los mandaría a «…».</li><li class="minus">Abajo, una barra más sobre el contenido.</li></ul>
+        <header><span class="code">HB1-A</span><h3>Tu foto abre un globo</h3></header>
+        <div class="pair">
+          <figure><img src="img/a-reposo.jpg" alt="Arriba: orbital, el control y tu foto; la portada limpia" loading="lazy"><figcaption>En reposo: la portada limpia.</figcaption></figure>
+          <figure><img src="img/a-abierto.jpg" alt="Globo con Qué ver en Inicio, la pastilla del filtro y Ajustes" loading="lazy"><figcaption>Al tocar tu foto.</figcaption></figure>
+        </div>
+        <img src="img/a-peliculas.jpg" alt="Con Películas elegido: la pastilla dice Películas" loading="lazy">
+        <ul>
+          <li class="plus">La portada queda limpia y el globo dice para qué es («Qué ver en Inicio»).</li>
+          <li class="plus">Con un filtro puesto, tu foto lleva su ícono chiquito: se sabe que Inicio está filtrado.</li>
+          <li class="minus">Ajustes pasa a dos toques, y solo en Inicio del Duo: en las demás pestañas tu foto abre Ajustes directo.</li>
+          <li class="minus">El filtro queda escondido: hay que saber que vive en tu foto.</li>
+        </ul>
       </article>
     </div>
+    <p class="note">En las dos, el control sigue en el renglón de arriba a un toque, y en tu 17 Pro no cambia nada.</p>
   </section>
   <section class="decision">
     <div class="dhead"><h2>Mi recomendación</h2></div>
     <p class="say">HB1-B</p>
-    <p class="why"><b>Por qué:</b> lo que más usas (el control) y Ajustes se quedan a un toque, y el filtro vive donde se nota su efecto. No le quita nada al renglón de arriba. Solo cambia en el Duo; en tu 17 Pro el filtro sigue donde está.</p>
+    <p class="why"><b>Por qué:</b> deja todo a un toque, con las mismas piezas que ya conoces, y tu foto hace lo mismo en todas las pestañas. Lo que pierde (un poco de esquina de la portada) es menos que lo que A esconde.</p>
   </section>
 </main>

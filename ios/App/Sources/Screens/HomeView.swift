@@ -5,8 +5,9 @@ import OrbitalModels
 struct HomeView: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
-    @State private var home: ModelObserver<HomeModel>
+    @State var home: ModelObserver<HomeModel>
     @State var tvNow: ModelObserver<TVNowModel>
+    @State var heroKindOpen = false   // HB1-B: la pastilla del tipo en la portada (Duo, en prueba)
     @State private var inbox: ModelObserver<InboxModel>
     /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
     @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
@@ -412,6 +413,7 @@ struct HomeView: View {
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $heroSlot)
         .clipShape(RoundedRectangle(cornerRadius: board ? DS.Radius.xxl : 0, style: .continuous))   // el tablero: la tarjeta al pasar de una a otra
+        .overlay(alignment: .topTrailing) { heroKind }
         .overlay(alignment: .bottom) {
             if !WindowMetrics.roomy {
                 PageDots(count: items.count, index: index)
