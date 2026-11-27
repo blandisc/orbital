@@ -120,6 +120,8 @@ salía ~20 pt más ancha, recorrida a la izquierda y cortada de los dos lados.
 - Lo cuida `DesignRulesTests+Column.swift`. Se comprueba con capturas con el control abierto y cerrado: `-demo-open
   remote-idle` en «Orbital QA iPad 13» de pie (ventana de 1032: ya sale el panel) y en «Orbital QA iPad» acostado;
   `-demo-sidebar` (solo Debug) abre la barra lateral.
+- `-demo-duo-bars-below` (solo Debug) prueba DU1-B en el iPhone Duo: la barra de pestañas abajo y la hora arriba, en vez
+  de la franja al costado que pone iOS (`Platform/DuoBars.swift`).
 
 ### Lo que se desplaza a lo ancho (13 nov 2026)
 
