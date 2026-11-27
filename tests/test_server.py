@@ -116,6 +116,16 @@ def test_system_says_which_players_are_connected(make_client, monkeypatch):
         monkeypatch.setattr(gamepad, "_load_battery", lambda: (lambda slot: {2: "low", 0: "wired"}[slot]))
         assert c.get("/api/system", headers=auth).json()["players"] == [{"player": 1, "battery": "low"}, {"player": 2, "battery": "wired"}]
 
+        # Los que XInput no ve (Legion Go en DInput, PlayStation): también cuentan, después, sin batería.
+        Watcher.others = lambda self: [(0x17EF, 0x61ED)]
+        assert c.get("/api/system", headers=auth).json()["players"] == [
+            {"player": 1, "battery": "low"}, {"player": 2, "battery": "wired"}, {"player": 3, "battery": None}]
+        monkeypatch.setattr(players, "order", [])
+        Watcher.devices, Watcher.connected_at = {}, {}
+        assert c.get("/api/system", headers=auth).json()["players"] == [{"player": 1, "battery": None}]
+        # Y Jugadores dice cuál es (la barra lo cuenta; la lista de jugadores, no): uno de la Legion Go.
+        assert c.get("/api/players", headers=auth).json()["others"] == [{"legion": True}]
+
 
 def test_voice_status_says_where_the_last_order_came_from(make_client):
     """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las últimas

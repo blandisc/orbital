@@ -1026,3 +1026,12 @@ test("DN1 · cada nube lleva su ícono (sus iniciales en su color), el mismo del
   assert.equal(rows.length, 9);
   for (const row of rows) assert.ok(row.initials && row.tint && !row.icon, `«${row.label}» lleva sus iniciales, no un ícono genérico`);
 });
+
+test("Jugadores dice los controles que XInput no ve (la Legion Go en DInput) y cómo hacer que cuenten", async () => {
+  const { playersMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = playersMenu({ players: [], game: null, others: [{ legion: true }, { legion: false }] });
+  const info = menu.options.filter((o) => o.info);
+  assert.deepEqual(info.map((o) => o.label), ["Control de la Legion Go (modo DInput)", "Otro control (DInput)"]);
+  assert.match(info[0].hint, /Legion L \+ RB/);
+  assert.ok(!menu.options.some((o) => o.label === "No hay controles conectados"));
+});
