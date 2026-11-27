@@ -96,12 +96,20 @@ extension View {
 /// «Más»: el mismo menú en toda la app, un círculo con «…» (vidrio; sólido donde el vidrio no se lleva bien). Antes había cuatro
 /// (con texto, borde, otro ícono…).
 struct DSMoreMenu<Content: View>: View {
+    /// TC-B: en una fila de teclas del control, «Más» es otra tecla (la misma `ActionTileLabel` de las teclas), no un círculo.
+    var key = false
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        Menu { content() } label: { Image(systemName: "ellipsis") }
-            .dsIconButtonLook().buttonBorderShape(.circle).dsControlSize(.large)
-            .accessibilityLabel(Text("Más"))
+        if key {
+            Menu { content() } label: { ActionTileLabel(style: .key, title: Text("Más"), symbol: "ellipsis") }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Más"))
+        } else {
+            Menu { content() } label: { Image(systemName: "ellipsis") }
+                .dsIconButtonLook().buttonBorderShape(.circle).dsControlSize(.large)
+                .accessibilityLabel(Text("Más"))
+        }
     }
 }
 

@@ -24,4 +24,17 @@ extension DesignRulesTests {
         XCTAssertTrue(scrubber.contains(".highPriorityGesture(DragGesture"), "la barra gana sobre la hoja")
         XCTAssertTrue(scrubber.contains("landing"), "al soltar, el punto espera a la TV")
     }
+
+    /// TC-B e IS-B (26 nov 2026): la tarjeta corta y la isla usan las teclas del control completo (anchas, mate, pegadas),
+    /// no círculos ni cápsulas de vidrio.
+    func testShortCardAndIslandUseTheRemoteKeys() throws {
+        let card = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "TVCards.swift" }).lines.joined(separator: "\n")
+        let now = try XCTUnwrap(card.range(of: "struct NowPlayingCard").map { String(card[$0.lowerBound...].prefix(9000)) })
+        XCTAssertTrue(now.contains("RemoteKey(symbol: symbol"), "la tarjeta corta usa `RemoteKey`")
+        XCTAssertFalse(now.contains("DSIconButton(symbol: symbol"), "sin círculos de vidrio en la tarjeta")
+        XCTAssertTrue(now.contains("DSMoreMenu(key:"), "«Más» es otra tecla")
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../App/Widgets/TVActivityWidget.swift").standardized
+        let widget = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertFalse(widget.contains("if wide { Capsule()"), "la isla usa la forma de las teclas, no cápsulas")
+    }
 }
