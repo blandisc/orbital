@@ -1,0 +1,111 @@
+<title>Control, Ajustes y filtro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Tres decisiones, cada una con «Hoy» y sus opciones lado a lado en el tamaño de la pantalla de afuera del Duo (466 × 678). */
+:root {
+  --bg: #f2f4f3; --card: #ffffff; --fg: #14181a; --muted: #5a6468; --line: #dde3e2; --accent: #0b8a85; --pick: #0b8a85; --pick-bg: #e3f4f2;
+  --display: "Space Grotesk", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1213; --card: #171c1e; --fg: #e7eced; --muted: #9aa6aa; --line: #283033; --accent: #3cc6bf; --pick: #3cc6bf; --pick-bg: #12302e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1213; --card: #171c1e; --fg: #e7eced; --muted: #9aa6aa; --line: #283033; --accent: #3cc6bf; --pick: #3cc6bf; --pick-bg: #12302e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 72px; }
+main { max-width: 1120px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-family: var(--display); font-size: clamp(1.7rem, 4vw, 2.3rem); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 1.35rem; margin: 0; text-wrap: balance; }
+.intro { display: grid; gap: 10px; max-width: 66ch; }
+.intro p, .lead { margin: 0; color: var(--muted); }
+.done { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; max-width: 66ch; display: grid; gap: 4px; }
+.done b { font-family: var(--display); color: var(--accent); }
+.done p { margin: 0; }
+section.decision { display: grid; gap: 14px; }
+.dhead { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.code { font-family: var(--display); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.opt { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.pick { border: 2px solid var(--pick); background: linear-gradient(var(--pick-bg), var(--card) 40%); }
+.opt.today { opacity: .92; }
+.opt header { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.opt h3 { margin: 0; font-size: 1rem; font-weight: 600; flex: 1; min-width: 0; }
+.tag { font-size: .72rem; font-weight: 600; letter-spacing: .03em; color: var(--pick); border: 1px solid var(--pick); border-radius: 999px; padding: 1px 8px; }
+.tag.grey { color: var(--muted); border-color: var(--line); }
+.opt img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; background: #000; }
+.opt ul { margin: 0; padding-left: 18px; font-size: .88rem; display: grid; gap: 3px; }
+.opt li::marker { color: var(--muted); }
+.plus { color: var(--fg); } .minus { color: var(--muted); }
+.why { margin: 0; font-size: .92rem; max-width: 70ch; }
+.why b { color: var(--accent); }
+.dictate { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; max-width: 70ch; }
+.dictate p { margin: 0; }
+.dictate .say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; }
+.strip { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.strip img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+.strip p { margin: 0; font-size: .84rem; }
+.strip b { font-weight: 600; }
+.map { overflow-x: auto; }
+.map table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .9rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.map th, .map td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.map th { font-family: var(--display); font-weight: 600; font-size: .85rem; color: var(--muted); }
+.map tr:last-child td { border-bottom: 0; }
+.map td:first-child { font-weight: 600; }
+.sources { font-size: .84rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.sources a { color: var(--accent); }
+.moments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.moment { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.moment img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; background: #000; }
+.moment h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.moment .rule { margin: 0; font-size: .9rem; }
+.moment .state { font-size: .75rem; font-weight: 600; color: var(--muted); }
+.moment .state.ok { color: var(--accent); }
+.notes { font-size: .88rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+
+.say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 0; }
+.note { font-size: .85rem; color: var(--muted); margin: 0; border-left: 3px solid var(--line); padding-left: 10px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair figure { margin: 0; display: grid; gap: 4px; }
+.pair figcaption { font-size: .8rem; color: var(--muted); }
+
+.say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 0; }
+.note { font-size: .85rem; color: var(--muted); margin: 0; border-left: 3px solid var(--line); padding-left: 10px; }
+</style>
+<main>
+  <div class="intro">
+    <h1>Control, Ajustes y filtro en el Duo</h1>
+    <p>En el renglón de arriba del Duo cerrado caben tres cosas junto a «orbital». Hoy son el control y tu foto (Ajustes), y el filtro «Todo» se quedó fuera. Tres formas de que quepan las tres. «Hoy» es una captura real; las opciones son maquetas sobre esa captura.</p>
+  </div>
+  <section class="decision">
+    <div class="dhead"><span class="code">HB1</span><h2>Dónde va cada cosa</h2></div>
+    <div class="options">
+      <article class="opt today">
+        <header><h3>Hoy</h3><span class="tag grey">así está</span></header>
+        <img src="img/hoy.jpg" alt="Inicio en el Duo hoy: logo, control y tu foto arriba; sin el filtro" loading="lazy">
+        <ul><li class="plus">El control y Ajustes, a un toque.</li><li class="minus">No hay forma de ver solo películas o solo series.</li></ul>
+      </article>
+      <article class="opt pick">
+        <header><span class="code">HB1-B</span><h3>El filtro en la portada</h3><span class="tag">recomendada</span></header>
+        <div class="pair"><figure><img src="img/b-reposo.jpg" alt="El botón Todo en la esquina de la portada" loading="lazy"><figcaption>En reposo.</figcaption></figure><figure><img src="img/b-abierto.jpg" alt="El menú Todo, Películas, Series abierto sobre la portada" loading="lazy"><figcaption>Al tocar «Todo».</figcaption></figure></div>
+        <ul><li class="plus">Arriba no cambia nada: el control y Ajustes siguen a un toque.</li><li class="plus">El filtro va justo sobre lo que filtra: la portada «En tendencia». Se entiende solo.</li><li class="minus">Tapa un poco la esquina de la imagen (por eso va oscuro, como los botones de la portada).</li></ul>
+      </article>
+      <article class="opt">
+        <header><span class="code">HB1-A</span><h3>Todo en tu foto</h3></header>
+        <div class="pair"><figure><img src="img/a-reposo.jpg" alt="Arriba solo el logo y tu foto" loading="lazy"><figcaption>En reposo.</figcaption></figure><figure><img src="img/a-abierto.jpg" alt="Menú de tu foto con el control de la TV, el filtro y Ajustes" loading="lazy"><figcaption>Al tocar tu foto.</figcaption></figure></div>
+        <ul><li class="plus">El renglón más limpio: solo «orbital» y tu foto.</li><li class="minus">El control, que es lo que más usas, pasa a dos toques.</li><li class="minus">El filtro queda escondido en un menú que no dice que está ahí.</li></ul>
+      </article>
+      <article class="opt">
+        <header><span class="code">HB1-C</span><h3>El control abajo, el filtro arriba</h3></header>
+        <img src="img/c-reposo.jpg" alt="Arriba logo, Todo y tu foto chocando con la hora; abajo una barra del control" loading="lazy">
+        <ul><li class="plus">El control, cerca del pulgar, como cuando algo se reproduce en la TV.</li><li class="minus">Arriba no cabe: «Todo» y tu foto chocan con la hora (en la maqueta se ve), e iOS los mandaría a «…».</li><li class="minus">Abajo, una barra más sobre el contenido.</li></ul>
+      </article>
+    </div>
+  </section>
+  <section class="decision">
+    <div class="dhead"><h2>Mi recomendación</h2></div>
+    <p class="say">HB1-B</p>
+    <p class="why"><b>Por qué:</b> lo que más usas (el control) y Ajustes se quedan a un toque, y el filtro vive donde se nota su efecto. No le quita nada al renglón de arriba. Solo cambia en el Duo; en tu 17 Pro el filtro sigue donde está.</p>
+  </section>
+</main>
