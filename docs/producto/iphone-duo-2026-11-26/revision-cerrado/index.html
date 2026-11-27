@@ -1,0 +1,442 @@
+<title>Duo cerrado, pantalla por pantalla</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Una tira de pantallas del iPhone Duo cerrado (466 × 678 pt): cada una en claro y oscuro, su código para dictar y lo que vio el revisor. */
+:root {
+  --bg: #f3f4f6; --card: #ffffff; --fg: #15181d; --muted: #5d6470; --line: #dfe3e8; --accent: #0b8a85;
+  --must: #b4372b; --should: #a35d00; --nit: #5d6470;
+  --display: "Space Grotesk", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1116; --card: #171b22; --fg: #e8ebef; --muted: #9aa3ae; --line: #2a303a; --accent: #3cc6bf;
+  --must: #f08a7e; --should: #f0b259; --nit: #9aa3ae; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1116; --card: #171b22; --fg: #e8ebef; --muted: #9aa3ae; --line: #2a303a; --accent: #3cc6bf;
+  --must: #f08a7e; --should: #f0b259; --nit: #9aa3ae; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px; }
+main { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-family: var(--display); font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0; text-wrap: balance; }
+.intro { display: grid; gap: 10px; max-width: 68ch; }
+.intro p { margin: 0; color: var(--muted); }
+.how { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; max-width: 68ch; }
+.how b { font-family: var(--display); color: var(--accent); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: .9rem; color: var(--muted); }
+.bar label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 18px; }
+.screen { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; scroll-margin-top: 16px; }
+.screen header { display: flex; gap: 10px; align-items: baseline; }
+.code { font-family: var(--display); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.screen h2 { font-size: 1rem; font-weight: 600; margin: 0; flex: 1; min-width: 0; }
+.count { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+figure { margin: 0; display: grid; gap: 4px; }
+figure img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #000; display: block; }
+figcaption { font-size: .75rem; color: var(--muted); letter-spacing: .02em; }
+.finds { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: .88rem; }
+.finds li { padding-left: 12px; border-left: 3px solid var(--nit); }
+.finds li b { font-family: var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.finds .sev-must { border-color: var(--must); } .finds .sev-must b { color: var(--must); }
+.finds .sev-should { border-color: var(--should); } .finds .sev-should b { color: var(--should); }
+.clean { margin: 0; font-size: .85rem; color: var(--muted); }
+body.only-finds .screen:not(:has(.finds)) { display: none; }
+input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+<main>
+  <section class="intro">
+    <h1>Duo cerrado, pantalla por pantalla</h1>
+    <p>47 pantallas de Orbital en la pantalla de afuera del iPhone Duo (466 × 678 pt, con la hora y las pestañas en la franja de la derecha), cada una en claro y en oscuro. Abajo de cada una, lo que encontró el revisor: 108 cosas.</p>
+  </section>
+  <section class="how" aria-label="Cómo dictar">
+    <p><b>Para dictar:</b> el código de la pantalla y lo que ves, por ejemplo «C07: el filtro queda muy pegado arriba». Para un hallazgo del revisor, su número: «C07-2 sí», «C07-2 no».</p>
+    <p>Con tu primera revisión armo el lenguaje de diseño del Duo cerrado (qué se acomoda, qué se achica, qué nunca se corta) y lo aplico solo en lo demás.</p>
+  </section>
+  <div class="bar">
+    <label for="only"><input type="checkbox" id="only"> Solo las que tienen hallazgos</label>
+    <span class="legend"><span><i class="dot" style="background:var(--must)"></i>Se ve mal</span> <span><i class="dot" style="background:var(--should)"></i>Mejorable</span> <span><i class="dot" style="background:var(--nit)"></i>Detalle</span></span>
+  </div>
+  <div class="grid">
+<article class="screen" id="C01">
+  <header><span class="code">C01</span><h2>Inicio</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C01-light.jpg" alt="Inicio en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C01-dark.jpg" alt="Inicio en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C01-1</b> En claro la tarjeta grande de Duna va metida con márgenes y sin puntitos de página; en oscuro ocupa todo el ancho hasta la franja de la derecha y muestra los puntitos: las dos versiones de la misma pantalla no se parecen.</li><li class="sev-should"><b>C01-2</b> La segunda tarjeta de «Seguir viendo» (Breaking Bad) corre por debajo de la barra de pestañas de la derecha y se ve mordida, mientras el resto del contenido respeta el margen.</li><li class="sev-nit"><b>C01-3</b> El título «Duna» y su fila de datos quedan en alturas distintas entre claro y oscuro.</li></ul>
+</article>
+<article class="screen" id="C02">
+  <header><span class="code">C02</span><h2>Explorar</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C02-light.jpg" alt="Explorar en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C02-dark.jpg" alt="Explorar en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C02-1</b> El título «Explorar» es negro sobre carteles de colores y casi no se lee en claro; en oscuro es blanco y tampoco tiene fondo que lo proteja del cartel de atrás.</li><li class="sev-should"><b>C02-2</b> Los botones flotantes de lista y perfil (arriba a la derecha) quedan encima de carteles y se mezclan con ellos; se ven apretados contra la hora y la señal.</li><li class="sev-should"><b>C02-3</b> Abajo el bloque «Decide por mí», la tarjeta de calificar y el selector Todo/Películas/Series se amontonan; la franja de pestañas tapa parte del selector y del texto «Lo más visto esta semana en Trakt» queda pegado al borde inferior.</li></ul>
+</article>
+<article class="screen" id="C03">
+  <header><span class="code">C03</span><h2>Explorar · mosaico</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C03-light.jpg" alt="Explorar · mosaico en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C03-dark.jpg" alt="Explorar · mosaico en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C03-1</b> Todos los carteles son el mismo (Duna) y la cuadrícula tiene un hueco en la tercera fila, última columna; se ve como una fila incompleta.</li><li class="sev-should"><b>C03-2</b> No hay título ni encabezado que diga qué pantalla es (mosaico); solo carteles y botones de flecha y recarga sueltos a la derecha.</li></ul>
+</article>
+<article class="screen" id="C04">
+  <header><span class="code">C04</span><h2>Explorar · listas</h2><span class="count"></span></header>
+  <div class="pair">
+    <figure><img src="img/C04-light.jpg" alt="Explorar · listas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C04-dark.jpg" alt="Explorar · listas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <p class="clean">Sin hallazgos.</p>
+</article>
+<article class="screen" id="C05">
+  <header><span class="code">C05</span><h2>Buscar</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C05-light.jpg" alt="Buscar en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C05-dark.jpg" alt="Buscar en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C05-1</b> La mitad de la pantalla queda vacía entre «Búsqueda avanzada» y la tarjeta de calificar; poco aprovechamiento del espacio.</li><li class="sev-nit"><b>C05-2</b> Los íconos de Género, Época, Tiempo, Calificación, Fama y Dónde usan colores muy distintos entre sí y las etiquetas son de letra muy chica.</li></ul>
+</article>
+<article class="screen" id="C06">
+  <header><span class="code">C06</span><h2>Buscar «dune»</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C06-light.jpg" alt="Buscar «dune» en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C06-dark.jpg" alt="Buscar «dune» en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C06-1</b> La tarjeta flotante tapa justo los títulos y la mitad de los carteles de la primera fila de resultados.</li><li class="sev-nit"><b>C06-2</b> Los textos bajo los carteles («Duna: Parte dos», «Duna: Prophecy») son muy chicos y en claro, grises y de bajo contraste.</li></ul>
+</article>
+<article class="screen" id="C07">
+  <header><span class="code">C07</span><h2>Buscar · filtro de género</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C07-light.jpg" alt="Buscar · filtro de género en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C07-dark.jpg" alt="Buscar · filtro de género en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C07-1</b> La hoja de géneros arranca cortada arriba: las pestañas «Género» y «Época» quedan a medias recortadas y no hay título ni agarradera que explique que es una hoja.</li><li class="sev-should"><b>C07-2</b> La hoja llega pegada a la orilla izquierda con esquina redondeada recortada arriba a la derecha, y la franja del sistema queda fuera: el panel se ve desalineado respecto al resto de pantallas.</li><li class="sev-nit"><b>C07-3</b> Los nombres de género sobre las fotos pequeñas son blancos sobre imágenes claras (Aventura, Animación, Romance) y pierden contraste.</li></ul>
+</article>
+<article class="screen" id="C08">
+  <header><span class="code">C08</span><h2>Biblioteca · Guardado</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C08-light.jpg" alt="Biblioteca · Guardado en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C08-dark.jpg" alt="Biblioteca · Guardado en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C08-1</b> Los tres botones de ordenar, filtrar y agregar y el selector Todo/Películas/Series están en filas distintas y con alineaciones distintas, la pantalla se ve cargada de controles antes de llegar a los carteles.</li><li class="sev-nit"><b>C08-2</b> Los textos «Separación 2022» bajo los carteles son muy chicos y de poco contraste en claro.</li></ul>
+</article>
+<article class="screen" id="C09">
+  <header><span class="code">C09</span><h2>Biblioteca · Descargas</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C09-light.jpg" alt="Biblioteca · Descargas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C09-dark.jpg" alt="Biblioteca · Descargas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C09-1</b> Las tarjetas de almacenamiento y descargas llegan hasta casi la franja derecha (borde a ~382), pasando el margen de las otras pantallas de Biblioteca (borde a ~365): el ancho cambia entre pestañas.</li><li class="sev-should"><b>C09-2</b> La tarjeta flotante de calificar tapa el nombre y los datos de la serie «La Oficina» en la lista de Series.</li><li class="sev-nit"><b>C09-3</b> En claro la barra de uso es un gris oscuro muy pesado comparada con el resto de la tarjeta; en oscuro el fondo se ve marrón rojizo y no combina con las demás pantallas oscuras.</li></ul>
+</article>
+<article class="screen" id="C10">
+  <header><span class="code">C10</span><h2>Biblioteca · Vistas</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C10-light.jpg" alt="Biblioteca · Vistas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C10-dark.jpg" alt="Biblioteca · Vistas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C10-1</b> El año del cartel de Breaking Bad queda cortado por la tarjeta flotante y el cartel de abajo (Chernobyl) aparece partido por detrás.</li><li class="sev-nit"><b>C10-2</b> Los dos iconos de reloj y lista a la derecha no tienen texto, y no se entiende que son botones.</li></ul>
+</article>
+<article class="screen" id="C11">
+  <header><span class="code">C11</span><h2>Ficha de serie</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C11-light.jpg" alt="Ficha de serie en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C11-dark.jpg" alt="Ficha de serie en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C11-1</b> En oscuro el cartel de la serie ocupa todo el ancho sin márgenes y en claro es una tarjeta con esquinas redondeadas y márgenes: las dos versiones no son iguales.</li><li class="sev-should"><b>C11-2</b> Bajo el botón «Continuar T2 E5» la barra de avance y «quedan 20 min» y los botones Guardada/Descargar/Vista quedan tapados por la tarjeta flotante; en oscuro la barra de avance casi se pierde.</li><li class="sev-nit"><b>C11-3</b> La línea de datos «2005–2013 · Serie · Comedia · 22 min» queda muy pegada a la franja y sin aire hacia la derecha en oscuro.</li></ul>
+</article>
+<article class="screen" id="C12">
+  <header><span class="code">C12</span><h2>Ficha de película</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C12-light.jpg" alt="Ficha de película en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C12-dark.jpg" alt="Ficha de película en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C12-1</b> Los botones Guardada/Descargar/Vista quedan casi ocultos tras la tarjeta flotante; solo se ven asomando por arriba.</li><li class="sev-nit"><b>C12-2</b> En claro el cartel es una tarjeta con márgenes y en oscuro va a pantalla completa; el título «Duna» cambia de altura entre modos.</li></ul>
+</article>
+<article class="screen" id="C13">
+  <header><span class="code">C13</span><h2>Elegir versión</h2><span class="count">1</span></header>
+  <div class="pair">
+    <figure><img src="img/C13-light.jpg" alt="Elegir versión en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C13-dark.jpg" alt="Elegir versión en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C13-1</b> En oscuro, el botón «Cambiarla por esta» es gris sobre gris casi sin contraste con el fondo de la hoja.</li></ul>
+</article>
+<article class="screen" id="C14">
+  <header><span class="code">C14</span><h2>Fuentes</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C14-light.jpg" alt="Fuentes en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C14-dark.jpg" alt="Fuentes en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C14-1</b> La hoja de «Versión» es translúcida y deja pasar el fondo, por lo que los renglones de las fuentes se ven sobre manchas; en claro el texto gris pequeño («Todas, por calidad», «en la nube») pierde contraste.</li><li class="sev-should"><b>C14-2</b> En claro la hoja se corta en la esquina derecha con una curva grande que se come parte del borde, y en la parte de abajo queda un espacio vacío antes de la barra inferior.</li><li class="sev-nit"><b>C14-3</b> Las banderas y la fila «Español · también inglés, francés» están muy apretadas y los íconos de ayuda («?») son muy chicos para tocar.</li></ul>
+</article>
+<article class="screen" id="C15">
+  <header><span class="code">C15</span><h2>Guardar en lista</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C15-light.jpg" alt="Guardar en lista en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C15-dark.jpg" alt="Guardar en lista en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C15-1</b> El título «Guardar en…» aparece cortado con puntos suspensivos porque el botón «+ Nueva lista…» le quita el espacio; el botón además queda pegado a la orilla derecha sobre la franja.</li><li class="sev-should"><b>C15-2</b> Las filas de listas son translúcidas y se mezclan con el fondo borroso, sobre todo en claro, donde los renglones se ven sucios; los círculos de selección son delgados y grises.</li></ul>
+</article>
+<article class="screen" id="C16">
+  <header><span class="code">C16</span><h2>Calificar</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C16-light.jpg" alt="Calificar en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C16-dark.jpg" alt="Calificar en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C16-1</b> La pantalla de calificar es en realidad Inicio con la tarjeta flotante «¿Qué tal Moonlight?» tapando «Seguir viendo»; las estrellas de la tarjeta casi no se distinguen del fondo en claro.</li><li class="sev-nit"><b>C16-2</b> La tarjeta dice «y 2 más» con una raya al lado pegada, de tamaño muy chico para un botón.</li></ul>
+</article>
+<article class="screen" id="C17">
+  <header><span class="code">C17</span><h2>Decide por mí</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C17-light.jpg" alt="Decide por mí en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C17-dark.jpg" alt="Decide por mí en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C17-1</b> En la fila de abajo, el botón de los tres puntos es claramente más chico que el de mezclar y que el botón Ver; los tres botones no se sienten de la misma familia y el chico queda corto para el dedo.</li><li class="sev-nit"><b>C17-2</b> El fondo de atrás se ve muy difuminado y la hoja llega hasta debajo de la franja del sistema, dejando una zona vacía a la derecha del contenido, que termina mucho antes.</li></ul>
+</article>
+<article class="screen" id="C18">
+  <header><span class="code">C18</span><h2>Una por una (match)</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C18-light.jpg" alt="Una por una (match) en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C18-dark.jpg" alt="Una por una (match) en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C18-1</b> El título bajo el póster se corta con «Guardianes de la G…» y la línea de datos también se corta con «Acción, A…»; se pierde el nombre de la película, justo lo que ayuda a decidir.</li><li class="sev-nit"><b>C18-2</b> En modo claro la sombra bajo el póster es muy negra y pesada, parece una mancha oscura detrás de la tarjeta; en oscuro no se nota igual.</li><li class="sev-nit"><b>C18-3</b> Las etiquetas de los cuatro botones (Paso, Para hoy, Guardar, Ver) son muy chicas y los botones son circulares pequeños con mucho aire a los lados.</li></ul>
+</article>
+<article class="screen" id="C19">
+  <header><span class="code">C19</span><h2>Colecciones</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C19-light.jpg" alt="Colecciones en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C19-dark.jpg" alt="Colecciones en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C19-1</b> Los contadores bajo cada trofeo («0 / 27», «0 / 26») son de letra muy chica y gris claro; en modo claro cuesta leerlos.</li><li class="sev-nit"><b>C19-2</b> Los trofeos y los títulos de la fila de arriba quedan más pegados al margen izquierdo (Globos de Oro) que el título «Colecciones», así que la rejilla no se alinea con el encabezado.</li></ul>
+</article>
+<article class="screen" id="C20">
+  <header><span class="code">C20</span><h2>Lo que ves</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C20-light.jpg" alt="Lo que ves en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C20-dark.jpg" alt="Lo que ves en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C20-1</b> La foto grande de «Este mes» llega pegada a la orilla izquierda y termina recta a la derecha sin esquinas redondeadas, mientras el selector de arriba y el resto tienen margen; se ve como un bloque cortado y no alineado.</li><li class="sev-nit"><b>C20-2</b> Los números grandes 1, 2, 3 de «Lo que más viste» quedan casi todos tapados por los pósters y se leen como manchas grises.</li><li class="sev-nit"><b>C20-3</b> Los textos de abajo («10 capítulos · 8 h», «7 capítulos · 5 h») son muy chicos y quedan pegados al indicador de inicio.</li></ul>
+</article>
+<article class="screen" id="C21">
+  <header><span class="code">C21</span><h2>Tu año</h2><span class="count">4</span></header>
+  <div class="pair">
+    <figure><img src="img/C21-light.jpg" alt="Tu año en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C21-dark.jpg" alt="Tu año en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C21-1</b> En el mapa de días, el mes de la izquierda se corta y se lee «pt» en vez de «sept», y las primeras columnas se desvanecen.</li><li class="sev-should"><b>C21-2</b> El título «Tu 2026» es pequeño y flotante, mucho menos marcado que «Colecciones» o «Lo que ves»; los encabezados de las pantallas no tienen el mismo peso.</li><li class="sev-nit"><b>C21-3</b> En oscuro las tres tarjetas de arriba (375 h, 2 días, Drama) casi no se distinguen del fondo; en claro sí tienen cuerpo.</li><li class="sev-nit"><b>C21-4</b> Bajo «Viernes, 27 de noviembre» la fila del día queda recortada por la tarjeta flotante y se ve como una franja gris sin contenido legible.</li></ul>
+</article>
+<article class="screen" id="C22">
+  <header><span class="code">C22</span><h2>Reproductor · siguiente episodio</h2><span class="count">1</span></header>
+  <div class="pair">
+    <figure><img src="img/C22-light.jpg" alt="Reproductor · siguiente episodio en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C22-dark.jpg" alt="Reproductor · siguiente episodio en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C22-1</b> La tarjeta «Siguiente episodio» está más angosta que el resto (empieza más adentro que la barra de tiempo), así que no cuadra con los márgenes de la pantalla.</li></ul>
+</article>
+<article class="screen" id="C23">
+  <header><span class="code">C23</span><h2>Reproductor · audio y subtítulos</h2><span class="count"></span></header>
+  <div class="pair">
+    <figure><img src="img/C23-light.jpg" alt="Reproductor · audio y subtítulos en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C23-dark.jpg" alt="Reproductor · audio y subtítulos en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <p class="clean">Sin hallazgos.</p>
+</article>
+<article class="screen" id="C24">
+  <header><span class="code">C24</span><h2>Reproductor · episodios</h2><span class="count"></span></header>
+  <div class="pair">
+    <figure><img src="img/C24-light.jpg" alt="Reproductor · episodios en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C24-dark.jpg" alt="Reproductor · episodios en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <p class="clean">Sin hallazgos.</p>
+</article>
+<article class="screen" id="C25">
+  <header><span class="code">C25</span><h2>Reproductor · ¿sigues viendo?</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C25-light.jpg" alt="Reproductor · ¿sigues viendo? en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C25-dark.jpg" alt="Reproductor · ¿sigues viendo? en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C25-1</b> El botón «Salir» es casi negro sobre fondo casi negro; se distingue poco del panel.</li><li class="sev-nit"><b>C25-2</b> Este panel ocupa de margen a margen, pero la tarjeta de siguiente episodio de la pantalla parecida es más angosta; los dos avisos no tienen el mismo ancho.</li></ul>
+</article>
+<article class="screen" id="C26">
+  <header><span class="code">C26</span><h2>Un Simpson al azar</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C26-light.jpg" alt="Un Simpson al azar en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C26-dark.jpg" alt="Un Simpson al azar en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-nit"><b>C26-1</b> El texto «Un Simpson al azar» es chico y gris claro sobre un fondo verdoso-amarillo, con poco contraste.</li><li class="sev-nit"><b>C26-2</b> El botón «Cancelar» es chico y translúcido, casi se pierde en el fondo; queda lejos del contenido con un gran vacío entre ambos.</li></ul>
+</article>
+<article class="screen" id="C27">
+  <header><span class="code">C27</span><h2>Control (sin nada)</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C27-light.jpg" alt="Control (sin nada) en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C27-dark.jpg" alt="Control (sin nada) en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C27-1</b> En claro, las etiquetas de los botones (Anterior, Siguiente, Atrás, Atajo, Opciones) y el texto «Escribir en la TV» son gris sobre gris translúcido y se leen con dificultad.</li><li class="sev-nit"><b>C27-2</b> Las etiquetas de la fila de atajos son muy chicas y «−5 en la fila» y «+5 en la fila» se parten en dos líneas mientras las demás van en una.</li><li class="sev-nit"><b>C27-3</b> La hoja llega hasta debajo de la franja del sistema, pero el contenido termina antes; queda un hueco desparejo a la derecha.</li></ul>
+</article>
+<article class="screen" id="C28">
+  <header><span class="code">C28</span><h2>Control (viendo en la TV)</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C28-light.jpg" alt="Control (viendo en la TV) en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C28-dark.jpg" alt="Control (viendo en la TV) en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C28-1</b> En oscuro, la tarjeta de Duna de atrás se ve apagada y «En tendencia esta semana» y «Duna» casi no se leen; en claro la tarjeta es redondeada y con margen, en oscuro llega recta a la orilla.</li><li class="sev-nit"><b>C28-2</b> El texto «Estira hacia arriba para el control completo» es muy chico y claro; casi no se lee.</li></ul>
+</article>
+<article class="screen" id="C29">
+  <header><span class="code">C29</span><h2>Consola (jugando)</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C29-light.jpg" alt="Consola (jugando) en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C29-dark.jpg" alt="Consola (jugando) en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C29-1</b> En el selector de modo de energía la tercera opción se corta con «Rendimien…».</li><li class="sev-should"><b>C29-2</b> La tarjeta «Guía» que asoma a la derecha queda cortada a mitad de texto («Para el jefe que t…», «Guías en», «Buscar en») y se lee como cortado y no como una invitación a deslizar.</li><li class="sev-nit"><b>C29-3</b> Los íconos de «Legion», «Xbox» y «Casa 5G» y su texto son diminutos.</li></ul>
+</article>
+<article class="screen" id="C30">
+  <header><span class="code">C30</span><h2>Ajustes</h2><span class="count">4</span></header>
+  <div class="pair">
+    <figure><img src="img/C30-light.jpg" alt="Ajustes en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C30-dark.jpg" alt="Ajustes en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C30-1</b> Las tarjetas de Ajustes llegan casi a tocar la franja del sistema (unos pocos puntos) y empiezan con margen distinto al de otras pantallas, que dejan más aire a la derecha.</li><li class="sev-should"><b>C30-2</b> El título «Ajustes» es pequeño frente al de «Colecciones»; los encabezados no son consistentes entre pantallas.</li><li class="sev-nit"><b>C30-3</b> La descripción del perfil se parte dejando «Real-Debrid» solo en la segunda línea.</li><li class="sev-nit"><b>C30-4</b> El lápiz para editar el perfil es un círculo muy chico pegado al avatar, difícil de tocar.</li></ul>
+</article>
+<article class="screen" id="C31">
+  <header><span class="code">C31</span><h2>Ajustes · Reproducción</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C31-light.jpg" alt="Ajustes · Reproducción en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C31-dark.jpg" alt="Ajustes · Reproducción en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C31-1</b> Las tarjetas llegan casi a la franja del sistema; los interruptores y el selector 4K/1080p/720p quedan pegados al borde derecho de la tarjeta.</li><li class="sev-nit"><b>C31-2</b> Varios renglones se parten en dos líneas («Con datos móviles», «Marcar los sustos en la barra», «Pedir solo el siguiente episodio») y los renglones quedan con alturas distintas.</li><li class="sev-nit"><b>C31-3</b> El título «Reproducción» es pequeño comparado con los títulos de otras pantallas.</li></ul>
+</article>
+<article class="screen" id="C32">
+  <header><span class="code">C32</span><h2>Ajustes · Idiomas</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C32-light.jpg" alt="Ajustes · Idiomas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C32-dark.jpg" alt="Ajustes · Idiomas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C32-1</b> Las tarjetas llegan casi a la franja del sistema y el mosaico de idiomas queda pegado a la izquierda, con la opción «English» más pequeña sin recuadro, así que las dos opciones no se ven iguales.</li><li class="sev-nit"><b>C32-2</b> La barra «Inicio / Explorar / Buscar» parece una barra real de pestañas pero es solo una muestra; puede confundir porque es otra cosa que la barra del sistema.</li><li class="sev-nit"><b>C32-3</b> En claro el recuadro del idioma elegido tiene relleno gris con borde negro grueso; se ve pesado frente a la limpieza del resto.</li></ul>
+</article>
+<article class="screen" id="C33">
+  <header><span class="code">C33</span><h2>Ajustes · Cuentas</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C33-light.jpg" alt="Ajustes · Cuentas en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C33-dark.jpg" alt="Ajustes · Cuentas en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C33-1</b> En Ajustes · Cuentas la tarjeta flotante «¿Qué tal Duna?» tapa la fila de Letterboxd (en claro apenas se lee «No conectado»; en oscuro el texto de abajo se transparenta a través de la tarjeta y queda ilegible).</li><li class="sev-should"><b>C33-2</b> En Cuentas la franja del sistema y el botón de regreso quedan flotando junto a las filas; las filas largas terminan justo antes de la franja y el espacio entre el borde derecho de las tarjetas y la franja es muy angosto.</li><li class="sev-nit"><b>C33-3</b> En oscuro el título de grupo «OneDrive · tus archivos» se ve cortado por un punto brillante de fondo encima de las letras, y los títulos de grupo grises tienen poco contraste sobre el fondo claro.</li></ul>
+</article>
+<article class="screen" id="C34">
+  <header><span class="code">C34</span><h2>Ajustes · Trakt</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C34-light.jpg" alt="Ajustes · Trakt en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C34-dark.jpg" alt="Ajustes · Trakt en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C34-1</b> En Ajustes · Trakt la tarjeta ocupa solo la parte de arriba y debajo queda un hueco enorme vacío hasta la tarjeta flotante; la pantalla se siente vacía.</li><li class="sev-nit"><b>C34-2</b> En oscuro la tarjeta de Trakt casi se funde con el fondo; el borde de la tarjeta se distingue muy poco.</li></ul>
+</article>
+<article class="screen" id="C35">
+  <header><span class="code">C35</span><h2>Ajustes · Series que sigues</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C35-light.jpg" alt="Ajustes · Series que sigues en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C35-dark.jpg" alt="Ajustes · Series que sigues en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C35-1</b> En Series que sigues (claro) la tarjeta flotante tapa por completo una fila de la lista, y la barra gris de inicio del sistema se encima sobre el interruptor de Chernobyl.</li><li class="sev-should"><b>C35-2</b> En Series que sigues (claro) el título «Series que sigues» está en una barra lila distinta del resto del fondo, y el buscador queda pegado muy cerca de esa barra.</li></ul>
+</article>
+<article class="screen" id="C36">
+  <header><span class="code">C36</span><h2>Ajustes · Tu perfil</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C36-light.jpg" alt="Ajustes · Tu perfil en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C36-dark.jpg" alt="Ajustes · Tu perfil en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C36-1</b> En Tu perfil la hoja de abajo sube hasta la mitad y deja ver Ajustes detrás con una fila cortada («Un Simpson al azar»); el filo inferior de los avatares queda cortado por la barra de inicio y la segunda fila de avatares queda a medias, sin saber que se puede deslizar.</li><li class="sev-should"><b>C36-2</b> En Tu perfil la hoja casi llega a la franja de la derecha: el botón «Listo» queda a pocos puntos de la orilla y la esquina redondeada de la hoja choca visualmente con la franja del sistema.</li><li class="sev-nit"><b>C36-3</b> En Tu perfil (oscuro) la tarjeta de «Cómo te llamamos» y la de avatares casi no se distinguen del fondo.</li></ul>
+</article>
+<article class="screen" id="C37">
+  <header><span class="code">C37</span><h2>Conectar tu Orbital</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C37-light.jpg" alt="Conectar tu Orbital en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C37-dark.jpg" alt="Conectar tu Orbital en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C37-1</b> En Conectar tu Orbital el botón «Ahora no» queda pegado arriba a la izquierda y la esquina redondeada de la hoja lo roza; es chico para el dedo y casi sin aire respecto a la orilla.</li><li class="sev-nit"><b>C37-2</b> En Conectar tu Orbital hay un gran hueco vacío entre el campo del nombre del aparato y el botón «Escanear el código».</li><li class="sev-nit"><b>C37-3</b> El renglón «código.» queda solo en el último renglón del paso 1, y el campo gris del nombre tiene muy poco contraste con el fondo en claro.</li></ul>
+</article>
+<article class="screen" id="C38">
+  <header><span class="code">C38</span><h2>Primera vez · bienvenida</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C38-light.jpg" alt="Primera vez · bienvenida en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C38-dark.jpg" alt="Primera vez · bienvenida en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C38-1</b> El dibujo de arriba (los tres carteles) sale diminuto y deja un hueco grande entre el logo y el título; en el iPhone normal se ve mucho más grande.</li><li class="sev-should"><b>C38-2</b> En bienvenida el dibujo de los pósters arriba es diminuto y queda perdido en un hueco grande, desproporcionado frente al título.</li><li class="sev-nit"><b>C38-3</b> En bienvenida el botón «Empezar» (oscuro) llega más cerca de la orilla izquierda que el resto del contenido; el margen no coincide con el título.</li></ul>
+</article>
+<article class="screen" id="C39">
+  <header><span class="code">C39</span><h2>Guía · tu TV</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C39-light.jpg" alt="Guía · tu TV en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C39-dark.jpg" alt="Guía · tu TV en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C39-1</b> En Guía · tu TV las tarjetas y el botón llegan hasta cerca de la franja del sistema y las tarjetas «Servicio de nube» y «Tu Trakt» tienen textos pequeños y grises de poco contraste.</li><li class="sev-nit"><b>C39-2</b> En Guía · tu TV el título parte «Listo, trajimos lo de / tu TV» dejando «tu TV» en un renglón corto, y los círculos punteados de la derecha de las tarjetas son muy pequeños.</li></ul>
+</article>
+<article class="screen" id="C40">
+  <header><span class="code">C40</span><h2>Guía · Trakt</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C40-light.jpg" alt="Guía · Trakt en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C40-dark.jpg" alt="Guía · Trakt en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C40-1</b> En Guía · Trakt hay un hueco grande entre las cifras («2 vistas, 11 en Mi lista, 0 series que sigues») y el botón de abajo; el contenido se agrupa arriba y la pantalla se siente vacía.</li><li class="sev-nit"><b>C40-2</b> En Guía · Trakt las etiquetas bajo las cifras («vistas», «en Mi lista») son muy chicas y de poco contraste, sobre todo en claro.</li></ul>
+</article>
+<article class="screen" id="C41">
+  <header><span class="code">C41</span><h2>Guía · tu nube</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C41-light.jpg" alt="Guía · tu nube en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C41-dark.jpg" alt="Guía · tu nube en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C41-1</b> En Guía · tu nube los tres botones («Ya tengo uno», «Aún no tengo», «Ahora no») cubren con un panel opaco el final del texto: el párrafo «Es aparte de Orbital…» queda pegado/cortado contra el panel y probablemente continúa debajo sin poderse leer.</li><li class="sev-should"><b>C41-2</b> En Guía · tu nube el dibujo de arriba y sus pies de foto («Tú eliges», «Tu servicio la tiene», «Aquí, al instante») son muy pequeños; «Ahora no» es un texto gris chico, difícil de tocar.</li></ul>
+</article>
+<article class="screen" id="C42">
+  <header><span class="code">C42</span><h2>Guía · subtítulos</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C42-light.jpg" alt="Guía · subtítulos en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C42-dark.jpg" alt="Guía · subtítulos en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C42-1</b> En Guía · subtítulos «Conectar» se ve apagado como texto gris sin forma de botón, parece deshabilitado y casi sin contraste; los campos de usuario y contraseña se ven muy planos en claro.</li><li class="sev-should"><b>C42-2</b> En Guía · subtítulos hay un enorme hueco vacío entre «Crear una cuenta gratis» y el botón «Ahora no», y los campos de texto, «Conectar» y el enlace quedan muy apretados entre sí.</li><li class="sev-nit"><b>C42-3</b> En Guía · subtítulos en oscuro los campos de texto son negros planos sin borde y se pierden contra el fondo.</li></ul>
+</article>
+<article class="screen" id="C43">
+  <header><span class="code">C43</span><h2>Lección · Tu nube</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C43-light.jpg" alt="Lección · Tu nube en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C43-dark.jpg" alt="Lección · Tu nube en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C43-1</b> En Lección · Tu nube la imagen de arriba (aviso y lista de versiones) llega hasta el borde izquierdo y se ve más ancha que el resto del contenido; en claro tiene una sombra grande que se ve sucia.</li><li class="sev-nit"><b>C43-2</b> En Lección · Tu nube el renglón «avisamos cuando esté.» queda corto al final y la etiqueta «Tu nube» es chica y de poco contraste en claro.</li></ul>
+</article>
+<article class="screen" id="C44">
+  <header><span class="code">C44</span><h2>Lección · En tu idioma</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C44-light.jpg" alt="Lección · En tu idioma en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C44-dark.jpg" alt="Lección · En tu idioma en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C44-1</b> En Lección · En tu idioma la lista «Tus idiomas» deja el borde izquierdo con menos margen que el título y el texto; las filas son bajas y las filas grises casi no se separan del fondo en claro.</li><li class="sev-nit"><b>C44-2</b> En Lección · En tu idioma los renglones del texto terminan con «es el que «Ver» busca primero.» y hay un hueco grande entre la lista y la etiqueta «En tu idioma».</li></ul>
+</article>
+<article class="screen" id="C45">
+  <header><span class="code">C45</span><h2>Lección · ¿Qué veo hoy?</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C45-light.jpg" alt="Lección · ¿Qué veo hoy? en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C45-dark.jpg" alt="Lección · ¿Qué veo hoy? en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C45-1</b> En Lección · ¿Qué veo hoy? el dibujo se corta arriba en los pósters y las filas de abajo se desvanecen; la etiqueta «Porque viste The Godfather» tapa parte de los pósters y el collage es chico frente al ancho de pantalla.</li><li class="sev-nit"><b>C45-2</b> En Lección · ¿Qué veo hoy? la etiqueta «¿Qué veo hoy?» es pequeña y en claro de bajo contraste, y el botón de regreso no aparece en esta lección mientras en las otras sí.</li></ul>
+</article>
+<article class="screen" id="C46">
+  <header><span class="code">C46</span><h2>Lección · Lo tuyo</h2><span class="count">2</span></header>
+  <div class="pair">
+    <figure><img src="img/C46-light.jpg" alt="Lección · Lo tuyo en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C46-dark.jpg" alt="Lección · Lo tuyo en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-should"><b>C46-1</b> En Lección · Lo tuyo las tarjetas («Lo que viste», «Tu lista», «Dónde ibas») tienen bajo contraste en claro y su borde izquierdo queda más pegado a la orilla que el título.</li><li class="sev-nit"><b>C46-2</b> En Lección · Lo tuyo falta el botón de regreso arriba a la izquierda, que otras lecciones sí tienen, y el ícono de Trakt flota solo con mucho aire alrededor.</li></ul>
+</article>
+<article class="screen" id="C47">
+  <header><span class="code">C47</span><h2>Lección · Tu TV</h2><span class="count">3</span></header>
+  <div class="pair">
+    <figure><img src="img/C47-light.jpg" alt="Lección · Tu TV en modo claro" loading="lazy" width="466" height="678"><figcaption>Claro</figcaption></figure>
+    <figure><img src="img/C47-dark.jpg" alt="Lección · Tu TV en modo oscuro" loading="lazy" width="466" height="678"><figcaption>Oscuro</figcaption></figure>
+  </div>
+  <ul class="finds"><li class="sev-must"><b>C47-1</b> En Lección · Tu TV el botón «Cerrar» queda pegado justo debajo del círculo negro de la cámara y casi pegado a la franja del sistema, apretado arriba a la derecha.</li><li class="sev-should"><b>C47-2</b> En Lección · Tu TV el dibujo del celular y la TV llega hasta el borde izquierdo sin margen igual al del texto, y la TV casi toca la franja de la derecha.</li><li class="sev-nit"><b>C47-3</b> En Lección · Tu TV el renglón «práctica.» queda solo en el último renglón del texto.</li></ul>
+</article>
+  </div>
+</main>
+<script>
+document.getElementById('only').addEventListener('change', e => document.body.classList.toggle('only-finds', e.target.checked));
+</script>
