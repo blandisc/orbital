@@ -312,3 +312,26 @@ def test_the_interface_is_in_inter_and_the_door_shows_the_dice(browser, server):
     to_media(page)
     assert page.evaluate(DOOR) == {"dice": True, "posters": 0, "title": "Decide por mí"}
     assert not page.errors, page.errors
+
+
+KINDS_RIGHT = "() => Math.round(document.querySelector('.hero__kinds').getBoundingClientRect().right)"
+
+
+def test_media_tools_never_leave_the_screen(browser, server):  # noqa: F811
+    """1280 con letra muy grande: «Búsqueda avanzada» se salía por la derecha. Si no caben, las herramientas quedan en su
+    ícono y la enfocada dice su nombre, sin salirse; con la letra normal van completas."""
+    page = open_at(browser, server, width=1280, height=800)
+    page.evaluate("document.documentElement.dataset.textSize = 'xlarge'")
+    to_media(page)
+    assert page.evaluate(KINDS_RIGHT) <= 1280
+    assert page.evaluate("document.querySelector('.hero__kinds').classList.contains('hero__kinds--tight')")
+    press(page, "ArrowUp", wait=500)
+    for _ in range(6):
+        press(page, "ArrowRight", wait=300)
+    assert page.evaluate("document.querySelector('.hero__kinds .is-focused')?.getAttribute('aria-label')") == "Búsqueda avanzada"
+    page.wait_for_timeout(400)
+    assert page.evaluate(KINDS_RIGHT) <= 1280
+    page.evaluate("document.documentElement.dataset.textSize = 'normal'")
+    page.wait_for_timeout(600)
+    assert not page.evaluate("document.querySelector('.hero__kinds').classList.contains('hero__kinds--tight')")
+    assert not page.errors, page.errors

@@ -109,3 +109,13 @@
 /* D5-A: después de las pestañas, Guardado, Colecciones y Filtro avanzado como íconos (lo que antes vivía en ☰). Una rayita los
    separa: las pestañas cambian lo que ves; los íconos abren otra pantalla. */
 .hero__kinds-gap { flex: none; align-self: stretch; margin: var(--space-2) var(--space-2); box-shadow: -1px 0 0 var(--color-hairline-strong); }
+/* Si no caben a lo ancho (hero.js · fitKinds: letra grande en 1280), las herramientas quedan en su ícono y su nombre se abre al
+   enfocarlas o señalarlas, en --duration-base y sin rebote, como Buscar (IN3-A). Las pestañas (Todo · Películas · Series) no
+   ceden: son lo que ves. Con el dedo, un toque abre la herramienta directo. */
+.hero__kinds--tight .pill--named:has(> .pill__name) { padding-inline: var(--space-2); }
+.hero__kinds--tight .pill__name {
+  display: inline-block; max-width: 0; overflow: hidden; opacity: 0; margin-left: calc(-1 * var(--space-2)); white-space: nowrap;
+  transition: max-width var(--duration-base) var(--ease-out), margin var(--duration-base) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+.hero__kinds--tight .pill--named:is(:hover, .is-focused):has(> .pill__name) { padding-inline: var(--space-2) var(--space-4); }
+.hero__kinds--tight .pill--named:is(:hover, .is-focused) .pill__name { max-width: 14em; opacity: 1; margin-left: 0; }

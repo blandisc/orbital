@@ -89,7 +89,19 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     if (!overflows()) return;
     title.classList.add("hero__title--short");
   }
-  if (globalThis.ResizeObserver) new ResizeObserver(() => fit()).observe(el);
+  /** Si las herramientas no caben a lo ancho (letra grande o muy grande en 1280: «Búsqueda avanzada» se salía de la pantalla),
+   *  sus nombres se pliegan al ícono y salen al enfocarlas o señalarlas, como Buscar (IN3-A); cabiendo, van completas (PS-2). */
+  function fitKinds() {
+    if (kinds.hidden) return;
+    kinds.classList.remove("hero__kinds--tight");
+    if (kinds.getBoundingClientRect().right > el.getBoundingClientRect().right + 1) kinds.classList.add("hero__kinds--tight");
+  }
+  if (globalThis.ResizeObserver) {
+    new ResizeObserver(() => { fit(); fitKinds(); }).observe(el);
+    // La fila también cambia sola (Ajustes › Tamaño del texto): se vuelve a medir. Estable: fitKinds deja la misma clase para
+    // el mismo ancho, así que no rebota.
+    new ResizeObserver(() => fitKinds()).observe(kinds);
+  }
   // Medir en el siguiente cuadro, una sola vez (V2, 10 nov 2026): fit() lee el layout y, llamado en medio de pintar el
   // título nuevo (y otra vez cuando llega su logo), obligaba al navegador a calcularlo de más. En requestAnimationFrame lee
   // cuando ya se escribió todo lo de esa tecla, antes de pintar: lo que se ve es lo mismo, en el mismo cuadro.
@@ -208,6 +220,7 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
       icon: svg(ICONS[tool.icon]), tone: "tab", className: "pill--named", tabindex: "-1", "aria-label": tool.label, title: tool.label,
       onClick: (event) => { event.stopPropagation(); onTool?.(tool.id); } }));
     mount(kinds, ...tabs, icons.length ? h("span", { class: "hero__kinds-gap", "aria-hidden": "true" }) : null, ...icons);
+    requestAnimationFrame(fitKinds);
   }
 
   /** T5: el foco del mando en una pestaña o un ícono (su índice, contando las pestañas primero), o en ninguno (null). */
