@@ -105,6 +105,11 @@ class Watch(_Details):
         self._stremio_cache = (Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                / "stremio-library.json") if config.source else None
         self.stremio_items: list[LibraryItem] = self._load_stremio_cache()
+        # Lo tuyo de videos (Stremio + Trakt) como se publicó la última vez: el escaneo lo incluye y así «A continuación»
+        # sale completo desde que abre Orbital, sin esperar a Trakt (library.py · _put_videos).
+        self._videos_cache = (Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
+                              / "videos-library.json") if config.source else None
+        self.videos: list[LibraryItem] = self._load_videos_cache()
         self.cinemeta_items: list[LibraryItem] = []
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()

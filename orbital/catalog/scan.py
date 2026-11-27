@@ -182,7 +182,8 @@ class _Scan(_Art):
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
-        found += self.watch.stremio_items
+        # Lo tuyo de videos como se publicó la última vez (Stremio + Trakt); si aún no hay, la copia de Stremio.
+        found += self.watch.videos or self.watch.stremio_items
         found += self.watch.cinemeta_items
         for item in found:
             url = f"/api/art/{quote(item.id, safe=':')}"

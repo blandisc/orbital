@@ -87,6 +87,8 @@ class _Base:
     # orden), `_trakt_busy` (Trakt, una a la vez) y `_saving` (guardar el avance, progress.py).
     _stremio_cache: Path | None
     stremio_items: list[LibraryItem]
+    _videos_cache: Path | None
+    videos: list[LibraryItem]
     cinemeta_items: list[LibraryItem]
     _stremio_fetched: float
     _stremio_busy: threading.Lock

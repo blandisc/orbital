@@ -48,6 +48,35 @@ class _Library(_Base):
         except OSError:
             log.warning("No pude guardar la biblioteca de Stremio en caché", exc_info=True)
 
+    # --- Lo tuyo de videos tal como se vio la última vez (Stremio + Trakt) -------------------------------------------------
+    # Arranque en frío (27 nov 2026): con Trakt al mando (Stremio de respaldo) lo que estás viendo vivía solo en memoria, y al
+    # reiniciar «A continuación» salía con 5 tarjetas (los juegos) y se llenaba hasta que Trakt contestaba (de 10 a 37 s,
+    # medido). Ahora lo último que se publicó se guarda y el escaneo lo incluye: sale desde el primer segundo y Trakt lo pone al
+    # día cuando contesta.
+    def _load_videos_cache(self) -> list[LibraryItem]:
+        if not self._videos_cache:
+            return []
+        try:
+            return [LibraryItem.from_dict(d) for d in json.loads(self._videos_cache.read_text(encoding="utf-8"))]
+        except (OSError, ValueError, TypeError, AttributeError, KeyError):
+            return []
+
+    def _put_videos(self, items: list[LibraryItem]) -> None:
+        """Pone lo tuyo de videos en la biblioteca y lo guarda para el próximo arranque."""
+        self.store.replace_source("stremio", items)
+        self.videos = items
+        if not self._videos_cache:
+            return
+        try:
+            with _CACHE_LOCK:
+                if items:
+                    self._videos_cache.parent.mkdir(parents=True, exist_ok=True)
+                    atomic_write(self._videos_cache, json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
+                else:
+                    self._videos_cache.unlink(missing_ok=True)  # sin cuentas (o sin nada): el próximo arranque tampoco enseña nada viejo
+        except OSError:
+            log.warning("No pude guardar lo tuyo de videos en caché", exc_info=True)
+
     @property
     def stremio_backup(self) -> bool:
         """Corte S5: Stremio ya no se lee (Seguir viendo y Mi lista salen de Trakt) y solo recibe copia si la dejas. Sin
@@ -67,7 +96,7 @@ class _Library(_Base):
             with self._stremio_publish:
                 had = bool(self.stremio_items)
                 self.stremio_items = []
-                self.store.replace_source("stremio", self.trakt_library.merged([]))
+                self._put_videos(self.trakt_library.merged([]))
             if had:
                 self.events.publish({"type": "library-changed"})
             return False
@@ -109,7 +138,7 @@ class _Library(_Base):
         with self._stremio_publish:
             if generation != self._stremio_generation or not self.stremio_linked:
                 return False  # cerraste sesión mientras se descargaba: no se vuelve a poner esa lista
-            self.store.replace_source("stremio", self.trakt_library.merged(items))
+            self._put_videos(self.trakt_library.merged(items))
             changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
                 a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
             self.stremio_items = items
@@ -129,7 +158,7 @@ class _Library(_Base):
             return  # Cinemeta no respondió: nada que avisar (la próxima descarga lo reintenta)
         if self.stremio_items is not items:
             return  # llegó una descarga más nueva: ella se encarga
-        self.store.replace_source("stremio", self.trakt_library.merged(items))
+        self._put_videos(self.trakt_library.merged(items))
         self._save_stremio_cache(items)
         self.events.publish({"type": "library-changed"})
 
@@ -309,7 +338,7 @@ class _Library(_Base):
         with self._stremio_publish:
             if self.stremio_items is not items:
                 merged = self.trakt_library.merged(self.stremio_items)  # llegó la biblioteca de Stremio mientras tanto
-            self.store.replace_source("stremio", merged)
+            self._put_videos(merged)
         self.events.publish({"type": "library-changed"})
 
     def link_stremio(self, auth_key: str) -> int:
@@ -324,6 +353,6 @@ class _Library(_Base):
             self._stremio_generation += 1  # una descarga que ya iba a medias no vuelve a poner la cuenta
             self.credentials.set(STREMIO_KEY, None)
             self.stremio_items = []
-            self.store.replace_source("stremio", self.trakt_library.merged([]))  # lo de Trakt se queda
+            self._put_videos(self.trakt_library.merged([]))  # lo de Trakt se queda
             if self._stremio_cache:
                 self._stremio_cache.unlink(missing_ok=True)

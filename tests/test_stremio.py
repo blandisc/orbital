@@ -400,6 +400,29 @@ def test_continue_is_ready_at_startup_from_the_last_download(tmp_path, monkeypat
     assert not (tmp_path / "orbital" / "cache" / "stremio-library.json").exists()
 
 
+def test_whats_on_is_ready_at_startup_without_waiting_for_trakt(tmp_path, monkeypatch):
+    """Arranque en frío (27 nov 2026): con Trakt al mando no hay copia de Stremio, y lo que estás viendo vivía solo en memoria
+    («A continuación» salía con 5 tarjetas hasta que Trakt contestaba, 10–37 s). Lo último que se publicó se guarda y el
+    escaneo del siguiente arranque ya lo trae, aunque todavía no conteste nadie."""
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    cfg = parse_config({"steam": {"enabled": False}, "esde": {"enabled": False}, "detect": {"enabled": False},
+                        "stremio": {"executable": "stremio-test"}}, source=tmp_path / "config.yaml")
+    creds = Credentials(tmp_path / "secrets.json")
+    first = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=FakeStremio())
+    first.watch.link_stremio("clave-buena")
+    cache = tmp_path / "orbital" / "cache"
+    assert (cache / "videos-library.json").exists()
+    (cache / "stremio-library.json").unlink()  # como con Trakt al mando: no hay copia de Stremio
+    offline = FakeStremio()
+    offline.fail = True  # y nadie contesta todavía
+    again = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=offline)
+    assert again.watch.stremio_items == []
+    again.refresh()
+    assert [i.title for i in again.grouped_items("continue")] == ["Game of Thrones", "Interstellar", "Anime temporal"]
+    again.watch.unlink_stremio()  # sin cuentas: el próximo arranque no enseña nada viejo
+    assert not (cache / "videos-library.json").exists()
+
+
 def test_missing_title_is_404_not_a_network_error(make_client, library, monkeypatch):
     """La interfaz distingue «no existe» (404) de «sin conexión» (502)."""
     from orbital.library import cinemeta
