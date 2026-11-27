@@ -99,8 +99,9 @@ struct DSSeekBubble: View {
             VStack(spacing: DS.Space.s2) {
                 if let scare { note(scare).transition(.opacity) }
                 if let still {
-                    Image(decorative: still, scale: 1).resizable().aspectRatio(contentMode: .fit)
-                        .frame(width: DS.Gesture.seekStillWidth)
+                    Image(decorative: still, scale: 1).resizable()
+                        .frame(width: DS.Gesture.seekStillWidth,
+                               height: DS.Gesture.seekStillWidth * CGFloat(still.height) / CGFloat(max(still.width, 1)))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.track, lineWidth: DS.Stroke.regular))
                         .shadow(DS.Elevation.medium)

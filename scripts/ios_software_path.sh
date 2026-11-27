@@ -6,16 +6,16 @@
 set -euo pipefail
 UDID=${1:-99C2A2FC-62AE-4D85-B17B-48C6B60410B9}   # «Orbital QA»
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-WORK=/tmp/orbital-43
+WORK=/tmp/orbital-43-10m   # 10 min: uno de 2 se toma por el aviso de Real-Debrid y se descarta
 SHOTS=/tmp/orbital-software-path
 PORT=8765
 mkdir -p "$WORK" "$SHOTS"
 
-# Dos minutos de 640×480 (4:3) con tono: H.264 (ruta nativa) y MPEG-4 Parte 2 (siempre por la ruta de software).
+# Diez minutos de 640×480 (4:3) con tono: H.264 (ruta nativa) y MPEG-4 Parte 2 (siempre por la ruta de software).
 [[ -f $WORK/s43-h264.mkv ]] || ffmpeg -loglevel error -y -f lavfi -i "testsrc2=size=640x480:rate=24" -f lavfi -i "sine=frequency=440" \
-  -t 120 -c:v libx264 -pix_fmt yuv420p -c:a aac "$WORK/s43-h264.mkv"
+  -t 600 -c:v libx264 -pix_fmt yuv420p -c:a aac "$WORK/s43-h264.mkv"
 [[ -f $WORK/s43-mpeg4.mkv ]] || ffmpeg -loglevel error -y -f lavfi -i "testsrc2=size=640x480:rate=24" -f lavfi -i "sine=frequency=440" \
-  -t 120 -c:v mpeg4 -q:v 5 -c:a aac "$WORK/s43-mpeg4.mkv"
+  -t 600 -c:v mpeg4 -q:v 5 -c:a aac "$WORK/s43-mpeg4.mkv"
 
 python3 "$ROOT/scripts/ios_video_server.py" $PORT "${DELAY:-0}" "$WORK" >/dev/null 2>&1 &
 SERVER=$!

@@ -60,6 +60,8 @@ extension DS {
         static let seekStillWidth: CGFloat = 160
         /// Cada cuánto (segundos de película) se pide otra imagen mientras arrastras.
         static let seekStillStep: Double = 2
+        /// Cuántas veces y cada cuánto se vuelve a pedir la imagen si el motor todavía no la tiene.
+        static let seekStillTries = 4, seekStillRetry: Duration = .milliseconds(350)
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance

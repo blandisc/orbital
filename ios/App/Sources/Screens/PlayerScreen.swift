@@ -243,6 +243,7 @@ struct PlayerScreen: View {
                         GeometryReader { geo in
                             let rect = videoRect(in: geo.size)
                             transport(model).position(x: rect.midX, y: rect.midY)
+                                .opacity(seekingByHand ? 0 : 1)
                         }
                         .ignoresSafeArea(edges: landscape ? .all : [])
                     }
@@ -250,7 +251,9 @@ struct PlayerScreen: View {
                 .transition(.opacity)
             }
             // ±10 en las orillas del video, con o sin controles (sin ellos, solo mientras dura el salto del doble toque).
-            if model.phase != .preparing, !padlock.locked, !failed(model), !dockState.subtitleDock || dockPinned, ipod == nil { skipLayer(model, shown: controlsShown) }
+            if model.phase != .preparing, !padlock.locked, !failed(model), !dockState.subtitleDock || dockPinned, ipod == nil {
+                skipLayer(model, shown: controlsShown && !seekingByHand).opacity(seekingByHand && skipChain == nil ? 0 : 1)
+            }
             // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
             if speedPillVisible { speedPill.transition(.opacity) }
             // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.

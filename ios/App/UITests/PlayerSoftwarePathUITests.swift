@@ -72,7 +72,7 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         let bar = app.otherElements["player-scrub"].exists ? app.otherElements["player-scrub"] : app.sliders["player-scrub"]
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
         let at = shownTime(app)
-        let frame = bar.frame, duration = 120.0
+        let frame = bar.frame, duration = 600.0
         let x = { (t: Double) in frame.minX + frame.width * CGFloat(t / duration) }
         let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x(at), dy: frame.midY))
         let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x(max(2, at - 12)), dy: frame.midY))

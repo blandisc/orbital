@@ -503,8 +503,15 @@ struct PlayerScrubBar: View {
         // (nunca la de otro minuto); al soltar se borra.
         .task(id: dragging || previewFrom != nil ? Int(value / DS.Gesture.seekStillStep) : -1) {
             guard dragging || previewFrom != nil, let still else { stillImage = nil; return }
-            let image = await still(value)
-            if !Task.isCancelled { withAnimation(DS.Motion.base(reduceMotion)) { stillImage = image } }
+            // El motor a veces contesta «todavía no» la primera vez (está leyendo ese tramo): unos intentos más con el dedo puesto.
+            for attempt in 0..<DS.Gesture.seekStillTries {
+                if attempt > 0 { try? await Task.sleep(for: DS.Gesture.seekStillRetry) }
+                guard !Task.isCancelled else { return }
+                let image = await still(value)
+                guard !Task.isCancelled else { return }
+                if image != nil || attempt == 0 { withAnimation(DS.Motion.base(reduceMotion)) { stillImage = image } }
+                if image != nil { return }
+            }
         }
     }
 

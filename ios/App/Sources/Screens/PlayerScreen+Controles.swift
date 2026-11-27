@@ -107,6 +107,7 @@ extension PlayerScreen {
                                 playerTitle
                                 if offersSkipOrNext(model) { nextEpisode(model); skipIntro(model) }
                             }
+                            .opacity(seekingByHand ? 0 : 1)   // arrastrando: la burbuja y su imagen van ahí
                             if model.snapshot.duration > 0 { scrubber(model) }
                         }
                     }

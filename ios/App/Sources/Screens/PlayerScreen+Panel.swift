@@ -324,6 +324,10 @@ extension PlayerScreen {
         .ignoresSafeArea(edges: landscape ? .all : [])
     }
 
+    /// Arrastrando la barra o el video para buscar: el título, el botón grande y ±10 se apartan (la burbuja con la imagen del
+    /// minuto pasaba encima o debajo de ellos, 27 nov 2026).
+    var seekingByHand: Bool { scrubbing != nil || drag.dragAxis == .horizontal }
+
     /// La barra lee la posición en su propia vista (`PlayerTimeReader`): el avance se repinta solo, no todo el reproductor.
     func scrubber(_ model: PlayerModel) -> some View {
         PlayerTimeReader(time: model.time) { position in scrubber(model, position: position) }
