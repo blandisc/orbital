@@ -342,6 +342,7 @@ extension PlayerScreen {
             // La barra a todo lo ancho y, debajo, lo visto y lo que falta (sin la hora a la que terminas: no la querías).
             PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), scares: scares, clock: { clock($0) },
                            previewFrom: drag.dragAxis == .horizontal ? drag.seekPositionAtDragStart : nil,
+                           still: { await model.scrubStill(at: $0, maxWidth: Int(DS.Gesture.seekStillWidth * 2)) },
                            change: { scrubbing = $0; model.scrub(to: $0) },
                            editing: { editing in
                                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde

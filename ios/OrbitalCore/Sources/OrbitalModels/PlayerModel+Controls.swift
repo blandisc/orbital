@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import OrbitalCore
 
@@ -113,6 +114,11 @@ extension PlayerModel {
     /// Mientras arrastras la barra: la escena sigue al dedo. Se busca el último punto pedido apenas termina la búsqueda
     /// anterior (nunca dos a la vez); en una descarga es casi inmediato, en internet se espera un momento entre búsquedas
     /// para no pedir un trozo nuevo por cada punto del arrastre.
+    /// La imagen de ese minuto para la burbuja de la barra (solo de lo ya bajado; nil si no está).
+    public func scrubStill(at seconds: Double, maxWidth: Int) async -> CGImage? {
+        await engine.scrubStill(at: seconds, maxWidth: maxWidth)
+    }
+
     public func scrub(to seconds: Double) {
         scrubTarget = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
         guard scrubTask == nil else { return }

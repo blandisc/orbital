@@ -78,6 +78,8 @@ struct DSSeekBubble: View {
     /// Pasando sobre un susto de la barra: cuál es (fuerte o leve, en su color, y lo que dice Where's The Jump). Va en su propia
     /// cápsula encima de la burbuja, para que la burbuja no cambie de alto ni tape la barra.
     var scare: JumpScare? = nil
+    /// La imagen de ese minuto (de lo ya bajado), encima de la burbuja; nil: solo el minuto.
+    var still: CGImage? = nil
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
@@ -92,11 +94,20 @@ struct DSSeekBubble: View {
         .frame(minWidth: DS.Gesture.seekBubbleWidth)
         .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        // Encima, sin mover la burbuja: la imagen del minuto y, más arriba, el susto.
         .overlay(alignment: .top) {
-            if let scare {
-                note(scare).alignmentGuide(.top) { $0[.bottom] + DS.Space.s2 }
-                    .transition(.opacity)
+            VStack(spacing: DS.Space.s2) {
+                if let scare { note(scare).transition(.opacity) }
+                if let still {
+                    Image(decorative: still, scale: 1).resizable().aspectRatio(contentMode: .fit)
+                        .frame(width: DS.Gesture.seekStillWidth)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.track, lineWidth: 1))
+                        .shadow(DS.Elevation.medium)
+                        .transition(.opacity)
+                }
             }
+            .alignmentGuide(.top) { $0[.bottom] + DS.Space.s2 }
         }
         .accessibilityHidden(true)
     }

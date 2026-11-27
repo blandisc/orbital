@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import OrbitalCore
 
 public struct Chapter: Sendable, Equatable { public var title: String; public var time: Double
@@ -71,10 +72,14 @@ public protocol PlayerEngine: AnyObject, Sendable {
     /// al irse a segundo plano en pausa) en el mismo punto, y sigue sonando si `resume`. `false`: no pudo (la fuente ya no
     /// contesta o su enlace caducó) y hay que volver a pedir el video.
     func restoreAfterBackground(resume: Bool) async -> Bool
+    /// La imagen chiquita de ese minuto mientras arrastras la barra, sacada de lo que ya se bajó (lo visto y un poco más
+    /// adelante): nunca abre otra conexión (Real-Debrid no aguanta dos). nil: ese tramo no está bajado; se ve solo el minuto.
+    func scrubStill(at seconds: Double, maxWidth: Int) async -> CGImage?
 }
 
 public extension PlayerEngine {
     func restoreAfterBackground(resume: Bool) async -> Bool { true }
+    func scrubStill(at seconds: Double, maxWidth: Int) async -> CGImage? { nil }
     func setRate(_ rate: Float) async {}
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {}
     func prepare(titleKey: String) async {}

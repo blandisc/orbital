@@ -57,6 +57,28 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         XCTAssertTrue(app.buttons["player-close"].waitForExistence(timeout: 5), "el reproductor sigue abierto")
     }
 
+    /// Arrastrar la barra hacia lo ya visto enseña la imagen de ese minuto sobre la burbuja (27 nov 2026). El dedo se queda
+    /// puesto `HOLD` segundos para que `simctl io screenshot`, desde fuera, la capture.
+    func testScrubbingBackShowsTheMinuteStill() throws {
+        let video = try XCTUnwrap(env["DEMO_VIDEO"], "sin DEMO_VIDEO: corre scripts/ios_software_path.sh")
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+                               "-demo-versions", "-demo-video", video]
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+        sleep(30)   // que suene y se baje un tramo
+        shot("still-0-sonando")
+        if !app.otherElements["player-scrub"].exists && !app.sliders["player-scrub"].exists { app.tap(); sleep(1) }
+        let bar = app.otherElements["player-scrub"].exists ? app.otherElements["player-scrub"] : app.sliders["player-scrub"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        let at = shownTime(app)
+        let frame = bar.frame, duration = 120.0
+        let x = { (t: Double) in frame.minX + frame.width * CGFloat(t / duration) }
+        let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x(at), dy: frame.midY))
+        let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x(max(2, at - 12)), dy: frame.midY))
+        start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: Double(env["HOLD"] ?? "6") ?? 6)
+    }
+
     /// Lo que dice la barra de avance («2:07 / 9:59»), con los controles a la vista.
     private func shownTime(_ app: XCUIApplication) -> Double {
         if !app.otherElements["player-scrub"].exists && !app.sliders["player-scrub"].exists { app.tap(); sleep(1) }
