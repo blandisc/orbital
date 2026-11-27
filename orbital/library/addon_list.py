@@ -28,7 +28,7 @@ OPENSUBTITLES = "https://opensubtitles-v3.strem.io/manifest.json"
 # Lo que viene con Orbital (como AddonTemplates del iPhone). Torrentio se arma con tus opciones y tu clave de Real-Debrid
 # (corte S3): su dirección no se guarda, se arma cada vez. Si traes uno de tu Stremio, sus opciones pasan a este.
 TEMPLATES = {"torrentio": {"name": "Torrentio", "url": None, "default": True},
-             "comet": {"name": "Comet", "url": None, "default": False},
+             "comet": {"name": "Comet", "url": None, "default": True},
              "opensubtitles": {"name": "OpenSubtitles", "url": OPENSUBTITLES, "default": True}}
 COMET_BASE = "https://comet.elfhosted.com"
 

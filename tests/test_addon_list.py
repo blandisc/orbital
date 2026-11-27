@@ -41,7 +41,7 @@ def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():
     assert lst.source == "own" and not lst.needs_copy and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
     names = [(e.name, e.origin) for e in lst.entries()]
     assert names == [("Torrentio", "orbital"), ("Comet", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio")]
-    assert "comet.elfhosted.com" not in str(lst.urls())  # Comet viene apagado, como en el iPhone
+    assert "comet.elfhosted.com" in str(lst.urls()[1])  # Comet viene prendido desde el 27 nov, como en el iPhone
     assert lst.urls()[0] == TORRENTIO  # la misma dirección: tus versiones no cambian
     assert "KEY" not in str(lst.store[addon_list.LIST_KEY]["entries"])  # la dirección con tu clave no se guarda
     assert LOCAL not in str([e.url for e in lst.entries()])  # «Archivos de la TV» ya no entra (4 nov)
@@ -99,6 +99,7 @@ def test_con_tu_lista_ya_no_se_le_pregunta_a_tu_cuenta(monkeypatch):
                  addon_list.OPENSUBTITLES: {"name": "OpenSubtitles", "resources": ["subtitles"], "types": ["movie"]}}
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: manifests[url])
     lst, _ = keyed()
+    lst.set_enabled("comet", False)  # sin Comet: aquí solo cuenta que no se le pregunte a tu cuenta
     lst.import_from_stremio([("Torrentio", TORRENTIO, None)])
     registry = addons.AddonRegistry(Account(), auth=lambda: "key", listing=lst)
     assert [a.name for a in registry.addons()] == ["Torrentio", "OpenSubtitles"] and Account.asked == 0
@@ -114,7 +115,7 @@ def test_el_torrentio_que_ya_habias_traido_pasa_al_de_orbital_y_sus_opciones_se_
     lst = AddonList(store, key=lambda: keys.get("rd"))
     assert lst.adopt_torrentio() and not lst.adopt_torrentio()  # una sola vez
     assert [e.name for e in lst.entries()] == ["OpenSubtitles", "Torrentio", "ThePirateBay+", "Comet"]  # en su lugar
-    assert lst.urls() == [addon_list.OPENSUBTITLES, TORRENTIO, TPB]
+    assert [u for u in lst.urls() if "comet" not in u] == [addon_list.OPENSUBTITLES, TORRENTIO, TPB]  # Comet, prendido, al final
     mine = lst.set_options({**lst.torrentio().options, "qualityfilter": ["cam"], "limit": 5, "nada": 1})
     assert mine.address == "https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|realdebrid=KEY/manifest.json"
     assert "nada" not in mine.options
