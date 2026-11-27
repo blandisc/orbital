@@ -28,6 +28,7 @@ CAPABILITIES: dict[str, tuple[tuple[str, str], ...]] = {
     "foryou": (("GET", "/api/foryou"), ("GET", "/api/foryou/list"), ("GET", "/api/foryou/details"),
                ("POST", "/api/foryou/dismiss")),
     "play_on_tv": (("POST", "/api/stremio/play"),),
+    "versions": (("GET", "/api/stremio/sources"),),  # IV-A: «Cómo lo ves» del iPhone
     "voice": (("POST", "/api/voice"),),
     "voice_hints": (("GET", "/api/voice/hints"),),
     "now_playing": (("GET", "/api/companion/now"),),

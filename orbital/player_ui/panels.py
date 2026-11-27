@@ -25,7 +25,7 @@ from .canvas import (
 )
 from .draw import _shape, fit, glass, gradient, hints, hints_width, icon, rrect, text, text_width, wrap
 from .hud import pills, pills_width
-from .labels import clock, esc, track_label
+from .labels import clock, esc, track_labels
 
 
 # --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Episodios · Versión) ------------------------------------
@@ -403,11 +403,11 @@ def track_options(kind: str, tracks: list[dict], extra: list[dict] | None = None
     if kind == "sub":
         none_selected = not any(t.get("type") == "sub" and t.get("selected") for t in tracks)
         options.append({"label": "Sin subtítulos", "action": ("sid", "no"), "current": none_selected})
-    for t in tracks:
-        if t.get("type") == kind:
-            options.append({"label": track_label(t), "action": ("aid" if kind == "audio" else "sid", t["id"]),
-                            "current": bool(t.get("selected")), "lang": t.get("lang"),
-                            "flag": flags.flag_for(t.get("lang"), str(t.get("title") or ""))})
+    mine = [t for t in tracks if t.get("type") == kind]
+    for t, label in zip(mine, track_labels(mine), strict=True):
+        options.append({"label": label, "action": ("aid" if kind == "audio" else "sid", t["id"]),
+                        "current": bool(t.get("selected")), "lang": t.get("lang"),
+                        "flag": flags.flag_for(t.get("lang"), str(t.get("title") or ""))})
     return options + (extra or [])
 
 

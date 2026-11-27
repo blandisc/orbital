@@ -86,7 +86,8 @@ struct RemoteWatchSheet: View {
         if model.versionsLoading {
             DSInlineProgress(text: Text("Buscando versiones en tu TV…"))
         } else if model.versionsFailed {
-            DSNotice(text: "No pude traer las versiones de tu TV. Revisa que esté prendida.", tone: .warn)
+            if let problem = model.versionsProblem { DSNotice(text: LocalizedStringKey(problem), tone: .warn) }
+            else { DSNotice(text: "No pude traer las versiones de tu TV. Revisa que esté prendida.", tone: .warn) }
         } else if let list = model.versions?.list, !list.isEmpty {
             if model.versionSwitchFailed {
                 DSNotice(text: "Tu TV no cambió de versión. Revisa que esté prendida e intenta otra vez.", tone: .warn)

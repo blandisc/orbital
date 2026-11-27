@@ -129,6 +129,21 @@ def test_every_capability_points_at_routes_that_exist(apps):
             assert (method, path) in routes, f"{name}: {method} {path} no existe en el puerto público"
 
 
+def test_every_route_the_iphone_calls_exists_on_the_public_port(apps):
+    """Regla (26 nov 2026): lo que el iPhone le pide a la TV existe en el puerto por el que le habla. «Cómo lo ves» pedía las
+    versiones a una ruta que solo existía en el puerto local, y decía «No pude traer las versiones de tu TV» con la TV
+    prendida. Se leen las llamadas de verdad del lado Swift (`send("api/…", method: "…")`)."""
+    _, public, *_ = apps
+    routes = {(method, re.sub(r"\{[^}]+\}", "{}", route.path)) for route in public.app.routes
+              for method in getattr(route, "methods", ()) or ()}
+    swift = Path(__file__).parents[1] / "ios" / "OrbitalCore" / "Sources"
+    calls = {(m.group(2), "/" + re.sub(r"\\\([^)]*\)", "{}", m.group(1)))
+             for f in swift.rglob("*.swift") for m in re.finditer(r'send\("(api/[^"]+)", method: "([A-Z]+)"', f.read_text(encoding="utf-8"))}
+    assert len(calls) > 20, "se leyeron las llamadas del iPhone"
+    missing = sorted(c for c in calls if c not in routes)
+    assert not missing, f"El iPhone llama rutas que el puerto público no tiene: {missing}"
+
+
 def test_ping_and_companion_say_the_contract_version_and_what_the_tv_can_do(apps):
     _, public, _, _, tmp = apps
     ping = call(public, "ping", "GET", "/api/ping", tmp)

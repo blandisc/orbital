@@ -172,3 +172,13 @@ def test_button_words_say_what_you_get():
     pills = player_ui.try_pills(player_ui.SubTrial(language="Español", number=1, total=3))
     assert ("Siguiente subtítulo ›", "right") in pills
     assert not {label for label, _ in pills} & {"Siguiente ›", "Siguiente", "Continuar", "Cancelar"}
+
+
+def test_tracks_never_look_the_same():
+    """Regla (26 nov 2026): en una lista de pistas no hay dos renglones iguales («Español» y «Español» no dicen cuál es
+    cuál), y lo técnico se dice en palabras de la app («de tus complementos», no «addon»; sin «Subtítulos» repetido)."""
+    subs = [{"type": "sub", "id": 1, "lang": "spa"}, {"type": "sub", "id": 2, "lang": "spa"},
+            {"type": "sub", "id": 3, "lang": "eng", "title": "Subtítulos", "external": True}]
+    labels = player_ui.track_labels(subs)
+    assert labels == ["Español · Opción 1", "Español · Opción 2", "Inglés · de tus complementos"]
+    assert len(set(labels)) == len(labels)

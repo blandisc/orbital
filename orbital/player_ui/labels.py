@@ -85,6 +85,8 @@ def sub_kind(track: dict) -> str:
 
 # La variante de un idioma va pegada a él («Español latino», no «Español · Latino»): un separador menos y el nombre del audio
 # cabe en su columna (RE-1, 2 nov 2026: se cortaba en «Español · Latino · Estér…»).
+# Títulos de pista que no dicen nada («Subtítulos», «Subs»): no se repiten junto al idioma.
+GENERIC = {"subtítulos", "subtitulos", "subtitles", "subtitle", "subs", "sub", "audio", "track", "pista"}
 VARIANTS = {"latino", "latinoamérica", "latinoamericano", "castellano", "españa", "méxico", "brasil", "portugal", "francia", "canadá"}
 
 
@@ -100,7 +102,7 @@ def track_label(track: dict) -> str:
         parts.append("Para sordos")
     elif title and lowered in VARIANTS and parts[0]:
         parts[0] = f"{parts[0]} {lowered}"
-    elif title and language(track.get("lang")).lower() not in lowered and len(title) <= 28:
+    elif title and lowered not in GENERIC and language(track.get("lang")).lower() not in lowered and len(title) <= 28:
         parts.append(title)
     if track.get("type") == "audio":
         channels = track.get("demux-channel-count") or track.get("audio-channels")
@@ -110,9 +112,26 @@ def track_label(track: dict) -> str:
         if codec:
             parts.append(codec)
     if track.get("external"):
-        parts.append("de tu addon")
+        parts.append("de tus complementos")   # «addon» no se dice en la app (26 nov 2026)
     label = " · ".join(p for p in parts if p)
     return label or f"Pista {track.get('id', '')}".strip()
+
+
+def track_labels(tracks: list[dict]) -> list[str]:
+    """Los nombres de una lista de pistas, sin dos iguales: «Español» y «Español» se ven idénticos y no se sabe cuál
+    tocar (26 nov 2026), así que los repetidos llevan su número («Español · Opción 1», «Español · Opción 2»)."""
+    labels = [track_label(t) for t in tracks]
+    count: dict[str, int] = {}
+    seen: dict[str, int] = {}
+    for label in labels:
+        count[label] = count.get(label, 0) + 1
+    out = []
+    for label in labels:
+        if count[label] > 1:
+            seen[label] = seen.get(label, 0) + 1
+            label = f"{label} · Opción {seen[label]}"
+        out.append(label)
+    return out
 
 
 def current_label(tracks: list[dict], kind: str) -> str:

@@ -302,8 +302,9 @@ class _Extras(_Input):
         tracks = self.mpv.get("track-list") or []
 
         def of(kind: str) -> list[dict]:
-            return [{"id": t["id"], "label": player_ui.track_label(t), "lang": t.get("lang") or None,
-                     "selected": bool(t.get("selected"))} for t in tracks if t.get("type") == kind and "id" in t]
+            mine = [t for t in tracks if t.get("type") == kind and "id" in t]
+            return [{"id": t["id"], "label": label, "lang": t.get("lang") or None, "selected": bool(t.get("selected"))}
+                    for t, label in zip(mine, player_ui.track_labels(mine), strict=True)]
         return {"audio": of("audio"), "subtitles": of("sub")}
 
     def phone_track(self, kind: str, track: int | str | None = None) -> None:

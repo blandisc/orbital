@@ -24,6 +24,7 @@
       "remote_input",
       "remote_text",
       "resume_sync",
+      "versions",
       "voice",
       "voice_hints"
     ],

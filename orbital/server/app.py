@@ -181,5 +181,6 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     app.state.run_voice = d.extra["run_voice"]
     app.state.voice_hints = d.extra["voice_hints"]
     app.state.play_stremio = d.extra["play_stremio"]
+    app.state.stream_sources = d.extra["stream_sources"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
     return app

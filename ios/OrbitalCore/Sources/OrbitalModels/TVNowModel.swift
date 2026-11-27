@@ -44,16 +44,19 @@ public final class TVNowModel: ObservableModel {
     public private(set) var versions: (id: String, list: [OrbitalRemote.Version])? { didSet { changed() } }
     public private(set) var versionsLoading = false { didSet { if oldValue != versionsLoading { changed() } } }
     public private(set) var versionsFailed = false { didSet { if oldValue != versionsFailed { changed() } } }
+    /// Por qué no llegaron, en palabras de la TV («Actualiza tu Orbital…», «Tu Orbital no contesta…» o lo que dijo ella). nil:
+    /// no se sabe (la hoja dice lo de siempre). Antes todo era «Revisa que esté prendida», también con la TV prendida.
+    public private(set) var versionsProblem: String? { didSet { if oldValue != versionsProblem { changed() } } }
 
     /// Pide a la TV las versiones de lo que se ve (una vez por capítulo o película).
     public func loadVersions() async {
         guard let now, let meta = now.metaID, !now.live else { return }
         let id = now.videoID ?? meta
         if versions?.id == id || versionsLoading { return }
-        versionsLoading = true; versionsFailed = false
+        versionsLoading = true; versionsFailed = false; versionsProblem = nil
         defer { versionsLoading = false }
         do { versions = (id, try await services.orbital.versions(kind: now.kind, metaID: meta, videoID: now.videoID)) }
-        catch { versionsFailed = true }
+        catch { versionsFailed = true; versionsProblem = (error as? OrbitalRemote.Failure)?.description }
     }
 
     /// Si la última versión pedida no se pudo poner (la TV no contestó o ya era otro capítulo).

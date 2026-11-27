@@ -7,7 +7,7 @@ from conftest import FakeLauncher
 from orbital.catalog import STREMIO_KEY, Catalog
 from orbital.config import parse_config
 from orbital.credentials import Credentials
-from orbital.library import addons, stremio_api
+from orbital.library import addons, cinemeta, stremio_api
 from orbital.voice import VoiceController
 
 # Formato real de LibraryItem (stremio-core/src/types/library/library_item.rs)

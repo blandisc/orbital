@@ -330,6 +330,8 @@ def router(d: Deps) -> APIRouter:
                 "plan": list(prefs.plan),  # N4-A: el resto de Tus idiomas («original» incluido): el orden de las filas
                 "quality": prefs.quality, "meta": info, "recommended": recommended}
 
+    d.extra["stream_sources"] = sources  # «Cómo lo ves» del iPhone la pide por el puerto público (create_public_app)
+
     @r.get("/availability")
     @slow
     def availability(kind: str, id: str, video: str | None = None) -> dict:

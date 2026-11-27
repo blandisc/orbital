@@ -46,7 +46,7 @@ public struct TVContract: Sendable, Equatable {
     }
 
     private static let exact: [String: String] = [
-        "api/stremio/play": "play_on_tv", "api/voice": "voice", "api/voice/hints": "voice_hints",
+        "api/stremio/play": "play_on_tv", "api/stremio/sources": "versions", "api/voice": "voice", "api/voice/hints": "voice_hints",
         "api/companion/now": "now_playing", "api/companion/input": "remote_input", "api/companion/text": "remote_text",
         "api/companion/player": "player_control", "api/companion/game": "game_control", "api/companion/console": "console_state",
         "api/companion/choices": "choices_sync", "api/companion/resume": "resume_sync", "api/companion/inbox/ack": "inbox",

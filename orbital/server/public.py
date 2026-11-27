@@ -251,6 +251,14 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         No da más de lo que ya da la voz («pon The Office»): solo poner un título de Stremio."""
         return main_app.state.play_stremio(body)
 
+    @public.get("/api/stremio/sources")
+    async def versions_for_phone(kind: str, id: str, video: str | None = None) -> dict:
+        """«Cómo lo ves» del iPhone: las versiones de lo que suena en la TV, igual que las ve la TV (sin URLs). Sin esta ruta
+        el iPhone decía «No pude traer las versiones de tu TV» con la TV prendida (26 nov 2026)."""
+        if not MEDIA_ID.match(id) or (video is not None and not MEDIA_ID.match(video)):
+            raise HTTPException(400, "Título inválido")
+        return await main_app.state.stream_sources(kind, id, video)
+
     _foryou_public_routes(public, main_app)
 
     @public.get("/api/companion/now")
