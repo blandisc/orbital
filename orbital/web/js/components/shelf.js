@@ -9,18 +9,22 @@ import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
 import { DecideDoor } from "./decide.js";
 import { Badge, EmptyState, Eyebrow, PosterSkeletons, RowCount, rowCountText, SectionHead } from "./ui.js";
+import { ScrollCue } from "./scroll-cue.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
 const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
 const STAGE_PX = 640; // «Porque viste»: el panel mide --because-stage-width (30rem, más con el texto grande)
 
 /**
- * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
+ * Filas de tarjetas. Muestra una fila a la vez (abajo, la señal con el nombre de la siguiente) y desplaza la
  * fila actual para que la tarjeta enfocada quede a la izquierda con una de contexto.
  */
 export function createShelf({ onPick, onMore, onSwipe }) {
   const rowsEl = h("div", { class: "shelf__rows" });
-  const el = h("section", { class: "shelf", "aria-label": "Biblioteca" }, rowsEl);
+  // MN-A (Fernando, 27 nov 2026), como IN1-A en el Inicio: la fila siguiente ya no asoma desvanecida encima del pie; en su
+  // lugar, la señal de abajo con su nombre (y su ícono, si es una sección). Un clic o un toque bajan.
+  const cue = ScrollCue({ className: "shelf__cue", onPress: () => onSwipe?.({ dr: 1 }) });
+  const el = h("section", { class: "shelf", "aria-label": "Biblioteca" }, h("div", { class: "shelf__clip" }, rowsEl), cue.el);
   // Pantalla táctil (Legion Go sin dock): deslizar de lado recorre la fila; de arriba abajo cambia de fila.
   swipeArea(el, ({ dx, dy, target }) => {
     const found = rowEls.findIndex((x) => x.rowEl.contains(target));
@@ -33,6 +37,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     }
   });
   let rowEls = [];
+  let cueFor; // la fila que nombra la señal de abajo
   let resting = false; // T5: el foco está arriba, en las pestañas
   let focus = { r: 0, c: 0 };
   // Lo que ya está pintado en las filas de ahora ({r, c}); null tras rearmarlas. Moverse solo toca la fila y la tarjeta de
@@ -174,6 +179,8 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     shown = rows.length ? rows : null;
     if (!rows.length) {
       rowEls = [];
+      cue.el.hidden = true;
+      cueFor = undefined;
       rowsEl.style.transform = ""; // si estabas en la fila 3, el aviso quedaba fuera de pantalla
       // Cargando: la forma de las filas que vienen (esqueleto, como ShelfSkeleton del iPhone); vacía: su estado vacío.
       mount(rowsEl, loading
@@ -247,6 +254,11 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     else if (before.r === r) paintRow(r, r, c, [...new Set([before.c, c])]);
     else { paintRow(before.r, r, c); paintRow(r, r, c); }
     applied = { r, c };
+    const next = shown?.[r + 1];
+    if (next !== cueFor) { // solo cuando cambia la fila de abajo (moverte dentro de una fila no la toca)
+      cueFor = next;
+      cue.el.hidden = !next?.title || !cue.set([{ label: next.title, icon: next.cards ? SECTION_ICONS[next.group] || "grid" : null }]);
+    }
     // Primero todo lo que se escribe; luego place() y las orillas, que miden (una sola vez el layout).
     place();
     // Las orillas de las otras filas no cambian al moverte dentro de una: solo la que dejó de ser la actual.

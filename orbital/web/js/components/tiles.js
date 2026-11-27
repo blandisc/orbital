@@ -2,7 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed } from "../core/format.js";
 import { kicker, platformColor, systemColor } from "../core/home.js";
 import { ICONS, isTitleItem, platformMark, systemIconName } from "../core/icons.js";
-import { alternativeRunner, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
+import { alternativeRunner, isGame, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Eyebrow, PlatformMark, Progress } from "./ui.js";
 import { reasonOnly } from "../core/format.js";
@@ -20,7 +20,6 @@ const art = (src, className) => {
 };
 
 /** «Episodios» y «Ficha» del destacado van redondos (su ícono); otra alternativa («Con Ryujinx») sigue con su nombre. */
-const ALT_ICONS = { Episodios: "list", Ficha: "info" };
 
 /** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
 function featureLogo(src, title) {
@@ -72,8 +71,9 @@ const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item
  */
 export function FeatureHero(item, { runningId = null, glyphs = {}, onAction, reason = null }) {
   const open = item.id === runningId;
-  const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
-    : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
+  // MN-A (Fernando, 27 nov 2026): un video ya no lleva su redondo de «Episodios» o «Ficha»: está primero en ··· (con su
+  // tecla, X) y X sigue abriéndola. Un juego conserva «Con Ryujinx»: es otra cosa que hacer, no está en ···.
+  const alt = !isWatchable(item) && alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
   const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
   const why = reason || eyebrowOf(item, runningId) || (open ? "Abierto ahora" : null);
   const detail = detailOf(item);
@@ -84,8 +84,7 @@ export function FeatureHero(item, { runningId = null, glyphs = {}, onAction, rea
     Progress(item.progress, { className: "feature-hero__progress" }),
     h("span", { class: "button-row feature-hero__actions" },
       Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
-      // «Episodios» o «Ficha» (un video) son redondos, como en Películas y series; «Con Ryujinx» sigue con su nombre.
-      alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, icon: ALT_ICONS[alt], onPress: press("alt") }),
+      alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
       Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") })));
 }
 

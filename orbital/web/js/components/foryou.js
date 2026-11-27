@@ -115,7 +115,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
 
   /** Pistas del pie. */
   function hints(g) {
-    const end = { glyph: g.menu, label: "Menú", end: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
+    const end = { glyph: g.menu, label: "Menú", end: true, collapsible: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
     if (!data) return [failed && { glyph: g.select, label: "Reintentar", offscreen: true }, end].filter(Boolean); // el botón ya lo dice
     const decide = onDecide && { glyph: g.alt, label: "Decide por mí" }; // D5-A: la entrada de Explorar, siempre a la vista
     if (mosaic.ambient) return [{ glyph: g.select, label: "Explorar" }, decide, end].filter(Boolean); // A entra al mosaico: el pie dice eso, no «Elegir»

@@ -1,0 +1,22 @@
+/* ScrollCue (js/components/scroll-cue.js): la señal de «hay más abajo» (IN1-A, 26 nov 2026; MN-A, 27 nov). Abajo al centro,
+   en voz baja: el nombre de lo que sigue con su ícono en el azul de Orbital (como el ícono de su rótulo) y la flecha. Sin
+   tecla. Al entrar al Inicio los íconos brincan tres veces, uno tras otro (--duration-hop), y se quedan quietos. Un clic o
+   un toque bajan. Dónde va lo pone quien la usa (`home__cue`, `shelf__cue`). */
+.scroll-cue {
+  position: absolute; z-index: var(--z-raised); left: 50%; translate: -50% 0;
+  display: flex; align-items: center; gap: var(--space-6); padding: var(--space-2) var(--space-6); border-radius: var(--radius-pill);
+  color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); white-space: nowrap;
+  animation: fade-in var(--duration-enter) var(--ease-out);
+  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+.scroll-cue:hover { background: var(--color-glass-hover); color: var(--color-text); }
+.scroll-cue__item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.scroll-cue__icon, .scroll-cue__arrow { display: inline-grid; place-items: center; color: var(--color-orbital); }
+.scroll-cue__icon .icon, .scroll-cue__arrow .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
+.scroll-cue__arrow .icon { rotate: 90deg; color: var(--color-text-muted); }
+.scroll-cue--hop .scroll-cue__icon { animation: scroll-cue-hop var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
+.scroll-cue--hop .scroll-cue__arrow { animation: scroll-cue-dip var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
+/* Un brinco y un rebotito que casi no se ve. La flecha, en cambio, baja: señala hacia dónde. */
+@keyframes scroll-cue-hop { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 -.3em; } 44% { translate: 0 -.06em; } }
+@keyframes scroll-cue-dip { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 .24em; } }
+[data-input="touch"] .scroll-cue { min-height: var(--touch-target); }

@@ -93,27 +93,7 @@
   .home__track--consoles > .tile--console { flex-basis: calc((100% - 2 * var(--tile-gap)) / 2.35); }
 }
 
-/* IN1-A (Fernando, 26 nov 2026): en «A continuación», lo de abajo no asoma (home.js · `home--cue`); se dice con la señal de
-   abajo al centro: el ícono y el nombre de cada fila que sigue, en el azul de Orbital como el ícono de su rótulo, y la flecha.
-   Al entrar al Inicio brincan apenas, uno tras otro, tres veces, y se quedan quietos: nada se mueve en bucle (Orbital es
-   ligera). Con el mando o el teclado lleva su tecla (RT, AvPág); con el dedo, no. Un clic o un toque bajan. */
+/* IN1-A (Fernando, 26 nov 2026): en «A continuación» lo de abajo no asoma (home.js · `home--cue`); lo dice la señal de abajo
+   (ScrollCue, scroll-cue.css). Aquí solo su lugar. */
 .home--cue .home__row:not([data-row="card"]) { opacity: 0; pointer-events: none; }
-.home__cue {
-  position: absolute; z-index: var(--z-raised); left: 50%; bottom: var(--space-4); translate: -50% 0;
-  display: flex; align-items: center; gap: var(--space-6); padding: var(--space-2) var(--space-6); border-radius: var(--radius-pill);
-  color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); white-space: nowrap;
-  animation: fade-in var(--duration-enter) var(--ease-out);
-  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
-}
-.home__cue:hover { background: var(--color-glass-hover); color: var(--color-text); }
-.home__cue-item { display: inline-flex; align-items: center; gap: var(--space-2); }
-.home__cue-icon, .home__cue-arrow { display: inline-grid; place-items: center; color: var(--color-orbital); }
-.home__cue-icon .icon, .home__cue-arrow .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
-.home__cue-arrow .icon { rotate: 90deg; color: var(--color-text-muted); }
-.home__cue--hop .home__cue-icon { animation: home-cue-hop var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
-.home__cue--hop .home__cue-arrow { animation: home-cue-dip var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
-/* Un brinco y un rebotito que casi no se ve. La flecha, en cambio, baja: señala hacia dónde. */
-@keyframes home-cue-hop { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 -.3em; } 44% { translate: 0 -.06em; } }
-@keyframes home-cue-dip { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 .24em; } }
-[data-input="touch"] .home__cue { min-height: var(--touch-target); }
-[data-input="touch"] .home__cue-glyph { display: none; }
+.home__cue { bottom: var(--space-4); }

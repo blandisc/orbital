@@ -14,7 +14,7 @@
 .hints__item .glyph + .glyph { margin-left: calc(-1 * var(--space-1)); } /* «LB RB»: un par, juntos */
 .hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
 .hints__item--end { margin-left: auto; }
-/* IN3-A (Fernando, 26 nov 2026): en el Inicio, «Menú» queda en su tecla (el atajo no se esconde) y su nombre se abre de lado
+/* IN3-A (Fernando, 26 nov 2026; en todas las pantallas desde MN-A, 27 nov): «Menú» queda en su tecla (el atajo no se esconde) y su nombre se abre de lado
    al señalarlo, en --duration-base y sin rebote. El margen se come el `gap` mientras no se ve. */
 .hints__item--collapsible .key-hint__label {
   max-width: 0; overflow: hidden; opacity: 0; margin-left: calc(-1 * var(--space-2));

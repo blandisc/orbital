@@ -1,13 +1,19 @@
-/* Shelf: filas de tarjetas; se ve una fila a la vez con la siguiente asomando.
+/* Shelf: filas de tarjetas; se ve una fila a la vez y, abajo, la señal de la siguiente (MN-A, 27 nov 2026; antes asomaba).
    Tiene su propio carril en la retícula (no es absoluta), así no se encima con el héroe
    ni con los controles. La fila siguiente se desvanece en lugar de cortarse en seco. */
 /* Abajo, aire antes del pie: el título de la fila que asoma ya no queda pegado a las pistas («RePág AvPág…»). */
 .shelf {
   grid-row: 3; grid-column: 1; /* ídem */
-  height: calc(var(--row-height) + var(--row-peek)); overflow: hidden; margin-bottom: var(--space-2);
-  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);
-  mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);
+  position: relative; height: calc(var(--row-height) + var(--row-peek)); overflow: hidden; margin-bottom: var(--space-2);
 }
+/* MN-A (Fernando, 27 nov 2026), como IN1-A en el Inicio: la fila siguiente ya no asoma; en la franja de abajo (--row-peek) va
+   la señal con su nombre (ScrollCue · shelf__cue). Las filas se recortan arriba de esa franja con una orilla suave. */
+.shelf__clip {
+  height: 100%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent calc(100% - var(--row-peek)));
+  mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent calc(100% - var(--row-peek)));
+}
+.shelf__cue { bottom: 0; }
 .shelf__rows { transition: transform var(--duration-slow) var(--ease-out); will-change: transform; }
 .shelf__row { height: var(--row-height); padding: 0 var(--page-gutter); }
 .shelf__heading {

@@ -194,16 +194,16 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa, onPads 
     fit();
   }
 
-  /** Los focos: `players` es [{ player, battery }] o null (nadie lee los mandos: no se enseña). */
+  /** Los focos: `players` es [{ player, battery }] o null (nadie lee los mandos). MN-A (Fernando, 27 nov 2026): sin
+   *  controles no se enseñan (la silueta apagada era ruido); aparecen cuando llega uno. */
   function setPlayers(players) {
-    pads.hidden = !Array.isArray(players);
-    if (pads.hidden) return;
+    pads.hidden = !Array.isArray(players) || !players.length;
+    if (pads.hidden) return fit();
     lights.forEach((light, i) => {
       const battery = players[i]?.battery;
       light.classList.toggle("pad-lights__light--on", !!players[i]);
       for (const [level, cls] of Object.entries(PAD_LIGHT)) light.classList.toggle(cls, battery === level);
     });
-    pads.classList.toggle("pad-lights--none", !players.length);
     const label = padsLabel(players);
     padsName.textContent = label;
     pads.setAttribute("aria-label", `${label} · Jugadores`);

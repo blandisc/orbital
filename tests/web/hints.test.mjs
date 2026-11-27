@@ -133,3 +133,20 @@ test("D4-B: con una consola enfocada, lo de arriba ya enseña «Entrar» y «Seg
   assert.ok(homeHints(g, target).some((i) => i.label === "Entrar"));
   assert.ok(!homeHints(g, target, { onScreen: true }).some((i) => i.label === "Entrar" || i.label.startsWith("Seguir")));
 });
+
+test("MN-A: «Menú» queda en su tecla en el pie de todas las pantallas", async () => {
+  const { footerHints, homeHints, gamesHints, tvHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = GLYPHS.gamepad;
+  const menus = [footerHints(g), homeHints(g, { kind: "item", item: {} }), gamesHints(g, null), tvHints(g, null)]
+    .map((list) => list.find((i) => i.label === "Menú"));
+  for (const menu of menus) assert.deepEqual(menu && { end: menu.end, collapsible: menu.collapsible }, { end: true, collapsible: true });
+});
+
+test("MN-A: lo que sale de la pantalla lo dice el menú (la ficha con su X, saltar de fila con LT/RT)", async () => {
+  const { gameMenu, controlsMenu } = await import("../../orbital/web/js/core/menus.js");
+  const movie = { id: "cinemeta:movie:tt1", title: "Thunderbolts*", source: "cinemeta", kind: "movie", extra: { kind: "movie", meta_id: "tt1" } };
+  const ficha = gameMenu(movie).options.find((o) => o.label === "Ver ficha");
+  assert.equal(ficha?.hint, "También con X");
+  const rows = JSON.stringify(controlsMenu([{ kind: "xbox", close: "Start + Select + Home" }]).options);
+  assert.ok(rows.includes("Saltar de fila") && rows.includes("LT / RT"));
+});

@@ -20,7 +20,7 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
   }
   // T5: en las pestañas Todo · Películas · Series, A elige y ↓ regresa a la fila. D5-A: en un ícono, A dice qué abre.
   if (kinds === "on") return capHints([{ glyph: glyphs.select, label: kindAction || "Mostrar" }, { glyph: glyphs.down, label: "Volver a la fila", secondary: true },
-    { glyph: glyphs.menu, label: "Menú", end: true }], glyphs);
+    { glyph: glyphs.menu, label: "Menú", end: true, collapsible: true }], glyphs);
   return capHints([
     // T9: un pedido a la nube enfocado dice su estado con palabras (el ícono de la esquina, en grande, no basta a 3 m).
     status && { glyph: "", label: status, status: true },
@@ -43,7 +43,7 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     !atHome && { glyph: glyphs.back, label: atTop ? "Al principio" : "Subir", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` },
-    { glyph: glyphs.menu, label: "Menú", end: true },
+    { glyph: glyphs.menu, label: "Menú", end: true, collapsible: true },
   ].filter(Boolean), glyphs);
 }
 
@@ -126,7 +126,7 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   // IN1-A: con la señal de abajo a la vista (`cue`), ella ya lo dice con su tecla: el pie no lo repite.
   if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true, ...(cue && { offscreen: true }) });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
-  // IN3-A (Fernando, 26 nov 2026): en el Inicio, «Menú» queda en su tecla; la palabra sale al señalarla.
+  // IN3-A (Fernando, 26 nov 2026; MN-A, 27 nov: en todas las pantallas): «Menú» queda en su tecla; la palabra sale al señalarla.
   list.push({ glyph: glyphs.menu, label: "Menú", end: true, collapsible: true });
   return capHints(list, glyphs);
 }
@@ -144,7 +144,7 @@ export function gamesHints(glyphs, target, { showAll = false } = {}) {
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   // B: primero al primer juego; desde ahí, a Inicio. Siempre dice «Atrás», como en el resto de Orbital.
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true });
-  list.push({ glyph: glyphs.menu, label: "Menú", end: true });
+  list.push({ glyph: glyphs.menu, label: "Menú", end: true, collapsible: true });
   return capHints(list, glyphs);
 }
 
@@ -166,7 +166,7 @@ export function tvHints(glyphs, target, { empty = false, failed = false, categor
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true }); // de los canales, B vuelve a las categorías; de ahí, al Inicio
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
-  list.push({ glyph: glyphs.menu, label: "Menú", end: true });
+  list.push({ glyph: glyphs.menu, label: "Menú", end: true, collapsible: true });
   return capHints(list, glyphs);
 }
 

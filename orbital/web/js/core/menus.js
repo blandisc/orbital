@@ -47,7 +47,8 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   // Con el dedo era la única forma de llegar a la ficha (X no existe en la pantalla).
   if (isWatchable(item) && !isOpen) {
     const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
-    options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
+    // MN-A (27 nov 2026): el botón redondo de la ficha salió del destacado; su tecla se dice aquí.
+    options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", hint: "También con X", command: { type: "title", id: item.id } });
   }
   // Un juego: su página (como la de producto del Apple TV), con la sinopsis y lo tuyo con él. Desde la página, no se repite.
   if (isGame(item) && !page) options.push({ icon: "info", label: "Ver ficha", command: { type: "game-page", id: item.id } });

@@ -1763,6 +1763,8 @@ async function pollSystem() {
     const system = await api.system();
     state.wifi = system.wifi;
     ui.status.setSystem(system);
+    // Se fue el último control con su indicador enfocado (MN-A: sin controles no se ve): el foco pasa a Buscar.
+    if (ui.home.focusId === "pads" && ui.status.padsButton.hidden) ui.home.focus("search");
     setOnline(system.online !== false);
   } catch { /* idem */ }
 }
