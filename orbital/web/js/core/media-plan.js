@@ -158,7 +158,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const latest = [...past.slice(-8), ...dated.filter(({ i }) => !i.released)].slice(0, 20).map(({ i }) => latestItem(i));
   if (latest.length) {
     const startAt = Math.max(0, latest.findIndex((i) => i.fresh || i.soon));
-    rows.push({ id: "curated:nuevo", title: "Lo nuevo de lo tuyo", reason: "Ya salió y lo que viene · de tus series en Trakt",
+    rows.push({ id: "curated:nuevo", title: "Lo nuevo de lo tuyo", reason: "Disponible y lo que viene · de tus series en Trakt",
       group: "nuevo", timeline: true, startAt: latest.some((i) => i.fresh || i.soon) ? startAt : latest.length - 1, items: latest });
   }
   const because = byId.because;

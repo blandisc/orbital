@@ -142,7 +142,7 @@ def calendar_item(g: dict, today: date) -> dict:
     released = when.date() < today  # ya salió (en «Lo nuevo de lo tuyo», la semana que pasó)
     # Un día solo («Miércoles 4») no decía qué pasaba: «Episodio nuevo el miércoles 4», «Episodio nuevo mañana» (PS-2, 2 nov 2026).
     soon = "Episodio nuevo mañana" if day == "Mañana" else f"Episodio nuevo el {day[:1].lower()}{day[1:]}"
-    item = video_item({**g, "kind": "series", "next": None}, "Sale hoy" if day == "Hoy" else "Ya salió" if released else soon)
+    item = video_item({**g, "kind": "series", "next": None}, "Sale hoy" if day == "Hoy" else "Disponible" if released else soon)
     return {**item, "key": f"video:{g['imdb']}", "day": when.date().isoformat(), "day_label": day, "day_sub": sub,
             "time": time_text, "today": day == "Hoy", "released": released, "episode": None, "episode_label": episode,
             "network": g.get("network") or "",

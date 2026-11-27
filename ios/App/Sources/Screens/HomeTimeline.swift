@@ -36,7 +36,7 @@ struct ReleaseTimeline: View {
             let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
             layout {
-                DSSectionHead(title: Text("Lo nuevo de lo tuyo"), eyebrow: Text("Ya salió y lo que viene"))
+                DSSectionHead(title: Text("Lo nuevo de lo tuyo"), eyebrow: Text("Disponible y lo que viene"))
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // El calendario es un ícono redondo, como el «+» de Canales (Fernando, 2 nov 2026, B3: sin la cápsula «Noviembre»;
                 // el mes ya se ve al abrirlo).

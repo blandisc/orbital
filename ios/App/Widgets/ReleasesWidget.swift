@@ -156,7 +156,7 @@ private struct ReleasesLine: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Lo nuevo de lo tuyo").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text)
                         Spacer(minLength: DS.Space.s2)
-                        Text("Ya salió y lo que viene").font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                        Text("Disponible y lo que viene").font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
                     }
                     HStack(alignment: .top, spacing: DS.Space.s2) {
                         ForEach(Array(out), id: \.id) { card($0) }
@@ -232,7 +232,7 @@ private struct ReleasesSpotlight: View {
                 Spacer(minLength: 0)
                 Text(verbatim: airing.title).font(DS.font(.md, weight: .semibold)).lineLimit(2)   // la negrita es de la cuenta de abajo (una por pantalla)
                 Text(verbatim: airing.episodeLabel).font(DS.font(.sm, weight: .medium)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
-                (when.isOut ? Text("Ya salió") : countdown(airing, when)).font(DS.font(.lg, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink)
+                (when.isOut ? Text("Disponible") : countdown(airing, when)).font(DS.font(.lg, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink)
             }
             .foregroundStyle(DS.text)
             .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
@@ -276,7 +276,7 @@ private struct ReleasesLockRow: View {
                 let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
                 HStack(spacing: DS.Space.s1) {
                     Image(systemName: when.isOut ? "sparkles" : "calendar")
-                    (when.isOut ? Text("Ya salió") : Text("\(when.day) \(when.hour)")).font(DS.font(.sm, weight: .semibold)).lineLimit(1)
+                    (when.isOut ? Text("Disponible") : Text("\(when.day) \(when.hour)")).font(DS.font(.sm, weight: .semibold)).lineLimit(1)
                 }
                 Text(verbatim: airing.title).font(DS.font(.lg, weight: .semibold)).lineLimit(1)
                 Text(verbatim: airing.episodeLabel).font(DS.font(.sm)).lineLimit(1)

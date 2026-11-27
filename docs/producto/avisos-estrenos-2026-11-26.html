@@ -1,0 +1,73 @@
+<title>Avisos de episodios nuevos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Una columna de lectura; cada decisión pone sus opciones lado a lado como avisos de iPhone y de reloj. */
+:root{--bg:#f3f6f7;--surface:#fff;--fg:#132022;--muted:#58696b;--line:#d5dfe0;--accent:#0f8f86;--soft:#dff3f1;--lock:#1a2830;--lockfg:#f1f6f7;--lockmuted:#a8bbc1;--rec:#a85600;
+--display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--soft:#163533;--lock:#090f12;--lockfg:#eef4f5;--lockmuted:#8ea3a9;--rec:#f0a453;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--soft:#163533;--lock:#090f12;--lockfg:#eef4f5;--lockmuted:#8ea3a9;--rec:#f0a453;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body)}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px;display:grid;gap:40px}
+h1,h2{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}h1{font-size:2rem}h2{font-size:1.35rem}
+p{margin:0;max-width:65ch}.muted{color:var(--muted)}section{display:grid;gap:16px}
+.note{background:var(--soft);border-radius:12px;padding:14px 16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.code{font:700 .95rem var(--display);color:var(--accent)}.badge{font-size:.78rem;font-weight:600;color:var(--rec);margin-left:6px}
+.lock{background:var(--lock);color:var(--lockfg);border-radius:18px;padding:12px;display:grid;gap:8px}
+.bubble{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;display:grid;gap:1px;font-size:.82rem}
+.bubble b{font-size:.85rem}.bubble small{color:var(--lockmuted)}
+.watch{background:#000;color:#fff;border-radius:28px;padding:14px;width:150px;justify-self:center;display:grid;gap:3px;font-size:.78rem;border:3px solid #333}
+.watch small{color:#9aa}.watch .app{color:#3cc9bc;font-weight:600;font-size:.7rem}
+.watch .btn{background:#222;border-radius:10px;padding:5px;text-align:center;margin-top:4px}
+.dictar{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;font-weight:600}
+ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+</style>
+<div class="wrap">
+<header style="display:grid;gap:8px"><h1>Avisos de episodios nuevos</h1>
+<p class="muted">26 nov 2026 · iPhone y Apple Watch. El reloj no tiene app propia de Orbital: muestra el mismo aviso del iPhone, con su imagen y sus botones.</p></header>
+
+<section><h2>Lo que ya cambié</h2>
+<ul>
+<li>«Ya salió» dejó de usarse en el aviso, en el widget, en Inicio y en la TV. En los avisos ahora dice <b>«Episodio nuevo»</b>, <b>«Estreno de temporada»</b> (episodio 1) o <b>«Estreno de la serie»</b> (T1 E1), seguido de lo que dura. En el widget, en Inicio y en la TV dice <b>«Disponible»</b>.</li>
+<li>En el reloj, esa línea es lo primero que se lee de un vistazo. Arriba va la serie, luego «T2 E5 · Nombre», y la imagen del episodio aparece al levantar la muñeca.</li>
+<li>Con la pantalla bloqueada y las vistas previas ocultas, el aviso dice «Episodio nuevo» en vez de «Salió un estreno».</li>
+<li>Si usas el resumen programado de iOS, los estrenos de temporada o de serie aparecen arriba de los episodios sueltos.</li>
+<li>Quedó como regla con su prueba automática: «Ya salió» no vuelve a aparecer en ninguna pantalla.</li>
+</ul></section>
+
+<section><h2>AV1 · Cómo se lee el aviso</h2>
+<div class="opts">
+<div class="opt rec"><div><span class="code">AV1-A</span><span class="badge">RECOMIENDO · ya aplicado</span></div>
+<div class="lock"><div class="bubble"><b>The Bear</b><span>T3 E5 · Children</span><small>Episodio nuevo · 34 min</small></div></div>
+<div class="watch"><span class="app">ORBITAL</span><b>The Bear</b><span>T3 E5 · Children</span><small>Episodio nuevo · 34 min</small><div class="btn">Descargar</div></div>
+<p>Dice qué es sin sonar a plática. En el estreno de una temporada cambia a «Estreno de temporada».</p></div>
+<div class="opt"><div><span class="code">AV1-B</span></div>
+<div class="lock"><div class="bubble"><b>The Bear</b><span>T3 E5 · Children</span><small>Disponible · 34 min</small></div></div>
+<div class="watch"><span class="app">ORBITAL</span><b>The Bear</b><span>T3 E5 · Children</span><small>Disponible · 34 min</small><div class="btn">Descargar</div></div>
+<p>Usa la misma palabra que el widget. Pero «Disponible» se puede confundir con «ya está en Real-Debrid», y eso no siempre es cierto cuando llega el aviso.</p></div>
+<div class="opt"><div><span class="code">AV1-C</span></div>
+<div class="lock"><div class="bubble"><b>Nuevo en The Bear</b><span>T3 E5 · Children · 34 min</span></div></div>
+<div class="watch"><span class="app">ORBITAL</span><b>Nuevo en The Bear</b><span>T3 E5 · Children</span><div class="btn">Descargar</div></div>
+<p>Una línea menos, mejor para el reloj. Pero se pierde la diferencia entre episodio y estreno de temporada.</p></div>
+</div></section>
+
+<section><h2>AV2 · Algo que ahora sí se puede, con la cuenta de paga: avisos «urgentes»</h2>
+<p>Apple llama a esto «Urgente» (en inglés, Time Sensitive). El aviso pasa por encima del modo Concentración (Dormir, Trabajo), se queda arriba en la pantalla bloqueada hasta una hora y en el reloj suena y vibra aunque tengas activado el resumen. La app necesita un permiso especial de Apple, que una cuenta gratuita no puede pedir. Además, tú puedes apagarlo cuando quieras en Ajustes del iPhone.</p>
+<div class="opts">
+<div class="opt"><div><span class="code">AV2-A</span></div><p><b>Como hoy.</b> Si tienes un modo Concentración activo, el aviso espera a que lo quites.</p><p class="muted">Gana: nunca interrumpe. Pierde: el estreno de la temporada que esperabas te llega horas después, cuando ya revisaste el celular.</p></div>
+<div class="opt rec"><div><span class="code">AV2-B</span><span class="badge">RECOMIENDO</span></div><p><b>Urgente solo en el estreno de una temporada o de una serie.</b> Los episodios sueltos de cada semana siguen siendo discretos.</p><p class="muted">Gana: lo importante llega a tiempo, también al reloj. Pierde: casi nada. Pasa pocas veces al año por serie, y de las 23 a las 8 siempre espera a la mañana.</p></div>
+<div class="opt"><div><span class="code">AV2-C</span></div><p><b>Todos los episodios, urgentes.</b></p><p class="muted">Gana: nunca se te pasa uno. Pierde: con varias series a la semana se vuelve ruido, e iOS te va a sugerir apagarlo.</p></div>
+</div></section>
+
+<section><h2>Lo demás que la cuenta de paga abre</h2>
+<ul>
+<li><b>Avisos que llegan al instante aunque la app esté cerrada</b> (push). Esto ya lo decidiste el 18 nov: elegiste IN-A, sin un servidor de fuera, así que los avisos siguen llegando cuando iOS despierta la app. No lo cambio a menos que lo pidas.</li>
+<li><b>iCloud y TestFlight</b>: los dos ya se usan.</li>
+<li><b>Una app propia para el reloj</b>: no hace falta para los avisos y sería una app más que mantener. No la recomiendo por ahora.</li>
+</ul></section>
+
+<div class="note">Algo que no comprobé: no vi el aviso nuevo en un reloj de verdad. El código compila y las pruebas pasan, pero un aviso de estreno real solo llega cuando sale un episodio.</div>
+<div class="dictar">Para dictar: «AV1-A» (o B o C) y «AV2-B» (o A o C).</div>
+</div>

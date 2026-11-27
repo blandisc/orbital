@@ -9516,6 +9516,17 @@
         }
       }
     },
+    "Disponible y lo que viene": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available and coming up"
+          }
+        }
+      }
+    },
     "Doble toque a los lados": {
       "extractionState": "manual",
       "localizations": {
@@ -12297,6 +12308,17 @@
         }
       }
     },
+    "Episodio nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New episode"
+          }
+        }
+      }
+    },
     "Episodios": {
       "extractionState": "manual",
       "localizations": {
@@ -13687,6 +13709,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Release"
+          }
+        }
+      }
+    },
+    "Estreno de temporada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season premiere"
+          }
+        }
+      }
+    },
+    "Estreno de la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series premiere"
           }
         }
       }
@@ -27380,17 +27424,6 @@
         }
       }
     },
-    "Salió un estreno": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A new episode is out"
-          }
-        }
-      }
-    },
     "Salta la intro": {
       "extractionState": "manual",
       "localizations": {
@@ -39262,28 +39295,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Many more subtitles now show"
-          }
-        }
-      }
-    },
-    "Ya salió": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Out now"
-          }
-        }
-      }
-    },
-    "Ya salió y lo que viene": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Out now and coming up"
           }
         }
       }

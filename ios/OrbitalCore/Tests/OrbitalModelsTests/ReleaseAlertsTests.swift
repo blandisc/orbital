@@ -89,4 +89,26 @@ final class ReleaseAlertsCheckTests: XCTestCase {
         XCTAssertEqual(due.map(\.episodeTitle), ["Ghosts and Spirits", "Battle of the Ruins"])
         XCTAssertEqual(due.map(\.still), ["https://episodes.example/10.jpg", "https://episodes.example/11.jpg"])
     }
+
+    /// La primera línea del aviso dice qué es, en tono neutro (26 nov 2026): el estreno de la serie, el de una temporada o un
+    /// episodio nuevo. En el Apple Watch es lo que se lee de un vistazo.
+    func testTheAlertSaysWhatKindOfReleaseItIs() {
+        func alert(_ season: Int, _ episode: Int) -> ReleaseAlerts.Alert {
+            .init(id: "tt1:\(season):\(episode)", metaID: "tt1", show: "Show", season: season, episode: episode, episodeTitle: "",
+                  poster: "", art: "", quality: nil, instant: false, minutes: nil)
+        }
+        XCTAssertEqual(alert(1, 1).kind, .seriesPremiere)
+        XCTAssertEqual(alert(3, 1).kind, .seasonPremiere)
+        XCTAssertEqual(alert(3, 4).kind, .episode)
+    }
+
+    /// Regla (26 nov 2026): lo que ya está para ver se dice «Disponible» o «Episodio nuevo», nunca «Ya salió» (coloquial),
+    /// ni en el iPhone, ni en el reloj, ni en los widgets, ni en la TV.
+    func testNoColloquialOutNowAnywhere() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../..").standardized
+        for path in ["ios/App/Resources/Localizable.xcstrings", "orbital/web/js/core/media-plan.js", "orbital/foryou/items.py"] {
+            let text = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            XCTAssertFalse(text.contains("\"Ya salió"), "«Ya salió» visible en \(path)")
+        }
+    }
 }

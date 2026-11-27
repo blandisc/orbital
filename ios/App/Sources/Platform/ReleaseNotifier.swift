@@ -6,7 +6,7 @@ import OrbitalModels
 import UIKit
 @preconcurrency import UserNotifications
 
-/// El aviso «Ya salió» en iOS (en cuanto sale, tenga o no fuente): uno por episodio, siempre (antes tres o más se juntaban en una lista sin botones de cada
+/// El aviso de un episodio nuevo en iOS (y en el Apple Watch, que repite el del iPhone) (en cuanto sale, tenga o no fuente): uno por episodio, siempre (antes tres o más se juntaban en una lista sin botones de cada
 /// uno, 30 oct). La serie arriba, el episodio y su nombre debajo, y la imagen del episodio (o el fondo de la serie, o su póster)
 /// que se ve en grande al mantenerlo presionado; sus tres botones: Ver, Ver en la TV y Descargar. Los de una misma serie se
 /// apilan juntos. Se revisa al abrir la app y en segundo plano (mejor esfuerzo de iOS).
@@ -70,7 +70,7 @@ enum ReleaseNotifier {
             UNNotificationAction(identifier: Action.unfollow, title: Strings.tr("Dejar de seguir", language: language), options: [.destructive], icon: UNNotificationActionIcon(systemImageName: "bell.slash")),
         ].filter { tv || $0.identifier != Action.tv }
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
-                                             hiddenPreviewsBodyPlaceholder: Strings.tr("Salió un estreno", language: language), options: [])
+                                             hiddenPreviewsBodyPlaceholder: Strings.tr("Episodio nuevo", language: language), options: [])
         UNUserNotificationCenter.current().getNotificationCategories { existing in
             UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != oldGroupCategory }.union([release]))
         }
@@ -120,15 +120,27 @@ enum ReleaseNotifier {
             content.title = AppEnvironment.shared.services.titleNames.name(alert.show, id: alert.metaID, kind: "series")
             let episode = Strings.episode(season: alert.season, episode: alert.episode, language: language)
             content.subtitle = alert.episodeTitle.isEmpty ? episode : "\(episode) · \(alert.episodeTitle)"
-            // En cuanto sale (Fernando, 1 nov 2026): «Ya salió», aunque Real-Debrid todavía no lo tenga.
+            // En cuanto sale (Fernando, 1 nov 2026), aunque Real-Debrid todavía no lo tenga. Neutro (26 nov): «Episodio nuevo»,
+            // «Estreno de temporada» o «Estreno de la serie», y lo que dura; en el reloj es la línea que se lee de un vistazo.
             let facts = [alert.minutes.map { "\($0) min" }].compactMap { $0 }
-            content.body = ([Strings.tr("Ya salió", language: language)] + facts).joined(separator: " · ")
+            content.body = ([Strings.tr(headline(alert.kind), language: language)] + facts).joined(separator: " · ")
+            // En el resumen programado, un estreno de serie o de temporada pesa más que un episodio suelto.
+            content.relevanceScore = alert.kind == .episode ? 0.5 : 0.8
             content.threadIdentifier = thread(alert.metaID)
             content.categoryIdentifier = category
             content.sound = .default
             content.userInfo = ["kind": "series", "id": alert.metaID, "video": alert.id, "title": alert.show]
             if let image = art[alert.id] { content.attachments = [image] }
             try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.\(alert.id)", content: content, trigger: trigger))
+        }
+    }
+
+    /// La primera línea del aviso, sin tono coloquial.
+    static func headline(_ kind: ReleaseAlerts.Alert.Kind) -> String {
+        switch kind {
+        case .seriesPremiere: "Estreno de la serie"
+        case .seasonPremiere: "Estreno de temporada"
+        case .episode: "Episodio nuevo"
         }
     }
 

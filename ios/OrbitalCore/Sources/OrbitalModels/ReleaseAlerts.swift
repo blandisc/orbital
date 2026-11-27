@@ -27,6 +27,10 @@ public final class ReleaseAlerts {
             self.poster = poster; self.art = art; self.still = still; self.quality = quality; self.instant = instant; self.minutes = minutes
         }
 
+        /// Qué tipo de estreno es, para la primera línea del aviso (26 nov 2026: «Ya salió» sonaba coloquial).
+        public enum Kind: Sendable, Equatable { case seriesPremiere, seasonPremiere, episode }
+        public var kind: Kind { episode != 1 ? .episode : season <= 1 ? .seriesPremiere : .seasonPremiere }
+
         /// Lo mismo con el nombre y la imagen del episodio que dice Cinemeta (lo que no traiga se queda como estaba).
         func with(_ episode: Episode?) -> Alert {
             guard let episode else { return self }

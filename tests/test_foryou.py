@@ -587,7 +587,7 @@ def test_upcoming_episodes_by_day_with_local_time(make_foryou, net):
 
 
 def test_whats_new_of_yours_has_last_week_and_whats_coming(make_foryou, net):
-    """«Lo nuevo de lo tuyo» (como el Inicio del iPhone): lo que salió la semana pasada («Ya salió», «Ayer») y lo que viene,
+    """«Lo nuevo de lo tuyo» (como el Inicio del iPhone): lo que salió la semana pasada («Disponible», «Ayer») y lo que viene,
     en un solo pedido a Trakt que empieza ocho días antes (hora universal)."""
     from datetime import datetime, timedelta
 
@@ -600,7 +600,7 @@ def test_whats_new_of_yours_has_last_week_and_whats_coming(make_foryou, net):
                                                   row("Hoy", "tt3", 5, 1, 0), row("Luego", "tt4", 1, 2, 3), row("Lejos", "tt5", 1, 1, 30)]))
     items = fy.latest(now=now)
     assert [(i["title"], i["day_label"], i["why"], i["released"]) for i in items] == [
-        ("Martes", "Viernes 9", "Ya salió", True), ("Ayer", "Ayer", "Ya salió", True), ("Hoy", "Hoy", "Sale hoy", False),
+        ("Martes", "Viernes 9", "Disponible", True), ("Ayer", "Ayer", "Disponible", True), ("Hoy", "Hoy", "Sale hoy", False),
         ("Luego", "Domingo 18", "Episodio nuevo el domingo 18", False)]
     asked = [c for c in net.calls if "/calendars/my/shows/" in c[1]]
     assert len(asked) == 1 and "/2026-10-07/23" in asked[0][1]
