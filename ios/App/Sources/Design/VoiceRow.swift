@@ -327,7 +327,7 @@ struct ConnectionTrail: View {
         case .noInternet: Text("Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez.")
         case .tunnelDown: Text("Tu TV no contesta: puede estar dormida. «Prende la tele» la despierta.")
         case .orbitalDown: Text("Tu TV contesta, pero Orbital no: puede estar cerrada o reiniciándose. Espera un momento.")
-        case .tokenChanged: Text("Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital.")
+        case .tokenChanged: Text("Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Tu Orbital.")
         }
     }
 

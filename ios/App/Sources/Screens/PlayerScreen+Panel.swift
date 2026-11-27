@@ -372,7 +372,7 @@ extension PlayerScreen {
             scareHintSeen += 1
             let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
             show(PlayerNotice(title: tr("Los puntos de la barra son sustos"),
-                              detail: tr("Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproductor."),
+                              detail: tr("Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproducción."),
                               tone: .info))
         }
     }

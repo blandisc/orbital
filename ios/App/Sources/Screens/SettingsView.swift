@@ -343,8 +343,11 @@ struct SettingsView: View {
         Section("Calidad") {
             SettingsChoiceRow(title: "Con Wi‑Fi", symbol: "wifi", tint: DS.ListTint.series, options: qualityChoices,
                               selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } }))
-            SettingsChoiceRow(title: "Con datos móviles", symbol: "antenna.radiowaves.left.and.right", tint: DS.ListTint.trend, options: qualityChoices,
-                              selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } }))
+            // En la Mac no hay datos móviles: un solo renglón («En esta Mac», su versión del catálogo).
+            if !ThisDevice.isMac {
+                SettingsChoiceRow(title: "Con datos móviles", symbol: "antenna.radiowaves.left.and.right", tint: DS.ListTint.trend, options: qualityChoices,
+                                  selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } }))
+            }
         }
         .listRowBackground(DS.surface)
         Section {
@@ -372,7 +375,9 @@ struct SettingsView: View {
         let s = model.settings
         Section {
             // Los mismos tres interruptores que Descargas › Descarga inteligente, con los mismos nombres.
-            DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", tint: DS.ListTint.series, isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
+            if !ThisDevice.isMac {   // en la Mac no hay datos móviles que cuidar
+                DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", tint: DS.ListTint.series, isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
+            }
             DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", symbol: "arrow.down.circle", tint: DS.ListTint.trend, isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
             DSToggleRow("Borrar al terminar de verlo", symbol: "trash", tint: DS.ListTint.flame,
                         isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
@@ -474,11 +479,11 @@ struct SettingsView: View {
         .onAppear { model.refreshScrobble() }
     }
 
-    /// «Último scrobble»: lo último que se le contó a Trakt (o por qué no se pudo), para comprobarlo en trakt.tv › Historial.
+    /// «Lo último que le contaste a Trakt» (así la TV): lo último que se le contó a Trakt (o por qué no se pudo), para comprobarlo en trakt.tv › Historial.
     @ViewBuilder
     func scrobbleRow(_ model: SettingsModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text("Último scrobble").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+            Text("Lo último que le contaste a Trakt").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             if let last = model.scrobble.last {
                 Text(verbatim: last.title).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
                 HStack(spacing: DS.Space.s1) {

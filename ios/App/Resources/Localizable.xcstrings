@@ -2626,13 +2626,13 @@
         }
       }
     },
-    "Agrégala en Ajustes › Avanzado para buscar con filtros.": {
+    "Agrégala en Ajustes › Cuentas para buscar con filtros.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add it in Settings › Advanced to search with filters."
+            "value": "Add it in Settings › Accounts to search with filters."
           }
         }
       }
@@ -6337,9 +6337,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On Wi‑Fi"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On Wi‑Fi"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On Wi‑Fi"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On Wi‑Fi"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Con Wi‑Fi"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Con Wi‑Fi"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Con Wi‑Fi"
+                }
+              }
+            }
           }
         }
       }
@@ -6628,7 +6682,7 @@
         }
       }
     },
-    "Conecta Trakt en este iPhone (Ajustes › Trakt).": {
+    "Conecta Trakt en este iPhone (Ajustes › Cuentas › Trakt).": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -6637,25 +6691,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect Trakt on this iPad (Settings › Trakt)."
+                  "value": "Connect Trakt on this iPad (Settings › Accounts › Trakt)."
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect Trakt on this iPhone (Settings › Trakt)."
+                  "value": "Connect Trakt on this iPhone (Settings › Accounts › Trakt)."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect Trakt on this Mac (Settings › Trakt)."
+                  "value": "Connect Trakt on this Mac (Settings › Accounts › Trakt)."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Connect Trakt on this iPhone (Settings › Trakt)."
+                  "value": "Connect Trakt on this iPhone (Settings › Accounts › Trakt)."
                 }
               }
             }
@@ -6667,25 +6721,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conecta Trakt en este iPad (Ajustes › Trakt)."
+                  "value": "Conecta Trakt en este iPad (Ajustes › Cuentas › Trakt)."
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conecta Trakt en este iPhone (Ajustes › Trakt)."
+                  "value": "Conecta Trakt en este iPhone (Ajustes › Cuentas › Trakt)."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conecta Trakt en esta Mac (Ajustes › Trakt)."
+                  "value": "Conecta Trakt en esta Mac (Ajustes › Cuentas › Trakt)."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conecta Trakt en este iPhone (Ajustes › Trakt)."
+                  "value": "Conecta Trakt en este iPhone (Ajustes › Cuentas › Trakt)."
                 }
               }
             }
@@ -10922,7 +10976,7 @@
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Start on the Mac and finish on the iPad or the Mac, right where you left off."
+                  "value": "Start on the Mac and finish on the iPhone or the iPad, right where you left off."
                 }
               },
               "other": {
@@ -10952,7 +11006,7 @@
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Empieza en la Mac y termina en el iPad o en la Mac, justo donde ibas."
+                  "value": "Empieza en la Mac y termina en el iPhone o en el iPad, justo donde ibas."
                 }
               },
               "other": {
@@ -10999,13 +11053,13 @@
         }
       }
     },
-    "En Ajustes › Tus idiomas, mantén presionado uno y súbelo. El de arriba es el que «Ver» busca primero.": {
+    "En Ajustes › Idiomas, mantén presionado uno y súbelo. El de arriba es el que «Ver» busca primero.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In Settings › Your languages, touch and hold one and move it up. The top one is what “Watch” looks for first."
+            "value": "In Settings › Languages, touch and hold one and move it up. The top one is what “Watch” looks for first."
           }
         }
       }
@@ -11942,9 +11996,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On a title, tap Save and then Favorites."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save and then Favorites."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save and then Favorites."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title page, click Save and then Favorites."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save and then Favorites."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar y luego Favoritos."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar y luego Favoritos."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, haz clic en Guardar y luego en Favoritos."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar y luego Favoritos."
+                }
+              }
+            }
           }
         }
       }
@@ -11953,9 +12061,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On a title, tap Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, click Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Save. What you save, what you’re watching and what you finish shows up here, just like on the TV."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, haz clic en Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Guardar. Lo que guardes, lo que estés viendo y lo que termines aparece aquí, como en la TV."
+                }
+              }
+            }
           }
         }
       }
@@ -15424,6 +15586,17 @@
         }
       }
     },
+    "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key is incomplete. Copy the whole key from real-debrid.com/apitoken."
+          }
+        }
+      }
+    },
     "La consola": {
       "extractionState": "manual",
       "localizations": {
@@ -16563,13 +16736,13 @@
         }
       }
     },
-    "Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Tus idiomas.": {
+    "Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Idiomas.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Versions in your languages come first, in your order. Change them in Settings › Your languages."
+            "value": "Versions in your languages come first, in your order. Change them in Settings › Languages."
           }
         }
       }
@@ -18332,6 +18505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I'll request it again when a slot frees up"
+          }
+        }
+      }
+    },
+    "Lo último que le contaste a Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last thing you told Trakt"
           }
         }
       }
@@ -20615,13 +20799,13 @@
         }
       }
     },
-    "Necesita la clave de TMDB (Ajustes › Avanzado).": {
+    "Necesita la clave de TMDB (Ajustes › Cuentas).": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Needs the TMDB key (Settings › Advanced)."
+            "value": "Needs the TMDB key (Settings › Accounts)."
           }
         }
       }
@@ -21808,6 +21992,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't reach Real-Debrid"
+          }
+        }
+      }
+    },
+    "No pude hablar con Real-Debrid. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach Real-Debrid. Check your connection."
           }
         }
       }
@@ -25893,6 +26088,17 @@
         }
       }
     },
+    "Real-Debrid contestó algo raro. Intenta otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid sent an odd answer. Try again."
+          }
+        }
+      }
+    },
     "Real-Debrid en real-debrid.com, TorBox en torbox.app y AllDebrid en alldebrid.com. Orbital no cobra nada.": {
       "extractionState": "manual",
       "localizations": {
@@ -25988,6 +26194,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid wouldn't let it download"
+          }
+        }
+      }
+    },
+    "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't recognize that key. Make sure it's the one from real-debrid.com/apitoken."
           }
         }
       }
@@ -26900,13 +27117,13 @@
         }
       }
     },
-    "Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproductor.": {
+    "Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproducción.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Red, major · amber, minor. Drag the bar to read each one; turn them off in Settings › Player."
+            "value": "Red, major · amber, minor. Drag the bar to read each one; turn them off in Settings › Playback."
           }
         }
       }
@@ -29389,13 +29606,13 @@
         }
       }
     },
-    "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Avanzado.": {
+    "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Cuentas.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Without it, collections and text-free posters are missing. Add it in Settings › Advanced."
+            "value": "Without it, collections and text-free posters are missing. Add it in Settings › Accounts."
           }
         }
       }
@@ -33501,9 +33718,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You tap “Watch” on the title page and the movie starts instantly"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You tap “Watch” on the title page and the movie starts instantly"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You tap “Watch” on the title page and the movie starts instantly"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You click “Watch” on the title page and the movie starts instantly"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You tap “Watch” on the title page and the movie starts instantly"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tocas «Ver» en la ficha y la película empieza al instante"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tocas «Ver» en la ficha y la película empieza al instante"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haces clic en «Ver» en la ficha y la película empieza al instante"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tocas «Ver» en la ficha y la película empieza al instante"
+                }
+              }
+            }
           }
         }
       }
@@ -34669,7 +34940,7 @@
         }
       }
     },
-    "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital.": {
+    "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Tu Orbital.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -34678,25 +34949,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPad. Reconnect it in Settings › Use with your Orbital."
+                  "value": "Your Orbital no longer recognizes this iPad. Reconnect it in Settings › Your Orbital."
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Use with your Orbital."
+                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Your Orbital."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this Mac. Reconnect it in Settings › Use with your Orbital."
+                  "value": "Your Orbital no longer recognizes this Mac. Reconnect it in Settings › Your Orbital."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Use with your Orbital."
+                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Your Orbital."
                 }
               }
             }
@@ -34708,25 +34979,25 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPad. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                  "value": "Tu Orbital ya no reconoce este iPad. Vuelve a conectarlo en Ajustes › Tu Orbital."
                 }
               },
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Tu Orbital."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce esta Mac. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                  "value": "Tu Orbital ya no reconoce esta Mac. Vuelve a conectarlo en Ajustes › Tu Orbital."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Tu Orbital."
                 }
               }
             }
@@ -41156,17 +41427,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Oscar for Best Picture"
-          }
-        }
-      }
-    },
-    "Último scrobble": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Last scrobble"
           }
         }
       }

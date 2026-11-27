@@ -229,7 +229,7 @@ struct DecideFilters: View {
                 m.fetchFameInBackground()
             }
         } else {
-            Text("Necesita la clave de TMDB (Ajustes › Avanzado).").recipe(.caption, color: DS.textFaint)
+            Text("Necesita la clave de TMDB (Ajustes › Cuentas).").recipe(.caption, color: DS.textFaint)
         }
     }
 
@@ -335,6 +335,7 @@ struct DecideListPicker: View {
             .accessibilityIdentifier("decide-lists-done")
         }
         .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .readableListWidth()   // iPad y Mac: en su columna, como toda lista
         .dsNavigationTitle("De qué listas").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Todas") { selection = [] }.disabled(selection.isEmpty) } }
     }

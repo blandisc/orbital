@@ -82,7 +82,7 @@ public enum Degraded: Equatable, Sendable {
         case .notConnected(.realDebrid): "Con Real-Debrid se ven y se descargan las películas y series. Agrega tu cuenta en Ajustes."
         case .notConnected(.addons): "No hay complementos que den dónde verlo. Agrégalos en Ajustes › Complementos."
         case .notConnected(.orbital): "Prende «Usar con tu Orbital» en Ajustes para ver lo de la consola."
-        case .notConnected(.tmdb): "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Avanzado."
+        case .notConnected(.tmdb): "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Cuentas."
         }
     }
 

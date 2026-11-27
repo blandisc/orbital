@@ -57,6 +57,48 @@ extension DesignRulesTests {
         }
     }
 
+    /// Toda página de lista o formulario va en su columna (`readableListWidth`): en la Mac, «Un Simpson al azar», «Series que
+    /// sigues» y el historial iban de orilla a orilla mientras las demás páginas de Ajustes guardaban su columna (26 nov 2026).
+    func testListPagesKeepTheirColumn() throws {
+        for file in try sources(["Screens"]) {
+            let code = file.lines.joined(separator: "\n")
+            guard code.contains("dsNavigationTitle("), code.contains("List {") || code.contains("Form {") else { continue }
+            XCTAssertTrue(code.contains(".readableListWidth()"), "\(file.path): la lista va en su columna (`.readableListWidth()`)")
+        }
+    }
+
+    /// Un póster de cuadrícula mide lo mismo que uno de fila: en Buscar, los resultados salían más chicos que «Lo más popular
+    /// hoy», justo arriba (26 nov 2026). Las columnas se cuentan con `DS.Poster.railWidth`, no con un tope aparte.
+    func testGridPostersMatchTheRows() throws {
+        let tokens = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Tokens.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(tokens.contains("Int(inner / (railWidth + DS.Space.s2))"), "las columnas de `DSPosterGrid` salen del ancho de una fila")
+        XCTAssertFalse(tokens.contains("gridCellMax"), "sin un tope aparte para la cuadrícula")
+    }
+
+    /// Lo que te manda a Ajustes nombra una página que existe: quedaban «Ajustes › Avanzado», «› Tus idiomas» y «› Reproductor»
+    /// de cuando esas páginas se llamaban así (26 nov 2026). Las páginas salen de `SettingsPage.title`; «Accesibilidad» es la
+    /// de Ajustes del sistema y lo de «Letterboxd › Ajustes» es de su página.
+    func testSettingsPathsNameRealPages() throws {
+        let parts = try XCTUnwrap(try sources(["Design"]).first { $0.name == "SettingsParts.swift" }).lines
+        let pages = parts.compactMap { line -> String? in
+            guard line.contains("case ."), let range = line.range(of: #"Text\("([^"]+)"\)"#, options: .regularExpression) else { return nil }
+            return String(line[range].dropFirst(6).dropLast(2))
+        } + ["Accesibilidad"]
+        XCTAssertGreaterThanOrEqual(pages.count, 10, "se leen las páginas de Ajustes")
+        let data = try Data(contentsOf: repo.appendingPathComponent("ios/App/Resources/Localizable.xcstrings"))
+        let strings = try XCTUnwrap((try JSONSerialization.jsonObject(with: data) as? [String: Any])?["strings"] as? [String: Any])
+        var stale: [String] = []
+        for key in strings.keys where !key.contains("Letterboxd › Ajustes") {
+            var rest = key[...]
+            while let found = rest.range(of: "Ajustes › ") {
+                let after = rest[found.upperBound...]
+                if !pages.contains(where: { after.hasPrefix($0) }) { stale.append(key) }
+                rest = after
+            }
+        }
+        XCTAssertEqual(stale, [], "«Ajustes › …» nombra una página que existe")
+    }
+
     /// C2: el margen de los lados crece con la ventana cuando hay espacio (`DS.Space.wideGutter`), no es un número fijo.
     func testTheGutterGrowsWithTheWindow() throws {
         let files = try sources(["Design"])

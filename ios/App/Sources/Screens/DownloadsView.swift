@@ -232,7 +232,7 @@ struct DownloadsView: View {
                     DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", isOn: setting(\.autoNextDownload))
                     DSToggleRow("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
                     // El mismo ajuste de Ajustes › Descargas, aquí a la mano (antes era una nota que no se podía tocar; J4).
-                    DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", isOn: setting(\.wifiOnlyDownloads))
+                    if !ThisDevice.isMac { DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", isOn: setting(\.wifiOnlyDownloads)) }   // la Mac no tiene datos móviles
                 }
                 .listRowBackground(DS.surface)
             }

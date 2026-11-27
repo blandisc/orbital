@@ -232,7 +232,9 @@ extension View {
     @ViewBuilder func macTopShade() -> some View {
         if ThisDevice.isMac {
             overlay(alignment: .top) {
-                ArtVeil(kind: .top, strength: .deep)
+                // Se desvanece a lo largo de todo su alto (antes a la mitad): el logo y «Buscar» quedaban sobre pósters claros
+                // del mosaico de Explorar sin nada detrás (26 nov 2026). Mismo degradado, el mismo costo.
+                ArtVeil(kind: .top, at: 1, strength: .deep)
                     .frame(height: DS.Mac.topScrim).ignoresSafeArea(edges: .top).allowsHitTesting(false)
             }
         } else {

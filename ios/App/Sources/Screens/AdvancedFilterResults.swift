@@ -55,7 +55,7 @@ struct FilterResultsView: View {
         .overlay {
             // Los premios vienen con la app: sin la clave de TMDB sí cargan, y el aviso de la clave ya no los tapa.
             if !model.available, model.filter.awards.isEmpty {
-                DSEmptyState(symbol: "key", title: Text("Falta la clave de TMDB"), message: Text("Agrégala en Ajustes › Avanzado para buscar con filtros."))
+                DSEmptyState(symbol: "key", title: Text("Falta la clave de TMDB"), message: Text("Agrégala en Ajustes › Cuentas para buscar con filtros."))
             } else if model.letterboxdDown, model.results.isEmpty {
                 // OI-3: un error trae su arreglo a la mano (antes solo decía «intenta de nuevo»).
                 DSEmptyState(symbol: "wifi.slash", title: Text("Letterboxd no contestó. Intenta de nuevo en un momento."), message: Text("Quita las estrellas de Letterboxd para ver los resultados de TMDB.")) {

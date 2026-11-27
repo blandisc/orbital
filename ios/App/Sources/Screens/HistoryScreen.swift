@@ -86,6 +86,7 @@ struct HistoryScreen: View {
         }
         .listStyle(.plain)
         .listHeadRows()
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden)   // el cielo lo pone la Biblioteca, el mismo en todo Guardado
         .environment(\.editMode, $editMode)
         .orbitalRefreshableList { await model.reload() }

@@ -40,20 +40,41 @@ final class DeviceWordsOnMacTests: XCTestCase {
         }
     }
 
-    /// MT1 (Fernando, 16 nov 2026: «en vez de equipo utiliza dispositivo»): la Mac toma la variante de iPad del catálogo, así
-    /// que esa variante no dice «iPad» sino «dispositivo» («device»). La única que nombra al iPad es la que manda a usar un
-    /// iPhone o un iPad para controlar la TV.
-    func testTheIPadVariantSaysDevice() throws {
+    /// La Mac lee su propia versión de cada texto (26 nov 2026). Una app del iPad en la Mac recibía la variante «ipad» del
+    /// catálogo: «Como el iPad» en Apariencia, «Toca uno» en Complementos. `MacStrings` (solo en la Mac) busca primero la
+    /// variante «mac»; aquí se cuida que esté instalado y que todo texto por aparato tenga su versión de Mac, que diga «haz
+    /// clic» y no «toca». (Antes, MT1 pedía que la variante del iPad dijera «dispositivo» porque era la que veía la Mac.)
+    func testTheMacReadsItsOwnVariant() throws {
+        XCTAssertTrue(try source("OrbitalApp.swift").contains("MacStrings.install()"), "la app instala los textos de la Mac al arrancar")
+        let mac = try source("Platform/MacStrings.swift")
+        XCTAssertTrue(mac.contains("guard ProcessInfo.processInfo.isiOSAppOnMac"), "solo en la Mac")
+        XCTAssertTrue(mac.contains(#"device["mac"]"#), "lee la variante «mac» del catálogo")
         let data = try Data(contentsOf: ios.appendingPathComponent("App/Resources/Localizable.xcstrings"))
         let strings = try XCTUnwrap((try JSONSerialization.jsonObject(with: data) as? [String: Any])?["strings"] as? [String: Any])
-        var offenders: [String] = []
-        for (_, entry) in strings {
-            for (_, loc) in ((entry as? [String: Any])?["localizations"] as? [String: Any]) ?? [:] {
-                let device = ((loc as? [String: Any])?["variations"] as? [String: Any])?["device"] as? [String: Any]
-                let value = ((device?["ipad"] as? [String: Any])?["stringUnit"] as? [String: Any])?["value"] as? String ?? ""
-                if value.contains("iPad"), !value.contains("iPhone") { offenders.append(value) }
+        var missing: [String] = [], touch: [String] = []
+        for (key, entry) in strings {
+            for (language, loc) in ((entry as? [String: Any])?["localizations"] as? [String: Any]) ?? [:] {
+                guard let device = ((loc as? [String: Any])?["variations"] as? [String: Any])?["device"] as? [String: Any] else { continue }
+                guard let value = ((device["mac"] as? [String: Any])?["stringUnit"] as? [String: Any])?["value"] as? String else {
+                    missing.append("\(language): \(key)"); continue
+                }
+                if value.range(of: #"\b([Tt]oca|[Tt]ocas|[Tt]ap)\b"#, options: .regularExpression) != nil { touch.append(value) }
             }
         }
-        XCTAssertEqual(offenders, [], "La variante de iPad (la que ve la Mac) dice «dispositivo», no «iPad»")
+        XCTAssertEqual(missing, [], "todo texto por aparato trae su versión de Mac")
+        XCTAssertEqual(touch, [], "en la Mac se hace clic, no se toca")
+    }
+
+    /// La Mac no tiene datos móviles: no se ofrece calidad «Con datos móviles» ni «Solo con Wi‑Fi» al bajar.
+    func testTheMacOffersNoCellular() throws {
+        let settings = try source("Screens/SettingsView.swift"), downloads = try source("Screens/DownloadsView.swift")
+        for (code, row) in [(settings, "SettingsChoiceRow(title: \"Con datos móviles\""), (settings, "DSToggleRow(\"Solo con Wi‑Fi\""),
+                            (downloads, "DSToggleRow(\"Solo con Wi‑Fi\"")] {
+            let lines = code.components(separatedBy: "\n")
+            for (i, line) in lines.enumerated() where line.contains(row) {
+                let before = lines[max(0, i - 2)...i].joined(separator: "\n")
+                XCTAssertTrue(before.contains("!ThisDevice.isMac"), "«\(row)» no sale en la Mac")
+            }
+        }
     }
 }

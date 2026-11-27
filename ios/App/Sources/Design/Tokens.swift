@@ -558,14 +558,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// desde qué ancho de contenido cuenta como ancha (iPhone horizontal, iPad).
         static let gridColumns = 3, gridColumnsWide = 4, gridColumnsLarge = 2
         static let gridWideWidth: CGFloat = 600
-        /// En ventanas anchas (iPad, Mac) caben más columnas: ninguna celda pasa de este ancho (con 4 fijas, en un iPad
-        /// horizontal cada póster medía ~280 pt).
-        static let gridCellMax: CGFloat = 160
         /// Cuántas columnas en `width` (el ancho del contenido, con sus márgenes).
         static func gridColumns(for width: CGFloat) -> Int {
             guard width >= gridWideWidth else { return gridColumns }
             let inner = width - DS.Space.gutter * 2 + DS.Space.s2
-            return max(gridColumnsWide, Int(inner / (gridCellMax + DS.Space.s2)))
+            // Los pósters de una cuadrícula miden lo mismo que los de las filas (26 nov 2026: en Buscar, los resultados salían
+            // más chicos que «Lo más popular hoy» justo arriba): tantas columnas como quepan del ancho de una fila.
+            return max(gridColumnsWide, Int(inner / (railWidth + DS.Space.s2)))
         }
         /// Las cuadrículas «de dos en dos» del iPhone (Top 10 completo, tus listas, Seguir viendo): en una ventana ancha (iPad,
         /// Mac) dos columnas hacían pósters de ~500 pt; ahí van tantas como quepan de al menos `wideMin`. El iPhone (vertical

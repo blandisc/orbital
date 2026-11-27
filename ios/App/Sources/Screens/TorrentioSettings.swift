@@ -103,7 +103,7 @@ struct TorrentioSettings: View {
             }
             .accessibilityIdentifier("torrentio-your-languages")
         } header: { Text("Idiomas primero") } footer: {
-            Text("Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Tus idiomas.")
+            Text("Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Idiomas.")
         }
         .listRowBackground(DS.surface)
     }

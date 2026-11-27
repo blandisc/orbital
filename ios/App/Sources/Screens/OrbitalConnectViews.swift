@@ -69,6 +69,7 @@ struct OrbitalUpgradeSheet: View {
             // Fernando, 3 nov, probando la 1729: la hoja quedaba a media pantalla con un hueco abajo. Mide lo que trae.
             .contentMargins(.bottom, DS.Space.s2, for: .scrollContent)   // el pie de la lista no deja otro hueco
             .fittedScrollSheet()
+            .readableListWidth()   // iPad y Mac: en su columna, como toda lista
             .dsNavigationTitle("Darle su propia conexión").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

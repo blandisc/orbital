@@ -63,7 +63,7 @@ enum LessonCatalog {
             .init(scene: .langPick, title: "«Ver» elige por ti",
                   line: "Busca primero en tu idioma favorito y en la mejor calidad. Si no está, prueba con el siguiente de tu lista."),
             .init(scene: .langOrder, title: "Tú decides el orden",
-                  line: "En Ajustes › Tus idiomas, mantén presionado uno y súbelo. El de arriba es el que «Ver» busca primero."),
+                  line: "En Ajustes › Idiomas, mantén presionado uno y súbelo. El de arriba es el que «Ver» busca primero."),
             .init(scene: .langOther, title: "¿Quieres otra versión?",
                   line: "Toca la bandera junto a «Ver»: eliges otro idioma o calidad sin buscar la película otra vez."),
             .init(scene: .langPanel, title: "Audio y subtítulos, sin salir",

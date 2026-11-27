@@ -71,8 +71,14 @@ extension SettingsView {
     /// «Claves de Explorar» (así le dice la TV): la de TMDB, antes en Avanzado.
     @ViewBuilder private func exploreKeys(_ model: SettingsModel) -> some View {
         Section {
-            SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
-                .accessibilityIdentifier("settings-tmdb-key")
+            // Con su ícono en la columna de los íconos, como los demás renglones: solo con el texto guía, tenue, no se veía
+            // como un campo (26 nov 2026).
+            Label {
+                SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityIdentifier("settings-tmdb-key")
+            } icon: {
+                Image(systemName: "key").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.ListTint.addon).frame(width: DS.SettingsLook.rowIcon)
+            }
             if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
         } header: { Text("Claves de Explorar") } footer: {
             env.services.usesBuiltInTMDBKey

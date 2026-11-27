@@ -16,6 +16,7 @@ struct OrbitalApp: App {
         if (UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []).first != language {
             UserDefaults.standard.set([language], forKey: "AppleLanguages")
         }
+        MacStrings.install()   // en la Mac, los textos dicen «Mac» y «haz clic», no «iPad» y «toca»
         DiskSpace.warm()   // el espacio libre, medido por detrás: la ficha y Descargas nunca esperan al disco
         // Video con sonido aunque el teléfono esté en silencio (como cualquier reproductor).
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)

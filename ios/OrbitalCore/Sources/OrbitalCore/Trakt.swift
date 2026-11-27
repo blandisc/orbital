@@ -219,7 +219,7 @@ public actor Trakt {
         guard let old = tokens() else { throw TraktError.auth("Conecta tu cuenta de Trakt en Ajustes.") }
         if !(old.refresh_token ?? "").isEmpty { _ = try await refresh(old); return }
         secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost()
-        throw TraktError.auth("Conecta Trakt en este iPhone (Ajustes › Trakt).")
+        throw TraktError.auth("Conecta Trakt en este iPhone (Ajustes › Cuentas › Trakt).")
     }
 
     /// La calificación de la comunidad de Trakt (0–10) y cuántos votaron; nil si nadie ha votado.
