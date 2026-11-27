@@ -1,0 +1,712 @@
+<title>Juegos en el iPhone Duo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Sora:wght@600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; las pantallas del Duo en filas lado a lado (cerrado, abierto, medio abierto) con su código; decisiones al final.
+   Las maquetas usan la paleta de Orbital (tinta, papel, teal solo para la voz) y no cambian con el tema. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64; --line:#dcd9d1;
+  --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6; --bad:#a3322b; --bad-soft:#f5dedb;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  /* Orbital (las maquetas): siempre oscuras, como la app en la noche */
+  --o-bg:#0c0c0e; --o-surface:#18181c; --o-raised:#1e1e23; --o-line:#2a2a30; --o-text:#f5f4f0; --o-sec:#babac1; --o-ter:#a3a3ab;
+  --o-teal:#5fd6c6; --o-amber:#f4c24d; --o-frame:#2a2a30;
+  --f-ui:-apple-system,"SF Pro Text",system-ui,"Figtree",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad; --line:#2c2c31;
+  --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14; --bad:#f08a80; --bad-soft:#3d1e1b;
+  --o-frame:#55555d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad; --line:#2c2c31;
+  --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14; --bad:#f08a80; --bad-soft:#3d1e1b;
+  --o-frame:#55555d; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:52px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.12rem;font-weight:600}
+p{margin:0;max-width:70ch}
+.lede{font-size:1.15rem;color:var(--muted)}
+.why{color:var(--teal);font-weight:500}
+section{display:grid;gap:18px}
+.src{font-size:.85rem;color:var(--muted)} .src a{color:inherit}
+.code{font-family:var(--f-mono);font-size:.82rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap;justify-self:start}
+.tag{font-size:.78rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--teal-soft);color:var(--teal)} .mid{background:var(--warn-soft);color:var(--warn)} .no{background:var(--bad-soft);color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{display:grid;gap:10px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.card.rec{border:2px solid var(--teal)}
+.card header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gain b{color:var(--teal)} .lose b{color:var(--bad)}
+.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.answers div{padding:16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:grid;gap:4px;min-width:0}
+.answers b{font-family:var(--f-display);font-size:1.02rem}
+/* etapas */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.stage{padding:18px;border-radius:16px;background:var(--surface);border:1px solid var(--line);display:grid;gap:10px;align-content:start;min-width:0}
+.stage .n{font-family:var(--f-display);font-weight:800;font-size:1.6rem;color:var(--teal);line-height:1}
+.apps{display:flex;gap:8px;flex-wrap:wrap}
+.app{display:grid;justify-items:center;gap:4px;font-size:.72rem;color:var(--muted);width:62px;text-align:center}
+.ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:#fff;font:700 11px/1 var(--f-ui)}
+.ico.or{background:linear-gradient(150deg,#2a2a30,#070708);border:1px solid #55555d}
+.ico.gc{background:linear-gradient(150deg,#5b3a9a,#1c1030)} .ico.sw{background:linear-gradient(150deg,#e60012,#3a0508)}
+.ico.ps{background:linear-gradient(150deg,#2b4fb3,#0a1638)} .ico.xb{background:linear-gradient(150deg,#107c10,#062306)}
+.ico.wu{background:linear-gradient(150deg,#1aa3d9,#05303f)} .ico.all{background:linear-gradient(150deg,#5fd6c6 0%,#2a2a30 55%,#070708)}
+.ico.gw{background:linear-gradient(150deg,#8a1c12,#1a0604)}
+/* filas de pantallas */
+.row{display:grid;gap:14px}
+.shots{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end}
+.shot{display:grid;gap:8px;justify-items:start;min-width:0}
+.shot .cap{font-size:.86rem;color:var(--muted);max-width:32ch}
+.shot .cap b{color:var(--fg)}
+/* aparato */
+.dev{border:6px solid var(--o-frame);border-radius:26px;background:var(--o-bg);color:var(--o-text);font-family:var(--f-ui);overflow:hidden;position:relative;max-width:100%}
+.dev.out{width:210px;aspect-ratio:466/678}
+.dev.in{width:300px;aspect-ratio:669/951}
+.dev.land{width:430px;aspect-ratio:951/669}
+.dev.half{width:300px;aspect-ratio:669/951;display:grid;grid-template-rows:1fr 6px 1fr}
+.dev.half .hinge{background:var(--o-frame)}
+.dev.half>.top,.dev.half>.bot{position:relative;overflow:hidden}
+/* Orbital por dentro */
+.scr{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto}
+.scr.side{grid-template-columns:1fr 34px;grid-template-rows:1fr}
+.bar{padding:12px 12px 4px;display:flex;justify-content:space-between;align-items:baseline}
+.bar .t{font-weight:700;font-size:15px}
+.bar .s{font-size:9px;color:var(--o-ter)}
+.body{padding:6px 12px;display:grid;gap:8px;align-content:start;overflow:hidden}
+.sec{font-size:10px;font-weight:600;color:var(--o-text)}
+.sec small{color:var(--o-teal);font-weight:500;margin-left:4px}
+.strip{display:flex;gap:6px;overflow:hidden}
+.cv{flex:0 0 auto;width:46px;aspect-ratio:3/4;border-radius:5px;background:#2a2a30;position:relative;overflow:hidden}
+.cv.w{width:78px;aspect-ratio:16/10}
+.cv i{position:absolute;left:4px;bottom:3px;font-style:normal;font-size:7px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000}
+.lm{background:linear-gradient(160deg,#3cbf6b,#0e2a17 80%)} .mk{background:linear-gradient(160deg,#e60012,#2e0306 80%)}
+.od{background:linear-gradient(160deg,#d8352a,#f4c24d 60%,#3a1a05)} .ww{background:linear-gradient(160deg,#2f8fd6,#0b2a40 80%)}
+.ms{background:linear-gradient(160deg,#f2b400,#1a4d8f 80%)} .gw3{background:linear-gradient(160deg,#a5241a,#1a0604 80%)}
+.halo{background:linear-gradient(160deg,#4d6b3a,#0f1a0b 80%)} .gt{background:linear-gradient(160deg,#ff7a1a,#2a1405 80%)}
+.prog{height:3px;border-radius:2px;background:#2a2a30;position:absolute;left:4px;right:4px;bottom:2px}
+.prog span{display:block;height:100%;border-radius:2px;background:var(--o-text)}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:8px;padding:3px 7px;border-radius:999px;background:var(--o-raised);color:var(--o-sec)}
+.chip.on{background:var(--o-text);color:#111}
+.cons{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.con{border-radius:7px;padding:6px;background:var(--o-surface);display:grid;gap:2px;font-size:8px;color:var(--o-ter)}
+.con b{color:var(--o-text);font-size:9px}
+.tabs{display:flex;justify-content:space-around;padding:6px 6px 10px;background:#131316;font-size:7.5px;color:var(--o-ter);border-top:1px solid #1e1e23}
+.tabs span{display:grid;justify-items:center;gap:2px}
+.tabs span::before{content:"";width:12px;height:12px;border-radius:3px;background:currentColor;opacity:.55}
+.tabs span.on{color:var(--o-text);font-weight:700}
+.tabs span.on::before{opacity:1}
+.sidebar{background:#131316;border-left:1px solid #1e1e23;display:grid;align-content:center;gap:12px;justify-items:center;padding:6px 0}
+.sidebar span{width:14px;height:14px;border-radius:4px;background:var(--o-ter);opacity:.5}
+.sidebar span.on{background:var(--o-text);opacity:1}
+/* ficha */
+.hero{height:42%;position:relative}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 35%,var(--o-bg))}
+.fbody{position:absolute;left:0;right:0;top:34%;padding:0 12px;display:grid;gap:7px}
+.ft{font-size:15px;font-weight:700;line-height:1.1}
+.fm{font-size:8.5px;color:var(--o-sec)}
+.btn{border-radius:999px;background:var(--o-text);color:#111;font-weight:700;font-size:10px;text-align:center;padding:7px}
+.btn.g{background:var(--o-raised);color:var(--o-text)}
+.btns{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.circ{width:26px;height:26px;border-radius:50%;background:var(--o-raised)}
+.info{display:grid;gap:4px;font-size:8.5px;color:var(--o-sec)}
+.info div{display:flex;justify-content:space-between;border-bottom:1px solid #1e1e23;padding-bottom:3px}
+.info b{color:var(--o-text);font-weight:600}
+.voice{color:var(--o-teal);font-size:8.5px}
+/* juego */
+.game{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;text-shadow:0 2px 8px #000}
+.lbx{position:absolute;inset:0;background:#000;display:grid;place-items:center}
+.lbx .g169{width:100%;aspect-ratio:16/9;display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px;text-shadow:0 2px 8px #000}
+.hint{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;font-size:8px;padding:4px 9px;border-radius:999px;background:rgba(12,12,14,.8);color:var(--o-sec);white-space:nowrap}
+.pad{position:absolute;inset:0;background:#0c0c0e;display:grid;grid-template-columns:1fr 1fr;align-items:center;justify-items:center;padding:10px}
+.dpad{width:64px;height:64px;position:relative}
+.dpad::before,.dpad::after{content:"";position:absolute;background:#2a2a30;border-radius:5px}
+.dpad::before{left:22px;top:0;width:20px;height:64px}.dpad::after{top:22px;left:0;height:20px;width:64px}
+.abxy{width:70px;height:70px;position:relative}
+.abxy span{position:absolute;width:24px;height:24px;border-radius:50%;background:#2a2a30;display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--o-sec)}
+.abxy .a{right:0;top:23px}.abxy .b{left:23px;bottom:0}.abxy .x{left:23px;top:0}.abxy .y{left:0;top:23px}
+.shoulders{position:absolute;top:6px;left:10px;right:10px;display:flex;justify-content:space-between}
+.shoulders span{font-size:8px;padding:3px 12px;border-radius:6px;background:#2a2a30;color:var(--o-sec)}
+.pmid{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.pmid span{font-size:8px;padding:2px 8px;border-radius:999px;background:#2a2a30;color:var(--o-sec)}
+.ds2{position:absolute;inset:0;display:grid;place-items:center}
+.ds2 div{width:78%;aspect-ratio:4/3;border-radius:4px;background:linear-gradient(160deg,#3a5a8a,#0d1726);display:grid;place-items:center;font-size:9px;color:#fff}
+/* pausa y hojas */
+.dim{position:absolute;inset:0;background:rgba(7,7,8,.72)}
+.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:62%;border-radius:16px;background:var(--o-surface);padding:12px;display:grid;gap:7px}
+.sheet.low{top:auto;bottom:10px;transform:translateX(-50%);width:calc(100% - 20px)}
+.sheet h4{margin:0;font-size:11px;font-weight:700}
+.sheet .r{font-size:9px;color:var(--o-text);padding:6px 8px;border-radius:9px;background:var(--o-raised);display:flex;justify-content:space-between}
+.sheet .r small{color:var(--o-ter)}
+.sheet p{font-size:8.5px;color:var(--o-sec);margin:0}
+.toast{position:absolute;left:50%;transform:translateX(-50%);top:10px;display:flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:var(--o-raised);font-size:8.5px;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.toast::before{content:"✓";font-size:9px;color:var(--o-text)}
+.bigprog{height:5px;border-radius:3px;background:#2a2a30}
+.bigprog span{display:block;height:100%;width:62%;border-radius:3px;background:var(--o-text)}
+.steps{display:grid;gap:6px}
+.steps div{display:grid;grid-template-columns:16px 1fr;gap:6px;font-size:8.5px;color:var(--o-sec);align-items:start}
+.steps div::before{content:"";width:12px;height:12px;border-radius:50%;border:1.5px solid var(--o-ter);margin-top:1px}
+.steps div.done::before{background:var(--o-teal);border-color:var(--o-teal)}
+.steps b{color:var(--o-text)}
+/* decisiones */
+.dec{display:grid;gap:14px;padding:22px;border-radius:18px;background:var(--raised)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.choice{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:6px;min-width:0}
+.choice.rec{border:2px solid var(--teal)}
+.recline{font-weight:600} .recline span{color:var(--teal)}
+.plan{display:grid;gap:10px;counter-reset:p;padding:0;margin:0;list-style:none}
+.plan li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.plan li::before{counter-increment:p;content:counter(p);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--teal);width:1.4em}
+.state{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.94rem}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.84rem}
+tr:last-child td{border-bottom:0}
+details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+.tech{display:grid;gap:10px;font-size:.92rem}
+.tech code{font-family:var(--f-mono);font-size:.8rem;overflow-wrap:anywhere}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:480px){.dev.land{width:100%}.dev.in,.dev.half{width:min(300px,100%)}}
+/* añadidos: selector de orden (como el de la app), botones encima del juego, minis de decisiones */
+.sel{display:flex;gap:12px;font-size:9px;color:var(--o-ter);border-bottom:1px solid #1e1e23;padding-bottom:4px}
+.sel span.on{color:var(--o-text);font-weight:700;box-shadow:0 2px 0 var(--o-text)}
+.ov{position:absolute;inset:0;pointer-events:none}
+.ov .dpad,.ov .abxy{position:absolute;opacity:.45;transform:scale(.8)}
+.ov .dpad{left:14px;bottom:14px}.ov .abxy{right:14px;bottom:10px}
+.ov .menu{position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:50%;background:rgba(42,42,48,.8);display:grid;place-items:center;font-size:9px;color:var(--o-sec)}
+.corner{position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:50%;background:rgba(42,42,48,.8);display:grid;place-items:center;font-size:9px;color:var(--o-sec)}
+.lock{position:absolute;right:4px;top:4px;width:12px;height:12px;border-radius:50%;background:rgba(12,12,14,.8);display:grid;place-items:center;font-size:7px;color:var(--o-sec)}
+.cv.dimd{opacity:.45}
+.minis{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.mini2{display:grid;gap:6px;justify-items:start;font-size:.82rem;color:var(--muted)}
+.dev.s{width:150px}.dev.s.land{width:220px}.dev.s.half{width:150px}
+.note{font-size:.88rem;padding:12px 14px;border-radius:12px;background:var(--warn-soft);color:var(--fg)}
+.note b{color:var(--warn)}
+</style>
+<div class="wrap">
+
+<header style="display:grid;gap:14px">
+  <p class="src">Orbital Ultra · plan y pantallas · 27 nov 2026 · sigue a «Tus consolas en el iPhone»</p>
+  <h1>Juegos en el iPhone Duo</h1>
+  <p class="lede">Cómo se verían tus juegos en Orbital con el Duo cerrado, abierto y medio abierto, y en qué orden lo construimos. Todavía no hay nada construido: primero quiero que veas las pantallas.</p>
+  <p class="src">Los números dentro de las maquetas (horas, tamaños, minutos) son ejemplos.</p>
+</header>
+
+<section>
+  <h2>Tus respuestas, y lo que salió</h2>
+  <div class="answers">
+    <div><b>God of War III: el de PS4</b>Le pregunté a la Lenovo: tienes el Remastered de PS4, lo jugaste 5.7 horas y la última vez fue el 24 nov. No hay versión de PS3. Así que va <b>K3-B, Olympus</b>, y sí, es el más estable porque está hecho solo para ese juego. Tu copia en la TV parece traer los archivos que pide; para confirmarlo tengo que mirar esa carpeta, y te pido permiso abajo.</div>
+    <div><b>Espacio: disco externo si hace falta</b>Nadie ha probado todavía jugar desde un disco USB-C en el iPhone. Lo pruebo aparte. Mientras, los juegos se copian al Duo (God of War pide unos 35 GB libres).</div>
+    <div><b>Switch: Luigi's Mansion 3, Mario Kart 8 y Mario Odyssey</b>Los tres ya funcionan con nxnative. Luigi's va a 60 cuadros por segundo (en la Switch, a 30). Mario Kart sale sin las cabezas de los Mii. Elegí Odyssey porque es de los más probados.</div>
+    <div><b>Mando GameSir por Bluetooth</b>iOS lo reconoce como un mando normal. Mientras está conectado no hay botones en la pantalla, y si se desconecta aparecen solos.</div>
+  </div>
+</section>
+
+<section>
+  <h2>nxnative y MeloNX, en simple</h2>
+  <div class="cards">
+    <article class="card rec">
+      <header><h3>nxnative: el libro ya traducido</h3><span class="tag ok">Tus 3 juegos</span></header>
+      <p>Antes de jugar, la Mac «traduce» el juego una sola vez (de 30 a 60 minutos) al idioma del iPhone. Después, el iPhone lo lee directo, como cualquier app.</p>
+      <p class="gain"><b>Ganas:</b> corre más rápido y más fresco, y no necesita el modo rápido de iOS, así que no se rompe cuando Apple cambia algo.</p>
+      <p class="lose"><b>Pierdes:</b> solo sirve con los juegos que alguien ya hizo funcionar (unos 50 hoy), y cada juego nuevo pasa por la Mac.</p>
+    </article>
+    <article class="card">
+      <header><h3>MeloNX: el intérprete en vivo</h3><span class="tag mid">El resto</span></header>
+      <p>Imita una Switch completa y traduce el juego mientras juegas.</p>
+      <p class="gain"><b>Ganas:</b> abre cualquier juego de Switch sin preparar nada en la Mac.</p>
+      <p class="lose"><b>Pierdes:</b> necesita el modo rápido de iOS, gasta más batería, calienta más y algunos juegos fallan o van lentos.</p>
+    </article>
+  </div>
+  <p class="why">Por eso: nxnative para los que más juegas y MeloNX para todo lo demás.</p>
+</section>
+
+<section>
+  <h2>De varias apps a una sola, en tres etapas</h2>
+  <p>Empezamos con K1-A y juntamos cuando cada pieza esté bien hecha. En todas las etapas entras solo por Orbital: los demás íconos se van a la Biblioteca de apps y no los tocas.</p>
+  <div class="stages">
+    <div class="stage">
+      <span class="n">1</span><h3>Cada motor, su app</h3>
+      <div class="apps">
+        <span class="app"><span class="ico or">orbital</span>Orbital</span>
+        <span class="app"><span class="ico sw">LM3</span>Luigi's</span>
+        <span class="app"><span class="ico sw">MK8</span>Mario Kart</span>
+        <span class="app"><span class="ico sw">SMO</span>Odyssey</span>
+        <span class="app"><span class="ico gw">GoW</span>God of War</span>
+        <span class="app"><span class="ico gc">GC</span>GameCube</span>
+      </div>
+      <p>Orbital tiene el catálogo y abre cada juego en su app. <b>Ojo:</b> hoy nxnative arma una app por juego, así que tus 3 juegos de Switch son 3 apps escondidas. Para ti se ven como parte de Orbital; por dentro todavía no lo son.</p>
+      <p class="src">Lo que ganamos: si algo truena, no tumba nada más, y cada pieza la afinamos sola.</p>
+    </div>
+    <div class="stage">
+      <span class="n">2</span><h3>Todas en «Orbital Juegos»</h3>
+      <div class="apps">
+        <span class="app"><span class="ico or">orbital</span>Orbital</span>
+        <span class="app"><span class="ico all">▶</span>Orbital Juegos</span>
+      </div>
+      <p>Juntamos los motores y los juegos convertidos en una sola app. Abre un juego a la vez y al salir se cierra sola, así nada choca. Es lo que pediste para los juegos convertidos; nxnative no lo trae listo y hay que probarlo.</p>
+      <p class="src">Lo que ganamos: dos íconos y nada más.</p>
+    </div>
+    <div class="stage">
+      <span class="n">3</span><h3>Dentro de Orbital</h3>
+      <div class="apps"><span class="app"><span class="ico or">orbital</span>Orbital</span></div>
+      <p>Si la etapa 2 sale estable, probamos meterlo todo en Orbital, siempre que un juego que truena no pueda cerrar la película que estés viendo.</p>
+    </div>
+  </div>
+  <p class="src">Las pantallas de abajo son iguales en las tres etapas. Para ti, lo único que cambia es si se ve un salto corto al entrar al juego.</p>
+</section>
+
+<section class="row">
+  <h2>1 · La pestaña «Juegos»</h2>
+  <p>Igual que en la TV: lo reciente y tus consolas. Solo en tu versión de Orbital.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P1</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span><span class="s">12 en tu iPhone</span></div>
+        <div class="body">
+          <div class="sec">Recientes <small>aquí o en la TV</small></div>
+          <div class="strip"><div class="cv w lm"><i>Luigi's Mansion 3</i></div><div class="cv w gw3"><i>God of War III</i></div><div class="cv w mk"><i>Mario Kart 8</i></div></div>
+          <div class="sec">Tus consolas</div>
+          <div class="cons">
+            <div class="con"><b>Switch</b>3 listos · 24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>Wii</b>9</div>
+            <div class="con"><b>PS2</b>31</div><div class="con"><b>Xbox 360</b>12</div><div class="con"><b>PS4</b>1</div>
+          </div>
+          <div class="sec">Favoritos</div>
+          <div class="strip"><div class="cv ww"><i>Wind Waker</i></div><div class="cv od"><i>Odyssey</i></div><div class="cv halo"><i>Halo 3</i></div><div class="cv gt"><i>GT4</i></div></div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Abierto.</b> La pantalla grande, con aire, como la TV.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P2</span>
+      <div class="dev out"><div class="scr side">
+        <div style="display:grid;grid-template-rows:auto 1fr">
+          <div class="bar"><span class="t">Juegos</span></div>
+          <div class="body">
+            <div class="sec">Recientes</div>
+            <div class="strip"><div class="cv w lm" style="width:100%"><i>Luigi's Mansion 3</i></div></div>
+            <div class="strip"><div class="cv mk"><i>MK8</i></div><div class="cv ww"><i>WW</i></div><div class="cv od"><i>SMO</i></div></div>
+            <div class="sec">Tus consolas</div>
+            <div class="cons" style="grid-template-columns:1fr 1fr"><div class="con"><b>Switch</b>24</div><div class="con"><b>GameCube</b>18</div><div class="con"><b>PS2</b>31</div><div class="con"><b>Xbox 360</b>12</div></div>
+          </div>
+        </div>
+        <div class="sidebar"><span></span><span></span><span class="on"></span><span></span><span></span></div>
+      </div></div>
+      <span class="cap"><b>Cerrado.</b> Lo mismo, más apretado. Las pestañas van en la franja de la derecha, como ya está el Duo.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P3</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Switch</span><span class="s">24 juegos</span></div>
+        <div class="body">
+          <div class="sel"><span class="on">Recientes</span><span>Favoritos</span><span>A–Z</span><span>Sin jugar</span><span>En tu iPhone</span></div>
+          <div class="strip" style="flex-wrap:wrap;gap:8px">
+            <div class="cv lm" style="width:78px"><i>Luigi's</i></div><div class="cv mk" style="width:78px"><i>MK8</i></div><div class="cv od" style="width:78px"><i>Odyssey</i></div>
+            <div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#9bd14a,#16300b)"><i>Zelda TotK</i><span class="lock">◷</span></div><div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#6fc2ff,#0b2238)"><i>Animal Crossing</i><span class="lock">◷</span></div><div class="cv dimd" style="width:78px;background:linear-gradient(160deg,#c86bff,#200b33)"><i>Kirby</i><span class="lock">◷</span></div>
+          </div>
+          <p class="voice">3 listos para jugar · los demás llegan con la etapa de MeloNX</p>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Una consola.</b> Los órdenes de la TV, más «En tu iPhone». Lo que todavía no corre se ve apagado, con un relojito (E6).</span>
+    </div>
+    <div class="shot">
+      <span class="code">P4</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span></div>
+        <div class="body" style="align-content:center;justify-items:center;text-align:center;gap:10px">
+          <div class="ft" style="font-size:13px">Tus juegos viven en tu consola</div>
+          <p class="fm" style="font-size:9.5px;max-width:24ch">Prende la Legion Go y conéctate a la misma wifi para ver tu catálogo.</p>
+          <div class="btn" style="width:60%">Buscar de nuevo</div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Sin catálogo todavía.</b> La primera vez, o con la consola apagada y nada bajado.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>2 · La ficha del juego y bajarlo</h2>
+  <p>Todo lo que necesitas antes de jugar: dónde está el juego, tu partida y cuánto llevas.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P5</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero lm"></div>
+        <div class="fbody">
+          <div class="ft">Luigi's Mansion 3</div>
+          <div class="fm">Switch · 2019 · 7.1 GB</div>
+          <div class="btns"><div class="btn">Jugar</div><div class="circ"></div><div class="circ"></div></div>
+          <p class="voice">Tu partida de la TV, de hace 3 días, ya está aquí</p>
+          <div class="info">
+            <div><span>Dónde</span><b>En tu iPhone</b></div>
+            <div><span>Jugado</span><b>9 h 40 min</b></div>
+            <div><span>Velocidad</span><b>60 cuadros por segundo</b></div>
+            <div><span>Mando</span><b>Tu GameSir · conectado</b></div>
+          </div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Listo para jugar.</b> «Jugar» lo abre. Los círculos son Favorito y los ajustes del juego.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P6</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero gw3"></div>
+        <div class="fbody">
+          <div class="ft">God of War III Remastered</div>
+          <div class="fm">PS4 · 2015 · 34.6 GB</div>
+          <div class="btns"><div class="btn">Bajar de tu consola</div><div class="circ"></div><div class="circ"></div></div>
+          <div class="info">
+            <div><span>Dónde</span><b>En tu consola</b></div>
+            <div><span>Necesita</span><b>35 GB libres · tienes 61</b></div>
+            <div><span>Jugado</span><b>5 h 42 min en la TV</b></div>
+          </div>
+          <p class="fm">Se baja solo en casa, por wifi. Puedes salir de aquí: te avisamos al terminar.</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Todavía en la consola.</b> Orbital te dice cuánto pesa y si cabe antes de empezar.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P7</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero gw3"></div>
+        <div class="fbody">
+          <div class="ft">God of War III Remastered</div>
+          <div class="fm">Bajando de tu consola · 21.4 de 34.6 GB</div>
+          <div class="bigprog"><span></span></div>
+          <div class="btns" style="grid-template-columns:1fr"><div class="btn g">Pausar</div></div>
+          <p class="fm">Faltan unos 6 minutos. Si sales de casa se pausa y sigue al volver.</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Bajando.</b> Se puede pausar; si se corta, sigue donde iba.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P8</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero gw3" style="height:100%;opacity:.35"></div>
+        <div class="sheet low">
+          <h4>Tu consola no responde</h4>
+          <p>Lo que ya bajó (21.4 GB) se queda. Prende la Legion Go y seguimos donde íbamos.</p>
+          <div class="btn">Intentar de nuevo</div>
+          <div class="btn g">Más tarde</div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si la consola se apaga o se duerme.</b> No se pierde lo bajado.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P9</span>
+      <div class="dev out"><div class="scr side">
+        <div style="position:relative">
+          <div class="hero lm" style="height:36%"></div>
+          <div class="fbody" style="top:28%;padding:0 10px">
+            <div class="ft" style="font-size:13px">Luigi's Mansion 3</div>
+            <div class="fm">Switch · 7.1 GB · en tu iPhone</div>
+            <div class="btn">Jugar</div>
+            <p class="voice">Se ve mejor con el Duo abierto</p>
+            <div class="info"><div><span>Jugado</span><b>9 h 40 min</b></div></div>
+          </div>
+        </div>
+        <div class="sidebar"><span></span><span></span><span class="on"></span><span></span><span></span></div>
+      </div></div>
+      <span class="cap"><b>Cerrado.</b> Se puede jugar aquí, pero Orbital sugiere abrirlo.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>3 · La primera vez</h2>
+  <p>Solo para lo que pide el modo rápido de iOS: GameCube, PS2, Xbox 360, Wii U, Xbox, MeloNX y también God of War. Tus 3 juegos de Switch no lo piden.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P10</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Antes de tu primer juego</span></div>
+        <div class="body">
+          <p class="fm" style="font-size:9.5px">Una sola vez. Orbital revisa cada paso por ti.</p>
+          <div class="steps">
+            <div class="done"><span><b>Prender el modo desarrollador</b><br>Ajustes › Privacidad y seguridad</span></div>
+            <div class="done"><span><b>Conectar Orbital con tu iPhone</b><br>Lo hace Orbital; tú solo aceptas</span></div>
+            <div><span><b>Prender la conexión local</b><br>Una app gratis que queda prendida</span></div>
+          </div>
+          <div class="btn" style="margin-top:6px">Seguir</div>
+          <p class="fm">Después, cada vez que juegas, se enciende solo.</p>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Asistente.</b> Tres pasos con su palomita.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P11</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero ww" style="height:100%;opacity:.35"></div>
+        <div class="sheet low">
+          <h4>Falta la conexión local</h4>
+          <p>Wind Waker necesita que esté prendida para ir a buena velocidad.</p>
+          <div class="btn">Prenderla</div>
+          <div class="btn g">Ahora no</div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si falta algo.</b> Te avisa antes de abrir el juego, no después de que truene.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>4 · Jugando, en las posiciones del Duo</h2>
+  <p>El Duo es casi una consola portátil. Lo aprovechamos según cómo lo tengas.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P12</span>
+      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div></div>
+      <span class="cap"><b>Abierto, de lado, con tu GameSir.</b> El juego llena la pantalla y nada lo tapa.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P13</span>
+      <div class="dev land"><div class="lbx"><div class="g169 lm">Luigi's Mansion 3</div></div>
+        <div class="ov"><div class="dpad"></div><div class="abxy"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><span class="menu">☰</span></div>
+      </div>
+      <span class="cap"><b>Abierto, sin mando.</b> Botones encima del juego, medio transparentes; arriba a la derecha, el menú de Orbital.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P14</span>
+      <div class="dev half">
+        <div class="top"><div class="lbx"><div class="g169 mk">Mario Kart 8</div></div></div>
+        <div class="hinge"></div>
+        <div class="bot"><div class="pad"><div class="dpad"></div><div class="abxy"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div><div class="shoulders"><span>L · ZL</span><span>R · ZR</span></div><div class="pmid"><span>−</span><span>☰</span><span>+</span></div></div></div>
+      </div>
+      <span class="cap"><b>Medio abierto, sin mando.</b> El juego arriba y los botones abajo, como una portátil: tus dedos no tapan nada.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P15</span>
+      <div class="dev half">
+        <div class="top"><div class="lbx"><div class="g169" style="background:linear-gradient(160deg,#2a7fd6,#0b2238)">Pantalla de arriba</div></div></div>
+        <div class="hinge"></div>
+        <div class="bot"><div class="ds2"><div>Pantalla táctil (DS) · control de Wii U</div></div></div>
+      </div>
+      <span class="cap"><b>Medio abierto, DS y Wii U.</b> Las consolas de dos pantallas usan las dos mitades.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P16</span>
+      <div class="dev out"><div class="lbx"><div class="g169 od" style="font-size:11px">Odyssey</div></div><div class="toast">Se ve mejor con el Duo abierto</div></div>
+      <span class="cap"><b>Cerrado.</b> Se puede, pero chiquito. Si cierras el Duo jugando, el juego pasa a esta pantalla sin pararse.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>5 · Pausa, salir y tu partida</h2>
+  <p>El menú es de Orbital, igual en todas las consolas: mantén el botón de inicio de tu GameSir, o toca ☰ sin mando.</p>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P17</span>
+      <div class="dev land"><div class="lbx"><div class="g169 gw3">God of War III</div></div><div class="dim"></div>
+        <div class="sheet" style="width:50%">
+          <h4>God of War III · en pausa</h4>
+          <div class="r">Seguir</div>
+          <div class="r">Guardar y salir <small>la partida va a tu consola</small></div>
+          <div class="r">Guardado rápido <small>solo en este iPhone</small></div>
+          <div class="r">Ajustes del juego</div>
+          <div class="r">Botones en pantalla <small>apagados</small></div>
+        </div>
+      </div>
+      <span class="cap"><b>Pausa.</b> Deja claro qué viaja a la TV y qué no.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P18</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero lm"></div>
+        <div class="toast">Partida guardada · ya está en tu consola</div>
+        <div class="fbody">
+          <div class="ft">Luigi's Mansion 3</div>
+          <div class="fm">Switch · 7.1 GB</div>
+          <div class="btns"><div class="btn">Seguir jugando</div><div class="circ"></div><div class="circ"></div></div>
+          <div class="info"><div><span>Jugado</span><b>10 h 25 min</b></div><div><span>Hoy</span><b>45 min</b></div></div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Al salir.</b> Regresas a la ficha. Si no estás en casa, dice «Se manda a tu consola al volver».</span>
+    </div>
+    <div class="shot">
+      <span class="code">P19</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero ww" style="height:100%;opacity:.35"></div>
+        <div class="sheet low">
+          <h4>Jugaste en los dos lados</h4>
+          <p>Wind Waker tiene una partida en la TV y otra en tu iPhone.</p>
+          <div class="r">En la TV <small>ayer 22:10 · 14 h</small></div>
+          <div class="r">En tu iPhone <small>hoy 8:40 · 13 h 20 min</small></div>
+          <p>La que no elijas se guarda aparte, por si acaso.</p>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si las dos cambiaron.</b> Tú eliges y nada se pierde.</span>
+    </div>
+    <div class="shot">
+      <span class="code">P20</span>
+      <div class="dev in"><div class="scr" style="display:block">
+        <div class="hero halo" style="height:100%;opacity:.35"></div>
+        <div class="sheet low">
+          <h4>Halo 3 se cerró</h4>
+          <p>Tu última partida guardada (hace 12 min) está a salvo.</p>
+          <div class="btn">Abrir otra vez</div>
+          <div class="btn g">Qué puedo probar</div>
+        </div>
+      </div></div>
+      <span class="cap"><b>Si un juego truena.</b> Orbital sigue abierta, te dice qué se salvó y cómo intentarlo.</span>
+    </div>
+  </div>
+</section>
+
+<section class="row">
+  <h2>6 · Ajustes › Juegos</h2>
+  <div class="shots">
+    <div class="shot">
+      <span class="code">P21</span>
+      <div class="dev in"><div class="scr">
+        <div class="bar"><span class="t">Juegos</span></div>
+        <div class="body">
+          <div class="info" style="font-size:9px">
+            <div><span>Mando</span><b>GameSir · conectado</b></div>
+            <div><span>Modo rápido</span><b>Listo</b></div>
+            <div><span>En tu iPhone</span><b>48 GB · 9 juegos</b></div>
+            <div><span>Partidas</span><b>Al día con tu consola</b></div>
+          </div>
+          <div class="sec" style="margin-top:6px">Consolas</div>
+          <div class="info" style="font-size:9px">
+            <div><span>Switch</span><b>3 juegos listos</b></div><div><span>God of War III</span><b>Listo</b></div><div><span>GameCube y Wii</span><b>Listo</b></div><div><span>PS2</span><b>Pronto</b></div>
+          </div>
+        </div>
+        <div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span><span>Buscar</span></div>
+      </div></div>
+      <span class="cap"><b>Todo en un lugar.</b> Si algo falla (el mando, el modo rápido), aquí dice qué es y cómo arreglarlo.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que tienes que decidir</h2>
+
+  <div class="dec">
+    <h3>E1 · La medio abierta</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev half s"><div class="top"><div class="lbx"><div class="g169 mk" style="font-size:9px">Juego</div></div></div><div class="hinge"></div><div class="bot"><div class="pad" style="padding:4px"><div class="dpad" style="transform:scale(.6)"></div><div class="abxy" style="transform:scale(.6)"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div></div></div><span class="code">E1-A</span></div>
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="lbx" style="background:linear-gradient(160deg,#e60012,#2e0306 80%)"><div style="font-weight:800;color:#fff;font-size:9px">Juego en las dos mitades</div></div><div style="position:absolute;left:0;right:0;top:50%;height:3px;background:var(--o-frame)"></div></div><span class="code">E1-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E1-A</span><b>Juego arriba, botones abajo</b>Como una portátil. Con el mando, abajo queda en negro; en DS y Wii U, la segunda pantalla.</div>
+      <div class="choice"><span class="code">E1-B</span><b>El juego en las dos mitades</b>Más grande, pero el doblez cruza la imagen y los botones van encima.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E1-A</span>. Es lo que el Duo hace mejor que cualquier iPhone, y nxnative ya lo hace así.</p>
+  </div>
+
+  <div class="dec">
+    <h3>E2 · Sin mando, con el Duo abierto de lado</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev s land"><div class="lbx"><div class="g169 lm" style="font-size:9px">Juego</div></div><div class="ov"><div class="dpad" style="transform:scale(.5);left:0;bottom:0"></div><div class="abxy" style="transform:scale(.5);right:0;bottom:-4px"><span class="x">X</span><span class="y">Y</span><span class="a">A</span><span class="b">B</span></div></div></div><span class="code">E2-A</span></div>
+      <div class="mini2"><div class="dev s land"><div class="lbx"><div class="g169 lm" style="font-size:9px;opacity:.35">Juego</div></div><div class="sheet" style="width:70%;padding:6px"><p style="font-size:7px">Conecta tu mando o dobla el Duo a la mitad</p></div></div><span class="code">E2-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E2-A</span><b>Botones encima del juego</b>Medio transparentes. Se pueden mover y hacer más claros desde la pausa.</div>
+      <div class="choice"><span class="code">E2-B</span><b>Pedir mando o medio abierto</b>Nada tapa el juego, pero sin mando no se juega de lado.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E2-A</span>: que siempre se pueda jugar, aunque olvides el mando.</p>
+  </div>
+
+  <div class="dec">
+    <h3>E3 · Al salir de un juego</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="hero lm"></div><div class="toast" style="font-size:6px">Partida guardada</div><div class="fbody" style="padding:0 8px"><div class="ft" style="font-size:9px">Luigi's Mansion 3</div><div class="btn" style="font-size:7px;padding:4px">Seguir jugando</div></div></div></div><span class="code">E3-A</span></div>
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="bar"><span class="t" style="font-size:10px">Juegos</span></div><div class="body"><div class="strip"><div class="cv lm" style="width:34px"></div><div class="cv mk" style="width:34px"></div><div class="cv od" style="width:34px"></div></div></div><div class="tabs" style="font-size:6px"><span>Inicio</span><span class="on">Juegos</span><span>Buscar</span></div></div></div><span class="code">E3-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E3-A</span><b>A la ficha del juego</b>Ves que se guardó, cuánto jugaste y «Seguir jugando».</div>
+      <div class="choice"><span class="code">E3-B</span><b>A la pestaña «Juegos»</b>Directo a elegir otro.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E3-A</span>: confirmar que tu partida está a salvo vale más que un toque menos.</p>
+  </div>
+
+  <div class="dec">
+    <h3>E4 · Si jugaste en la TV y en el iPhone</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="sheet low" style="padding:6px;gap:4px"><h4 style="font-size:8px">Jugaste en los dos lados</h4><div class="r" style="font-size:7px;padding:4px">En la TV</div><div class="r" style="font-size:7px;padding:4px">En tu iPhone</div></div></div></div><span class="code">E4-A</span></div>
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr" style="display:block"><div class="hero ww" style="height:100%;opacity:.35"></div><div class="toast" style="font-size:6px">Seguimos con la más nueva</div></div></div><span class="code">E4-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E4-A</span><b>Orbital pregunta</b>Las dos con su fecha y sus horas; la otra se guarda aparte.</div>
+      <div class="choice"><span class="code">E4-B</span><b>Gana la más nueva</b>Sin preguntar; la otra también se guarda aparte.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E4-A</span>. Pasa poco y es tu partida: mejor que decidas tú.</p>
+  </div>
+
+  <div class="dec">
+    <h3>E5 · Jugar con el Duo cerrado</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev s" style="aspect-ratio:466/678"><div class="lbx"><div class="g169 od" style="font-size:8px">Juego</div></div><div class="toast" style="font-size:6px">Se ve mejor abierto</div></div><span class="code">E5-A</span></div>
+      <div class="mini2"><div class="dev s" style="aspect-ratio:466/678"><div class="scr" style="display:block"><div class="sheet" style="width:80%;padding:6px"><p style="font-size:7px">Abre el Duo para jugar</p></div></div></div><span class="code">E5-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E5-A</span><b>Se puede, con un aviso</b>Una vez por partida.</div>
+      <div class="choice"><span class="code">E5-B</span><b>Solo abierto</b>Con el Duo cerrado, «Jugar» pide abrirlo.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E5-A</span>: para una carrera de Mario Kart en la fila del súper, chiquito está bien.</p>
+  </div>
+
+  <div class="dec">
+    <h3>E6 · Los juegos que todavía no corren</h3>
+    <div class="minis">
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="body" style="padding-top:12px"><div class="strip" style="flex-wrap:wrap"><div class="cv lm" style="width:38px"></div><div class="cv mk" style="width:38px"></div><div class="cv dimd" style="width:38px;background:#3a5a2a"><span class="lock">◷</span></div><div class="cv dimd" style="width:38px;background:#2a3a5a"><span class="lock">◷</span></div></div></div></div></div><span class="code">E6-A</span></div>
+      <div class="mini2"><div class="dev s" style="aspect-ratio:669/951"><div class="scr"><div class="body" style="padding-top:12px"><div class="strip"><div class="cv lm" style="width:38px"></div><div class="cv mk" style="width:38px"></div></div></div></div></div><span class="code">E6-B</span></div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">E6-A</span><b>Se ven apagados</b>Con un relojito: «llega con la etapa de MeloNX». Ves todo tu catálogo, como en la TV.</div>
+      <div class="choice"><span class="code">E6-B</span><b>Se esconden</b>Solo ves lo que ya se puede jugar.</div>
+    </div>
+    <p class="recline">Recomiendo <span>E6-A</span>: el catálogo es el mismo que en la TV, y sabes qué viene.</p>
+  </div>
+
+  <div class="dec">
+    <h3>Y dos cosas más</h3>
+    <ol class="plan">
+      <li><div><b>¿Cambiarías algo de las pantallas?</b> Díctame el código (P1 a P21).</div></li>
+      <li><div><b>¿Me das permiso de mirar la carpeta de God of War en la Lenovo?</b> Solo esa carpeta, para confirmar que trae lo que pide Olympus (y qué actualización tiene). No toco nada más.</div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h2>El plan</h2>
+  <ol class="plan">
+    <li><div><b>Día de prueba en tu Duo.</b> Compilo desde su código Olympus (God of War), iCube (GameCube) y Luigi's Mansion 3 con nxnative. Mido cuadros, calor y batería, que tu GameSir funcione en los tres y el modo rápido. Aparte, si se puede jugar desde un disco externo.</div></li>
+    <li><div><b>La pestaña «Juegos» y la ficha</b> (P1 a P9 y P21), con tu catálogo de la consola y bajar juegos. La TV aprende a mandarle los juegos al iPhone.</div></li>
+    <li><div><b>Tus 3 juegos de Switch y God of War.</b> El menú de pausa de Orbital, los botones y la medio abierta (P12 a P18). Cada motor trae su propio menú: lo cambiamos por el de Orbital.</div></li>
+    <li><div><b>GameCube y Wii</b>, con la primera vez del modo rápido (P10, P11) y las partidas que van y vienen con la TV (P19).</div></li>
+    <li><div><b>PS2, Xbox 360, Wii U, Xbox y MeloNX</b> para el resto de Switch, una por una.</div></li>
+    <li><div><b>Etapa 2: «Orbital Juegos».</b> Juntar todo, juegos convertidos incluidos, cuando cada pieza esté bien.</div></li>
+  </ol>
+</section>
+
+<p class="src">Solo en tu versión (Ultra), instalada desde la Mac. Nada entra a Plus ni a la App Store, ni al iPad o la Mac. Juegos, firmware y llaves salen de tu consola.</p>
+
+<details>
+  <summary>Detalle técnico (para la sesión que lo construya)</summary>
+  <div class="tech">
+    <p><b>Duo.</b> Afuera 466×678 pt (pestañas en la franja lateral, DU1-A); adentro ≈669×951 pt (<code>WindowMetrics</code>). Postura: iOS 27.1, <code>onHingeChange</code> (<code>.closed</code>, <code>.partiallyOpen</code>, <code>.fullyOpen</code> y ángulo) y <code>GeometryProxy.reservedRegions(kind: .division)</code> para el doblez (<a href="https://dev.classmethod.jp/en/articles/ios27-1-iphone-duo-new-apis/">classmethod</a>, <a href="https://developer.apple.com/forums/thread/848054">foro de Apple</a>; sin documentación oficial). Orbital hoy no usa ninguna. nxnative ya pone la imagen en la mitad de arriba medio abierto.</p>
+    <p><b>nxnative, etapa 1.</b> El motor se compila por juego (perfil por juego; <code>Gen/embed.S</code> mete los módulos al enlazar; <code>main.m</code> lee un solo <code>Documents/romfs.img</code>). Una app por juego, íconos escondidos, abierta desde Orbital por esquema de URL con App Group para partidas. Usar <code>--romfs separate</code> + <code>push_romfs.sh</code>: la app queda en ~1 GB y reinstalar no manda los GB del juego. Etapa 2: <code>dm_set_game_image_header</code> (framework con los módulos) asume un solo motor y no tiene pruebas; cada framework llevaría su motor y rutas propias de romfs/msl/pso/aoc.</p>
+    <p><b>Olympus.</b> FEXCore con JIT: necesita modo rápido (trae <code>Gow3JITRequest.swift</code>, StikJIT y emparejamiento propio en iOS 27). App Expo/React Native (<code>build-ios.sh</code>, <code>expo prebuild</code>, <code>xcodebuild</code>). <code>tools/prepare</code>: Python 3.10, corre en la Mac. Pide el volcado de PS4 con la 01.02 fusionada; el port de la Lenovo casi seguro es <a href="https://github.com/FelipePrado0/gow3_pc">gow3_pc</a>, cuya <code>out/</code> trae los mismos tres archivos (acepta 01.00: confirmar). Entitlements: increased-memory-limit, extended-virtual-addressing; 8 GB de RAM.</p>
+    <p><b>Menú de Orbital.</b> Ningún motor lo trae: nxnative tiene su rueda (textos por <code>DM_GAME_MENU_TEXT</code>), Olympus R3+L2 y doble toque con dos dedos. Hay que conectarlo en cada motor. GameSir funciona por GameController en los dos.</p>
+    <p><b>Etapa 2.</b> Frameworks firmados del propio paquete cargados con <code>dlopen</code>, uno por proceso: permitido fuera de la App Store. Al salir: <code>open(url)</code> a Orbital y <code>exit(0)</code> en su respuesta.</p>
+    <p><b>Disco externo.</b> Sin probar por nadie: Olympus espera <code>Documents/gow3</code> y nxnative <code>Documents/romfs.img</code>; un USB-C con marcador de seguridad, mmap, velocidad y desconexión a media partida están por medir.</p>
+  </div>
+</details>
+
+<p class="src">Fuentes: <a href="https://github.com/seedds/nxnative">nxnative</a> · <a href="https://nxnative.net/games/luigis-mansion-3">Luigi's Mansion 3 en nxnative</a> · <a href="https://github.com/MohinShaikh5689/god-of-war-3-ios">Olympus</a> · <a href="https://github.com/Provenance-Emu/iCube">iCube</a> · investigación completa: <code>docs/producto/emulacion-iphone/nativo-2026-11-27.md</code></p>
+
+</div>
