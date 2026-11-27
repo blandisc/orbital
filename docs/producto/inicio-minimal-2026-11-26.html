@@ -1,0 +1,238 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Inicio más limpio: A continuación, controles y botones que se encogen</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* Lienzo de decisión (26 nov 2026). Cada maqueta es la TV a escala (16:9); se puede pasar el puntero, tabular o tocar. */
+:root{--bg:#f3f6f7;--surface:#fff;--fg:#132022;--muted:#58696b;--line:#d5dfe0;--accent:#0f8f86;--soft:#dff3f1;--rec:#a85600;
+--display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;
+--tv-bg:#0b0d10;--tv-fg:#f4f6f8;--tv-muted:rgba(244,246,248,.62);--tv-glass:rgba(30,34,40,.62);--tv-line:rgba(255,255,255,.14);--tv-accent:#3cc9bc;--focus:#f3e2b3}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--soft:#163533;--rec:#f0a453;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body)}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 16px 64px;display:grid;gap:44px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15}h1{font-size:2rem}h2{font-size:1.35rem}h3{font-size:1.05rem}
+p{margin:0;max-width:70ch}.muted{color:var(--muted)}section{display:grid;gap:16px}
+ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.note{background:var(--soft);border-radius:12px;padding:14px 16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.code{font:700 .95rem var(--display);color:var(--accent)}.badge{font-size:.78rem;font-weight:600;color:var(--rec);margin-left:6px}
+
+/* ---------- la TV a escala: todo en unidades de --u (1 px de la TV de 1920) ---------- */
+.tv{--u:calc(100cqw / 1920);container-type:inline-size;position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
+  background:radial-gradient(120% 90% at 75% 20%,#e8a01e 0,#b4500d 28%,#3a1607 55%,var(--tv-bg) 78%);color:var(--tv-fg);font-family:var(--body)}
+.tvwrap{container-type:inline-size}
+.tv *{box-sizing:border-box}
+.tv::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.78) 0,rgba(0,0,0,.25) 55%,transparent),linear-gradient(0deg,rgba(0,0,0,.85) 0,transparent 55%);pointer-events:none}
+.tv > *{position:absolute;z-index:1}
+.pill{display:inline-flex;align-items:center;gap:calc(10*var(--u));height:calc(60*var(--u));padding:0 calc(18*var(--u));border-radius:999px;
+  background:var(--tv-glass);border:calc(1.5*var(--u)) solid var(--tv-line);font-size:calc(28*var(--u));color:var(--tv-fg);white-space:nowrap;backdrop-filter:blur(8px)}
+.key{display:inline-grid;place-items:center;min-width:calc(34*var(--u));height:calc(34*var(--u));padding:0 calc(6*var(--u));border-radius:calc(8*var(--u));
+  border:calc(1.5*var(--u)) solid var(--tv-line);font:600 calc(19*var(--u)) var(--body);color:var(--tv-muted)}
+.logo{left:calc(80*var(--u));top:calc(66*var(--u));font:700 calc(40*var(--u)) var(--display);letter-spacing:-.02em}
+.logo i{display:inline-block;width:calc(9*var(--u));height:calc(9*var(--u));border-radius:50%;background:var(--tv-accent);vertical-align:top;margin-left:calc(3*var(--u))}
+.tabs{left:50%;top:calc(58*var(--u));translate:-50% 0;display:flex;gap:calc(14*var(--u));align-items:center;padding:calc(6*var(--u)) calc(14*var(--u));border-radius:999px;background:var(--tv-glass);border:calc(1.5*var(--u)) solid var(--tv-line);height:calc(68*var(--u));font-size:calc(28*var(--u))}
+.tabs b{background:rgba(255,255,255,.16);border-radius:999px;padding:calc(8*var(--u)) calc(22*var(--u));font-weight:600}
+.tabs span{opacity:.7;padding:0 calc(10*var(--u))}
+.clock{right:calc(78*var(--u));top:calc(64*var(--u));font:600 calc(42*var(--u)) var(--body);display:flex;align-items:center;gap:calc(22*var(--u))}
+.hero{left:calc(80*var(--u));top:calc(190*var(--u));display:grid;gap:calc(14*var(--u))}
+.kick{color:var(--tv-accent);font-weight:600;font-size:calc(28*var(--u))}
+.title{font:900 calc(78*var(--u))/0.95 var(--display);text-transform:uppercase;letter-spacing:-.02em;max-width:calc(560*var(--u))}
+.meta{font-size:calc(28*var(--u));color:var(--tv-muted)}
+.cta{display:flex;gap:calc(14*var(--u))}
+.cta .main{background:#f4f4f4;color:#111;font-weight:600}
+.rowtitle{left:calc(80*var(--u));font:600 calc(40*var(--u)) var(--display)}
+.row{left:calc(60*var(--u));display:flex;gap:calc(30*var(--u))}
+.card{border-radius:calc(14*var(--u));flex:none;position:relative;overflow:hidden;box-shadow:0 calc(8*var(--u)) calc(30*var(--u)) rgba(0,0,0,.5)}
+.card::after{content:"";position:absolute;left:8%;right:8%;bottom:7%;height:calc(5*var(--u));border-radius:9px;background:linear-gradient(90deg,#fff var(--p,40%),rgba(255,255,255,.3) 0)}
+.card.f{outline:calc(5*var(--u)) solid var(--focus);outline-offset:calc(4*var(--u))}
+.c1{background:linear-gradient(135deg,#f2a024,#c2410c 60%,#1e3a8a)}.c2{background:linear-gradient(135deg,#1c2a22,#3f5544)}.c3{background:linear-gradient(160deg,#0d1b2a,#3b6ea5 70%,#cfe3f5)}
+.c4{background:linear-gradient(135deg,#271a5a,#a21caf 50%,#22c55e)}.c5{background:linear-gradient(135deg,#7dd3fc,#fde047 60%,#f59e0b)}.c6{background:linear-gradient(135deg,#334155,#0f172a)}
+.hints{left:calc(80*var(--u));right:calc(78*var(--u));bottom:calc(36*var(--u));display:flex;justify-content:space-between;align-items:center;font-size:calc(28*var(--u));color:var(--tv-muted)}
+.hints > span{display:flex;align-items:center;gap:calc(10*var(--u))}
+.peek{left:calc(80*var(--u));font:600 calc(40*var(--u)) var(--display);opacity:.55}
+
+/* ---------- IN1: la señal de «hay más abajo» (3 vueltas al entrar y se queda quieta: Orbital no anima sin parar) ---------- */
+.cue{left:50%;translate:-50% 0;display:grid;justify-items:center;gap:calc(4*var(--u));color:var(--tv-muted);font-size:calc(24*var(--u))}
+.chev{width:calc(34*var(--u));height:calc(34*var(--u));border-right:calc(4*var(--u)) solid currentColor;border-bottom:calc(4*var(--u)) solid currentColor;rotate:45deg;border-radius:calc(3*var(--u))}
+.play .chev{animation:nudge 1.6s cubic-bezier(.45,0,.25,1) 3}
+@keyframes nudge{0%,100%{translate:0 0;opacity:.55}45%{translate:0 calc(14*var(--u));opacity:1}}
+.shelf{left:0;right:0;height:calc(90*var(--u));display:flex;justify-content:center;align-items:end;gap:calc(26*var(--u))}
+.shelf i{width:calc(150*var(--u));height:calc(12*var(--u));border-radius:calc(10*var(--u)) calc(10*var(--u)) 0 0;background:rgba(255,255,255,.22)}
+.play .shelf i{animation:rise 1.6s cubic-bezier(.45,0,.25,1) 3}
+@keyframes rise{0%,100%{height:calc(12*var(--u))}45%{height:calc(28*var(--u))}}
+.glow{left:0;right:0;bottom:0;height:calc(130*var(--u));background:linear-gradient(0deg,rgba(60,201,188,.28),transparent);opacity:0}
+.play .glow{animation:breathe 1.6s ease-in-out 3}
+@keyframes breathe{45%{opacity:1}}
+
+/* ---------- IN2: los cuatro focos de los controles ---------- */
+.pads{display:inline-flex;flex-direction:column;align-items:center;gap:calc(5*var(--u));color:var(--tv-fg)}
+.pads svg{width:calc(44*var(--u));height:calc(30*var(--u));opacity:.86}
+.leds{display:flex;gap:calc(6*var(--u))}
+.leds i{width:calc(7*var(--u));height:calc(7*var(--u));border-radius:50%;background:rgba(255,255,255,.16);transition:background .3s,box-shadow .3s}
+.leds i.on{background:var(--tv-accent);box-shadow:0 0 calc(8*var(--u)) rgba(60,201,188,.65)}
+.pads.row{flex-direction:row;gap:calc(10*var(--u))}
+.pads.row .leds{flex-direction:column;gap:calc(4*var(--u))}
+.pads.row .leds{display:grid;grid-template-columns:repeat(2,auto);gap:calc(4*var(--u))}
+.dot4{display:inline-grid;grid-template-columns:repeat(2,auto);gap:calc(3*var(--u));vertical-align:top;margin-left:calc(4*var(--u))}
+.dot4 i{width:calc(7*var(--u));height:calc(7*var(--u));border-radius:50%;background:rgba(255,255,255,.18)}
+.dot4 i.on{background:var(--tv-accent)}
+
+/* ---------- IN3: botones que se encogen a su atajo y crecen al enfocar / pasar el puntero ---------- */
+.mini{display:inline-flex;align-items:center;height:calc(60*var(--u));border-radius:999px;background:var(--tv-glass);border:calc(1.5*var(--u)) solid var(--tv-line);
+  padding:0 calc(13*var(--u));gap:calc(10*var(--u));color:var(--tv-fg);font:calc(28*var(--u)) var(--body);cursor:pointer;outline:none;
+  transition:padding 220ms cubic-bezier(.2,.8,.2,1),background 220ms,border-color 220ms}
+.mini .lbl{display:inline-block;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 220ms cubic-bezier(.2,.8,.2,1),opacity 180ms}
+.mini:is(:hover,:focus-visible,.open){padding:0 calc(20*var(--u));background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35)}
+.mini:is(:hover,:focus-visible,.open) .lbl{max-width:calc(200*var(--u));opacity:1}
+.mini svg{width:calc(28*var(--u));height:calc(28*var(--u))}
+.demo-tip{font-size:.85rem;color:var(--muted)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:700px){.cmp{grid-template-columns:1fr}}
+.cap{font-size:.82rem;color:var(--muted);margin-top:4px}
+button.replay{justify-self:start;font:600 .85rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 14px;cursor:pointer}
+table{border-collapse:collapse;font-size:.9rem}td,th{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="pad" viewBox="0 0 44 30"><path d="M12 3h20c6 0 10 5 11 12l1 7c.6 4-3.6 7-7 4.4L32 22H12l-5 4.4C3.6 29-.6 26 0 22l1-7C2 8 6 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 11v8M7 15h8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="31" cy="12.5" r="1.9" fill="currentColor"/><circle cx="35" cy="17" r="1.9" fill="currentColor"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+<header style="display:grid;gap:8px">
+<h1>Inicio más limpio</h1>
+<p class="muted">26 nov 2026 · Propuesta para la TV (Inicio). Son tres decisiones: <b>IN1</b> «A continuación» más grande y «Mi lista» fuera de la vista, <b>IN2</b> dónde va el indicador de controles, <b>IN3</b> los botones que se encogen a su atajo. Todavía no hay nada programado.</p>
+</header>
+
+<section class="note"><h3>Reglas que respetan todas las opciones</h3>
+<ul>
+<li><b>Ligera:</b> ninguna animación se repite sin parar. La señal de «hay más abajo» da 3 vueltas al llegar al Inicio y luego se queda quieta. Con un juego o un video al frente no anima nada.</li>
+<li><b>Las cuatro superficies:</b> mando y teclado hacen crecer un botón al enfocarlo, el mouse al pasar encima, y con el dedo un toque lo usa directamente sin tener que agrandarlo antes. El atajo sigue a la vista: el botón encogido muestra su atajo, no lo esconde.</li>
+<li><b>Una sola Orbital:</b> IN1 y IN3 son solo de la TV, porque en el iPhone no hay foco. IN2 en el iPhone sería «Controles conectados» dentro del control remoto. Queda anotado en el registro de paridad.</li>
+<li>Todo valor nuevo entra como token (tamaño de las tarjetas, duración de 220 ms, color de los focos) y cada pieza nueva entra al catálogo: <code>scroll-cue</code>, <code>pad-lights</code> y <code>chip--collapsible</code>.</li>
+</ul></section>
+
+<!-- ======================= IN1 ======================= -->
+<section><h2>IN1 · «A continuación» más grande y «Mi lista» fuera de la vista</h2>
+<p>Hoy las tarjetas miden 320×180 y el título de «Mi lista» ya asoma abajo. En todas las opciones las tarjetas pasan a <b>440×248</b> (+38 %) y la que está enfocada crece a 500×282. Así caben 3½ tarjetas: la media que se corta a la derecha avisa que la fila sigue. «Mi lista» baja por completo y solo aparece al bajar. Lo que cambia entre opciones es la señal de que hay más abajo.</p>
+<button class="replay" onclick="document.querySelectorAll('.in1').forEach(t=>{t.classList.remove('play');void t.offsetWidth;t.classList.add('play')})">▶ Repetir la animación</button>
+<div class="opts">
+<div class="opt rec"><div><span class="code">IN1-A</span><span class="badge">RECOMIENDO</span></div>
+<div class="tvwrap"><div class="tv in1 play">
+<div class="logo">orbital<i></i></div><div class="clock">10:06 p. m.</div>
+<div class="hero" style="top:calc(170*var(--u))"><span class="kick">Seguir viendo</span><span class="title">Mike Tyson Mysteries</span><span class="meta">Serie · T1 E3 · quedan 6 min</span></div>
+<div class="rowtitle" style="top:calc(520*var(--u))">A continuación</div>
+<div class="row" style="top:calc(590*var(--u))"><div class="card c1 f" style="width:calc(500*var(--u));height:calc(282*var(--u))"></div><div class="card c2" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c3" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c4" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div></div>
+<div class="cue" style="bottom:calc(34*var(--u))"><span>Mi lista</span><span class="chev"></span></div>
+<div class="hints" style="bottom:calc(34*var(--u))"><span></span><span><span class="key">☰</span> Menú</span></div>
+</div></div>
+<p><b>Una flecha y el nombre de lo que sigue</b>, abajo al centro: «Mi lista ⌄». Baja y sube suave 3 veces y luego se queda quieta. Dice adónde lleva bajar, no solo que hay algo. También se puede tocar o hacer clic: baja a «Mi lista». La pista «LT RT Mi lista» de abajo a la izquierda se quita, porque ya lo dice esto.</p></div>
+
+<div class="opt"><div><span class="code">IN1-B</span></div>
+<div class="tvwrap"><div class="tv in1 play">
+<div class="logo">orbital<i></i></div><div class="clock">10:06 p. m.</div>
+<div class="hero" style="top:calc(170*var(--u))"><span class="kick">Seguir viendo</span><span class="title">Mike Tyson Mysteries</span><span class="meta">Serie · T1 E3 · quedan 6 min</span></div>
+<div class="rowtitle" style="top:calc(520*var(--u))">A continuación</div>
+<div class="row" style="top:calc(590*var(--u))"><div class="card c1 f" style="width:calc(500*var(--u));height:calc(282*var(--u))"></div><div class="card c2" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c3" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c4" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div></div>
+<div class="shelf" style="bottom:0"><i></i><i></i><i></i><i></i><i></i></div>
+</div></div>
+<p><b>Los bordes de las tarjetas de abajo asoman</b> y crecen un poco 3 veces, como un cajón que se puede jalar. No lleva texto, así que es lo más minimalista. Pero no dice qué hay abajo, y con el fondo claro de algunas series cuesta verlo.</p></div>
+
+<div class="opt"><div><span class="code">IN1-C</span></div>
+<div class="tvwrap"><div class="tv in1 play">
+<div class="logo">orbital<i></i></div><div class="clock">10:06 p. m.</div>
+<div class="hero" style="top:calc(170*var(--u))"><span class="kick">Seguir viendo</span><span class="title">Mike Tyson Mysteries</span><span class="meta">Serie · T1 E3 · quedan 6 min</span></div>
+<div class="rowtitle" style="top:calc(520*var(--u))">A continuación</div>
+<div class="row" style="top:calc(590*var(--u))"><div class="card c1 f" style="width:calc(500*var(--u));height:calc(282*var(--u))"></div><div class="card c2" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c3" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div><div class="card c4" style="width:calc(440*var(--u));height:calc(248*var(--u));margin-top:calc(17*var(--u))"></div></div>
+<div class="glow"></div>
+<div class="cue" style="bottom:calc(30*var(--u))"><span class="chev"></span></div>
+</div></div>
+<p><b>Un resplandor turquesa sube desde abajo</b> con una flecha sola, 3 veces. Es lo más llamativo y tiene el color de Orbital. Pero es la opción que más pinta (el resplandor cubre todo el ancho) y se parece al aviso de «cargando».</p></div>
+</div>
+<p class="muted">En las tres, al bajar a «Mi lista» el Inicio se desplaza como ya lo hace hoy y la señal desaparece. Vuelve a salir la próxima vez que entras al Inicio, no cada vez que el foco regresa a la fila.</p>
+</section>
+
+<!-- ======================= IN2 ======================= -->
+<section><h2>IN2 · El indicador de controles: un control con cuatro focos</h2>
+<p>El ícono es la silueta de un control con <b>cuatro puntitos</b> encima, como los focos de jugador del Wii o del Xbox. Se prenden en turquesa tantos como controles haya conectados, con un brillo apenas visible. Cuando se conecta uno, su foco se prende en 300 ms, sin rebotes. Así lo ves de un vistazo desde el sillón y nunca le compite al contenido.</p>
+<div class="cmp">
+<div><div class="tvwrap"><div class="tv" style="background:#11151a">
+<div class="clock" style="top:calc(40*var(--u));right:calc(40*var(--u))"><span class="pads" style="transform:scale(2.6);transform-origin:right top"><span class="leds"><i class="on"></i><i class="on"></i><i></i><i></i></span><svg><use href="#pad"/></svg></span></div>
+</div></div><p class="cap">De cerca: dos controles conectados.</p></div>
+<div><table><tr><th>Controles</th><th>Se ve</th></tr>
+<tr><td>0</td><td>La silueta, tenue, con los cuatro focos apagados. Dice «conecta uno» sin poner un aviso.</td></tr>
+<tr><td>1–4</td><td>Ese número de focos prendidos, de izquierda a derecha, en el orden en que se conectaron (el jugador 1 a la izquierda).</td></tr>
+<tr><td>Más de 4</td><td>Los cuatro prendidos y un «+» chiquito.</td></tr>
+<tr><td>Batería baja</td><td>El foco de ese control se pone ámbar. El detalle está en el menú, en «Controles».</td></tr></table></div>
+</div>
+
+<div class="opts">
+<div class="opt rec"><div><span class="code">IN2-A</span><span class="badge">RECOMIENDO</span></div>
+<div class="tvwrap"><div class="tv">
+<div class="logo">orbital<i></i></div>
+<div class="tabs"><span>✧</span><b>Inicio</b><span>🎮</span><span>▶</span><span>📺</span></div>
+<div class="clock"><span class="pads"><span class="leds"><i class="on"></i><i class="on"></i><i></i><i></i></span><svg><use href="#pad"/></svg></span>10:06 p. m.</div>
+</div></div>
+<p><b>Junto a la hora, a su izquierda.</b> Es el lugar del «estado del sistema», donde la consola y el Apple TV ya ponen batería, wifi y perfil. Se lee junto con la hora, sin buscarlo, y no cambia de lugar entre secciones. Se queda fijo porque es estado, no un botón, y al pasar el puntero o tocarlo dice «2 controles · Configurar».</p></div>
+
+<div class="opt"><div><span class="code">IN2-B</span></div>
+<div class="tvwrap"><div class="tv">
+<div class="logo">orbital<span class="dot4"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+<div class="tabs"><span>✧</span><b>Inicio</b><span>🎮</span><span>▶</span><span>📺</span></div>
+<div class="clock">10:06 p. m.</div>
+</div></div>
+<p><b>El punto turquesa del logo se vuelve cuatro.</b> Es lo más ingenioso: no agrega nada a la pantalla y el logo pasa a decir quién está jugando. Pero cambia la marca, y sin explicarlo nadie entiende qué significan los puntos.</p></div>
+
+<div class="opt"><div><span class="code">IN2-C</span></div>
+<div class="tvwrap"><div class="tv">
+<div class="logo">orbital<i></i></div><div class="clock">10:06 p. m.</div>
+<div class="hints"><span></span><span><span class="pads row"><svg><use href="#pad"/></svg><span class="leds"><i class="on"></i><i class="on"></i><i></i><i></i></span></span>&nbsp;&nbsp;<span class="key">☰</span> Menú</span></div>
+</div></div>
+<p><b>Abajo, junto a «Menú».</b> Tiene sentido porque ahí vive lo del mando. Pero abajo se mira poco, y en el reproductor esa barra se esconde, justo cuando importa saber si el segundo control se apagó.</p></div>
+</div>
+</section>
+
+<!-- ======================= IN3 ======================= -->
+<section><h2>IN3 · Botones que se encogen a su atajo</h2>
+<p>Buscar y Menú se quedan como una píldora chica con el ícono y su tecla. Al enfocarlos con el mando o el teclado, o al pasar el puntero, la píldora se abre de lado y muestra el nombre en 220 ms (salida suave, sin rebote). Al irse el foco se cierra igual. Con el dedo, un toque abre Buscar directamente. <b>Pruébalo:</b> pasa el puntero o tabula.</p>
+<div class="opts">
+<div class="opt rec"><div><span class="code">IN3-A</span><span class="badge">RECOMIENDO</span></div>
+<div class="tvwrap"><div class="tv" style="background:#151a20">
+<div class="logo">orbital<i></i></div>
+<div style="left:calc(300*var(--u));top:calc(56*var(--u))"><button class="mini"><svg><use href="#search"/></svg><span class="lbl">Buscar</span><span class="key">⧉</span></button></div>
+<div class="clock"><span class="pads"><span class="leds"><i class="on"></i><i></i><i></i><i></i></span><svg><use href="#pad"/></svg></span>10:06 p. m.</div>
+<div class="hints"><span></span><span><button class="mini"><span class="key">☰</span><span class="lbl">Menú</span></button></span></div>
+</div></div>
+<p><b>Ícono y tecla siempre a la vista; el nombre sale al enfocar.</b> En reposo «Buscar» mide un 45 % de lo que mide hoy, y «Menú» abajo queda en solo su tecla. El atajo nunca se esconde, así que la regla «un atajo siempre tiene camino visible» se sigue cumpliendo.</p></div>
+
+<div class="opt"><div><span class="code">IN3-B</span></div>
+<div class="tvwrap"><div class="tv" style="background:#151a20">
+<div class="logo">orbital<i></i></div>
+<div style="left:calc(300*var(--u));top:calc(56*var(--u))"><button class="mini"><svg><use href="#search"/></svg><span class="lbl">Buscar</span></button></div>
+<div class="clock">10:06 p. m.</div>
+<div class="hints"><span></span><span><button class="mini"><svg><use href="#menu"/></svg><span class="lbl">Menú</span></button></span></div>
+</div></div>
+<p><b>Solo el ícono</b>: el nombre y la tecla salen juntos al enfocar. Es lo más limpio, pero con el mando no sabes qué tecla abre Buscar hasta llegar a él, y eso rompe la regla de las cuatro superficies.</p></div>
+
+<div class="opt"><div><span class="code">IN3-C</span></div>
+<div class="tvwrap"><div class="tv" style="background:#151a20">
+<div class="logo">orbital<i></i></div>
+<div style="left:calc(300*var(--u));top:calc(56*var(--u))"><button class="mini open"><svg><use href="#search"/></svg><span class="lbl">Buscar</span><span class="key">⧉</span></button></div>
+<div class="clock">10:06 p. m.</div>
+<div class="hints"><span></span><span><button class="mini"><span class="key">☰</span><span class="lbl">Menú</span></button></span></div>
+</div></div>
+<p><b>Abiertos al llegar y encogidos a los 4 s sin tocar nada</b>, como la barra del Apple TV. El primer vistazo enseña los nombres. Pero es una animación más en cada entrada y en reposo se ve igual que IN3-A.</p></div>
+</div>
+<p class="muted">También se encogerían, con la misma pieza (<code>chip--collapsible</code>), los botones redondos de la ficha (lista ⓧ y más ⓨ). Hoy ya son solo íconos, pero su nombre nunca aparece.</p>
+</section>
+
+<section class="note"><h3>Lo que haría si dices «IN1-A, IN2-A, IN3-A»</h3>
+<ul>
+<li>Tokens nuevos: <code>--card-next-w/h</code> (440×248), <code>--dur-chip</code> (220 ms), <code>--pad-light-on</code> y <code>--pad-light-low</code>. Piezas nuevas en el catálogo: <code>scroll-cue</code>, <code>pad-lights</code> y <code>chip--collapsible</code>.</li>
+<li>El número de controles conectados viene del lector del mando que ya existe (<code>orbital.gamepad</code>), por el estado del sistema; no hace falta preguntar más seguido.</li>
+<li>Lo pruebo con mando, teclado, mouse y toques en 1920×1080 y 1280×800, con capturas de antes y después, y corro las pruebas de humo, porque cambia lo que sale en la fila.</li>
+</ul></section>
+</div>
