@@ -4,6 +4,9 @@ import XCTest
 /// («Diseñada para iPad») la cubierta leía sus preferencias (`interactiveDismissDisabled`, el zoom de entrada) antes de
 /// heredar `AppEnvironment`, y la app tronaba al abrir el reproductor desde cualquier lado. Toda `fullScreenCover` lleva
 /// `.environment(env)` en lo que muestra (en su cierre o en la función que nombra con `content:`).
+/// Y las barras del iPhone Duo (27 nov 2026): cada hoja y cada pantalla completa es su propia presentación y UIKit le pregunta
+/// a ella dónde van la hora y las pestañas; la que no declara `.duoBars()` regresa a la franja del costado aunque la app las
+/// pida abajo. `appSheet` lo hace por todas las hojas (`DesignRulesTests+Sheets`).
 /// Regla en `docs/ios-interfaz.md` § «El replanteamiento de la Mac».
 extension DesignRulesTests {
     func testFullScreenCoversPassTheApp() throws {
@@ -18,14 +21,14 @@ extension DesignRulesTests {
                 search = hit.upperBound
                 covers += 1
                 let body = Self.coverContent(in: code, after: hit.upperBound)
-                if !(body?.contains(".environment(env)") ?? false) {
+                if !(body?.contains(".environment(env)") ?? false) || !(body?.contains(".duoBars()") ?? false) {
                     let line = code[..<hit.lowerBound].components(separatedBy: "\n").count
                     missing.append("\(file.lastPathComponent):\(line)")
                 }
             }
         }
         XCTAssertGreaterThanOrEqual(covers, 7, "se leyeron las cubiertas de ios/App/Sources")
-        XCTAssertEqual(missing, [], "Cubierta sin `.environment(env)`: en la Mac la app truena al abrirla")
+        XCTAssertEqual(missing, [], "Cubierta sin `.environment(env)` (en la Mac la app truena) o sin `.duoBars()` (en el Duo)")
     }
 
     /// Lo que muestra la cubierta: la función que nombra con `content:` o su cierre `{ … }`.

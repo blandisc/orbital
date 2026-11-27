@@ -79,20 +79,20 @@ struct RootView: View {
 
     private func playerCover(_ request: PlayRequest) -> some View {
         PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
-            .environment(env)   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
+            .environment(env).duoBars()   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
     }
 
     /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
     private func withGuide<V: View>(_ content: V) -> some View {
         content.fullScreenCover(isPresented: showingGuide, onDismiss: endGuide) {
-            OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env)
+            OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env).duoBars()
         }
     }
     private func endGuide() { ui.practiceGuide = false; Demo.practice = false }
 
     /// Una lección de Aprende (AF1-B): desde Ajustes, «Ver la lección» de un aviso o un «?».
     private func withStories<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(item: openLesson) { (route: LessonRoute) in LessonScreen(route: route) { ui.openLesson = nil }.environment(env) }
+        content.fullScreenCover(item: openLesson) { (route: LessonRoute) in LessonScreen(route: route) { ui.openLesson = nil }.environment(env).duoBars() }
     }
 
     private var showingGuide: Binding<Bool> { Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 }) }

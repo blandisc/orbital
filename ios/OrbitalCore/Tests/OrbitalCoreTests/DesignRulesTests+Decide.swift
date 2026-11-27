@@ -211,8 +211,13 @@ extension DesignRulesTests {
         let files = try sources()
         let door = try file("DecideDoor.swift", in: files)
         XCTAssertTrue(door.contains("PosterFan(posters: posters, width: DS.ParaTiB.doorPoster, shift: DS.ParaTiB.doorShift)"))
-        XCTAssertGreaterThanOrEqual(door.components(separatedBy: ".lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)").count - 1, 3,
-                                    "el nombre (con y sin pósters) y «Tres que caben · Una por una» en un renglón")
+        XCTAssertGreaterThanOrEqual(door.components(separatedBy: ".lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)").count - 1, 2,
+                                    "el nombre sin pósters y «Tres que caben · Una por una» en un renglón")
+        // Con pósters, junto al dado, el nombre puede achicarse más (el Duo cerrado, ~350 pt de tarjeta, 27 nov 2026): con
+        // `doorTitleScale` se cortaba en «Decide por…». El dado se queda (DM-A).
+        XCTAssertTrue(door.contains("doorName.lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleNarrowScale)"),
+                      "con pósters, el dado y el nombre en un renglón, entero aunque la tarjeta sea angosta")
+        XCTAssertTrue(door.contains("Image(systemName: DS.Symbol.decide).foregroundStyle(DS.brandMoon)"), "el dado sigue junto al nombre")
         XCTAssertTrue(door.contains(".padding(DS.Space.s4)   // DM-A"), "la puerta con 16 de aire, no 20")
         let tokens = try file("Tokens+Home.swift", in: files)
         let poster = try XCTUnwrap(tokens.firstMatch(of: /doorPoster: CGFloat = (\d+)/)).1

@@ -40,7 +40,7 @@ struct LessonHelpButton: View {
             .contentShape(Rectangle())
             .accessibilityLabel(Text(label))
             .accessibilityIdentifier("lesson-help-\(lesson)")
-            .fullScreenCover(item: $route) { r in LessonScreen(route: r) { route = nil }.environment(env) }
+            .fullScreenCover(item: $route) { r in LessonScreen(route: r) { route = nil }.environment(env).duoBars() }
         }
     }
 }

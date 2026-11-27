@@ -117,6 +117,9 @@ extension DS {
         /// para que el dado con «Decide por mí» y «Tres que caben · Una por una» quepan en un renglón en el 17 Pro (antes 132 de abanico y
         /// 182 de texto: los dos se partían). Si aun así no cabe (SE, letra grande), se achica hasta `doorTitleScale`.
         static let doorPoster: CGFloat = 88, doorShift: CGFloat = 8, doorTitleScale: CGFloat = 0.85
+        /// Si ni así cabe (la tarjeta de ~350 del Duo cerrado con la barra al costado), el nombre llega hasta aquí: entero y
+        /// con el dado, en vez de «Decide por…».
+        static let doorTitleNarrowScale: CGFloat = 0.72
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3
         /// En la Mac, la puerta de «Decide por mí» lleva a la derecha una tira de más carteles que se desvanece hacia el texto

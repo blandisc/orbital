@@ -21,6 +21,15 @@ struct DecideDoor: View {
     /// Un renglón junto al abanico; con letra de accesibilidad el texto va debajo, a todo lo ancho, y puede partirse.
     private var oneLine: Int? { typeSize.isAccessibilitySize ? nil : 1 }
 
+    /// El dado y el nombre de la puerta, en un renglón.
+    private var doorName: some View {
+        HStack(spacing: DS.Space.s2) {
+            Image(systemName: DS.Symbol.decide).foregroundStyle(DS.brandMoon).accessibilityHidden(true)
+            Text("Decide por mí").recipe(.title)
+        }
+        .font(DS.TextRecipe.title.font)
+    }
+
     var body: some View {
         // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado no cabía y ensanchaba toda la página de
         // Explorar (ChaosRegressionUITests, letra máxima).
@@ -44,12 +53,10 @@ struct DecideDoor: View {
                     // renglón; si no cabe (el SE), se achica tantito en vez de partirse en «Decide / por mí».
                     if posters.isEmpty { Text("Decide por mí").recipe(.title).lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale) }
                     else {
-                        HStack(spacing: DS.Space.s2) {
-                            Image(systemName: DS.Symbol.decide).foregroundStyle(DS.brandMoon).accessibilityHidden(true)
-                            Text("Decide por mí").recipe(.title)
-                        }
-                        .font(DS.TextRecipe.title.font)
-                        .lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleScale)
+                        // Angosto (el Duo cerrado con la barra al costado, ~350 de tarjeta): achicado a `doorTitleScale` se
+                        // cortaba en «Decide por…». El nombre se achica solo lo que haga falta, hasta `doorTitleNarrowScale`;
+                        // donde ya cabía no cambia nada, y el dado se queda (DM-A).
+                        doorName.lineLimit(oneLine).minimumScaleFactor(DS.ParaTiB.doorTitleNarrowScale)
                     }
                     (offline && posters.isEmpty ? Text("Sin conexión por ahora.") : Text("Tres que caben · Una por una"))
                         .recipe(.secondary, color: DS.textMuted)

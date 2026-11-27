@@ -4,6 +4,7 @@ import SwiftUI
 /// En la Mac («Diseñada para iPad») la hoja arma su contenido para leer sus preferencias antes de heredar el entorno de quien
 /// la abre, y una vista con `@Environment(AppEnvironment.self)` adentro tronaba la app (la 2491, 23 nov 2026: abrir una hoja
 /// con una película puesta). Es lo mismo que pasaba con las cubiertas (`DesignRulesTests+Covers`).
+/// También declara las barras del iPhone Duo (`duoBars`): cada hoja es su propia presentación y UIKit le pregunta a ella.
 /// `DesignRulesTests+Sheets` falla si vuelve un `.sheet(` suelto.
 extension View {
     func appSheet<Sheet: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil,
@@ -24,7 +25,7 @@ private struct FlagSheet<Sheet: View>: ViewModifier {
     @Environment(AppEnvironment.self) private var env
 
     func body(content: Content) -> some View {
-        content.sheet(isPresented: $isPresented, onDismiss: onDismiss) { sheet().environment(env) }
+        content.sheet(isPresented: $isPresented, onDismiss: onDismiss) { sheet().environment(env).duoBars() }
     }
 }
 
@@ -35,6 +36,6 @@ private struct ItemSheet<Item: Identifiable, Sheet: View>: ViewModifier {
     @Environment(AppEnvironment.self) private var env
 
     func body(content: Content) -> some View {
-        content.sheet(item: $item, onDismiss: onDismiss) { sheet($0).environment(env) }
+        content.sheet(item: $item, onDismiss: onDismiss) { sheet($0).environment(env).duoBars() }
     }
 }
