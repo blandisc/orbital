@@ -23,20 +23,32 @@ final class HomeNewUITests: XCTestCase {
         for _ in 0..<tries where !element.isHittable { app.swipeUp(velocity: .slow) }
     }
 
+    /// «Añadir canal» va al final del renglón de Canales (17 nov 2026): baja hasta el renglón y lo desliza de lado.
+    private func reachAddChannel() -> XCUIElement {
+        let add = app.buttons["home-channels-add"]
+        let head = app.staticTexts["Canales"].firstMatch
+        for _ in 0..<25 where !(head.exists && head.frame.minY > 80 && head.frame.maxY < app.frame.height * 0.55) { app.swipeUp(velocity: .slow) }
+        let onScreen = { add.exists && !add.frame.isEmpty && self.app.frame.insetBy(dx: 8, dy: 8).contains(CGPoint(x: add.frame.midX, y: add.frame.midY)) }
+        for _ in 0..<8 where !onScreen() {
+            let y = (head.frame.maxY + 90) / app.frame.height
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: y)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: y)))
+        }
+        return add
+    }
+
     func testPeliculasEscondeCanales() {
-        let edit = app.buttons["home-channels-add"]
-        scrollTo(edit)
+        let edit = reachAddChannel()
         XCTAssertTrue(edit.waitForExistence(timeout: 20), "Canales aparece con Todo")
         shot("canales")
         // Volver arriba y elegir Películas en la franja.
         for _ in 0..<8 { app.swipeDown(velocity: .fast) }
-        // Todo · Películas · Series son pestañas de texto (`DSKindFilter`), ya no un control segmentado.
-        // La de la barra de arriba (la pastilla del Top 10 también dice «Películas», más abajo).
-        let named = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Películas"))
-        XCTAssertTrue(named.firstMatch.waitForExistence(timeout: 10), "la pestaña Películas de la barra de Inicio")
-        let movies = named.allElementsBoundByIndex.min { $0.frame.minY < $1.frame.minY }
-        XCTAssertNotNil(movies)
-        movies?.tap()
+        // La pastilla del tipo (`KindPill`): recogida dice lo que ves; tocarla la abre con los tres.
+        let all = app.buttons["kind-all"].firstMatch
+        XCTAssertTrue(all.waitForExistence(timeout: 10), "la pastilla del tipo de Inicio")
+        all.tap()
+        let movies = app.buttons["kind-movie"].firstMatch
+        XCTAssertTrue(movies.waitForExistence(timeout: 5), "abierta, con Películas")
+        movies.tap()
         sleep(1)
         shot("peliculas")
         for _ in 0..<8 { app.swipeUp(velocity: .slow) }
@@ -44,8 +56,7 @@ final class HomeNewUITests: XCTestCase {
     }
 
     func testBuscarYAnadirUnCanal() throws {
-        let edit = app.buttons["home-channels-add"]
-        scrollTo(edit)
+        let edit = reachAddChannel()
         XCTAssertTrue(edit.waitForExistence(timeout: 20))
         edit.tap()
         let search = app.searchFields.firstMatch

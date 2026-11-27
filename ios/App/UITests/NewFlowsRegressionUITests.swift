@@ -48,7 +48,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         let because = any("because-deck")
         scrollTo(because)
         XCTAssertTrue(because.waitForExistence(timeout: 10), "«Por lo que viste»")
-        let channels = app.buttons["home-channels-add"]
+        let channels = app.staticTexts["Canales"].firstMatch
         scrollTo(channels)
         XCTAssertTrue(channels.waitForExistence(timeout: 10), "Canales")
         shot("inicio-canales")
@@ -86,7 +86,14 @@ final class NewFlowsRegressionUITests: XCTestCase {
         app.buttons["filter-decade-1990"].tap()
         XCTAssertTrue(app.buttons["filter-era"].label.contains("90"), "el mosaico dice la década")
         shot("filtro-epoca")
-        app.buttons["filter-length"].tap()
+        // En una pantalla baja (el Duo cerrado) «Tiempo» queda bajo la barra de «Limpiar · Ver resultados»: se sube el cajón,
+        // como lo haría el dedo (antes el toque caía en «Limpiar»).
+        let length = app.buttons["filter-length"], bar = app.buttons["filter-results"]
+        for _ in 0..<4 where length.frame.maxY > bar.frame.minY - 8 {
+            any("filter-year-ruler").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 2.5))
+                .press(forDuration: 0.05, thenDragTo: any("filter-year-ruler").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -0.5)))
+        }
+        length.tap()
         XCTAssertTrue(any("filter-ends-by").waitForExistence(timeout: 5), "otro mosaico cambia el panel")
         XCTAssertFalse(any("filter-year-ruler").exists, "y cierra el anterior")
         app.buttons["filter-results"].tap()
@@ -222,7 +229,10 @@ final class NewFlowsRegressionUITests: XCTestCase {
         for _ in 0..<6 where !(watched.exists && watched.isHittable) { app.swipeDown(velocity: .slow) }
         XCTAssertTrue(watched.waitForExistence(timeout: 10))
         watched.tap()
-        app.buttons["title-watched-season"].tap()
+        // Dentro de un menú de iOS el identificador no llega: se busca por su nombre («Temporada 1 · 3 de 22 vistos»).
+        let season = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Temporada'")).firstMatch
+        XCTAssertTrue(season.waitForExistence(timeout: 5), "el menú de «Vista» trae la temporada")
+        season.tap()
         XCTAssertTrue(app.buttons["watched-release"].waitForExistence(timeout: 10), "la temporada con «Cuando salió cada episodio»")
         shot("temporada-cuando")
     }

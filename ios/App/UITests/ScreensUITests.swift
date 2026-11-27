@@ -35,7 +35,8 @@ final class ScreensUITests: XCTestCase {
     func testBrowseHasNoGenreShortcut() {
         app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2"]
         app.launch()
-        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 20), "Buscar abrió")
+        // En el iPhone, Buscar es el campo y la búsqueda avanzada (lo popular vive en Explorar; en la Mac y el iPad ancho, abajo).
+        XCTAssertTrue(app.staticTexts["Búsqueda avanzada"].firstMatch.waitForExistence(timeout: 20), "Buscar abrió")
         app.swipeUp(); app.swipeUp()
         XCTAssertFalse(app.descendants(matching: .any)["art-tile-genre-action"].exists, "«Por género» volvió a Buscar")
         XCTAssertFalse(app.staticTexts["Por género"].exists, "«Por género» volvió a Buscar")
@@ -168,12 +169,14 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(waitUntil { barShown() }, "al subir con el dedo, sigue")
     }
 
-    /// Buscar › «Ver todo» de lo más popular hoy: abre la lista completa, un título se abre y se regresa, y funciona otra vez.
+    /// Explorar › «Ver todo» de lo más popular hoy (su franja, después de la segunda de «Lo que se ve hoy»): abre la lista
+    /// completa, un título se abre y se regresa, y funciona otra vez. En el iPhone ya no vive en Buscar.
     func testPopularSeeAllOpens() {
-        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "2", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-tab", "1", "-demo-no-idle"]
         app.launch()
         // El encabezado entero es el botón; «Ver todo» es la flecha junto al título (su pista, no su nombre).
         let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Lo más popular hoy'")).firstMatch
+        for _ in 0..<12 where !(seeAll.exists && seeAll.isHittable) { app.swipeUp(velocity: .slow) }
         XCTAssertTrue(seeAll.waitForExistence(timeout: 20), "el botón «Ver todo»")
         for round in 1...2 {
             seeAll.tap()
@@ -188,7 +191,7 @@ final class ScreensUITests: XCTestCase {
                 XCTAssertTrue(title.waitForExistence(timeout: 10), "regresa a la lista")
             }
             app.navigationBars.buttons.firstMatch.tap()
-            XCTAssertTrue(seeAll.waitForExistence(timeout: 10), "regresa a Buscar (vez \(round))")
+            XCTAssertTrue(seeAll.waitForExistence(timeout: 10), "regresa a Explorar (vez \(round))")
         }
     }
 

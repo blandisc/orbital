@@ -374,7 +374,8 @@ final class ChaosRegressionUITests: XCTestCase {
         let win = root.frame
         var out: [String] = []
         func walk(_ e: XCUIElementSnapshot, inCarousel: Bool) {
-            let carousel = inCarousel || (e.elementType == .scrollView && e.frame.width >= win.width - 1 && e.frame.height < win.height * 0.8)
+            // Un carrusel a lo ancho o dentro del margen (el selector de Guardado se desliza de lado si no cabe, SG1).
+            let carousel = inCarousel || (e.elementType == .scrollView && e.frame.width >= win.width * 0.85 && e.frame.height < win.height * 0.8)
             let f = e.frame
             if !carousel, [.staticText, .button].contains(e.elementType), !f.isEmpty, f.width < win.width * 2,
                f.minY > win.minY + 40, f.maxY < win.maxY - 90,   // ni la barra de estado ni la de pestañas
