@@ -54,11 +54,16 @@ extension DesignRulesTests {
         check(problems, "Un vacío enseña qué hacer: ícono, qué pasa y un botón a dónde ir")
     }
 
-    /// El aviso flotante «¿Qué tal…?» no tapa lo último de Guardado, y las listas abiertas llevan el mismo cielo.
+    /// El aviso flotante «¿Qué tal…?» no tapa lo último de ninguna pestaña, y las listas abiertas llevan el mismo cielo.
     func testSavedKeepsItsSkyAndRoomForTheReminder() throws {
         let files = try savedScreens()
-        let saved = code(try XCTUnwrap(files.first { $0.name == "LibrarySavedView.swift" }))
-        XCTAssertTrue(saved.contains { $0.contains("ratingReminderHeight") }, "Guardado deja lugar abajo para «¿Qué tal…?»")
+        // Desde el 27 nov 2026 lo hace cada pestaña (en el Duo cerrado tapaba la última fila de Ajustes y los botones de la ficha).
+        let root = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/RootView.swift"), encoding: .utf8)
+        let stacks = root.components(separatedBy: "NavigationStack(path: $paths[").count - 1
+        XCTAssertGreaterThanOrEqual(stacks, 4, "se leyeron las cuatro pestañas")
+        XCTAssertEqual(root.components(separatedBy: ".ratingReminderRoom()").count - 1, stacks, "Cada pestaña deja lugar abajo para «¿Qué tal…?»")
+        let host = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/RatingReminderHost.swift"), encoding: .utf8)
+        XCTAssertTrue(host.contains("safeAreaPadding(.bottom, env.ui.ratingReminderHeight)"), "Es espacio seguro: los carruseles de adentro no crecen")
         let list = code(try XCTUnwrap(files.first { $0.name == "SavedListScreen.swift" }))
         XCTAssertTrue(list.contains { $0.contains("Backdrop()") }, "Una lista abierta lleva el cielo de Guardado")
     }

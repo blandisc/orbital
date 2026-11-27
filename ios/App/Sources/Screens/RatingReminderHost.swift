@@ -84,3 +84,18 @@ struct AccessoryPlacementReport: ViewModifier {
         content.onChange(of: placement, initial: true) { _, now in AppEnvironment.shared.ui.tvAccessoryInline = now == .inline }
     }
 }
+
+/// «¿Qué tal…?» flota abajo, encima de lo que haya: cada pestaña le aparta su alto al final (GD2, en Biblioteca desde el 9 nov;
+/// en todas desde el 27 nov 2026: en el Duo cerrado tapaba la última fila de Ajustes y los botones de la ficha). Es espacio
+/// seguro, no un margen: solo lo toma la lista de la pantalla, no los carruseles de adentro.
+struct RatingReminderRoom: ViewModifier {
+    @Environment(AppEnvironment.self) private var env
+
+    func body(content: Content) -> some View {
+        content.safeAreaPadding(.bottom, env.ui.ratingReminderHeight)
+    }
+}
+
+extension View {
+    func ratingReminderRoom() -> some View { modifier(RatingReminderRoom()) }
+}

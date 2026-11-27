@@ -310,7 +310,7 @@ struct MainTabs: View {
     }
 
     /// Las cuatro pilas de navegación, una por pestaña.
-    private var homeStack: some View { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar() }
+    private var homeStack: some View { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
     private var exploreStack: some View {
         NavigationStack(path: $paths[1]) {
             // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
@@ -318,10 +318,10 @@ struct MainTabs: View {
                 .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
                 .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
                 .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
-        }.tint(DS.primary).macHidesTabBar()
+        }.tint(DS.primary).macHidesTabBar().ratingReminderRoom()
     }
-    private var libraryStack: some View { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar() }
-    private var searchStack: some View { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar() }
+    private var libraryStack: some View { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
+    private var searchStack: some View { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
 
     /// Las cuatro pestañas, cada una con su pila de navegación. En la Mac, una baraja (`MacTabDeck`): las pantallas ya
     /// abiertas se quedan armadas y solo se esconden; con las pestañas del sistema cada clic las desarmaba y rearmaba

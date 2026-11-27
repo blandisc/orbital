@@ -39,7 +39,6 @@ struct LibraryHome: View {
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .contentMargins(.bottom, env.ui.ratingReminderHeight, for: .scrollContent)
         .orbitalRefreshable { [model] in await model.load(list: SavedModel.watchlist) }
         .perfTag("library")
         .task {   // de vuelta a la pestaña no lo vuelve a pedir todo (`loadIfStale`); jalar hacia abajo sí

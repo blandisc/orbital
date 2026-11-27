@@ -71,8 +71,6 @@ struct LibrarySavedView: View {
                 content(board)
             }
         }
-        // «¿Qué tal…?» flota sobre la barra: se le aparta su lugar abajo para que nunca tape la última fila (GD2).
-        .contentMargins(.bottom, env.ui.ratingReminderHeight, for: .scrollContent)
         .perfTag("saved")
         .task {
             await model.load(list: SavedModel.watchlist)

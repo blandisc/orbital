@@ -128,6 +128,9 @@ struct DSSelector<ID: Hashable>: View {
             title.fontWeight(on ? DS.Weight.strong : DS.Weight.plain)   // ds-exception: la elegida se distingue por el peso
         }
         .lineLimit(1)
+        // Si su parte queda angosta (el Duo cerrado: «Rendimiento» en la tarjeta de la consola), el nombre se achica tantito
+        // en vez de cortarse en «Rendimien…».
+        .minimumScaleFactor(DS.Size.statScale)
     }
 
     private func accessibilityName(_ option: Option) -> Text {

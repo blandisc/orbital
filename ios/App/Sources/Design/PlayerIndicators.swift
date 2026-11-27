@@ -102,7 +102,7 @@ struct DSSeekBubble: View {
                     Image(decorative: still, scale: 1).resizable().aspectRatio(contentMode: .fit)
                         .frame(width: DS.Gesture.seekStillWidth)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.track, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.track, lineWidth: DS.Stroke.regular))
                         .shadow(DS.Elevation.medium)
                         .transition(.opacity)
                 }
