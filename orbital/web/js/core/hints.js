@@ -58,7 +58,8 @@ export const MAX_HINTS = 3;
  */
 export function capHints(list, glyphs = {}) {
   const shown = () => list.filter((i) => !i.offscreen && !i.end).length;
-  for (const drop of [(i) => i.glyph === glyphs.back, (i) => glyphs.home && i.glyph === glyphs.home]) {
+  // Primero cede la X chica de la ficha (MN-A: secundaria, también está en ···); luego B y, al último, «Volver a…».
+  for (const drop of [(i) => i.secondary && SHEET_ALTS.has(i.label), (i) => i.glyph === glyphs.back, (i) => glyphs.home && i.glyph === glyphs.home]) {
     if (shown() <= MAX_HINTS) break;
     list = list.map((i) => (!i.offscreen && !i.end && drop(i) ? { ...i, offscreen: true } : i));
   }

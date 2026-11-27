@@ -163,3 +163,12 @@ test("MN-A: la X de una película o serie la dice el pie (su redondo salió del 
   assert.ok(show(footerHints(g, { primary: "Ver la serie", alt: "Ficha", heroButtons: true })).includes("X Ficha"));
   assert.ok(!show(footerHints(g, { primary: "Jugar", alt: "Con Ryujinx", heroButtons: true })).includes("X Con Ryujinx"));
 });
+
+test("MN-A: si no caben, primero cede la X chica de la ficha, no «Volver a…»", async () => {
+  const { footerHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = GLYPHS.gamepad;
+  const shown = footerHints(g, { primary: "Ver la serie", alt: "Episodios", heroButtons: true, running: { title: "Hades" }, status: "Bajando 42 %", groups: true })
+    .filter((i) => !i.offscreen).map((i) => i.label);
+  assert.ok(shown.includes("Volver a Hades"), shown);
+  assert.ok(!shown.includes("Episodios"), shown);
+});

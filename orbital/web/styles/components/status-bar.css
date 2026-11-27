@@ -234,7 +234,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .pad-lights__label {
   position: absolute; top: calc(100% + var(--space-2)); right: 0; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
-  color: var(--color-text); white-space: nowrap; opacity: 0; translate: 0 calc(-1 * var(--space-2)); pointer-events: none;
+  color: var(--color-text); width: max-content; max-width: 22rem; text-align: right; opacity: 0; /* con cuatro y sus pilas, en dos renglones */ translate: 0 calc(-1 * var(--space-2)); pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out), translate var(--duration-base) var(--ease-out);
 }
 .pad-lights:hover .pad-lights__label, .is-focused.pad-lights .pad-lights__label, .pad-lights:focus-visible .pad-lights__label { opacity: 1; translate: 0 0; }
