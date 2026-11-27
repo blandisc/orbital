@@ -1,6 +1,6 @@
 # Juegos en Orbital Ultra (iPhone): investigación
 
-3 nov 2026. Canvas con las opciones y decisiones: https://claude.ai/artifact/X3f9bdqV7qYN2Xd9aofZ9D (`canvas.html`).
+**27 nov: reemplazada por `paridad-tv-2026-11-27.md` (decisiones J1–J6).** 3 nov 2026. Canvas con las opciones y decisiones: https://claude.ai/artifact/X3f9bdqV7qYN2Xd9aofZ9D (`canvas.html`).
 Estado: **investigación, nada construido**. Espera las decisiones D1–D3 de Fernando.
 
 ## Lo que se encontró

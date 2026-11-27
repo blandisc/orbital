@@ -1,0 +1,304 @@
+<title>Los juegos de la TV en el iPhone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; los dos caminos lado a lado con su recorrido en pasos; decisiones con código; detalle técnico plegado al final. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64;
+  --line:#dcd9d1; --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6;
+  --bad:#a3322b; --bad-soft:#f5dedb; --screen:#0c0c0e; --screen-fg:#f2f1ec; --step:#26262b;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{font-size:1.15rem;color:var(--muted)}
+.why{color:var(--teal);font-weight:500}
+section{display:grid;gap:18px}
+.code{font-family:var(--f-mono);font-size:.85rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap;justify-self:start}
+.tag{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--teal-soft);color:var(--teal)} .mid{background:var(--warn-soft);color:var(--warn)} .no{background:var(--bad-soft);color:var(--bad)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.opt{display:grid;gap:14px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.opt.rec{border:2px solid var(--teal)}
+.opt header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gain b{color:var(--teal)} .lose b{color:var(--bad)}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+/* recorrido: lo que ve Fernando, paso por paso */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.st{display:grid;gap:6px;justify-items:center;text-align:center;font-size:.82rem;color:var(--muted)}
+.mini{width:100%;max-width:92px;aspect-ratio:9/16;border-radius:14px;border:4px solid var(--fg);background:var(--screen);color:var(--screen-fg);display:grid;place-items:center;font-size:10px;font-weight:600;padding:6px;line-height:1.2}
+.mini.or{background:linear-gradient(160deg,#5a3d8f,#111 70%)}
+.mini.jit{background:var(--step)}
+.mini.gc{background:linear-gradient(160deg,#4b2a85,#111)}
+.mini.sw{background:linear-gradient(160deg,#e60012,#111)}
+.mini.ghost{border-style:dashed;opacity:.55}
+.state{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.95rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+tr:last-child td{border-bottom:0}
+.once{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.once div{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:4px}
+.once b{font-family:var(--f-display)}
+.dec{display:grid;gap:14px;padding:22px;border-radius:18px;background:var(--raised)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.choice{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:6px;min-width:0}
+.choice.rec{border:2px solid var(--teal)}
+.recline{font-weight:600}
+.recline span{color:var(--teal)}
+.plan{display:grid;gap:10px;counter-reset:p;padding:0;margin:0;list-style:none}
+.plan li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.plan li::before{counter-increment:p;content:counter(p);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--teal);width:1.4em}
+details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+.tech{display:grid;gap:10px;font-size:.92rem}
+.tech code{font-family:var(--f-mono);font-size:.82rem;overflow-wrap:anywhere}
+.src{font-size:.85rem;color:var(--muted)} .src a{color:inherit}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:420px){.flow{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<style>
+/* Extras de esta página: matriz de consolas y maquetas del iPhone con su barra de pestañas. */
+.verdict{display:grid;gap:10px;padding:22px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.verdict p{font-size:1.1rem}
+.verdict b{font-family:var(--f-display)}
+.matrix td:first-child{font-weight:600;white-space:nowrap}
+.matrix .tag{display:inline-block}
+.matrix small{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.phone{display:grid;gap:8px;justify-items:center;text-align:center;font-size:.85rem;color:var(--muted)}
+.ph{width:100%;max-width:150px;aspect-ratio:9/19;border-radius:22px;border:5px solid var(--fg);background:var(--screen);color:var(--screen-fg);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;font-size:10px;text-align:left}
+.ph .top{padding:12px 10px 4px;font-weight:700;font-size:12px}
+.ph .body{padding:4px 10px;display:grid;gap:6px;align-content:start}
+.ph .row{display:flex;gap:4px}
+.ph .card{flex:1;aspect-ratio:3/4;border-radius:5px;background:#2e2e34}
+.ph .card.gc{background:linear-gradient(160deg,#5b3a9a,#222)}
+.ph .card.sw{background:linear-gradient(160deg,#e60012,#2a0b0d)}
+.ph .card.xb{background:linear-gradient(160deg,#107c10,#0b1d0b)}
+.ph .card.gba{background:linear-gradient(160deg,#3d3dbf,#141433)}
+.ph .lbl{color:#a5a5ad;font-size:9px}
+.ph .band{border-radius:6px;background:#1d1d22;padding:6px;display:grid;gap:4px}
+.ph .hl{outline:2px solid #5fd3c3;outline-offset:1px}
+.ph .tabs{display:flex;justify-content:space-around;padding:6px 4px 10px;background:#141417;font-size:8px;color:#8d8d95}
+.ph .tabs span.on{color:#5fd3c3;font-weight:700}
+.ph .sheet{margin-top:auto;border-radius:10px;background:#26262b;padding:8px;display:grid;gap:5px}
+.ph .btn{border-radius:999px;background:#f2f1ec;color:#111;text-align:center;padding:4px;font-weight:700}
+.ph .btn.ghost{background:transparent;color:#f2f1ec;border:1px solid #55555d}
+.ph.land{aspect-ratio:19/9;max-width:100%;grid-template-rows:1fr}
+.ph .game{background:linear-gradient(160deg,#e60012,#111 75%);display:grid;place-items:center;font-size:12px;font-weight:700;position:relative}
+.ph .pad{position:absolute;bottom:8px;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.5)}
+.ph .pad.l{left:10px} .ph .pad.r{right:10px}
+.watch{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.watch div{padding:14px;border-radius:12px;border:1px dashed var(--line);display:grid;gap:4px}
+.watch b{font-family:var(--f-display)}
+</style>
+<div class="wrap">
+
+<header style="display:grid;gap:14px">
+  <p class="src">Orbital Ultra · investigación · 27 nov 2026 · reemplaza las decisiones D1–D6 del 3 nov</p>
+  <h1>Los juegos de la TV en el iPhone</h1>
+  <p class="lede">Pediste que el iPhone juegue lo mismo que la TV: Switch, Switch 2, GBA, GameCube y Xbox. Se puede casi todo, pero no de la misma forma para cada consola.</p>
+</header>
+
+<section class="verdict">
+  <p><b>En casa: todo lo de la TV.</b> La Legion Go corre el juego y el iPhone lo recibe por wifi, como una pantalla más.</p>
+  <p><b>Fuera de casa: por ahora solo GBA, DS, PS1 y PSP.</b> Esas corren en el propio iPhone, sin internet.</p>
+  <p class="why">Switch, GameCube y Xbox dentro del iPhone dependen del «modo rápido» de iOS, y en iOS 27 está roto o a medias. Lo vigilamos.</p>
+</section>
+
+<section>
+  <h2>Cada consola, por dónde llega</h2>
+  <p>Tu iPhone 17 Pro tiene fuerza de sobra. Lo que estorba es el permiso de Apple para el modo rápido, no el aparato.</p>
+  <div class="state">
+    <table class="matrix">
+      <thead><tr><th>Consola</th><th>En el iPhone, ya</th><th>En el iPhone, si vuelve el modo rápido</th><th>Transmitida desde la consola</th></tr></thead>
+      <tbody>
+        <tr><td>GBA, DS, PS1, PSP</td><td><span class="tag ok">Sí</span><small>Sin internet; la partida va y viene con la TV</small></td><td><span class="tag ok">No hace falta</span></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>GameCube, Wii</td><td><span class="tag mid">Quizás</span><small>iCube dice que sí; nadie lo ha medido</small></td><td><span class="tag mid">Sí</span><small>iCube o DolphiniOS</small></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>Switch</td><td><span class="tag no">No</span></td><td><span class="tag mid">Sí</span><small>MeloNX</small></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>Xbox</td><td><span class="tag no">No</span></td><td><span class="tag mid">En pañales</span><small>DukeX</small></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>Xbox 360</td><td><span class="tag no">No</span></td><td><span class="tag mid">En pañales</span><small>XeniOS, versión de prueba</small></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>PS2, Wii U, PS3, PS4</td><td><span class="tag no">No</span></td><td><span class="tag no">No</span></td><td><span class="tag ok">Sí</span></td></tr>
+        <tr><td>Switch 2</td><td><span class="tag no">No</span></td><td><span class="tag no">No existe</span></td><td><span class="tag mid">Cuando la TV lo tenga</span><small>La TV hoy no tiene Switch 2</small></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src"><b>Sobre el Switch 2:</b> el único emulador salió hace un mes, solo para PC, y apenas arranca Mario Kart World y DK Bananza con tirones en computadoras más fuertes que la Legion Go. No hay nada que decidir todavía: te aviso cuando madure.</p>
+</section>
+
+<section>
+  <h2>Los tres caminos</h2>
+  <div class="opts">
+    <article class="opt rec">
+      <header><span class="code">T</span><h3>Transmitir desde la consola</h3><span class="tag ok">Primero</span></header>
+      <div class="flow">
+        <div class="st"><div class="mini or">Juegos</div>Eliges el juego</div>
+        <div class="st"><div class="mini jit">Abriendo en tu consola…</div>La Legion Go lo abre</div>
+        <div class="st"><div class="mini sw">Juego</div>Lo ves y juegas en el iPhone</div>
+        <div class="st"><div class="mini or">Orbital</div>Sales y regresas</div>
+      </div>
+      <p class="gain"><b>Ganas:</b> todo el catálogo de la TV, hoy, en cualquier iOS. Las partidas viven en un solo lugar.</p>
+      <p class="lose"><b>Pierdes:</b> solo en casa (fuera, se puede probar por Tailscale, sin promesa). La TV queda ocupada mientras juegas, la Legion Go tiene que estar despierta y hay un poquito de retraso.</p>
+      <div class="meta"><span class="tag ok">Prueba: medio día</span><span class="tag mid">Dentro de Orbital: 4–6 semanas</span></div>
+    </article>
+    <article class="opt">
+      <header><span class="code">L</span><h3>GBA, DS, PS1 y PSP en el iPhone</h3><span class="tag mid">Después</span></header>
+      <div class="flow">
+        <div class="st"><div class="mini or">Juegos</div>Eliges el juego</div>
+        <div class="st"><div class="mini jit">Bajando…</div>Una vez, de la consola</div>
+        <div class="st"><div class="mini gc" style="background:linear-gradient(160deg,#3d3dbf,#111)">Juego</div>Juegas, también en el avión</div>
+        <div class="st"><div class="mini or">Orbital</div>La partida vuelve a la TV</div>
+      </div>
+      <p class="gain"><b>Ganas:</b> jugar en cualquier lado, sin internet ni la consola prendida.</p>
+      <p class="lose"><b>Pierdes:</b> solo esas cuatro consolas. El guardado rápido no pasa a la TV (la partida normal sí).</p>
+      <div class="meta"><span class="tag ok">Con apps de la App Store: días</span><span class="tag mid">Dentro de Orbital: 5–8 semanas</span></div>
+    </article>
+    <article class="opt">
+      <header><span class="code">P</span><h3>Switch, GameCube y Xbox en el iPhone</h3><span class="tag no">Vigilar</span></header>
+      <div class="flow">
+        <div class="st"><div class="mini ghost">Juegos</div></div>
+        <div class="st"><div class="mini ghost">Modo rápido</div></div>
+        <div class="st"><div class="mini ghost">Juego</div></div>
+        <div class="st"><div class="mini ghost">Orbital</div></div>
+      </div>
+      <p class="gain"><b>Ganarías:</b> las consolas pesadas fuera de casa.</p>
+      <p class="lose"><b>Hoy:</b> el modo rápido de iOS 27 falla en muchos iPhone y nadie lo ha arreglado. Cada iOS nuevo lo vuelve a romper. En la prueba de medio día lo medimos en tu iPhone, sin construir nada.</p>
+      <div class="meta"><span class="tag no">Depende de Apple y de StikDebug</span></div>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que te va a tocar vivir, y cómo lo resolvemos</h2>
+  <div class="once">
+    <div><b>La TV está en uso</b>Si alguien ve algo en la TV, el iPhone no la toma sin preguntar. Lo decides en J4.</div>
+    <div><b>La consola está dormida</b>El iPhone te dice «Tu consola está dormida · Préndela para jugar». Después ajustamos su energía para que no se duerma de noche.</div>
+    <div><b>El juego sale en la tele</b>La consola tiene que mandar el juego a la pantalla del iPhone, no a la TV. Es lo primero que probamos.</div>
+    <div><b>Recientes y horas</b>Lo que juegas en el iPhone sale en Recientes de la TV, y al revés. Una sola Orbital.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que tienes que decidir</h2>
+
+  <div class="dec">
+    <h3>J1 · Por dónde empezamos</h3>
+    <div class="choices">
+      <div class="choice rec"><span class="code">J1-A</span><b>Transmitir</b>Todo el catálogo de la TV en casa, en semanas.</div>
+      <div class="choice"><span class="code">J1-B</span><b>GBA y compañía en el iPhone</b>Cuatro consolas, en cualquier lado.</div>
+      <div class="choice"><span class="code">J1-C</span><b>Esperar al modo rápido</b>No construir nada hasta que Apple o StikDebug lo arreglen. Puede ser meses.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J1-A</span>. Es lo único que te da Switch, GameCube y Xbox ya, y lo que construyamos (la pestaña, el catálogo, los Recientes) sirve igual para lo demás.</p>
+  </div>
+
+  <div class="dec">
+    <h3>J2 · Transmitir dentro o fuera de Orbital</h3>
+    <div class="choices">
+      <div class="choice"><span class="code">J2-A</span><b>Con la app Moonlight</b>Gratis, en días. Pero no abre el juego directo: Orbital lo pide, Moonlight se abre y para volver es a mano. La pausa es la de Moonlight.</div>
+      <div class="choice rec"><span class="code">J2-B</span><b>Dentro de Orbital</b>Sin saltos entre apps, con la pausa y el «salir» de Orbital. 4–6 semanas.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J2-A para la prueba y J2-B para quedarse</span>. Moonlight nos dice en una tarde si se siente bien; si sí, lo metemos.</p>
+  </div>
+
+  <div class="dec">
+    <h3>J3 · Con qué juegas Switch, GameCube y Xbox</h3>
+    <div class="phones">
+      <div class="phone"><div class="ph land"><div class="game">Mario Kart</div></div><span class="code">J3-A</span>Pantalla limpia, juegas con un mando</div>
+      <div class="phone"><div class="ph land"><div class="game">Mario Kart<span class="pad l"></span><span class="pad r"></span></div></div><span class="code">J3-B</span>Solo botones en pantalla</div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">J3-A</span><b>Un mando Bluetooth, solo dentro del juego</b>Solo en tu versión. Es una excepción a la regla del 29 oct («el iPhone no usa mando»): el resto de Orbital sigue siendo táctil.</div>
+      <div class="choice"><span class="code">J3-B</span><b>Solo botones en pantalla</b>Sin mando. Con los dedos tapando media pantalla y sin gatillos.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J3-A</span>. Un juego de Switch o Xbox con botones en pantalla casi no se juega. GBA y DS van con botones en pantalla en cualquier caso.</p>
+  </div>
+
+  <div class="dec">
+    <h3>J4 · Si la TV está en uso cuando quieres jugar</h3>
+    <div class="phones">
+      <div class="phone"><div class="ph"><div class="top">Mario Kart</div><div class="body"><div class="sheet"><b>La TV está en uso</b><span class="lbl">Alguien ve «Dune» en la sala</span><div class="btn">Tomarla</div><div class="btn ghost">Ahora no</div></div></div><div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span></div></div><span class="code">J4-A</span>Pregunta</div>
+      <div class="phone"><div class="ph"><div class="top">Mario Kart</div><div class="body"><div class="sheet"><b>Esperando la TV…</b><span class="lbl">Te aviso en cuanto se libere</span><div class="btn ghost">Cancelar</div></div></div><div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Juegos</span><span>Biblioteca</span></div></div><span class="code">J4-B</span>Espera</div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">J4-A</span><b>Pregunta «¿La tomo?»</b>Si dices que sí, la TV avisa unos segundos en pantalla y pausa lo que se veía.</div>
+      <div class="choice"><span class="code">J4-B</span><b>Espera</b>El iPhone no toca la TV; te avisa cuando quede libre.</div>
+      <div class="choice"><span class="code">J4-C</span><b>La TV muestra tu juego</b>Juegas en el iPhone y en la sala se ve lo mismo. Bonito para jugar acompañado; lo que veían se pausa.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J4-A</span>. La consola es una sola: lo justo es que tú decidas y que quien está en la sala se entere.</p>
+  </div>
+
+  <div class="dec">
+    <h3>J5 · Dónde viven los juegos en el iPhone</h3>
+    <div class="phones">
+      <div class="phone"><div class="ph"><div class="top">Juegos</div><div class="body"><span class="lbl">Recientes</span><div class="row"><div class="card sw"></div><div class="card gc"></div><div class="card xb"></div></div><span class="lbl">Switch · 24</span><div class="row"><div class="card sw"></div><div class="card sw"></div><div class="card sw"></div></div><span class="lbl">GameCube · 12</span><div class="row"><div class="card gc"></div><div class="card gc"></div><div class="card gc"></div></div></div><div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on hl">Juegos</span><span>Biblioteca</span></div></div><span class="code">J5-A</span>Una pestaña «Juegos»</div>
+      <div class="phone"><div class="ph"><div class="top">Biblioteca</div><div class="body"><span class="lbl">Descargas · Guardado · <b style="color:#5fd3c3">Juegos</b></span><div class="row"><div class="card sw"></div><div class="card gc"></div><div class="card xb"></div></div><span class="lbl">Switch · 24</span><div class="row"><div class="card sw"></div><div class="card sw"></div><div class="card sw"></div></div></div><div class="tabs"><span>Inicio</span><span>Explorar</span><span class="on">Biblioteca</span></div></div><span class="code">J5-B</span>Dentro de Biblioteca</div>
+      <div class="phone"><div class="ph"><div class="top">Inicio</div><div class="body"><span class="lbl">Seguir viendo</span><div class="row"><div class="card"></div><div class="card"></div><div class="card"></div></div><div class="band hl"><span class="lbl">Tus juegos</span><div class="row"><div class="card sw"></div><div class="card gc"></div><div class="card xb"></div></div></div><span class="lbl">Mi lista</span><div class="row"><div class="card"></div><div class="card"></div><div class="card"></div></div></div><div class="tabs"><span class="on">Inicio</span><span>Explorar</span><span>Biblioteca</span></div></div><span class="code">J5-C</span>Una franja en Inicio</div>
+    </div>
+    <div class="choices">
+      <div class="choice rec"><span class="code">J5-A</span><b>Quinta pestaña</b>Como en la TV, los juegos tienen su lugar. Solo en tu versión; Plus y la App Store siguen con cuatro.</div>
+      <div class="choice"><span class="code">J5-B</span><b>Dentro de Biblioteca</b>La barra no cambia, pero los juegos quedan a dos toques y mezclados con descargas.</div>
+      <div class="choice"><span class="code">J5-C</span><b>Franja en Inicio</b>Rápido de ver, pero rompe que Inicio es solo películas y series, y no cabe todo el catálogo.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J5-A</span>. Si los juegos importan tanto como dijiste, merecen su pestaña, igual que en la TV.</p>
+  </div>
+
+  <div class="dec">
+    <h3>J6 · GBA, DS, PS1 y PSP (cuando lleguemos)</h3>
+    <div class="choices">
+      <div class="choice"><span class="code">J6-A</span><b>Con apps de la App Store</b>Delta y PPSSPP, gratis. Orbital les pasa el juego. Días. Las partidas se quedan en esas apps y no vuelven solas a la TV.</div>
+      <div class="choice rec"><span class="code">J6-B</span><b>Dentro de Orbital</b>Sin salir de Orbital; la partida va y viene con la TV. 5–8 semanas las cuatro.</div>
+    </div>
+    <p class="recline">Recomiendo <span>J6-B</span>, después de transmitir. Si antes te vas de viaje y los quieres, J6-A te los da en días.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Si dices J1-A · J2-A · J3-A · J4-A · J5-A · J6-B</h2>
+  <ol class="plan">
+    <li><div><b>Prueba de medio día, sin construir.</b> La consola transmitiendo y Moonlight en tu 17 Pro con un mando: media hora de Switch y media de GameCube. Si en una hora se va más del 30 % de la batería, se calienta o se siente el retraso, no seguimos y lo replanteamos. De paso, medimos si el modo rápido funciona en tu iPhone.</div></li>
+    <li><div><b>La TV.</b> Prende la transmisión solo cuando el iPhone pide jugar, manda el juego a la pantalla del iPhone, no reacciona al mando mientras tanto y pregunta antes de tomar la sala (J4-A).</div></li>
+    <li><div><b>El iPhone.</b> La pestaña «Juegos» con lo mismo que la TV: portadas, Recientes y cada consola. «Jugar» abre el juego en la consola.</div></li>
+    <li><div><b>Todo dentro de Orbital (J2-B).</b> Sin Moonlight, con la pausa de Orbital.</div></li>
+    <li><div><b>GBA, DS, PS1 y PSP dentro de Orbital (J6-B).</b> Para jugar fuera de casa.</div></li>
+  </ol>
+  <div class="watch">
+    <div><b>Vigilamos: modo rápido de iOS 27</b>Si vuelve, Switch, GameCube y Xbox pueden correr en el iPhone fuera de casa.</div>
+    <div><b>Vigilamos: iCube sin modo rápido</b>Si se confirma, GameCube iría en el iPhone sin depender de nadie.</div>
+    <div><b>Vigilamos: Switch 2</b>Cuando haya un emulador que la Legion Go aguante, entra a la TV y por transmisión al iPhone.</div>
+  </div>
+</section>
+
+<p class="src">Solo en tu versión (Ultra, instalada desde la Mac). Por licencia, estos programas no pueden ir en Plus ni en la App Store. iPad y Mac no llevan nada de esto.</p>
+
+<details>
+  <summary>Detalle técnico (para la sesión que lo construya)</summary>
+  <div class="tech">
+    <p><b>Consola alcanzable.</b> El iPhone ya habla con la Legion Go por https (túnel) o Tailscale con token (<code>OrbitalRemote.swift</code>); <code>POST /api/launch</code> está en <code>orbital/api/play.py</code>. Moonlight puede ir por la IP de Tailscale.</p>
+    <p><b>Transmitir.</b> Apollo (fork de Sunshine) crea una pantalla virtual del tamaño del cliente; debe ser la principal mientras dure o el emulador abre en la TV. Una pantalla virtual por cliente (<a href="https://github.com/ClassicOldSong/Apollo/issues/874">Apollo #874</a>). Moonlight iOS no tiene esquema de URL para abrir un juego, solo accesos por UUID del equipo (<a href="https://github.com/moonlight-stream/moonlight-ios">moonlight-ios</a>, <code>AppDelegate.m</code>). J2-B: <a href="https://github.com/moonlight-stream/moonlight-common-c">moonlight-common-c</a> (GPLv3) + decodificación con VideoToolbox, audio, entrada y emparejamiento.</p>
+    <p><b>Modo transmisión en la TV.</b> Con el candado (<code>tele.lock</code>): la interfaz ignora el mando y no roba el foco; el juego en la pantalla virtual.</p>
+    <p><b>JIT.</b> <a href="https://github.com/StephenDev0/StikDebug">StikDebug</a> marca iOS 26.4+ como sin probar o parcial; reportes de falla en 27.0 y 27.2.1 (<a href="https://github.com/imxieyi/Kernarium/issues/71">Kernarium #71</a>). No confirmado en el iPhone de Fer: se mide en el paso 1.</p>
+    <p><b>Licencias.</b> mGBA MPL-2.0; melonDS, SwanStation, PPSSPP, Dolphin, Ryujinx y moonlight-common-c GPL. Firma de desarrollo con Xcode, nunca TestFlight externo.</p>
+    <p><b>Partidas.</b> La <code>.sav</code> de mGBA es la <code>.srm</code> del núcleo; PPSSPP usa la misma <code>SAVEDATA</code>. Los guardados rápidos no se cruzan.</p>
+  </div>
+</details>
+
+<p class="src">Fuentes: <a href="https://www.techspot.com/news/114408-nintendo-tried-kill-switch-emulation-but-first-switch.html">TechSpot (Switch 2)</a> · <a href="https://tech-insider.org/switch-2-emulator-eden-nx2-vs-eden-citron-neo-ryubing-2026/">Tech Insider</a> · <a href="https://lovegame.space/en/news/melonx-2-7-release/">MeloNX 2.7</a> · <a href="https://nintendowire.com/news/2026/09/21/wii-and-gamecube-games-now-playable-at-60-fps-on-ios-devices-without-jit/">NintendoWire (iCube)</a> · <a href="https://heldgames.com/guides/icube-gamecube-wii-iphone-jitless">Held Games (iCube)</a> · <a href="https://github.com/MaftyManicEMU/DukeX">DukeX</a> · <a href="https://heldgames.com/guides/xenios-xbox-360-iphone">Held Games (XeniOS)</a></p>
+
+</div>
