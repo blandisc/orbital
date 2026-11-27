@@ -54,6 +54,13 @@ section.decision { display: grid; gap: 14px; }
 .map td:first-child { font-weight: 600; }
 .sources { font-size: .84rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .sources a { color: var(--accent); }
+.moments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.moment { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.moment img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; background: #000; }
+.moment h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.moment .rule { margin: 0; font-size: .9rem; }
+.moment .state { font-size: .75rem; font-weight: 600; color: var(--muted); }
+.moment .state.ok { color: var(--accent); }
 .notes { font-size: .88rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
 .notes p { margin: 0; }
 </style>
@@ -61,7 +68,43 @@ section.decision { display: grid; gap: 14px; }
   <section class="intro">
     <h1>El dock del Duo cerrado</h1>
     <p>Cuando el Duo está cerrado, el iPhone pone la hora y las pestañas en una columna a la derecha. Hoy cada pantalla la trata distinto. En Inicio los carruseles pasan por debajo de las pestañas y chocan. Arriba, tu foto y el control se quedan en su barra y dejan un hueco. El reproductor deja la columna negra. Y a la mitad de la columna no hay nada.</p>
-    <p>Abajo va primero la regla de fondo (DR0), sacada de lo que hacen otras apps, y luego tres decisiones con cómo se ve hoy y sus opciones. Las maquetas están armadas con pedazos de las pantallas reales; las de Apple son capturas de sus apps en el simulador del Duo.</p>
+    <p>Primero, las tres formas de acomodar los controles (LD1) y cuál recomiendo. Luego, cómo creo que debe verse Orbital en cada momento de uso. Al final, la evidencia de las apps de Apple y el detalle de cada decisión. Donde dice «captura real» ya está hecho; lo demás son maquetas armadas con pedazos de las pantallas reales.</p>
+  </section>
+
+  <section class="decision" aria-labelledby="ld1">
+    <div class="dhead"><span class="code">LD1</span><h2 id="ld1">Dónde viven los controles</h2></div>
+    <p class="lead">Se pueden poner en otro lugar: hay tres formas. Las tres con Inicio, para compararlas igual.</p>
+    <div class="options">
+      <article class="opt pick">
+        <header><span class="code">LD1-A</span><h3>En la columna, con botones del sistema</h3><span class="tag">recomendada</span></header>
+        <img src="img/dr1-a.jpg" alt="Inicio con el control y tu foto en la columna bajo la hora y las pestañas al pie" loading="lazy">
+        <ul><li class="plus">Lo que más tocas queda bajo el pulgar: el Duo cerrado se usa con una mano.</li><li class="plus">El contenido conserva todo el alto: los pósters son verticales y la pantalla es baja.</li><li class="plus">Un solo diseño para el iPhone normal y el Duo: el iPhone acomoda cada botón según su papel.</li><li class="minus">En el iPhone normal, algunos botones de pantalla suben a la barra de arriba.</li></ul>
+      </article>
+      <article class="opt">
+        <header><span class="code">LD1-B</span><h3>Arriba y abajo, como cualquier iPhone</h3><span class="tag grey">captura real</span></header>
+        <img src="img/ld1-b.jpg" alt="Inicio con la hora arriba y la barra de pestañas abajo, como en un iPhone normal" loading="lazy">
+        <ul><li class="plus">Igual que en tu 17 Pro: nada nuevo que aprender.</li><li class="minus">La hora arriba y las pestañas abajo se comen unos 130 puntos de alto: se ve menos de cada fila.</li><li class="minus">En iOS 27.2 la hora regresa al costado en las hojas a media altura: queda mezclado.</li></ul>
+      </article>
+      <article class="opt">
+        <header><span class="code">LD1-C</span><h3>Diseño propio, como TikTok</h3></header>
+        <img src="img/ld1-c.jpg" alt="Inicio con las pestañas como texto arriba, la lupa arriba y la columna solo con la hora" loading="lazy">
+        <ul><li class="plus">Libertad total de forma: pestañas en texto, lupa arriba.</li><li class="minus">Arriba es lo más lejano para el pulgar: TikTok pone ahí la búsqueda porque se usa poco, no las pestañas que usas todo el tiempo.</li><li class="minus">La columna sigue ahí con la hora sola: más hueco, no menos.</li><li class="minus">Dos diseños que mantener y se pierde lo que da el iPhone gratis (vidrio, encogerse al deslizar, accesibilidad).</li></ul>
+      </article>
+    </div>
+    <p class="why"><b>Por qué A:</b> lo que usas a cada rato va donde cae el pulgar, el contenido gana alto y se construye una sola vez para los dos iPhone.</p>
+  </section>
+
+  <section class="decision" aria-labelledby="momentos">
+    <div class="dhead"><h2 id="momentos">Cómo creo que debe verse, momento a momento</h2></div>
+    <p class="lead">No todo va a la derecha. Cada cosa va donde la espera tu pulgar o tu vista. La regla: lo que navega y lo que usas seguido, a la columna; lo que cambia lo que ves, junto al contenido; lo que es una experiencia en sí (ver, controlar la tele), pantalla completa y con diseño propio.</p>
+    <div class="moments">
+      <article class="moment"><img src="img/dr1-a.jpg" alt="Inicio con la columna ordenada" loading="lazy"><span class="state">maqueta</span><h3>Recorrer (Inicio, Explorar)</h3><p class="rule">Pestañas y atrás en la columna. Tu foto y el control, bajo la hora. El contenido se detiene antes de la columna: nada choca.</p></article>
+      <article class="moment"><img src="img/dr2-b.jpg" alt="Biblioteca con filtrar, agregar y elegir varias en la columna" loading="lazy"><span class="state">maqueta</span><h3>Actuar sobre una lista</h3><p class="rule">Los íconos de la pantalla (filtrar, agregar, elegir varias) llenan el hueco de en medio de la columna, como Archivos de Apple. «Todo · Películas · Series» se queda junto a la lista: cambia lo que ves.</p></article>
+      <article class="moment"><img src="img/mom-buscar.jpg" alt="Buscar con el campo arriba y la lupa en la columna" loading="lazy"><span class="state ok">captura real · ya así</span><h3>Buscar</h3><p class="rule">La lupa es una pestaña más, en la columna. Ya adentro, el campo va arriba: ahí sí, como TikTok, porque ahí lo buscas con la vista.</p></article>
+      <article class="moment"><img src="img/mom-mosaico.jpg" alt="El mosaico de Explorar con atrás, refrescar y tu foto en la columna" loading="lazy"><span class="state ok">captura real · ya así</span><h3>Explorar a fondo (mosaico)</h3><p class="rule">El ejemplo que te gustó: atrás, refrescar y tu foto en la columna, todo con botones del sistema. Es el modelo para las demás pantallas.</p></article>
+      <article class="moment"><img src="img/mom-ver.jpg" alt="El reproductor de orilla a orilla, sin franja negra" loading="lazy"><span class="state ok">captura real · hecho, falta subirlo</span><h3>Ver</h3><p class="rule">Pantalla completa, sin columna ni barras: el video, los botones y la barra de avance llegan a las orillas. Sus controles son propios porque ver es una experiencia en sí.</p></article>
+      <article class="moment"><img src="img/mom-tele.jpg" alt="El control de la tele en su hoja" loading="lazy"><span class="state ok">captura real</span><h3>Controlar la tele</h3><p class="rule">Una hoja propia con botones grandes, que se estira a pantalla completa. Es un control, no una lista: aquí el diseño propio gana.</p></article>
+    </div>
   </section>
 
   <section class="decision" aria-labelledby="dr0">
@@ -169,8 +212,8 @@ section.decision { display: grid; gap: 14px; }
   </section>
 
   <section class="dictate" aria-label="Para dictar">
-    <p>Para dictar, el código de cada decisión. Mi recomendación:</p>
-    <p class="say">DR0-A · DR1-A · DR2-B · DR3-B</p>
+    <p>Para dictar, el código de cada decisión. Mi recomendación (LD1-A ya incluye DR0-A y DR1-A, que están abajo con su detalle):</p>
+    <p class="say">LD1-A · DR2-B · DR3-B</p>
     <p>Si quieres otra cosa en alguna, dime el código y lo que cambiarías, por ejemplo «DR2-A también».</p>
   </section>
 
