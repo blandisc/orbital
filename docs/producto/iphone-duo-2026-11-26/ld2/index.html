@@ -1,0 +1,109 @@
+<title>Inicio en un renglón</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Tres decisiones, cada una con «Hoy» y sus opciones lado a lado en el tamaño de la pantalla de afuera del Duo (466 × 678). */
+:root {
+  --bg: #f2f4f3; --card: #ffffff; --fg: #14181a; --muted: #5a6468; --line: #dde3e2; --accent: #0b8a85; --pick: #0b8a85; --pick-bg: #e3f4f2;
+  --display: "Space Grotesk", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1213; --card: #171c1e; --fg: #e7eced; --muted: #9aa6aa; --line: #283033; --accent: #3cc6bf; --pick: #3cc6bf; --pick-bg: #12302e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1213; --card: #171c1e; --fg: #e7eced; --muted: #9aa6aa; --line: #283033; --accent: #3cc6bf; --pick: #3cc6bf; --pick-bg: #12302e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 72px; }
+main { max-width: 1120px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-family: var(--display); font-size: clamp(1.7rem, 4vw, 2.3rem); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 1.35rem; margin: 0; text-wrap: balance; }
+.intro { display: grid; gap: 10px; max-width: 66ch; }
+.intro p, .lead { margin: 0; color: var(--muted); }
+.done { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; max-width: 66ch; display: grid; gap: 4px; }
+.done b { font-family: var(--display); color: var(--accent); }
+.done p { margin: 0; }
+section.decision { display: grid; gap: 14px; }
+.dhead { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.code { font-family: var(--display); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.opt { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.pick { border: 2px solid var(--pick); background: linear-gradient(var(--pick-bg), var(--card) 40%); }
+.opt.today { opacity: .92; }
+.opt header { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.opt h3 { margin: 0; font-size: 1rem; font-weight: 600; flex: 1; min-width: 0; }
+.tag { font-size: .72rem; font-weight: 600; letter-spacing: .03em; color: var(--pick); border: 1px solid var(--pick); border-radius: 999px; padding: 1px 8px; }
+.tag.grey { color: var(--muted); border-color: var(--line); }
+.opt img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; background: #000; }
+.opt ul { margin: 0; padding-left: 18px; font-size: .88rem; display: grid; gap: 3px; }
+.opt li::marker { color: var(--muted); }
+.plus { color: var(--fg); } .minus { color: var(--muted); }
+.why { margin: 0; font-size: .92rem; max-width: 70ch; }
+.why b { color: var(--accent); }
+.dictate { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; max-width: 70ch; }
+.dictate p { margin: 0; }
+.dictate .say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; }
+.strip { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.strip img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+.strip p { margin: 0; font-size: .84rem; }
+.strip b { font-weight: 600; }
+.map { overflow-x: auto; }
+.map table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .9rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.map th, .map td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.map th { font-family: var(--display); font-weight: 600; font-size: .85rem; color: var(--muted); }
+.map tr:last-child td { border-bottom: 0; }
+.map td:first-child { font-weight: 600; }
+.sources { font-size: .84rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.sources a { color: var(--accent); }
+.moments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.moment { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.moment img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; background: #000; }
+.moment h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.moment .rule { margin: 0; font-size: .9rem; }
+.moment .state { font-size: .75rem; font-weight: 600; color: var(--muted); }
+.moment .state.ok { color: var(--accent); }
+.notes { font-size: .88rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+
+.say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 0; }
+.note { font-size: .85rem; color: var(--muted); margin: 0; border-left: 3px solid var(--line); padding-left: 10px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair figure { margin: 0; display: grid; gap: 4px; }
+.pair figcaption { font-size: .8rem; color: var(--muted); }
+
+.say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 0; }
+.note { font-size: .85rem; color: var(--muted); margin: 0; border-left: 3px solid var(--line); padding-left: 10px; }
+</style>
+<main>
+  <div class="intro">
+    <h1>Inicio en un renglón</h1>
+    <p>LD1-B y DK-B ya están en la app: en el Duo, la hora va arriba y las pestañas abajo, y la barra se encoge al bajar. Falta una decisión: cómo junto el encabezado de Inicio con la hora. Las dos son capturas reales del Duo cerrado.</p>
+  </div>
+  <section class="decision">
+    <div class="dhead"><span class="code">LD2</span><h2>El encabezado de Inicio en el Duo</h2></div>
+    <div class="options">
+      <article class="opt">
+        <header><span class="code">LD2-A</span><h3>Dos renglones, logo completo</h3><span class="tag grey">así está hoy</span></header>
+        <img src="img/hoy.jpg" alt="Inicio en el Duo con la hora en un renglón y debajo el logo orbital, el mosaico, el control y tu foto" loading="lazy">
+        <ul><li class="plus">Se lee «orbital» completo.</li><li class="minus">Arriba se pierden unos 55 puntos: la hora va sola en su renglón.</li></ul>
+      </article>
+      <article class="opt pick">
+        <header><span class="code">LD2-B</span><h3>Un renglón, solo el ícono</h3><span class="tag">recomendada</span></header>
+        <img src="img/un-renglon.jpg" alt="Inicio en el Duo con un solo renglón: el ícono de Orbital, el mosaico, el control con tu foto y la hora" loading="lazy">
+        <ul><li class="plus">El ícono, «Todo», el control, tu foto y la hora en un solo renglón: «En tendencia» sube unos 55 puntos.</li><li class="plus">Es el renglón del iPhone, como Buscar, Biblioteca y la ficha: iOS acomoda todo alrededor de la hora. Nada fijado a mano.</li><li class="minus">En Inicio no se lee la palabra «orbital», solo el ícono.</li></ul>
+      </article>
+    </div>
+    <p class="note">No caben el logo completo y la hora en el mismo renglón: con la palabra «orbital», iOS mete el control y tu foto en un botón «…». Por eso B lleva solo el ícono. Lo probé así, con la palabra, y no queda bien.</p>
+    <div class="options" style="max-width:420px">
+      <article class="opt">
+        <header><span class="code">LD2-B</span><h3>Así se vería en tu 17 Pro</h3></header>
+        <img src="img/pro.jpg" alt="Inicio en el iPhone 17 Pro con el ícono, el mosaico, el control y tu foto debajo de la hora" loading="lazy">
+        <ul><li class="plus">Es el mismo código. En el 17 Pro la hora va junto a la isla, así que el renglón queda debajo, como hoy.</li><li class="minus">Ahí también se cambia la palabra «orbital» por el ícono.</li></ul>
+      </article>
+    </div>
+  </section>
+  <section class="decision">
+    <div class="dhead"><h2>Mi recomendación</h2></div>
+    <p class="say">LD2-B</p>
+    <p class="why"><b>Por qué:</b> en el Duo cerrado el alto es lo que más falta, y así Inicio queda igual que las otras pantallas, sin nada que mantener aparte. El ícono de Orbital ya se reconoce solo.</p>
+  </section>
+</main>
