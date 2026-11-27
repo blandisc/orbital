@@ -24,6 +24,7 @@ import sys
 import threading
 import time
 from ctypes import wintypes
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -111,11 +112,33 @@ def rem_for(width: int, height: int) -> float:
 
 
 # --- dibujar (Pillow) -------------------------------------------------------------------------------------------------
+INTER = Path(__file__).parent / "web" / "fonts" / "inter-variable.ttf"
+WEIGHTS = {"Regular": 400, "Semibold": 600}
+
+
+def _inter(size: float, weight: str):
+    """La letra de la interfaz (TF-B, 27 nov 2026): Inter, la que va dentro de Orbital, con su peso y su tamaño óptico."""
+    from PIL import ImageFont
+
+    font = ImageFont.truetype(str(INTER), max(1, round(size)))
+    axes = font.get_variation_axes()
+    names = [a["name"].decode() if isinstance(a["name"], bytes) else str(a["name"]) for a in axes]
+    optical = axes[names.index("Optical size")]
+    low, high = int(optical["minimum"] or 14), int(optical["maximum"] or 32)
+    values = {"Optical size": max(low, min(high, round(size))), "Weight": WEIGHTS.get(weight, 400)}
+    font.set_variation_by_axes([values[name] for name in names])
+    return font
+
+
 def _font(size: float, weight: str):
     from PIL import ImageFont
 
     try:
-        font = ImageFont.truetype("SegUIVar.ttf", max(1, round(size)))  # Segoe UI Variable, la de la interfaz
+        return _inter(size, weight)
+    except (OSError, KeyError, AttributeError, ValueError):
+        pass  # sin el archivo (o un Pillow sin fuentes variables): la de Windows, como antes
+    try:
+        font = ImageFont.truetype("SegUIVar.ttf", max(1, round(size)))  # Segoe UI Variable
         names = [n.decode() if isinstance(n, bytes) else n for n in font.get_variation_names()]
         pick = next((n for n in names if "Text" in n and weight in n), None) or next((n for n in names if weight in n), None)
         if pick:

@@ -65,3 +65,13 @@ def test_the_icon_comes_first_then_the_card_grows_and_then_the_text():
     assert _ink(layers["text"]) > 0 and _ink(overlay.compose_toast(layers, overlay.TEXT_DELAY_MS - 10)) < _ink(overlay.compose_toast(layers))
     image, margin = overlay.draw_toast("Se desconectó el Xbox", "Enciéndelo o conéctalo para seguir jugando", "!", "warn", rem)
     assert margin == m and image.tobytes() == overlay.compose_toast(layers).tobytes()  # al final, la de siempre y quieta
+
+
+def test_the_notices_over_a_game_use_the_interface_font():
+    """TF-B (27 nov 2026): los avisos encima del juego van en Inter, la misma de la interfaz, con su peso (la seminegrita mide
+    más que la normal) y su archivo dentro de Orbital (también en el paquete: pyproject › package-data)."""
+    assert overlay.INTER.is_file()
+    regular, semi = overlay._font(28, "Regular"), overlay._font(28, "Semibold")
+    assert regular.getname()[0].startswith("Inter")
+    assert semi.getlength("Control conectado · Jugador 2") > regular.getlength("Control conectado · Jugador 2")
+    assert '"web/fonts/*"' in (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8")

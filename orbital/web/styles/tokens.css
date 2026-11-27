@@ -9,6 +9,14 @@
   font-family: "Orbital Wordmark"; src: url("../fonts/sora-wordmark.woff2") format("woff2");
   font-weight: 600; font-style: normal; font-display: block;
 }
+/* La letra de la interfaz (TF-B, Fernando, 27 nov 2026): Inter 4.1, la más cercana a la del iPhone (San Francisco), en vez de
+   Segoe UI Variable, que se veía cruda («se ve Windows»). Variable, con tamaño óptico (14–32) y pesos 100–900: un solo archivo
+   que va dentro de Orbital, sin internet (fonts/, licencia OFL en Inter-OFL.txt). Los avisos encima del juego usan la misma en
+   .ttf (overlay.py); el reproductor y los subtítulos siguen en Segoe (libass no elige sus pesos ni sus cifras tabulares). */
+@font-face {
+  font-family: "Inter"; src: url("../fonts/inter-variable.woff2") format("woff2-variations"), url("../fonts/inter-variable.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: block;
+}
 
 :root {
   /* generado: inicio */
@@ -76,8 +84,11 @@
   --radius-pill: 999px;
 
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
-  --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-text: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  /* Los rasgos de Inter que se eligieron (TF-B): «l» con colita (cv05: no se confunde con la I), «a» de un piso (cv11) y comillas
+     y comas redondas (ss03). El tamaño óptico lo pone el navegador según el tamaño de la letra. */
+  --font-features: "cv05", "cv11", "ss03";
   /* El nombre de un premio (Óscar, Emmy…), como en su ceremonia: con remate, en mayúsculas espaciadas. */
   --font-award: "Didot", "Bodoni MT", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --tracking-award: .14em;

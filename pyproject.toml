@@ -39,7 +39,7 @@ packages = ["orbital", "orbital.api", "orbital.catalog", "orbital.foryou", "orbi
 
 [tool.setuptools.package-data]
 "orbital.design" = ["*.json"]
-orbital = ["remote_input_page.html", "web/*.html", "web/js/**/*.js", "web/styles/**/*.css", "web/styles/*.json", "web/icons/*", "web/img/**/*"]
+orbital = ["remote_input_page.html", "web/*.html", "web/js/**/*.js", "web/styles/**/*.css", "web/styles/*.json", "web/icons/*", "web/img/**/*", "web/fonts/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -298,3 +298,17 @@ def test_shelf_says_what_comes_next_instead_of_peeking(browser, server):  # noqa
             break
     assert page.evaluate(CUE) is None
     assert not page.errors, page.errors
+
+
+DOOR = """() => { const d = document.querySelector('.decide-door'); return d && { dice: !!d.querySelector('.decide-door__dice svg'),
+  posters: d.querySelectorAll('img').length, title: d.querySelector('.decide-door__title')?.textContent };}"""
+
+
+def test_the_interface_is_in_inter_and_the_door_shows_the_dice(browser, server):  # noqa: F811
+    """TF-B: la letra que se pinta es Inter (cargada de Orbital, no la del sistema). PD-B: la puerta de «Decide por mí» lleva el
+    dado y ningún póster."""
+    page = open_at(browser, server)
+    assert page.evaluate("document.fonts.check('600 24px Inter') && [...document.fonts].some((f) => f.family.includes('Inter') && f.status === 'loaded')")
+    to_media(page)
+    assert page.evaluate(DOOR) == {"dice": True, "posters": 0, "title": "Decide por mí"}
+    assert not page.errors, page.errors

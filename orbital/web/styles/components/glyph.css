@@ -11,7 +11,8 @@
   background: var(--glyph-bg); color: var(--glyph-ink); backdrop-filter: var(--filter-glass);
   box-shadow: var(--edge-glyph), inset 0 0 0 1.5px var(--glyph-ring);
   font: var(--type-badge-weight) var(--type-badge) / 1 var(--font-text); letter-spacing: var(--tracking-label); /* la receta de placa (badge) */
-  /* La caja del texto de Segoe queda baja: sube medio píxel para verse centrado en el círculo. */
+  /* La caja del texto queda baja: sube medio píxel para verse centrado en el círculo (medido con Segoe; con Inter, TF-B, se
+     revisó de cerca y sigue centrada). */
   padding-bottom: .06em;
 }
 /* Botones de cara: disco oscuro, letra y aro de su color (A verde, B rojo, X azul, Y amarillo). */

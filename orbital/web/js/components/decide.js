@@ -31,12 +31,12 @@ const MODE_ICONS = ["decideTrio", "decideDeck"]; // los del selector del iPhone 
  * `door` = { picks: [{ title, image, hero }] }.
  */
 export function DecideDoor(door, { focusId, onPress }) {
-  const posters = (door?.picks || []).slice(0, 3);
+  // PD-B (Fernando, 27 nov 2026): el dado de «Decide por mí» en su cuadrito turquesa, en vez del abanico de pósters (eran los
+  // mismos tres que van justo a su lado en la fila). `door` sigue llegando: lo de arriba (DecideDoorHero) nombra los tres.
   return h("button", { class: ["card", "card--wide", "decide-door"], type: "button", tabindex: "-1", "data-focus-id": focusId,
     style: { "--ratio": 16 / 9 }, // lo que mide una tarjeta ancha (Card lo pone igual)
     "aria-label": "Decide por mí", onClick: onPress },
-  h("span", { class: "decide-door__fan", "aria-hidden": "true" },
-    posters.map((p) => h("img", { class: "decide-door__poster", src: sized(p.image, 160), alt: "", loading: "lazy", decoding: "async" }))),
+  h("span", { class: "decide-door__dice", "aria-hidden": "true" }, svg(ICONS.dice)),
   h("span", { class: "decide-door__text" },
     h("strong", { class: "decide-door__title" }, "Decide por mí"),
     h("small", { class: "decide-door__line" }, doorLine())));

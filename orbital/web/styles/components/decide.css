@@ -95,17 +95,21 @@
 .decide__question .browse__filters { flex-wrap: wrap; overflow: visible; }
 .decide__question .pill { white-space: nowrap; }
 
-/* NQ-1 (16 nov 2026): la puerta del Inicio, segunda de «A continuación». Mide lo que una tarjeta ancha (`card--wide`) y
-   lleva el foco de siempre; adentro, el abanico de los tres pósters de hoy y la pregunta. */
-.decide-door { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); text-align: left; background: var(--color-surface-raised); }
-/* El abanico crece con la tarjeta (en el Inicio es ancha y baja; en la fila de Películas y series, del alto de un póster). */
-.decide-door__fan { position: relative; flex: none; height: 60%; aspect-ratio: .85; }
-.decide-door__poster {
-  position: absolute; top: 50%; left: 0; height: 84%; aspect-ratio: 2 / 3; object-fit: cover;
-  border-radius: var(--radius-sm); box-shadow: var(--shadow-card); transform: translateY(-50%) rotate(-7deg);
+/* NQ-1 (16 nov 2026): la puerta de «Decide por mí» (la fila «¿No sabes qué ver?» de Películas y series). Mide lo que una
+   tarjeta ancha (`card--wide`) y lleva el foco de siempre. PD-B (Fernando, 27 nov 2026): sin pósters (eran los tres de junto);
+   el dado en su cuadrito turquesa, el título grande y la línea de la hora, sobre una luz turquesa que viene de la esquina. */
+.decide-door {
+  display: flex; align-items: center; gap: var(--space-6); padding: 0 var(--space-8); text-align: left;
+  background: linear-gradient(135deg, color-mix(in oklab, var(--color-orbital) 30%, var(--color-surface-raised)), var(--color-surface-raised) 70%);
 }
-.decide-door__poster:nth-child(2) { left: 17%; z-index: var(--z-raised); height: 100%; transform: translateY(-50%); }
-.decide-door__poster:nth-child(3) { left: 34%; transform: translateY(-50%) rotate(7deg); }
+.decide-door__dice {
+  flex: none; display: grid; place-items: center; width: 4.2rem; aspect-ratio: 1; border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--color-orbital) 22%, transparent); color: var(--color-orbital);
+}
+.decide-door__dice .icon { width: 58%; height: 58%; stroke-width: var(--stroke-regular); }
 .decide-door__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-.decide-door__title { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); line-height: var(--leading-tight); white-space: nowrap; }
-.decide-door__line { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
+.decide-door__title {
+  font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking);
+  line-height: var(--leading-tight); white-space: nowrap;
+}
+.decide-door__line { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }

@@ -22,6 +22,8 @@ body {
   color: var(--color-text);
   font-family: var(--font-text);
   font-kerning: normal;
+  font-optical-sizing: auto; /* Inter: más cerrada en los títulos, más abierta en lo chico (TF-B) */
+  font-feature-settings: var(--font-features);
   -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
