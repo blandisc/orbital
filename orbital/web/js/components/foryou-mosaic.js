@@ -64,6 +64,8 @@ const AMBIENT_MS = 90_000;
 // cada SAVER_REST_MS da un paso corto —un arranque y un frenado— y vuelve a parar. Se mueve ~8 s de cada 20: avanza sin que la
 // tarjeta gráfica trabaje todo el tiempo.
 const SAVER_REST_MS = 12_000;
+// Con el protector las columnas van un poco más rápido que en Explorar (Fernando, 26 nov 2026: «un poquitito más rápido»).
+const SAVER_PACE = 1.35;
 const RAMP = .5; // los tramos de arranque y frenado recorren la mitad (--ease-glide-in/out llegan a la velocidad del resto)
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
@@ -395,7 +397,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     columns.forEach((col, c) => {
       if (col.edge && !col.active) return;
       while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - 80) col.tiles.shift().node.remove();
-      col.offset += DRIFT[c] * (ms / 1000) * share;
+      col.offset += DRIFT[c] * (saver ? SAVER_PACE : 1) * (ms / 1000) * share;
       fill(col, c); // las piezas que el tramo va a enseñar ya están puestas
     });
     applyOffsets();
@@ -534,6 +536,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     el.classList.add("foryou-mosaic--intro");
     if (pool.length) paint();
     else onFocus?.(null);
+    dream(); // llegaron con el protector puesto: directo a la deriva
   }
 
   /** «No me interesa»: la pieza se desvanece y otra toma su lugar. */
@@ -582,7 +585,18 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     running = true;
     if (!shown) { shown = true; for (const [img, src] of waiting.splice(0)) img.src = src; }
     wake();
+    if (saver) return dream();
     if (pool.length) paint();
+  }
+
+  /** El protector entra directo a la deriva: sin pasar por una pieza enfocada (Fernando, 26 nov 2026: «no debes de caer
+   *  en la selección»). Sin piezas todavía, lo hace setPool cuando lleguen. */
+  function dream() {
+    if (!running || !saver || mode === "ambient" || !pool.length) return;
+    clearTimeout(idleTimer);
+    clearTimeout(aliveTimer);
+    coveredSeen = false;
+    goAmbient();
   }
 
   function stop() {
@@ -606,7 +620,9 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     // volver a verse, otra vez saver(true) la arranca.
     saver: (on) => {
       saver = !!on;
-      if (saver && running && mode === "ambient" && !frame && !document.hidden) { el.classList.add("foryou-mosaic--drifting"); glide(0); }
+      const was = mode;
+      dream(); // si entra al ambiente, su propia deriva arranca al terminar de subir las columnas
+      if (was === "ambient" && saver && running && mode === "ambient" && !frame && !document.hidden) { el.classList.add("foryou-mosaic--drifting"); glide(0); }
     },
     get current() { return current(); },
     get ambient() { return mode === "ambient"; },
