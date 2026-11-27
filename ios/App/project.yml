@@ -183,6 +183,7 @@ targets:
       # Su propio catálogo (`Widgets/Symbols.xcassets`, dentro de `Widgets`): solo los dos símbolos que usa (la marca de Orbital
       # y la dona). Antes empacaba todo el arte de la app (~4 MB) (A14). Los copian scripts/orbital_symbol.py y donut_symbol.py.
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
+      - path: Sources/Design/Tokens+Imagery.swift   # el fondo, el arte y los pósters (salieron de Tokens.swift)
       - path: Sources/Design/Tokens+Player.swift
       - path: Sources/Design/Tokens+Screens.swift   # `Brand.swift` usa DS.Splash
       - path: Sources/Design/Tokens+Tints.swift     # lo que salió de Tokens+Screens (colores de lista, avatar…)

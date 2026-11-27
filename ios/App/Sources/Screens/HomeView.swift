@@ -602,20 +602,7 @@ struct HomeView: View {
         .dsNavigationTitle("Seguir viendo").navigationBarTitleDisplayMode(.inline)
         // Ordenar y filtrar, como toda lista abierta desde «Ver todo».
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Ordenar", selection: $continueSort) {
-                        Text("Lo último que viste").tag(ListSort.added)
-                        Text("A–Z").tag(ListSort.title)
-                    }
-                    Picker("Mostrar", selection: $continueKind) {
-                        Text("Todo").tag("")
-                        Text("Películas").tag("movie")
-                        Text("Series").tag("series")
-                    }
-                } label: { Image(systemName: "line.3.horizontal.decrease") }   // ds-exception: en la barra de arriba el sistema le da los 44
-                .accessibilityLabel(Text("Ordenar y filtrar"))
-            }
+            ToolbarItem(placement: .topBarTrailing) { ContinueSortMenu(sort: $continueSort, kind: $continueKind) }
         }
     }
 }
