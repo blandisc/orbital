@@ -164,6 +164,8 @@ extension DS {
         /// La carta mide lo que el póster y cede el alto que haga falta a sus datos y a los botones; en el iPad y la Mac no
         /// pasa de este ancho.
         static let cardMax: CGFloat = 440
+        /// Si la carta queda más angosta que esto, sus datos van de orilla a orilla del mazo y no a la orilla de la carta.
+        static let infoMinWidth: CGFloat = 220
         /// Debajo de la carta: cuántos géneros dice su línea y el logo de Trakt; el sello («Guardar», «Paso»): su giro y su orilla.
         static let genres = 3, ratingLogo: CGFloat = 16
         static let stampTilt: Double = 12, stampLine: CGFloat = 3

@@ -341,7 +341,10 @@ struct MatchDeckLayout: Layout {
         let room = max(0, bounds.height - info)
         deck.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: room))
         guard subviews.count > 1 else { return }
-        let inset = infoFullWidth ? 0 : max(0, (bounds.width - Self.fitted(CGSize(width: bounds.width, height: room), behind: behind).width) / 2)
+        // Con la carta angosta (el Duo cerrado: ~130 pt) sus datos toman todo el ancho del mazo, así el nombre no se corta en
+        // «Guardianes de la G…».
+        let card = Self.fitted(CGSize(width: bounds.width, height: room), behind: behind).width
+        let inset = infoFullWidth || card < DS.Match.infoMinWidth ? 0 : max(0, (bounds.width - card) / 2)
         subviews[1].place(at: CGPoint(x: bounds.minX + inset, y: bounds.minY + room + gap),
                           proposal: ProposedViewSize(width: bounds.width - inset * 2, height: nil))
     }

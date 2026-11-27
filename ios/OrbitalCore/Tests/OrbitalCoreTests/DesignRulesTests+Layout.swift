@@ -82,6 +82,7 @@ extension DesignRulesTests {
         let files = try sources()
         let mazo = code(try XCTUnwrap(files.first { $0.name == "MazoMatch.swift" }))
         XCTAssertTrue(mazo.contains("struct MatchDeckLayout: Layout"), "la carta y sus datos en una pieza de acomodo")
+        XCTAssertTrue(mazo.contains("card < DS.Match.infoMinWidth"), "Con la carta angosta (Duo cerrado) el nombre va de orilla a orilla, no cortado")
         XCTAssertFalse(mazo.contains("cardInset"), "sin un estado que se persiga con la medida de la carta")
         let screen = code(try XCTUnwrap(files.first { $0.name == "MatchDeckScreen.swift" }))
         XCTAssertTrue(screen.contains(".layoutPriority(-1)"), "el mazo cede primero")
