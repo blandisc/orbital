@@ -97,7 +97,7 @@ struct NowPlayingCard: View {
             actionButton(symbol: now.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", text: "Sin sonido", labeled: labeled) { act("mute") }
         } else {
             actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }
-            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Continuar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
+            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Continuar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") } // sistema-base: ignora tecla de reproducción con su ícono (▶ ⏭): el mismo nombre que en el control completo (RemoteSheet)
             actionButton(symbol: "goforward.10", text: "Adelantar 10 segundos", labeled: labeled) { act("skip", 10) }
             if now.kind == "series" { actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") } }
         }
@@ -127,8 +127,8 @@ struct NowPlayingCard: View {
 
     /// El nombre corto bajo cada tecla, como en el control completo («−10 s», «Pausa»).
     private var short: [String: LocalizedStringKey] {
-        ["gobackward.10": "−10 s", "goforward.10": "+10 s", "play.fill": "Continuar", "pause.fill": "Pausa",
-         "forward.end.fill": "Siguiente", "chevron.up": "Canal siguiente", "chevron.down": "Canal anterior",
+        ["gobackward.10": "−10 s", "goforward.10": "+10 s", "play.fill": "Continuar", "pause.fill": "Pausa", // sistema-base: ignora tecla de reproducción con su ícono (▶ ⏭): el mismo nombre que en el control completo (RemoteSheet)
+         "forward.end.fill": "Siguiente", "chevron.up": "Canal siguiente", "chevron.down": "Canal anterior", // sistema-base: ignora tecla de reproducción con su ícono (▶ ⏭): el mismo nombre que en el control completo (RemoteSheet)
          "speaker.slash.fill": "Sin sonido", "speaker.wave.2.fill": "Sin sonido"]
     }
 

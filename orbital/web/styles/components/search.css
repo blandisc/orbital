@@ -37,11 +37,11 @@
 /* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
    que escribías aparecía corrido a la izquierda. La caja vacía de lo escrito no ocupa lugar. */
 /* La ayuda en letra de encabezado: «Juego, película o serie» cabe entera en la columna del teclado compacto (P4). */
-.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(var(--space-caret) - var(--space-2)); } /* justo después del cursor, sin que lo tape (revisión 2, 16) */
+.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(var(--gap-caret) - var(--space-2)); } /* justo después del cursor, sin que lo tape (revisión 2, 16) */
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
-.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(var(--space-caret) - var(--space-2)); border-radius: var(--radius-sm); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(var(--gap-caret) - var(--space-2)); border-radius: var(--radius-sm); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }
@@ -87,7 +87,7 @@
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
-.search__set { flex: none; max-width: 100%; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + var(--space-focus-room)); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
+.search__set { flex: none; max-width: 100%; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + var(--gap-focus-room)); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--caption-room) + var(--focus-grow) + var(--space-2)) var(--space-6); }
 /* Centrado (Fernando, 13 nov 2026: «Ve que esté centrado el buscar»): las portadas van en columnas que se reparten a lo ancho,
    así la última termina en el margen derecho como el teclado empieza en el izquierdo (antes sobraba un hueco a la derecha y

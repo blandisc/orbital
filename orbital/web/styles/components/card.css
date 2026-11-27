@@ -54,7 +54,7 @@
    la misma placa oscura (legible sobre cualquier póster, claro u oscuro). */
 /* El sube y baja del Top 10, debajo del puesto. Sin verde: el teal es solo «En vivo»; abajo, tenue. */
 .card__trend.badge {
-  position: absolute; top: calc(var(--inset-poster) + var(--space-card-badge)); left: var(--inset-poster); z-index: var(--z-raised);
+  position: absolute; top: calc(var(--inset-poster) + var(--gap-card-badge)); left: var(--inset-poster); z-index: var(--z-raised);
   font-variant-numeric: tabular-nums;
 }
 .card__trend--down.badge { color: var(--color-text-muted); }
@@ -83,12 +83,12 @@
    clasificación ESRB y los logos, que casi siempre van abajo). */
 /* C10: va en su placa (Chip plate): el fondo de abajo puede ser cualquier arte. */
 .card__chip {
-  position: absolute; left: 0; top: calc(100% + var(--space-card-caption));
+  position: absolute; left: 0; top: calc(100% + var(--gap-card-caption));
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 /* Pie con título y tipo (búsqueda): dos líneas, recortadas al ancho de la portada. */
 .card__caption {
-  position: absolute; left: 0; right: 0; top: calc(100% + var(--space-card-caption-loose));
+  position: absolute; left: 0; right: 0; top: calc(100% + var(--gap-card-caption-loose));
   display: flex; flex-direction: column; gap: 0; font-size: var(--caption-size, var(--type-footnote)); line-height: var(--leading-normal);
 }
 /* El nombre solo bajo la enfocada (Card · caption "focus", como el Apple TV): las demás son puro arte. */

@@ -44,13 +44,6 @@
   --space-8: 2rem;
   --space-12: 3rem;
   --space-16: 4rem;
-  /* Espacios con nombre de lo que separan (SD1-A, 26 nov 2026: antes escritos a mano en cada pieza). */
-  --space-status-bar: 3rem;          /* lo que ocupa la barra de arriba: los avisos flotan debajo */
-  --space-card-caption: .45rem;      /* del póster a su nombre */
-  --space-card-caption-loose: .55rem;/* del póster a su nombre con fila de datos */
-  --space-card-badge: 2.4rem;        /* la segunda placa sobre el póster, debajo de la primera */
-  --space-focus-room: .35rem;        /* aire extra para que el anillo del foco no se corte */
-  --space-caret: 2px;                /* el cursor de la búsqueda, pegado al texto */
 
   /* Radios: rectángulos suaves, no burbujas */
   /* Dos esquinas y la cápsula (ritmo del 5 nov 2026; T11, 10 nov: antes siete nombres para estos dos valores). Las del
@@ -70,6 +63,14 @@
   --duration-enter: 300ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-tint: 700ms; /* lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego */
   /* generado: fin */
+
+  /* Espacios con nombre de lo que separan (SD1-A, 26 nov 2026: antes escritos a mano en cada pieza). Solo de la TV: van fuera del bloque generado (lo que se comparte con el iPhone) y por eso con --gap-, no --space- (27 nov 2026). */
+  --gap-status-bar: 3rem;          /* lo que ocupa la barra de arriba: los avisos flotan debajo */
+  --gap-card-caption: .45rem;      /* del póster a su nombre */
+  --gap-card-caption-loose: .55rem;/* del póster a su nombre con fila de datos */
+  --gap-card-badge: 2.4rem;        /* la segunda placa sobre el póster, debajo de la primera */
+  --gap-focus-room: .35rem;        /* aire extra para que el anillo del foco no se corte */
+  --gap-caret: 2px;                /* el cursor de la búsqueda, pegado al texto */
 
   /* La cápsula (la misma del iPhone: DS.Radius.pill) */
   --radius-pill: 999px;

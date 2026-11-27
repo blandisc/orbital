@@ -12,7 +12,7 @@
   --toast-lead: var(--control-height); /* de dónde nace la cajita: un círculo del alto del aviso, alrededor del ícono */
   --toast-slack: var(--space-8); /* el aire del rebote, a la derecha */
   position: fixed; z-index: var(--z-toast);
-  top: calc(var(--space-6) + var(--safe-y) + var(--space-status-bar) + var(--space-1)); right: var(--page-gutter);
+  top: calc(var(--space-6) + var(--safe-y) + var(--gap-status-bar) + var(--space-1)); right: var(--page-gutter);
   display: flex; align-items: center; gap: var(--space-2);
   width: max-content; max-width: min(46rem, calc(100vw - 2 * var(--page-gutter)));
   min-height: var(--control-height); padding: var(--space-1) var(--space-6) var(--space-1) var(--space-1);
