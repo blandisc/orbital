@@ -1437,3 +1437,9 @@ clave de una nube. Copiar (escribir en el portapapeles) sí se vale. `DesignRule
 Fernando: «la puse en la tele y estaba reproduciendo el audio del iPhone». **Al mandar algo a la TV, el iPhone se queda en
 silencio**: el reproductor de aquí se cierra y su motor se detiene, aunque ya no esté en pantalla (en segundo plano o en
 imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone`. Lo mismo si sales **mientras carga**: la carga a medias se suelta y nunca se pone a sonar sin pantalla (`testALoadYouLeftNeverStartsPlaying`).
+
+### El control de la TV: el teclado y los juegos (26 nov 2026)
+
+**El teclado del control solo se va cuando buscas o lo bajas tú**: moverte por los resultados no lo esconde. **Un juego que se
+abre o está abierto en la TV siempre se puede cerrar desde el control** (con confirmación), y un «Buscar» repetido al instante
+no sale dos veces. Lo cuida `DesignRulesTests.testRemoteKeepsTheKeyboardAndCanCloseAGame`.

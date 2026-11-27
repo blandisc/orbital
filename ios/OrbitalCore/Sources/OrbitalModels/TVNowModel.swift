@@ -352,13 +352,13 @@ public final class TVNowModel: ObservableModel {
         catch {}
     }
 
-    /// Un botón de la tarjeta: `toggle · pause · play · skip (delta en segundos) · next · previous · stop · mute`.
     /// LA-B: le da a la TV el buzón de la isla (ver `OrbitalRemote.registerActivityPush`). Si falla, se vuelve a dar con
     /// el siguiente buzón o al abrir la app; mientras, la isla sigue al día como antes (preguntando con la app abierta).
     public func registerActivityPush(token: String, language: String, sandbox: Bool) async {
         try? await services.orbital.registerActivityPush(token: token, language: language, sandbox: sandbox)
     }
 
+    /// Un botón de la tarjeta: `toggle · pause · play · skip (delta en segundos) · next · previous · stop · mute`.
     public func control(_ action: String, delta: Double? = nil, track: String? = nil) async {
         guard !busy else { return }
         busy = true

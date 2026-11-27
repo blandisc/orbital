@@ -32,6 +32,10 @@ struct RemoteSheet: View {
     @State private var text = ""
     /// Lo que ya tiene la TV de lo que escribiste (para mandar solo la diferencia).
     @State private var sentText = ""
+    /// El teclado del campo está arriba: el control se queda en «escribiendo» aunque la TV ya esté en los resultados.
+    @State private var editing = false
+    /// Cuándo se mandó «Buscar»: uno repetido en menos de un segundo no sale (la TV abrió un juego con dos seguidos).
+    @State private var submittedAt = Date.distantPast
     @State private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
@@ -300,7 +304,22 @@ struct RemoteSheet: View {
             }
             .transition(.opacity)
         } else {
-            RemoteStatusCard(tvNow: tvNow)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                RemoteStatusCard(tvNow: tvNow)
+                // Un juego abriéndose o abierto: se puede cancelar desde aquí (Fernando, 26 nov 2026: se abrió uno sin querer
+                // y el control no tenía cómo cerrarlo).
+                if let game = model.game {
+                    HStack(spacing: DS.Space.s2) {
+                        Text(game.title).recipe(.cardTitle).lineLimit(1)
+                        Spacer(minLength: DS.Space.s2)
+                        ConfirmIconButton(symbol: "xmark", prompt: "¿Cerrar el juego?", label: "Cerrar el juego") {
+                            Task { await model.game("close") }
+                        }
+                        .accessibilityIdentifier("remote-close-game")
+                    }
+                    .transition(.opacity)
+                }
+            }
         }
     }
 
@@ -314,7 +333,7 @@ struct RemoteSheet: View {
         VStack(spacing: DS.Remote.groupGap) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             voice(model).remoteMorph("voice", in: morph)
-            switch model.context {
+            switch editing && model.context == .browse ? .typing : model.context {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
             // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
             case .player:
@@ -547,7 +566,9 @@ struct RemoteSheet: View {
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
     func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
-        RemoteTextField(text: $text, autoFocus: autoFocus) {
+        RemoteTextField(text: $text, autoFocus: autoFocus, editing: $editing) {
+            guard Date().timeIntervalSince(submittedAt) > 1 else { return }
+            submittedAt = Date()
             let typed = text
             sentText = text   // lo que espera mandarse ya va aquí (no reemplaza el campo después de buscar)
             Task { await model.type(typed, submit: true, replace: true) }
