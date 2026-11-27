@@ -542,7 +542,15 @@ export function createSearch({ onOpen, onMore = null, onMove, onClose, onAdvance
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, setText,
+  /** «Buscar» del teclado del iPhone: a los resultados y nada más. Antes era un Enter y, ya en los resultados, abría el
+   *  enfocado (Fernando, 26 nov 2026: se le abrió War Thunder desde el control del iPhone). */
+  function submit() {
+    if (el.hidden || el.classList.contains("screen--leaving") || zone === "results") return;
+    goToResults();
+    onMove?.();
+  }
+
+  return { el, open: show, close, handle, hints, refresh, type, setText, submit,
     /** Eligiendo una ficha para algo que está abierto debajo (una lista): Buscar va primero, aunque esa vista también esté abierta. */
     get isPicking() { return !!picking && !el.hidden && !el.classList.contains("screen--leaving"); },
     get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },

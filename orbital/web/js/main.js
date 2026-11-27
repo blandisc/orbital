@@ -511,7 +511,8 @@ function remoteText(text, submit, replace = false) {
   if (ui.login.isOpen) replace ? ui.login.setText(text) : [...text].forEach((char) => ui.login.type(char));
   else if (ui.search.isOpen) replace ? ui.search.setText(text) : [...text].forEach((char) => ui.search.type(char));
   else if (text) openSearch(text);
-  if (submit) (ui.login.isOpen ? ui.login : ui.search).type(String.fromCharCode(10)); // Enter
+  // Enter en la cuenta de Stremio; en la búsqueda solo lleva a los resultados (nunca abre uno: eso lo decide A o el pad).
+  if (submit) ui.login.isOpen ? ui.login.type(String.fromCharCode(10)) : ui.search.submit();
   renderHints();
 }
 
