@@ -62,6 +62,13 @@ final class RemoteWatchUITests: XCTestCase {
         for _ in 0..<4 where !(first.exists && first.isHittable) { app.swipeUp() }
         XCTAssertTrue(first.waitForExistence(timeout: 8), "las versiones de la TV")
         XCTAssertTrue(app.staticTexts["Ultra HD 4K"].exists, "con su calidad en palabras")
+        // Hasta abajo, lo último se ve entero: no queda bajo la esquina redonda ni la barra de inicio (26 nov, «se come el
+        // contenido hasta abajo»).
+        for _ in 0..<3 { app.swipeUp() }
+        let note = app.staticTexts["Cambia en la TV en el mismo minuto; la imagen se corta unos segundos."]
+        XCTAssertTrue(note.exists, "la nota del pie")
+        let bottom = app.windows.firstMatch.frame.maxY - 34
+        XCTAssertLessThanOrEqual(note.frame.maxY, bottom, "lo último de la hoja no queda tapado: \(note.frame.maxY) > \(bottom)")
         let second = app.descendants(matching: .any)["watch-version-1"]
         second.tap()
         XCTAssertTrue(audio.waitForExistence(timeout: 6), "elegir una versión cierra la hoja")

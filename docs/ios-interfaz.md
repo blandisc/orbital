@@ -770,6 +770,10 @@ su forma. En el mazo los cuatro botones y los datos de la carta se acomodan ante
 mazo se queda sobre el área segura. Nada se encima ni se recorta. Lo cuidan `testGrowingContentYieldsToControls` y
 `DecideTabsUITests` (los datos terminan antes que los botones y los botones caben en la pantalla, también con letra grande).
 
+Lo mismo al pie (26 nov 2026, «Cómo lo ves»: «se come el contenido hasta abajo»): **en una hoja que se desplaza, lo último
+se ve entero al llegar abajo**, arriba de la esquina redonda y de la barra de inicio. Todas las `fittedScrollSheet` dejan ese
+aire (`DS.Space.sheetBottom`); lo cuida `RemoteWatchUITests.testHoldingLanguageOpensHowYouWatchAndItsChoicesWork`.
+
 ### La puerta de algo grande es grande y tiene nombre (13 nov 2026)
 
 Fernando, del mosaico: «lo saquemos de la barra de menú que está arriba y lo pongamos de manera creativa abajo… mejorar el

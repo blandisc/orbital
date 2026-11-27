@@ -174,6 +174,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital». Con 24 el
         /// título quedaba pegado al asa (Fernando, 4 nov 2026, la 1774, la hoja de un pedido: «muy poco espacio arriba»): 32.
         static let sheetTop = s8
+        /// Lo último de una hoja que se desplaza queda arriba de la esquina redonda y la barra de inicio (`fittedScrollSheet`).
+        static let sheetBottom = s8
     }
 
     /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
