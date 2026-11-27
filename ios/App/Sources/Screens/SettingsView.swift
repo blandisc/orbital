@@ -335,7 +335,8 @@ struct SettingsView: View {
                               selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
         }
         .listRowBackground(DS.surface)
-        Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)
+        // En la Mac el ícono no se puede cambiar (la app del iPad no tiene íconos alternos ahí): no se ofrece.
+        if !ThisDevice.isMac { Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface) }
     }
 
     @ViewBuilder private func playback(_ model: SettingsModel) -> some View {

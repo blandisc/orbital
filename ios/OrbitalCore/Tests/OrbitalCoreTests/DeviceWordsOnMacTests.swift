@@ -65,11 +65,11 @@ final class DeviceWordsOnMacTests: XCTestCase {
         XCTAssertEqual(touch, [], "en la Mac se hace clic, no se toca")
     }
 
-    /// La Mac no tiene datos móviles: no se ofrece calidad «Con datos móviles» ni «Solo con Wi‑Fi» al bajar.
+    /// La Mac no ofrece lo que no tiene: datos móviles («Con datos móviles», «Solo con Wi‑Fi») ni cambiar el ícono de la app.
     func testTheMacOffersNoCellular() throws {
         let settings = try source("Screens/SettingsView.swift"), downloads = try source("Screens/DownloadsView.swift")
         for (code, row) in [(settings, "SettingsChoiceRow(title: \"Con datos móviles\""), (settings, "DSToggleRow(\"Solo con Wi‑Fi\""),
-                            (downloads, "DSToggleRow(\"Solo con Wi‑Fi\"")] {
+                            (downloads, "DSToggleRow(\"Solo con Wi‑Fi\""), (settings, "Section(\"Ícono de la app\")")] {
             let lines = code.components(separatedBy: "\n")
             for (i, line) in lines.enumerated() where line.contains(row) {
                 let before = lines[max(0, i - 2)...i].joined(separator: "\n")
