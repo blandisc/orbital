@@ -341,29 +341,39 @@ struct RemoteScrubber: View {
     var scares: [JumpScare] = []
     let seek: (Double) -> Void
     @State private var target: Double?
+    /// Ya soltaste: el punto se queda donde lo dejaste hasta que la TV llega ahí (antes regresaba un instante a donde iba).
+    @State private var landing: Double?
 
     var body: some View {
+        // El minuto de arriba siempre ocupa su lugar (invisible sin arrastrar): al aparecer, la tarjeta ya no brinca
+        // (Fernando, 26 nov 2026: «cuando lo muevo, brinca la tarjeta»).
         VStack(spacing: DS.Space.s1) {
-            if let target {
-                Text(verbatim: Self.clock(target) + " / " + Self.clock(duration)).recipe(.caption, color: DS.text).monospacedDigit()
-                    .frame(maxWidth: .infinity)
-                    .transition(.opacity)
-            }
+            Text(verbatim: Self.clock(target ?? position) + " / " + Self.clock(duration)).recipe(.caption, color: DS.text).monospacedDigit()
+                .frame(maxWidth: .infinity)
+                .opacity(target == nil ? 0 : 1)
+                .accessibilityHidden(true)
             GeometryReader { geo in
-                ScareTimeline(position: target ?? position, duration: duration, scares: scares)
+                ScareTimeline(position: target ?? landing ?? position, duration: duration, scares: scares)
                     .frame(maxHeight: .infinity)
                     .contentShape(Rectangle())
-                    .gesture(DragGesture(minimumDistance: DS.Remote.scrubSlop)
+                    // Gana sobre la hoja: arrastrar la barra no mueve ni estira la tarjeta.
+                    .highPriorityGesture(DragGesture(minimumDistance: DS.Remote.scrubSlop)
                         .onChanged { g in
                             guard duration > 0 else { return }
                             target = min(duration, max(0, Double(g.location.x / max(1, geo.size.width)) * duration))
                         }
                         .onEnded { _ in
-                            if let target { seek(target) }
+                            if let target { seek(target); landing = target }
                             target = nil
                         })
             }
             .frame(height: DS.Size.touchTarget)
+        }
+        .onChange(of: position) { _, now in if let landing, abs(now - landing) < DS.Remote.scrubLanded { self.landing = nil } }
+        .task(id: landing) {   // si la TV no llega (no pudo brincar), a los pocos segundos vuelve a lo de verdad
+            guard landing != nil else { return }
+            try? await Task.sleep(for: .seconds(DS.Remote.scrubLandingWait))
+            if !Task.isCancelled { landing = nil }
         }
         .dsFeedback(.selection, trigger: target.map { Int($0 / 60) })
         .accessibilityElement()

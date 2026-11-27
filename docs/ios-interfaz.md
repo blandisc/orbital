@@ -1442,4 +1442,4 @@ imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone
 
 **El teclado del control solo se va cuando buscas o lo bajas tú**: moverte por los resultados no lo esconde. **Un juego que se
 abre o está abierto en la TV siempre se puede cerrar desde el control** (con confirmación), y un «Buscar» repetido al instante
-no sale dos veces. Lo cuida `DesignRulesTests.testRemoteKeepsTheKeyboardAndCanCloseAGame`.
+no sale dos veces. Lo cuida `DesignRulesTests.testRemoteKeepsTheKeyboardAndCanCloseAGame`. **Arrastrar la línea de tiempo del control no mueve la tarjeta**: el minuto ya ocupa su lugar, la barra gana sobre la hoja y, al soltar, el punto espera a la TV (`testScrubbingTheRemoteDoesNotMoveTheCard`).

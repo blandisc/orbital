@@ -4,6 +4,10 @@ import SwiftUI
 extension DS.Remote {
     /// La barra del control: cuánto mover el dedo antes de que cuente como arrastre, y el paso con VoiceOver.
     static let scrubSlop: CGFloat = 2
+    /// s de video: la TV ya llegó a donde soltaste la línea de tiempo.
+    static let scrubLanded: Double = 5
+    /// s que el punto espera en lo que soltaste antes de volver a lo que dice la TV.
+    static let scrubLandingWait: Double = 4
     static let scrubAccessibilityStep: Double = 30
 }
 
