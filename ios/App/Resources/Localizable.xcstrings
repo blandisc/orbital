@@ -17458,13 +17458,13 @@
         }
       }
     },
-    "Lleva %lld %": {
+    "Lleva %lld %": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld % done"
+            "value": "%lld % done"
           }
         }
       }

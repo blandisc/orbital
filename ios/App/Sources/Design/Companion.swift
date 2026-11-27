@@ -77,7 +77,7 @@ struct ConsoleStatePanel: View {
                 if let percent = s.batteryPercent {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         HStack {
-                            Text(verbatim: "\(percent) %").recipe(.section)
+                            Text(verbatim: "\(percent)\u{00A0}%").recipe(.section)
                             Spacer()
                             if s.plugged { Text("Cargando la batería").recipe(.caption) }   // su propia clave: «Cargando» a secas es una carga (Loading)
                             else if let minutes = s.minutesLeft {

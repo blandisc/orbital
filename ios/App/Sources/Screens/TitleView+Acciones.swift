@@ -92,7 +92,7 @@ extension TitleView {
         let size = item.expectedBytes.map { ByteSize.text($0, locale: env.uiLocale) } ?? ""
         let tail = item.addon.isEmpty ? "" : " · \(item.addon)"
         if item.state != .done, let expected = item.expectedBytes, expected > 0 {
-            let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100)) %"
+            let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100))\u{00A0}%"
             return (item.quality ?? item.addon, Text("\(Text("Bajando \(percent)"))\(Text(verbatim: tail))"))
         }
         return (item.quality ?? item.addon, Text(verbatim: size + tail))

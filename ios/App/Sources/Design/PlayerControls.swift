@@ -106,7 +106,7 @@ struct UpNextCard: View {
                     Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
                         .recipe(.secondary, color: DS.text).fontWeight(DS.Weight.strong).lineLimit(2)
                     if let percent = card.downloading {
-                        Label { Text("Bajando en la nube · \(Text(verbatim: "\(percent) %"))") } icon: { Image(systemName: DS.Symbol.cloud) }
+                        Label { Text("Bajando en la nube · \(Text(verbatim: "\(percent)\u{00A0}%"))") } icon: { Image(systemName: DS.Symbol.cloud) }
                             .recipe(.caption, color: DS.textMuted)
                             .accessibilityIdentifier("upnext-downloading")
                     }

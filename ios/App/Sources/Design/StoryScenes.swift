@@ -424,7 +424,7 @@ struct SceneCloudRequest: View {
             ZStack(alignment: .top) {
                 VStack(spacing: DS.Space.s2) {
                     Spacer(minLength: 0)
-                    SceneRow(title: step == 0 ? Text("4K · Latino · Por pedir") : step < 3 ? Text("\(Text("Bajando en la nube"))\(Text(verbatim: " · \(step == 1 ? "12" : "42") %"))") : Text("Lista para ver"),
+                    SceneRow(title: step == 0 ? Text("4K · Latino · Por pedir") : step < 3 ? Text("\(Text("Bajando en la nube"))\(Text(verbatim: " · \(step == 1 ? "12" : "42")\u{00A0}%"))") : Text("Lista para ver"),
                              lit: step >= 3) {
                         Image(systemName: step >= 3 ? "play.fill" : DS.Symbol.cloud).foregroundStyle(DS.fresh)
                     }

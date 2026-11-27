@@ -16,13 +16,13 @@ extension TitleView {
             switch model.downloadState(target) {
             case .downloading?, .queued?:
                 Menu {
-                    if let fraction { Text("Lleva \(Int(fraction * 100)) %") }
+                    if let fraction { Text("Lleva \(Int(fraction * 100))\u{00A0}%") }
                     Button("Pausar", systemImage: "pause.fill") { if let target { Task { await model.pauseDownload(target) } } }
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                     if series { Section { seriesDownloads(model, episode: false) } }
                 } label: {
-                    ActionTileLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100)) %") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
+                    ActionTileLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100))\u{00A0}%") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
                 }
             case .paused?, .failed?:
                 let failed = model.downloadState(target) == .failed

@@ -93,7 +93,7 @@ final class DownloadContinuation {
         task.progress.completedUnitCount = Int64(fraction * Double(Self.units))
         let current = items.first { $0.state == .downloading } ?? mine.first { $0.state != .done }
         let size = ByteSize.text(written, language: language()) + " / " + ByteSize.text(expected, language: language())
-        task.updateTitle(current.map { Self.title($0.title, language: language()) } ?? task.title, subtitle: "\(Int(fraction * 100)) % · \(size)")
+        task.updateTitle(current.map { Self.title($0.title, language: language()) } ?? task.title, subtitle: "\(Int(fraction * 100))\u{00A0}% · \(size)")
     }
 
     private static func title(_ name: String, language: String) -> String { String(format: Strings.tr("Descargando «%@»", language: language), name) }

@@ -341,7 +341,7 @@ struct DownloadsView: View {
             return parts.isEmpty ? progress : progress + "\n" + parts.joined(separator: " · ")
         case .paused:
             let paused = Strings.tr("En pausa", language: language)
-            return item.progress.map { "\(paused) · \(Int(($0 * 100).rounded())) %" } ?? paused
+            return item.progress.map { "\(paused) · \(Int(($0 * 100).rounded()))\u{00A0}%" } ?? paused
         case .failed: return item.lastError.map { Strings.message($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
         }

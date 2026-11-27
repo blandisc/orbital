@@ -306,7 +306,7 @@ struct LessonReadiness: View {
             switch state {
             case .instant: Label("Al instante", systemImage: "bolt.fill").foregroundStyle(DS.fresh)
             case .request: Label("Por pedir", systemImage: "arrow.down").foregroundStyle(DS.warning)
-            case .progress(let n): Text(verbatim: "\(n) %").monospacedDigit().foregroundStyle(DS.warning)
+            case .progress(let n): Text(verbatim: "\(n)\u{00A0}%").monospacedDigit().foregroundStyle(DS.warning)
             case .ready: Label("Lista", systemImage: "checkmark").foregroundStyle(DS.fresh)
             }
         }

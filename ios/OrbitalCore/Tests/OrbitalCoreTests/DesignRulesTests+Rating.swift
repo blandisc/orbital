@@ -38,4 +38,17 @@ extension DesignRulesTests {
         XCTAssertTrue(body.contains("if stacked { moreButton }") && body.contains("if !stacked { moreButton }"),
                       "Con letra grande, «y 2 más» va debajo de las estrellas: en un renglón la pastilla se salía por la orilla")
     }
+
+    /// Un porcentaje no se parte: «38» arriba y «%» abajo salía con letra grande en Biblioteca y en «Ya la tienes» (Duo
+    /// cerrado, 27 nov 2026). La cifra y el «%» van con espacio duro (`\u{00A0}`). La voz de VoiceOver y los textos
+    /// traducidos con `%%` quedan fuera.
+    func testPercentNeverSplitsFromItsNumber() throws {
+        var loose: [String] = []
+        for file in try sources(["Design", "Screens", "Platform"]) {
+            for (i, line) in file.lines.enumerated() where !line.contains("accessibility") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                if line.range(of: #"\) %(\"| ·)"#, options: .regularExpression) != nil { loose.append("\(file.path):\(i + 1)") }
+            }
+        }
+        XCTAssertEqual(loose, [], "Cifra y «%» con espacio normal: con letra grande se parten en dos renglones. Usa \\u{00A0}")
+    }
 }
