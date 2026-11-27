@@ -202,8 +202,8 @@ def router(d: Deps) -> APIRouter:
             series = pool.submit(search_kind, "series", q)
             try:
                 found_movies, found_series = movies.result(), series.result()
-                ranked = cinemeta.tie_popularity(catalog.cinemeta, q, found_movies, found_series)  # S1-A «Mejor resultado»
-                return {"results": cinemeta.search_results(q, found_movies, found_series, popularity=ranked)}
+                known = cinemeta.fame_lookup(catalog.cinemeta, found_movies, found_series)  # parecido × fama
+                return {"results": cinemeta.search_results(q, found_movies, found_series, fame=known)}
             except cinemeta.CinemetaError:
                 raise HTTPException(502, "Sin conexión con el catálogo de películas y series. Tus juegos siguen aquí.")
 

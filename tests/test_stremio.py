@@ -709,3 +709,15 @@ def test_best_result_keeps_cinemetas_order_when_the_cards_are_slow_or_missing():
 
     assert cinemeta.tie_popularity(Lenta(), "dune", movies, series, limit=.1) == {}
     assert cinemeta.search_results("dune", movies, series, popularity={})[0]["meta_id"] == "s1"
+
+
+def test_search_orders_by_fame():
+    """Parecido × fama (26 nov 2026), igual que el iPhone (`testSearchPutsWhatPeopleWatchFirst`)."""
+    movies = [{"id": "tt4154796", "name": "Avengers: Endgame"}, {"id": "tt4154756", "name": "Avengers: Infinity War"},
+              {"id": "tt0848228", "name": "The Avengers"}]
+    series = [{"id": "tt2455546", "name": "Avengers Assemble"}, {"id": "tt0054518", "name": "The Avengers"}]
+    fame = {"tt4154796": 193, "tt4154756": 138, "tt0848228": 118, "tt2455546": 3, "tt0054518": 3}
+    got = [r["meta_id"] for r in cinemeta.search_results("avengers", movies, series, fame=fame)]
+    assert got == ["tt4154796", "tt0848228", "tt4154756", "tt0054518", "tt2455546"]
+    assert cinemeta.fame({"popularities": {"trakt": 3, "moviedb": 45, "stremio": 1.5}}) == 3
+    assert cinemeta.relevance("dune", "Dune: Part Two") == 2

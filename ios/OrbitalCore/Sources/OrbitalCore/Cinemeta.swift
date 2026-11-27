@@ -338,10 +338,38 @@ public enum CinemetaParsing {
         meta["popularity"]?.doubleValue ?? meta["popularities"]?["stremio"]?.doubleValue
     }
 
-    /// Une películas y series alternando tipos y respetando el orden de Cinemeta; solo sube una coincidencia exacta.
+    /// Qué tan conocida es para ordenar la búsqueda: la de Trakt (gente que la ve) y, si no, la de TMDB. La de Stremio no
+    /// sirve para esto: ponía la serie The Avengers de 1961 arriba de la película de 2012 (Fernando, 26 nov 2026).
+    public static func fame(_ meta: JSON) -> Double? {
+        let p = meta["popularities"]
+        return p?["trakt"]?.doubleValue ?? p?["moviedb"]?.doubleValue
+    }
+
+    /// Las primeras de cada tipo, de las que se pide qué tan conocidas son (en paralelo y con tope).
+    public static let fameCandidates = 6
+    public static func fameCandidates(movies: [JSON], series: [JSON]) -> [(kind: String, id: String)] {
+        let pick: (String, [JSON]) -> [(kind: String, id: String)] = { kind, metas in
+            metas.prefix(fameCandidates).compactMap { m in m["id"]?.string.map { (kind, $0) } }
+        }
+        return pick("movie", movies) + pick("series", series)
+    }
+
+    /// Qué tanto se parece el nombre a lo escrito: igual (sin «The») 3, empieza igual 2, trae todas las palabras 1.5, otra 1.
+    public static func relevance(query: String, name: String?) -> Double {
+        let q = withoutArticle(query.trimmingCharacters(in: .whitespaces).lowercased())
+        let n = withoutArticle((name ?? "").trimmingCharacters(in: .whitespaces).lowercased())
+        if n == q { return 3 }
+        if n.hasPrefix(q) { return 2 }
+        let words = q.split(separator: " ")
+        if !words.isEmpty, words.allSatisfy({ n.contains($0) }) { return 1.5 }
+        return 1
+    }
+
+    /// Une películas y series alternando tipos y respetando el orden de Cinemeta; solo sube una coincidencia exacta. Con
+    /// `fame` (id → qué tan conocida), ordena por parecido × fama.
     /// `popularity` (id → qué tan vista): entre las exactas gana la más conocida, no la serie por ir primero (S1-A).
     public static func searchResults(query: String, movies: [JSON], series: [JSON], limit: Int = 18,
-                                     popularity: [String: Double] = [:]) -> [SearchResult] {
+                                     popularity: [String: Double] = [:], fame: [String: Double] = [:]) -> [SearchResult] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         var merged: [(String, JSON)] = []
         for i in 0..<min(series.count, movies.count) { merged.append(("series", series[i])); merged.append(("movie", movies[i])) }
@@ -359,8 +387,20 @@ public enum CinemetaParsing {
             }.map(\.element)
         }
         let rest = merged.filter { !isExact($0) }  // estable
+        var ordered = exact + rest
+        // Con qué tan conocidas son (`fame`): arriba lo que más se parece a lo escrito y más gente ve, en una sola cuenta
+        // (parecido × fama). Antes, película y serie se alternaban una a una: con «avengers» la caricatura «Avengers
+        // Assemble» quedaba segunda y Endgame sexta. Lo que no tiene dato, después y en el orden de siempre.
+        if !fame.isEmpty {
+            let score: ((String, JSON)) -> Double? = { km in
+                km.1["id"]?.string.flatMap { fame[$0] }.map { $0 * relevance(query: query, name: km.1["name"]?.string) }
+            }
+            let known = ordered.enumerated().compactMap { i, km in score(km).map { (i, km, $0) } }
+                .sorted { $0.2 != $1.2 ? $0.2 > $1.2 : $0.0 < $1.0 }.map(\.1)
+            ordered = known + ordered.filter { score($0) == nil }
+        }
         var seen = Set<String>(), results: [SearchResult] = []
-        for (kind, meta) in exact + rest {
+        for (kind, meta) in ordered {
             guard let id = meta["id"]?.string, seen.insert(id).inserted else { continue }
             let info = describe(meta)
             results.append(SearchResult(kind: kind, metaID: id, title: meta["name"]?.string ?? "", poster: medium(meta["poster"]?.string), year: info.year))

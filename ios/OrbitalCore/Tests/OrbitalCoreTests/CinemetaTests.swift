@@ -81,6 +81,20 @@ final class CinemetaTests: XCTestCase {
                                                 series: [["id": "tt0386676", "name": "The Office"]]).isEmpty)
     }
 
+    /// Búsqueda por parecido × fama (Fernando, 26 nov 2026: «avengers» dejaba Endgame sexta, debajo de una caricatura,
+    /// porque película y serie se alternaban una a una). La misma prueba vive en la TV (`test_search_orders_by_fame`).
+    func testSearchPutsWhatPeopleWatchFirst() {
+        let movies: [JSON] = [["id": "tt4154796", "name": "Avengers: Endgame"], ["id": "tt4154756", "name": "Avengers: Infinity War"],
+                              ["id": "tt0848228", "name": "The Avengers"]]
+        let series: [JSON] = [["id": "tt2455546", "name": "Avengers Assemble"], ["id": "tt0054518", "name": "The Avengers"]]
+        let fame = ["tt4154796": 193.0, "tt4154756": 138, "tt0848228": 118, "tt2455546": 3, "tt0054518": 3]
+        let got = CinemetaParsing.searchResults(query: "avengers", movies: movies, series: series, fame: fame).map(\.metaID)
+        XCTAssertEqual(got, ["tt4154796", "tt0848228", "tt4154756", "tt0054518", "tt2455546"], "lo que se ve arriba; las caricaturas al final")
+        XCTAssertEqual(CinemetaParsing.fame(["popularities": ["trakt": .double(3), "moviedb": .double(45), "stremio": .double(1.5)]]), 3, "Trakt antes que TMDB y Stremio")
+        XCTAssertEqual(CinemetaParsing.relevance(query: "dune", name: "Dune: Part Two"), 2)
+        XCTAssertEqual(CinemetaParsing.fameCandidates(movies: movies, series: series).count, 5)
+    }
+
     func testUnusableMetasAreDropped() {
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "tt1", "name": 1917]))
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "", "name": "x"]))

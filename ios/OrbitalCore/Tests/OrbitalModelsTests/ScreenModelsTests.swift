@@ -153,14 +153,14 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(search.results.filter { $0.kind == "series" }.count, 12)
     }
 
-    /// S1-A: con una película y una serie que se llaman igual, la búsqueda pide sus fichas y pone arriba la más vista.
+    /// S1-A: con una película y una serie que se llaman igual, la búsqueda pide sus fichas y pone arriba la más vista (Trakt).
     func testSearchPutsTheBestKnownOfTwoExactMatchesFirst() async throws {
         let rig = try ServicesRig()
         let base = "https://v3-cinemeta.strem.io"
         rig.http.json["\(base)/catalog/movie/top/search=matrix.json"] = ["metas": [["id": "tt0133093", "name": "The Matrix"]]]
         rig.http.json["\(base)/catalog/series/top/search=matrix.json"] = ["metas": [["id": "tt0106062", "name": "Matrix"]]]
-        rig.http.json["\(base)/meta/movie/tt0133093.json"] = ["meta": ["id": "tt0133093", "name": "The Matrix", "popularity": .double(1.28)]]
-        rig.http.json["\(base)/meta/series/tt0106062.json"] = ["meta": ["id": "tt0106062", "name": "Matrix", "popularity": .double(0.08)]]
+        rig.http.json["\(base)/meta/movie/tt0133093.json"] = ["meta": ["id": "tt0133093", "name": "The Matrix", "popularities": ["trakt": .double(180)]]]
+        rig.http.json["\(base)/meta/series/tt0106062.json"] = ["meta": ["id": "tt0106062", "name": "Matrix", "popularities": ["trakt": .double(2)]]]
         let search = SearchModel(rig.services)
         await search.search("matrix")
         XCTAssertEqual(search.results.first?.metaID, "tt0133093", "«Mejor resultado»: The Matrix, no la serie de 1993")

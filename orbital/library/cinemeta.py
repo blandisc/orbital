@@ -379,8 +379,65 @@ def tie_popularity(client: Cinemeta, query: str, movies: list[dict], series: lis
     return {meta_id: value for meta_id, value in found.items() if value is not None}
 
 
+def fame(meta: dict | None) -> float | None:
+    """Qué tan conocida es para ordenar la búsqueda (como el iPhone): la de Trakt (gente que la ve) y, si no, la de TMDB.
+    La de Stremio no sirve para esto: ponía la serie The Avengers de 1961 arriba de la película de 2012 (26 nov 2026)."""
+    pops = meta.get("popularities") if isinstance(meta, dict) else None
+    if not isinstance(pops, dict):
+        return None
+    for key in ("trakt", "moviedb"):
+        value = pops.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+    return None
+
+
+FAME_CANDIDATES = 6  # las primeras de cada tipo
+FAME_LIMIT = 0.8  # segundos: si las fichas tardan más, se queda el orden de Cinemeta (antes 1.5 y solo para empates)
+
+
+def fame_candidates(movies: list[dict], series: list[dict]) -> list[tuple[str, str]]:
+    return ([("movie", m["id"]) for m in movies[:FAME_CANDIDATES] if m.get("id")]
+            + [("series", m["id"]) for m in series[:FAME_CANDIDATES] if m.get("id")])
+
+
+def relevance(query: str, name: object) -> float:
+    """Qué tanto se parece el nombre a lo escrito: igual (sin «The») 3, empieza igual 2, trae todas las palabras 1.5, otra 1."""
+    q = _without_article(query.strip().lower())
+    n = _without_article(name.strip().lower()) if isinstance(name, str) else ""
+    if n == q:
+        return 3.0
+    if n.startswith(q):
+        return 2.0
+    words = q.split()
+    return 1.5 if words and all(w in n for w in words) else 1.0
+
+
+def fame_lookup(client: Cinemeta, movies: list[dict], series: list[dict], limit: float = FAME_LIMIT) -> dict[str, float]:
+    """Qué tan conocidas son las primeras de cada tipo (id → fama), pidiendo sus fichas a la vez y con tope."""
+    items = fame_candidates(movies, series)
+    if not items:
+        return {}
+    from concurrent.futures import ThreadPoolExecutor, wait
+
+    def one(kind: str, meta_id: str) -> float | None:
+        try:
+            return fame(client.meta(kind, meta_id, localized=False))
+        except CinemetaError:
+            return None
+
+    pool = ThreadPoolExecutor(max_workers=len(items))
+    try:
+        jobs = {pool.submit(one, kind, meta_id): meta_id for kind, meta_id in items}
+        done, _ = wait(jobs, timeout=limit)
+        found = {jobs[job]: job.result() for job in done if not job.exception()}
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    return {meta_id: value for meta_id, value in found.items() if value is not None}
+
+
 def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18,
-                   popularity: dict[str, float] | None = None) -> list[dict]:
+                   popularity: dict[str, float] | None = None, fame: dict[str, float] | None = None) -> list[dict]:
     """Une películas y series alternando tipos (para que uno no tape al otro) y respetando el orden de
     Cinemeta, que ya ordena por relevancia y popularidad y tolera errores de dedo. Solo se sube una
     coincidencia exacta: "subir lo que empieza igual" ponía "Oficer" antes que "The Office" con "ofice".
@@ -396,8 +453,15 @@ def search_results(query: str, movies: list[dict], series: list[dict], limit: in
     if popularity:  # estable: las que no tienen dato conservan su lugar, después de las que sí
         exact.sort(key=lambda km: -popularity.get(str(km[1].get("id")), -1.0))
     rest = [km for km in merged if not _exact(query, km[1].get("name"))]
+    ordered = exact + rest
+    if fame:  # parecido × fama, como el iPhone: «avengers» ya no pone la caricatura antes que Endgame
+        def score(km: tuple[str, dict]) -> float | None:
+            value = fame.get(str(km[1].get("id")))
+            return None if value is None else value * relevance(query, km[1].get("name"))
+        known = sorted((km for km in ordered if score(km) is not None), key=lambda km: -(score(km) or 0.0))  # estable
+        ordered = known + [km for km in ordered if score(km) is None]
     seen, results = set(), []
-    for kind, meta in exact + rest:
+    for kind, meta in ordered:
         if meta["id"] in seen:
             continue
         seen.add(meta["id"])

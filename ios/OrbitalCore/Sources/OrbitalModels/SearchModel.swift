@@ -152,14 +152,15 @@ public final class SearchModel: ObservableModel {
                 case .kind(let kind, nil): failed.insert(kind)
                 }
                 let cinemetaSettled = parts.count + failed.count == 2
-                // S1-A: si una película y una serie se llaman igual a lo que buscas, la más conocida va de «Mejor resultado»
-                // (su ficha dice qué tan vista es). Se pregunta una vez, con tope: si tarda, se queda el orden de Cinemeta.
-                let ties = CinemetaParsing.exactTies(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [])
-                if cinemetaSettled, !ties.isEmpty, popularity == nil {
-                    popularity = await Self.popularity(of: ties, cinemeta: cinemeta)
+                // Qué tan conocidas son las primeras de cada tipo (Trakt, en su ficha): se pregunta una vez, a la vez y con
+                // tope (`fameLimit`). Ordena por parecido × fama (antes: solo entre exactas, S1-A, y esperando hasta 1.5 s).
+                // Si tarda, se queda el orden de Cinemeta.
+                if cinemetaSettled, popularity == nil {
+                    let candidates = CinemetaParsing.fameCandidates(movies: parts["movie"] ?? [], series: parts["series"] ?? [])
+                    popularity = candidates.isEmpty ? [:] : await Self.fame(of: candidates, cinemeta: cinemeta)
                 }
                 let fromCinemeta = parts.isEmpty ? [] : CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [],
-                                                                                         limit: Self.resultLimit, popularity: popularity ?? [:])
+                                                                                         limit: Self.resultLimit, fame: popularity ?? [:])
                 // Lo de Trakt entra cuando ya está Cinemeta (o tardó): así no salta el orden al llegar.
                 let now = Self.merged(cinemeta: fromCinemeta, trakt: cinemetaSettled || waited ? fromTrakt ?? [] : [])
                 if !now.isEmpty, now != shown { shown = now; await show(now) }
@@ -171,19 +172,19 @@ public final class SearchModel: ObservableModel {
         return (shown, failed.isEmpty && (trakt == nil || fromTrakt != nil))
     }
 
-    /// Qué tan vista es cada empatada (id → popularidad), pidiendo sus fichas a la vez; lo que no llega en `tieLimit`, sin dato.
-    nonisolated static func popularity(of ties: [(kind: String, id: String)], cinemeta: Cinemeta) async -> [String: Double] {
+    /// Qué tan conocida es cada una (id → fama), pidiendo sus fichas a la vez; lo que no llega en `fameLimit`, sin dato.
+    nonisolated static func fame(of items: [(kind: String, id: String)], cinemeta: Cinemeta) async -> [String: Double] {
         await withTaskGroup(of: (String, Double?).self) { group in
-            for tie in ties.prefix(4) {
-                group.addTask { (tie.id, (try? await cinemeta.meta(kind: tie.kind, id: tie.id)).flatMap(CinemetaParsing.popularity)) }
+            for item in items {
+                group.addTask { (item.id, (try? await cinemeta.meta(kind: item.kind, id: item.id)).flatMap(CinemetaParsing.fame)) }
             }
-            group.addTask { try? await Task.sleep(nanoseconds: tieLimit); return ("", nil) }
+            group.addTask { try? await Task.sleep(nanoseconds: fameLimit); return ("", nil) }
             var found: [String: Double] = [:], answered = 0
             for await (id, value) in group {
                 if id.isEmpty { group.cancelAll(); break }
                 answered += 1
                 if let value { found[id] = value }
-                if answered == min(ties.count, 4) { group.cancelAll(); break }
+                if answered == items.count { group.cancelAll(); break }
             }
             return found
         }
@@ -237,8 +238,8 @@ public final class SearchModel: ObservableModel {
     static let traktLimit = 50
     /// Si Cinemeta no ha contestado en este tiempo, se enseña lo de Trakt solo (y Cinemeta, al llegar, pone su orden).
     static let hedgeDelay: UInt64 = 1_200_000_000
-    /// S1-A: cuánto se espera la ficha de las empatadas (película y serie con el mismo nombre) antes de enseñar el orden.
-    static let tieLimit: UInt64 = 1_500_000_000
+    /// Cuánto se espera a saber qué tan conocidas son antes de enseñar el orden (antes 1.5 s, y solo para las empatadas).
+    static let fameLimit: UInt64 = 800_000_000
 
     /// Lo buscado en esta sesión (las últimas `memoryLimit` búsquedas), por texto en minúsculas.
     private var memory: [String: [Result]] = [:]
