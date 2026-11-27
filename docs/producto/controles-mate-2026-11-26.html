@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controles mate</title>
+<style>
+:root{--bg:#f3f6f7;--surface:#fff;--fg:#132022;--muted:#58696b;--line:#d5dfe0;--accent:#0f8f86;--rec:#a85600;
+--sheet:#2a2c2e;--sheettx:#f2f4f4;--sheetmu:#a3abad;--key:#3a3d40;--keyline:#4a4e52;--glass:rgba(255,255,255,.06);--glassline:rgba(255,255,255,.22);--turq:#3cc9bc;--island:#000}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--rec:#f0a453;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--rec:#f0a453;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 16px 64px;display:grid;gap:32px}
+h1,h2{margin:0;line-height:1.2}h1{font-size:1.9rem}h2{font-size:1.3rem}
+p{margin:0;max-width:68ch}.muted{color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:12px;align-content:start}
+.opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.code{font-weight:700;color:var(--accent)}.badge{font-size:.78rem;font-weight:700;color:var(--rec);margin-left:6px}
+/* hoja */
+.sheet{background:var(--sheet);color:var(--sheettx);border-radius:26px;padding:14px 14px 16px;display:grid;gap:12px;font-size:13px}
+.hdr{color:var(--sheetmu);font-weight:600}
+.now{display:flex;gap:10px;align-items:center}
+.poster{width:44px;height:64px;border-radius:6px;background:linear-gradient(160deg,#6b5a4a,#2b3238);flex:none}
+.now b{font-size:15px;display:block}.now small{color:var(--sheetmu)}
+.bar{height:4px;border-radius:2px;background:#555;margin-top:6px;position:relative}.bar i{position:absolute;inset:0 90% 0 0;background:#fff;border-radius:2px}
+.row{display:flex;justify-content:space-around;align-items:center}
+.circ{width:44px;height:44px;border-radius:50%;border:1px solid var(--glassline);background:var(--glass);display:grid;place-items:center;font-size:15px}
+.circ.solid{background:#f2f4f4;color:#111;border:0}
+.circ.sm{width:38px;height:38px}
+.keys{display:grid;gap:6px}
+.k4{grid-template-columns:1fr 1.25fr 1fr .7fr}
+.k3{grid-template-columns:1fr 1.25fr 1fr}
+.key{background:var(--key);border:1px solid var(--keyline);border-radius:12px;height:52px;display:grid;place-items:center;align-content:center;gap:1px;font-size:16px}
+.key small{font-size:10px;color:var(--sheetmu)}
+.key.solid{background:var(--turq);border-color:var(--turq);color:#0b1416}.key.solid small{color:#0b1416}
+.key.low{height:42px}
+.voice{background:#353739;border-radius:16px;padding:10px;display:flex;gap:10px;align-items:center}
+.mic{width:40px;height:40px;border-radius:50%;background:#f2f4f4;flex:none}
+.voice b{font-size:14px;display:block}.voice small{color:var(--sheetmu)}
+/* isla */
+.isl{background:var(--island);color:#f1f6f7;border-radius:34px;padding:14px 16px 14px;display:grid;gap:10px;font-size:13px}
+.isl .now b{font-size:14px}.isl small{color:#9fb1b5}
+.isl .poster{width:34px;height:48px}
+.time{display:flex;gap:8px;align-items:center;color:#9fb1b5;font-size:11px}.time .bar{flex:1;margin:0;background:#333}.time .bar i{background:var(--turq);inset:0 88% 0 0}
+.cap{height:40px;border-radius:20px;background:rgba(255,255,255,.14);display:grid;place-items:center}
+.cap.solid{background:var(--turq);color:#0b1416}
+.ikeys{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:6px}
+.ik{height:40px;border-radius:12px;background:#26292b;border:1px solid #34383b;display:grid;place-items:center;font-size:15px}
+.ik.solid{background:var(--turq);border-color:var(--turq);color:#0b1416}
+ul{margin:0;padding-left:18px}li{margin:2px 0}
+.dictar{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header style="display:grid;gap:8px"><h1>Controles mate, como los de adentro</h1>
+<p class="muted">26 nov 2026 · iPhone. La tarjeta corta de «Viendo en la TV» tiene botones redondos de vidrio, chicos y con mucho aire entre ellos. Adentro (el control completo) las teclas son anchas, mate y llenan el ancho. Propongo lo mismo para la tarjeta corta y para la isla cuando la picas.</p></header>
+
+<section style="display:grid;gap:12px"><h2>TC · La tarjeta corta del control</h2>
+<div class="opts">
+<div class="opt"><div><span class="code">TC-A</span> · como hoy</div>
+<div class="sheet"><div class="hdr">▭ Viendo en la TV</div>
+<div class="now"><div class="poster"></div><div style="flex:1"><b>Thunderbolts*</b><small>quedan 1 h 53 min</small><div class="bar"><i></i></div></div></div>
+<div class="row"><div class="circ">↺</div><div class="circ solid">❚❚</div><div class="circ">↻</div><div class="circ sm">···</div></div>
+<div class="voice"><div class="mic"></div><div><b>Dile a Orbital</b><small>Prueba: «sube el volumen»</small></div></div></div>
+<p class="muted">Botones de vidrio, redondos y chicos; mucho hueco entre ellos.</p></div>
+
+<div class="opt rec"><div><span class="code">TC-B</span><span class="badge">RECOMIENDO</span></div>
+<div class="sheet"><div class="hdr">▭ Viendo en la TV</div>
+<div class="now"><div class="poster"></div><div style="flex:1"><b>Thunderbolts*</b><small>quedan 1 h 53 min</small><div class="bar"><i></i></div></div></div>
+<div class="keys k4"><div class="key">↺<small>−10 s</small></div><div class="key solid">❚❚<small>Pausa</small></div><div class="key">↻<small>+10 s</small></div><div class="key">···<small>Más</small></div></div>
+<div class="voice"><div class="mic"></div><div><b>Dile a Orbital</b><small>Prueba: «sube el volumen»</small></div></div></div>
+<p><b>Las mismas teclas del control completo:</b> anchas, mate, con su nombre abajo, llenando el ancho. La pausa en turquesa.</p>
+<p class="muted">Gana: se ve igual afuera y adentro, se atina más fácil y se lee qué hace cada una. Pierde: casi nada; mide lo mismo de alto que hoy.</p></div>
+
+<div class="opt"><div><span class="code">TC-C</span></div>
+<div class="sheet"><div class="hdr">▭ Viendo en la TV</div>
+<div class="now"><div class="poster"></div><div style="flex:1"><b>Thunderbolts*</b><small>quedan 1 h 53 min</small><div class="bar"><i></i></div></div></div>
+<div class="keys k4"><div class="key low">↺</div><div class="key low solid">❚❚</div><div class="key low">↻</div><div class="key low">···</div></div>
+<div class="voice"><div class="mic"></div><div><b>Dile a Orbital</b><small>Prueba: «sube el volumen»</small></div></div></div>
+<p><b>Teclas mate y anchas, solo con el ícono</b> y más bajitas.</p>
+<p class="muted">Gana: la tarjeta queda un poco más corta. Pierde: no es igual a la de adentro (allá llevan nombre).</p></div>
+</div></section>
+
+<section style="display:grid;gap:12px"><h2>IS · La isla cuando la picas (Viendo en la TV)</h2>
+<div class="opts">
+<div class="opt"><div><span class="code">IS-A</span> · como hoy</div>
+<div class="isl"><div class="now"><div class="poster"></div><div><b>Thunderbolts*</b><small>En tu TV</small></div></div>
+<div class="time">0:12:04<div class="bar"><i></i></div>1:53:10</div>
+<div class="ikeys"><div class="cap">↺</div><div class="cap solid">❚❚</div><div class="cap">↻</div></div></div>
+<p class="muted">Cápsulas redondas, translúcidas (se ven de vidrio).</p></div>
+
+<div class="opt rec"><div><span class="code">IS-B</span><span class="badge">RECOMIENDO</span></div>
+<div class="isl"><div class="now"><div class="poster"></div><div><b>Thunderbolts*</b><small>En tu TV</small></div></div>
+<div class="time">0:12:04<div class="bar"><i></i></div>1:53:10</div>
+<div class="ikeys"><div class="ik">↺</div><div class="ik solid">❚❚</div><div class="ik">↻</div></div></div>
+<p><b>Las mismas teclas mate y anchas</b>, con las esquinas de las teclas de adentro y un borde fino. Sin nombre: la isla tiene un alto fijo y no cabe.</p>
+<p class="muted">Gana: la isla, la tarjeta y el control completo hablan igual. Pierde: nada que se note; se pierde lo translúcido.</p></div>
+</div></section>
+
+<section style="display:grid;gap:8px"><h2>Lo que cambia en los dos</h2>
+<ul><li>Sin aire de sobra entre botones: tocan casi borde con borde, como en el control completo.</li>
+<li>La pausa siempre en turquesa (hoy en la tarjeta es blanca).</li>
+<li>En una serie, la tarjeta suma «Siguiente» como quinta tecla; en vivo, canal ▲ ▼ y sin sonido, con la misma forma.</li></ul></section>
+
+<div class="dictar">Para dictar: «TC-B, IS-B» (lo que recomiendo) o la combinación que quieras.</div>
+</div>
+</body>
+</html>
