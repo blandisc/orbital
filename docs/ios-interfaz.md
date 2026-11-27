@@ -179,6 +179,8 @@ izquierda, entre el avance y las tarjetas, y «rompe simetría».
 - **En la ficha, el idioma y la calidad se eligen desde la zona derecha del botón principal** («Ver», «Continuar T2 E5»):
   el botón va partido (`SplitPlayButton`, `Design/SplitPlayButton.swift`, medidas en `DS.SplitPlay`). La izquierda, la
   mayor, reproduce; la derecha, más angosta, dice «🇲🇽 1080p ⌄» y abre «Versión». Cada lado se hunde por su cuenta.
+- **Elegir una versión no la reproduce** (26 nov 2026): queda elegida, el botón la dice y «Ver» o «En la TV» la usan.
+  Solo el «⋯» de otro episodio arranca al elegir (`DesignRulesTests.testChoosingAVersionDoesNotPlay`).
 - **No existe un renglón de versión aparte.** Lo que queda bajo el botón: la línea del avance (barra, «quedan 20 min» y ↺,
   R1) y un aviso que solo informa («Sin versiones por ahora», «Sin conexión», lo de un pedido a la nube).
 - **El botón va entero** cuando no hay versión que elegir: sin versiones, sin red, Real-Debrid con su propio botón

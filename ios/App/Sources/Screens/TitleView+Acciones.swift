@@ -44,7 +44,7 @@ extension TitleView {
 
     func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
         guard var request = model.playRequest(videoID: videoID) else { return }
-        request.sourceIndex = source?.index
+        request.sourceIndex = (source ?? model.chosenSource(for: videoID))?.index   // la que elegiste en «Elegir versión»
         request.fromStart = fromStart
         launch(request, source: source)
     }
@@ -74,6 +74,9 @@ extension TitleView {
 
     func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
         switch purpose {
+        // La del botón «Ver» no reproduce al elegirla (Fernando, 26 nov): queda elegida y «Ver» o «En la TV» la usan. La del
+        // «⋯» de otro episodio sí arranca: es «ver este así». `testChoosingAVersionDoesNotPlay`.
+        case .watch where videoID == model.continueVideoID: model.select(source, videoID: videoID)
         case .watch: start(model, videoID: videoID, source: source)
         case .download:
             // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.

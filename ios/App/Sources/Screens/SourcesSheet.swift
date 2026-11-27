@@ -24,6 +24,8 @@ struct SourcesSheet: View {
     private let episode: Bool
     private let metaID: String
     private let fromHere: Bool
+    /// La versión del botón «Ver»: tocarla la elige, no la reproduce (26 nov).
+    private let selectsOnly: Bool
 
     init(model: TitleModel, videoID: String, fromHere: Bool = false, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil,
          request: ((Source) async -> Void)? = nil) {
@@ -34,6 +36,7 @@ struct SourcesSheet: View {
         episode = model.kind == "series" && videoID.contains(":")
         metaID = model.metaID
         self.fromHere = fromHere
+        selectsOnly = videoID == model.continueVideoID
     }
 
     private var prefs: Preferences { env.services.titlePrefs.languages(for: metaID, settings: env.services.appSettings).prefs }
@@ -171,7 +174,9 @@ struct SourcesSheet: View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una") : Text("Toca para ver · mantén para más")) {
+            DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una")
+                           // La del botón «Ver» solo se elige (26 nov); la de otro episodio arranca.
+                           : selectsOnly ? Text("Toca para elegir · mantén para más") : Text("Toca para ver · mantén para más")) {
                 // Qué quiere decir cada ícono y etiqueta (⚡, ☁︎, 4K, DV, REMUX…).
                 Button { showsGlossary = true } label: { Image(systemName: "info.circle").font(DS.TextRecipe.section.font) }
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)   // el ícono al ras del margen, el toque sigue de 44

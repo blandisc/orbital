@@ -79,6 +79,10 @@ public final class TitleModel: ObservableModel {
     @Tracked public private(set) var recommendedSource: Source? = nil
     /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
     @Tracked public private(set) var recommendedLanguage: String? = nil
+    /// La versión que elegiste en «Elegir versión» desde la ficha, y de qué video: elegir no reproduce (Fernando, 26 nov: la
+    /// cambiaba para mandarla a la TV y arrancaba en el iPhone). «Ver» y «En la TV» usan esta. Sin `@Tracked`: lo visible es
+    /// `recommendedSource`.
+    public private(set) var chosen: (videoID: String, source: Source)? = nil
     /// N5-A: la de un idioma que va antes en tu orden y no ganó «Ver» porque aquí no se ve bien (la ficha lo dice en una línea).
     @Tracked public private(set) var poorFit: PoorFit? = nil
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
@@ -297,6 +301,24 @@ public final class TitleModel: ObservableModel {
 
     /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con
     /// la mejor para el encabezado. Sin fuentes o sin red, no se enseña nada.
+    /// Deja `source` como la que va a sonar en `videoID` sin reproducir: el botón «Ver» la dice y la usan «Ver» y «En la TV».
+    public func select(_ source: Source, videoID: String) {
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
+        chosen = (videoID, source)
+        guard videoID == continueVideoID else { return }
+        coalescing {
+            recommendedSource = source
+            recommendedLanguage = Streams.playingLanguage(source, prefs)?.code
+            poorFit = nil
+        }
+    }
+
+    /// La elegida para `videoID`, si elegiste una.
+    public func chosenSource(for videoID: String?) -> Source? {
+        guard let chosen, chosen.videoID == (videoID ?? continueVideoID) else { return nil }
+        return chosen.source
+    }
+
     public func loadBestSource(onCellular: Bool = false) async {
         guard let videoID = continueVideoID else { return }
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
@@ -315,7 +337,8 @@ public final class TitleModel: ObservableModel {
                 // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
                 let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
                 let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
-                recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
+                let picked = chosenSource(for: videoID).flatMap { mine in found.first { $0.key == mine.key } }   // la que elegiste sigue
+                recommendedSource = picked ?? SourcesModel.toPlay(found, resume: resume, family: family)
                 recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
                 if let ready = recommendedSource, ready.instant, let url = ready.playbackURL { StreamWarmup.warm(url, parallel: ready.resolution == "4K") }   // ST5
                 poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
