@@ -26,17 +26,29 @@ struct OnboardingWelcome: View {
         _guide = State(wrappedValue: ModelObserver(guide)); self.next = next; self.skip = skip
     }
 
+    /// El idioma, el nombre al centro de la fila y «Salir de la guía».
+    private func topRow(_ model: OnboardingModel, compactSkip: Bool) -> some View {
+        CenterBetween(gap: DS.Space.s2) {
+            WelcomeLanguageMenu(settings: model.settings)
+            OrbitalWordmark(size: DS.Welcome.wordmark, showsMark: false).fixedSize().hidden()
+                .overlay { if showsTop { OrbitalWordmark(size: DS.Welcome.wordmark, animated: true, showsMark: false).foregroundStyle(DS.text).fixedSize().transition(.opacity) } }
+            GuideSkip(action: skip, compact: compactSkip)
+        }
+    }
+
     var body: some View {
         let model = guide.model
         VStack(spacing: DS.Space.s6) {
             // BV-L1 (Fernando, 18 nov 2026): el idioma en un globo arriba a la izquierda; «Saltar» a la derecha.
             // El nombre arriba del planeta, al centro de esta fila (Fernando, 18 nov 2026): aquí no le quita alto a la escena.
             // Va solo la palabra (el planeta de abajo hace de marca); la luna cae cuando la fila entra.
-            HStack { WelcomeLanguageMenu(settings: model.settings); Spacer(); GuideSkip(action: skip) }
-                .overlay {
-                    OrbitalWordmark(size: DS.Welcome.wordmark, showsMark: false).fixedSize().hidden()
-                        .overlay { if showsTop { OrbitalWordmark(size: DS.Welcome.wordmark, animated: true, showsMark: false).foregroundStyle(DS.text).fixedSize().transition(.opacity) } }
-                }
+            // En una fila angosta (el iPhone Duo cerrado con la barra al costado, ~325 pt; 27 nov 2026) el nombre se encimaba
+            // con «Salir de la guía»: si no cabe centrado sin tocar a los lados, «Salir» queda en su ícono (con su nombre
+            // para VoiceOver).
+            // Con letra de accesibilidad el idioma crecía hasta encimarse con el nombre (que no crece): la fila se queda en la
+            // letra de los controles (`dsChromeType`), como las barras.
+            ViewThatFits(in: .horizontal) { topRow(model, compactSkip: false); topRow(model, compactSkip: true) }
+                .dsChromeType()
                 .opacity(showsTop ? 1 : 0)
             Spacer(minLength: DS.Space.s4)
             // En un iPhone chico (SE) la escena se encoge para que el texto y «Empezar» quepan.
@@ -194,5 +206,25 @@ struct WelcomeLanguageMenu: View {
         }
         .accessibilityIdentifier("guide-language")
         .accessibilityLabel(Text("Idioma de la app"))
+    }
+}
+
+/// Tres piezas en una fila: la primera a la izquierda, la última a la derecha y la de en medio al centro de la fila. Su ancho
+/// ideal es el que hace falta para que la de en medio quede centrada sin tocar a las otras (así `ViewThatFits` sabe si cabe).
+private struct CenterBetween: Layout {
+    let gap: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        guard sizes.count == 3 else { return .zero }
+        let ideal = 2 * max(sizes[0].width, sizes[2].width) + sizes[1].width + 2 * gap
+        return CGSize(width: proposal.width ?? ideal, height: sizes.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: .unspecified)
+        subviews[1].place(at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center, proposal: .unspecified)
+        subviews[2].place(at: CGPoint(x: bounds.maxX, y: bounds.midY), anchor: .trailing, proposal: .unspecified)
     }
 }

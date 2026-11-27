@@ -134,12 +134,24 @@ struct GuidePage<Content: View>: View {
 
 /// «Ahora no» de la guía (antes «Saltar»; OI-2, 20 nov 2026): siempre a la vista, con su ícono. Termina la guía; la retomas en
 /// Aprende.
+/// `compact`: solo el ícono, donde la fila no da para el nombre (la bienvenida en una pantalla angosta); VoiceOver lo sigue
+/// leyendo.
 struct GuideSkip: View {
     let action: () -> Void
+    var compact = false
 
     var body: some View {
-        Button(action: action) { Label("Salir de la guía", systemImage: "forward.end").labelStyle(.titleAndIcon) }
-            .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+        Button(action: action) {
+            if compact {
+                // Del mismo alto que con el nombre (la fila no brinca) y con su ancho táctil; el ícono, en el margen.
+                Label("Salir de la guía", systemImage: "forward.end").labelStyle(.iconOnly)
+                    .frame(minWidth: DS.Size.touchTarget, alignment: .trailing)
+                    .contentShape(Rectangle())
+            } else {
+                Label("Salir de la guía", systemImage: "forward.end").labelStyle(.titleAndIcon)
+            }
+        }
+        .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
             .accessibilityHint(Text("Termina la guía"))
             .accessibilityIdentifier("guide-skip-all")
     }
