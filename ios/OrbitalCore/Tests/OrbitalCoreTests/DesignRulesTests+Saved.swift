@@ -67,7 +67,9 @@ extension DesignRulesTests {
         XCTAssertGreaterThanOrEqual(stacks, 4, "se leyeron las cuatro pestañas")
         XCTAssertEqual(root.components(separatedBy: ".ratingReminderRoom()").count - 1, stacks, "Cada pestaña deja lugar abajo para «¿Qué tal…?»")
         let host = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/RatingReminderHost.swift"), encoding: .utf8)
-        XCTAssertTrue(host.contains("safeAreaPadding(.bottom, env.ui.ratingReminderHeight)"), "Es espacio seguro: los carruseles de adentro no crecen")
+        XCTAssertTrue(host.contains("safeAreaPadding(.bottom, height + extra)"), "Es espacio seguro: los carruseles de adentro no crecen")
+        XCTAssertTrue(host.contains("max(0, DS.Toast.clearance - below)"),
+                      "Aparta toda la distancia a la que flota: en el iPad y la Mac (barra arriba) tapaba la última fila")
         let list = code(try XCTUnwrap(files.first { $0.name == "SavedListScreen.swift" }))
         XCTAssertTrue(list.contains { $0.contains("Backdrop()") }, "Una lista abierta lleva el cielo de Guardado")
     }

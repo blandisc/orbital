@@ -90,9 +90,16 @@ struct AccessoryPlacementReport: ViewModifier {
 /// seguro, no un margen: solo lo toma la lista de la pantalla, no los carruseles de adentro.
 struct RatingReminderRoom: ViewModifier {
     @Environment(AppEnvironment.self) private var env
+    /// Lo que ya aparta la pantalla abajo (la barra de pestañas en el iPhone; casi nada en el iPad y la Mac, que la llevan arriba).
+    @State private var below: CGFloat = 0
 
     func body(content: Content) -> some View {
-        content.safeAreaPadding(.bottom, env.ui.ratingReminderHeight)
+        let height = env.ui.ratingReminderHeight
+        // La pastilla flota a `DS.Toast.clearance` de la orilla (`dsNoticePlacement`): si la pantalla aparta menos que eso abajo
+        // (iPad y Mac), se suma la diferencia; si no, en el iPad tapaba la última fila (revisión del 27 nov 2026).
+        let extra = height > 0 && !WindowMetrics.sideBars ? max(0, DS.Toast.clearance - below) : 0
+        content.safeAreaPadding(.bottom, height + extra)
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom.rounded() } action: { if $0 != below { below = $0 } }
     }
 }
 
