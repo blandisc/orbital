@@ -70,7 +70,7 @@ extension DesignRulesTests {
     /// Un póster de cuadrícula mide lo mismo que uno de fila: en Buscar, los resultados salían más chicos que «Lo más popular
     /// hoy», justo arriba (26 nov 2026). Las columnas se cuentan con `DS.Poster.railWidth`, no con un tope aparte.
     func testGridPostersMatchTheRows() throws {
-        let tokens = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Tokens.swift" }).lines.joined(separator: "\n")
+        let tokens = try XCTUnwrap(try sources(["Design"]).first { $0.name == "Tokens+Imagery.swift" }).lines.joined(separator: "\n")   // DS.Poster
         XCTAssertTrue(tokens.contains("Int(inner / (railWidth + DS.Space.s2))"), "las columnas de `DSPosterGrid` salen del ancho de una fila")
         XCTAssertFalse(tokens.contains("gridCellMax"), "sin un tope aparte para la cuadrícula")
     }

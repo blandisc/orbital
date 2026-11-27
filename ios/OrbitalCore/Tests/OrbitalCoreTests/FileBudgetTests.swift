@@ -15,11 +15,11 @@ final class FileBudgetTests: XCTestCase {
     static let roots = ["ios/App/Sources", "ios/App/Widgets", "ios/App/Shared", "ios/OrbitalCore/Sources"]
 
     /// Pendientes (ruta desde `ios/`): su tamaño el día de la auditoría (29 oct 2026). Solo puede bajar.
-    /// 25 nov 2026: seis crecieron en las tandas del 24–25 nov (Mac, mosaico, guía); se anotan para que no crezcan más y se parten después.
+    /// 25 nov 2026: seis crecieron en las tandas del 24–25 nov (Mac, mosaico, guía). 27 nov 2026: se partieron (Tokens+Imagery,
+    /// MacDrive, TitleTypes, OrbitalRemote+Choices, Routes, TitleMeasure, ContinueSortMenu, HomeView+Flags); quedan dos, con su tamaño nuevo.
     static let pending: [String: Int] = [
-        "App/Sources/Design/Tokens.swift": 606, "App/Sources/Screens/HomeView.swift": 609,
-        "App/Sources/Screens/RootView.swift": 610, "App/Sources/Screens/TitleView.swift": 675, "App/Sources/Support/Perf.swift": 651,
-        "OrbitalCore/Sources/OrbitalCore/OrbitalRemote.swift": 602, "OrbitalCore/Sources/OrbitalModels/TitleModel.swift": 660,
+        "App/Sources/Screens/TitleView.swift": 655,
+        "OrbitalCore/Sources/OrbitalModels/TitleModel.swift": 650,
     ]
 
     func testNoSwiftFileOutgrowsItsBudget() throws {

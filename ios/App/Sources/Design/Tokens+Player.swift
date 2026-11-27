@@ -56,6 +56,10 @@ extension DS {
         static let seekBubbleSideMargin: CGFloat = 64
         /// El ancho mínimo del contenido de la burbuja: con su orilla, cabe justo en ese margen y no brinca al cambiar de cifras.
         static let seekBubbleWidth: CGFloat = 88
+        /// La imagen del minuto sobre la burbuja (y lo que se le pide al motor, al doble para la pantalla Retina).
+        static let seekStillWidth: CGFloat = 160
+        /// Cada cuánto (segundos de película) se pide otra imagen mientras arrastras.
+        static let seekStillStep: Double = 2
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance

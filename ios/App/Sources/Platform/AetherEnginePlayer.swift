@@ -294,6 +294,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func play() async { if rearming { rearmIntent = true }; engine.play() }
     func pause() async { if rearming { rearmIntent = false }; engine.pause() }
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
+    func scrubStill(at seconds: Double, maxWidth: Int) async -> CGImage? {   // descargado sin caché: sin imagen, nunca en blanco
+        engine.supportsCacheBackedStills ? await engine.scrubThumbnail(atSeconds: seconds, maxWidth: maxWidth) : nil
+    }
     /// Cuántas cargas se han pedido; `stop()` también la mueve, así una carga a medias sabe que ya nadie la quiere.
     private var loads = 0
     func stop() async { loads += 1; engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }

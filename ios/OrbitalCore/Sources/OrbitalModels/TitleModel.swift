@@ -2,31 +2,6 @@ import Foundation
 import OrbitalCore
 import OrbitalAddons
 
-public struct EpisodeRow: Equatable, Identifiable {
-    public var id: String                  // el video id
-    public var season: Int
-    public var number: Int
-    public var title: String               // en tu idioma
-    public var hasTitle: Bool
-    public var overview: String
-    public var thumbnail: String?
-    public var watched: Bool
-    public var progress: Double?           // a medias
-    public var timeLeft: String
-    public var leftMinutes: Int
-    public var download: DownloadState?
-    /// Todavía no sale: cuándo (nil = ya salió o no se sabe). Se ve con su fecha y no se puede reproducir ni bajar.
-    public var airs: Date? = nil
-    /// El idioma del nombre o de la sinopsis cuando no es el tuyo (no había traducción): la ficha dice «En inglés».
-    public var titleLanguage: String? = nil
-    public var overviewLanguage: String? = nil
-    /// Lo que se marca una vez en el renglón: el idioma colado del nombre o, si no, el de la sinopsis.
-    public var foreignLanguage: String? { (hasTitle ? titleLanguage : nil) ?? (overview.isEmpty ? nil : overviewLanguage) }
-}
-
-/// Lo que se sabe de las fuentes del video de «Ver» antes de abrir el reproductor.
-public enum SourceCheck: Equatable, Sendable { case unknown, available, none, offline }
-
 /// La ficha de una película o serie: datos en tu idioma, temporadas y episodios con su estado (visto, a medias,
 /// descargado), Mi lista (Stremio), watchlist (Trakt) y las acciones de ver y descargar.
 @MainActor
@@ -672,17 +647,4 @@ public final class TitleModel: ObservableModel {
     /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
     public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
 
-}
-
-/// Una de tus listas de Trakt, con si el título que ves está en ella.
-public struct SavedList: Identifiable, Equatable, Sendable {
-    public let id: String
-    public let name: String
-    public var contains: Bool
-    /// Cuándo cambió en Trakt (las recientes van arriba en «Guardar en…»); nil sin conexión o si Trakt no lo dijo.
-    public var updatedAt: Date? = nil
-
-    public init(id: String, name: String, contains: Bool, updatedAt: Date? = nil) {
-        self.id = id; self.name = name; self.contains = contains; self.updatedAt = updatedAt
-    }
 }

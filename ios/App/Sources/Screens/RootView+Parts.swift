@@ -8,9 +8,9 @@ import OrbitalModels
 struct TabBarFirst: ViewModifier {
     func body(content: Content) -> some View {
         #if DEBUG
-        if Demo.isOn, Demo.has("-demo-sidebar") { return content.defaultAdaptableTabBarPlacement(.sidebar) }   // la barra lateral abierta (capturas)
+        if Demo.isOn, Demo.has("-demo-sidebar") { return content.defaultAdaptableTabBarPlacement(.sidebar).duoBars() }   // la barra lateral abierta (capturas); duoBars iguala el tipo de las dos ramas
         #endif
-        return content.defaultAdaptableTabBarPlacement(.tabBar)
+        return content.defaultAdaptableTabBarPlacement(.tabBar).duoBars()
     }
 }
 

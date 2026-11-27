@@ -23,6 +23,10 @@ extension DesignRulesTests {
         XCTAssertTrue(filters.contains("private func nameSlot(") && !filters.contains("Text($0.1).hidden()"),
                       "La pastilla de tipo dice «Todo», «Películas» o «Series» adentro, a la izquierda de los íconos, y mide justo lo que el nombre: sin lugar apartado para el más largo, que dejaba un hueco con «Todo» (KT2, 14 nov)")
         XCTAssertFalse(filters.contains("chosenName"), "El nombre de lo elegido ya no va afuera de la pastilla (KT2)")
+        // Una opción del selector no se corta con «…»: se achica tantito (Duo cerrado, «Rendimien…» en la consola, 27 nov 2026).
+        let selector = try XCTUnwrap(files.first { $0.name == "Selector.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(selector.contains(".lineLimit(1)\n") && selector.contains(".minimumScaleFactor(DS.Size.statScale)"),
+                      "Los nombres del selector se achican en vez de cortarse")
         XCTAssertTrue(filters.contains(".frame(minWidth: left)"),
                       "En Inicio, el nombre ocupa lo que había a la izquierda de lo elegido: centrado en ese lugar; con Series el círculo no brinca a la orilla (KT2)")
     }

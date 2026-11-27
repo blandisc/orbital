@@ -4,13 +4,16 @@ import XCTest
 /// captura de cada pantalla en `ORBITAL_SHOTS` (o /tmp/orbital-shots); en horizontal sale girada (así las da XCUITest).
 ///   xcodebuild test -project Orbital.xcodeproj -scheme Orbital -destination 'platform=iOS Simulator,name=Orbital QA iPad' \
 ///     -only-testing:OrbitalUITests/IPadLayoutUITests
-/// En un iPhone no corre (allá la app es vertical y el giro lo prueba `PlayerRotationUITests`).
+/// En un iPhone no corre (allá la app es vertical y el giro lo prueba `PlayerRotationUITests`), salvo `testLandscapeTour`.
 final class IPadLayoutUITests: XCTestCase {
     private var app: XCUIApplication!
     private var folder: String { ProcessInfo.processInfo.environment["ORBITAL_SHOTS"] ?? "/tmp/orbital-shots" }
 
     override func setUpWithError() throws {
-        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "solo en iPad")
+        // El recorrido acostado también corre en un iPhone (el iPhone Duo cerrado y acostado, 27 nov 2026): ahí la app se
+        // queda vertical salvo el reproductor, y el recorrido lo enseña tal cual.
+        let tourOnPhone = name.contains("LandscapeTour") && ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"] != nil
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad || tourOnPhone, "solo en iPad")
         if name.contains("LandscapeTour") { try XCTSkipIf(ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"] == nil, "solo con ORBITAL_HANDSHAKE") }
         continueAfterFailure = true
         app = XCUIApplication()

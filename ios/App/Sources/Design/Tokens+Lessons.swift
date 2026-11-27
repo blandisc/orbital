@@ -8,6 +8,8 @@ extension DS {
         static let canvas = CGSize(width: 402, height: 330)
         /// Lo más ancha que crece la escena (iPad, Mac): una columna, como la guía.
         static var sceneMax: CGFloat { Mac.sized(460) }
+        /// Lo menos que mide de alto la escena cuando se achica para que el texto quepa sobre los botones (el SE, el Duo cerrado).
+        static let sceneFloor: CGFloat = 240
         /// El reloj de la escena se detiene un poco después de su último movimiento (no repinta una escena quieta).
         static let settleAfter = 0.6
         /// El póster: su esquina en proporción del ancho (como `DS.Radius.logoShare`; nunca menos de `DS.Radius.xs`).

@@ -54,7 +54,9 @@ struct LessonArt: Equatable {
 /// El lienzo de una escena: 402 × 330 puntos que se escalan al ancho disponible; el reloj corre desde `start` y se detiene
 /// poco después de `end` (no gasta batería mirando una escena quieta), salvo `live` (las de «Pruébalo», que se animan al
 /// tocarlas). Con «Reducir movimiento», el último cuadro. La letra de adentro no crece con el tamaño del texto del
-/// sistema: es un dibujo (el titular y la línea de abajo sí crecen).
+/// sistema: es un dibujo (el titular y la línea de abajo sí crecen). Sigue el modo claro u oscuro de la app (27 nov 2026: forzada
+/// en oscuro, en claro la letra salía blanca sobre el fondo claro); lo que es oscuro siempre (el iPhone, la tele, las etiquetas
+/// flotantes) lo dice cada pieza.
 struct LessonCanvas<Content: View>: View {
     let end: Double
     let start: Date
@@ -80,7 +82,6 @@ struct LessonCanvas<Content: View>: View {
         }
         .aspectRatio(Self.size.width / Self.size.height, contentMode: .fit)
         .dynamicTypeSize(.large)
-        .environment(\.colorScheme, .dark)
         .task(id: start) {
             settled = false
             // Si la escena vuelve a empezar, esta espera se cancela y no la congela (19 nov 2026: la primera pantalla salía vacía).
@@ -137,13 +138,24 @@ struct LessonFinger: View {
         let a = M.clamp((t - (at - 0.35)) / 0.35), d = M.clamp((t - (at + 0.15)) / 0.3)
         let press = max(0, 1 - pow((t - at) / 0.09, 2))
         let side = DS.Lesson.finger
-        Circle().fill(DS.paper.opacity(DS.Lesson.fingerFill))
-            .overlay(Circle().strokeBorder(DS.paper.opacity(DS.Lesson.fingerRim), lineWidth: DS.Stroke.regular))
+        LessonFingerDot()
             .background(Circle().stroke(DS.fresh.opacity(DS.Lesson.ringOpacity * press), lineWidth: DS.Lesson.ring * press))
             .sceneBox(side, side)
             .scenePut(a * (1 - d) * DS.Lesson.fingerOpacity, x - side / 2 + (1 - M.easeOut(a)) * 14, y - side / 2 + (1 - M.easeOut(a)) * 18,
                       1 - DS.Lesson.fingerPress * press)
             .allowsHitTesting(false)
+    }
+}
+
+/// La yema del dedo fantasma: blanca translúcida en oscuro (y dentro del iPhone dibujado); en claro, de tinta, para que se vea
+/// sobre el fondo claro (27 nov 2026).
+struct LessonFingerDot: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let ink = scheme == .dark ? DS.paper : DS.text
+        Circle().fill(ink.opacity(DS.Lesson.fingerFill))
+            .overlay(Circle().strokeBorder(ink.opacity(DS.Lesson.fingerRim), lineWidth: DS.Stroke.regular))
     }
 }
 
@@ -197,6 +209,7 @@ struct LessonTV<Inner: View>: View {
             Rectangle().fill(DS.Lesson.deviceRim).sceneBox(DS.Lesson.tvNeck, DS.Lesson.tvNeck)
             Capsule().fill(DS.Lesson.deviceRim).sceneBox(DS.Lesson.tvBase, DS.Lesson.tvBaseHeight)
         }
+        .environment(\.colorScheme, .dark)   // la pantalla de la tele, oscura en claro y en oscuro (como el iPhone dibujado)
     }
 }
 
@@ -211,6 +224,7 @@ struct LessonChip<Inner: View>: View {
             .background(DS.backdropDeep.opacity(DS.Lesson.chipFill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.hairline, lineWidth: DS.Stroke.hairline))
             .shadow(DS.Elevation.floating)
+            .environment(\.colorScheme, .dark)   // oscura también con la app en claro: sin esto, fondo negro y letra negra
     }
 }
 

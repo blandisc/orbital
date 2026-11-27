@@ -115,15 +115,6 @@ struct HomeView: View {
             }
     }
 
-    /// En la Mac Inicio se arma entero (26 nov 2026): la baraja de pestañas ya lo tiene armado y escondido, y perezoso armaba
-    /// cada fila al entrar deslizando (128 ms atrasados por segundo al bajar; entero, 27–48). En el iPhone y el iPad, perezoso.
-    private static var lazyPage: Bool {
-        #if MAC_DRIVE
-        if MacDrive.lazy { return true }
-        #endif
-        return !ThisDevice.isMac
-    }
-
     /// La página de Inicio, fuera de `body` para que el compilador la revise a tiempo.
     private func page(_ model: HomeModel, kind: String?) -> some View {
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
@@ -165,10 +156,10 @@ struct HomeView: View {
                 continueRail(model, items: continuing).perfTag("home.rail")
                     // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                     // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                    .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+                    .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -heroLift : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
             } else if WindowMetrics.roomy, spotlightItems(model).count > 1 {
                 // RI2: en la Mac, sin nada a medias, lo que sigue en la portada va en esa misma fila encimada (como la tele).
-                upNextRail(model).padding(.top, scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
+                upNextRail(model).padding(.top, scheme == .dark ? -heroLift : DS.Layout.betweenSubsections - DS.Layout.betweenSections)
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                 DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
             }
@@ -250,7 +241,7 @@ struct HomeView: View {
         .background(Backdrop(tint: tint.colors))
         // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
         .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)).environment(env) }
+        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)).environment(env).duoBars() }
         .onChange(of: env.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
             env.ui.openSimpsons = false
@@ -341,6 +332,9 @@ struct HomeView: View {
 
     /// Cuánto se encima «Seguir viendo» sobre la portada: solo en oscuro (en claro la portada es una tarjeta y no se leería).
     private var heroOverlap: CGFloat { scheme == .dark && !board ? DS.HomeHero.overlap : 0 }
+    /// Cuánto sube la fila de abajo sobre la portada (en oscuro). Con puntero (Mac, iPad ancho) los puntos van en su renglón bajo
+    /// la portada: subir lo mismo los tapaba con «Lo que tienes a medias» (27 nov 2026); ahí sube solo hasta quedar bajo ellos.
+    private var heroLift: CGFloat { WindowMetrics.roomy ? DS.Layout.betweenSections - DS.Space.s2 : DS.Layout.betweenSections + heroOverlap }
 
     /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
     @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {
@@ -373,7 +367,6 @@ struct HomeView: View {
         return settings
     }
 
-    private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
     /// Cuántos de «Destacado» van en la portada.
     private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(HomeModel.heroCount)) }
@@ -599,20 +592,7 @@ struct HomeView: View {
         .dsNavigationTitle("Seguir viendo").navigationBarTitleDisplayMode(.inline)
         // Ordenar y filtrar, como toda lista abierta desde «Ver todo».
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Ordenar", selection: $continueSort) {
-                        Text("Lo último que viste").tag(ListSort.added)
-                        Text("A–Z").tag(ListSort.title)
-                    }
-                    Picker("Mostrar", selection: $continueKind) {
-                        Text("Todo").tag("")
-                        Text("Películas").tag("movie")
-                        Text("Series").tag("series")
-                    }
-                } label: { Image(systemName: "line.3.horizontal.decrease") }   // ds-exception: en la barra de arriba el sistema le da los 44
-                .accessibilityLabel(Text("Ordenar y filtrar"))
-            }
+            ToolbarItem(placement: .topBarTrailing) { ContinueSortMenu(sort: $continueSort, kind: $continueKind) }
         }
     }
 }

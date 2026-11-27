@@ -2,19 +2,6 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Ajustes (desde el ícono de la esquina de Inicio).
-struct SettingsRoute: Hashable {}
-
-/// Un título al que se navega.
-struct TitleRoute: Hashable {
-    var kind: String
-    var metaID: String
-    var title: String
-    var poster: String?
-    /// Abrir ya «Versión» de este video (P2-B: «Probar otra versión» desde «Tus pedidos»).
-    var versionsFor: String? = nil
-}
-
 struct RootView: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
@@ -92,20 +79,20 @@ struct RootView: View {
 
     private func playerCover(_ request: PlayRequest) -> some View {
         PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
-            .environment(env)   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
+            .environment(env).duoBars()   // en la Mac la cubierta no la heredaba a tiempo y la app tronaba (DesignRulesTests+Covers)
     }
 
     /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
     private func withGuide<V: View>(_ content: V) -> some View {
         content.fullScreenCover(isPresented: showingGuide, onDismiss: endGuide) {
-            OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env)
+            OnboardingView(practice: ui.practiceGuide) { ui.showingGuide = false }.environment(env).duoBars()
         }
     }
     private func endGuide() { ui.practiceGuide = false; Demo.practice = false }
 
     /// Una lección de Aprende (AF1-B): desde Ajustes, «Ver la lección» de un aviso o un «?».
     private func withStories<V: View>(_ content: V) -> some View {
-        content.fullScreenCover(item: openLesson) { (route: LessonRoute) in LessonScreen(route: route) { ui.openLesson = nil }.environment(env) }
+        content.fullScreenCover(item: openLesson) { (route: LessonRoute) in LessonScreen(route: route) { ui.openLesson = nil }.environment(env).duoBars() }
     }
 
     private var showingGuide: Binding<Bool> { Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 }) }
@@ -323,7 +310,7 @@ struct MainTabs: View {
     }
 
     /// Las cuatro pilas de navegación, una por pestaña.
-    private var homeStack: some View { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar() }
+    private var homeStack: some View { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
     private var exploreStack: some View {
         NavigationStack(path: $paths[1]) {
             // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
@@ -331,10 +318,10 @@ struct MainTabs: View {
                 .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
                 .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
                 .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
-        }.tint(DS.primary).macHidesTabBar()
+        }.tint(DS.primary).macHidesTabBar().ratingReminderRoom()
     }
-    private var libraryStack: some View { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar() }
-    private var searchStack: some View { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar() }
+    private var libraryStack: some View { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
+    private var searchStack: some View { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary).macHidesTabBar().ratingReminderRoom() }
 
     /// Las cuatro pestañas, cada una con su pila de navegación. En la Mac, una baraja (`MacTabDeck`): las pantallas ya
     /// abiertas se quedan armadas y solo se esconden; con las pestañas del sistema cada clic las desarmaba y rearmaba

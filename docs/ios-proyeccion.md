@@ -272,6 +272,9 @@ catálogo y la vuelve a armar traducida, nunca `LocalizedStringKey(texto)` (un t
 
 Ajustes › Apariencia: Como el iPhone · Claro · Oscuro (`AppSettings.appearance`). El reproductor y todo lo que va sobre el
 arte siguen siendo sala oscura. Para capturas: `-demo-appearance light|dark`.
+Un dibujo (las escenas de Aprende) sigue el modo de la app: solo lo que es oscuro de verdad (el iPhone y la tele dibujados,
+las etiquetas flotantes) lo pide, pieza por pieza; forzarlo entero dejaba letra blanca sobre el fondo claro
+(`DesignRulesTests+Lessons`).
 
 ## 8. Qué vigilan las pruebas
 

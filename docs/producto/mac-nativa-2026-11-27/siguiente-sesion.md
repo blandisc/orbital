@@ -140,8 +140,18 @@ El plan acordado tiene dos pasos:
 - **Comprobado** (registro y capturas de la propia app): compila para Mac Catalyst con AetherEngine; carga las 9 bibliotecas de
   FFmpeg; dibuja Inicio, Explorar y Biblioteca al 100 %; **el reproductor reproduce** los videos de demostración (`motor: playing`,
   cambia de versión cuando una falla). La compilación de iPhone sigue en verde.
-- **Visto en las capturas, por arreglar:** la cápsula de pestañas tapa «orbital» del logo (ventana de 1024); los puntitos y
-  flechas del carrusel de «Seguir viendo» quedan encima de «Lo que tienes a medias»; la ventana arranca de 1024 × 768.
+- **Arreglado al revisar** (capturas de la propia app y el recorrido `tour` en cinco tamaños, `$TMPDIR/mac-tour/`):
+  - Los espacios y las esquinas (`DS.Space`, `DS.Radius`) y el logo de la barra (`markScale`, `heroScale`) también van
+    ×`native`: con ellos a 100 % la cápsula de pestañas se montaba sobre el logo.
+  - Los puntitos de la portada (con puntero van en su renglón, bajo la portada) quedaban tapados por «Lo que tienes a
+    medias», que sube sobre la portada. Ahora sube solo hasta quedar bajo ellos (`heroLift`). Pasaba también en el iPad ancho y
+    en la Mac de hoy.
+- **Visto, sin arreglar todavía:**
+  - En 1024 de ancho, la cápsula de pestañas al centro tapa «Buscar» (junto al logo): falta subir `centeredTabsFrom` en la de verdad.
+  - Biblioteca sale solo con sus dos puertas en la demostración (hay que ver si es la demostración o la Mac).
+  - La ventana arranca de 1024 × 768.
+- **Instalada para que Fernando la vea:** `/Applications/Orbital Mac (prueba).app` (Debug, ad hoc), abre sola en modo
+  demostración por su identificador (`Demo.macTrial`). La de siempre sigue siendo la 2638 («Diseñada para iPad»).
 - **Falta:**
   - Revisar pantalla por pantalla (Inicio, Explorar, Biblioteca, Buscar, ficha, reproductor, Ajustes) y decidir lo genérico ×0.77.
   - Firmar con el equipo (hoy es ad hoc): sin `application-identifier` no hay descargas en segundo plano
@@ -149,3 +159,17 @@ El plan acordado tiene dos pasos:
     ID de Mac Catalyst en la cuenta de Apple necesita el OK de Fernando.
   - Que Fernando la vea en persona (la de verdad junto a la instalada) antes de cambiar la que se instala.
   - Medir el deslizar (abajo de 5) en esta app.
+
+### Estado (27 nov 2026, tarde): firmada con el equipo
+
+- **Firma (Fernando: «Sí, créalo»):** `catalyst_proyecto.py` ya firma en automático con el equipo B7KRCF776Z y le pone solo el
+  llavero de la app (`Build/Catalyst.entitlements`), que pide perfil de verdad. Compilar con `-allowProvisioningUpdates`. Xcode
+  usó el perfil comodín del equipo («Mac Catalyst Team Provisioning Profile: *», vence el 27 nov 2027): la firma trae
+  `application-identifier` = `B7KRCF776Z.mx.iracheta.orbital.macprueba`, lo que piden las descargas en segundo plano.
+- **Comprobado:** compila firmada; `codesign --verify` pasa; abre desde Aplicaciones con doble clic; la ventana nace de
+  1440 × 900 la primera vez (`DS.Mac.firstWindow`, `AppWindows.openWideOnce`: fijar y soltar, porque `requestGeometryUpdate`
+  al arrancar no hace caso); Biblioteca trae sus filas en la demostración (era la demostración sin Trakt, no la Mac: la prueba
+  abre con `-demo-trakt`); de 960 y 560 la barra va en íconos sin encimarse y en 1440 la cápsula va al centro
+  (`centeredTabsFrom` = 1260 en la de verdad). iPhone compila; DesignRulesTests 210 en verde.
+- **Sin comprobar:** una descarga de verdad en segundo plano (desde la sesión no se lee el registro del sistema).
+- **Falta:** que Fernando la vea en persona; medir el deslizar; decidir si la de siempre pasa a ser esta.

@@ -120,6 +120,8 @@ salía ~20 pt más ancha, recorrida a la izquierda y cortada de los dos lados.
 - Lo cuida `DesignRulesTests+Column.swift`. Se comprueba con capturas con el control abierto y cerrado: `-demo-open
   remote-idle` en «Orbital QA iPad 13» de pie (ventana de 1032: ya sale el panel) y en «Orbital QA iPad» acostado;
   `-demo-sidebar` (solo Debug) abre la barra lateral.
+- `-demo-duo-bars-below` (solo Debug) prueba DU1-B en el iPhone Duo: la barra de pestañas abajo y la hora arriba, en vez
+  de la franja al costado que pone iOS (`Platform/DuoBars.swift`).
 
 ### Lo que se desplaza a lo ancho (13 nov 2026)
 
@@ -838,7 +840,7 @@ distinto de «llegó vacío». Lo que ya se tenía se sigue viendo; el aviso sal
 
 Un vacío trae su ícono, qué pasa y **un botón a dónde ir** («Explorar», «Agregar», «Buscar qué ver», «Conectar Trakt»), no solo
 un letrero. Una cuenta nueva ve una sola guía para todo Guardado, no cuatro pestañas vacías; una pestaña en cero que no aplica
-(«Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo (`ratingReminderHeight`) para no tapar lo
+(«Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo en todas las pestañas (`ratingReminderRoom`, 27 nov 2026) para no tapar lo
 último de la pantalla.
 
 `DesignRulesTests+Saved.swift` lo cuida: Guardado usa `DSSelector` completo con sus cuatro partes en orden y sin el tablero ni sus

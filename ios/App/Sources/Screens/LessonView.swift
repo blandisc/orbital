@@ -22,10 +22,15 @@ struct LessonView: View {
     @State private var art = LessonArt()
     @State private var tried = false
     @State private var shown = false
+    /// Lo que se ve entre la barra de arriba y los botones, y lo que mide el texto: con eso la escena se achica en pantallas
+    /// bajas (el SE, el Duo cerrado) para que el texto no quede debajo de los botones (27 nov 2026).
+    @State private var room = CGFloat.infinity
+    @State private var textHeight: CGFloat = 0
     @Environment(AppEnvironment.self) private var env
     @Environment(\.titleName) private var titleName
     @Environment(\.locale) private var locale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var current: Lesson.Step { lesson.steps[min(step, lesson.steps.count - 1)] }
     private var last: Bool { step >= lesson.steps.count - 1 }
@@ -42,6 +47,8 @@ struct LessonView: View {
                     .frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height - $0.contentInsets.top }   // ya sin la barra de los botones
+                action: { _, visible in room = visible }
         }
         .safeAreaBar(edge: .bottom) { buttons }
         .background(Backdrop())
@@ -84,7 +91,8 @@ struct LessonView: View {
     private var page: some View {
         VStack(alignment: .leading, spacing: DS.Space.s6) {
             LessonScene(id: current.scene, art: art, start: start) { tried = true }
-                .frame(maxWidth: DS.Lesson.sceneMax)
+                .frame(maxWidth: DS.Lesson.sceneMax, maxHeight: sceneRoom)
+                .opacity(room.isFinite && textHeight > 0 ? 1 : 0)   // hasta medir: sin un primer cuadro grande que luego se achica
                 .frame(maxWidth: .infinity)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 eyebrow.id(tried).opacity(shown ? 1 : 0).offset(y: shown ? 0 : DS.Lesson.textRise)
@@ -100,10 +108,42 @@ struct LessonView: View {
                     .animation(DS.Motion.enter(reduceMotion)?.delay(DS.Lesson.textAt + 2 * DS.Lesson.textStep), value: shown)
             }
             .padding(.horizontal, DS.Space.s6)
+            .overlay(alignment: .top) { textSizer }
             .animation(DS.Motion.spring(reduceMotion), value: tried)
         }
         .padding(.top, DS.Space.s2)
         .accessibilityElement(children: .contain)
+    }
+
+    /// Lo que puede medir de alto la escena: lo que sobra después del texto (su espacio, el aire de arriba y un respiro antes de
+    /// los botones), nunca menos de `sceneFloor` (con letra grande el texto ya no cabe y la página se desliza). Donde todo
+    /// cabe (el 17 Pro), la escena mide lo de siempre.
+    /// Con letra de accesibilidad el texto ya no cabe de todos modos: la escena se queda de su tamaño y la página se desliza.
+    private var sceneRoom: CGFloat {
+        if typeSize.isAccessibilitySize { return .infinity }
+        return max(DS.Lesson.sceneFloor, room - textHeight - DS.Space.s6 - DS.Space.s2 - DS.Space.s4)
+    }
+
+    /// El texto más alto de toda la lección, medido sin verse: así la escena mide lo mismo en cada paso y no salta al cambiar
+    /// de pantalla ni al lograr «Pruébalo» (el renglón de arriba se hace «¡Eso es!», un poco más alto).
+    private var textSizer: some View {
+        ZStack {
+            ForEach(lesson.steps.indices, id: \.self) { i in
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    Label("¡Eso es! Así de fácil.", systemImage: "checkmark.circle.fill").font(DS.TextRecipe.labelLarge.font)
+                    Text(lesson.steps[i].title, cloud: art.cloud, locale: locale)   // no-es-título: solo mide
+                        .recipe(.display, color: DS.text).fixedSize(horizontal: false, vertical: true)
+                    Text(lesson.steps[i].line, cloud: art.cloud, locale: locale)
+                        .font(DS.Welcome.lead).fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, DS.Space.s6)
+        .fixedSize(horizontal: false, vertical: true)
+        .hidden()
+        .accessibilityHidden(true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { textHeight = $0 }
     }
 
     /// El renglón turquesa de arriba: de qué lección es; en «Pruébalo», que es de práctica y, al lograrlo, «¡Eso es!» justo

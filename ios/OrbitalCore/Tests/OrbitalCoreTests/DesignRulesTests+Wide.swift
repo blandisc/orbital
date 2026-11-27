@@ -8,8 +8,9 @@ extension DesignRulesTests {
     func testMacHasItsOwnSizes() throws {
         let design = try sources(["Design"])
         let tokens = try XCTUnwrap(design.first { $0.name == "Tokens.swift" })
+        let imagery = try XCTUnwrap(design.first { $0.name == "Tokens+Imagery.swift" }, "DS.Image y DS.Poster viven en Tokens+Imagery.swift")
         let mac = try XCTUnwrap(design.first { $0.name == "Tokens+Mac.swift" }, "El mini sistema de la Mac vive en Tokens+Mac.swift")
-        let code = (tokens.lines + mac.lines).filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+        let code = (tokens.lines + imagery.lines + mac.lines).filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
         // Toda receta de letra pasa por `DS.styled`: un `.system(.estilo, …)` suelto en la Mac sale al 77 % (de 13 en vez de 16).
         let loose = code.filter { $0.contains(".system(.") || $0.contains(".system(face.style") }
             .filter { !$0.contains("guard ProcessInfo.onMac else { return .system(style") }

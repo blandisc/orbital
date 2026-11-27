@@ -429,10 +429,13 @@ struct PlayerScrubBar: View {
     /// Buscando arrastrando sobre el video (no sobre la barra): desde dónde. La barra se ve igual que al arrastrarla, con la misma
     /// burbuja en el mismo lugar.
     var previewFrom: Double? = nil
+    /// La imagen de un minuto, de lo ya bajado (nil: no hay o ese tramo no está).
+    var still: ((Double) async -> CGImage?)? = nil
     let change: (Double) -> Void
     let editing: (Bool) -> Void
     @State private var dragging = false
     @State private var startValue: Double = 0
+    @State private var stillImage: CGImage?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -467,7 +470,7 @@ struct PlayerScrubBar: View {
                 // Arrastrando: la burbuja arriba de la barra, centrada sobre el dedo (sin salirse de la barra ni tapar los tiempos).
                 if active {
                     let delta = value - (previewFrom ?? startValue)
-                    DSSeekBubble(time: clock(value), delta: delta, clock: clock, scare: nearest)
+                    DSSeekBubble(time: clock(value), delta: delta, clock: clock, scare: nearest, still: stillImage)
                         .fixedSize()
                         .position(x: min(max(x(value), DS.Gesture.seekBubbleSideMargin), width - DS.Gesture.seekBubbleSideMargin),
                                   y: DS.PlayerPanel.scrubHit / 2 - DS.PlayerPanel.scrubBubbleLift)
@@ -489,6 +492,13 @@ struct PlayerScrubBar: View {
         }
         .frame(height: DS.PlayerPanel.scrubHit)
         .dsFeedback(.selection, trigger: dragging)
+        // Arrastrando: la imagen de ese minuto, una cada `seekStillStep` s de película. Si ese tramo no está bajado, sin imagen
+        // (nunca la de otro minuto); al soltar se borra.
+        .task(id: dragging || previewFrom != nil ? Int(value / DS.Gesture.seekStillStep) : -1) {
+            guard dragging || previewFrom != nil, let still else { stillImage = nil; return }
+            let image = await still(value)
+            if !Task.isCancelled { withAnimation(DS.Motion.base(reduceMotion)) { stillImage = image } }
+        }
     }
 
     /// El susto bajo el punto mientras arrastras: la burbuja lo nombra.

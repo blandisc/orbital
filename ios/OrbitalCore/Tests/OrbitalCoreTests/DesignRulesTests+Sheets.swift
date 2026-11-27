@@ -23,8 +23,8 @@ extension DesignRulesTests {
         XCTAssertEqual(loose, [], "Hoja sin la app: usa `.appSheet(` (en la Mac la app truena al abrirla)")
 
         let wrapper = try String(contentsOf: root.appendingPathComponent("Screens/AppSheet.swift"), encoding: .utf8)
-        XCTAssertTrue(wrapper.contains("{ sheet().environment(env) }"), "`appSheet(isPresented:)` pone la app en la hoja")
-        XCTAssertTrue(wrapper.contains("{ sheet($0).environment(env) }"), "`appSheet(item:)` pone la app en la hoja")
+        XCTAssertTrue(wrapper.contains("{ sheet().environment(env).duoBars() }"), "`appSheet(isPresented:)` pone la app y las barras del Duo en la hoja")
+        XCTAssertTrue(wrapper.contains("{ sheet($0).environment(env).duoBars() }"), "`appSheet(item:)` pone la app y las barras del Duo en la hoja")
         let rootView = try String(contentsOf: root.appendingPathComponent("Screens/RootView.swift"), encoding: .utf8)
         XCTAssertTrue(rootView.contains("{ sidePanel.environment(env) }"), "el panel de la derecha (inspector) también la lleva")
     }

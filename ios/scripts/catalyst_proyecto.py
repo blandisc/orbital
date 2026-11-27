@@ -7,7 +7,8 @@ cambio ya no encuentra su línea (alguien editó `project.yml`), se detiene y di
 - Nombre `OrbitalCatalyst` (crea `OrbitalCatalyst.xcodeproj`, esquema `Orbital`).
 - Mac Catalyst con idioma Mac (familia 6, «Optimize Interface for Mac»): se dibuja al 100 %.
 - Las bibliotecas del motor de video desde `ios/Vendor/catalyst` (ver `catalyst_bibliotecas.py`).
-- Sin el widget ni los entitlements: la Mac no tiene actividades en vivo y la firma es local (ad hoc).
+- Sin el widget, el grupo de apps ni los avisos: la Mac no tiene actividades en vivo. Con su llavero (pide perfil).
+- Firmada con el equipo (automática): compilar con `-allowProvisioningUpdates`.
 - Su propio identificador, para no pisar la Orbital instalada.
 
 Uso (desde la raíz del repo):
@@ -38,13 +39,20 @@ EDITS: list[tuple[str, str]] = [
      "        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO\n"
      "        SUPPORTS_MACCATALYST: YES\n"
      "        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO\n"
-     '        CODE_SIGN_IDENTITY: "-"\n'
-     "        CODE_SIGN_STYLE: Manual\n"),
+     # Firma automática con el equipo de project.yml: Xcode registra el identificador y esta Mac la primera vez
+     # (`-allowProvisioningUpdates`). Con firma de verdad hay `application-identifier`: descargas en segundo plano.
+     "        CODE_SIGN_STYLE: Automatic\n"),
     ("    entitlements:\n"
      "      path: Build/Orbital.entitlements\n"
      "      properties:\n"
      "        com.apple.security.application-groups: [group.mx.iracheta.orbital]   # el snapshot del widget «Lo siguiente para ti»\n"
-     "        aps-environment: development   # LA-B: la TV mantiene al día la isla «Viendo en la TV» con avisos de Apple\n", ""),
+     "        aps-environment: development   # LA-B: la TV mantiene al día la isla «Viendo en la TV» con avisos de Apple\n",
+     # Solo el llavero de la app: pide un perfil de verdad, y con él llega `application-identifier` (lo que piden las
+     # descargas en segundo plano). Sin grupo de apps: en macOS su carpeta saca un aviso de permiso oculto.
+     "    entitlements:\n"
+     "      path: Build/Catalyst.entitlements\n"
+     "      properties:\n"
+     "        keychain-access-groups: [$(AppIdentifierPrefix)" + BUNDLE_ID + "]\n"),
     ("        LSSupportsOpeningDocumentsInPlace: false\n", ""),   # en macOS no se permite en NO
     # Su propia ficha: si las dos escribieran Build/Info.plist, generar un proyecto rompería el otro.
     ("      path: Build/Info.plist\n", "      path: Build/Catalyst-Info.plist\n"),
