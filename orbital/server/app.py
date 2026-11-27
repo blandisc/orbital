@@ -118,6 +118,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Y al volver de un juego (los emuladores Vulkan le dejan memoria a DWM): mientras la tele regresa a 4K.
             catalog.sessions.release_video_memory = lambda: dwm_release.release_if_full("al volver de un juego")
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
+            if app.state.island is not None:
+                app.state.island.start()  # si el iPhone ya dio su buzón y está la llave de Apple
             from .. import remote_art
 
             remote_art.prune_later()  # el caché de arte de internet no crece sin fin (A5)
@@ -159,6 +161,11 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     app.state.remote_input = RemoteInput(publish=catalog.events.publish)
     from ..credentials import Credentials
     app.state.devices = d.extra["devices"] = devices.Devices(getattr(catalog, "credentials", None) or Credentials(None))  # K1-A
+    # LA-B: la TV mantiene al día la isla del iPhone (la llave y el buzón viven junto a config.yaml; sin carpeta, apagado).
+    from .. import companion as _companion
+    from .. import island_push
+    secrets_file = getattr(getattr(catalog, "credentials", None), "path", None)
+    app.state.island = island_push.IslandPush(Path(secrets_file).parent, lambda: _companion.now_playing(catalog)) if secrets_file else None
     app.state.ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})  # lo cuenta la interfaz (POST /api/ui/state)
 
     @app.middleware("http")

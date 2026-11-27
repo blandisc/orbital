@@ -80,6 +80,7 @@ targets:
       path: Build/Orbital.entitlements
       properties:
         com.apple.security.application-groups: [group.mx.iracheta.orbital]   # el snapshot del widget «Lo siguiente para ti»
+        aps-environment: development   # LA-B: la TV mantiene al día la isla «Viendo en la TV» con avisos de Apple
     info:
       path: Build/Info.plist
       properties:

@@ -165,6 +165,13 @@ public struct OrbitalRemote: Sendable {
         return try await send("api/foryou/details", method: "GET", query: query, body: nil)
     }
 
+    /// LA-B (26 nov 2026): el buzón de la isla «Viendo en la TV». Con él, la TV le avisa a la isla por Apple cuando cambia lo
+    /// que suena, aunque la app esté cerrada. `sandbox`: compilación de desarrollo (los avisos van al servidor de pruebas).
+    public func registerActivityPush(token: String, language: String, sandbox: Bool) async throws {
+        _ = try await send("api/companion/activity", method: "POST", body: JSON.object([
+            "token": .string(token), "language": .string(language), "sandbox": .bool(sandbox)]).serialized())
+    }
+
     public func foryouDismiss(key: String) async throws {
         _ = try await send("api/foryou/dismiss", method: "POST", body: JSON.object(["key": .string(key)]).serialized())
     }

@@ -274,6 +274,22 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
                 "ui": companion.ui_state(catalog, main_app.state.shell, main_app.state.ui_state),
                 "volume": companion.volume_state(catalog, _volume())}  # {"level", "muted"} y el Extra: la barra del control del iPhone
 
+    @public.post("/api/companion/activity")
+    def companion_activity(body: dict) -> dict:
+        """LA-B: el buzón de la isla «Viendo en la TV» del iPhone. Con él (y la llave de Apple en la TV) la TV le avisa a la
+        isla al cambiar lo que suena, con la app cerrada. `ready`: si la TV tiene la llave."""
+        island = getattr(main_app.state, "island", None)
+        if island is None:
+            raise HTTPException(503, "Esta TV no guarda avisos")
+        token, language, sandbox = body.get("token"), body.get("language"), body.get("sandbox")
+        if not isinstance(token, str) or not isinstance(language, str) or not isinstance(sandbox, bool):
+            raise HTTPException(422, "Falta el buzón")
+        try:
+            island.register(token.lower(), language, sandbox)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+        return {"ready": island.key() is not None}
+
     @public.get("/api/tv/logo")
     def companion_channel_logo(id: str) -> FileResponse:
         """El logo del canal que se ve (el iPhone lo pinta en «Viendo en la TV»)."""

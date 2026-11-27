@@ -32,6 +32,7 @@ CAPABILITIES: dict[str, tuple[tuple[str, str], ...]] = {
     "voice": (("POST", "/api/voice"),),
     "voice_hints": (("GET", "/api/voice/hints"),),
     "now_playing": (("GET", "/api/companion/now"),),
+    "island_push": (("POST", "/api/companion/activity"),),  # LA-B: la TV le avisa a la isla del iPhone
     "remote_input": (("POST", "/api/companion/input"),),
     "remote_text": (("POST", "/api/companion/text"),),
     "player_control": (("POST", "/api/companion/player"),),
