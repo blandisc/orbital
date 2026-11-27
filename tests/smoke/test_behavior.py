@@ -319,17 +319,16 @@ KINDS_RIGHT = "() => Math.round(document.querySelector('.hero__kinds').getBoundi
 
 def test_media_tools_never_leave_the_screen(browser, server):  # noqa: F811
     """1280 con letra muy grande: «Búsqueda avanzada» se salía por la derecha. Si no caben, las herramientas quedan en su
-    ícono y la enfocada dice su nombre, sin salirse; con la letra normal van completas."""
+    ícono y la señalada (o enfocada) dice su nombre, sin salirse; con la letra normal van completas."""
     page = open_at(browser, server, width=1280, height=800)
     page.evaluate("document.documentElement.dataset.textSize = 'xlarge'")
     to_media(page)
     assert page.evaluate(KINDS_RIGHT) <= 1280
     assert page.evaluate("document.querySelector('.hero__kinds').classList.contains('hero__kinds--tight')")
-    press(page, "ArrowUp", wait=500)
-    for _ in range(6):
-        press(page, "ArrowRight", wait=300)
-    assert page.evaluate("document.querySelector('.hero__kinds .is-focused')?.getAttribute('aria-label')") == "Búsqueda avanzada"
-    page.wait_for_timeout(400)
+    # Señalada (el puntero; con el mando, enfocada): su nombre se abre y la fila sigue dentro de la pantalla.
+    page.locator('.hero__kinds .pill--named[aria-label="Búsqueda avanzada"]').hover()
+    page.wait_for_timeout(500)
+    assert page.evaluate("document.querySelector('.hero__kinds .pill--named[aria-label=\"Búsqueda avanzada\"] .pill__name').getBoundingClientRect().width") > 40
     assert page.evaluate(KINDS_RIGHT) <= 1280
     page.evaluate("document.documentElement.dataset.textSize = 'normal'")
     page.wait_for_timeout(600)
