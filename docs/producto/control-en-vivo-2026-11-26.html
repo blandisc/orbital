@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isla al día</title>
+<style>
+:root{--bg:#f3f6f7;--surface:#fff;--fg:#132022;--muted:#58696b;--line:#d5dfe0;--accent:#0f8f86;--rec:#a85600;--island:#000;--islandfg:#f1f6f7;--stale:#c25b3a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--rec:#f0a453;--stale:#f08a6a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1416;--surface:#152024;--fg:#e5eded;--muted:#92a5a6;--line:#26363a;--accent:#3cc9bc;--rec:#f0a453;--stale:#f08a6a;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 64px;display:grid;gap:28px}
+h1,h2{margin:0;line-height:1.2}h1{font-size:1.9rem}h2{font-size:1.3rem}
+p{margin:0;max-width:65ch}.muted{color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;align-content:start}
+.opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.code{font-weight:700;color:var(--accent)}.badge{font-size:.78rem;font-weight:700;color:var(--rec);margin-left:6px}
+.island{background:var(--island);color:var(--islandfg);border-radius:22px;padding:10px 14px;display:flex;gap:10px;align-items:center;font-size:.85rem}
+.island .p{width:28px;height:40px;border-radius:5px;background:#3a4a50;flex:none}
+.island small{display:block;color:#9fb1b5}
+.tv{font-size:.8rem;color:var(--muted)}
+.stale{color:var(--stale);font-weight:600}
+.dictar{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header style="display:grid;gap:8px"><h1>Que la isla siga a la TV sin abrir la app</h1>
+<p class="muted">26 nov 2026 · iPhone. Cambias de capítulo en la TV y la isla (y la pantalla bloqueada) se queda en el anterior hasta que abres Orbital.</p></header>
+
+<section style="display:grid;gap:10px"><h2>Por qué pasa</h2>
+<p>Hoy el iPhone es el que le pregunta a la TV «¿qué estás poniendo?», cada 5 segundos, pero solo mientras la app está abierta. Al salir, iOS la duerme y ya nadie pregunta. Ya dejé subido un arreglo chico: al salir, sigue preguntando unos 25 segundos más, que es lo que iOS deja. Ayuda si cambias justo después de salir, pero no después.</p>
+<p>Lo que sí funciona siempre es al revés: que la TV le avise al iPhone en cuanto cambia algo. Eso pasa por el servicio de avisos de Apple (el mismo de las notificaciones), y la TV puede mandarlo ella sola, sin otro servidor. Lo único que pide es una llave de Apple que se crea una vez en tu cuenta de desarrollador (la de paga) y se guarda en la TV.</p>
+</section>
+
+<section style="display:grid;gap:12px"><h2>LA · Cómo se mantiene al día</h2>
+<div class="opts">
+<div class="opt"><div><span class="code">LA-A</span></div>
+<div class="tv">TV: pasa a T2 E6 · tú no abres la app</div>
+<div class="island"><div class="p"></div><div><b>The Bear</b><small>T2 E5 · <span class="stale">el anterior</span></small></div></div>
+<p><b>Como queda hoy.</b> Se pone al día al abrir Orbital, o si cambias en los primeros 25 s después de salir.</p>
+<p class="muted">Gana: nada que configurar. Pierde: la isla se queda atrasada casi siempre.</p></div>
+<div class="opt rec"><div><span class="code">LA-B</span><span class="badge">RECOMIENDO</span></div>
+<div class="tv">TV: pasa a T2 E6 · tú no abres la app</div>
+<div class="island"><div class="p"></div><div><b>The Bear</b><small>T2 E6 · al momento</small></div></div>
+<p><b>La TV le avisa al iPhone.</b> Al cambiar de capítulo, pausar o terminar, la isla cambia en uno o dos segundos, aunque la app esté cerrada.</p>
+<p class="muted">Gana: la isla siempre dice la verdad, también en el reloj y en la pantalla bloqueada. Pierde: una vez, tú creas la llave en developer.apple.com (2 minutos, yo te digo dónde) y la TV la guarda. Sin servidores de fuera: la TV es la que manda.</p></div>
+<div class="opt"><div><span class="code">LA-C</span></div>
+<div class="tv">Cada 15 min o más, cuando iOS quiera</div>
+<div class="island"><div class="p"></div><div><b>The Bear</b><small>T2 E5 · <span class="stale">a veces</span></small></div></div>
+<p><b>Que iOS despierte la app de vez en cuando.</b></p>
+<p class="muted">Gana: sin llave. Pierde: iOS decide cuándo (a veces horas): no resuelve el cambio de capítulo.</p></div>
+</div></section>
+
+<div class="dictar">Para dictar: «LA-A», «LA-B» o «LA-C». Recomiendo LA-B: es la única que hace lo que pediste.</div>
+</div>
+</body>
+</html>
