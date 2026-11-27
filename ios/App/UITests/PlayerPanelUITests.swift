@@ -68,6 +68,25 @@ final class PlayerPanelUITests: XCTestCase {
         XCTAssertTrue(done.waitForNonExistence(timeout: 5), "«Listo» la cierra")
     }
 
+    /// En horizontal el siguiente episodio es una cinta pegada al borde derecho, como en la TV (26 nov 2026): «Ahora no» y su
+    /// tarjeta llegan hasta el marco, sin aire a la derecha.
+    func testUpNextIsARibbonOnTheRightEdge() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+                               "-demo-player-state", "upnext"]
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+        XCTAssertTrue(app.buttons["Ahora no"].waitForExistence(timeout: 15), "la tarjeta del siguiente episodio")
+        sleep(2)
+        if let folder = ProcessInfo.processInfo.environment["SHOTS"] {
+            try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(folder)/upnext-cinta.png"))
+        }
+        let screen = app.windows.firstMatch.frame
+        let button = app.buttons["Ahora no"].frame
+        // El botón queda a un aire de tarjeta de la orilla de la cinta, y la cinta, en el borde (más la zona segura).
+        XCTAssertGreaterThan(button.maxX, screen.maxX - 140, "la cinta va pegada al borde derecho, no flota con aire")
+    }
+
     /// Bloqueado: sale el aviso de arriba y se va solo; un toque trae «Desbloquear» y ese botón desbloquea.
     /// La tarjeta de «Siguiente episodio» no se ve.
     func testLockShowsAnUnlockButtonAndHidesUpNext() {

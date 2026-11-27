@@ -367,7 +367,7 @@ extension PlayerScreen {
         env.services.orbital.isConfigured && model.request?.metaID.hasPrefix("file:") != true
     }
 
-    @ViewBuilder func upNextCard(_ model: PlayerModel, _ up: UpNext) -> some View {
+    @ViewBuilder func upNextCard(_ model: PlayerModel, _ up: UpNext, edge: Bool = false) -> some View {
         UpNextCard(card: up, total: PlaybackRules.upNextCountdown, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() },
                    notify: { Task { await notifyWhenReady() } })
             .transition(.opacity)

@@ -287,8 +287,9 @@ struct PlayerScreen: View {
             // dos veces, la de los controles y esta.
             if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed, model.phase != .preparing, !model.stillWatchingPrompt {
                 if landscape {
-                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
-                        .padding(.horizontal, DS.Space.s6)
+                    // Cinta pegada al borde derecho (Fernando, 26 nov 2026, igual que la TV): sin aire a la derecha.
+                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up, edge: true).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
+                        .padding(.leading, DS.Space.s6)
                         .padding(.bottom, controlsVisible ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s6)
                 } else if ipod != nil {
                     // En el iPod, sobre lo de abajo de la pantalla (el nombre y el avance), como un aviso del aparato.

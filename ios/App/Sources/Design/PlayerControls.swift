@@ -77,9 +77,17 @@ struct UpNextCard: View {
     let cancel: () -> Void
     /// «Avisarme» (R8): el aviso cuando esté.
     var notify: (() -> Void)? = nil
+    /// En horizontal es una cinta pegada al borde derecho, sin esquinas de ese lado y que llega hasta el marco, como en la TV
+    /// (Fernando, 26 nov 2026); en vertical, la tarjeta bajo el video.
+    var edge = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View { bodyContent.pointerHover(.lift) }
+
+    private var shape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(topLeadingRadius: DS.Radius.xl, bottomLeadingRadius: DS.Radius.xl,
+                               bottomTrailingRadius: edge ? 0 : DS.Radius.xl, topTrailingRadius: edge ? 0 : DS.Radius.xl)
+    }
     @ViewBuilder private var bodyContent: some View {
         // Arriba la imagen y cuál es; abajo los dos botones lado a lado, del mismo ancho y a todo lo ancho (antes iban uno
         // bajo el otro junto a la imagen y dejaban un hueco debajo de ella).
@@ -112,7 +120,8 @@ struct UpNextCard: View {
             }
         }
         .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        // La cinta sigue hasta el marco del teléfono (detrás de la isla o de la esquina, sin nada encima).
+        .background { Color.clear.glassEffect(.regular, in: shape).ignoresSafeArea(.container, edges: edge ? .trailing : []) }
         // Sobre el video, con la letra más grande ya no cabía y empujaba la barra de la ✕ fuera de alcance: crece hasta aquí
         // (VoiceOver la lee completa).
         .dsChromeType()
