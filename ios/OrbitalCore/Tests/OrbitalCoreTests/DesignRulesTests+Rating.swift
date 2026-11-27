@@ -32,5 +32,10 @@ extension DesignRulesTests {
             if !near.contains("lineLimit(1)") { loose.append("Calificar.swift:\(i + 1)") }
         }
         XCTAssertEqual(loose, [], "Letreros de la pastilla «¿Qué tal…?» sin .lineLimit(1): se parten letra por letra")
+        // Con letra de accesibilidad no cabe en un renglón: «y 2 más» baja bajo las estrellas en vez de empujar la pastilla
+        // fuera de la pantalla (Duo cerrado, 27 nov 2026).
+        let body = file.lines[start..<end].joined(separator: "\n")
+        XCTAssertTrue(body.contains("if stacked { moreButton }") && body.contains("if !stacked { moreButton }"),
+                      "Con letra grande, «y 2 más» va debajo de las estrellas: en un renglón la pastilla se salía por la orilla")
     }
 }

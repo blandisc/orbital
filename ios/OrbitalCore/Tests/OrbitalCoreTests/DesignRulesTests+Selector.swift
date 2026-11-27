@@ -27,6 +27,8 @@ extension DesignRulesTests {
         let selector = try XCTUnwrap(files.first { $0.name == "Selector.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(selector.contains(".lineLimit(1)\n") && selector.contains(".minimumScaleFactor(DS.Size.statScale)"),
                       "Los nombres del selector se achican en vez de cortarse")
+        XCTAssertTrue(selector.contains(".font(DS.TextRecipe.cardTitle.font)\n                .lineLimit(1)"),
+                      "La cifra del selector (Mi lista · 11) va en un renglón: con letra grande se partía en «1» sobre «1»")
         XCTAssertTrue(filters.contains(".frame(minWidth: left)"),
                       "En Inicio, el nombre ocupa lo que había a la izquierda de lo elegido: centrado en ese lugar; con Series el círculo no brinca a la orilla (KT2)")
     }

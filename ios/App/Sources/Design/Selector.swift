@@ -109,6 +109,8 @@ struct DSSelector<ID: Hashable>: View {
                     }
                 }
                 .font(DS.TextRecipe.cardTitle.font)
+                .lineLimit(1)   // con letra de accesibilidad, «11» se partía en «1/1» (Duo cerrado, 27 nov 2026)
+                .minimumScaleFactor(DS.Size.statScale)
                 if names { weighted(option.title, on: on).font(DS.TextRecipe.footnote.font) }
             }
         case .regular:

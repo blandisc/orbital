@@ -170,6 +170,11 @@ struct RatingReminder: View {
     /// inmediatamente y no supe si lo registró»).
     @State private var rated: Double?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// Con letra de accesibilidad, «y 2 más» baja debajo de las estrellas: en un renglón la pastilla se salía por la orilla
+    /// (Duo cerrado, 27 nov 2026). Sin `ViewThatFits`: la pastilla se mide a cada rato para apartarle su lugar abajo.
+    private var stacked: Bool { typeSize.isAccessibilitySize }
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
@@ -189,13 +194,11 @@ struct RatingReminder: View {
                     }
                 }
                 .animation(DS.Motion.base(reduceMotion), value: rated)
+                if stacked { moreButton }
             }
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
             Spacer(minLength: 0)
-            if more > 0, rated == nil {   // ya calificada, «Guardada» ocupa su lugar: la pastilla se va y no hay a dónde ir
-                Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }   // nunca letra por letra
-                    .accessibilityIdentifier("rating-reminder-more")
-            }
+            if !stacked { moreButton }
             DSIconButton(symbol: DS.Symbol.remove, label: "No calificar esta", size: .small, action: onDismiss)
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
@@ -205,6 +208,13 @@ struct RatingReminder: View {
         .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: Capsule())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rating-reminder")
+    }
+
+    @ViewBuilder private var moreButton: some View {
+        if more > 0, rated == nil {   // ya calificada, «Guardada» ocupa su lugar: la pastilla se va y no hay a dónde ir
+            Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }   // nunca letra por letra
+                .accessibilityIdentifier("rating-reminder-more")
+        }
     }
 
     @ViewBuilder private var posterThumb: some View {
