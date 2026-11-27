@@ -183,3 +183,10 @@ test("un juego de Steam sin instalar dice «Instalar»", async () => {
   assert.equal(primaryLabel({ id: "steam:620", category: "steam", source: "steam", extra: { installed: false } }), "Instalar");
   assert.equal(primaryLabel({ id: "steam:367520", category: "steam", source: "steam", extra: {} }), "Jugar");
 });
+
+test("una serie de Trakt en «A continuación» (su tipo en extra.kind) dice «Continuar la serie», no «la película»", async () => {
+  const { primaryLabel } = await import("../../orbital/web/js/core/library.js");
+  const simpsons = { id: "watch:tt0096697", title: "Los Simpson", source: "stremio", progress: .6, extra: { kind: "series", meta_id: "tt0096697" } };
+  assert.equal(primaryLabel(simpsons), "Continuar la serie");
+  assert.equal(primaryLabel({ ...simpsons, extra: { kind: "movie", meta_id: "tt1" } }), "Continuar la película");
+});

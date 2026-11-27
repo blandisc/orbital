@@ -126,7 +126,9 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : item.collection?.type === "decide" ? "Decide por mí" : "Ver la lista";
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
-  if (isSeries(item)) return item.progress > 0 ? "Continuar la serie" : "Ver la serie"; // X1-B: «Continuar» con su objeto (como DecideView del iPhone)
+  // X1-B: «Continuar» con su objeto (como DecideView del iPhone). Una serie de Trakt en «A continuación» dice su tipo en `extra.kind`
+  // (como altLabel): sin eso, Los Simpson decían «Continuar la película» (27 nov 2026).
+  if (isSeries(item) || item?.extra?.kind === "series") return item.progress > 0 ? "Continuar la serie" : "Ver la serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar la película" : "Ver") : "Jugar"; // V1 (TB-44): «Continuar» con su objeto
 };
 
