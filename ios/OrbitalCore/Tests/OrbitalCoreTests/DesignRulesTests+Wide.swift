@@ -12,7 +12,7 @@ extension DesignRulesTests {
         let code = (tokens.lines + mac.lines).filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
         // Toda receta de letra pasa por `DS.styled`: un `.system(.estilo, …)` suelto en la Mac sale al 77 % (de 13 en vez de 16).
         let loose = code.filter { $0.contains(".system(.") || $0.contains(".system(face.style") }
-            .filter { !$0.contains("guard ProcessInfo.processInfo.isiOSAppOnMac else { return .system(style") }
+            .filter { !$0.contains("guard ProcessInfo.onMac else { return .system(style") }
         XCTAssertEqual(loose, [], "Las letras de los tokens van por DS.styled(…) para tener su tamaño de Mac")
         let joined = code.joined(separator: "\n")
         XCTAssertTrue(joined.contains("enum Mac {"), "Los tamaños de la Mac viven en DS.Mac")
@@ -27,7 +27,7 @@ extension DesignRulesTests {
         // 800 (más era casi el triple de memoria por imagen en el iPad).
         for token in ["static var bleed: CGFloat {", "static var wide: CGFloat {"] {
             let line = try XCTUnwrap(code.first { $0.contains(token) }, token)
-            XCTAssertTrue(line.contains("ProcessInfo.processInfo.isiOSAppOnMac ?") && line.contains("WindowMetrics.column.width"),
+            XCTAssertTrue(line.contains("ProcessInfo.onMac ?") && line.contains("WindowMetrics.column.width"),
                           "\(token) crece con la ventana solo en la Mac")
         }
     }
@@ -112,7 +112,7 @@ extension DesignRulesTests {
             let file = try XCTUnwrap(files.first { $0.name == name }, "falta \(name)")
             return file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
         }
-        XCTAssertTrue(try code("WindowMetrics.swift").contains("static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }"))
+        XCTAssertTrue(try code("WindowMetrics.swift").contains("static var roomy: Bool { ProcessInfo.onMac || column.width >= roomyWidth }"))
         let tokens = try code("Tokens.swift"), home = try code("Tokens+Home.swift")
         // El arte a sangre no: en el iPad se queda en 800 por memoria (`testMacHasItsOwnSizes`).
         XCTAssertFalse(tokens.contains("static var bleed: CGFloat { WindowMetrics.roomy"))

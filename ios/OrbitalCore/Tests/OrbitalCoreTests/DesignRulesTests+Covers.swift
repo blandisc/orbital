@@ -65,7 +65,7 @@ extension DesignRulesTests {
         for token in ["playButton", "playGlyph", "sideButton", "skipGlyph", "circle", "width", "scrubHit", "scrubKnob"] {
             XCTAssertTrue(tokens.contains("static var \(token): CGFloat { big("), "`DS.PlayerPanel.\(token)` crece en la Mac y el iPad")
         }
-        XCTAssertTrue(tokens.contains("ProcessInfo.processInfo.isiOSAppOnMac ? Mac.sized(points) : isPad ? points * padScale : points"),
+        XCTAssertTrue(tokens.contains("ProcessInfo.onMac ? Mac.sized(points) : isPad || WindowMetrics.large ? points * padScale : points"),
                       "la Mac crece como su letra y el iPad con `padScale`")
         let controls = try String(contentsOf: sources.appendingPathComponent("Design/PlayerControls.swift"), encoding: .utf8)
         XCTAssertTrue(controls.contains(".frame(width: DS.PlayerPanel.circle, height: DS.PlayerPanel.circle)"),

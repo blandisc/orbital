@@ -112,8 +112,8 @@ extension DesignRulesTests {
             for sensor in ["CMMotionManager()", "CMAltimeter()", "CMPedometer()", "CMHeadphoneMotionManager()"] {
                 guard let use = text.range(of: sensor) else { continue }
                 let before = text[text.startIndex..<use.lowerBound].suffix(400)
-                XCTAssertTrue(before.contains("guard !ProcessInfo.processInfo.isiOSAppOnMac"),
-                              "\(file.name): \(sensor) sin «guard !ProcessInfo.processInfo.isiOSAppOnMac» justo antes: en la Mac traba la app")
+                XCTAssertTrue(before.contains("guard !ProcessInfo.onMac"),
+                              "\(file.name): \(sensor) sin «guard !ProcessInfo.onMac» justo antes: en la Mac traba la app")
             }
         }
     }
@@ -151,9 +151,9 @@ extension DesignRulesTests {
         XCTAssertFalse(art.contains("TimelineView"), "Art.swift: sin `TimelineView` (no suelta el reloj de pantalla)")
         XCTAssertFalse(try code("Tokens.swift").contains("static let breathe"), "sin la animación larga `DS.Motion.breathe`")
         // El cielo en la Mac a 2 cuadros por segundo (era ~9 de 10 % de la CPU en reposo).
-        XCTAssertTrue(try code("Tokens+Sky.swift").contains("isiOSAppOnMac ? 1.0 / 2"), "el cielo de la Mac, lento")
+        XCTAssertTrue(try code("Tokens+Sky.swift").contains("onMac ? 1.0 / 2"), "el cielo de la Mac, lento")
         // Ultrawide: la portada de Inicio sin tope de ancho en la Mac y el arte a la derecha, fundido (no un cuadro al centro).
-        XCTAssertTrue(try code("Tokens+Home.swift").contains("isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)"), "Inicio: en la Mac la portada no se topa a lo ancho")
+        XCTAssertTrue(try code("Tokens+Home.swift").contains("onMac ? fitted : min(aspectWideMax, fitted)"), "Inicio: en la Mac la portada no se topa a lo ancho")
         XCTAssertTrue(try code("Posters.swift").contains("ZStack(alignment: side ? .trailing : .center)"), "arte de portada en ventana muy ancha: a la derecha, fundido (P4: solo en marco ancho)")
         // Las tarjetas a lo ancho llenan la fila como las demás (con tope unas seguían y otras no; Fernando, 17 nov 2026):
         // «Porque viste…» pone el encabezado al lado en ventanas anchas y «Decide por mí» llena su tira.
@@ -180,6 +180,6 @@ extension DesignRulesTests {
         }
         XCTAssertFalse(try code("TitleView+Detalles.swift").contains("? DS.TitleAction.wideSide :"), "ficha ancha: sin el margen fijo de 40 pt")
         // La ventana más chica de la Mac: 560 (a 420 la barra de arriba se salía).
-        XCTAssertTrue(try code("WindowMetrics.swift").contains("isiOSAppOnMac ? 560 : 375"), "la ventana mínima de la Mac, 560")
+        XCTAssertTrue(try code("WindowMetrics.swift").contains("onMac ? 560 : 375"), "la ventana mínima de la Mac, 560")
     }
 }

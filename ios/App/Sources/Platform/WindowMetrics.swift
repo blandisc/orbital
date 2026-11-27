@@ -29,13 +29,13 @@ final class WindowMetrics {
     /// el tamaño más chico en el que la app está probada. Así ningún acomodo se rompe al achicar la ventana. En la Mac, 560 de
     /// ancho: más angosta, la barra de arriba (logo, «Buscar», pestañas, «Todo» y tu foto) no cabía y se salía por los dos
     /// lados (17 nov 2026, `MacSelfCheck.tour`).
-    static let minimum = CGSize(width: ProcessInfo.processInfo.isiOSAppOnMac ? 560 : 375, height: 667)
+    static let minimum = CGSize(width: ProcessInfo.onMac ? 560 : 375, height: 667)
 
     /// Pantalla con espacio: la Mac, o una columna desde `roomyWidth` (el iPad de 13" de pie, cualquier iPad acostado). Lo que
     /// en la Mac crece hasta llenar el renglón (tarjetas, canales, la tira de «Decide por mí», el muro de Buscar) crece igual
     /// aquí: en el iPad dejaba media pantalla vacía (Fernando, 17 nov 2026: «tráete de Mac a iPad lo que haga sentido»). Lo del
     /// puntero y la ventana de la Mac (pestañas en el renglón del logo, buscador propio) sigue siendo solo de la Mac.
-    nonisolated static var roomy: Bool { ProcessInfo.processInfo.isiOSAppOnMac || column.width >= roomyWidth }
+    nonisolated static var roomy: Bool { ProcessInfo.onMac || column.width >= roomyWidth }
     nonisolated static let roomyWidth: CGFloat = 900
 
     /// Pantalla grande: 600 puntos o más por su lado corto. La de adentro del iPhone Duo (≈ 669 × 951) lo es; la de afuera

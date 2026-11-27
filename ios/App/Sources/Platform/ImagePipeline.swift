@@ -31,7 +31,7 @@ final class ImagePipeline: @unchecked Sendable {
     /// se llenaban de a poco (Fernando, 22 nov 2026: «se sigue sintiendo muy lenta»). Esperar la red no ocupa hilos.
     /// En el iPhone, 24 desde el 25 nov 2026 (MP1, Fernando: «se tardan mucho en cargar los pósters del mosaico»): con 12 la
     /// versión buena de cada póster esperaba turno. `ios/scripts/medir-posters.py` lo mide.
-    private static let maxDownloads = ProcessInfo.processInfo.isiOSAppOnMac ? 32 : 24
+    private static let maxDownloads = ProcessInfo.onMac ? 32 : 24
     /// Las decodificaciones, 4 también en la Mac: corren en los hilos de Swift, y con 8 podían ocuparlos todos (lo mismo que
     /// atoraba la ficha con Vision, 22 nov 2026).
     private static let maxDecodes = 4
@@ -43,7 +43,7 @@ final class ImagePipeline: @unchecked Sendable {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         let scale = scene?.screen.scale ?? 3
         // La Mac: la ventana puede pasar a una pantalla Retina aunque arranque en un monitor de 1x; con 2 se ve nítida en las dos.
-        return ProcessInfo.processInfo.isiOSAppOnMac ? max(scale, 2) : scale
+        return ProcessInfo.onMac ? max(scale, 2) : scale
     }()
 
     nonisolated(unsafe) private let memory = NSCache<NSString, UIImage>()   // NSCache es seguro entre hilos

@@ -13,11 +13,11 @@ final class MacNeverTalksToTheTVTests: XCTestCase {
 
     func testOnlyTheIPhoneTalksToTheTV() throws {
         let device = try source("Platform/DeviceInfo.swift")
-        XCTAssertTrue(device.contains("static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac && !runsOnIPad"),
+        XCTAssertTrue(device.contains("static let talksToOrbital = !ProcessInfo.onMac && !runsOnIPad"),
                       "ni la Mac ni el iPad hablan con tu TV")
         XCTAssertTrue(device.contains(#"return machine.hasPrefix("iPad")"#) && device.contains(#"simulated.hasPrefix("iPad")"#),
                       "el iPad se reconoce por su modelo (también en el simulador)")
-        XCTAssertTrue(device.contains(#"ProcessInfo.processInfo.isiOSAppOnMac ? "mac""#), "la Mac se presenta como «mac», no como iPad")
+        XCTAssertTrue(device.contains(#"ProcessInfo.onMac ? "mac""#), "la Mac se presenta como «mac», no como iPad")
     }
 
     func testEveryServicesTheAppBuildsAsksThisDevice() throws {

@@ -209,14 +209,14 @@ extension View {
     /// qué gasta). Se lee una vez, al arrancar.
     nonisolated static let off: Set<String> = {
         let request = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("mac-check-request")
-        guard ProcessInfo.processInfo.isiOSAppOnMac || simulator, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
+        guard ProcessInfo.onMac || simulator, let text = try? String(contentsOf: request, encoding: .utf8) else { return [] }
         return Set(text.split(separator: "\n").compactMap { line in line.hasPrefix("off ") ? String(line.dropFirst(4)) : nil })
     }()
 
     static func runIfRequested() async {
         _ = off
         // La Mac, o el simulador (el iPad: la misma revisión sin manos, en su tamaño).
-        guard ProcessInfo.processInfo.isiOSAppOnMac || Self.simulator else { return }
+        guard ProcessInfo.onMac || Self.simulator else { return }
         let request = tmp.appendingPathComponent("mac-check-request")
         guard let text = try? String(contentsOf: request, encoding: .utf8) else { return }
         try? FileManager.default.removeItem(at: request)
@@ -269,14 +269,14 @@ extension View {
 
     /// La ventana fija a ese tamaño (en la Mac, mínimo = máximo); `free` la deja libre otra vez.
     static func resize(_ size: CGSize) {
-        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
+        guard ProcessInfo.onMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
         limits.minimumSize = CGSize(width: min(size.width, WindowMetrics.minimum.width), height: min(size.height, WindowMetrics.minimum.height))
         limits.maximumSize = size
         limits.minimumSize = size
     }
 
     static func free() {
-        guard ProcessInfo.processInfo.isiOSAppOnMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
+        guard ProcessInfo.onMac, let limits = AppWindows.scene?.sizeRestrictions else { return }
         limits.minimumSize = WindowMetrics.minimum
         limits.maximumSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
     }
@@ -437,7 +437,7 @@ extension View {
         let folder = tmp.appendingPathComponent("mac-fichas")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let full = screenSize, before = window?.bounds.size ?? full
-        let sizes: [CGSize] = !ProcessInfo.processInfo.isiOSAppOnMac ? [window?.bounds.size ?? full] : [
+        let sizes: [CGSize] = !ProcessInfo.onMac ? [window?.bounds.size ?? full] : [
             CGSize(width: 760, height: 1000), CGSize(width: 1100, height: 760), CGSize(width: 1440, height: 900),
             CGSize(width: 1920, height: 1080), CGSize(width: full.width * 0.75, height: full.height), full,
         ]
@@ -471,7 +471,7 @@ extension View {
         }
         let full = screenSize
         // En el iPad, su tamaño de siempre (la ventana no se cambia desde aquí).
-        let sizes: [(String, CGSize)] = !ProcessInfo.processInfo.isiOSAppOnMac ? [("ipad", window?.bounds.size ?? full)] : [
+        let sizes: [(String, CGSize)] = !ProcessInfo.onMac ? [("ipad", window?.bounds.size ?? full)] : [
             ("1-chica", CGSize(width: 560, height: 720)),
             ("2-mediana", CGSize(width: 960, height: 680)),
             ("3-grande", CGSize(width: 1440, height: 900)),

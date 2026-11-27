@@ -154,7 +154,8 @@ targets:
           FW_DIR="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
           [ -d "$FW_DIR" ] || exit 0
           for fw in "$FW_DIR"/*.framework; do
-            [ -f "$fw/Info.plist" ] && continue
+            # En la app de Mac (Mac Catalyst) llegan como framework de Mac, con su ficha en Resources/: no se tocan.
+            { [ -f "$fw/Info.plist" ] || [ -f "$fw/Resources/Info.plist" ]; } && continue
             name=$(basename "$fw" .framework)
             [ -f "$fw/$name" ] || continue
             p="$fw/Info.plist"

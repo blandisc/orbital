@@ -178,7 +178,7 @@ extension DS {
     /// El tablero de Inicio (MI2 · II1).
     enum HomeBoard {
         /// Desde este ancho de columna (y acostada): en la Mac, con su letra más grande, un poco más.
-        static let from: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? 1200 : 1100
+        static let from: CGFloat = ProcessInfo.onMac ? 1200 : 1100
         static let panelShare: CGFloat = 0.34, panelMin: CGFloat = 340, panelMax: CGFloat = 520
         static let gap = DS.Space.s6, heightShare: CGFloat = 0.6, heroAspectMin: CGFloat = 1.1
         /// Hasta cuántos de lo que tienes a medias van en el panel (los que quepan; «Ver todo» abre los demás) y el ancho de su imagen.

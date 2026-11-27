@@ -38,7 +38,7 @@ extension DS {
         /// fugaz, 30. `tiltStill`: cuánto le falta a la inclinación para alcanzar tu mano (de -1 a 1) y contar como quieta.
         /// En la Mac, quieto va a 2: a 6 el cielo era casi todo el CPU de Inicio quieto (~9 % de 10 %, 17 nov 2026), y la capa de
         /// cerca avanza medio punto por cuadro, que no se nota.
-        static let calmFrame: TimeInterval = ProcessInfo.processInfo.isiOSAppOnMac ? 1.0 / 2 : 1.0 / 6
+        static let calmFrame: TimeInterval = ProcessInfo.onMac ? 1.0 / 2 : 1.0 / 6
         static let frame: TimeInterval = 1.0 / 12, shootFrame: TimeInterval = 1.0 / 30
         static let tiltStill: CGFloat = 0.02
         /// El sensor: cada cuánto lee, qué tan rápido el reposo sigue a tu mano, cuánto se nota y qué tan suave.

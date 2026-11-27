@@ -203,7 +203,7 @@ final class SkyTilt {
     func start() {
         // La Mac no tiene sensor de movimiento, y soltar su `CMMotionManager` al irse el cielo (salir de Ajustes) dejaba la app
         // trabada para siempre: CoreMotion se queda esperando en el hilo principal (17 nov 2026). En la Mac ni se crea.
-        guard !ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        guard !ProcessInfo.onMac else { return }
         let motion = self.motion ?? CMMotionManager()
         self.motion = motion
         guard motion.isDeviceMotionAvailable, !motion.isDeviceMotionActive else { return }

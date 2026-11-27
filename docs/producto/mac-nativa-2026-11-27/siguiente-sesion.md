@@ -103,3 +103,49 @@ El plan acordado tiene dos pasos:
   - Sospecha siguiente en Explorar: `ListsView` con `.scrollPosition($position)` y `.scrollTargetLayout()` reevalúa todo el
     cuerpo al cambiar la fila de arriba. La idea es pasar ese estado a una vista envoltorio chica.
   - Detalle en `docs/ios-interfaz.md` § «Deslizar sin tirones en la Mac».
+
+## Paso 2 (TL2-A, Fernando, 27 nov 2026: «Vamos en TL2A»)
+
+### Cómo se arma la app de Mac de verdad (ya no es un parche aparte)
+
+1. **Las bibliotecas del motor de video:** `python3 ios/scripts/catalyst_bibliotecas.py`. Copia FFmpegBuild, LibDovi y LibTrueHD
+   (de los checkouts de SwiftPM de una compilación normal) a `ios/Vendor/catalyst/` (no va a git) y le agrega a cada
+   xcframework la rebanada `ios-arm64-maccatalyst`: la de macOS arm64, marcada como Mac Catalyst. El código de máquina es el
+   mismo; solo cambia la etiqueta de plataforma. A los frameworks (FFmpeg) se les cambia con `vtool` y se firman de nuevo; a los
+   objetos de las bibliotecas estáticas (Dovi y TrueHD, de Rust) se les cambia el campo de plataforma en su lugar, porque
+   `vtool` no cabe en sus comandos de carga. Se corre otra vez cada que suba AetherEngine.
+2. **El proyecto:** `python3 ios/scripts/catalyst_proyecto.py` escribe `ios/App/project.catalyst.yml` desde `project.yml` (no va
+   a git; se regenera) y `xcodegen generate --spec project.catalyst.yml` crea `OrbitalCatalyst.xcodeproj`. Si alguien cambia
+   una de las líneas que toca, el script se detiene y dice cuál.
+3. **El código ya compila igual para las dos:**
+   - «¿Es la Mac?» se pregunta en un solo lugar: `ProcessInfo.onMac` (las dos formas) y `ProcessInfo.macNative` (solo la de
+     verdad), en `Design/Tokens+Mac.swift`. Lo cuida `DesignRulesTests.testTheMacIsAskedInOnePlace`.
+   - Lo que no existe en Mac Catalyst va tras `#if !targetEnvironment(macCatalyst)`: las actividades en vivo (descargas y
+     «Viendo en la TV»), la descarga continua con la app cerrada y el lector de QR (en la Mac dice que no puede, como sin cámara).
+   - **El App Group solo por `WidgetStore`** (`directory` y `defaults`), que en Mac Catalyst devuelven nada. En macOS el
+     contenedor `group.mx.iracheta.orbital` existe igual (es el de la Orbital de iPad instalada) y abrirlo dispara el aviso
+     «quiere acceder a datos de otras apps»: la app se quedaba congelada al abrir, con su ventana vacía y sin que se viera el
+     aviso (27 nov 2026). Lo cuida la misma prueba.
+4. **Tamaños:** `DS.Mac.native` (0.77 en la de verdad, 1 en la otra) multiplica lo que en `DS.Mac` creció para compensar el
+   77 %: `typeScale`, `railWidth`, la búsqueda, Ajustes, los anchos de ventana donde cambia la barra, etc. Lo genérico (los
+   espacios `DS.Space`, los radios, los íconos) todavía no: sale ~30 % más grande que hoy. Se decide al revisar pantalla por pantalla.
+5. **Compilar:** `xcodebuild build -project OrbitalCatalyst.xcodeproj -scheme Orbital -configuration Debug -destination
+   'platform=macOS,variant=Mac Catalyst' -derivedDataPath /tmp/dd-orbital-catalyst 'OTHER_SWIFT_FLAGS=$(inherited) -DMAC_DRIVE'`.
+   Abrir: `open -n …/Debug-maccatalyst/Orbital.app --args -demo -demo-no-idle -demo-mute -macDrive "wait 8|snap inicio"`. Las
+   capturas quedan en `$TMPDIR/macsnap-*.png`. Para el reproductor: `-demo-open play` y `-macDrive "wait 6|title movie tt1160419|…"`
+   (en la Mac la ficha se abre por `title`, no por `-demo-title`). Con la pantalla bloqueada la app no dibuja.
+
+### Estado (27 nov 2026, mañana)
+
+- **Comprobado** (registro y capturas de la propia app): compila para Mac Catalyst con AetherEngine; carga las 9 bibliotecas de
+  FFmpeg; dibuja Inicio, Explorar y Biblioteca al 100 %; **el reproductor reproduce** los videos de demostración (`motor: playing`,
+  cambia de versión cuando una falla). La compilación de iPhone sigue en verde.
+- **Visto en las capturas, por arreglar:** la cápsula de pestañas tapa «orbital» del logo (ventana de 1024); los puntitos y
+  flechas del carrusel de «Seguir viendo» quedan encima de «Lo que tienes a medias»; la ventana arranca de 1024 × 768.
+- **Falta:**
+  - Revisar pantalla por pantalla (Inicio, Explorar, Biblioteca, Buscar, ficha, reproductor, Ajustes) y decidir lo genérico ×0.77.
+  - Firmar con el equipo (hoy es ad hoc): sin `application-identifier` no hay descargas en segundo plano
+    (`Background URLSession adopters are required to have com.apple.application-identifier`) ni Llavero compartido. Crear el App
+    ID de Mac Catalyst en la cuenta de Apple necesita el OK de Fernando.
+  - Que Fernando la vea en persona (la de verdad junto a la instalada) antes de cambiar la que se instala.
+  - Medir el deslizar (abajo de 5) en esta app.

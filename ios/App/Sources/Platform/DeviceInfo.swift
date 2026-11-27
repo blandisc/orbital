@@ -67,7 +67,7 @@ enum ThisDevice {
     /// se conecta con la TV para nada») y el iPad también (18 nov, confirmada el 23 nov en PA5-A: «El iPad no se conecta a la
     /// TV»): sin control, voz, «Ver en la TV», invitación ni acompañante de juegos. Los dos reciben tu clave de Real-Debrid por
     /// iCloud (CX2-A). `MacNeverTalksToTheTVTests` cuida que esto no cambie.
-    static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac && !runsOnIPad
+    static let talksToOrbital = !ProcessInfo.onMac && !runsOnIPad
     /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal; esto se lee al armar `Services`).
     private static let runsOnIPad: Bool = {
         if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
@@ -77,12 +77,12 @@ enum ThisDevice {
         return machine.hasPrefix("iPad")
     }()
     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
-    static let isMac = ProcessInfo.processInfo.isiOSAppOnMac || macLookForDemo
+    static let isMac = ProcessInfo.onMac || macLookForDemo
     /// Adornos que se mueven solos (el cielo, el muro de Explorar, los canales que se deslizan): en la Mac, quietos. Su pantalla
     /// va a 165 Hz y a todo lo ancho: el compositor de la Mac (WindowServer) se iba a 60–95 % con Orbital en reposo y ni la
     /// ventana se dejaba mover (Fernando, 22 nov 2026: «está inusable»). En la Mac se mueve lo que tocas, nada más.
     /// `DesignRulesTests` cuida que todo adorno en movimiento pregunte por esto.
-    static let ambientMotion = !ProcessInfo.processInfo.isiOSAppOnMac
+    static let ambientMotion = !ProcessInfo.onMac
     /// `-demo-mac-look` (solo Debug): el acomodo de la Mac (pestañas en cápsula, ficha en filas, Buscar grande, ▶ ＋) en el
     /// simulador del iPad, para recorrer los flujos de la Mac con XCUITest cuando nadie está frente a la Mac (allí la app de
     /// iPad se queda dormida si no se ve). Solo cambia `isMac`; la letra y los tamaños siguen siendo los del iPad.
@@ -97,17 +97,17 @@ enum ThisDevice {
     static let capabilities = Capabilities(edition: .bundled(), talksToOrbital: talksToOrbital)
     /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, y quién quita a quién (CX5).
     @MainActor static var platform: String {
-        ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+        ProcessInfo.onMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
     }
     /// El símbolo de este aparato («Para ver sin internet», RX1-A).
     @MainActor static var symbol: String { ["mac": "laptopcomputer", "ipad": "ipad"][platform] ?? "iphone" }
     /// Brillo y volumen con el dedo sobre el video (iPhone, iPad). En la Mac no aplican.
-    static let hasTouchScreenControls = !ProcessInfo.processInfo.isiOSAppOnMac
+    static let hasTouchScreenControls = !ProcessInfo.onMac
     /// Las descargas en la pantalla bloqueada y la Dynamic Island. En la Mac no existen.
-    static let supportsLiveActivities = !ProcessInfo.processInfo.isiOSAppOnMac
+    static let supportsLiveActivities = !ProcessInfo.onMac
 
     /// El nombre de este aparato en lo que se anota (quién pidió algo a Real-Debrid, R12): «iPhone», «iPad» o «Mac».
-    @MainActor static var name: String { ProcessInfo.processInfo.isiOSAppOnMac ? "Mac" : UIDevice.current.name }
+    @MainActor static var name: String { ProcessInfo.onMac ? "Mac" : UIDevice.current.name }
 
     @MainActor static var forOrbital: OrbitalRemote.Device {
         let device = UIDevice.current

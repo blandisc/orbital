@@ -14,7 +14,7 @@ import ObjectiveC
 /// búsqueda en un diccionario por texto después. `DeviceWordsOnMacTests.testTheMacReadsItsOwnVariant` lo cuida.
 enum MacStrings {
     static func install() {
-        guard ProcessInfo.processInfo.isiOSAppOnMac, !installed else { return }
+        guard ProcessInfo.onMac, !installed else { return }
         installed = true
         for name in ["localizedStringForKey:value:table:localization:", "localizedStringForKey:value:table:localizations:",
                      "_localizedStringForKey:value:table:localizations:"] { hook(name, attributed: false) }

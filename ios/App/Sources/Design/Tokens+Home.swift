@@ -26,13 +26,13 @@ extension DS {
                 let fitted = max(base, size.width / (size.height * maxHeightShare))
                 // En la Mac no hay tope: más apaisada, el arte va a la derecha sobre su copia difuminada (`PosterView`,
                 // `sideFade`), así en un monitor ultrawide la portada no pasa de su parte del alto (antes llenaba la ventana).
-                return ProcessInfo.processInfo.isiOSAppOnMac ? fitted : min(aspectWideMax, fitted)
+                return ProcessInfo.onMac ? fitted : min(aspectWideMax, fitted)
             }
             return size.height < shortScreen ? aspectShort : aspect
         }
         /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
         /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
-        static let maxHeightShare: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
+        static let maxHeightShare: CGFloat = ProcessInfo.onMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4
         /// Un arte a sangre mucho más angosto que su marco (la Mac, sobre todo un monitor ultrawide) va a la derecha y se funde
         /// hacia la izquierda en su copia difuminada (`PosterView`): esta parte de su ancho, desde la izquierda, se funde.
         static let sideFade: CGFloat = 0.45
@@ -190,7 +190,7 @@ extension DS {
         static var logo: CGFloat { 34 * scale }
         static var glow: CGFloat { 18 * scale }
         /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
-        static var pickLogo: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? 60 : WindowMetrics.roomy ? 52 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
+        static var pickLogo: CGFloat { ProcessInfo.onMac ? 60 : WindowMetrics.roomy ? 52 : 40 }   // en la Mac, más grande: con 50 seguían diminutos junto a los pósters
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

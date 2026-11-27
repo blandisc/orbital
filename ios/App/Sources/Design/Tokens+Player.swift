@@ -80,11 +80,11 @@ extension DS {
         /// (la de adentro del Duo, `WindowMetrics.large`); en los demás iPhone, igual.
         static let padScale: CGFloat = 1.2
         static func big(_ points: CGFloat) -> CGFloat {
-            ProcessInfo.processInfo.isiOSAppOnMac ? Mac.sized(points) : isPad || WindowMetrics.large ? points * padScale : points
+            ProcessInfo.onMac ? Mac.sized(points) : isPad || WindowMetrics.large ? points * padScale : points
         }
         /// ¿Es un iPad? Por el modelo del aparato y no por `UIDevice` (que es del hilo principal y no existe en los widgets).
         private static let isPad: Bool = {
-            if ProcessInfo.processInfo.isiOSAppOnMac { return false }
+            if ProcessInfo.onMac { return false }
             if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated.hasPrefix("iPad") }
             var info = utsname()
             uname(&info)

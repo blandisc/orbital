@@ -430,7 +430,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let rankTracking = -rankNumber * 0.08
         /// El «10»: sus cifras más juntas y el póster encima de parte del cero (no empuja el póster ni se achata).
         static let rankTwoDigitsOverlap = rankNumber * 0.42
-        static let logoHero = CGFloat(DesignTokens.Size.logoHero) * (ProcessInfo.processInfo.isiOSAppOnMac ? Mac.heroScale : 1)
+        static let logoHero = CGFloat(DesignTokens.Size.logoHero) * (ProcessInfo.onMac ? Mac.heroScale : 1)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline = Stroke.hairline
         /// El alto del logo en la franja del mosaico.
@@ -534,10 +534,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96
         /// En la Mac el arte a sangre mide la ventana (con 800 la portada se veía pixeleada, 16 nov 2026); iPhone y iPad, 800
         /// (más era casi el triple de memoria por imagen en el iPad sin que se notara).
-        static var bleed: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(bleedPhone, WindowMetrics.column.width) : bleedPhone }
+        static var bleed: CGFloat { ProcessInfo.onMac ? max(bleedPhone, WindowMetrics.column.width) : bleedPhone }
         static let bleedPhone: CGFloat = 800
         /// Una tarjeta ancha de lado a lado (la portada de un estreno, `CoverCard`): con `card` se pedía la versión chica (480 px).
-        static var wide: CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? max(widePhone, WindowMetrics.column.width / 2) : widePhone }   // en la Mac la tarjeta crece con la columna
+        static var wide: CGFloat { ProcessInfo.onMac ? max(widePhone, WindowMetrics.column.width / 2) : widePhone }   // en la Mac la tarjeta crece con la columna
         static let widePhone: CGFloat = 420
         /// El desenfoque de la copia que rellena el marco cuando la imagen va completa (`ArtFit.whole`).
         static let wholeBlur: CGFloat = 28
@@ -555,7 +555,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
         static var railWidth: CGFloat {   // con espacio, C5 (`filling`); si no, sin el panel de la derecha
-            let wide = ProcessInfo.processInfo.isiOSAppOnMac ? Mac.railWidth : railWidthWide
+            let wide = ProcessInfo.onMac ? Mac.railWidth : railWidthWide
             return WindowMetrics.roomy ? filling(target: wide, columns: railColumns) : WindowMetrics.column.width >= gridWideWidth ? wide : railWidthCompact
         }
         static let railWidthCompact: CGFloat = 112, railWidthWide: CGFloat = 148

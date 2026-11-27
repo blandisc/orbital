@@ -47,7 +47,7 @@ final class DeviceWordsOnMacTests: XCTestCase {
     func testTheMacReadsItsOwnVariant() throws {
         XCTAssertTrue(try source("OrbitalApp.swift").contains("MacStrings.install()"), "la app instala los textos de la Mac al arrancar")
         let mac = try source("Platform/MacStrings.swift")
-        XCTAssertTrue(mac.contains("guard ProcessInfo.processInfo.isiOSAppOnMac"), "solo en la Mac")
+        XCTAssertTrue(mac.contains("guard ProcessInfo.onMac"), "solo en la Mac")
         XCTAssertTrue(mac.contains(#"device["mac"]"#), "lee la variante «mac» del catálogo")
         let data = try Data(contentsOf: ios.appendingPathComponent("App/Resources/Localizable.xcstrings"))
         let strings = try XCTUnwrap((try JSONSerialization.jsonObject(with: data) as? [String: Any])?["strings"] as? [String: Any])

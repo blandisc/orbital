@@ -1,12 +1,21 @@
 import SwiftUI
 
+/// ¿Es la Mac? Una sola pregunta para sus dos formas: la app de iPad en la Mac («Diseñada para iPad», que macOS dibuja al 77 %)
+/// y la app de Mac de verdad (Mac Catalyst con idioma Mac, al 100 %; TL1-B, 27 nov 2026). Nada pregunta a `ProcessInfo` por
+/// su cuenta (`DesignRulesTests.testTheMacIsAskedInOnePlace`): en Mac Catalyst `isiOSAppOnMac` es falso y la app se creía iPad.
+extension ProcessInfo {
+    nonisolated static let onMac = processInfo.isiOSAppOnMac || processInfo.isMacCatalystApp
+    /// Solo la app de Mac de verdad (`isMacCatalystApp` también es cierto en la de iPad en la Mac).
+    nonisolated static let macNative = processInfo.isMacCatalystApp && !processInfo.isiOSAppOnMac
+}
+
 /// El mini sistema de la Mac (MAC-A, 16 nov 2026): la letra y los tamaños propios de la app «Diseñada para iPad» en la Mac.
 /// Regla en docs/ios-interfaz.md § «iPad y Mac: su propio tamaño».
 extension DS {
     /// SF Pro en su estilo: en iPhone y iPad, con Dynamic Type; en la Mac (que no tiene Dynamic Type), al tamaño del estilo
     /// por `DS.Mac.typeScale`, porque macOS dibuja la app al 77 % y la letra salía de 13 (MAC-A, 16 nov 2026).
     static func styled(_ style: Font.TextStyle) -> Font {
-        guard ProcessInfo.processInfo.isiOSAppOnMac else { return .system(style, design: .default) }
+        guard ProcessInfo.onMac else { return .system(style, design: .default) }
         return .system(size: (Mac.styleSizes[style] ?? Mac.bodySize) * Mac.typeScale, design: .default)
     }
 
@@ -14,7 +23,10 @@ extension DS {
     /// de las tiras crecen (MAC-A, Fernando, 16 nov 2026: «los botones están muy pequeños»). iPhone y iPad no los usan.
     enum Mac {
         /// Cuánto crece la letra: con 1.25 el cuerpo de 17 pt sale de ~16 en pantalla en vez de 13.
-        static let typeScale: CGFloat = 1.25
+        /// TL1-B (27 nov 2026): la app de Mac de verdad se dibuja al 100 % y la de iPad en la Mac, al 77 %. Lo que aquí creció
+        /// para compensar ese 77 % va por `native` (0.77 en la de verdad, 1 en la otra): así sale del mismo tamaño en pantalla.
+        static let native: CGFloat = ProcessInfo.macNative ? 0.77 : 1
+        static let typeScale: CGFloat = 1.25 * native
         /// Cuántos pósters lleva cada fila de Biblioteca (`LibraryHome`): el resto, en su pantalla completa.
         static let libraryRow = 30
         /// Los tamaños de cada estilo del iPhone (letra «Grande», la de fábrica): en la Mac se parte de estos.
@@ -37,14 +49,14 @@ extension DS {
         /// pequeño… hacían sentido en el iPhone los tamaños, pero aquí ya no»). En la Mac, del estilo `barTitle` con la escala.
         static let barTitle: Font.TextStyle = .title2
         @MainActor static func styleBarTitles() {
-            guard ProcessInfo.processInfo.isiOSAppOnMac else { return }
+            guard ProcessInfo.onMac else { return }
             let size = (styleSizes[barTitle] ?? bodySize) * typeScale
             let bar = UINavigationBar.appearance()
             bar.titleTextAttributes = [.font: UIFont.systemFont(ofSize: size, weight: .bold)]
             bar.largeTitleTextAttributes = [.font: UIFont.systemFont(ofSize: (styleSizes[.largeTitle] ?? size) * typeScale, weight: .bold)]
         }
         static func control(_ size: ControlSize) -> ControlSize {
-            guard ProcessInfo.processInfo.isiOSAppOnMac else { return size }
+            guard ProcessInfo.onMac else { return size }
             switch size {
             case .mini: return .small
             case .small: return .regular
@@ -58,15 +70,15 @@ extension DS {
         /// la ventana); sin él manda esta parte, con el arte a la derecha cuando hace falta (`HomeHero.sideFade`).
         static let heroHeightShare: CGFloat = 0.56, heroScale: CGFloat = 1.5
         /// El póster de una tira en la Mac: con 148 pt se veía de ~114.
-        static let railWidth: CGFloat = 188
+        static let railWidth: CGFloat = 188 * native
         /// Cuántos renglones de «Lo más popular hoy» lleva Buscar vacío en la Mac: los que caben a lo alto de la ventana bajo la
         /// búsqueda avanzada (`searchTop`), al menos `searchRowsMin` (con dos fijos quedaba vacío el tercio de abajo).
-        static let searchRowsMin = 2, searchTop: CGFloat = 520, searchCaption: CGFloat = 52
+        static let searchRowsMin = 2, searchTop: CGFloat = 520 * native, searchCaption: CGFloat = 52 * native
         /// La sombra bajo la barra de la Mac: las pestañas se leen aunque pase un póster detrás (Explorar, 16 nov 2026).
-        static let topScrim: CGFloat = 120
+        static let topScrim: CGFloat = 120 * native
         /// «Mejor resultado» en Buscar: en la Mac la ventana es tan ancha que con el alto del iPhone quedaba una franja delgada y
         /// el arte casi no se veía (24 nov 2026).
-        static let searchTopHeight: CGFloat = 320
+        static let searchTopHeight: CGFloat = 320 * native
         /// Cuánto después de abrir la app se arman, escondidas, Biblioteca y Explorar (`MacTabDeck`), y cuánto entre una y otra:
         /// primero que Inicio se asiente; luego una a la vez, para no trabar lo que estés haciendo.
         static let tabPrepareDelay: Double = 4, tabPrepareGap: Double = 2.5
@@ -85,7 +97,7 @@ extension DS {
         static let markScale: CGFloat = 1.45
         /// La lista de Ajustes (MA1), como Ajustes del Sistema: desde AJ-A (22 nov 2026) una barra lateral angosta, un renglón
         /// por página sin su valor; la página de la derecha llena lo demás hasta `settingsPageWidth`.
-        static let settingsListWidth: CGFloat = 340, settingsPageWidth: CGFloat = 1200
+        static let settingsListWidth: CGFloat = 340 * native, settingsPageWidth: CGFloat = 1200 * native
         /// Entre grupos de una página de Ajustes en la Mac: con el espacio de iOS, la explicación de un grupo quedaba pegada al
         /// nombre del siguiente y no se sabía de cuál era (23 nov 2026). Con 300 de barra, «Conectado a Trakt, Real-De…» se cortaba.
         static let settingsSectionGap = Space.s8
@@ -103,25 +115,25 @@ extension DS {
         /// cuadrícula. Un paso más alto que las cápsulas de la barra y de las puertas, con la letra de un nombre en tarjeta
         /// (Fernando, 23 nov 2026: «se ven demasiado grandes los botones respecto a los otros»; con 88 y la letra de título
         /// pesaba más que todo lo demás de la pantalla).
-        static let searchFieldHeight: CGFloat = 64
+        static let searchFieldHeight: CGFloat = 64 * native
         static let searchFieldText = TextRecipe.section   // el campo de texto del sistema no crece con la letra de la Mac: con `cardTitle` salía más chica que la de las puertas
         /// RF2: las reseñas de la ficha en la Mac, en columnas a lo ancho (como la tele, no una tira angosta a la izquierda).
         static let reviewColumns = 3
         /// RP2: el póster bajo el puntero crece un poco y lleva el marco crema del foco de la TV.
         static let hoverScale: CGFloat = 1.05, hoverRing: CGFloat = 3
         /// Desde este ancho de póster salen ▶ y ＋ al pasar el puntero (los de un renglón, de 40 pt, solo llevan el marco).
-        static let quickMinWidth: CGFloat = 120
+        static let quickMinWidth: CGFloat = 120 * native
         /// RN2: desde este ancho de ventana la cápsula de pestañas va al centro con sus nombres; más angosta, junto al logo y
         /// solo con íconos (con la letra de la Mac, las tres con nombre miden ~330 pt y se encimaban con el logo y tu foto).
-        static let centeredTabsFrom: CGFloat = 980
+        static let centeredTabsFrom: CGFloat = 980 * native
         /// Más angosta que esto, la barra de arriba lleva solo el planeta, sin «orbital» (`AppMark`).
-        static let markOnlyBelow: CGFloat = 760
+        static let markOnlyBelow: CGFloat = 760 * native
         /// RB2: qué parte del alto de la ventana ocupa un aviso vacío (`DSEmptyState`) en la Mac: queda al centro de lo visible.
         static let emptyShare: CGFloat = 0.72
         /// RN2: el puntito de Biblioteca (algo bajando) en la cápsula de pestañas.
-        static let tabBadge: CGFloat = 8
+        static let tabBadge: CGFloat = 8 * native
         /// Un control de tamaño fijo (los círculos del selector de tipo): en la Mac crece como la letra, si no su ícono lo llena.
-        static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.processInfo.isiOSAppOnMac ? points * typeScale : points }
+        static func sized(_ points: CGFloat) -> CGFloat { ProcessInfo.onMac ? points * typeScale : points }
     }
 }
 

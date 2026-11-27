@@ -12,10 +12,26 @@ enum WidgetStore {
 
     /// nil si el App Group no está disponible (una compilación sin firmar).
     static var directory: URL? {
+        #if targetEnvironment(macCatalyst)
+        // La app de Mac de verdad no lleva widgets ni App Group. En macOS el contenedor del grupo existe igual (es el de la
+        // Orbital de iPad instalada) y abrirlo dispara el aviso «quiere acceder a datos de otras apps», que congelaba la app al
+        // abrir sin que se viera (TL1-B, 27 nov 2026).
+        return nil
+        #else
         guard let root = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID) else { return nil }
         let url = root.appendingPathComponent("Widget", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
+        #endif
+    }
+
+    /// Los ajustes compartidos con los widgets (mismo App Group); en la app de Mac de verdad, ninguno (ver `directory`).
+    static var defaults: UserDefaults? {
+        #if targetEnvironment(macCatalyst)
+        return nil
+        #else
+        return UserDefaults(suiteName: groupID)
+        #endif
     }
 
     private static var snapshotURL: URL? { directory?.appendingPathComponent("snapshot.json") }
