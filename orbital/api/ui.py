@@ -67,9 +67,14 @@ def connected_players() -> list[dict] | None:
     from .. import gamepad
     from ..players import players
 
-    if players.watcher is None and gamepad._watcher is None:  # noqa: SLF001 - el único que sondea los mandos
+    watcher = players.watcher or gamepad._watcher  # noqa: SLF001 - el único que sondea los mandos
+    if watcher is None:
         return None
-    return [{"player": p["player"], "battery": p["battery"]} for p in players.snapshot()]
+    found = [{"player": p["player"], "battery": p["battery"]} for p in players.snapshot()]
+    # Los que XInput no ve (Fernando, 27 nov 2026): los controles de la Legion Go en modo DInput (17EF:61ED), PlayStation, Switch
+    # Pro. Windows los ve por winmm; no dicen su batería (su foco va prendido sin color de pila). Se suman después de los de XInput.
+    extra = watcher.others() if hasattr(watcher, "others") else []
+    return found + [{"player": len(found) + i, "battery": None} for i in range(1, len(extra) + 1)]
 
 
 def router(d: Deps) -> APIRouter:

@@ -366,12 +366,15 @@ const BATTERY = { wired: "Con cable", full: "Llena", medium: "A la mitad", low: 
  * suman. A sobre uno: hacerlo Jugador 1 o hacerlo vibrar para saber cuál es. Con un juego abierto que solo lee los
  * controles al arrancar (los de Switch), reiniciarlo con estos jugadores.
  */
-export function playersMenu({ players = [], game = null }) {
+export function playersMenu({ players = [], game = null, others = [] }) {
   const options = players.map((p) => ({
     icon: "gamepad", label: `Jugador ${p.player} · ${p.name}`, value: BATTERY[p.battery] || undefined,
     hint: p.player === 1 ? "Vibra para saber cuál es" : "Hacerlo Jugador 1 o identificarlo",
     command: p.player === 1 ? { type: "player-identify", slot: p.slot } : { type: "player-menu", slot: p.slot, name: p.name, player: p.player },
   }));
+  // Los que Windows ve pero no como XInput (la barra de arriba sí los cuenta): sin número de jugador, y cómo arreglarlo.
+  others.forEach((other) => options.push({ icon: "gamepad", info: true, label: other.legion ? "Control de la Legion Go (modo DInput)" : "Otro control (DInput)",
+    hint: other.legion ? "No tiene número de jugador. Para que cuente, Legion L + RB lo pasa a XInput" : "No tiene número de jugador: algunos juegos no lo leen" }));
   if (!options.length) {
     options.push({ icon: "gamepad", label: "No hay controles conectados", hint: "Conecta uno: entra como el siguiente jugador", command: { type: "stay" } });
   }
