@@ -16,9 +16,9 @@ final class FileBudgetTests: XCTestCase {
 
     /// Pendientes (ruta desde `ios/`): su tamaño el día de la auditoría (29 oct 2026). Solo puede bajar.
     /// 25 nov 2026: seis crecieron en las tandas del 24–25 nov (Mac, mosaico, guía). 27 nov 2026: se partieron (Tokens+Imagery,
-    /// MacDrive, TitleTypes, OrbitalRemote+Choices, Routes, TitleMeasure, ContinueSortMenu); quedan tres, con su tamaño nuevo.
+    /// MacDrive, TitleTypes, OrbitalRemote+Choices, Routes, TitleMeasure, ContinueSortMenu, HomeView+Flags); quedan dos, con su tamaño nuevo.
     static let pending: [String: Int] = [
-        "App/Sources/Screens/HomeView.swift": 605, "App/Sources/Screens/TitleView.swift": 655,
+        "App/Sources/Screens/TitleView.swift": 655,
         "OrbitalCore/Sources/OrbitalModels/TitleModel.swift": 650,
     ]
 

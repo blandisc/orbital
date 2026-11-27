@@ -115,15 +115,6 @@ struct HomeView: View {
             }
     }
 
-    /// En la Mac Inicio se arma entero (26 nov 2026): la baraja de pestañas ya lo tiene armado y escondido, y perezoso armaba
-    /// cada fila al entrar deslizando (128 ms atrasados por segundo al bajar; entero, 27–48). En el iPhone y el iPad, perezoso.
-    private static var lazyPage: Bool {
-        #if MAC_DRIVE
-        if MacDrive.lazy { return true }
-        #endif
-        return !ThisDevice.isMac
-    }
-
     /// La página de Inicio, fuera de `body` para que el compilador la revise a tiempo.
     private func page(_ model: HomeModel, kind: String?) -> some View {
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
@@ -376,7 +367,6 @@ struct HomeView: View {
         return settings
     }
 
-    private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
     /// Cuántos de «Destacado» van en la portada.
     private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(HomeModel.heroCount)) }
