@@ -116,15 +116,16 @@ def test_system_says_which_players_are_connected(make_client, monkeypatch):
         monkeypatch.setattr(gamepad, "_load_battery", lambda: (lambda slot: {2: "low", 0: "wired"}[slot]))
         assert c.get("/api/system", headers=auth).json()["players"] == [{"player": 1, "battery": "low"}, {"player": 2, "battery": "wired"}]
 
-        # Los que XInput no ve (Legion Go en DInput, PlayStation): también cuentan, después, sin batería.
-        Watcher.others = lambda self: [(0x17EF, 0x61ED)]
+        # Los que XInput no ve (un PlayStation): también cuentan, después, sin batería. La central de la Legion Go (17EF:61ED),
+        # que Windows siempre ve aunque no haya controles, no.
+        Watcher.others = lambda self: [(0x054C, 0x09CC), (0x17EF, 0x61ED)]
         assert c.get("/api/system", headers=auth).json()["players"] == [
             {"player": 1, "battery": "low"}, {"player": 2, "battery": "wired"}, {"player": 3, "battery": None}]
         monkeypatch.setattr(players, "order", [])
         Watcher.devices, Watcher.connected_at = {}, {}
         assert c.get("/api/system", headers=auth).json()["players"] == [{"player": 1, "battery": None}]
-        # Y Jugadores dice cuál es (la barra lo cuenta; la lista de jugadores, no): uno de la Legion Go.
-        assert c.get("/api/players", headers=auth).json()["others"] == [{"legion": True}]
+        # Y Jugadores lo dice (la barra lo cuenta; la lista de jugadores, no). La central de la Legion, tampoco ahí.
+        assert c.get("/api/players", headers=auth).json()["others"] == [{}]
 
 
 def test_voice_status_says_where_the_last_order_came_from(make_client):

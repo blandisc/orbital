@@ -207,7 +207,10 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 /* IN2-A (Fernando, 26 nov 2026): los controles, a la izquierda de la hora. La silueta de un control con sus cuatro focos
    encima, como los focos de jugador de una consola: prendidos en el azul de Orbital tantos como jugadores (el 1 a la
    izquierda); en ámbar, ese control con la batería baja; en rojo, casi vacía. Sin controles no se ve (MN-A, 27 nov 2026). Es estado: sin cápsula hasta que lo enfocas o lo señalas, y entonces se abre su nombre, como Buscar (IN3-A). */
-/* El hueco del indicador mide lo mismo con y sin controles: las secciones de en medio no se recorren. */
+/* El hueco del indicador mide lo mismo con y sin controles: las secciones de en medio no se recorren. Sin controles, el hueco
+   vacío se va al principio del grupo de la derecha (se pierde en el aire de junto a las secciones): la pila queda pegada a la
+   hora y no un hueco entre las dos (27 nov 2026). Al llegar uno, vuelve a la izquierda de la hora. */
+.status-bar__pads-slot:has(> .pad-lights[hidden]) { order: -1; }
 .status-bar__pads-slot {
   --pad-light: .44rem; /* un foco */
   display: inline-flex; justify-content: flex-end; min-width: max(var(--icon-xl), 4 * var(--pad-light) + 3 * var(--space-1)); /* lo que mide el indicador: sus cuatro focos */
@@ -234,7 +237,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .pad-lights__label {
   position: absolute; top: calc(100% + var(--space-2)); right: 0; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
-  color: var(--color-text); width: max-content; max-width: 22rem; text-align: right; opacity: 0; /* con cuatro y sus pilas, en dos renglones */ translate: 0 calc(-1 * var(--space-2)); pointer-events: none;
+  color: var(--color-text); width: max-content; max-width: 30rem; text-align: right; opacity: 0; /* con cuatro y sus pilas, en dos renglones */ translate: 0 calc(-1 * var(--space-2)); pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out), translate var(--duration-base) var(--ease-out);
 }
 .pad-lights:hover .pad-lights__label, .is-focused.pad-lights .pad-lights__label, .pad-lights:focus-visible .pad-lights__label { opacity: 1; translate: 0 0; }

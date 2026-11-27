@@ -89,14 +89,13 @@ def router(d: Deps) -> APIRouter:
             if running and running.get("managed"):
                 exe = windows.exe_name(int(running["pid"])) if running.get("pid") else ""
                 game = {"title": running.get("title"), "live_join": exe in d.shell.LIVE_JOIN}
-            # Los que XInput no ve (Legion Go en DInput, PlayStation, Switch Pro): la barra los cuenta, así que aquí se dicen
-            # (27 nov 2026: «2 controles» y un solo jugador en la lista no cuadraba). «legion»: los de la Legion Go.
+            # Los que XInput no ve (PlayStation, Switch Pro): la barra los cuenta, así que aquí se dicen (27 nov 2026: «2
+            # controles» y un solo jugador en la lista no cuadraba). La central de la Legion Go no cuenta (gamepad.GHOST_HUBS).
             from .. import gamepad
 
             watcher = players.watcher or gamepad._watcher  # noqa: SLF001
-            others = watcher.others() if watcher is not None and hasattr(watcher, "others") else []
-            return {"players": players.snapshot(), "game": game,
-                    "others": [{"legion": vendor == gamepad.LENOVO_VENDOR} for vendor, _ in others]}
+            others = gamepad.counted_others(watcher.others()) if watcher is not None and hasattr(watcher, "others") else []
+            return {"players": players.snapshot(), "game": game, "others": [{} for _ in others]}
         return await run_in_threadpool(read)
 
     @r.post("/api/players/first")

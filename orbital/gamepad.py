@@ -352,6 +352,18 @@ def _load_joysticks():
     return joysticks
 
 
+# La central USB de la Legion Go (17EF:61ED: teclado, mouse, touchpad y dos entradas de control) siempre se ve por winmm, con o
+# sin los controles puestos y prendidos, en reposo y sin moverse (medido el 27 nov 2026: «según yo no están conectados» y la
+# barra decía 2). Por winmm no se sabe si un control de la Legion está prendido: no cuenta. Prendidos en XInput (Legion L + RB)
+# sí cuentan, con su batería.
+GHOST_HUBS = {(LENOVO_VENDOR, 0x61ED)}
+
+
+def counted_others(devices: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Los que XInput no ve y sí son controles conectados (fuera la central de la Legion Go)."""
+    return [d for d in devices if d not in GHOST_HUBS]
+
+
 def others(joysticks: list[tuple[int, int]], xinput: list[tuple[int, int]]) -> list[tuple[int, int]]:
     """Los mandos que ve winmm y XInput no (cada XInput también sale en winmm, con la misma marca y modelo)."""
     left = list(xinput)
