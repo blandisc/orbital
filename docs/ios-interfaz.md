@@ -1341,6 +1341,12 @@ sinopsis (aparte; si nunca lo elegiste, el mismo de la app), lo que ves (el audi
 tres opciones cortas se eligen a la vista con `DSSelector`, nunca con una lista que abre otra pantalla.
 `testLanguagesLiveInOnePlace` y `testOneSelectorEverywhere`.
 
+### La isla abierta se ve entera
+
+Lo que muestra una actividad en vivo en la isla abierta cabe completo, sin cortarse por abajo: iOS le da un alto fijo, así
+que cada actividad usa en la isla sus propias medidas, más chicas que las de la pantalla bloqueada (26 nov 2026: la pausa de
+«Viendo en la TV» salía a la mitad). Lo vigila `DesignRulesTests.testTheOpenIslandFitsWhole`.
+
 ## 4b. Bilingüe
 
 Textos en `Localizable.xcstrings` (es base, en); fichas según el idioma de la app; lo guardado en Stremio

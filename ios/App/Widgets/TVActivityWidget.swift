@@ -35,7 +35,7 @@ struct TVLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster, placeholder: "tv").padding(.leading, DS.Space.s1)
+                    ActivityPoster(file: context.state.poster, width: DS.Widget.islandTVPoster, placeholder: "tv").padding(.leading, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     OrbitalSeal(paused: context.state.paused, compact: true).padding(.trailing, DS.Space.s1)
@@ -51,7 +51,7 @@ struct TVLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: DS.Space.s1) {
                         if !context.state.live { TVTimeline(state: context.state) }
-                        TVButtons(state: context.state)
+                        TVButtons(state: context.state, size: DS.Widget.islandKey)
                     }
                     .padding(.horizontal, DS.Space.s1)
                 }
@@ -129,6 +129,9 @@ private struct TVTimeline: View {
 /// turquesa de Orbital. Cada uno con su objetivo táctil completo.
 private struct TVButtons: View {
     var state: TVActivityAttributes.ContentState
+    /// El alto de cada botón y el círculo de la pausa: entero en la pantalla bloqueada, más chico en la isla, que tiene un alto
+    /// fijo y cortaba la pausa por abajo (Fernando, 26 nov 2026).
+    var size: CGFloat = DS.Widget.tvKey
     var body: some View {
         HStack(spacing: 0) {
             if !state.live { key("gobackward.10", action: "back", label: Text("−10 s")) }
@@ -142,11 +145,11 @@ private struct TVButtons: View {
     private func key(_ symbol: String, action: String, label: Text, solid: Bool = false) -> some View {
         Button(intent: TVControlIntent(action: action)) {
             ZStack {
-                if solid { Circle().fill(DS.accent).frame(width: DS.Widget.tvKey, height: DS.Widget.tvKey) }
-                Image(systemName: symbol).font(DS.font(solid ? .lg : .xl, weight: .semibold))
+                if solid { Circle().fill(DS.accent).frame(width: size, height: size) }
+                Image(systemName: symbol).font(DS.font(solid || size < DS.Widget.tvKey ? .lg : .xl, weight: .semibold))
                     .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
             }
-            .frame(maxWidth: .infinity).frame(height: DS.Widget.tvKey)
+            .frame(maxWidth: .infinity).frame(height: size)
             .contentShape(Rectangle())
         }
         .accessibilityLabel(label)
