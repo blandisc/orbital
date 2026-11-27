@@ -41,6 +41,19 @@ section.decision { display: grid; gap: 14px; }
 .dictate { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; max-width: 70ch; }
 .dictate p { margin: 0; }
 .dictate .say { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; }
+.strip { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.strip img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+.strip p { margin: 0; font-size: .84rem; }
+.strip b { font-weight: 600; }
+.map { overflow-x: auto; }
+.map table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .9rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.map th, .map td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.map th { font-family: var(--display); font-weight: 600; font-size: .85rem; color: var(--muted); }
+.map tr:last-child td { border-bottom: 0; }
+.map td:first-child { font-weight: 600; }
+.sources { font-size: .84rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.sources a { color: var(--accent); }
 .notes { font-size: .88rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
 .notes p { margin: 0; }
 </style>
@@ -48,7 +61,43 @@ section.decision { display: grid; gap: 14px; }
   <section class="intro">
     <h1>El dock del Duo cerrado</h1>
     <p>Cuando el Duo está cerrado, el iPhone pone la hora y las pestañas en una columna a la derecha. Hoy cada pantalla la trata distinto. En Inicio los carruseles pasan por debajo de las pestañas y chocan. Arriba, tu foto y el control se quedan en su barra y dejan un hueco. El reproductor deja la columna negra. Y a la mitad de la columna no hay nada.</p>
-    <p>Abajo van tres decisiones, cada una con cómo se ve hoy y sus opciones. Las maquetas están armadas con pedazos de las pantallas reales.</p>
+    <p>Abajo va primero la regla de fondo (DR0), sacada de lo que hacen otras apps, y luego tres decisiones con cómo se ve hoy y sus opciones. Las maquetas están armadas con pedazos de las pantallas reales; las de Apple son capturas de sus apps en el simulador del Duo.</p>
+  </section>
+
+  <section class="decision" aria-labelledby="dr0">
+    <div class="dhead"><span class="code">DR0</span><h2 id="dr0">Cómo se acomodan los controles</h2></div>
+    <p class="lead">Lo primero fue ver qué hacen otras apps en el Duo cerrado. Las de Apple no acomodan nada a mano. Cada botón dice qué papel tiene y el iPhone decide dónde va: arriba o abajo en un iPhone normal, en la columna en el Duo.</p>
+    <div class="evidence">
+      <figure class="strip"><img src="img/col-archivos.jpg" alt="La columna de Archivos de Apple: atrás y adelante arriba, una cápsula con vista y más en medio, las pestañas abajo" loading="lazy"><p><b>Archivos (Apple).</b> Arriba, atrás y adelante. En medio, una cápsula con lo de esa pantalla (vista y más). Abajo, las pestañas. El contenido se detiene antes de la columna.</p></figure>
+      <figure class="strip"><img src="img/col-safari.jpg" alt="La columna de Safari: atrás y lectura arriba, agregar y pestañas abajo" loading="lazy"><p><b>Safari (Apple).</b> Arriba, atrás y el modo lectura. Abajo, los botones que en un iPhone normal van en la barra de abajo (agregar y pestañas).</p></figure>
+      <figure class="strip"><img src="img/col-mosaico.jpg" alt="La columna del mosaico de Orbital: atrás arriba, refrescar y tu foto juntos, las pestañas abajo" loading="lazy"><p><b>Orbital, mosaico de Explorar.</b> El que te gustó ya usa botones del sistema: atrás, refrescar y tu foto. Por eso se acomoda bien, sin código para el Duo.</p></figure>
+    </div>
+    <div class="options">
+      <article class="opt pick">
+        <header><span class="code">DR0-A</span><h3>Botones del sistema, con su papel</h3><span class="tag">recomendada</span></header>
+        <ul><li class="plus">Un solo diseño: el mismo código da la barra de arriba en un iPhone normal y la columna en el Duo. Igual en el Duo abierto, el iPad y lo que venga.</li><li class="plus">Se ve y se siente como las apps de Apple: la gente ya sabe dónde buscar.</li><li class="plus">Casi nada que cuidar solo para el Duo: tres reglas (abajo) y sus pruebas.</li><li class="minus">En un iPhone normal algunos botones cambian de lugar: los de Biblioteca (filtrar, agregar, elegir varias) suben a la barra de arriba, como en Archivos.</li><li class="minus">La forma la pone el iPhone (cápsulas de vidrio): menos libertad para dibujar algo propio en la columna.</li></ul>
+      </article>
+      <article class="opt">
+        <header><span class="code">DR0-B</span><h3>Una columna hecha por Orbital</h3></header>
+        <ul><li class="plus">Libertad total: la columna podría llevar el póster de la tele, un avance o lo que se nos ocurra.</li><li class="minus">Dos diseños que mantener: cada pantalla nueva se arma y se prueba dos veces, la del iPhone y la del Duo.</li><li class="minus">Pelea con lo que el iPhone ya pone en la columna (la hora, las pestañas, los botones del sistema). Cada versión de iOS puede moverlo.</li></ul>
+      </article>
+    </div>
+    <div class="map" role="region" aria-label="Dónde va cada control" tabindex="0">
+      <table>
+        <thead><tr><th>Control y su papel</th><th>iPhone normal</th><th>Duo cerrado</th></tr></thead>
+        <tbody>
+          <tr><td>Volver</td><td>Arriba a la izquierda</td><td>Arriba de la columna, bajo la hora</td></tr>
+          <tr><td>Lo tuyo: tu foto y el control de la tele</td><td>Arriba a la derecha</td><td>Bajo la hora, juntos en una cápsula</td></tr>
+          <tr><td>Lo de esa pantalla: filtrar, agregar, elegir varias, vistas, refrescar</td><td>En la barra de arriba</td><td>En medio de la columna, en una cápsula (el hueco de hoy)</td></tr>
+          <tr><td>Pestañas</td><td>Abajo</td><td>Al pie de la columna (ya está así)</td></tr>
+          <tr><td>«Viendo en la TV»</td><td>Sobre las pestañas</td><td>Lo acomoda el iPhone junto a las pestañas; lo mido en el simulador antes de darlo por bueno</td></tr>
+          <tr><td>Avisos y «¿Qué tal…?»</td><td>Sobre las pestañas</td><td>A la orilla de abajo (ya hecho)</td></tr>
+          <tr><td>Reproductor</td><td>Pantalla completa, con sus controles</td><td>Igual, de orilla a orilla (DR3)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="why"><b>Por qué A:</b> es lo que hace Apple y lo que ya funciona en el mosaico. La regla para construir queda en una frase: <i>si es un botón de la pantalla, es un botón del sistema con su papel</i>. Lo único propio del Duo serían tres cosas: el contenido se detiene antes de la columna, los avisos bajan a la orilla y el reproductor llega a las orillas. Las tres viven en un solo lugar cada una, con una prueba que avisa si alguien las rompe.</p>
+    <p class="sources">Fuentes: <a href="https://www.duoapps.com/patterns/where-the-bars-go/">Where toolbars and tab bars go on iPhone Duo</a> <a href="https://iphoneduo.dev/blog/02-design-for-iphone-duo">Design for iPhone Duo</a> <a href="https://developer.android.com/design/ui/mobile/guides/layout-and-content/postures-and-orientation">Android: postures and orientation</a> <a href="https://m2.material.io/components/navigation-rail">Material: navigation rail</a></p>
   </section>
 
   <div class="done">
@@ -93,7 +142,7 @@ section.decision { display: grid; gap: 14px; }
         <ul><li class="plus">Los botones propios de cada pantalla bajan a la columna. En Biblioteca son filtrar, agregar y elegir varias.</li><li class="plus">El contenido gana su renglón y la columna siempre tiene algo útil.</li><li class="minus">Esos botones quedan un poco más lejos del contenido que tocan.</li></ul>
       </article>
     </div>
-    <p class="why"><b>Por qué B:</b> llena el hueco siempre, no solo cuando la tele está prendida, y usa los mismos botones de hoy. A la puedo sumar después, encima de los botones, cuando la tele tenga algo y ya la hayamos visto en el simulador.</p>
+    <p class="why"><b>Por qué B:</b> es lo que hace Archivos de Apple y sale solo con DR0-A: llena el hueco siempre, no solo cuando la tele está prendida. Lo de la tele (A) ya tiene su lugar nativo, «Viendo en la TV», que el iPhone acomoda junto a las pestañas.</p>
   </section>
 
   <section class="decision" aria-labelledby="dr3">
@@ -121,7 +170,7 @@ section.decision { display: grid; gap: 14px; }
 
   <section class="dictate" aria-label="Para dictar">
     <p>Para dictar, el código de cada decisión. Mi recomendación:</p>
-    <p class="say">DR1-A · DR2-B · DR3-B</p>
+    <p class="say">DR0-A · DR1-A · DR2-B · DR3-B</p>
     <p>Si quieres otra cosa en alguna, dime el código y lo que cambiarías, por ejemplo «DR2-A también».</p>
   </section>
 
