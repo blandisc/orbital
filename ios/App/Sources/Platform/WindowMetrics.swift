@@ -46,6 +46,19 @@ final class WindowMetrics {
     nonisolated static func isLarge(_ size: CGSize) -> Bool { min(size.width, size.height) >= largeSide }
     nonisolated static var large: Bool { isLarge(size) }
 
+    /// iPhone de pie más ancho que lo común (la pantalla de afuera del Duo, 466 × 678, proporción 0,69; los demás iPhone
+    /// andan en 0,46): ahí falta alto, así que Inicio junta su encabezado con la hora en un solo renglón (LD2-B, 27 nov
+    /// 2026). En el 17 Pro y el resto de iPhone no cambia nada.
+    nonisolated static var shortPhone: Bool {
+        #if os(iOS) && !WIDGET_EXTENSION
+        let s = size
+        guard !ProcessInfo.onMac, !isLarge(s), s.height > s.width else { return false }
+        return MainActor.assumeIsolated { UIDevice.current.userInterfaceIdiom == .phone } && s.width / s.height > 0.6
+        #else
+        return false
+        #endif
+    }
+
     /// Las barras al costado (el Duo cerrado, DU1-A): iOS pone la hora y las pestañas en una franja a la derecha, de pie. Abajo
     /// ya no hay barra de pestañas: lo que flota abajo (avisos, «¿Qué tal…?») baja a la orilla en vez de apartarle su lugar.
     /// Se reconoce por el margen seguro del costado, de pie: el de un iPhone acostado (la isla, ~60) no cuenta porque ahí

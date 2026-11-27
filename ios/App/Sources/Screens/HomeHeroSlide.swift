@@ -37,6 +37,7 @@ struct HomeHeroSlide: View {
             // cerca de la orilla de abajo: se veía flotando a media tarjeta (Fernando, 24 nov 2026).
             .padding(.bottom, overlap + (tile ? DS.Space.s2 : WindowMetrics.roomy ? DS.Space.s4 : DS.Space.s6))
         }
+        .environment(\.artCentered, Double(aspect) >= ArtFit.tallBelow)   // marco ancho (el Duo): el carrusel, al centro
         .contentShape(Rectangle())
         .onTapGesture { open(s.route) }
     }

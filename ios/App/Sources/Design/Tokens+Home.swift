@@ -28,8 +28,12 @@ extension DS {
                 // `sideFade`), así en un monitor ultrawide la portada no pasa de su parte del alto (antes llenaba la ventana).
                 return ProcessInfo.onMac ? fitted : min(aspectWideMax, fitted)
             }
+            if WindowMetrics.shortPhone { return aspectShortPhone }
             return size.height < shortScreen ? aspectShort : aspect
         }
+        /// En la pantalla de afuera del Duo (ancha y baja) la portada es más baja que en el SE: el fondo 16:9 se recorta menos
+        /// (se ve el arte entero, al centro) y «Seguir viendo» sube (Fernando, 27 nov 2026: «centrada y un poco más pequeña»).
+        static let aspectShortPhone: CGFloat = 1.5
         /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
         /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
         static let maxHeightShare: CGFloat = ProcessInfo.onMac ? DS.Mac.heroHeightShare : 0.6, aspectWideMax: CGFloat = 2.4

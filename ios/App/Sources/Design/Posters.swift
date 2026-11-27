@@ -238,10 +238,11 @@ private struct FocusedFill: View {
     let box: CGSize
     @State private var focus: CGPoint?
     @State private var gaveUp = false
+    @Environment(\.artCentered) private var centered
 
     var body: some View {
         let size = source?.size ?? .zero
-        let needed = source != nil && ArtFit.needsFocus(image: size, box: box)
+        let needed = source != nil && !centered && ArtFit.needsFocus(image: size, box: box)
         let point = focus ?? FocalPoint.cached(key)
         let drawn = ArtFit.filled(image: size, box: box)
         Group {
@@ -265,6 +266,13 @@ private struct FocusedFill: View {
             gaveUp = true   // si tarda, al centro (y si lo encuentra después, se corre)
         }
     }
+}
+
+extension EnvironmentValues {
+    /// El recorte va al centro, sin buscar al sujeto: la portada de Inicio en un marco ancho (la pantalla de afuera del Duo).
+    /// Corrida hacia las caras se veía descentrada junto a las demás tarjetas del carrusel (Fernando, 27 nov 2026: «fíjate que
+    /// las imágenes del carrusel estén centradas»).
+    @Entry var artCentered = false
 }
 
 extension DS.Image {

@@ -6,7 +6,7 @@ struct HomeView: View {
     @Environment(\.titleName) var titleName
     @Environment(AppEnvironment.self) private var env
     @State private var home: ModelObserver<HomeModel>
-    @State private var tvNow: ModelObserver<TVNowModel>
+    @State var tvNow: ModelObserver<TVNowModel>
     @State private var inbox: ModelObserver<InboxModel>
     /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
     @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
@@ -33,7 +33,7 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.openRemote) private var openRemote
+    @Environment(\.openRemote) var openRemote
     @Environment(\.scenePhase) private var scenePhase
 
     /// Bajaste: el encabezado se encoge (las historias se achican en su lugar).
@@ -266,16 +266,16 @@ struct HomeView: View {
             await SimpsonsWidgetPublisher.publishIfNeeded(env.simpsons, seasons: env.services.appSettings.simpsonsSeasons)   // el widget «Un Simpson del día»
         }
         // El encabezado propio de Inicio (HE1-B): el logo, la cápsula y los tipos (sin historias desde el 18 nov).
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(Self.headerInBar ? .visible : .hidden, for: .navigationBar)
+        .toolbar { if Self.headerInBar { barHeader } }
         .macTopShade()   // en la Mac, lo que sube no pasa crudo detrás del logo y las pestañas
-        .safeAreaBar(edge: .top) {
+        .safeAreaBar(edge: .top) { if !Self.headerInBar {
             HomeHeader(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
                        collapsed: collapsed,
-                       // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
-                       showsRemote: openRemote != nil && (tvNow.model.now == nil || !Self.hasTabAccessory),
+                       showsRemote: showsRemote,
                        remote: { openRemote?() },
                        avatar: look.avatar)
-        }
+        } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
@@ -357,7 +357,7 @@ struct HomeView: View {
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
 
     /// Cómo se ve Inicio (carrusel, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
-    private var look: AppSettings {
+    var look: AppSettings {
         var settings = env.services.appSettings
         #if DEBUG
         if Demo.isOn {   // `-demo-avatar comet`: para ver cada avatar en las capturas
