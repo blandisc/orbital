@@ -324,7 +324,7 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)
         .animation(DS.Motion.base(reduceMotion), value: ipodFace)
-        .onAppear { Perf.mark("player.shown"); HardwareVolumeButtons.yieldsToPlayer = true; env.tvNow.setLocalPlayerOpen(true) }   // A11: sin sondear la TV
+        .onAppear { Perf.mark("player.shown"); env.lastLocalEngine = holder.engine; HardwareVolumeButtons.yieldsToPlayer = true; env.tvNow.setLocalPlayerOpen(true) }   // A11: sin sondear la TV
         .onDisappear { HardwareVolumeButtons.yieldsToPlayer = false; env.tvNow.setLocalPlayerOpen(false) }
         .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
         // A1: la primera vez que pausas, el aviso chico de los gestos (nunca encima de una escena que corre).

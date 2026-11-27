@@ -26,6 +26,7 @@ extension AppEnvironment {
     func playOnTV(kind: String, metaID: String, videoID: String?, title: String, source: Source? = nil) async {
         guard ui.sendingToTV != metaID else { return }
         ui.sendingToTV = metaID
+        await silenceThisDevice()
         defer { if ui.sendingToTV == metaID { ui.sendingToTV = nil } }
         let language = services.appSettings.uiLanguage
         notices.show(Notice(text: Strings.message("Mandando a tu Orbital…", language: language), tone: .info, detail: title, symbol: "tv.and.mediabox"))
@@ -36,6 +37,17 @@ extension AppEnvironment {
                 self?.ui.openRemote = true
             }
         } catch { notifyOrbital(error) }
+    }
+
+    /// Lo que va a la TV no suena también aquí: el reproductor del iPhone se cierra y su motor se calla, aunque ya no esté en
+    /// pantalla (en segundo plano o en imagen en imagen). Regla: al mandar a la TV, el iPhone se queda en silencio
+    /// (`DesignRulesTests.testSendingToTheTVSilencesThePhone`).
+    func silenceThisDevice() async {
+        playing = nil
+        guard let engine = lastLocalEngine else { return }
+        lastLocalEngine = nil
+        await engine.pause()
+        await engine.stop()
     }
 
     /// Lo de `metaID` va en camino a tu Orbital (el botón de la tele enseña la ruedita).

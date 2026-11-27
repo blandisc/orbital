@@ -1431,3 +1431,9 @@ llegaba tarde tapaba el que elegiste y otro episodio esperaba a que se guardara 
 Para pegar se usa `PasteButton`, nunca `UIPasteboard.general.string` leído por código; al pegar se quitan los espacios y los
 saltos de las orillas. *Por qué:* leerlo por código hace que iOS pregunte «Permitir pegar» cada vez, y así pasaba al pegar la
 clave de una nube. Copiar (escribir en el portapapeles) sí se vale. `DesignRulesTests+Paste` falla si vuelve una lectura.
+
+### Lo que va a la TV no suena también en el iPhone (26 nov 2026)
+
+Fernando: «la puse en la tele y estaba reproduciendo el audio del iPhone». **Al mandar algo a la TV, el iPhone se queda en
+silencio**: el reproductor de aquí se cierra y su motor se detiene, aunque ya no esté en pantalla (en segundo plano o en
+imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone`.
