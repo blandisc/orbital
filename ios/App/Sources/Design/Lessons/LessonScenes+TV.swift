@@ -68,8 +68,7 @@ struct LessonTVRemote: View {
                 Circle().fill(DS.fillStrong).sceneBox(80, 80).sceneAt(10, 50)
                 ForEach(0..<2, id: \.self) { n in
                     let s = Self.swipes[n]
-                    Circle().fill(DS.paper.opacity(DS.Lesson.fingerFill))
-                        .overlay(Circle().strokeBorder(DS.paper.opacity(DS.Lesson.fingerRim), lineWidth: DS.Stroke.regular))
+                    LessonFingerDot()
                         .sceneBox(30, 30)
                         .scenePut(M.smooth(s - 0.34, s - 0.26, t) * M.lerp(1, 0, M.smooth(s, s + 0.1, t)),
                                   35 - 18 + 36 * M.smooth(s - 0.3, s, t), 75)

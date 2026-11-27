@@ -81,8 +81,7 @@ struct LessonLanguageOrder: View {
                     .sceneBox(354, DS.Lesson.languageRow).scaleEffect(1 + 0.04 * lift).sceneAt(24, CGFloat(40 + i * 60))
                     .scenePut(e.o, 0, e.y + dy)
             }
-            Circle().fill(DS.paper.opacity(DS.Lesson.fingerFill))
-                .overlay(Circle().strokeBorder(DS.paper.opacity(DS.Lesson.fingerRim), lineWidth: DS.Stroke.regular))
+            LessonFingerDot()
                 .sceneBox(DS.Lesson.finger, DS.Lesson.finger)
                 .scenePut(M.clamp((t - 0.4) / 0.2) * (1 - M.smooth(1.75, 1.95, t)) * DS.Lesson.fingerOpacity,
                           CGFloat(348) - DS.Lesson.finger / 2, CGFloat(125) - DS.Lesson.finger / 2 - CGFloat(60 * k), 1 - DS.Lesson.fingerPress * CGFloat(press))
@@ -141,6 +140,7 @@ struct LessonAudioPanel: View {
         .padding(DS.Space.s2)
         .sceneBox(DS.Lesson.panel, 208)
         .background(.ultraThinMaterial)
+        .environment(\.colorScheme, .dark)   // va sobre el video, como el panel del reproductor: oscuro en los dos modos
     }
 
     private func header(_ text: Text) -> some View {
