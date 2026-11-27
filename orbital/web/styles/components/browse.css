@@ -14,6 +14,10 @@
 .browse__bar--compact .pill { padding: 0 var(--space-4); }
 .browse__bar--compact .browse__count { display: none; }
 .browse__bar--tight .browse__filters { gap: var(--space-2); }
+/* Pestañas de texto (Recientes … Con control): entre una y otra, el aire de su propio relleno y un paso chico. Con Inter (TF-B,
+   27 nov 2026), más ancha que Segoe, la fila se corría ~33 px y en 1280 «Con control» quedaba sobre lo más claro del arte
+   (4,0 contra 4,5 en test_text_on_art_passes_strict_contrast); así vuelve a su lugar y la cápsula enfocada conserva su aire. */
+.browse__filters:has(> .pill--tab) { column-gap: var(--space-1); }
 .browse__bar--tight .pill { padding: 0 var(--space-2); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 /* --- Portadas: aire generoso con los filtros y entre ellas; la enfocada crece sin cortarse arriba. --- */
