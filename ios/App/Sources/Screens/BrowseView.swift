@@ -248,7 +248,8 @@ struct BrowseView: View {
         }
         DSPosterGrid(items: shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r, width in
             // Con letra de accesibilidad, el año y el tipo en dos renglones (en uno se cortaban).
-            TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: width,
+            // El póster chico de metahub: la celda no necesita el mediano y llega en menos de la mitad del tiempo.
+            TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: Artwork.thumbnail(r.poster)), width: width,
                       detail: yearAndKind(year: r.year, kind: r.kind), detailLines: typeSize.isAccessibilitySize ? 2 : 1,
                       fallbackPoster: r.fallbackPoster)
                 .perfTag("search.grid")
@@ -257,7 +258,7 @@ struct BrowseView: View {
         // Los pósters de los primeros resultados, todos a la vez en cuanto llegan (antes cada celda pedía el suyo hasta
         // aparecer, de a poco).
         .task(id: shown.prefix(DS.Size.searchPrefetch).map(\.metaID)) {
-            ImagePipeline.shared.prefetchPosters(shown.prefix(DS.Size.searchPrefetch).compactMap(\.poster))
+            ImagePipeline.shared.prefetchPosters(shown.prefix(DS.Size.searchPrefetch).compactMap { Artwork.thumbnail($0.poster) })
         }
     }
 

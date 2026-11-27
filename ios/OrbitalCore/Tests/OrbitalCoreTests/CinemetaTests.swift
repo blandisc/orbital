@@ -89,8 +89,16 @@ final class CinemetaTests: XCTestCase {
         let series: [JSON] = [["id": "tt2455546", "name": "Avengers Assemble"], ["id": "tt0054518", "name": "The Avengers"]]
         let fame = ["tt4154796": 193.0, "tt4154756": 138, "tt0848228": 118, "tt2455546": 3, "tt0054518": 3]
         let got = CinemetaParsing.searchResults(query: "avengers", movies: movies, series: series, fame: fame).map(\.metaID)
-        XCTAssertEqual(got, ["tt4154796", "tt0848228", "tt4154756", "tt0054518", "tt2455546"], "lo que se ve arriba; las caricaturas al final")
-        XCTAssertEqual(CinemetaParsing.fame(["popularities": ["trakt": .double(3), "moviedb": .double(45), "stremio": .double(1.5)]]), 3, "Trakt antes que TMDB y Stremio")
+        XCTAssertEqual(got, ["tt0848228", "tt4154796", "tt4154756", "tt0054518", "tt2455546"], "lo que se ve arriba; las caricaturas al final")
+        // La serie de 1961 y la película de 2012 empatan en TMDB y Stremio; la combinación ya las separa.
+        let old = CinemetaParsing.fame(["imdbRating": "8.3", "popularities": ["moviedb": .double(45.8), "trakt": .double(3), "stremio": .double(1.527)]])!
+        let movie = CinemetaParsing.fame(["imdbRating": "8.0", "popularities": ["moviedb": .double(45.8), "trakt": .double(118), "stremio": .double(1.526)]])!
+        XCTAssertGreaterThan(movie, old)
+        XCTAssertNil(CinemetaParsing.fame(["imdbRating": "8.0"]))
+        // Lo de moda no gana a lo conocido: Shrek Forever After (Trakt 225) ya no le gana a Shrek.
+        let shrek = CinemetaParsing.fame(["imdbRating": "7.9", "popularities": ["moviedb": .double(24.1), "trakt": .double(50)]])!
+        let forever = CinemetaParsing.fame(["imdbRating": "6.4", "popularities": ["moviedb": .double(12.4), "trakt": .double(225)]])!
+        XCTAssertGreaterThan(shrek, forever)
         XCTAssertEqual(CinemetaParsing.relevance(query: "dune", name: "Dune: Part Two"), 2)
         XCTAssertEqual(CinemetaParsing.fameCandidates(movies: movies, series: series).count, 5)
         // Sin dato de fama: lo que se parece antes que lo que no trae ninguna palabra («Thunderbolts*» sale por el reparto).

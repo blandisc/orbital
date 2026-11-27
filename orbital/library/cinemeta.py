@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import threading
 import time
 import urllib.error
@@ -380,16 +381,23 @@ def tie_popularity(client: Cinemeta, query: str, movies: list[dict], series: lis
 
 
 def fame(meta: dict | None) -> float | None:
-    """Qué tan conocida es para ordenar la búsqueda (como el iPhone): la de Trakt (gente que la ve) y, si no, la de TMDB.
-    La de Stremio no sirve para esto: ponía la serie The Avengers de 1961 arriba de la película de 2012 (26 nov 2026)."""
+    """Qué tan conocida es para ordenar la búsqueda (como el iPhone): la media geométrica de las tres popularidades de la
+    ficha (TMDB, Trakt entre 3, Stremio por 25, para llevarlas a la misma escala) por la calificación de IMDb arriba de 4.
+    Ninguna sola sirve: Trakt y TMDB miden lo de moda («shrek» daba Shrek Forever After; «lord of the rings», Rings of
+    Power con 1825 en TMDB) y Stremio y TMDB ponían la serie The Avengers de 1961 al nivel de la película de 2012.
+    Medido con `scripts/medir_busqueda.py relevancia` (26 nov 2026)."""
     pops = meta.get("popularities") if isinstance(meta, dict) else None
     if not isinstance(pops, dict):
         return None
-    for key in ("trakt", "moviedb"):
-        value = pops.get(key)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return float(value)
-    return None
+    values = [value * scale for key, scale in (("moviedb", 1.0), ("trakt", 1 / 3), ("stremio", 25.0))
+              if isinstance(value := pops.get(key), (int, float)) and not isinstance(value, bool) and value > 0]
+    if not values:
+        return None
+    try:
+        rating = float(meta.get("imdbRating") or 0)
+    except (TypeError, ValueError):
+        rating = 0.0
+    return math.exp(sum(math.log(v) for v in values) / len(values)) * max(rating - 4, 0.5)
 
 
 FAME_CANDIDATES = 10  # las primeras de cada tipo
@@ -457,7 +465,8 @@ def search_results(query: str, movies: list[dict], series: list[dict], limit: in
     if fame:  # parecido × fama, como el iPhone: «avengers» ya no pone la caricatura antes que Endgame
         def score(km: tuple[str, dict]) -> float | None:
             value = fame.get(str(km[1].get("id")))
-            return None if value is None else value * relevance(query, km[1].get("name"))
+            # parecido al cuadrado y fama en logaritmo: que la fama desempate, no que aplaste al nombre
+            return None if value is None else relevance(query, km[1].get("name")) ** 2 * math.log1p(value)
         known = sorted((km for km in ordered if score(km) is not None), key=lambda km: -(score(km) or 0.0))  # estable
         ordered = known + [km for km in ordered if score(km) is None]
     # Lo que no tiene dato de fama, por parecido (estable): lo que no trae ni una palabra de lo escrito, hasta abajo.

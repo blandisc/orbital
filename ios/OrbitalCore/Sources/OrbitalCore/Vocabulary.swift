@@ -108,6 +108,13 @@ public enum Artwork {
         return url
     }
 
+    /// El póster de una celda de cuadrícula (Buscar): el «small» de metahub (300×445, ~60 KB) en vez del «medium» (~150 KB),
+    /// que además ya no se pide junto con su versión ligera. La celda mide ~115 pt (≈345 px): se ve igual y los diez primeros
+    /// pósters de una búsqueda llegan en menos de la mitad del tiempo (`scripts/medir_busqueda.py posters`, 26 nov 2026).
+    public static func thumbnail(_ url: String?) -> String? {
+        url?.replacingOccurrences(of: "images.metahub.space/poster/medium/", with: "images.metahub.space/poster/small/")
+    }
+
     /// Lo contrario de `variant`, para los widgets (se bajan una vez y se ven a pantalla de iPhone): el póster «large» de metahub
     /// (780×1170) en vez del «medium» (500×750), y de TMDB w780 en vez de w342 o w500, cuando se piden más pixeles de los que
     /// trae la variante de la URL. Lo demás, tal cual.

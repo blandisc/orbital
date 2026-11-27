@@ -338,11 +338,18 @@ public enum CinemetaParsing {
         meta["popularity"]?.doubleValue ?? meta["popularities"]?["stremio"]?.doubleValue
     }
 
-    /// Qué tan conocida es para ordenar la búsqueda: la de Trakt (gente que la ve) y, si no, la de TMDB. La de Stremio no
-    /// sirve para esto: ponía la serie The Avengers de 1961 arriba de la película de 2012 (Fernando, 26 nov 2026).
+    /// Qué tan conocida es para ordenar la búsqueda: la media geométrica de las tres popularidades de la ficha (TMDB, Trakt
+    /// entre 3, Stremio por 25, a la misma escala) por la calificación de IMDb arriba de 4. Ninguna sola sirve: Trakt y TMDB
+    /// miden lo de moda («shrek» daba Shrek Forever After) y Stremio y TMDB ponían la serie The Avengers de 1961 al nivel de
+    /// la película. Medido con `scripts/medir_busqueda.py relevancia` (Fernando, 26 nov 2026). La misma cuenta en la TV.
     public static func fame(_ meta: JSON) -> Double? {
         let p = meta["popularities"]
-        return p?["trakt"]?.doubleValue ?? p?["moviedb"]?.doubleValue
+        let values = [("moviedb", 1.0), ("trakt", 1.0 / 3), ("stremio", 25.0)].compactMap { key, scale in
+            p?[key]?.doubleValue.flatMap { $0 > 0 ? $0 * scale : nil }
+        }
+        guard !values.isEmpty else { return nil }
+        let rating = meta["imdbRating"]?.string.flatMap(Double.init) ?? meta["imdbRating"]?.doubleValue ?? 0
+        return exp(values.map(log).reduce(0, +) / Double(values.count)) * max(rating - 4, 0.5)
     }
 
     /// Las primeras de cada tipo, de las que se pide qué tan conocidas son (en paralelo y con tope).
@@ -393,7 +400,8 @@ public enum CinemetaParsing {
         // Assemble» quedaba segunda y Endgame sexta. Lo que no tiene dato, después y en el orden de siempre.
         if !fame.isEmpty {
             let score: ((String, JSON)) -> Double? = { km in
-                km.1["id"]?.string.flatMap { fame[$0] }.map { $0 * relevance(query: query, name: km.1["name"]?.string) }
+                // parecido al cuadrado y fama en logaritmo: que la fama desempate, no que aplaste al nombre
+                km.1["id"]?.string.flatMap { fame[$0] }.map { pow(relevance(query: query, name: km.1["name"]?.string), 2) * log1p($0) }
             }
             let known = ordered.enumerated().compactMap { i, km in score(km).map { (i, km, $0) } }
                 .sorted { $0.2 != $1.2 ? $0.2 > $1.2 : $0.0 < $1.0 }.map(\.1)

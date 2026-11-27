@@ -718,8 +718,14 @@ def test_search_orders_by_fame():
     series = [{"id": "tt2455546", "name": "Avengers Assemble"}, {"id": "tt0054518", "name": "The Avengers"}]
     fame = {"tt4154796": 193, "tt4154756": 138, "tt0848228": 118, "tt2455546": 3, "tt0054518": 3}
     got = [r["meta_id"] for r in cinemeta.search_results("avengers", movies, series, fame=fame)]
-    assert got == ["tt4154796", "tt0848228", "tt4154756", "tt0054518", "tt2455546"]
-    assert cinemeta.fame({"popularities": {"trakt": 3, "moviedb": 45, "stremio": 1.5}}) == 3
+    assert got == ["tt0848228", "tt4154796", "tt4154756", "tt0054518", "tt2455546"]
+    old = cinemeta.fame({"imdbRating": "8.3", "popularities": {"moviedb": 45.8, "trakt": 3, "stremio": 1.527}})
+    movie = cinemeta.fame({"imdbRating": "8.0", "popularities": {"moviedb": 45.8, "trakt": 118, "stremio": 1.526}})
+    assert movie > old  # la serie de 1961 ya no empata con la película de 2012
+    assert cinemeta.fame({"imdbRating": "8.0"}) is None
+    shrek = cinemeta.fame({"imdbRating": "7.9", "popularities": {"moviedb": 24.1, "trakt": 50}})
+    forever = cinemeta.fame({"imdbRating": "6.4", "popularities": {"moviedb": 12.4, "trakt": 225}})
+    assert shrek > forever  # lo de moda no gana a lo conocido
     assert cinemeta.relevance("dune", "Dune: Part Two") == 2
     more = movies + [{"id": "tt1", "name": "Thunderbolts*"}, {"id": "tt2", "name": "Avengers"}]
     assert [r["meta_id"] for r in cinemeta.search_results("avengers", more, series, fame=fame)][-2:] == ["tt2", "tt1"]

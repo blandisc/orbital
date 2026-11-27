@@ -21,8 +21,9 @@ extension DesignRulesTests {
                 rest = after
             }
         }
-        // En la ficha, lo de abajo (episodios, reparto, detalles) se arma al asomarse, no al abrir.
-        XCTAssertTrue(try code("TitleView.swift").contains("if belowFold { LazyVStack("), "lo de abajo de la ficha va perezoso")
+        // En la ficha, lo de abajo (episodios, reparto, detalles) se arma cuando llegó la ficha, no al abrir. En una pila
+        // normal: la perezosa adivinaba su alto y la ficha se «soltaba» al final (26 nov, `testLazyStacksAreOnlyForLongLists`).
+        XCTAssertTrue(try code("TitleView.swift").contains("if belowFold { VStack("), "lo de abajo de la ficha se arma al llegar la ficha")
         // «Decide por mí» no rehace su abanico de pósters en cada pasada: lo guarda hasta que el modelo cambie.
         XCTAssertTrue(try code("DecideSheet.swift").contains("DecideFanMemo"), "el abanico de «Decide por mí» se guarda por versión del modelo")
     }

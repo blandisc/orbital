@@ -1203,8 +1203,9 @@ instalada, sin clics (`ios/scripts/medir-mac-sin-manos.sh`: la app sigue unas ó
 marca cada una), tres rondas antes (2531) y cuatro después (2533).
 
 - **Regla: lo que no está a la vista no se arma ni avisa.** Un panel cerrado no arma lo de adentro (el `.inspector` de la
-  raíz armaba el panel lateral al abrir la app y lo repintaba con cada sondeo de la TV); lo de abajo de la ficha va
-  perezoso (`LazyVStack`); un valor que se calcula de un modelo en cada pasada se guarda hasta que el modelo cambie
+  raíz armaba el panel lateral al abrir la app y lo repintaba con cada sondeo de la TV); lo de abajo de la ficha se
+  arma hasta que llegó la ficha (`belowFold`), en una pila normal: perezosa adivinaba su alto y la ficha se «soltaba» al
+  final (26 nov; «Una pantalla no se suelta al final» en `docs/sistema-de-diseno.md`); un valor que se calcula de un modelo en cada pasada se guarda hasta que el modelo cambie
   (`ObservableModel.revision`, el abanico de «Decide por mí»), y una propiedad publicada que se compara no avisa con el
   mismo valor (`@Tracked` sin `always`). `DesignRulesTests.testWhatIsNotSeenIsNotBuilt` y
   `testTrackedValuesCompareBeforeNotifying` lo vigilan.
