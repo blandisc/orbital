@@ -296,12 +296,17 @@ private struct TitleDestinations: ViewModifier {
 }
 
 private struct TitleZoomSource: ViewModifier {
+    #if MAC_DRIVE
+    static var lite: Bool { MacDrive.litePoster }
+    #else
+    static let lite = false
+    #endif
     let route: TitleRoute
     @Environment(\.titleZoom) private var zoom
     @Environment(\.titleZoomSlot) private var slot
 
     func body(content: Content) -> some View {
-        if let zoom, let slot {
+        if let zoom, let slot, !Self.lite {
             content
                 // Con la esquina y la sombra del póster: el zoom crece desde la tarjeta y regresa a ella, no desde un
                 // rectángulo de esquinas rectas.

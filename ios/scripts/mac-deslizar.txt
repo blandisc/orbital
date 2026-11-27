@@ -1,0 +1,30 @@
+go
+wait 20
+tab 0
+wait 3
+scroll 3000 3
+wait 1.5
+scroll -3000 3
+wait 2
+tab 1
+wait 4
+scroll 3000 3
+wait 1.5
+scroll -3000 3
+wait 2
+tab 3
+wait 4
+scroll 2500 3
+wait 1.5
+scroll -2500 3
+wait 2
+tab 0
+wait 2
+title series tt0903747 https://images.metahub.space/poster/small/tt0903747/img Breaking_Bad
+wait 5
+scroll 2500 3
+wait 1.5
+scroll -2500 3
+wait 2
+close
+wait 2

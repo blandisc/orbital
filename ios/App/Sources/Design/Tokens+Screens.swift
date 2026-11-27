@@ -85,6 +85,10 @@ extension DS {
         /// ancha que la ficha de una columna se estire.
         static var sidePanelWidth: CGFloat { min(max(WindowMetrics.size.width * sidePanelShare, sidePanelMin), sidePanelMax) }   // ds-exception: la ficha flota sobre la ventana entera
         static let sidePanelShare: CGFloat = 0.4, sidePanelMin: CGFloat = 460, sidePanelMax: CGFloat = 680
+        /// El margen de los lados dentro de esa ficha a la derecha: el de un teléfono grande, no el de la ventana entera. Con el
+        /// de la ventana (5 %, ~78 pt) la columna de 460 se quedaba con un tercio vacío y el contenido apretado al centro
+        /// (Fernando, 26 nov 2026: «más ancho el contenido; no la columna, pero sí el contenido dentro de ella»).
+        static let sidePanelSide = DS.Space.s6
         /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo. Largo (AR1, 13
         /// nov 2026; antes 36): lo que sube se va despacio, sin franja con orilla ni texto cortado a la mitad (el SE).
         static let topFade: CGFloat = 96, fadeAt: CGFloat = 0.85

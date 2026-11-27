@@ -132,6 +132,9 @@ struct ListsView: View {
         #if DEBUG
         if MacSelfCheck.off.contains("lazy") { return false }
         #endif
+        #if MAC_DRIVE
+        if MacDrive.eager { return false }
+        #endif
         return true
     }
 
@@ -140,7 +143,7 @@ struct ListsView: View {
             // Perezoso (Fernando, 1 nov 2026: «Explorar cambia lento»): al volver a la pestaña solo se acomoda lo que se ve;
             // antes un `VStack` volvía a acomodar todos los grupos (plataformas, colecciones, años, listas) en cada cambio.
             // El índice de arriba sigue saltando a cualquiera (cada grupo tiene su `id`).
-            LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+            ShelfStack(lazy: Self.lazyShelves, spacing: DS.Layout.betweenSections) {
                 // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
                 // «Decide por mí». El destacado, «Porque viste» y los estrenos viven en Inicio.
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {

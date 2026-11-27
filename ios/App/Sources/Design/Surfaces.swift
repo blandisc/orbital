@@ -222,7 +222,10 @@ private struct RowEdgeClip: ViewModifier {
     @State private var geo = RowGeo()
     /// Dónde queda la fila en la ventana: una fila suelta que lleva su margen como relleno de adentro (no como `contentMargins`)
     /// no lo dice en `contentInsets`, y llegaba a la orilla de la ventana (los episodios en la ficha, 22 nov 2026).
-    @State private var span = ClosedRange<CGFloat>(uncheckedBounds: (0, 0))
+    /// Se mide una vez y otra solo si la fila cambia de ancho (otra ventana, otra columna): leerlo de la ventana en cada cuadro
+    /// costaba en cada fila mientras deslizabas la página (26 nov 2026; al deslizar la página la fila no se mueve a lo ancho).
+    @State private var span = RowSpan()
+    struct RowSpan: Equatable { var range = ClosedRange<CGFloat>(uncheckedBounds: (0, 0)), width: CGFloat = -1 }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Dónde empieza y termina el contenido (sus márgenes) y si hay más a cada lado.
@@ -240,7 +243,11 @@ private struct RowEdgeClip: ViewModifier {
                 } action: { _, now in
                     withAnimation(DS.Motion.base(reduceMotion)) { geo = now }
                 }
-                .onGeometryChange(for: ClosedRange<CGFloat>.self) { $0.frame(in: .global).minX...max($0.frame(in: .global).minX, $0.frame(in: .global).maxX) } action: { span = $0 }
+                .onGeometryChange(for: RowSpan.self) { [span] g in
+                    if g.size.width == span.width { return span }   // ya medida: sin leer la ventana (así no depende de dónde va la página)
+                    let frame = g.frame(in: .global)
+                    return RowSpan(range: frame.minX...max(frame.minX, frame.maxX), width: g.size.width)
+                } action: { span = $0 }
                 .mask {
                     HStack(spacing: 0) {
                         Color.clear.frame(width: lead)
@@ -260,11 +267,11 @@ private struct RowEdgeClip: ViewModifier {
     private var lead: CGFloat {
         guard geo.before else { return 0 }
         guard edge == .bleeds else { return geo.lead }
-        return max(geo.lead, DS.Space.gutter - span.lowerBound, 0)
+        return max(geo.lead, DS.Space.gutter - span.range.lowerBound, 0)
     }
     private var trail: CGFloat {
         guard geo.after else { return 0 }
         guard edge == .bleeds else { return geo.trail }
-        return max(geo.trail, DS.Space.gutter - (WindowMetrics.column.width - span.upperBound), 0)
+        return max(geo.trail, DS.Space.gutter - (WindowMetrics.column.width - span.range.upperBound), 0)
     }
 }

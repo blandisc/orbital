@@ -130,7 +130,8 @@ extension TitleView {
 
     /// El margen de los lados: el del iPhone, o en el iPad y la Mac el de la receta (`WideStage`): la columna de «Ver» y lo de
     /// abajo empiezan en la orilla del escenario centrado más su margen. Las filas salen por la orilla.
-    var side: CGFloat { sizeClass == .regular ? wideStage.leading : DS.Space.gutter }
+    /// En la ficha a la derecha de la Mac, el suyo (`sidePanelSide`): el de la ventana es para pantallas enteras.
+    var side: CGFloat { sizeClass == .regular ? wideStage.leading : inPanel ? DS.TitleAction.sidePanelSide : DS.Space.gutter }
 
     /// El trabajo de alguien del equipo, en español (TMDB lo manda en inglés); un personaje se queda tal cual.
     func crewRole(_ role: String) -> String {

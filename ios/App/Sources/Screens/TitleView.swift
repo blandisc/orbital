@@ -233,7 +233,7 @@ struct TitleView: View {
                     AnyView(readingSections(model))
                 }
                 .modifier(TitleEntrance())   // el arte llega con el zoom; lo de abajo entra detrás de él
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
+                .padding(.horizontal, side).padding(.bottom, DS.Layout.screenBottom)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
                 // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
                 // reparto ni saga): si no, en unas fichas se recogía y en otras no.
@@ -410,7 +410,7 @@ struct TitleView: View {
         // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
         // la segunda fila de acciones quedaba debajo de las pestañas.
         let room = viewport.height - belowHero - padding - DS.Space.s2
-        let width = contentWidth - (scheme == .dark ? 0 : DS.Space.gutter * 2)
+        let width = contentWidth - (scheme == .dark ? 0 : side * 2)
         guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
         return min(cap, max(DS.TitleAction.heroAspect, width / room))

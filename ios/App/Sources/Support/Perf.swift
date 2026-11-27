@@ -647,6 +647,14 @@ final class MainPing: @unchecked Sendable {
     static let glassInstant = UserDefaults.standard.bool(forKey: "macGlassInstant")
     static let frostGlass = UserDefaults.standard.bool(forKey: "macFrostGlass")
     static let solidGlass = UserDefaults.standard.bool(forKey: "macSolidGlass")
+    /// Experimentos de deslizar (26 nov 2026): `-macNoEntrance` sin la entrada de las filas, `-macEager` las columnas de Inicio
+    /// y Explorar armadas de una vez, `-macLitePoster` el póster sin el marco del puntero, su realce ni el origen del zoom.
+    static let noEntrance = UserDefaults.standard.bool(forKey: "macNoEntrance")
+    static let eager = UserDefaults.standard.bool(forKey: "macEager")
+    /// `-macLazy`: Inicio perezoso también en la Mac (como antes), para comparar.
+    static let lazy = UserDefaults.standard.bool(forKey: "macLazy")
+    static let litePoster = UserDefaults.standard.bool(forKey: "macLitePoster")
+
 
     /// `go`: espera a que el script avise que Instruments ya graba (`notifyutil -p mx.iracheta.orbital.go`; dos minutos como
     /// mucho). Con la Mac ocupada Instruments tardaba más que la espera fija y se perdía la ronda (25 nov 2026).
@@ -666,13 +674,10 @@ final class MainPing: @unchecked Sendable {
         let start = view.contentOffset.y
         let top = -view.adjustedContentInset.top, bottom = max(top, view.contentSize.height - view.bounds.height + view.adjustedContentInset.bottom)
         log.notice("scroll \(Int(view.frame.width))x\(Int(view.frame.height)) de \(Int(view.contentSize.height)) desde \(Int(start))")
-        let t0 = CACurrentMediaTime()
-        while true {
-            let p = min(1, (CACurrentMediaTime() - t0) / seconds)
-            view.contentOffset.y = min(bottom, max(top, start + distance * p))
-            if p >= 1 { break }
-            try? await Task.sleep(for: .milliseconds(4))
-        }
+        // Cuadro por cuadro (CADisplayLink), como la rueda: cada cuadro mueve la lista a donde va según el reloj, y se anota cuánto
+        // se atrasó cada uno. «tirones» = ms atrasados por segundo de deslizar (Apple: < 5 se siente fluido, > 10 se nota).
+        let r = await ScrollDriver.run(seconds: seconds) { p in view.contentOffset.y = min(bottom, max(top, start + distance * p)) }
+        log.notice("frames \(r.frames, privacy: .public) tirones \(Int(r.hitchPerSecond), privacy: .public) peor \(Int(r.worst), privacy: .public) pesados \(r.heavy, privacy: .public) hz \(r.hz, privacy: .public)")
     }
 
     /// La lista de enfrente: de las que se ven y ocupan buena parte de la ventana, la que está más arriba (la ficha, si está
@@ -691,6 +696,37 @@ final class MainPing: @unchecked Sendable {
         }
         walk(root)
         return front
+    }
+
+    /// Mueve algo cada cuadro durante `seconds` y cuenta los cuadros atrasados.
+    @MainActor private final class ScrollDriver: NSObject {
+        struct Result { var frames = 0, heavy = 0, hz = 0; var worst = 0.0, hitchPerSecond = 0.0 }
+        private var link: CADisplayLink?, first: CFTimeInterval = 0, last: CFTimeInterval = 0, lost: CFTimeInterval = 0
+        private var result = Result(), seconds = 0.0, step: @MainActor (Double) -> Void = { _ in }, done: CheckedContinuation<Result, Never>?
+        static func run(seconds: Double, step: @escaping @MainActor (Double) -> Void) async -> Result {
+            let d = ScrollDriver(); d.seconds = seconds; d.step = step
+            return await withCheckedContinuation { c in
+                d.done = c
+                let link = CADisplayLink(target: d, selector: #selector(tick(_:)))
+                link.add(to: .main, forMode: .common); d.link = link
+            }
+        }
+        @objc private func tick(_ link: CADisplayLink) {
+            let frame = max(link.targetTimestamp - link.timestamp, 1.0 / 120)
+            if first == 0 { first = link.timestamp; result.hz = Int((1 / frame).rounded()) }
+            if last > 0 {
+                let gap = link.timestamp - last
+                result.worst = max(result.worst, gap * 1000)
+                if gap > frame * 1.5 { lost += gap - frame; result.heavy += 1 }
+            }
+            last = link.timestamp; result.frames += 1
+            let p = min(1, (link.timestamp - first) / seconds)
+            step(p)
+            guard p >= 1 else { return }
+            link.invalidate(); self.link = nil
+            result.hitchPerSecond = lost * 1000 / max(0.001, last - first)
+            done?.resume(returning: result); done = nil
+        }
     }
 
     /// `snap <nombre>`: la ventana a un PNG en la carpeta temporal de la app (para comparar cómo se ve antes y después sin

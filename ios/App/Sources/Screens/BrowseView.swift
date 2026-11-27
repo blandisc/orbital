@@ -279,7 +279,7 @@ struct BrowseView: View {
         }
     }
 
-    /// Lo más popular hoy, en renglones que llenan la ventana (solo en la Mac).
+    /// Lo más popular hoy, en renglones que llenan la ventana (la Mac y el iPad ancho).
     /// Renglones del muro que caben a lo alto de la ventana (ver `DS.Mac.searchRowsMin`).
     private static func wallRows(posterWidth: CGFloat) -> Int {
         let row = posterWidth / DesignTokens.Aspect.poster + DS.Mac.searchCaption
@@ -312,13 +312,9 @@ struct BrowseView: View {
             showFilter = true
         }
         let clear = { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
-        return Group {
-            if !ThisDevice.isMac {
-                FilterDoorQuiet(context: context, count: model.count, open: open, clear: clear)
-            } else {
-                FilterDoor(context: context, count: model.count, open: open, clear: clear)
-            }
-        }
+        // Igual en el iPhone, el iPad y la Mac (Fernando, 26 nov 2026: «hazlo para que quede como en el iPhone»): la tarjeta
+        // callada (R1). Debajo, con espacio, lo más popular hoy.
+        return FilterDoorQuiet(context: context, count: model.count, open: open, clear: clear)
         .coachAnchor("advanced-search")   // F3: el aviso con foco de Buscar señala la puerta del filtro
         .padding(.horizontal, DS.Space.gutter)
     }

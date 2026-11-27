@@ -154,8 +154,12 @@ struct MosaicCover: View {
                 if isDoor { MosaicDoorBadge(count: count).padding(.horizontal, DS.Space.gutter).offset(y: DS.ParaTiB.badgeDrop).opacity(Double(1 - reach)) }
             }
             .contentShape(Rectangle())
-            // Solo lo de lado: al deslizar la página cambia el alto en pantalla y no debe volver a pintar la portada.
-            .onGeometryChange(for: CGRect.self) { g in let f = g.frame(in: .global); return CGRect(x: f.minX, y: 0, width: f.width, height: 0) } action: { coverFrame = $0 }
+            // Solo lo de lado, y medido una vez por ancho: al deslizar la página la portada no se mueve a lo ancho, y leer la
+            // ventana en cada cuadro costaba mientras deslizabas (26 nov 2026, como `RowEdgeClip`).
+            .onGeometryChange(for: CGRect.self) { [coverFrame] g in
+                if g.size.width == coverFrame.width { return coverFrame }
+                let f = g.frame(in: .global); return CGRect(x: f.minX, y: 0, width: f.width, height: 0)
+            } action: { coverFrame = $0 }
     }
 
     /// Tocarla: el muro se endereza y crece (`DS.Motion.grow`) y entonces entra el mosaico. Con «Reducir movimiento», de una vez.

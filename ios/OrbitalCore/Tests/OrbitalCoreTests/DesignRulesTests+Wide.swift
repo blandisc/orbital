@@ -175,8 +175,10 @@ extension DesignRulesTests {
         XCTAssertTrue(try code("DownloadsView.swift").contains("LibraryHome(saved: saved"), "Biblioteca en la Mac: filas como Inicio (BI-A)")
         XCTAssertTrue(try code("SettingsView+Mac.swift").contains(".environment(\\.settingsPane, SettingsPane("), "Ajustes en la Mac: lista y detalle")
         XCTAssertTrue(try code("BrowseView.swift").contains("if TopRow.tabsInLogoRow { MacSearchField(text: $query, focused: $typing)"), "Buscar en la Mac (y el iPad con espacio, C1): el campo grande")
-        // BU-A (22 nov 2026) reemplazó los seis mosaicos grandes de MS1: un renglón de cápsulas con ícono y el campo a lo ancho.
-        XCTAssertTrue(try code("Filtro.swift").contains("FilterChip(page: page, context: context) { open(page) }"), "Buscar en la Mac: las puertas en un renglón de cápsulas (BU-A)")
+        // BU-A (22 nov 2026) puso un renglón de cápsulas en la Mac; el 26 nov Fernando pidió «que quede como en el iPhone»: la
+        // misma tarjeta callada (R1) en las tres, y debajo, con espacio, lo más popular hoy (arriba en este mismo test).
+        XCTAssertTrue(try code("BrowseView.swift").contains("return FilterDoorQuiet(context: context"), "Buscar: la misma búsqueda avanzada en el iPhone, el iPad y la Mac")
+        XCTAssertFalse(files.contains { $0.lines.contains { $0.contains("struct FilterDoor:") } }, "Sin otra puerta de búsqueda avanzada solo para la Mac")
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".frame(maxWidth: .infinity, minHeight: DS.Mac.searchFieldHeight)"), "El campo de Buscar en la Mac va a lo ancho (BU-A)")
         XCTAssertTrue(try code("MacTabStrip.swift").contains(".textFieldStyle(.plain).font(DS.Mac.searchFieldText.font)"), "El campo de Buscar en la Mac lleva la letra de su token (un paso arriba de las puertas)")
         XCTAssertTrue(try code("MacTabStrip.swift").contains("UIView.setAnimationsEnabled(false)"), "En la Mac la pestaña cambia al momento")
@@ -218,5 +220,19 @@ extension DesignRulesTests {
         let controls = try XCTUnwrap(files.first { $0.name == "ListControls.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(bar.contains(".font(DS.TextRecipe.section.font)"), "ListBarIcon con la letra de sección")
         XCTAssertTrue(controls.contains("Image(systemName: \"arrow.up.arrow.down\").font(DS.TextRecipe.section.font)"), "ordenar del tamaño de los otros íconos")
+    }
+
+    /// La ficha a la derecha de la Mac (460–680 pt) lleva su propio margen, no el de la ventana entera (5 %, ~78 pt): con ese
+    /// el contenido quedaba apretado al centro de la columna (Fernando, 26 nov 2026). Todo margen de la ficha pasa por `side`.
+    func testTitlePanelUsesItsOwnSide() throws {
+        let files = try sources(["Screens"])
+        let title = files.filter { $0.name.hasPrefix("TitleView") && $0.name != "TitleView+TusVistas.swift" }
+        XCTAssertFalse(title.isEmpty)
+        for file in title {
+            for line in file.lines where line.contains("DS.Space.gutter") {
+                XCTAssertTrue(line.contains("var side: CGFloat") && line.contains("inPanel ? DS.TitleAction.sidePanelSide"),
+                              "\(file.name): el margen de la ficha va por `side` (en el panel, `sidePanelSide`): \(line)")
+            }
+        }
     }
 }
