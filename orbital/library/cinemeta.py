@@ -392,7 +392,7 @@ def fame(meta: dict | None) -> float | None:
     return None
 
 
-FAME_CANDIDATES = 6  # las primeras de cada tipo
+FAME_CANDIDATES = 10  # las primeras de cada tipo
 FAME_LIMIT = 0.8  # segundos: si las fichas tardan más, se queda el orden de Cinemeta (antes 1.5 y solo para empates)
 
 
@@ -460,6 +460,9 @@ def search_results(query: str, movies: list[dict], series: list[dict], limit: in
             return None if value is None else value * relevance(query, km[1].get("name"))
         known = sorted((km for km in ordered if score(km) is not None), key=lambda km: -(score(km) or 0.0))  # estable
         ordered = known + [km for km in ordered if score(km) is None]
+    # Lo que no tiene dato de fama, por parecido (estable): lo que no trae ni una palabra de lo escrito, hasta abajo.
+    first_unknown = next((i for i, km in enumerate(ordered) if str(km[1].get("id")) not in fame), len(ordered)) if fame else len(ordered)
+    ordered = ordered[:first_unknown] + sorted(ordered[first_unknown:], key=lambda km: -relevance(query, km[1].get("name")))
     seen, results = set(), []
     for kind, meta in ordered:
         if meta["id"] in seen:

@@ -431,6 +431,21 @@ final class DesignRulesTests: XCTestCase {
 
     // MARK: Pulido de la 1729 (Fernando, 3 nov 2026)
 
+    /// Una pantalla no se suelta al final (Fernando, 26 nov 2026: en la ficha de Endgame «seguía para abajo» a un hueco y luego
+    /// brincaba). Una pila perezosa adivina el alto de lo que no ha armado: solo vale para listas largas (`ForEach`) o los
+    /// feeds de muchas filas que ya la usan; unos cuantos bloques grandes van en una pila normal.
+    func testLazyStacksAreOnlyForLongLists() throws {
+        let feeds: Set<String> = ["HomeView.swift", "ListsView.swift", "ListsView+Parts.swift", "MiMediaView.swift", "LibraryHome.swift"]
+        var problems: [String] = []
+        for file in try sources() where !feeds.contains(file.name) {
+            for (i, line) in file.lines.enumerated() where line.contains("LazyVStack(") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                let window = file.lines[i..<min(file.lines.count, i + 4)].joined(separator: "\n")
+                if !window.contains("ForEach") { problems.append("\(file.path):\(i + 1)") }
+            }
+        }
+        check(problems, "Pila perezosa sin lista larga (se suelta al final)")
+    }
+
     /// Una hoja mide lo que trae (`fittedSheet`, `fittedScrollSheet`): nunca media pantalla con un hueco abajo. Las de antes
     /// con `.medium` quedan en la lista y solo puede bajar; «¿Qué es esto?» se mide sola (quien la abre no le pone alturas).
     func testSheetsFitTheirContent() throws {

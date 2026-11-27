@@ -721,3 +721,5 @@ def test_search_orders_by_fame():
     assert got == ["tt4154796", "tt0848228", "tt4154756", "tt0054518", "tt2455546"]
     assert cinemeta.fame({"popularities": {"trakt": 3, "moviedb": 45, "stremio": 1.5}}) == 3
     assert cinemeta.relevance("dune", "Dune: Part Two") == 2
+    more = movies + [{"id": "tt1", "name": "Thunderbolts*"}, {"id": "tt2", "name": "Avengers"}]
+    assert [r["meta_id"] for r in cinemeta.search_results("avengers", more, series, fame=fame)][-2:] == ["tt2", "tt1"]

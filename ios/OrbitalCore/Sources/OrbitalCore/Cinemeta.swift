@@ -346,7 +346,7 @@ public enum CinemetaParsing {
     }
 
     /// Las primeras de cada tipo, de las que se pide qué tan conocidas son (en paralelo y con tope).
-    public static let fameCandidates = 6
+    public static let fameCandidates = 10
     public static func fameCandidates(movies: [JSON], series: [JSON]) -> [(kind: String, id: String)] {
         let pick: (String, [JSON]) -> [(kind: String, id: String)] = { kind, metas in
             metas.prefix(fameCandidates).compactMap { m in m["id"]?.string.map { (kind, $0) } }
@@ -399,6 +399,13 @@ public enum CinemetaParsing {
                 .sorted { $0.2 != $1.2 ? $0.2 > $1.2 : $0.0 < $1.0 }.map(\.1)
             ordered = known + ordered.filter { score($0) == nil }
         }
+        // Lo que no tiene dato de fama, por parecido (estable): lo que no trae ni una palabra de lo escrito, hasta abajo.
+        let firstUnknown = fame.isEmpty ? ordered.count : ordered.firstIndex { km in km.1["id"]?.string.flatMap { fame[$0] } == nil } ?? ordered.count
+        let tail = ordered[firstUnknown...].enumerated().sorted { a, b in
+            let ra = relevance(query: query, name: a.element.1["name"]?.string), rb = relevance(query: query, name: b.element.1["name"]?.string)
+            return ra != rb ? ra > rb : a.offset < b.offset
+        }.map(\.element)
+        ordered = Array(ordered[..<firstUnknown]) + tail
         var seen = Set<String>(), results: [SearchResult] = []
         for (kind, meta) in ordered {
             guard let id = meta["id"]?.string, seen.insert(id).inserted else { continue }

@@ -93,6 +93,10 @@ final class CinemetaTests: XCTestCase {
         XCTAssertEqual(CinemetaParsing.fame(["popularities": ["trakt": .double(3), "moviedb": .double(45), "stremio": .double(1.5)]]), 3, "Trakt antes que TMDB y Stremio")
         XCTAssertEqual(CinemetaParsing.relevance(query: "dune", name: "Dune: Part Two"), 2)
         XCTAssertEqual(CinemetaParsing.fameCandidates(movies: movies, series: series).count, 5)
+        // Sin dato de fama: lo que se parece antes que lo que no trae ninguna palabra («Thunderbolts*» sale por el reparto).
+        let more = movies + [["id": "tt1", "name": "Thunderbolts*"], ["id": "tt2", "name": "Avengers"]]
+        let tail = CinemetaParsing.searchResults(query: "avengers", movies: more, series: series, fame: fame).map(\.metaID).suffix(2)
+        XCTAssertEqual(Array(tail), ["tt2", "tt1"])
     }
 
     func testUnusableMetasAreDropped() {

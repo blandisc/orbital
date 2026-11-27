@@ -383,9 +383,11 @@ struct TitleView: View {
         if let info = letterboxdInfo, !info.reviews.isEmpty {
             LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
         }
-        // Perezosa: episodios, reparto y detalles casi nunca caben a la vista al abrir; se arman al asomarse (en la Mac, abrir
-        // una ficha armaba la serie entera de golpe). Mismo espaciado que la columna.
-        if belowFold { LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) { belowTheFold(model) } }
+        // Lo de abajo (episodios, reparto, saga, parecidas, detalles) se arma cuando llegó la ficha (`belowFold`), en una pila
+        // normal: son tres bloques grandes y una pila perezosa adivinaba su alto. Con Endgame la ficha se «soltaba»: seguía
+        // bajando a un hueco vacío y luego brincaba para arriba (Fernando, 26 nov 2026). Los episodios ya son perezosos
+        // adentro (`episodes`), que es lo que de verdad pesa.
+        if belowFold { VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) { belowTheFold(model) } }
     }
 
     /// Lo de más abajo de la ficha: se arma después de que la ficha llegó (`belowFold`).
