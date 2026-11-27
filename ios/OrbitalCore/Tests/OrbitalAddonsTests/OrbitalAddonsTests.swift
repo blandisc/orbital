@@ -10,7 +10,7 @@ final class AddonListTests: XCTestCase {
 
     func testTheTemplateCarriesYourKeyAndTheKeyIsHiddenInLogs() throws {
         let url = try XCTUnwrap(AddonCatalog.torrentio.manifestURL(token: token))
-        XCTAssertEqual(url, "https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr,unknown|realdebrid=\(token)/manifest.json")
+        XCTAssertEqual(url, "https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr|realdebrid=\(token)/manifest.json")
         XCTAssertNil(AddonCatalog.torrentio.manifestURL(token: nil), "sin clave no se arma")
         XCTAssertNotNil(AddonCatalog.openSubtitles.manifestURL(token: nil), "el que no usa Real-Debrid no la pide")
         let log = "No contestó \(url)"
@@ -33,7 +33,7 @@ final class AddonListTests: XCTestCase {
         XCTAssertEqual(services, [["service": "realdebrid", "apiKey": token]])
         XCTAssertEqual(config["cachedOnly"] as? Bool, true)
         XCTAssertNil(AddonCatalog.comet.manifestURL(token: nil), "sin clave no se arma")
-        XCTAssertFalse(AddonCatalog.comet.onByDefault, "apagado hasta probarlo con una cuenta real")
+        XCTAssertTrue(AddonCatalog.comet.onByDefault, "prendido desde el 27 nov: más fuentes")
         XCTAssertFalse(AddonRedaction.redact("No contestó \(url)", secrets: [token]).contains(segment))
         XCTAssertEqual(AddonCatalog.recommended.map(\.id), ["torrentio", "comet", "opensubtitles"])
     }
@@ -135,6 +135,22 @@ final class AddonStorageTests: XCTestCase {
         + #"{"id":"a1x","name":"Listas","resources":["catalog"],"enabled":false,"origin":{"imported":{}},"usesDebrid":false},"#
         + #"{"id":"a2y","name":"Pegado","resources":["stream"],"enabled":true,"origin":{"pasted":{}},"usesDebrid":false}]"#
 
+    /// 27 nov 2026 (el Chapulín Colorado en TorBox): una sola vez, lo instalado deja de esconder «sin calidad» y Comet se prende;
+    /// si luego lo vuelves a poner, se respeta.
+    func testMoreSourcesOnceInWhatIsInstalled() throws {
+        let vault = InMemoryAddonVault()
+        let first = AddonList(vault: vault)
+        first.startWithRecommended()
+        first.setOptions("torrentio", AddonOptions(excludedQualities: ["cam", "scr", "unknown"]))
+        first.update { list in for i in list.indices where list[i].origin == .recommended("comet") { list[i].enabled = false } }
+        vault.setData(AddonKeys.moreSourcesDone, nil)
+        let second = AddonList(vault: vault)
+        XCTAssertEqual(second.installed.first { $0.id == "torrentio" }?.options?.excludedQualities, ["cam", "scr"])
+        XCTAssertEqual(second.installed.first { $0.origin == .recommended("comet") }?.enabled, true)
+        second.setOptions("torrentio", AddonOptions(excludedQualities: ["unknown"]))
+        XCTAssertEqual(AddonList(vault: vault).installed.first { $0.id == "torrentio" }?.options?.excludedQualities, ["unknown"], "una sola vez")
+    }
+
     func testTodaysSavedListIsReadBackedUpAndItsDefaultsWritten() throws {
         let vault = InMemoryAddonVault()
         vault.setData("addons-installed", Data(today.utf8))
@@ -146,7 +162,7 @@ final class AddonStorageTests: XCTestCase {
         XCTAssertEqual(list.installed[0].options, AddonOptions(), "las opciones de hoy quedan escritas")
         let saved = try XCTUnwrap(String(data: XCTUnwrap(vault.data("addons-installed")), encoding: .utf8))
         XCTAssertTrue(saved.contains(#""version":2"#))
-        XCTAssertTrue(saved.contains(#""qualityfilter""#) == false && saved.contains("unknown"), "los valores, no «los de la app»")
+        XCTAssertTrue(saved.contains(#""qualityfilter""#) == false && saved.contains(#""scr"#), "los valores, no «los de la app»")
         // Leído otra vez (ya en el formato nuevo): lo mismo, y la copia no se toca.
         let again = AddonList(vault: vault)
         XCTAssertEqual(again.installed, list.installed)

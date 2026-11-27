@@ -776,7 +776,7 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   assert.equal(order.options.sort, "size"); // A pasa al siguiente orden
   assert.equal(menu.options[2].command.options.debridoptions[0], "nodownloadlinks");
   assert.deepEqual(menu.options.at(-2).command.options.language, ["latino", "spanish"]);
-  assert.ok(!torrentioMenu({ options: { language: ["latino", "spanish"], qualityfilter: ["cam", "scr", "unknown"] } }).options.some((o) => o.label === "Volver a lo recomendado"));
+  assert.ok(!torrentioMenu({ options: { language: ["latino", "spanish"], qualityfilter: ["cam", "scr"] } }).options.some((o) => o.label === "Volver a lo recomendado"));
   const langs = torrentioLanguagesMenu({ options: { language: ["latino", "japanese"] } });
   assert.deepEqual(langs.options.map((o) => o.label), ["1. Latino", "2. Japonés", "Agregar idioma"]);
   const japanese = torrentioLanguageMenu({ options: { language: ["latino", "japanese"] } }, "japanese");

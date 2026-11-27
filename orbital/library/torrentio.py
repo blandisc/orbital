@@ -35,8 +35,8 @@ QUALITIES = ("brremux", "hdrall", "dolbyvision", "dolbyvisionwithhdr", "threed",
              "480p", "other", "scr", "cam", "unknown")
 SORTS = ("quality", "qualitysize", "seeders", "size")  # el primero es el de Torrentio y no se escribe
 NO_LIMIT = "1000GB"
-# Lo que viene con Orbital (T11, igual que AddonOptions del iPhone): latino y español primero; sin cine, Screener ni sin calidad.
-RECOMMENDED = {"language": ["latino", "spanish"], "qualityfilter": ["cam", "scr", "unknown"]}
+# Lo que viene con Orbital (T11, igual que AddonOptions del iPhone): latino y español primero; sin cine ni Screener («sin calidad» se ve desde el 27 nov 2026: las series viejas casi siempre vienen así).
+RECOMMENDED = {"language": ["latino", "spanish"], "qualityfilter": ["cam", "scr"]}
 SECRET_KEYS = ("realdebrid", "premiumize", "alldebrid", "debridlink", "offcloud", "putio", "torbox", "easydebrid")
 
 

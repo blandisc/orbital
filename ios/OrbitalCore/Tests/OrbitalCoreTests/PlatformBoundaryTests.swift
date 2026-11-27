@@ -10,12 +10,14 @@ final class PlatformBoundaryTests: XCTestCase {
         return url
     }
 
-    /// Mide la pantalla en vez de la ventana, pregunta qué aparato es, fuerza el giro o supone una sola ventana.
-    static let deviceAPI = #"UIScreen|UIDevice|userInterfaceIdiom|requestGeometryUpdate|supportedInterfaceOrientations|AppDelegate\.orientations|connectedScenes|import ActivityKit|MPVolumeView"#
+    /// Mide la pantalla en vez de la ventana, pregunta qué aparato es, fuerza el giro o supone una sola ventana. «¿Es iPad?»
+    /// tampoco: el iPhone Duo abierto tiene el espacio de un iPad (26 nov 2026); la pantalla pregunta por el espacio.
+    static let deviceAPI = #"UIScreen|UIDevice|userInterfaceIdiom|requestGeometryUpdate|supportedInterfaceOrientations|AppDelegate\.orientations|connectedScenes|import ActivityKit|MPVolumeView|platform == "ipad""#
 
     /// Pendientes por archivo (ruta desde `ios/App/Sources/`): cuántos usos quedan. Al quitar uno, baja aquí el número.
     static let pending: [String: Int] = [
         "App/AppDelegate.swift": 1,   // el método del AppDelegate que iOS pregunta (responde `Orientation.supported`)
+        "Screens/OrbitalDevicesSection.swift": 1,   // el nombre del aparato que se le dice a la TV («ipad» o «iphone»), no un acomodo
     ]
 
     func testDeviceSpecificCodeLivesInPlatform() throws {

@@ -32,6 +32,8 @@ public enum AddonKeys {
     public static let previousDebridToken = "debrid_token.previous"
     /// Cuándo se puso la clave de este aparato (para saber cuál es la más reciente de tus aparatos Apple). No es secreto.
     public static let debridSavedAt = "debrid_saved_at"
+    /// 27 nov 2026 · ya se hizo, una vez, «más fuentes» en lo instalado (`AddonList.moreSources`).
+    public static let moreSourcesDone = "addons.more_sources.v1"
     /// La URL completa de un complemento pegado o importado (en el llavero: puede llevar tu clave adentro).
     public static func addonURL(_ id: String) -> String { "addon_url.\(id)" }
     static let installed = "addons-installed"
