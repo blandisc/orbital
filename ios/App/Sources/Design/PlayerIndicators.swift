@@ -67,10 +67,14 @@ struct DSLoader: View {
     }
 }
 
-/// La burbuja de «buscar arrastrando»: el tiempo destino grande y la diferencia pequeña («+1:20»).
+/// La burbuja de «buscar arrastrando»: el tiempo destino grande y, debajo, hacia dónde y cuánto saltas (▸▸ 1:20). Mide siempre lo
+/// mismo de ancho (no brinca al pasar de 9:59 a 10:00) y el salto no se ve hasta que de verdad te mueves (sin «+0:00» al tocar).
 struct DSSeekBubble: View {
     let time: String
-    let delta: String
+    /// Segundos desde donde empezaste (negativo: hacia atrás).
+    let delta: Double
+    /// Cómo se dice un tramo («1:20»).
+    var clock: (Double) -> String = { _ in "" }
     /// Pasando sobre un susto de la barra: cuál es (fuerte o leve, en su color, y lo que dice Where's The Jump). Va en su propia
     /// cápsula encima de la burbuja, para que la burbuja no cambie de alto ni tape la barra.
     var scare: JumpScare? = nil
@@ -78,9 +82,15 @@ struct DSSeekBubble: View {
     var body: some View {
         VStack(spacing: DS.Space.s1) {
             Text(time).font(DS.TextRecipe.section.font).foregroundStyle(DS.text).monospacedDigit()
-            Text(delta).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).monospacedDigit()
+            HStack(spacing: DS.Space.s1) {
+                Image(systemName: delta < 0 ? "backward.fill" : "forward.fill").font(DS.TextRecipe.caption.font)
+                Text(verbatim: clock(abs(delta))).font(DS.TextRecipe.footnote.font).monospacedDigit()
+            }
+            .foregroundStyle(DS.textMuted)
+            .opacity(abs(delta) < 1 ? 0 : 1)
         }
-        .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s2)
+        .frame(minWidth: DS.Gesture.seekBubbleWidth)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .overlay(alignment: .top) {
             if let scare {

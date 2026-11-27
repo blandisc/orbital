@@ -293,7 +293,7 @@ extension PlayerScreen {
             let rawX = DS.Space.gutter + (geo.size.width - DS.Space.gutter * 2) * fraction
             let x = min(max(rawX, DS.Gesture.seekBubbleSideMargin), geo.size.width - DS.Gesture.seekBubbleSideMargin)
             let y = geo.size.height - DS.Gesture.seekBubbleBottomInset   // solo el iPod: sobre su rueda
-            DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))")
+            DSSeekBubble(time: clock(target), delta: delta, clock: clock)
                 .position(x: x, y: y)
         }
         .transition(.opacity).allowsHitTesting(false)
