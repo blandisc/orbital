@@ -16,7 +16,9 @@ env:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # 30: cuando pasa tarda ~19 min (las pruebas de humo con navegador son lo más largo) y con 20 se cortaba a la mitad
+    # (27 nov 2026: tres corridas seguidas «canceladas» sin ningún error).
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
