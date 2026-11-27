@@ -89,6 +89,7 @@ export function createHomeScreen({ state, ui, glyphs, inHome, getLists, getItems
     }
     if (target.kind === "search") return action === "select" ? openSearch() : sound.play("error");
     if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : sound.play("error");
+    if (target.kind === "pads") return action === "select" ? runCommand({ type: "players" }) : sound.play("error");
     if (target.kind === "decide") return action === "select" ? runCommand({ type: "decide" }) : sound.play("error");
     if (target.kind === "console") {
       if (action === "alt" && target.console.last) return launch(target.console.last);

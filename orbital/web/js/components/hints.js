@@ -17,10 +17,12 @@ export function createHints({ onAction } = {}) {
     node.setAttribute("role", "button");
     node.addEventListener("click", (event) => { event.stopPropagation(); onAction?.(action); });
   };
-  const item = ({ glyph, label, end, secondary, status }) => {
+  const item = ({ glyph, label, end, secondary, status, collapsible }) => {
     // T9: un estado, sin tecla («Bajando en la nube · 42 %»): lo que tiene lo enfocado, dicho con palabras.
     if (status) return h("span", { class: "hints__item hints__status", role: "status" }, label);
-    const node = KeyHint(glyph, label, { small: false, className: ["hints__item", end && "hints__item--end", secondary && "hints__item--secondary"] });
+    // IN3-A: `collapsible`, solo la tecla; su nombre se abre al señalarlo (hints.css).
+    const node = KeyHint(glyph, label, { small: false, className: ["hints__item", end && "hints__item--end", secondary && "hints__item--secondary",
+      collapsible && "hints__item--collapsible"] });
     const actions = String(glyph).split(" ").map(glyphAction);
     if (actions.length === 1 && actions[0]) press(node, actions[0]);
     else node.querySelectorAll(".glyph").forEach((g, i) => actions[i] && press(g, actions[i]));

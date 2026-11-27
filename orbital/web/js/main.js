@@ -107,11 +107,12 @@ const { openMatch, openDecide, ...decideScreens } = createDecideScreens({ ui: ()
   openList: ({ id, title, source }) => openCollection({ collection: { type: "list", source, list: { id, title, meta: source === "trakt" ? "Lo que guardas en «Una por una»" : "" } } }) });
 const ui = {
   backdrop: createBackdrop(),
-  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
+  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }), onPads: () => runCommand({ type: "players" }) }),
   hero: createHero({ onAction: (action) => handleAction(action), onKind: (value) => runCommand({ type: "media-filter", value }),
     onTool: (id) => runCommand(MEDIA_TOOLS.find((t) => t.id === id).command) }),
   home: createHome({
-    outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
+    // Buscar, Alexa y los controles (arriba) también se alcanzan con ↑
+    outside: () => [ui.status.searchButton, ui.status.alexaButton, ui.status.padsButton],
     onFocus: (target) => homeFocused(target),
     onPick: (target, id) => (ui.home.focusId === id && !justTouched() ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
@@ -560,8 +561,9 @@ function renderHints() {
       sections: visibleSections(state.allRows).length,
       // El destacado enseña sus botones (A, X, Y) también con un renglón enfocado: enseña ese renglón.
       // Lo de arriba sigue al foco en todas las filas (D4-B) y enseña sus botones: el pie no los repite.
-      onScreen: !["search", "alexa"].includes(ui.home.focusId),
+      onScreen: !["search", "alexa", "pads"].includes(ui.home.focusId),
       jump: ui.home.nextRow ?? (ui.home.focusId.split(":")[0] !== "card" ? "Arriba" : null),
+      cue: ui.home.cueShown,
     }));
   }
   const { r, c } = state.focus;

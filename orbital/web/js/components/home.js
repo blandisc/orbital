@@ -1,10 +1,12 @@
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { Card } from "./card.js";
 import { DecideDoor, DecideDoorHero } from "./decide.js";
+import { Glyph } from "./glyph.js";
 import { ConsoleHero, ConsoleTile, FeatureHero } from "./tiles.js";
 import { EmptyState, SectionHead } from "./ui.js";
 
@@ -37,9 +39,12 @@ export function emptyFeature(hasGames, hidden = 0, { glyph = null, onPress = nul
 /** Las filas del Inicio, de arriba abajo: la clave es el prefijo de su foco («card:3», «mine:0»…). */
 const ROWS = [
   { key: "card", track: "home__track--upnext" },
-  { key: "mine", track: "home__track--posters" },
-  { key: "console", track: "home__track--consoles", row: "home__consoles" },
+  { key: "mine", track: "home__track--posters", icon: "list" },
+  { key: "console", track: "home__track--consoles", row: "home__consoles", icon: "gamepad" },
 ];
+
+/** Lo que vive en la barra de arriba pero se alcanza desde el Inicio con ↑ (Buscar, Alexa, los controles). */
+const BAR = ["search", "alexa", "pads"];
 
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hero = h("div", { class: "home__hero" });
@@ -55,7 +60,12 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const rowOf = Object.fromEntries(rows.map((r) => [r.key, r]));
   const scroller = h("div", { class: "home__scroll" }, ...rows.map((r) => r.row));
   const box = h("div", { class: "home__rows" }, scroller);
-  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, box, hero);
+  // IN1-A (Fernando, 26 nov 2026): en «A continuación» lo de abajo no asoma; abajo al centro, quieta, la señal de que hay
+  // más: el ícono y el nombre de cada fila de abajo («Mi lista», «Tus consolas») y la flecha. Al entrar al Inicio los íconos
+  // brincan apenas, tres veces, y se quedan quietos (nada en bucle: Orbital es ligera). Con el mando o el teclado lleva su
+  // tecla (RT, AvPág); un clic o un toque bajan a la fila siguiente.
+  const cue = h("button", { class: "home__cue", type: "button", hidden: true, onClick: () => { const to = rowStep(1); if (to) focus(to); } });
+  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, box, hero, cue);
   // Lo de arriba llena la pantalla hasta la fila enfocada; de la siguiente asoma su título. El alto se mide aquí (cambia con
   // la ventana y con el tamaño del texto).
   // También lo de arriba: un logo o una letra que llegan tarde lo hacen más alto, y no debe quedar cortado bajo la barra.
@@ -105,6 +115,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Fuera del Inicio pero alcanzable navegando: Buscar, arriba (↑ desde lo de arriba).
     targets.set("search", { kind: "search" });
     targets.set("alexa", { kind: "alexa" });
+    targets.set("pads", { kind: "pads" }); // IN2-A: los controles, junto a la hora
 
     // «A continuación»: lo que te toca primero (lo abierto, lo que dejaste a medias) y luego lo demás.
     const queue = model.feature ? [model.feature, ...model.cards] : [];
@@ -158,13 +169,35 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       focusId = inRow.at(-1) ?? topId();
     }
     for (const key of Object.keys(memory)) if (!targets.has(memory[key])) delete memory[key];
+    renderCue();
     if (!introduced) { // entrada: lo de arriba y las filas una tras otra
       introduced = true;
       el.classList.add("home--intro");
       setTimeout(() => el.classList.remove("home--intro"), 1400);
+      hop();
     }
     paint();
     fit();
+  }
+
+  /** La señal de abajo: lo que hay debajo de la primera fila, con su ícono, y la tecla que baja. */
+  function renderCue() {
+    const below = visibleRows().slice(1).filter((r) => titles[r.key]);
+    const down = String(options.glyphs.page || "").split(" ")[1];
+    mount(cue, below.length > 0 && [
+      down && h("span", { class: "home__cue-glyph" }, Glyph(down, { small: true })),
+      ...below.map((r, i) => h("span", { class: "home__cue-item", style: { "--i": i } },
+        h("span", { class: "home__cue-icon", "aria-hidden": "true" }, svg(ICONS[ROWS.find((row) => row.key === r.key).icon] || ICONS.list)), titles[r.key])),
+      h("span", { class: "home__cue-arrow", "aria-hidden": "true", style: { "--i": below.length } }, svg(ICONS.chevron)),
+    ]);
+    cue.setAttribute("aria-label", `Bajar a ${below.map((r) => titles[r.key]).join(" y ")}`);
+  }
+
+  /** Los íconos de la señal brincan tres veces (al entrar al Inicio) y se quedan quietos. */
+  function hop() {
+    cue.classList.remove("home__cue--hop");
+    void cue.offsetWidth;
+    cue.classList.add("home__cue--hop");
   }
 
   /** Una fila con su título y sus piezas; sin piezas, no se ve. */
@@ -185,7 +218,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   /** De qué habla lo de arriba: lo enfocado; en la barra (Buscar, Alexa), lo último que enfocaste en las filas. */
   function stageTarget() {
-    if (focusId === "search" || focusId === "alexa") return targets.get(memory.last && targets.has(memory.last) ? memory.last : topId());
+    if (BAR.includes(focusId)) return targets.get(memory.last && targets.has(memory.last) ? memory.last : topId());
     return targets.get(focusId);
   }
 
@@ -222,6 +255,11 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   }
 
   const room = () => box.clientHeight; // lo que va de la barra al pie (home.css · .home__rows)
+  /** Lo que ocupa la señal de abajo, con su aire (home.css · --home-cue-room). */
+  const cueRoom = () => {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    return (parseFloat(getComputedStyle(el).getPropertyValue("--home-cue-room")) || 0) * rem;
+  };
 
   /**
    * Alto de lo de arriba: la pantalla menos la fila enfocada y lo que asoma de la siguiente (su título y la orilla de arriba de
@@ -238,7 +276,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const peek = (parseFloat(getComputedStyle(el).getPropertyValue("--home-peek")) || 0) * rem;
     const lead = next ? next.track.getBoundingClientRect().top - next.row.getBoundingClientRect().top : 0;
-    const below = (row ? row.row.offsetHeight : 0) + (next ? gap + lead + peek : 0);
+    // IN1-A: en la primera fila, lo de abajo no asoma: en su lugar, la señal (y su aire).
+    const below = (row ? row.row.offsetHeight : 0) + (next ? (at === 0 ? cueRoom() : gap + lead + peek) : 0);
     const content = hero.firstElementChild ? hero.firstElementChild.offsetHeight + parseFloat(getComputedStyle(hero).paddingBottom || 0) : 0;
     const stage = Math.max(content, Math.min(room(), Math.max(12 * rem, room() - below)));
     el.style.setProperty("--home-stage", `${Math.round(stage)}px`);
@@ -256,6 +295,12 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Lo que se desvanece abajo lo dice lo que de verdad queda cortado, no la fila enfocada: con el dedo las filas suben sin
     // mover el foco, y las consolas se quedaban en su asomo desvanecido aunque ya estuvieran enteras a la vista (13 nov 2026).
     const cut = (r) => !!r && r.row.offsetTop + r.row.offsetHeight - s > room() + 1;
+    // IN1-A: mientras la fila de abajo no llega a la vista (está donde va la señal), no se ve y la señal sí. Con el dedo, al
+    // subir las filas, la de abajo aparece y la señal se va.
+    const second = visibleRows()[1];
+    const tucked = !!second && second.row.offsetTop - s > room() - cueRoom() - 1;
+    el.classList.toggle("home--cue", tucked);
+    cue.hidden = !tucked || !cue.firstChild;
     box.classList.toggle("home__rows--more", cut(last));
     el.classList.toggle("home--peek", cut(rowOf.console?.row.hidden ? null : rowOf.console));
     el.classList.toggle("home--scrolled", rowKey(focusId) !== "card");
@@ -273,7 +318,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   /** Marca el foco, mantiene lo enfocado a la vista en su fila y cambia lo de arriba. */
   function paint() {
-    if (targets.has(focusId) && !["search", "alexa"].includes(focusId)) {
+    if (targets.has(focusId) && !BAR.includes(focusId)) {
       memory[rowKey(focusId)] = focusId;
       memory.last = focusId;
     }
@@ -379,6 +424,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     show: () => {
       el.hidden = false;
       requestAnimationFrame(fit);
+      hop(); // la señal vuelve a brincar cada vez que entras al Inicio (no cada vez que el foco regresa a la fila)
       for (const node of outside()) node.classList.toggle("is-focused", node.dataset.focusId === focusId);
     },
     hide: () => { // Buscar y Alexa viven en la barra de arriba: fuera del Inicio no quedan marcados
@@ -389,6 +435,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     get focusId() { return focusId; },
     get visible() { return !el.hidden; },
     get hasConsoles() { return (model?.consoles.length ?? 0) > 0; },
+    /** IN1-A: la señal de abajo está a la vista (ya dice a dónde lleva RT: el pie no lo repite). */
+    get cueShown() { return !cue.hidden; },
     /** El nombre de la fila a la que lleva RT desde aquí (el pie lo dice); null si no hay más abajo. */
     get nextRow() {
       const shown = visibleRows();

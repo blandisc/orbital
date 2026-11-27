@@ -3,6 +3,7 @@
    (tiles.css). Ocupa el carril del héroe y de las filas. */
 .home {
   --home-peek: 3.4rem; /* lo que asoma de las consolas (home.js lo lee) */
+  --home-cue-room: 4.6rem; /* IN1-A: lo que ocupa la señal de abajo en la primera fila, con su aire (home.js lo lee) */
   grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ min-height: 0; overflow: hidden;
   padding: 0 var(--page-gutter) var(--space-6);
 }
@@ -35,7 +36,7 @@
 
 
 /* Una fila del Inicio: su título y la pista que se desliza de lado (aire para lo que crece la enfocada). */
-.home__row { flex: none; display: flex; flex-direction: column; gap: var(--layout-title-to-content); }
+.home__row { flex: none; display: flex; flex-direction: column; gap: var(--layout-title-to-content); transition: opacity var(--duration-base) var(--ease-out); }
 .home__row[hidden] { display: none; }
 .home__viewport {
   --fade-left: var(--mask-solid); --fade-right: var(--mask-solid);
@@ -52,9 +53,11 @@
 .home__viewport--before { --fade-left: transparent; }
 .home__track { display: flex; align-items: flex-end; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
-.home__viewport--card { --row-grow: calc(8.4rem * .1); }
+.home__viewport--card { --row-grow: calc(11.6rem * .1); }
 .home__viewport--mine { --row-grow: calc(9.6rem * .1); }
-.home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-2); /* lo que crece la enfocada */ }
+/* IN1-A (Fernando, 26 nov 2026): más grandes, 440×248 en 1920 (antes 320×180) y la enfocada un 10 % más; caben 3½, y la
+   media que se corta a la derecha dice que la fila sigue. Más aire entre ellas: la enfocada ya no toca a su vecina. */
+.home__track--upnext { --card-height: 11.6rem; --card-focus-scale: 1.1; gap: var(--space-8); padding-bottom: var(--space-2); /* lo que crece la enfocada */ }
 .home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
 /* Seguir viendo y Mi lista: las portadas de Películas y series, un paso más bajas (lo de arriba ya dice cuál es). */
@@ -89,3 +92,28 @@
 @media (max-width: 760px) {
   .home__track--consoles > .tile--console { flex-basis: calc((100% - 2 * var(--tile-gap)) / 2.35); }
 }
+
+/* IN1-A (Fernando, 26 nov 2026): en «A continuación», lo de abajo no asoma (home.js · `home--cue`); se dice con la señal de
+   abajo al centro: el ícono y el nombre de cada fila que sigue, en el azul de Orbital como el ícono de su rótulo, y la flecha.
+   Al entrar al Inicio brincan apenas, uno tras otro, tres veces, y se quedan quietos: nada se mueve en bucle (Orbital es
+   ligera). Con el mando o el teclado lleva su tecla (RT, AvPág); con el dedo, no. Un clic o un toque bajan. */
+.home--cue .home__row:not([data-row="card"]) { opacity: 0; pointer-events: none; }
+.home__cue {
+  position: absolute; z-index: var(--z-raised); left: 50%; bottom: var(--space-4); translate: -50% 0;
+  display: flex; align-items: center; gap: var(--space-6); padding: var(--space-2) var(--space-6); border-radius: var(--radius-pill);
+  color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); white-space: nowrap;
+  animation: fade-in var(--duration-enter) var(--ease-out);
+  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+.home__cue:hover { background: var(--color-glass-hover); color: var(--color-text); }
+.home__cue-item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.home__cue-icon, .home__cue-arrow { display: inline-grid; place-items: center; color: var(--color-orbital); }
+.home__cue-icon .icon, .home__cue-arrow .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
+.home__cue-arrow .icon { rotate: 90deg; color: var(--color-text-muted); }
+.home__cue--hop .home__cue-icon { animation: home-cue-hop var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
+.home__cue--hop .home__cue-arrow { animation: home-cue-dip var(--duration-hop) var(--ease-out) calc(var(--i, 0) * var(--stagger)) 3; }
+/* Un brinco y un rebotito que casi no se ve. La flecha, en cambio, baja: señala hacia dónde. */
+@keyframes home-cue-hop { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 -.3em; } 44% { translate: 0 -.06em; } }
+@keyframes home-cue-dip { 0%, 60%, 100% { translate: 0 0; } 28% { translate: 0 .24em; } }
+[data-input="touch"] .home__cue { min-height: var(--touch-target); }
+[data-input="touch"] .home__cue-glyph { display: none; }

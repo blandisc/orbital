@@ -84,6 +84,25 @@ test("Inicio: LT/RT dicen a dónde saltan (Tus consolas desde arriba, Arriba des
   assert.equal(homeHints(g, { kind: "console", console: { last: null } }).some((i) => i.glyph === "LT RT"), false); // sin consolas, no hay a dónde saltar
 });
 
+test("Inicio (IN1-A, IN3-A): con la señal de abajo a la vista, el pie no repite LT/RT; «Menú» queda en su tecla", async () => {
+  const { homeHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = { select: "A", alt: "X", back: "B", options: "Y", section: "LB RB", page: "LT RT", menu: "☰" };
+  const withCue = homeHints(g, { kind: "item", item: {} }, { onScreen: true, jump: "Tus consolas", cue: true });
+  // Sigue en la lista (el control del iPhone lo enseña), pero no se dibuja: la señal ya lo dice con su tecla.
+  assert.equal(withCue.find((i) => i.glyph === "LT RT").offscreen, true);
+  assert.deepEqual(withCue.at(-1), { glyph: "☰", label: "Menú", end: true, collapsible: true });
+});
+
+test("los focos de los controles dicen cuántos hay y quién tiene la batería baja (IN2-A)", async () => {
+  const { padsLabel } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(padsLabel([]), "Sin controles");
+  assert.equal(padsLabel([{ player: 1, battery: "wired" }]), "1 control");
+  assert.equal(padsLabel([{ player: 1, battery: "low" }]), "1 control · batería baja");
+  assert.equal(padsLabel([{ player: 1, battery: "full" }, { player: 2, battery: null }]), "2 controles");
+  assert.equal(padsLabel([{ player: 1, battery: "empty" }, { player: 2, battery: "medium" }, { player: 3, battery: "low" }]),
+    "3 controles · Jugador 1 y 3 con batería baja");
+});
+
 test("aviso de voz: «No era eso» con B (cierra y busca lo que oyó) y «Lo que puedes decir» con ☰", async () => {
   const { voiceToastAction } = await import("../../orbital/web/js/core/hints.js");
   assert.deepEqual(voiceToastAction({ type: "voice-undo", query: "jades" }), { kind: "undo", label: "No era eso", button: "back", query: "jades" });

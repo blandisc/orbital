@@ -179,3 +179,13 @@ export function textLanguage(text) {
   const [best, hits] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
   return hits >= 2 && hits > (Object.values(score).sort((a, b) => b - a)[1] ?? 0) ? best : null;
 }
+
+/** IN2-A: lo que dicen los focos de la barra al señalarlos (y lo que lee el lector de pantalla): «2 controles»,
+ * «1 control · batería baja», «2 controles · Jugador 2 con batería baja» o «Sin controles». */
+export function padsLabel(players) {
+  if (!players.length) return "Sin controles";
+  const count = `${players.length} ${players.length === 1 ? "control" : "controles"}`;
+  const low = players.filter((p) => p.battery === "low" || p.battery === "empty");
+  if (!low.length) return count;
+  return players.length === 1 ? `${count} · batería baja` : `${count} · Jugador ${low.map((p) => p.player).join(" y ")} con batería baja`;
+}

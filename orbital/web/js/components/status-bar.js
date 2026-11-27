@@ -1,7 +1,7 @@
 import { h, mount, svg } from "../core/dom.js";
 import { reducedMotion } from "../core/motion.js";
 import { Glyph } from "./glyph.js";
-import { clock } from "../core/format.js";
+import { clock, padsLabel } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
 
 const ALEXA_LIVE_SECONDS = 600;
@@ -16,11 +16,16 @@ const SECTION_ICONS = { foryou: "spark", home: "home", games: "gamepad", media: 
 /** ¿Se esconde la batería? Sin el cargador nunca; cargando, de 95 % para arriba (ya casi llena, no dice nada). */
 export const batteryHidden = (pct, charging) => !!charging && pct >= 95;
 
-export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
-  // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
+/** IN2-A: el foco de cada jugador según su batería (sin dato o con cable, prendido en turquesa). */
+const PAD_LIGHT = { low: "pad-lights__light--low", empty: "pad-lights__light--empty" };
+
+export function createStatusBar({ onBrand, onSection, onSearch, onAlexa, onPads }) {
+  // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección. IN3-A (Fernando, 26 nov
+  // 2026): en reposo, la lupa y su tecla; la palabra se abre de lado al enfocarlo o señalarlo (status-bar.css).
   const searchGlyph = h("span", { class: "status-bar__search-glyph" });
   const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", "data-focus-id": "search", onClick: () => onSearch?.() },
-    svg(ICONS.search), h("span", {}, "Buscar"), searchGlyph);
+    svg(ICONS.search), h("span", { class: "status-bar__search-label" }, h("span", {}, "Buscar")), searchGlyph);
+  const searchSlot = h("span", { class: "status-bar__search-slot" }, search);
   const playingTitle = h("span", { class: "status-bar__playing-title" });
   // Lo abierto: un ícono quieto, en verde, y su nombre: ▶ si es un video, el control si es un juego (setRunning).
   const liveIcon = h("span", { class: "status-bar__live", "aria-hidden": "true" });
@@ -42,15 +47,23 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   // La batería: la pila con su nivel (el rayo dentro al cargar) y, al lado, cuánto le queda.
   const percent = h("span", { class: "battery__percent" });
   const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt), percent);
+  // IN2-A (Fernando, 26 nov 2026): los controles, a la izquierda de la hora: la silueta de un control con cuatro focos encima,
+  // prendidos tantos como jugadores (el 1 a la izquierda). Ámbar: ese control tiene la batería baja; rojo, casi vacía. Su
+  // nombre sale al enfocarlo o señalarlo, como Buscar; A, un clic o un toque abren Jugadores.
+  const lights = [0, 1, 2, 3].map(() => h("i", { class: "pad-lights__light" }));
+  const padsName = h("span", {});
+  const pads = h("button", { class: "pad-lights", type: "button", hidden: true, "data-focus-id": "pads", onClick: () => onPads?.() },
+    h("span", { class: "pad-lights__mark", "aria-hidden": "true" }, h("span", { class: "pad-lights__lights" }, ...lights), svg(ICONS.gamepad)),
+    h("span", { class: "pad-lights__label" }, padsName));
   const time = h("span", { class: "status-bar__clock" });
 
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
   const el = h("header", { class: "status-bar" },
     h("button", { class: "status-bar__brand", type: "button", "aria-label": "Orbital: menú", onClick: onBrand },
       svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital", h("i", { class: "status-bar__moon", "aria-hidden": "true" }))),
-    search,
+    searchSlot,
     tabs,
-    h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, time));
+    h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, pads, time));
 
   // La píldora de la sección activa es una sola: al cambiar de sección viaja hasta la nueva y se ajusta a ella mientras
   // su nombre se despliega.
@@ -151,9 +164,12 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   const TIGHT = 6;
   const overflows = () => time.getBoundingClientRect().right > el.getBoundingClientRect().right + 1;
   let fitting = 0;
+  /** IN3-A: el hueco de Buscar mide lo que mide plegado (abierto, crece encima del aire de su derecha). */
+  const open = () => search.matches(":hover, :focus-visible, .is-focused");
   function fit() {
     cancelAnimationFrame(fitting);
     fitting = requestAnimationFrame(() => {
+      if (!open()) searchSlot.style.width = `${search.offsetWidth}px`;
       for (let i = 1; i <= TIGHT; i++) el.classList.remove(`status-bar--tight-${i}`);
       for (let i = 1; i <= TIGHT && overflows(); i++) el.classList.add(`status-bar--tight-${i}`);
       placePill(false);
@@ -178,7 +194,24 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     fit();
   }
 
-  function setSystem({ wifi: info, alexa_last: alexaLast, online = true }) {
+  /** Los focos: `players` es [{ player, battery }] o null (nadie lee los mandos: no se enseña). */
+  function setPlayers(players) {
+    pads.hidden = !Array.isArray(players);
+    if (pads.hidden) return;
+    lights.forEach((light, i) => {
+      const battery = players[i]?.battery;
+      light.classList.toggle("pad-lights__light--on", !!players[i]);
+      for (const [level, cls] of Object.entries(PAD_LIGHT)) light.classList.toggle(cls, battery === level);
+    });
+    pads.classList.toggle("pad-lights--none", !players.length);
+    const label = padsLabel(players);
+    padsName.textContent = label;
+    pads.setAttribute("aria-label", `${label} · Jugadores`);
+    fit();
+  }
+
+  function setSystem({ wifi: info, alexa_last: alexaLast, online = true, players }) {
+    if (players !== undefined) setPlayers(players);
     offline.hidden = online !== false;
     wifi.hidden = !info;
     if (info) {
@@ -229,5 +262,5 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   setInterval(tick, 10_000);
   watchBattery();
 
-  return { el, setRunning, setSystem, setSections, pulseAlexa, searchButton: search, alexaButton: alexa };
+  return { el, setRunning, setSystem, setSections, pulseAlexa, searchButton: search, alexaButton: alexa, padsButton: pads };
 }

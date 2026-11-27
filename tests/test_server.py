@@ -95,6 +95,28 @@ def test_system_and_alexa_indicator(make_client):
         assert c.get("/api/system", headers=auth).json()["alexa_last"] > 0
 
 
+def test_system_says_which_players_are_connected(make_client, monkeypatch):
+    """IN2-A: los focos de la barra. Sin nadie que lea los mandos (fuera de Windows, las pruebas), None: la barra no los
+    enseña, en vez de decir «Sin controles». Con el lector, un renglón por jugador, en su orden, con su batería."""
+    from orbital import gamepad
+    from orbital.players import players
+
+    with make_client(REMOTE) as c:
+        auth = {"Authorization": "Bearer secreto"}
+        monkeypatch.setattr(gamepad, "_watcher", None)
+        monkeypatch.setattr(players, "watcher", None)
+        assert c.get("/api/system", headers=auth).json()["players"] is None
+
+        class Watcher:
+            devices = {2: (0x045E, 0x028E), 0: (0x045E, 0x028E)}
+            connected_at = {2: 1.0, 0: 2.0}
+
+        monkeypatch.setattr(players, "watcher", Watcher())
+        monkeypatch.setattr(players, "order", [])
+        monkeypatch.setattr(gamepad, "_load_battery", lambda: (lambda slot: {2: "low", 0: "wired"}[slot]))
+        assert c.get("/api/system", headers=auth).json()["players"] == [{"player": 1, "battery": "low"}, {"player": 2, "battery": "wired"}]
+
+
 def test_voice_status_says_where_the_last_order_came_from(make_client):
     """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las últimas
     con lo que se dijo y lo que se entendió. Sin eso, «la voz no funciona» no se podía ni ubicar."""

@@ -87,21 +87,38 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
     opacity var(--duration-base) var(--ease-out) var(--delay-1);
 }
 /* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. Centrado (Fernando, 14 nov): la
-   lupa (--icon-sm) y el círculo de la tecla (--glyph-size-sm) quedan concéntricos con las puntas redondas, a la misma distancia
+   lupa (--icon-sm; --icon-md desde IN3-A) y el círculo de la tecla (--glyph-size-sm) quedan concéntricos con las puntas redondas, a la misma distancia
    de su orilla: a la derecha, el aire de arriba y abajo; a la izquierda, ese mismo más lo que la lupa es más chica (antes
    .85rem y .5rem: todo corrido ~1,4 px a la derecha y el círculo casi tocando la orilla). B1 (24 nov): el aire es --space-2
    (antes .4rem, fuera de la escala); el de la izquierda no es un paso sino una cuenta (el aire + media diferencia de tamaños),
-   para que la lupa siga concéntrica. */
+   para que la lupa siga concéntrica.
+   IN3-A (Fernando, 26 nov 2026): en reposo, solo la lupa y su tecla (el atajo nunca se esconde); la palabra se abre de lado
+   al enfocarlo o señalarlo, en --duration-base y sin rebote, y se cierra al irte. Con el dedo, un toque busca directo (sin
+   abrirse antes). La lupa, del tamaño mediano y en blanco: chica y gris no se veía que ahí se busca. */
 .status-bar__search {
-  display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-2));
-  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-sm)) / 2); border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-md)) / 2); border-radius: var(--radius-pill);
   background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
   color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
-.status-bar__search svg { width: var(--icon-sm); height: var(--icon-sm); }
+.status-bar__search svg { width: var(--icon-md); height: var(--icon-md); color: var(--color-text); }
+.is-focused.status-bar__search svg { color: inherit; } /* sobre el foco blanco, la lupa en su tinta oscura (en blanco desaparecía) */
+/* IN3-A: Buscar vive en su hueco del tamaño plegado (status-bar.js · fit lo mide) y al abrirse crece encima del aire de su
+   derecha: las secciones no se recorren cada vez que subes a Buscar. */
+.status-bar__search-slot { position: relative; flex: none; margin-left: calc(-1 * var(--space-2)); display: flex; align-items: center; height: 100%; }
+.status-bar__search-slot > .status-bar__search { position: absolute; left: 0; z-index: var(--z-raised); width: max-content; }
 .status-bar__search:hover { background: var(--color-glass-hover); color: var(--color-text); }
 .status-bar__search-glyph:empty { display: none; }
+/* La palabra plegada no deja su hueco: el margen se come el `gap` que la separa de la lupa. */
+.status-bar__search-label {
+  display: grid; grid-template-columns: 0fr; opacity: 0; margin-left: calc(-1 * var(--space-2)); white-space: nowrap;
+  transition: grid-template-columns var(--duration-base) var(--ease-out), margin var(--duration-base) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+.status-bar__search-label > span { min-width: 0; overflow: hidden; }
+.status-bar__search:hover .status-bar__search-label, .is-focused.status-bar__search .status-bar__search-label,
+.status-bar__search:focus-visible .status-bar__search-label { grid-template-columns: 1fr; opacity: 1; margin-left: 0; }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
 .is-focused.status-bar__search { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
@@ -187,6 +204,38 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .battery--low .battery__level { background: var(--color-danger); }
 .battery--charging .battery__level { background: var(--color-text-faint); }
 
+/* IN2-A (Fernando, 26 nov 2026): los controles, a la izquierda de la hora. La silueta de un control con sus cuatro focos
+   encima, como los focos de jugador de una consola: prendidos en el azul de Orbital tantos como jugadores (el 1 a la
+   izquierda); en ámbar, ese control con la batería baja; en rojo, casi vacía. Sin controles, la silueta tenue y los focos
+   apagados. Es estado: sin cápsula hasta que lo enfocas o lo señalas, y entonces se abre su nombre, como Buscar (IN3-A). */
+.pad-lights {
+  position: relative; display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-2); margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)); border-radius: var(--radius-pill);
+  color: var(--color-text); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
+  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+.pad-lights:hover { background: var(--color-glass-hover); }
+.is-focused.pad-lights { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.pad-lights__mark { display: inline-flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+.pad-lights__mark .icon { width: var(--icon-xl); height: var(--icon-xl); stroke-width: var(--stroke-regular); }
+.pad-lights--none .pad-lights__mark .icon { color: var(--color-text-faint); }
+.pad-lights__lights { display: flex; gap: var(--space-1); }
+.pad-lights__light {
+  width: .44rem; height: .44rem; border-radius: 50%; background: color-mix(in oklab, var(--color-text-faint) 55%, transparent);
+  transition: background var(--duration-slow) var(--ease-out), box-shadow var(--duration-slow) var(--ease-out);
+}
+.pad-lights__light--on { background: var(--color-orbital); box-shadow: 0 0 .3rem color-mix(in oklab, var(--color-orbital) 65%, transparent); }
+.pad-lights__light--low { background: var(--color-warning); box-shadow: 0 0 .3rem color-mix(in oklab, var(--color-warning) 65%, transparent); }
+.pad-lights__light--empty { background: var(--color-danger); box-shadow: 0 0 .3rem color-mix(in oklab, var(--color-danger) 65%, transparent); }
+/* Su nombre, en una etiqueta de vidrio debajo (no al lado: abrirse en la barra recorría las secciones). */
+.pad-lights__label {
+  position: absolute; top: calc(100% + var(--space-2)); right: 0; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
+  background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+  color: var(--color-text); white-space: nowrap; opacity: 0; translate: 0 calc(-1 * var(--space-2)); pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out), translate var(--duration-base) var(--ease-out);
+}
+.pad-lights:hover .pad-lights__label, .is-focused.pad-lights .pad-lights__label, .pad-lights:focus-visible .pad-lights__label { opacity: 1; translate: 0 0; }
+
 @media (max-width: 700px) { .status-bar .assistant, .status-bar__playing { display: none; } }
 
 /* Pantallas angostas: primero se van los textos de apoyo, nunca las pestañas ni la hora. */
@@ -203,8 +252,8 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 @media (max-width: 480px) { .status-bar__search, .battery { display: none; } }
 /* Con el dedo no hay atajo que enseñar (T12, revisión del 10 nov: la «S» del teclado sobraba): solo la lupa y «Buscar». Objetivos de ~44 px. */
 [data-input="touch"] .status-bar__search-glyph { display: none; }
-[data-input="touch"] .status-bar__tab, [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-height: var(--touch-target); }
+[data-input="touch"] .status-bar__tab, [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .pad-lights { min-height: var(--touch-target); }
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: var(--touch-target); justify-content: center; }
 /* Sin la tecla a la derecha, «Buscar» va centrado en su pastilla con el mismo aire que la lupa del otro lado: guardaba el
    relleno chico de junto al círculo y la palabra quedaba pegada a la orilla (18 px a la izquierda, 11 a la derecha). */
-[data-input="touch"] .status-bar__search, .status-bar__search:has(> .status-bar__search-glyph:empty) { padding-right: calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-sm)) / 2); }
+[data-input="touch"] .status-bar__search, .status-bar__search:has(> .status-bar__search-glyph:empty) { padding-right: calc(var(--space-2) + (var(--glyph-size-sm) - var(--icon-md)) / 2); }

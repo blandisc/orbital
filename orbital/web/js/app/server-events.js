@@ -56,6 +56,7 @@ export function createServerEvents({ state, ui, openSearch, openTitle, goToSecti
     input: (event) => handleAction(event.action),  // el control remoto del iPhone, como el mando
     // un mando que el servidor no lee (PlayStation): la interfaz vuelve a leer el suyo, sin tragarse su primer botón
     "pad-wake": () => padWake(),
+    pads: () => pollSystem(), // IN2-A: llegó o se fue un control: los focos de la barra, ya
     text: (event) => remoteText(String(event.text || ""), !!event.submit, !!event.replace),
     settings: (event) => event.settings && applySettings(event.settings),
     // memoria casi llena

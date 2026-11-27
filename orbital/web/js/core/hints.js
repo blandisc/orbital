@@ -96,7 +96,7 @@ export function shortTitle(title = "") {
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
  * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
  */
-export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false, jump = null } = {}) {
+export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false, jump = null, cue = false } = {}) {
   const list = [];
   if (target?.kind === "console") {
     if (!onScreen) { // D4-B: lo de arriba ya enseña «Entrar» y «Seguir…» de la consola enfocada
@@ -107,6 +107,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     list.push({ glyph: glyphs.select, label: "Buscar" });
   } else if (target?.kind === "alexa") {
     list.push({ glyph: glyphs.select, label: "Qué pedirle a Alexa" });
+  } else if (target?.kind === "pads") {
+    list.push({ glyph: glyphs.select, label: "Jugadores" }); // IN2-A: los controles de la barra abren Jugadores
   } else if (target?.kind === "decide") {
     if (!onScreen) list.push({ glyph: glyphs.select, label: "Decide por mí" }); // NQ-1: lo de arriba ya enseña su botón
   } else if (target?.kind === "item") {
@@ -121,9 +123,11 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   }
   if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   // LT/RT saltan entre lo de arriba y Tus consolas (`jump`: a dónde llevan desde aquí).
-  if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true });
+  // IN1-A: con la señal de abajo a la vista (`cue`), ella ya lo dice con su tecla: el pie no lo repite.
+  if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true, ...(cue && { offscreen: true }) });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
-  list.push({ glyph: glyphs.menu, label: "Menú", end: true });
+  // IN3-A (Fernando, 26 nov 2026): en el Inicio, «Menú» queda en su tecla; la palabra sale al señalarla.
+  list.push({ glyph: glyphs.menu, label: "Menú", end: true, collapsible: true });
   return capHints(list, glyphs);
 }
 

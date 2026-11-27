@@ -589,6 +589,7 @@ class ConsoleShell:
         running = self.catalog.launcher.status()
         # Con una película o un canal abierto no se habla de jugar ni de jugadores (Fernando, 6 nov: «jugar en la película»).
         video = bool(running and str(running.get("id") or "").startswith("media:"))
+        self.notify({"type": "pads"})  # IN2-A: los focos de la barra se ponen al día ya, sin esperar su vuelta de 30 s
         if not connected:
             players.sync()
             if self.away_from_orbital() and self.overlay is not None:

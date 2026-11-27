@@ -192,6 +192,7 @@
   --duration-enter-long: 640ms; /* solo abrir un juego (launch-overlay): lento a propósito, como la carga; la primera entrada de Inicio y del mosaico usa --duration-enter (B12, 25 nov 2026) */
   --duration-land: 760ms; /* el arranque de Orbital */
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
+  --duration-hop: 1.2s; /* IN1-A: un brinco de la señal de «hay más abajo» del Inicio (da tres al entrar y se queda quieta) */
   --duration-breathe: 1.4s; /* algo que espera: dictando */
   --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
   --duration-glide: 4s; /* un tramo de la deriva de Para ti (la anima el compositor; JS solo trae piezas al empezar cada uno) */

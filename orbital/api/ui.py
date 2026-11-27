@@ -61,6 +61,17 @@ def valid_setting(key, value) -> bool:
         isinstance(value, int) and not isinstance(value, bool) and any(type(o) is float and value == o for o in allowed))
 
 
+def connected_players() -> list[dict] | None:
+    """Los jugadores para la barra (número y batería). None si nadie lee los mandos (fuera de Windows): la barra no enseña
+    focos, en vez de decir «ningún control»."""
+    from .. import gamepad
+    from ..players import players
+
+    if players.watcher is None and gamepad._watcher is None:  # noqa: SLF001 - el único que sondea los mandos
+        return None
+    return [{"player": p["player"], "battery": p["battery"]} for p in players.snapshot()]
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter()
     catalog, shell, kiosk = d.catalog, d.shell, d.kiosk
@@ -72,7 +83,9 @@ def router(d: Deps) -> APIRouter:
     @r.get("/api/system")
     async def system_info() -> dict:
         return {"wifi": await run_in_threadpool(system.wifi), "online": await run_in_threadpool(system.online),
-                "alexa_last": d.alexa_last}
+                "alexa_last": d.alexa_last,
+                # IN2-A (Fernando, 26 nov 2026): los focos junto a la hora, uno por jugador y con su batería.
+                "players": await run_in_threadpool(connected_players)}
 
     @r.get("/api/controllers")
     async def controllers() -> dict:
