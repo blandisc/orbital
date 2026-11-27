@@ -49,7 +49,7 @@ struct ProfileCard: View {
                     }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     title.recipe(.cardTitle)
-                    detail.recipe(.footnote, color: DS.textMuted).lineLimit(2)
+                    detail.recipe(.footnote, color: DS.textMuted).lineLimit(4)   // con letra grande «falta Real-Debrid» se cortaba en dos renglones (Duo cerrado, 27 nov 2026)
                 }
                 Spacer(minLength: 0)
             }
