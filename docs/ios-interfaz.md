@@ -1436,4 +1436,4 @@ clave de una nube. Copiar (escribir en el portapapeles) sí se vale. `DesignRule
 
 Fernando: «la puse en la tele y estaba reproduciendo el audio del iPhone». **Al mandar algo a la TV, el iPhone se queda en
 silencio**: el reproductor de aquí se cierra y su motor se detiene, aunque ya no esté en pantalla (en segundo plano o en
-imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone`.
+imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone`. Lo mismo si sales **mientras carga**: la carga a medias se suelta y nunca se pone a sonar sin pantalla (`testALoadYouLeftNeverStartsPlaying`).
