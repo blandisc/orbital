@@ -46,6 +46,16 @@ final class WindowMetrics {
     nonisolated static func isLarge(_ size: CGSize) -> Bool { min(size.width, size.height) >= largeSide }
     nonisolated static var large: Bool { isLarge(size) }
 
+    /// Las barras al costado (el Duo cerrado, DU1-A): iOS pone la hora y las pestañas en una franja a la derecha, de pie. Abajo
+    /// ya no hay barra de pestañas: lo que flota abajo (avisos, «¿Qué tal…?») baja a la orilla en vez de apartarle su lugar.
+    /// Se reconoce por el margen seguro del costado, de pie: el de un iPhone acostado (la isla, ~60) no cuenta porque ahí
+    /// la ventana es más ancha que alta.
+    private(set) var sideBars = false
+    nonisolated static var sideBars: Bool { MainActor.assumeIsolated { shared.sideBars } }
+    nonisolated static let sideBarInset: CGFloat = 70
+
+    func updateSideBars(_ now: Bool) { if now != sideBars { sideBars = now } }
+
     func update(_ new: CGSize) {
         guard new.width > 0, new.height > 0, new != size else { return }
         let wasLarge = Self.isLarge(size)
@@ -77,6 +87,10 @@ extension View {
             let inset = proxy.safeAreaInsets
             return CGSize(width: proxy.size.width + inset.leading + inset.trailing, height: proxy.size.height + inset.top + inset.bottom)
         } action: { WindowMetrics.shared.update($0) }
+        .onGeometryChange(for: Bool.self) { proxy in
+            proxy.size.height > proxy.size.width
+                && max(proxy.safeAreaInsets.leading, proxy.safeAreaInsets.trailing) >= WindowMetrics.sideBarInset
+        } action: { WindowMetrics.shared.updateSideBars($0) }
     }
 
     /// Pone al día `WindowMetrics.column`: lo que miden las pestañas, sin el panel de la derecha. El panel (`.inspector`) les llega

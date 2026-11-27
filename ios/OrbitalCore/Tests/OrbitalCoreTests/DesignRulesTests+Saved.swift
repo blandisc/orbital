@@ -59,6 +59,10 @@ extension DesignRulesTests {
         let files = try savedScreens()
         // Desde el 27 nov 2026 lo hace cada pestaña (en el Duo cerrado tapaba la última fila de Ajustes y los botones de la ficha).
         let root = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/RootView.swift"), encoding: .utf8)
+        // Con las barras al costado (Duo cerrado) lo que flota abajo va a la orilla: sin el hueco de la barra que ya no está.
+        let placement = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Design/PlayerControls.swift"), encoding: .utf8)
+        XCTAssertTrue(placement.contains("if WindowMetrics.sideBars {\n            padding(.bottom, DS.Toast.gap + lift)"),
+                      "Los avisos de abajo no apartan el lugar de una barra de pestañas que está al costado")
         let stacks = root.components(separatedBy: "NavigationStack(path: $paths[").count - 1
         XCTAssertGreaterThanOrEqual(stacks, 4, "se leyeron las cuatro pestañas")
         XCTAssertEqual(root.components(separatedBy: ".ratingReminderRoom()").count - 1, stacks, "Cada pestaña deja lugar abajo para «¿Qué tal…?»")

@@ -840,7 +840,7 @@ distinto de «llegó vacío». Lo que ya se tenía se sigue viendo; el aviso sal
 
 Un vacío trae su ícono, qué pasa y **un botón a dónde ir** («Explorar», «Agregar», «Buscar qué ver», «Conectar Trakt»), no solo
 un letrero. Una cuenta nueva ve una sola guía para todo Guardado, no cuatro pestañas vacías; una pestaña en cero que no aplica
-(«Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo en todas las pestañas (`ratingReminderRoom`, 27 nov 2026) para no tapar lo
+(«Las dejé») no aparece. El aviso flotante «¿Qué tal…?» deja su alto libre abajo en todas las pestañas (`ratingReminderRoom`, 27 nov 2026); con las barras al costado (el Duo cerrado) baja a la orilla, sin el hueco de la barra de pestañas que ya no está abajo (`WindowMetrics.sideBars`) para no tapar lo
 último de la pantalla.
 
 `DesignRulesTests+Saved.swift` lo cuida: Guardado usa `DSSelector` completo con sus cuatro partes en orden y sin el tablero ni sus

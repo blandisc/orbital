@@ -258,10 +258,17 @@ struct FlowChips: Layout {
 extension View {
     /// Receta: un aviso de abajo (`Toast`, la pastilla de calificar) en su lugar, a `DS.Toast.gap` de lo que tenga debajo.
     /// `lift`: lo que hay entre la barra de pestañas y el aviso («Viendo en la TV», el pie del mosaico).
-    func dsNoticePlacement(lift: CGFloat = 0) -> some View {
-        padding(.bottom, DS.Toast.clearance + lift)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .ignoresSafeArea(.container, edges: .bottom)
+    /// Con las barras al costado (el Duo cerrado) no hay barra abajo: el aviso va a `gap` de la orilla segura, sin el hueco
+    /// de la barra que ya no está (Fernando, 27 nov 2026: «ya no dejar ese espacio vacío que tienes abajo»).
+    @ViewBuilder func dsNoticePlacement(lift: CGFloat = 0) -> some View {
+        if WindowMetrics.sideBars {
+            padding(.bottom, DS.Toast.gap + lift)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        } else {
+            padding(.bottom, DS.Toast.clearance + lift)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .ignoresSafeArea(.container, edges: .bottom)
+        }
     }
 }
 

@@ -373,7 +373,7 @@ extension Demo {
     static var yearInReview: YearInReview { DemoHTTPClient.demoYear }
 }
 
-/// `-demo-scroll N`: la pantalla abre ya desplazada N puntos (cuando ya cargó), para capturar a medio camino lo que cambia
+/// `-demo-scroll N`: la pantalla abre ya desplazada N puntos (cuando ya cargó; `-1`, hasta el final), para capturar a medio camino lo que cambia
 /// al desplazar (el arte de la ficha). `-demo-autoscroll`: baja sola y suave hasta ~600 pt (~4 s), espera 1 s y regresa
 /// arriba (~3 s), para grabarlo con `xcrun simctl io … recordVideo`. Sin los argumentos no toca el desplazamiento.
 struct DemoScroll: ViewModifier {
@@ -390,7 +390,7 @@ struct DemoScroll: ViewModifier {
         } else if let y = Demo.scroll {
             content.scrollPosition($position).task {
                 try? await Task.sleep(for: .seconds(2))   // ds-exception: espera a que la ficha cargue (solo modo demo)
-                position.scrollTo(y: y)
+                if y < 0 { position.scrollTo(edge: .bottom) } else { position.scrollTo(y: y) }   // -1: hasta el final
             }
         } else {
             content
