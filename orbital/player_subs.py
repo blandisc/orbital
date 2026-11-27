@@ -332,6 +332,8 @@ class SubtitleTrial:
                 return  # ya te moviste a otro: queda bajado por si regresas
             self.mpv.command("sub-add", path, "select", f"Subtítulo {index + 1}", candidate["lang"])
             self._try_put(candidate)
+            if not candidate.get("delay"):  # sin una sincronía tuya: se pone a tiempo solo (ST2)
+                self.auto_sync(path)
             trial["status"] = "Parece de otra edición del video · Y ajusta la velocidad" if candidate.get("edition") else said
             self._try_draw()
 

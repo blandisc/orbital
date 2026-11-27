@@ -65,6 +65,7 @@ from ..playback import (  # noqa: F401 - el resto de Orbital y las pruebas las p
     track_properties,
     wrong_audio,
 )
+from . import subsync
 from .base import log
 from .upnext import _UpNext
 
@@ -218,8 +219,26 @@ class _Tracks(_UpNext):
             self.mpv.command("sub-add", path, "select", title, lang)
             if done:
                 self.toast(done)
+            if path != url:  # de internet: se pone a tiempo solo (ST2)
+                self.auto_sync(path)
 
         self.background(work)
+
+    def auto_sync(self, path: str) -> None:
+        """ST2: oye la película y, si ese subtítulo de internet va corrido, lo pone a tiempo con un aviso. Solo mientras
+        siga puesto y nadie mueva la sincronía (tus ↑ ↓ en «Probar otros» mandan)."""
+        playback, delay = self.current, self.sub_delay
+
+        def still() -> bool:
+            here = self.mpv.get("current-tracks/sub/external-filename")
+            return self.current is playback and self.sub_delay == delay and (here is None or str(here) == path)
+
+        def apply(shift: float) -> None:
+            self.sub_delay = round(delay + shift, 1)
+            self.mpv.command("set_property", "sub-delay", self.sub_delay)
+            self.toast(f"Subtítulos ajustados a tu copia ({shift:+.1f} s)".replace(".", ","), 3.0)
+
+        self.background(lambda: subsync.listen_and_fix(path, self.mpv.get, self.mpv.command, still, apply))
 
     def pause(self) -> None:
         if self._is_live():
