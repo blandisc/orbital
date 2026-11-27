@@ -193,7 +193,10 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
-            env.tvNow.setActive(phase == .active)
+            // Con algo sonando en la TV, al salir de la app se le sigue preguntando lo que iOS deja (unos 30 s): la isla y la
+            // pantalla bloqueada siguen a la TV si cambias de capítulo justo después (26 nov: «tengo que volver a entrar»).
+            if phase == .background, env.tvNow.now != nil { TVKeepFresh.start(env.tvNow) }
+            else if phase != .inactive { TVKeepFresh.stop(); env.tvNow.setActive(phase == .active) }
             if phase == .background { foreground.wentToBackground() }
             if phase == .active {
                 let decision = foreground.becameActive(at: Date())
