@@ -29,12 +29,22 @@ struct PosterBoundsKey: PreferenceKey {
 
 extension View {
     /// El póster avisa dónde está (solo en la Mac), para que su enlace le dibuje el marco y ▶ ＋ encima.
-    func macPosterBounds() -> some View {
+    @ViewBuilder func macPosterBounds() -> some View {
+        #if MAC_DRIVE
+        if MacDrive.litePoster { self } else { anchorPreference(key: PosterBoundsKey.self, value: .bounds) { ThisDevice.isMac ? $0 : nil } }
+        #else
         anchorPreference(key: PosterBoundsKey.self, value: .bounds) { ThisDevice.isMac ? $0 : nil }
+        #endif
     }
 
     /// El enlace de un póster responde al puntero en la Mac. Sin `route` (un título de TMDB sin IMDb) solo lleva el marco.
-    func macPosterHover(_ route: TitleRoute?) -> some View { modifier(MacPosterHover(route: route)) }
+    @ViewBuilder func macPosterHover(_ route: TitleRoute?) -> some View {
+        #if MAC_DRIVE
+        if MacDrive.litePoster { self } else { modifier(MacPosterHover(route: route)) }
+        #else
+        modifier(MacPosterHover(route: route))
+        #endif
+    }
 }
 
 private struct MacPosterHover: ViewModifier {

@@ -329,6 +329,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let leaveScale: CGFloat = 0.85
         /// Los estantes que llegan: suben esto, cada uno este tiempo después del anterior, y a partir del quinto ya no esperan más.
         static let entranceRise: CGFloat = 16, entranceStep: Double = 0.06, entranceMax = 4
+        /// Pasado este rato desde lo primero de una pantalla, lo que aparece (deslizando) ya no entra escalonado.
+        static let entranceWindow: CFTimeInterval = 1.2
         /// Cuánto hay que empujar más allá de la orilla de una fila para el golpe en la mano, y qué tan fuerte.
         static let edgeOverscroll: CGFloat = 24, edgeIntensity: Double = 0.7
         /// Avance parejo, sin acelerar ni frenar: un anillo de progreso que se llena.

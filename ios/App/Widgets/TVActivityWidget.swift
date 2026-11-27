@@ -132,7 +132,7 @@ private struct TVButtons: View {
     /// El alto de cada botón y el círculo de la pausa: entero en la pantalla bloqueada, más chico en la isla, que tiene un alto
     /// fijo y cortaba la pausa por abajo (Fernando, 26 nov 2026).
     var size: CGFloat = DS.Widget.tvKey
-    /// En la isla: cápsulas anchas y bajas que llenan el ancho (Fernando, 26 nov 2026: «más anchos, no tan altos»).
+    /// En la isla: teclas anchas y bajas que llenan el ancho (Fernando, 26 nov 2026: «más anchos, no tan altos»).
     var wide = false
     var body: some View {
         HStack(spacing: wide ? DS.Space.s2 : 0) {
@@ -147,7 +147,13 @@ private struct TVButtons: View {
     private func key(_ symbol: String, action: String, label: Text, solid: Bool = false) -> some View {
         Button(intent: TVControlIntent(action: action)) {
             ZStack {
-                if wide { Capsule().fill(solid ? DS.accent : DS.paper.opacity(DS.Widget.islandKeyFill)) }
+                // IS-B (Fernando, 26 nov 2026): la forma de las teclas del control (esquina `Radius.lg`, mate, borde fino), no
+                // cápsulas translúcidas.
+                if wide {
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                        .fill(solid ? DS.accent : DS.paper.opacity(DS.Widget.islandKeyFill))
+                        .overlay { if !solid { RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(DS.hairline, lineWidth: DS.Size.hairline) } }
+                }
                 else if solid { Circle().fill(DS.accent).frame(width: size, height: size) }
                 Image(systemName: symbol).font(DS.font(solid || size < DS.Widget.tvKey ? .lg : .xl, weight: .semibold))
                     .foregroundStyle(solid ? DS.backdropDeep : DS.paper)

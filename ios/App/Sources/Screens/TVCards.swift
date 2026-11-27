@@ -80,7 +80,8 @@ struct NowPlayingCard: View {
                 VStack(alignment: .leading, spacing: DS.Space.s2) { buttons(labeled: true) }
             } else {
                 // Repartidos a lo ancho (en un iPhone grande no se amontonan a la izquierda).
-                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }.frame(maxWidth: .infinity)
+                // TC-B (Fernando, 26 nov 2026): las mismas teclas del control completo (`RemoteKey`), anchas y mate, pegadas.
+                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }.frame(maxWidth: .infinity).fixedSize(horizontal: false, vertical: true)
             }
         }
         .disabled(busy)
@@ -104,7 +105,7 @@ struct NowPlayingCard: View {
     }
 
     private var moreMenu: some View {
-        DSMoreMenu {
+        DSMoreMenu(key: !dynamicTypeSize.isAccessibilitySize) {
             Button("Salir del video", systemImage: DS.Symbol.leave) { act("stop") }
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
         }
@@ -118,10 +119,17 @@ struct NowPlayingCard: View {
             } else if labeled {
                 Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.dsGlassButton()
             } else {
-                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }.frame(maxWidth: .infinity)
+                RemoteKey(symbol: symbol, title: Text(short[symbol] ?? text)) { tapAndRun(action) }
             }
         }
         .dsControlSize(prominent ? .extraLarge : .large)
+    }
+
+    /// El nombre corto bajo cada tecla, como en el control completo («−10 s», «Pausa»).
+    private var short: [String: LocalizedStringKey] {
+        ["gobackward.10": "−10 s", "goforward.10": "+10 s", "play.fill": "Continuar", "pause.fill": "Pausa",
+         "forward.end.fill": "Siguiente", "chevron.up": "Canal siguiente", "chevron.down": "Canal anterior",
+         "speaker.slash.fill": "Sin sonido", "speaker.wave.2.fill": "Sin sonido"]
     }
 
     private func tapAndRun(_ action: @escaping () -> Void) {

@@ -93,6 +93,9 @@ final class AppEnvironment {
     }
     /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
     var watchedSomething = 0
+    /// El motor del último video que sonó en este aparato: al mandar algo a la TV se calla, aunque el reproductor ya se haya
+    /// ido de la pantalla (26 nov: «la puse en la tele y estaba reproduciendo el audio del iPhone»).
+    @ObservationIgnored var lastLocalEngine: VideoPlayerEngine?
     /// Una ficha que pidió abrir un enlace (el widget): `MainTabs` la empuja en Inicio y la vacía.
     var pendingTitle: TitleRoute? { get { ui.pendingTitle } set { ui.pendingTitle = newValue } }
     /// Lo que se abrió en Infuse y está esperando a que vuelva (no se pinta).

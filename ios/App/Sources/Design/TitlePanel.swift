@@ -27,9 +27,6 @@ struct TitleNavigationLink<Label: View>: View {
     @ViewBuilder var label: () -> Label
     @Environment(\.titlePanel) private var panel
     @Environment(\.titleZoom) private var zoom
-    /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí. En una caja que SwiftUI no observa: cambia en
-    /// cada cuadro al desplazar y, guardado como estado, volvía a pintar cada póster en cada cuadro (auditoría, A3).
-    @State private var frame = FrameBox()
     /// El nombre de este enlace en el zoom (`TitleZoomID`): viaja en la navegación, así la ficha sale de este póster aunque el
     /// título se repita en otra fila. Antes se anotaba con un gesto de toque encima del póster, que a veces se comía el toque
     /// y la ficha no abría (Mi lista en Inicio).
@@ -38,8 +35,10 @@ struct TitleNavigationLink<Label: View>: View {
     var body: some View {
         Group {
             if let panel {
-                Button { panel(route, from: frame.rect) } label: { label() }
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame.rect = $0 }
+                // Sin seguir su marco en la ventana (26 nov 2026): cada póster lo anotaba en cada cuadro al deslizar (decenas a
+                // 120 por segundo) y la ficha no lo usa (sale de su propia capa, `MacTitleHost`). Medido en la Mac: Explorar
+                // bajaba con 273–286 ms atrasados por segundo; sin esto, 175–218.
+                Button { panel(route) } label: { label() }
             } else if zoom != nil {
                 NavigationLink(value: TitleZoomID(route: route, slot: slot)) { label() }
             } else {
@@ -50,11 +49,6 @@ struct TitleNavigationLink<Label: View>: View {
         .macPosterHover(route)   // RP2: en la Mac, al pasar el puntero crece con el marco de la TV y muestra ▶ y ＋
         .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
-}
-
-/// Un marco que se guarda sin avisar a SwiftUI (solo se lee al tocar).
-@MainActor private final class FrameBox {
-    var rect: CGRect?
 }
 
 /// Abre la ficha de un estado (`openTitle`): en el panel si lo hay; si no, como destino de la navegación.

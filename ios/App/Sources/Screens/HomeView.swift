@@ -115,6 +115,15 @@ struct HomeView: View {
             }
     }
 
+    /// En la Mac Inicio se arma entero (26 nov 2026): la baraja de pestañas ya lo tiene armado y escondido, y perezoso armaba
+    /// cada fila al entrar deslizando (128 ms atrasados por segundo al bajar; entero, 27–48). En el iPhone y el iPad, perezoso.
+    private static var lazyPage: Bool {
+        #if MAC_DRIVE
+        if MacDrive.lazy { return true }
+        #endif
+        return !ThisDevice.isMac
+    }
+
     /// La página de Inicio, fuera de `body` para que el compilador la revise a tiempo.
     private func page(_ model: HomeModel, kind: String?) -> some View {
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
@@ -123,7 +132,7 @@ struct HomeView: View {
         let pending = model.traktPending.filter { fits($0.kind) }
         // Perezosa: al volver a Inicio se acomoda solo lo que se ve, no la página entera (cada vuelta costaba 0.7 s en la Mac;
         // Fernando, 22 nov 2026: «le sigo picando y todavía se tarda»).
-        return LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+        return ShelfStack(lazy: Self.lazyPage, spacing: DS.Layout.betweenSections) {
             topCards(model)
             if board, !model.spotlight.isEmpty { boardTop(model, continuing: continuing, kind: kind) } else { cinema(model, continuing: continuing) }
             lowerRows(model, kind: kind, picks: picks, pending: pending)

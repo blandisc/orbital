@@ -87,23 +87,34 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         let variant = wantedVariant, keys = [url.absoluteString, titleKey]
         let guess = variant.flatMap { AudioVariantMemory.shared.index(variant: $0, keys: keys) }.map(Int32.init)
         loadedKey = url.absoluteString
+        loads += 1
+        let mine = loads
+        // Saliste mientras cargaba (o cerraste para mandarlo a la TV): ni se cae a «directo» ni se pone a sonar sin pantalla
+        // (Fernando, 26 nov: «me salí del reproductor… como si el del iPhone se hubiera seguido reproduciendo»).
+        func stillWanted() throws {
+            guard !Task.isCancelled, mine == loads else { engine.stop(); releaseProxy(); throw CancellationError() }
+        }
         // ST6: el video por el intermediario local, con varias conexiones; si no arranca o el motor no lo abre, directo.
         if let local = parallelURL(for: url, headers: options.httpHeaders, cellular: cellular) {
             proxied = local
             do {
                 try await engine.load(url: local, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
+                try stillWanted()
                 pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
                 engine.play(); demoMuteAfterLoad()
                 return
             } catch {
                 releaseProxy()
+                if error is CancellationError || Task.isCancelled || mine != loads { engine.stop(); throw CancellationError() }
                 PlayerModel.note("varias conexiones no abrió (\(error)): directo")
             }
         }
         // Lo que se calentó desde la ficha (los primeros 8 MB y la dirección final): se espera a que termine en vez de pedirlo
         // otra vez a la par (dos conexiones al mismo archivo: Real-Debrid forma la segunda).
         await EnginePrewarm.settle(url)
+        try stillWanted()
         try await engine.load(url: url, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
+        try stillWanted()
         pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
         engine.play(); demoMuteAfterLoad()
     }
@@ -283,7 +294,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func play() async { if rearming { rearmIntent = true }; engine.play() }
     func pause() async { if rearming { rearmIntent = false }; engine.pause() }
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
-    func stop() async { engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }
+    /// Cuántas cargas se han pedido; `stop()` también la mueve, así una carga a medias sabe que ya nadie la quiere.
+    private var loads = 0
+    func stop() async { loads += 1; engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }
     // Los ids de pista son los de AetherEngine (`TrackInfo.id`), no la posición en la lista.
     func selectAudio(_ id: Int?) async {
         guard let id else { return }

@@ -76,30 +76,3 @@ struct FilterTile: View {
         .animation(DS.Motion.smooth(reduceMotion), value: compact)
     }
 }
-
-/// Una puerta de la búsqueda avanzada en la Mac (BU-A): cápsula con el ícono de su color, su nombre y, si está puesto, lo
-/// elegido. Puesta, con el anillo de selección (como el mosaico).
-struct FilterChip: View {
-    let page: FilterPage
-    let context: FilterContext
-    let action: () -> Void
-
-    var body: some View {
-        let value = FilterText.value(page, context)
-        Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: page.symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(page.hue)
-                page.title.recipe(.cardTitle)
-                if let value { value.recipe(.secondary, color: DS.textMuted).lineLimit(1) }
-            }
-            .padding(.horizontal, DS.Space.s1)
-            // En la Mac el alto lo pone el botón (como las cápsulas de la barra de arriba); en touch, a tamaño de dedo.
-            .padding(.vertical, ThisDevice.isMac ? 0 : DS.Space.s1)
-        }
-        .dsSecondaryButton()   // el botón secundario de la app (cápsula con borde), no uno armado a mano
-        .dsSelectionRing(value != nil, in: Capsule())
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(value != nil ? .isSelected : [])
-        .accessibilityValue(value ?? Text("Cualquiera"))
-    }
-}

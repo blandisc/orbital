@@ -42,12 +42,15 @@ main, hangs, _ = read(f"{out}/arranque.trace")
 work, quiet, worst = window(main, hangs, t_open, t_open + 5)
 print(f"ARRANQUE quieta {quiet} ms · trabajo {work} ms (primeros 5 s) · bloqueo mayor {worst:.0f} ms")
 
-marks = []
+marks, frames = [], []
 for line in open(f"{out}/marcas.ndjson"):
     try: e = json.loads(line)
     except ValueError: continue
-    if e.get("eventMessage", "").startswith("mark "):
-        marks.append((e["eventMessage"][5:], datetime.datetime.strptime(e["timestamp"][:26], "%Y-%m-%d %H:%M:%S.%f").timestamp()))
+    msg = e.get("eventMessage", "")
+    if msg.startswith("mark "):
+        marks.append((msg[5:], datetime.datetime.strptime(e["timestamp"][:26], "%Y-%m-%d %H:%M:%S.%f").timestamp()))
+    elif msg.startswith("frames "):   # lo que mide `scroll` cuadro por cuadro (MacDrive.ScrollDriver)
+        frames.append((marks[-1][0] if marks else "?", msg))
 main, hangs, began = read(f"{out}/ordenes.trace")
 print(f"{'orden':<28}{'trabajo':>8}{'quieta':>8}{'bloqueo':>8}")
 for i, (name, t) in enumerate(marks):
@@ -55,3 +58,6 @@ for i, (name, t) in enumerate(marks):
     if t < began: print(f"{name[:28]:<28}{'—':>8}{'—':>8}{'—':>8}  (Instruments aún no grababa)"); continue
     work, quiet, worst = window(main, hangs, t, hi)
     print(f"{name[:28]:<28}{work:>8}{quiet:>8}{worst:>8.0f}")
+if frames:
+    print("\nDESLIZAR (cuadro por cuadro; tirones = ms atrasados por segundo, < 5 fluido, > 10 se nota)")
+    for name, msg in frames: print(f"{name[:28]:<28}{msg}")

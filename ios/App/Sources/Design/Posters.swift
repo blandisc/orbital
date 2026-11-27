@@ -207,7 +207,13 @@ struct PosterCard: View {
     /// Otro póster si el primero no carga (Buscar: el de TMDB cuando metahub no tiene el suyo).
     var fallback: String? = nil
 
-    var body: some View { bodyContent.pointerHover(.lift, radius: DS.Radius.md) }   // el realce sigue la esquina del póster (D14)
+    var body: some View {
+        #if MAC_DRIVE
+        if MacDrive.litePoster { bodyContent } else { bodyContent.pointerHover(.lift, radius: DS.Radius.md) }
+        #else
+        bodyContent.pointerHover(.lift, radius: DS.Radius.md)
+        #endif
+    }   // el realce sigue la esquina del póster (D14)
     @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .topLeading) {
             PosterView(url: poster, title: title, fallback: fallback)

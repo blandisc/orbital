@@ -1232,6 +1232,31 @@ marca cada una), tres rondas antes (2531) y cuatro después (2533).
   que juntar esas llegadas en un solo acomodo o armar menos ficha de entrada: es un cambio de cómo carga la ficha, no un
   ajuste.
 
+### Deslizar sin tirones en la Mac (26 nov 2026)
+
+Fernando: «que mejores la experiencia de scroll, que se sienta snappy… una aplicación rápida, instantánea». Medido cuadro por
+cuadro en la app instalada (`scroll` de `MacDrive` deja «tirones»: ms atrasados por segundo a 120 Hz; Apple: menos de 5 se
+siente fluido, más de 10 se nota), con `ios/scripts/medir-mac-sin-manos.sh` y `ios/scripts/mac-deslizar.txt`, alternando antes
+y después.
+
+- **Regla: al deslizar nada lee su lugar en la ventana en cada cuadro.** Cada póster anotaba su marco en la ventana
+  (`TitleNavigationLink`, para un zoom que la ficha ya no usa) y cada fila su orilla (`RowEdgeClip`): a 120 cuadros por
+  segundo y decenas a la vez, el costo crecía con cada vista armada. Lo que necesita saber dónde está lo mide una vez por
+  ancho (al deslizar la página no se mueve a lo ancho). `DesignRulesTests.testNothingTracksTheWindowWhileScrolling`.
+- **Lo que llega deslizando ya está.** La entrada escalonada (`entrance`) es para lo primero que ves al abrir una pantalla;
+  lo que aparece después de `DS.Motion.entranceWindow` no espera ni se funde mientras deslizas.
+- **Inicio entero en la Mac.** La baraja de pestañas lo tiene armado y escondido; perezoso armaba cada fila al entrar
+  deslizando. En el iPhone y el iPad sigue perezoso. Explorar sigue perezoso: entero bajaba mejor pero subía peor.
+- Lo que se midió y no bajó los tirones: quitar la entrada de las filas, o el realce, el marco del puntero y el origen del
+  zoom de cada póster.
+
+### La ficha a la derecha usa su propio margen (26 nov 2026)
+
+Fernando: «debería ser más ancho el contenido. No la columna, pero sí el contenido dentro de ella». **Regla: lo que va
+dentro de un panel toma el margen del panel, no el de la ventana.** La ficha a la derecha mide 460–680 pt, como un teléfono
+grande; con el margen de la ventana (5 %, ~78 pt por lado) se quedaba con un tercio vacío. Todo margen de la ficha pasa por
+`side`, que en el panel es `DS.TitleAction.sidePanelSide`. `DesignRulesTests.testTitlePanelUsesItsOwnSide`.
+
 ### La receta de la ficha ancha (17 nov 2026)
 
 Fernando: «replantea con una receta el cómo se debe de armar… que la imagen que está atrás de manera inteligente se
@@ -1431,3 +1456,15 @@ llegaba tarde tapaba el que elegiste y otro episodio esperaba a que se guardara 
 Para pegar se usa `PasteButton`, nunca `UIPasteboard.general.string` leído por código; al pegar se quitan los espacios y los
 saltos de las orillas. *Por qué:* leerlo por código hace que iOS pregunte «Permitir pegar» cada vez, y así pasaba al pegar la
 clave de una nube. Copiar (escribir en el portapapeles) sí se vale. `DesignRulesTests+Paste` falla si vuelve una lectura.
+
+### Lo que va a la TV no suena también en el iPhone (26 nov 2026)
+
+Fernando: «la puse en la tele y estaba reproduciendo el audio del iPhone». **Al mandar algo a la TV, el iPhone se queda en
+silencio**: el reproductor de aquí se cierra y su motor se detiene, aunque ya no esté en pantalla (en segundo plano o en
+imagen en imagen). Lo cuida `DesignRulesTests.testSendingToTheTVSilencesThePhone`. Lo mismo si sales **mientras carga**: la carga a medias se suelta y nunca se pone a sonar sin pantalla (`testALoadYouLeftNeverStartsPlaying`).
+
+### El control de la TV: el teclado y los juegos (26 nov 2026)
+
+**El teclado del control solo se va cuando buscas o lo bajas tú**: moverte por los resultados no lo esconde. **Un juego que se
+abre o está abierto en la TV siempre se puede cerrar desde el control** (con confirmación), y un «Buscar» repetido al instante
+no sale dos veces. Lo cuida `DesignRulesTests.testRemoteKeepsTheKeyboardAndCanCloseAGame`. **Arrastrar la línea de tiempo del control no mueve la tarjeta**: el minuto ya ocupa su lugar, la barra gana sobre la hoja y, al soltar, el punto espera a la TV (`testScrubbingTheRemoteDoesNotMoveTheCard`). **La tarjeta corta de «Viendo en la TV» y la isla usan las teclas del control completo** (anchas, mate, pegadas; TC-B e IS-B): `testShortCardAndIslandUseTheRemoteKeys`.

@@ -87,4 +87,30 @@ extension DesignRulesTests {
         let deck = try XCTUnwrap(files.first { $0.name == "MacTabDeck.swift" }).lines.joined(separator: "\n")
         XCTAssertTrue(deck.contains(".macPointerWatch()"), "toda la ventana anota cuándo se mueve el puntero")
     }
+
+    /// Al deslizar nada lee su lugar en la ventana en cada cuadro (26 nov 2026): cada póster anotaba su marco (`.global`) y
+    /// cada fila su orilla, decenas de veces a 120 cuadros por segundo, y Explorar bajaba con 273–286 ms atrasados por segundo.
+    /// Quien necesita saber dónde está lo mide una vez por ancho (`size.width ==`, al deslizar la página no cambia); solo las
+    /// piezas que hay una vez por pantalla y no van en filas lo leen directo.
+    func testNothingTracksTheWindowWhileScrolling() throws {
+        let once: Set<String> = ["HomeMark.swift", "MacTabStrip.swift", "SimpsonsRoulette.swift", "OnboardingPlatforms.swift", "Brand.swift"]
+        var tracked = 0
+        for file in try sources(["Design", "Screens", "App"]) where !once.contains(file.name) {
+            let text = file.lines.filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.joined(separator: "\n")
+            var rest = text[...]
+            while let use = rest.range(of: ".onGeometryChange(") {
+                let after = rest[use.upperBound...]
+                let transform = after.range(of: "action:").map { after[..<$0.lowerBound] } ?? after.prefix(400)   // el cálculo
+                if transform.contains("frame(in: .global)") {
+                    tracked += 1
+                    XCTAssertTrue(transform.contains("size.width =="), "\(file.name): lee su lugar en la ventana en cada cuadro; mídelo una vez por ancho (`if g.size.width == … { return … }`)")
+                }
+                rest = rest[use.upperBound...]
+            }
+        }
+        XCTAssertGreaterThanOrEqual(tracked, 2, "no encontré la fila (`RowEdgeClip`) ni la portada de Explorar")
+        // El enlace de un póster no sigue su marco (la ficha de la Mac sale de su propia capa y no lo usa).
+        let link = try XCTUnwrap(try sources(["Design"]).first { $0.name == "TitlePanel.swift" }).lines.joined(separator: "\n")
+        XCTAssertFalse(link.contains("onGeometryChange"), "TitleNavigationLink no sigue su marco en cada cuadro")
+    }
 }

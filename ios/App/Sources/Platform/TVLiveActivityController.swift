@@ -20,7 +20,9 @@ final class TVLiveActivityController {
         // Si iOS cerró la app con una viva, se retoma esa; las de más se terminan.
         let live = Activity<TVActivityAttributes>.activities.filter { $0.activityState == .active || $0.activityState == .stale }
         activity = live.first
+        watchPushToken(tv)
         Task { for extra in live.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) } }
+        self.tv = tv
         subscription = tv.onChange { [weak self, weak tv] in
             guard let self, let tv else { return }
             Task { await self.update(tv.now, tv: tv) }
@@ -59,7 +61,37 @@ final class TVLiveActivityController {
             }
         }
         if let activity { await activity.update(content) }
-        else { activity = try? Activity.request(attributes: TVActivityAttributes(), content: content) }
+        else {
+            // LA-B: con buzón (`pushType: .token`), así la TV la mantiene al día sola. Si iOS no lo deja, sin buzón.
+            activity = (try? Activity.request(attributes: TVActivityAttributes(), content: content, pushType: .token))
+                ?? (try? Activity.request(attributes: TVActivityAttributes(), content: content))
+            watchPushToken(tv)
+        }
+    }
+
+    private weak var tv: TVNowModel?
+    private var tokenTask: Task<Void, Never>?
+
+    /// LA-B: cada buzón que iOS le da a la actividad se lo pasa a la TV (cambia de vez en cuando).
+    private func watchPushToken(_ tv: TVNowModel) {
+        tokenTask?.cancel()
+        guard let activity else { return }
+        let language = language()
+        tokenTask = Task { [weak tv] in
+            for await data in activity.pushTokenUpdates {
+                let token = data.map { String(format: "%02x", $0) }.joined()
+                await tv?.registerActivityPush(token: token, language: language, sandbox: Self.sandbox)
+            }
+        }
+    }
+
+    /// Instalada desde la Mac (perfil de desarrollo): los avisos de Apple van por su servidor de pruebas.
+    private static var sandbox: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") != nil
+        #endif
     }
 
     /// La TV ya no reproduce nada: la actividad se va.
@@ -69,6 +101,7 @@ final class TVLiveActivityController {
         guard let activity else { return }
         await activity.end(nil, dismissalPolicy: .immediate)
         self.activity = nil
+        tokenTask?.cancel()
     }
 
     /// El póster (o el logo del canal) reducido en el App Group: la actividad no baja imágenes.
