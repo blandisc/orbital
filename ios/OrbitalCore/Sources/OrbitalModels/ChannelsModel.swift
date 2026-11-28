@@ -56,6 +56,8 @@ public final class ChannelsModel: ObservableModel {
     public private(set) var channels: [Channel] = [] { didSet { if channels != oldValue { changed() } } }
     /// Lo que encontró la búsqueda.
     public private(set) var results: [Pick] = [] { didSet { if results != oldValue { changed() } } }
+    /// La búsqueda no llegó (sin red): se dice eso, no «No encontré» (revisión del 28 nov 2026).
+    public private(set) var searchFailed = false { didSet { if searchFailed != oldValue { changed() } } }
     private var loaded: [String: Channel] = [:]
     private var loading = false
     /// Se pidió cargar mientras otra carga seguía (cerraste la hoja con una serie nueva): al terminar, otra vuelta.
@@ -135,9 +137,14 @@ public final class ChannelsModel: ObservableModel {
     /// Busca series por nombre («mal» encuentra Malcolm).
     public func search(_ text: String) async {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard query.count >= Self.minQuery else { results = []; return }
-        let found = (try? await services.cinemeta.search("series", query: query)) ?? []
+        guard query.count >= Self.minQuery else { results = []; searchFailed = false; return }
+        let found: [JSON]
+        do { found = try await services.cinemeta.search("series", query: query) } catch {
+            guard !Task.isCancelled else { return }
+            results = []; searchFailed = true; return
+        }
         guard !Task.isCancelled else { return }
+        searchFailed = false
         results = found.compactMap { m in
             guard let id = m["id"]?.nonEmptyString, id.hasPrefix("tt"), let name = m["name"]?.nonEmptyString else { return nil }
             return Pick(id: id, title: name, poster: m["poster"]?.nonEmptyString ?? Self.poster(id))

@@ -688,6 +688,7 @@ TRANSLATIONS = {
     "Entra justo donde va": "Tune in right where it is",
     "Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.": "Each channel plays random episodes of that show all day. Tap one to tune in right where it is.",
     "No encontré «%@». Prueba con otro nombre.": "I couldn't find “%@”. Try another name.",
+    "No pude buscar: revisa tu conexión.": "I couldn't search: check your connection.",
     "Cambia lo que viste y cambian las sugerencias": "Change what you watched and the suggestions change",
     "Ya salió y lo que viene": "Out now and coming up",
     "Ayer": "Yesterday",

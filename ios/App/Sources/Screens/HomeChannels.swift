@@ -180,10 +180,11 @@ struct ChannelsSheet: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Busca una serie para añadirla"))
             .task(id: query) {
                 searching = true
-                // Cada tecla cancela la espera anterior: solo se busca cuando dejas de escribir.
+                // Cada tecla cancela la espera anterior: solo se busca cuando dejas de escribir. Una búsqueda cancelada no apaga
+                // la ruedita de la nueva (antes salía «No encontré» con el texto nuevo antes de buscarlo).
                 guard (try? await Task.sleep(for: DS.HomeChannels.searchDelay)) != nil else { return }
                 await model.search(query)
-                searching = false
+                if !Task.isCancelled { searching = false }
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
         }
@@ -237,6 +238,8 @@ struct ChannelsSheet: View {
     @ViewBuilder private var results: some View {
         if searching && model.results.isEmpty {
             DSLoadingState()
+        } else if model.searchFailed {
+            Text("No pude buscar: revisa tu conexión.").recipe(.footnote, color: DS.textMuted)
         } else if model.results.isEmpty {
             Text("No encontré «\(query)». Prueba con otro nombre.").recipe(.footnote, color: DS.textMuted)
         } else {

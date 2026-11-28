@@ -57,4 +57,18 @@ final class ChannelsModelTests: XCTestCase {
         let again = ChannelsModel(rig.services)
         XCTAssertEqual(again.picks.map(\.id), ChannelsModel.starters.dropFirst().map(\.id) + [extra.id])
     }
+
+    /// Revisión del 28 nov: buscar sin red dice que no se pudo, no «No encontré».
+    func testBuscarSinRedNoEsNoEncontre() async throws {
+        let rig = try ServicesRig()
+        let model = ChannelsModel(rig.services)
+        rig.http.offline = true
+        await model.search("malcolm")
+        XCTAssertTrue(model.searchFailed)
+        XCTAssertTrue(model.results.isEmpty)
+        rig.http.offline = false
+        await model.search("m")
+        XCTAssertFalse(model.searchFailed, "otra búsqueda lo apaga")
+    }
 }
+

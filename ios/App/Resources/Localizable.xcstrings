@@ -22748,6 +22748,17 @@
         }
       }
     },
+    "No pude buscar: revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't search: check your connection."
+          }
+        }
+      }
+    },
     "No pude cambiar Mi lista": {
       "extractionState": "manual",
       "localizations": {
