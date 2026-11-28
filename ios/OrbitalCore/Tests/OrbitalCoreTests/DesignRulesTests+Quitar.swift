@@ -54,7 +54,9 @@ extension DesignRulesTests {
 extension DesignRulesTests {
     func testDeletingADownloadOffersUndo() throws {
         let code = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/DownloadsView.swift"), encoding: .utf8)
-        let lines = code.components(separatedBy: "\n")
+        // La serie y su temporada viven aparte (DownloadSeriesViews.swift): sus «Borrar» cuentan igual.
+        let series = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Screens/DownloadSeriesViews.swift"), encoding: .utf8)
+        let lines = (code + "\n" + series).components(separatedBy: "\n")
         let deletes = lines.filter { $0.contains("Button(\"Borrar\"") }
         XCTAssertGreaterThanOrEqual(deletes.count, 6, "se leyeron los «Borrar» de Descargas")
         for line in deletes { XCTAssertTrue(line.contains("deleteWithUndo("), "«Borrar» sin «Deshacer»: \(line)") }
