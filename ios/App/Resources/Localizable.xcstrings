@@ -34,6 +34,17 @@
         }
       }
     },
+    "%@ (ejemplo). Puedes intentarlo igual; tu partida de la TV no se toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (example). You can try anyway; your TV save isn't touched."
+          }
+        }
+      }
+    },
     "%@ Aquí, al instante": {
       "localizations": {
         "en": {
@@ -217,6 +228,17 @@
         }
       }
     },
+    "%@ en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ on the TV"
+          }
+        }
+      }
+    },
     "%@ libres": {
       "extractionState": "manual",
       "localizations": {
@@ -366,6 +388,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ is deleted from your account. To watch it again you'd have to request it again."
+          }
+        }
+      }
+    },
+    "%@ se cerró": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ closed"
           }
         }
       }
@@ -695,6 +728,28 @@
         }
       }
     },
+    "%@ · en pausa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · paused"
+          }
+        }
+      }
+    },
+    "%@ · la que juegas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · current"
+          }
+        }
+      }
+    },
     "%@ · no cabe en tu iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -864,6 +919,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d titles"
+          }
+        }
+      }
+    },
+    "%lld GB libres · tienes 61": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld GB free · you have 61"
           }
         }
       }
@@ -1076,6 +1142,17 @@
         }
       }
     },
+    "%lld en tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld on your iPhone"
+          }
+        }
+      }
+    },
     "%lld episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -1163,6 +1240,17 @@
         }
       }
     },
+    "%lld h %lld min jugados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h %lld min played"
+          }
+        }
+      }
+    },
     "%lld hoy": {
       "localizations": {
         "en": {
@@ -1224,6 +1312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld min jugados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min played"
           }
         }
       }
@@ -1914,6 +2013,17 @@
         }
       }
     },
+    "A veces hay que abrirlo varias veces": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sometimes it takes a few tries to open"
+          }
+        }
+      }
+    },
     "A veces una no deja bajar algo que otra sí. Si te pasa seguido, prueba otra.": {
       "extractionState": "manual",
       "localizations": {
@@ -2089,6 +2199,28 @@
         }
       }
     },
+    "Abre tus partidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your saves"
+          }
+        }
+      }
+    },
+    "Abre, pero se cierra en el primer combate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens, but closes at the first fight"
+          }
+        }
+      }
+    },
     "Abriendo %@ en la TV.": {
       "extractionState": "manual",
       "localizations": {
@@ -2096,6 +2228,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opening %@ on the TV."
+          }
+        }
+      }
+    },
+    "Abriendo el juego…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the game…"
           }
         }
       }
@@ -2593,6 +2736,17 @@
         }
       }
     },
+    "Agregar a Favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Favorites"
+          }
+        }
+      }
+    },
     "Agregar a favoritos": {
       "extractionState": "manual",
       "localizations": {
@@ -2736,6 +2890,28 @@
         }
       }
     },
+    "Ajustes de juegos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Game settings"
+          }
+        }
+      }
+    },
+    "Ajustes del juego": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Game settings"
+          }
+        }
+      }
+    },
     "Ajustes › Complementos": {
       "extractionState": "manual",
       "localizations": {
@@ -2754,6 +2930,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Settings…"
+          }
+        }
+      }
+    },
+    "Al abrir trae la de la TV; al salir la manda de regreso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It brings the TV one when you open and sends it back when you leave."
+          }
+        }
+      }
+    },
+    "Al abrir un juego se trae la de la TV y al salir se manda. Se guardan las últimas 10 de cada juego.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening a game brings the TV save; leaving sends it back. The last 10 of each game are kept."
           }
         }
       }
@@ -2831,6 +3029,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Something didn't match when sending it. Try again; if it keeps happening, update Orbital on your TV."
+          }
+        }
+      }
+    },
+    "Alguien juega %@ en la TV. Si sigues aquí, al final te preguntamos con cuál partida te quedas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone is playing %@ on the TV. If you keep going here, we'll ask at the end which save to keep."
           }
         }
       }
@@ -2944,6 +3153,17 @@
         }
       }
     },
+    "Antes de tu primer juego": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before your first game"
+          }
+        }
+      }
+    },
     "Apaga los subtítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -2984,6 +3204,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Off"
+          }
+        }
+      }
+    },
+    "Apagados con mando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off with a controller"
           }
         }
       }
@@ -3365,6 +3596,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Here you decide which ones it shows you"
+          }
+        }
+      }
+    },
+    "Aquí o en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Here or on the TV"
           }
         }
       }
@@ -3761,6 +4003,28 @@
         }
       }
     },
+    "Añadido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        }
+      }
+    },
+    "Añadidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        }
+      }
+    },
     "Añadir": {
       "extractionState": "manual",
       "localizations": {
@@ -4023,6 +4287,17 @@
         }
       }
     },
+    "Baja de velocidad en las partidas grandes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slows down in big matches"
+          }
+        }
+      }
+    },
     "Baja el volumen": {
       "extractionState": "manual",
       "localizations": {
@@ -4118,6 +4393,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Move down"
+          }
+        }
+      }
+    },
+    "Bajar de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get from the TV"
           }
         }
       }
@@ -4417,6 +4703,17 @@
         }
       }
     },
+    "Botones en pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-screen buttons"
+          }
+        }
+      }
+    },
     "Breaking Bad": {
       "extractionState": "manual",
       "localizations": {
@@ -4654,6 +4951,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search"
+          }
+        }
+      }
+    },
+    "Buscar de nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search again"
           }
         }
       }
@@ -4906,6 +5214,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Cada consola trae sus botones: palancas y gatillos en las de la TV; cruceta, A y B en las portátiles.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each console brings its own buttons: sticks and triggers for TV consoles; D-pad, A and B for handhelds."
           }
         }
       }
@@ -6442,6 +6761,17 @@
         }
       }
     },
+    "Con fallas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With glitches"
+          }
+        }
+      }
+    },
     "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento.": {
       "extractionState": "manual",
       "localizations": {
@@ -6508,6 +6838,17 @@
         }
       }
     },
+    "Con tu mando o en la pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your controller or on screen"
+          }
+        }
+      }
+    },
     "Con un código": {
       "extractionState": "manual",
       "localizations": {
@@ -6515,6 +6856,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "With a code"
+          }
+        }
+      }
+    },
+    "Con un mando conectado, los botones en pantalla se esconden solos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With a controller connected, the on-screen buttons hide on their own."
           }
         }
       }
@@ -7985,6 +8337,17 @@
         }
       }
     },
+    "Cómo corre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How it runs"
+          }
+        }
+      }
+    },
     "Cómo funciona": {
       "extractionState": "manual",
       "localizations": {
@@ -7992,6 +8355,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How it works"
+          }
+        }
+      }
+    },
+    "Cómo juegas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you play"
           }
         }
       }
@@ -10421,6 +10795,17 @@
         }
       }
     },
+    "El juego se cerró": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The game closed"
+          }
+        }
+      }
+    },
     "El juego se va a cerrar": {
       "extractionState": "manual",
       "localizations": {
@@ -11797,6 +12182,71 @@
         }
       }
     },
+    "En tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On your iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On your iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On your Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On your iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En tu iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En tu iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En tu Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En tu iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "En tu idioma": {
       "extractionState": "manual",
       "localizations": {
@@ -12635,6 +13085,17 @@
         }
       }
     },
+    "Esconderlos con mando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide them with a controller"
+          }
+        }
+      }
+    },
     "Escondida": {
       "extractionState": "manual",
       "localizations": {
@@ -12816,6 +13277,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You didn't watch anything that day."
+          }
+        }
+      }
+    },
+    "Ese juego ya no está en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That game isn't on the TV anymore"
           }
         }
       }
@@ -13068,6 +13540,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This folder is empty."
+          }
+        }
+      }
+    },
+    "Esta consola todavía no comparte partidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This console doesn't share saves yet"
           }
         }
       }
@@ -13780,6 +14263,17 @@
         }
       }
     },
+    "Estás fuera de casa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're away from home"
+          }
+        }
+      }
+    },
     "Excelente": {
       "extractionState": "manual",
       "localizations": {
@@ -13874,6 +14368,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your cloud is missing"
+          }
+        }
+      }
+    },
+    "Faltan 9 GB para %@. Quita juegos que ya no juegas; tus partidas se quedan en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ needs 9 GB more. Remove games you don't play; your saves stay on the TV."
           }
         }
       }
@@ -14152,6 +14657,17 @@
         }
       }
     },
+    "Fuera de casa también": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Away from home too"
+          }
+        }
+      }
+    },
     "Full HD": {
       "extractionState": "manual",
       "localizations": {
@@ -14170,6 +14686,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Futurama"
+          }
+        }
+      }
+    },
+    "GameSir · conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GameSir · connected"
           }
         }
       }
@@ -14426,6 +14953,82 @@
         }
       }
     },
+    "Guardado en este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en este iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en este iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en este iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Guardado rápido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick save"
+          }
+        }
+      }
+    },
     "Guardan películas y series en sus servidores: lo que ya tienen arranca al instante y lo que no, se lo pides y lo bajan.": {
       "extractionState": "manual",
       "localizations": {
@@ -14488,6 +15091,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save to…"
+          }
+        }
+      }
+    },
+    "Guardar y salir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save and exit"
           }
         }
       }
@@ -14664,6 +15278,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Talking to your TV…"
+          }
+        }
+      }
+    },
+    "Hace %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
+          }
+        }
+      }
+    },
+    "Hace %lld h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h ago"
           }
         }
       }
@@ -15356,6 +15992,17 @@
         }
       }
     },
+    "Intentar de todos modos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try anyway"
+          }
+        }
+      }
+    },
     "Internet": {
       "extractionState": "manual",
       "localizations": {
@@ -15455,6 +16102,104 @@
         }
       }
     },
+    "Juegas con tu última partida de este iPhone. Si avanzaste en la TV desde entonces, eso no está aquí todavía.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You'll play your last save from this iPad. If you got further on the TV since, that isn't here yet."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You'll play your last save from this iPhone. If you got further on the TV since, that isn't here yet."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You'll play your last save from this Mac. If you got further on the TV since, that isn't here yet."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You'll play your last save from this iPhone. If you got further on the TV since, that isn't here yet."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Juegas con tu última partida de este iPad. Si avanzaste en la TV desde entonces, eso no está aquí todavía."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Juegas con tu última partida de este iPhone. Si avanzaste en la TV desde entonces, eso no está aquí todavía."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Juegas con tu última partida de esta Mac. Si avanzaste en la TV desde entonces, eso no está aquí todavía."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Juegas con tu última partida de este iPhone. Si avanzaste en la TV desde entonces, eso no está aquí todavía."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Juegas igual; tu partida se manda cuando vuelvas a la wifi de casa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You play the same; your save is sent when you get back on home Wi-Fi."
+          }
+        }
+      }
+    },
+    "Juegos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Games"
+          }
+        }
+      }
+    },
+    "Jugado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Played"
+          }
+        }
+      }
+    },
     "Jugando en la consola": {
       "extractionState": "manual",
       "localizations": {
@@ -15462,6 +16207,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playing on the console"
+          }
+        }
+      }
+    },
+    "Jugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        }
+      }
+    },
+    "Jugar aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play here"
+          }
+        }
+      }
+    },
+    "Jugaste %@ aquí y en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You played %@ here and on the TV"
           }
         }
       }
@@ -15511,6 +16289,17 @@
       }
     },
     "La TV no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV isn't answering"
+          }
+        }
+      }
+    },
+    "La TV no responde": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15846,6 +16635,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The same version you're watching"
+          }
+        }
+      }
+    },
+    "La más avanzada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Furthest along"
           }
         }
       }
@@ -16217,6 +17017,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "La otra no se borra: queda en Partidas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The other one isn't deleted: it stays in Saves."
           }
         }
       }
@@ -16722,6 +17533,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The ones that packed theaters"
+          }
+        }
+      }
+    },
+    "Las que viajan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The ones that travel"
           }
         }
       }
@@ -17470,6 +18292,17 @@
         }
       }
     },
+    "Llevar y traer tus partidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carry your saves back and forth"
+          }
+        }
+      }
+    },
     "Llevas %@": {
       "extractionState": "manual",
       "localizations": {
@@ -18127,6 +18960,17 @@
         }
       }
     },
+    "Lo que llevas ahora no se pierde: queda en la lista y puedes volver a él.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you have now isn't lost: it stays in the list and you can go back to it."
+          }
+        }
+      }
+    },
     "Lo que mandes desde la sala al iPhone llega a Inicio, para verlo en la cama.": {
       "extractionState": "manual",
       "localizations": {
@@ -18407,6 +19251,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you watched and your list are already in Orbital."
+          }
+        }
+      }
+    },
+    "Lo que ya bajó se queda. Prende Orbital en la TV y sigue donde iba.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What already downloaded stays. Turn on Orbital on the TV and it picks up where it was."
           }
         }
       }
@@ -18924,6 +19779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Send “%@”"
+          }
+        }
+      }
+    },
+    "Mando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controller"
           }
         }
       }
@@ -20767,6 +21633,17 @@
         }
       }
     },
+    "Nada por aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing here."
+          }
+        }
+      }
+    },
     "Nada por calificar": {
       "extractionState": "manual",
       "localizations": {
@@ -20818,6 +21695,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Christmas"
+          }
+        }
+      }
+    },
+    "Necesita": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs"
           }
         }
       }
@@ -20997,6 +21885,17 @@
         }
       }
     },
+    "No cabe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It doesn't fit"
+          }
+        }
+      }
+    },
     "No cabe en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -21157,6 +22056,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Didn't answer in time: %@"
+          }
+        }
+      }
+    },
+    "No corre todavía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn't run yet"
           }
         }
       }
@@ -22348,6 +23258,28 @@
         }
       }
     },
+    "No se pudo mandar tu partida; sigue aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your save couldn't be sent; it's still here"
+          }
+        }
+      }
+    },
+    "No se pudo mandar · se reintenta solo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't send · retries on its own"
+          }
+        }
+      }
+    },
     "No se pudo reproducir": {
       "extractionState": "manual",
       "localizations": {
@@ -23428,6 +24360,17 @@
         }
       }
     },
+    "Pantalla de arriba": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top screen"
+          }
+        }
+      }
+    },
     "Pantalla táctil": {
       "extractionState": "manual",
       "localizations": {
@@ -23718,6 +24661,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "For “Watch on TV”, the remote and voice."
+          }
+        }
+      }
+    },
+    "Partida al día con la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save up to date with the TV"
+          }
+        }
+      }
+    },
+    "Partidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saves"
           }
         }
       }
@@ -24303,6 +25268,17 @@
         }
       }
     },
+    "Pide el modo rápido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs fast mode"
+          }
+        }
+      }
+    },
     "Pidiendo a tu nube…": {
       "extractionState": "manual",
       "localizations": {
@@ -24820,6 +25796,17 @@
         }
       }
     },
+    "Portátiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handhelds"
+          }
+        }
+      }
+    },
     "Posición": {
       "extractionState": "manual",
       "localizations": {
@@ -24882,6 +25869,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Awards"
+          }
+        }
+      }
+    },
+    "Prende Orbital en la TV y conéctate a la misma wifi para ver tu catálogo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Orbital on the TV and join the same Wi-Fi to see your catalog."
           }
         }
       }
@@ -24963,6 +25961,17 @@
         }
       }
     },
+    "Prendidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        }
+      }
+    },
     "Primer episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -24970,6 +25979,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "First episode"
+          }
+        }
+      }
+    },
+    "Primera vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time"
           }
         }
       }
@@ -25760,6 +26780,17 @@
         }
       }
     },
+    "Quitar de Favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Favorites"
+          }
+        }
+      }
+    },
     "Quitar de Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -25837,6 +26868,71 @@
         }
       }
     },
+    "Quitar del iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove from iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove from iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove from Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove from iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar del iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar del iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar de la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar del iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Quitar filtros": {
       "extractionState": "manual",
       "localizations": {
@@ -25848,6 +26944,17 @@
         }
       }
     },
+    "Quitar los que no juegas en un mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove ones you haven't played in a month"
+          }
+        }
+      }
+    },
     "Quitar silencio": {
       "extractionState": "manual",
       "localizations": {
@@ -25855,6 +26962,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unmute"
+          }
+        }
+      }
+    },
+    "Quitar un juego del iPhone no toca tus partidas: siguen en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removing a game from the iPad doesn't touch your saves: they stay on the TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removing a game from the iPhone doesn't touch your saves: they stay on the TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removing a game from the Mac doesn't touch your saves: they stay on the TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removing a game from the iPhone doesn't touch your saves: they stay on the TV."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar un juego del iPad no toca tus partidas: siguen en la TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar un juego del iPhone no toca tus partidas: siguen en la TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar un juego de la Mac no haz clic en tus partidas: siguen en la TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quitar un juego del iPhone no toca tus partidas: siguen en la TV."
+                }
+              }
+            }
           }
         }
       }
@@ -26012,6 +27184,17 @@
         }
       }
     },
+    "Qué se sabe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's known"
+          }
+        }
+      }
+    },
     "Qué significa cada etiqueta": {
       "extractionState": "manual",
       "localizations": {
@@ -26030,6 +27213,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How good"
+          }
+        }
+      }
+    },
+    "Qué tanto se ven": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How visible"
           }
         }
       }
@@ -26408,6 +27602,17 @@
         }
       }
     },
+    "Recientes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent"
+          }
+        }
+      }
+    },
     "Recién agregado": {
       "extractionState": "manual",
       "localizations": {
@@ -26568,6 +27773,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back to Explore"
+          }
+        }
+      }
+    },
+    "Regresar y jugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back and play"
           }
         }
       }
@@ -27206,6 +28422,71 @@
         }
       }
     },
+    "Rápidos, solo este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quick, this iPad only"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quick, this iPhone only"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quick, this Mac only"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quick, this iPhone only"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rápidos, solo este iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rápidos, solo este iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rápidos, solo esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rápidos, solo este iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Sacar tu clave": {
       "extractionState": "manual",
       "localizations": {
@@ -27524,6 +28805,17 @@
         }
       }
     },
+    "Se baja en casa, por wifi, aunque cierres Orbital; te avisa al terminar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It downloads at home over Wi-Fi, even if you close Orbital; you'll be told when it's done."
+          }
+        }
+      }
+    },
     "Se borra de este iPhone lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia.": {
       "extractionState": "manual",
       "localizations": {
@@ -27687,6 +28979,17 @@
         }
       }
     },
+    "Se está jugando en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's being played on the TV"
+          }
+        }
+      }
+    },
     "Se guarda en tu historial de Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -27705,6 +29008,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "They are saved with the download: you can watch them offline too."
+          }
+        }
+      }
+    },
+    "Se guardan las últimas 10. Regresar a una no borra las demás.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last 10 are kept. Going back to one doesn't delete the others."
           }
         }
       }
@@ -28165,6 +29479,17 @@
         }
       }
     },
+    "Se ve mejor con el Duo abierto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looks better with the Duo open"
+          }
+        }
+      }
+    },
     "Seguir": {
       "extractionState": "manual",
       "localizations": {
@@ -28618,6 +29943,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "If someone else uses it at the same time, the video cuts out. If you share it, it can be closed."
+          }
+        }
+      }
+    },
+    "Si conectas un mando, los botones en pantalla se esconden.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you connect a controller, the on-screen buttons hide."
           }
         }
       }
@@ -29815,6 +31151,17 @@
         }
       }
     },
+    "Sin jugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not played"
+          }
+        }
+      }
+    },
     "Sin lo que ya vi": {
       "extractionState": "manual",
       "localizations": {
@@ -30281,6 +31628,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Just this episode"
+          }
+        }
+      }
+    },
+    "Solo este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPad only"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone only"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This Mac only"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone only"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo este iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo este iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo este iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -31234,6 +32646,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Maximum size"
+          }
+        }
+      }
+    },
+    "También con datos del celular": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also on cellular data"
           }
         }
       }
@@ -34042,6 +35465,82 @@
         }
       }
     },
+    "Todavía no bajas juegos de esta consola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't downloaded games from this console yet."
+          }
+        }
+      }
+    },
+    "Todavía no corre en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doesn't run on the iPad yet"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doesn't run on the iPhone yet"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doesn't run on the Mac yet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doesn't run on the iPhone yet"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía no corre en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía no corre en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía no corre en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía no corre en el iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Todavía no está en la nube": {
       "extractionState": "manual",
       "localizations": {
@@ -34093,6 +35592,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nowhere to watch it yet"
+          }
+        }
+      }
+    },
+    "Todavía no hay. En la pausa, «Guardado rápido».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None yet. In the pause menu, “Quick save”."
           }
         }
       }
@@ -34685,6 +36195,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "After two failures in a row it's no longer waited for; it's retried on its own, up to every hour."
+          }
+        }
+      }
+    },
+    "Trayendo tu partida de la TV…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bringing your save from the TV…"
           }
         }
       }
@@ -35771,6 +37292,17 @@
         }
       }
     },
+    "Tu copia es la 1.3.0. Con la 1.4.1 correría preparado en la Mac: más rápido y más fresco.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your copy is 1.3.0. With 1.4.1 it would run prepared on the Mac: faster and cooler."
+          }
+        }
+      }
+    },
     "Tu cuenta": {
       "extractionState": "manual",
       "localizations": {
@@ -36444,6 +37976,50 @@
         }
       }
     },
+    "Tu partida está a salvo hasta tu último guardado. Si vuelve a pasar, revisa «Qué se sabe» en la ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your progress is safe up to your last save. If it happens again, check “What's known” on the game page."
+          }
+        }
+      }
+    },
+    "Tu partida se manda al llegar a casa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your save is sent when you get home"
+          }
+        }
+      }
+    },
+    "Tu partida viaja sola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your save travels on its own"
+          }
+        }
+      }
+    },
+    "Tu partida ya está en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your save is on the TV now"
+          }
+        }
+      }
+    },
     "Tu pedido está en cola en la nube": {
       "extractionState": "manual",
       "localizations": {
@@ -36650,6 +38226,17 @@
         }
       }
     },
+    "Tus consolas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your consoles"
+          }
+        }
+      }
+    },
     "Tus descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -36694,6 +38281,17 @@
         }
       }
     },
+    "Tus juegos viven en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your games live on the TV"
+          }
+        }
+      }
+    },
     "Tus listas": {
       "extractionState": "manual",
       "localizations": {
@@ -36723,6 +38321,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Trakt lists show up here"
+          }
+        }
+      }
+    },
+    "Tus partidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your saves"
+          }
+        }
+      }
+    },
+    "Tus partidas se quedan en la TV aunque quites el juego.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your saves stay on the TV even if you remove the game."
           }
         }
       }
@@ -37149,6 +38769,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "One moment"
+          }
+        }
+      }
+    },
+    "Un reporte en iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One iPad report"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One iPhone report"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One Mac report"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One iPhone report"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un reporte en iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un reporte en iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un reporte en Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un reporte en iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -37596,6 +39281,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use my whole OneDrive"
+          }
+        }
+      }
+    },
+    "Va a la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goes to the TV"
+          }
+        }
+      }
+    },
+    "Va a la TV cuando vuelvas a casa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goes to the TV when you get home"
+          }
+        }
+      }
+    },
+    "Va bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs well"
           }
         }
       }
@@ -38215,6 +39933,17 @@
         }
       }
     },
+    "Ver qué quitar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See what to remove"
+          }
+        }
+      }
+    },
     "Ver resultados": {
       "extractionState": "manual",
       "localizations": {
@@ -38468,6 +40197,17 @@
         }
       }
     },
+    "Vibrar al tocarlos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibrate on touch"
+          }
+        }
+      }
+    },
     "Viendo": {
       "extractionState": "manual",
       "localizations": {
@@ -38705,6 +40445,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back"
+          }
+        }
+      }
+    },
+    "Volver a abrir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open again"
           }
         }
       }
@@ -40638,6 +42389,17 @@
         }
       }
     },
+    "¿Con cuál sigues?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which one do you keep?"
+          }
+        }
+      }
+    },
     "¿Cuál?": {
       "extractionState": "manual",
       "localizations": {
@@ -41190,6 +42952,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Which did you watch most?"
+          }
+        }
+      }
+    },
+    "¿Regresar a esta partida?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back to this save?"
           }
         }
       }

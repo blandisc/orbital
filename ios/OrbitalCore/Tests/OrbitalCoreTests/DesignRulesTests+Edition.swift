@@ -16,6 +16,8 @@ extension DesignRulesTests {
         "AddonsSettings.swift": "Ajustes › Complementos (instantStreams)",
         "Companion.swift": "el acompañante de los juegos de la consola (console)",
         "GameCompanionView.swift": "el acompañante de los juegos de la consola (console)",
+        "GamesView.swift": "Juegos en el iPhone (emulation, Ultra)", "GameDetailView.swift": "Juegos en el iPhone (emulation, Ultra)",
+        "GamesSettings.swift": "Juegos en el iPhone (emulation, Ultra)",
         "DebridRedeem.swift": "canjear Real-Debrid (instantStreams)",
         "DebridRequests.swift": "pedidos a la nube (instantStreams)",
         "DebridReminderNotifier.swift": "avisos de Real-Debrid (instantStreams)",

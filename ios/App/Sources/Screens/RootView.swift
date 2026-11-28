@@ -339,6 +339,8 @@ struct MainTabs: View {
             TabView(selection: selection) {
                 Tab("Inicio", systemImage: "house", value: 0) { homeStack }
                 Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) { exploreStack }   // antes «Para ti» (Fernando, 31 oct 2026)
+                // Juegos (Ultra, solo el iPhone): en diseño hasta que Fernando apruebe las pantallas (`GamesTab.isOn`).
+                if GamesTab.isOn { Tab("Juegos", systemImage: "gamecontroller", value: 4) { GamesTab() } }
                 // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas». Su ícono, una pila
                 // de tarjetas (tu colección), del mismo trazo que la casa y la lupa; los libros parecían de lectura (4 nov, la 1774).
                 Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { libraryStack }

@@ -22,6 +22,7 @@ extension DesignRulesTests {
         "flight": "el póster que vuela (solo arte, sin texto)", "title": "un título de TMDB: ya llega en tu idioma (sin id de IMDb)",
         "route.name": "una persona (reparto)", "studio.name": "un estudio", "air.episode.name": "un episodio de un canal",
         "model.name": "en la conexión con la TV: el nombre de este aparato",
+        "console": "una consola de juegos (nombre fijo)", "pads": "el nombre del mando conectado",
     ]
 
     /// Lo que solo lleva el nombre como dato (abrir la ficha, pedir a la TV, descargar): la vista que lo pinta lo cruza.
