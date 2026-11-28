@@ -118,6 +118,13 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         partsFolder = AppFiles.support.appendingPathComponent("Parts", isDirectory: true)
         try? FileManager.default.createDirectory(at: resumeFolder, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: partsFolder, withIntermediateDirectories: true)
+        // Lo que se está bajando no va a la copia de iCloud: eran GB a medias subiéndose de noche (con el iPhone cargando y en
+        // Wi‑Fi, justo cuando bajan) y regresaban como pedazos huérfanos al restaurar (revisión del 28 nov 2026).
+        for folder in [resumeFolder, partsFolder] {
+            var url = folder
+            var excluded = URLResourceValues(); excluded.isExcludedFromBackup = true
+            try? url.setResourceValues(excluded)
+        }
         (events, continuation) = AsyncStream.makeStream(bufferingPolicy: .unbounded)
         super.init()
         contexts = (defaults.data(forKey: "orbital.download-contexts").flatMap { try? JSONDecoder().decode([String: Context].self, from: $0) }) ?? [:]

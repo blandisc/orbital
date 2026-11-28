@@ -182,7 +182,16 @@ public actor Downloads {
         for var item in all where item.state == .queued && !waiting.contains(item.id) && active < limit {
             guard let latest = items[item.id], latest.state == .queued, latest.createdAt == item.createdAt else { continue }   // cambió mientras arrancaba otra
             item = latest
-            guard let url = secrets.get(SecretKey.download(item.id)).flatMap(URL.init(string:)) else {
+            var saved = secrets.get(SecretKey.download(item.id)).flatMap(URL.init(string:))
+            if saved == nil {
+                // Sin enlace (el llavero es de este aparato: al restaurar en otro iPhone no viene): se pide uno nuevo, como con
+                // uno vencido; antes «Reintentar» fallaba igual cada vez (revisión del 28 nov 2026).
+                saved = await refresh(item)
+                if let saved { secrets.set(SecretKey.download(item.id), saved.absoluteString) }
+                guard let again = items[item.id], again.state == .queued, again.createdAt == item.createdAt else { continue }
+                item = again
+            }
+            guard let url = saved else {
                 item.state = .failed; item.lastError = DownloadError.noURL.description
                 items[item.id] = item; continue
             }
@@ -202,6 +211,15 @@ public actor Downloads {
             // del sistema, no en el archivo: el avance no se regresa a cero al retomarla (al bloquear el iPhone parecía que
             // se reiniciaba); el primer avance real lo corrige si de verdad empezó de nuevo.
             item.writtenBytes = max(onDisk, item.writtenBytes)
+            // Al reanudar o reintentar también se mira el espacio (antes solo al encolar): sin él no se baja hasta dejar el iPhone
+            // en cero (revisión del 28 nov 2026).
+            if let expected = item.expectedBytes {
+                let needed = Int64(Double(max(0, expected - item.writtenBytes)) * 1.05) + Self.spaceMargin, free = freeSpace()
+                if needed > free {
+                    item.state = .failed; item.lastError = DownloadError.notEnoughSpace(needed: needed, free: free).description
+                    items[item.id] = item; continue
+                }
+            }
             relaunched.remove(item.id)
             item.state = .downloading
             items[item.id] = item

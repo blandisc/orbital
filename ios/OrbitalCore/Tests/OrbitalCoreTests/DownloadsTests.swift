@@ -119,6 +119,24 @@ final class DownloadsTests: XCTestCase {
         XCTAssertTrue(transport.starts.isEmpty, "no se vuelve a pedir")
     }
 
+    /// Revisión del 28 nov 2026: restaurada en otro iPhone (el enlace no viaja), la descarga pide uno nuevo en vez de fallar
+    /// siempre; y al reanudar sin espacio no arranca.
+    func testAMissingLinkIsAskedAgainAndResumingChecksSpace() async throws {
+        let transport = FakeTransport()
+        var queued = item("tt1:1:1"); queued.state = .queued
+        let d = makeDownloads(transport, saved: [queued], refresh: { _ in URL(string: "https://rd.example/FRESH.mkv") })
+        await settle("arranca con el enlace nuevo") { transport.starts.count == 1 }
+        let state = await d.item(queued.id)?.state
+        XCTAssertEqual(state, .downloading)
+
+        let small = FakeTransport()
+        var big = item("tt1:1:2", size: 40_000_000_000); big.state = .queued
+        let secrets = InMemorySecrets(); secrets.set(SecretKey.download(big.id), "https://rd.example/b.mkv")
+        let full = makeDownloads(small, secrets: secrets, free: 1_000_000_000, saved: [big])
+        await settle("sin espacio") { await full.item(big.id)?.state == .failed }
+        XCTAssertTrue(small.starts.isEmpty)
+    }
+
     func testNetworkFailuresRetryThenGiveUp() async throws {
         let transport = FakeTransport()
         let d = makeDownloads(transport)

@@ -277,7 +277,13 @@ struct DownloadsView: View {
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
     private func setting(_ key: WritableKeyPath<AppSettings, Bool>) -> Binding<Bool> {
-        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in env.services.settings.update { $0[keyPath: key] = value }; observer.invalidate() })
+        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in
+            env.services.settings.update { $0[keyPath: key] = value }
+            // «Solo con Wi‑Fi» decide al pedir cada pieza: lo que ya bajaba se vuelve a conectar con el ajuste nuevo, como en Ajustes
+            // (antes seguía gastando datos, o seguía «Esperando Wi‑Fi» al apagarlo; revisión del 28 nov 2026).
+            if key == \AppSettings.wifiOnlyDownloads { Task { [services = env.services] in await services.downloads.reconnect() } }
+            observer.invalidate()
+        })
     }
 
     /// Lo que se está bajando: póster, nombre, datos en SF Mono, el avance y pausar o seguir.

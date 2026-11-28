@@ -225,7 +225,7 @@ public final class SavedModel: ObservableModel {
     public func remove(_ s: Suggestion) async -> Bool {
         let list = selected
         setShown(s, shown: false)
-        do { try await actions.setInList(s, listID: list, add: false); return true } catch {
+        do { try await actions.setInList(s, listID: list, add: false); reflect(s, in: list, add: false); return true } catch {
             if list == selected { setShown(s, shown: true) }
             return false
         }
@@ -236,9 +236,20 @@ public final class SavedModel: ObservableModel {
     public func add(_ s: Suggestion) async -> Bool {
         let list = selected
         setShown(s, shown: true)
-        do { try await actions.setInList(s, listID: list, add: true); return true } catch {
+        do { try await actions.setInList(s, listID: list, add: true); reflect(s, in: list, add: true); return true } catch {
             if list == selected { setShown(s, shown: false) }
             return false
+        }
+    }
+
+    /// La cifra de la pestaña y del mosaico de la lista, al día con lo que quitaste o agregaste (antes solo al recargar;
+    /// revisión del 28 nov 2026).
+    private func reflect(_ s: Suggestion, in list: String, add: Bool) {
+        if list == Self.watchlist {
+            if add { if !watchlist.contains(where: { $0.imdb == s.imdb }) { watchlist.insert(s, at: 0) } }
+            else { watchlist.removeAll { $0.imdb == s.imdb } }
+        } else if Self.traktListID(list) != nil, s.imdb.hasPrefix("tt") {
+            listCounts[list] = max(0, (listCounts[list] ?? 0) + (add ? 1 : -1))
         }
     }
 

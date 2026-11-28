@@ -112,7 +112,11 @@ public final class DownloadsModel: ObservableModel {
 
     /// Cada cuánto se pinta el avance (segundos).
     static let progressInterval = 0.5
-    private static func shape(_ items: [DownloadItem]) -> [String] { items.map { "\($0.id)|\($0.state)" } }
+    /// Lo que se pinta al momento: el estado, «Esperando Wi‑Fi» y el error (antes solo el estado, y «Esperando…» casi nunca
+    /// salía: llegaba justo tras otro repintado y, mientras se espera, no llega nada más; revisión del 28 nov 2026).
+    private static func shape(_ items: [DownloadItem]) -> [String] {
+        items.map { "\($0.id)|\($0.state)|\($0.waitingForNetwork)|\($0.lastError ?? "")" }
+    }
 
     public var active: [DownloadItem] { items.filter { $0.state != .done } }
     public var ready: [DownloadItem] { items.filter { $0.state == .done } }
