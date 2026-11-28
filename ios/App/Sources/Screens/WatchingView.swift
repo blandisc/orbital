@@ -193,9 +193,13 @@ struct WatchingView: View {
         let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil && RatingKey.parseSeason($0.key) == nil }
         let all = Array(mine.values)
         if !all.isEmpty {
-            let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
+            // Las barras cuentan lo mismo que el carrusel (lo calificado que está en tu historial): una barra decía 40 y la
+            // línea de abajo «Con 5 estrellas · 12» (revisión del 28 nov 2026). Sin historial aún, todo lo calificado.
+            let ratedNow = ratedItems()
+            let counts = ratedNow.isEmpty ? (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
+                                       : (1...5).map { star in ratedNow.filter { $0.stars == star }.count }
             let star = pickedStars ?? 5
-            let items = ratedItems().filter { $0.stars == star }.map {
+            let items = ratedNow.filter { $0.stars == star }.map {
                 WatchingFiveStars.Item(id: $0.id, title: $0.title, kind: $0.kind, poster: String(format: ForYou.metahubPoster, $0.id))
             }
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
