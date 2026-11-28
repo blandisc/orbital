@@ -6,16 +6,22 @@ import XCTest
 /// «Cancelar» a la izquierda y las hojas del reproductor (Audio, Subtítulos) dejan el del sistema al centro: ahí no hay «‹».
 extension DesignRulesTests {
     func testInlineTitlesUseTheSharedRecipe() throws {
-        let withCancel: Set<String> = ["TitleView+TusVistas.swift", "MiMediaView.swift", "SavedListMenu.swift", "EpisodePickerSheet.swift"]
+        // «Cancelar» de la misma hoja: unos renglones abajo del título.
+        func cancelNear(_ lines: [String], _ i: Int) -> Bool {
+            lines[i..<min(lines.count, i + 4)].contains { $0.contains(".cancellationAction") }
+        }
         var offenders: [String] = []
         for source in try sources(["Design", "Screens"]) where source.name != "NavigationTitle.swift" {
+            if source.name == "PlayerScreen+DockData.swift" { continue }   // hojas del reproductor, con «Listo»
             for (i, line) in source.lines.enumerated() {
                 let previous = i > 0 ? source.lines[i - 1] : ""
-                let titled = line.contains("avigationTitle(") || (line.contains(".navigationBarTitleDisplayMode(.inline)")
-                                                                 && previous.contains("avigationTitle("))
+                if line.contains(".dsInlineTitle("), cancelNear(source.lines, i) {
+                    offenders.append("\(source.name):\(i + 1) (hoja con «Cancelar»: título al centro)")
+                    continue
+                }
+                let titled = line.contains("avigationTitle(") || previous.contains("avigationTitle(")
                 guard titled, line.contains(".navigationBarTitleDisplayMode(.inline)") else { continue }
-                if withCancel.contains(source.name) && sourceHasCancel(source.lines) { continue }
-                if source.name == "PlayerScreen+DockData.swift" { continue }   // hojas del reproductor, con «Listo»
+                if cancelNear(source.lines, i) { continue }
                 offenders.append("\(source.name):\(i + 1)")
             }
         }
@@ -25,6 +31,4 @@ extension DesignRulesTests {
         XCTAssertTrue(text.contains(".toolbar(removing: .title)") && text.contains("placement: .topBarLeading"),
                       "la receta quita el título del centro y lo pone junto a «‹»")
     }
-
-    private func sourceHasCancel(_ lines: [String]) -> Bool { lines.contains { $0.contains(".cancellationAction") } }
 }

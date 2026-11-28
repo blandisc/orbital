@@ -140,7 +140,7 @@ struct OneDriveFolderPicker: View {
         }
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsInlineTitle(path.isEmpty ? Text("OneDrive") : Text(verbatim: (path as NSString).lastPathComponent))
+        .navigationTitle(path.isEmpty ? Text("OneDrive") : Text(verbatim: (path as NSString).lastPathComponent)).navigationBarTitleDisplayMode(.inline)
         .toolbar { if path.isEmpty { ToolbarItem(placement: .cancellationAction) { Button("Cancelar", action: done) } } }
         .task { await load() }
     }
