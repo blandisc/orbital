@@ -5,6 +5,14 @@ import OrbitalAddons
 
 /// Lo que hace la ficha al tocar: ver, guardar, descargar, en la TV y los avisos que dejan.
 extension TitleView {
+    /// Lo de «Ver» (la versión, si hay, la nube): al abrir y otra vez al cambiar el episodio que sigue (terminaste uno); antes
+    /// se quedaba lo del episodio anterior (revisión del 27 nov 2026). Las fuentes tardan: no detienen el color del fondo.
+    func loadVersions(_ model: TitleModel) async {
+        guard model.continueVideoID != nil else { return }
+        await model.loadBestSource(onCellular: env.connectivity.isCellular)
+        if model.bestSource != nil { Perf.mark("title.sources") }
+    }
+
     // MARK: acciones
     /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
     func play(_ model: TitleModel) {
@@ -162,7 +170,9 @@ extension TitleView {
             // No cargó (sin red, Cinemeta caído, un id raro): el botón mismo reintenta (OI-3, 20 nov 2026: un error trae su
             // arreglo). El aviso de abajo dice qué pasó.
             if model.error != nil {
-                return ContinueAction(title: Text("Reintentar"), symbol: "arrow.clockwise", play: { Task { await model.load() } })
+                return ContinueAction(title: Text("Reintentar"), symbol: "arrow.clockwise", play: {
+                    Task { await model.load(); await model.loadBestSource(onCellular: env.connectivity.isCellular) }
+                })
             }
             return ContinueAction(title: Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }

@@ -31,7 +31,7 @@ extension TitleView {
     /// Qué marcar en una serie: el episodio que toca, la temporada elegida o toda la serie; y calificar la temporada.
     @ViewBuilder private func watchedMenu(_ model: TitleModel) -> some View {
         let season = model.selectedSeason
-        let progress = model.seasonProgress
+        let progress = model.watchedCount(.season(season))   // lo estrenado: lo mismo que marca
         let specials = model.seasons.first { $0.season == season }?.isSpecials == true
         Section {
             if let episode = model.continueVideoID, let code = model.episodeLabel(episode) {

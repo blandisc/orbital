@@ -59,7 +59,7 @@ extension TitleView {
             Button { Task { await toggleList(model, status, follow) } } label: {
                 Label { Text("En Mi lista") } icon: { Image(systemName: status == .inList ? "checkmark" : "bookmark") }
             }
-            if series, status == .watching || status == .dropped && model.seasonProgress.watched > 0 {
+            if series, status == .watching || status == .dropped && model.watchedAnyEpisode {
                 Button { Task { await showAgain(model, follow) } } label: {
                     Label { Text("Viendo") } icon: { Image(systemName: status == .watching ? "checkmark" : "play.circle") }
                 }

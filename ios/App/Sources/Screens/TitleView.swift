@@ -148,9 +148,9 @@ struct TitleView: View {
     private func loaded(_ model: TitleModel) -> some View {
         following(model)
         .modifier(DismissWhen(closing: closing))
+        .task(id: model.continueVideoID) { await loadVersions(model) }   // lo de «Ver», aparte; otra vez al cambiar de episodio
         .task {
             await model.load()
-            Task { await model.loadBestSource(onCellular: env.connectivity.isCellular); if model.bestSource != nil { Perf.mark("title.sources") } }   // aparte: las fuentes tardan y no detienen el color del fondo
             if let video = route.versionsFor { sourcesFor = SourcesTarget(videoID: video, purpose: .watch) }   // «Probar otra versión» desde «Tus pedidos»
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }

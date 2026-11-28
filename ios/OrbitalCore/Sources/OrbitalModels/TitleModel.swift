@@ -68,6 +68,8 @@ public final class TitleModel: ObservableModel {
     /// «Pedirlo y avisarme» (R2-A, R4): la versión que existe pero Real-Debrid todavía no tiene, lista para pedir; nil si la
     /// recomendada arranca al instante, si no hay qué pedir o sin clave de Real-Debrid.
     @Tracked public internal(set) var debridOffer: DebridOffer? = nil
+    /// El video para el que se buscó lo de «Ver» (al cambiar de episodio se busca otra vez).
+    private var sourcesFor: String?
     /// FQ1-A (Fernando, 3 nov): «Ver» arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo: al lado,
     /// «Pedir a la nube en latino» con esta versión.
     @Tracked public internal(set) var wantedOffer: DebridOffer? = nil
@@ -85,6 +87,9 @@ public final class TitleModel: ObservableModel {
     @Tracked private var entry: LibraryEntry? = nil
     @Tracked private(set) var watched = Set<String>()   // lo visto (ids de video); lo lee «¿Cuándo la viste?» (TitleModel+Watched)
     @Tracked private var downloadStates: [String: DownloadState] = [:]
+    /// Por video, el id de la copia que se enseña (`downloadID`).
+    var downloadIDs: [String: String] = [:]
+
     @Tracked private var downloadProgress: [String: Double] = [:]
     /// Cómo va la descarga de un video de este título (nil: no se ha pedido).
     public func downloadState(_ videoID: String?) -> DownloadState? { videoID.flatMap { downloadStates[$0] } }
@@ -104,6 +109,7 @@ public final class TitleModel: ObservableModel {
             if let current = chosen[item.videoID], Self.rank(current.state) <= Self.rank(item.state) { continue }
             chosen[item.videoID] = item
         }
+        downloadIDs = chosen.mapValues(\.id)   // la copia que se enseña es la que pausa, cancela o reintenta la ficha
         let states = chosen.mapValues(\.state)
         let progress = chosen.compactMapValues(\.progress)
         guard states != downloadStates || progress != downloadProgress else { return }
@@ -296,11 +302,20 @@ public final class TitleModel: ObservableModel {
 
     public func loadBestSource(onCellular: Bool = false) async {
         guard let videoID = continueVideoID else { return }
+        // Otro episodio (terminaste el anterior): lo de «Ver» se vuelve a buscar desde cero; antes se quedaba la versión, el «no
+        // hay» y la oferta de la nube del episodio anterior (revisión del 27 nov 2026).
+        if sourcesFor != videoID {
+            sourcesFor = videoID
+            coalescing {
+                bestSource = nil; recommendedSource = nil; recommendedLanguage = nil; poorFit = nil
+                sourceCheck = .unknown; unavailableCause = nil; debridOffer = nil
+            }
+        }
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
         do {
             await services.freshenDebrid()   // RC1: con código, la llave al día antes de pedir versiones
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, videoID == continueVideoID else { return }   // llegó tarde: ya es otro episodio
             listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })
             // La veías en otro idioma (inglés): ese dice qué va a sonar y si te queda, no el de Ajustes (Fernando, 6 nov).
             var prefs = prefs
@@ -618,23 +633,6 @@ public final class TitleModel: ObservableModel {
         return await download(Array(ids.dropFirst(i).prefix(count)))
     }
 
-    /// Seguir una descarga en pausa o que falló (donde iba, con la misma fuente), en vez de empezarla de cero.
-    public func resumeDownload(_ videoID: String) async {
-        await services.downloads.resume(DownloadItem.makeID(metaID: metaID, videoID: videoID))
-        await refreshState()
-    }
-
-    /// Pausar o cancelar (borrar lo bajado) una descarga de este título.
-    public func pauseDownload(_ videoID: String) async {
-        await services.downloads.pause(DownloadItem.makeID(metaID: metaID, videoID: videoID))
-        await refreshState()
-    }
-
-    public func cancelDownload(_ videoID: String) async {
-        await services.downloads.remove(DownloadItem.makeID(metaID: metaID, videoID: videoID))
-        await refreshState()
-    }
-
     /// «T2 E5» de un episodio de esta serie; nil en una película.
     public func episodeLabel(_ videoID: String) -> String? {
         guard kind == "series", let found = episode(videoID) else { return nil }
@@ -644,7 +642,5 @@ public final class TitleModel: ObservableModel {
     /// El video que bajaría «Descargar» de un toque: la película, o el episodio que sigue en una serie.
     public var downloadTarget: String? { kind == "movie" ? metaID : continueVideoID }
 
-    /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
-    public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
 
 }

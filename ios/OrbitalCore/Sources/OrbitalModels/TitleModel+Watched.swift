@@ -31,6 +31,15 @@ extension TitleModel {
     }
 
     /// Ya está vista (la película, el episodio o todos los que ya salieron de la temporada o la serie).
+    /// Cuántos de lo estrenado ya viste (como lo que marca «Vista»): una temporada aún al aire llega a «8 de 8» con su ✓,
+    /// no a «8 de 10» sin él (revisión del 27 nov 2026).
+    public func watchedCount(_ scope: WatchedScope) -> (watched: Int, total: Int) {
+        let ids = videos(in: scope)
+        return (ids.filter(watched.contains).count, ids.count)
+    }
+    /// ¿Viste algún episodio de la serie? (para «Viendo» en una que dejaste, sin importar qué temporada se ve).
+    public var watchedAnyEpisode: Bool { watched.contains { $0 != metaID } }
+
     public func isWatched(_ scope: WatchedScope) -> Bool {
         let ids = videos(in: scope)
         return !ids.isEmpty && ids.allSatisfy(watched.contains)
