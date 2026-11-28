@@ -15609,6 +15609,17 @@
         }
       }
     },
+    "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key is incomplete. Copy the whole key from real-debrid.com/apitoken."
+          }
+        }
+      }
+    },
     "La consola": {
       "extractionState": "manual",
       "localizations": {
@@ -22030,6 +22041,17 @@
         }
       }
     },
+    "No pude hablar con Real-Debrid. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach Real-Debrid. Check your connection."
+          }
+        }
+      }
+    },
     "No pude hacer la lista": {
       "localizations": {
         "en": {
@@ -26122,6 +26144,17 @@
         }
       }
     },
+    "Real-Debrid contestó algo raro. Intenta otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid sent an odd answer. Try again."
+          }
+        }
+      }
+    },
     "Real-Debrid en real-debrid.com, TorBox en torbox.app y AllDebrid en alldebrid.com. Orbital no cobra nada.": {
       "extractionState": "manual",
       "localizations": {
@@ -26217,6 +26250,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid wouldn't let it download"
+          }
+        }
+      }
+    },
+    "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't recognize that key. Make sure it's the one from real-debrid.com/apitoken."
           }
         }
       }

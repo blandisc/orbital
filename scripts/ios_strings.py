@@ -1799,6 +1799,17 @@ def source_without_comments() -> str:
     return "\n".join(parts)
 
 
+# Claves que el código arma al correr (un error con `\(service.keyPlace)` adentro) y que no se leen tal cual en el Swift: sin esta
+# lista, regenerar el catálogo las borraba y salían en español (UserTextTests, 27 nov 2026).
+RUNTIME_KEYS = {
+    "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken.": "The key is incomplete. Copy the whole key from real-debrid.com/apitoken.",
+    "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": "Real-Debrid doesn't recognize that key. Make sure it's the one from real-debrid.com/apitoken.",
+    "No pude hablar con Real-Debrid. Revisa tu conexión.": "I couldn't reach Real-Debrid. Check your connection.",
+    "Real-Debrid contestó algo raro. Intenta otra vez.": "Real-Debrid sent an odd answer. Try again.",
+}
+TRANSLATIONS.update(RUNTIME_KEYS)
+
+
 def build() -> dict:
     strings = {}
     for key, english in sorted(TRANSLATIONS.items()):
@@ -1819,7 +1830,7 @@ def build() -> dict:
     # Solo lo que la app usa hoy: un texto viejo que sigue en TRANSLATIONS (o en el catálogo) arrastraba palabras que ya se
     # cambiaron («Pedirlo y avisarme» en vez de «Pedir a la nube») y la prueba de vocabulario lo marcaba.
     code = source_without_comments()
-    used = set(used_literals())
+    used = set(used_literals()) | set(RUNTIME_KEYS)
     strings = {k: v for k, v in strings.items() if k in used or swift_text(k) in code}
     return {"sourceLanguage": "es", "strings": dict(sorted(strings.items())), "version": "1.0"}
 
