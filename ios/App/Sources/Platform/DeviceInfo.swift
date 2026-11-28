@@ -78,6 +78,8 @@ enum ThisDevice {
     }()
     /// La Mac («Diseñada para iPad»): sus pestañas van en el renglón del logo y la letra es más grande (MAC-A, 16 nov 2026).
     static let isMac = ProcessInfo.onMac || macLookForDemo
+    /// Un iPhone (ni iPad ni Mac).
+    static var isPhone: Bool { !isMac && !runsOnIPad }
     /// Adornos que se mueven solos (el cielo, el muro de Explorar, los canales que se deslizan): en la Mac, quietos. Su pantalla
     /// va a 165 Hz y a todo lo ancho: el compositor de la Mac (WindowServer) se iba a 60–95 % con Orbital en reposo y ni la
     /// ventana se dejaba mover (Fernando, 22 nov 2026: «está inusable»). En la Mac se mueve lo que tocas, nada más.

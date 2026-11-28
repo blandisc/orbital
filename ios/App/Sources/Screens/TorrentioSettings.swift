@@ -79,7 +79,7 @@ struct TorrentioSettings: View {
         .tint(DS.accent)
         .animation(DS.Motion.base(reduceMotion), value: model.probe.isNothing)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: "Torrentio")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: "Torrentio"))
         .readableListWidth()
         .confirmationDialog("¿Volver a lo recomendado?", isPresented: $confirmReset, titleVisibility: .visible) {   // ds-exception: confirmación de borrar tus ajustes (sí o no)
             Button("Volver a lo recomendado", role: .destructive) { model.resetToRecommended() }

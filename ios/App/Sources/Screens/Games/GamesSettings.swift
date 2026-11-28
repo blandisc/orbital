@@ -49,7 +49,7 @@ struct GamesSettingsView: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Ajustes de juegos").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Ajustes de juegos")
         .readableListWidth()
     }
 
@@ -83,7 +83,7 @@ struct GamesOnPhoneView: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("En tu iPhone").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("En tu iPhone")
         .readableListWidth()
     }
 }
@@ -111,7 +111,7 @@ struct GameButtonsSettings: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Botones en pantalla").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Botones en pantalla")
         .readableListWidth()
     }
 }

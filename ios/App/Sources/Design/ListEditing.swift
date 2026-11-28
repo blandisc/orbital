@@ -141,7 +141,7 @@ struct AddToListSheet: View {
             }
             .readableListWidth()
             .scrollContentBackground(.hidden).background(Backdrop())
-            .navigationTitle(Text("Agregar a \(listName)")).navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle(Text("Agregar a \(listName)"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
             .task(id: query) {
                 try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)

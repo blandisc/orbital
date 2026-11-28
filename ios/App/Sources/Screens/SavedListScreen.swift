@@ -13,7 +13,7 @@ struct SavedListScreen: View {
             .scrollContentBackground(.hidden)
             .background(Backdrop())   // el cielo del resto de Guardado (GD2)
             .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
-            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle(title)
     }
 
     private var title: Text {

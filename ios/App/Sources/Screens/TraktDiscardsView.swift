@@ -31,7 +31,7 @@ struct TraktDiscardsView: View {
         .overlay { if rows.isEmpty { DSEmptyState(symbol: "checkmark.seal", title: Text("Todo llegó a Trakt")) } }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("No llegó a Trakt").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("No llegó a Trakt")
         .readableListWidth()
         .onAppear { model.reload() }
     }

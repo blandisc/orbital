@@ -88,7 +88,7 @@ struct CollectionGridView: View {
         }
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
-        .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(title)
         .askingWhenWatched($asking) { s, date in Task { _ = await env.markWatched(s, at: date) } }
         .task {
             // Un estudio se pide aquí; un premio llega con las colecciones. Si al final no hay nada (falló o tardó

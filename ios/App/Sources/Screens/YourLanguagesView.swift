@@ -19,7 +19,7 @@ struct YourLanguagesView: View {
             Form { audioSection }
                 .tint(DS.accent)
                 .scrollContentBackground(.hidden).background(Backdrop())
-                .dsNavigationTitle("Tus idiomas").navigationBarTitleDisplayMode(.inline)
+                .dsInlineTitle("Tus idiomas")
                 .readableListWidth()
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("your-languages")
@@ -178,7 +178,7 @@ struct YourLanguagesPicker: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Agregar idioma").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Agregar idioma")
         .readableListWidth()
     }
 }

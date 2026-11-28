@@ -60,8 +60,7 @@ struct AdvancedFilterSheet: View {
             .safeAreaBar(edge: .bottom) {
                 actions(model)
             }
-            .navigationTitle(model.filter.isEmpty ? Text("Filtros") : Text("Filtros · \(model.filter.activeCount)"))
-            .navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle(model.filter.isEmpty ? Text("Filtros") : Text("Filtros · \(model.filter.activeCount)"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Con un filtro abierto, lo cierra; si no, cierra el cajón.

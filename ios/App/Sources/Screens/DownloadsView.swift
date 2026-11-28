@@ -87,7 +87,7 @@ struct DownloadsView: View {
             .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
             .navigationDestination(for: LibrarySavedRoute.self) { route in
                 LibrarySavedView(observer: saved, tab: route.tab).scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
-                    .dsNavigationTitle("Guardado").navigationBarTitleDisplayMode(.inline)
+                    .dsInlineTitle("Guardado")
             }
             .navigationDestination(item: $macPart) { part in
                 Group {
@@ -95,12 +95,12 @@ struct DownloadsView: View {
                     else { phoneList(observer.model).readableListWidth() }
                 }
                 .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
-                .dsNavigationTitle(part == .media ? "Mi media" : "Descargas").navigationBarTitleDisplayMode(.inline)
+                .dsInlineTitle(part == .media ? "Mi media" : "Descargas")
                 .onAppear { seeing(part == .phone) }
                 .onDisappear { seeing(false) }
             }
             .navigationDestination(for: DiaryRoute.self) { _ in
-                HistoryScreen().background(Backdrop()).dsNavigationTitle("Historial").navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
+                HistoryScreen().background(Backdrop()).dsInlineTitle("Historial")   // como toda pantalla de adentro
             }
     }
 
@@ -442,7 +442,7 @@ struct DownloadSeriesView: View {
         }
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? "")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? ""))
     }
 }
 
@@ -488,7 +488,7 @@ struct DownloadSeasonView: View {
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? "")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? ""))
         .appSheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
     }
 }

@@ -76,8 +76,7 @@ struct FilterResultsView: View {
                 DSEmptyState(symbol: "line.3.horizontal.decrease", title: Text("Nada con esos filtros"), message: Text("Quita alguno de arriba para ver más opciones."))
             }
         }
-        .dsNavigationTitle("Resultados")
-        .navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Resultados")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

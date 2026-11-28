@@ -10,7 +10,7 @@ extension DesignRulesTests {
         var screens = 0
         for file in try sources() where file.path.contains("Screens/") {
             let grid = file.lines.contains { $0.contains("SortableGrid(") }
-            let titled = file.lines.contains { $0.contains(".navigationTitle(") }
+            let titled = file.lines.contains { $0.contains(".navigationTitle(") || $0.contains(".dsInlineTitle(") }
             guard grid, titled else { continue }
             screens += 1
             if !file.lines.contains(where: { $0.contains("scrollEdgeEffectStyle(.hard, for: .top)") }) { missing.append(file.path) }

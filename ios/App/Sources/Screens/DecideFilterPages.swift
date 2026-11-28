@@ -75,7 +75,7 @@ struct DecideFilters: View {
             .accessibilityIdentifier("decide-more-done")
         }
         .scrollEdgeEffectStyle(.soft, for: .bottom)
-        .dsNavigationTitle("Filtros").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Filtros")
         .toolbar {
             // Discreto y solo cuando hay algo que quitar (antes un botón de vidrio grande, apagado casi siempre).
             if hasFilters(m) {
@@ -338,7 +338,7 @@ struct DecideListPicker: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .bottom)
         .readableListWidth()   // iPad y Mac: en su columna, como toda lista
-        .dsNavigationTitle("De qué listas").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("De qué listas")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Todas") { selection = [] }.disabled(selection.isEmpty) } }
     }
 

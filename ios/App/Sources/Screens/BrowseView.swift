@@ -353,7 +353,7 @@ struct PopularGridView: View {
             .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
-        .dsNavigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Lo más popular hoy")
     }
 
     static func suggestion(_ item: CatalogItem) -> Suggestion {

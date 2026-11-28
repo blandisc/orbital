@@ -314,8 +314,7 @@ struct HomeView: View {
                 .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
-        .dsNavigationTitle(route.id == "watchlist" ? "Mi lista" : "Sugerencias para ti")
-        .navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(route.id == "watchlist" ? "Mi lista" : "Sugerencias para ti")
     }
 
     /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
@@ -591,7 +590,7 @@ struct HomeView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
-        .dsNavigationTitle("Seguir viendo").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Seguir viendo")
         // Ordenar y filtrar, como toda lista abierta desde «Ver todo».
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { ContinueSortMenu(sort: $continueSort, kind: $continueKind) }

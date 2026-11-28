@@ -43,7 +43,7 @@ struct OpenSubtitlesSettings: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: "OpenSubtitles")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: "OpenSubtitles"))
         .readableListWidth()
         .task { await model.refresh() }
         .confirmationDialog("¿Desconectar OpenSubtitles?", isPresented: $confirmDisconnect, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)

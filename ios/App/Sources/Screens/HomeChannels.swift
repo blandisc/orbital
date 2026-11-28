@@ -175,7 +175,7 @@ struct ChannelsSheet: View {
                 }
                 .padding(DS.Space.gutter)
             }
-            .dsNavigationTitle("Tus canales").navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle("Tus canales")
             .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Busca una serie para añadirla"))
             .task(id: query) {

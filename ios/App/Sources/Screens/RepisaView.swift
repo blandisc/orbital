@@ -171,8 +171,7 @@ struct RepisaCollectionView: View {
                 .padding(.bottom, DS.Layout.screenBottom)
             }
             .background(Backdrop())
-            .navigationTitle(CanonNames.title(c.id))
-            .navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle(CanonNames.title(c.id))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Sin «Ordenar»: la repisa ya va por década (o por lugar) y tiene su botón de más recientes o antiguas.

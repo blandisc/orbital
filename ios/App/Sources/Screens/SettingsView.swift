@@ -75,7 +75,7 @@ struct SettingsView: View {
         // Sin el hueco grande de arriba del primer grupo y con aire abajo: el último grupo no queda bajo la barra flotante.
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .contentMargins(.bottom, DS.Space.s12, for: .scrollContent)
-        .dsNavigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Ajustes")
         .readableListWidth()   // iPad y Mac: los renglones al centro
     }
 
@@ -159,7 +159,7 @@ struct SettingsView: View {
             }
             .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
                 .scrollContentBackground(.hidden).background(Backdrop())
-                .dsNavigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
+                .dsInlineTitle("Tu perfil")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
         }
         .presentationDetents([.medium])
@@ -289,7 +289,7 @@ struct SettingsView: View {
         Form { content() }
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
-            .dsNavigationTitle(title).navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle(title)
             .readableListWidth()
     }
 

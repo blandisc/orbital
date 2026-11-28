@@ -491,7 +491,7 @@ struct MiMediaFolderView: View {
         }
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(OneDriveModel.folderName(path).map { Text(verbatim: $0) } ?? Text("OneDrive")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(OneDriveModel.folderName(path).map { Text(verbatim: $0) } ?? Text("OneDrive"))
         .task {
             do { let found = try await observer.model.listing(path); folders = found.folders; videos = found.videos }
             catch { self.error = "\(error)" }

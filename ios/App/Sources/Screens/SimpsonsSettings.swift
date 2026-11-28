@@ -22,7 +22,7 @@ struct SimpsonsSeasonsPage: View {
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
         .readableListWidth()   // iPad y Mac: en la columna de las demás páginas de Ajustes, no a todo lo ancho
-        .dsNavigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Un Simpson al azar")
     }
 }
 

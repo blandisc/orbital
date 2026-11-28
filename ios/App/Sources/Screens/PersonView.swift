@@ -90,7 +90,7 @@ struct PersonView: View {
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop())
         // El nombre en la barra solo cuando el grande ya se fue (o si no hay nada más que mostrar).
-        .navigationTitle(scrolledDown || failed ? Text(verbatim: route.name) : Text(verbatim: "")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(scrolledDown || failed ? Text(verbatim: route.name) : Text(verbatim: ""))
         .task { await observer.model.load() }
     }
 

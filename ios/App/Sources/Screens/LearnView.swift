@@ -50,7 +50,7 @@ struct LearnView: View {
             .listRowBackground(DS.surface)
         }
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Aprende").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Aprende")
         .readableListWidth()
         .appSheet(isPresented: $confirmReset) {
             ResetTipsCard(reset: { model.reset(); confirmReset = false }, cancel: { confirmReset = false })

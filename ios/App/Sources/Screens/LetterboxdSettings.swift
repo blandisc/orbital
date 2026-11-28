@@ -58,7 +58,7 @@ struct LetterboxdSettings: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: "Letterboxd")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: "Letterboxd"))
         .readableListWidth()
         .fileImporter(isPresented: $importing, allowedContentTypes: [.zip, .commaSeparatedText], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }

@@ -44,7 +44,7 @@ struct FollowedSeriesView: View {
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
         .searchable(text: $query, prompt: Text("Buscar una serie"))
-        .dsNavigationTitle("Series que sigues").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Series que sigues")
         .task { await follow.loadSeries() }
         .orbitalRefreshableList { await follow.loadSeries() }
     }
@@ -110,7 +110,7 @@ struct HiddenSeriesView: View {
         .scrollContentBackground(.hidden)
         .readableListWidth()   // iPad y Mac: en la columna de las demás páginas de Ajustes
         .background(Backdrop())
-        .dsNavigationTitle("Escondidas").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Escondidas")
         .orbitalRefreshableList { await follow.loadSeries() }
     }
 }

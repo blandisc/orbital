@@ -689,6 +689,13 @@ siempre en inglés («MOBLAND» sobre «Tierra de Mafia»); si no coincide, va e
 Con un filtro puesto, «Todas» tomaba también los títulos escondidos y «Quitar» se los llevaba. Toda lista que ofrece elegir
 varios saca «Todas» de `ListBarParts.visible`; lo cuida `DesignRulesTests+Selection`.
 
+### El título de una pantalla va junto a «‹» (TD1, 27 nov 2026)
+
+En el iPhone el título de toda pantalla que se abre encima va a la izquierda, justo después de «‹», siempre: iOS lo centraba si
+cabía y si no lo mandaba a la izquierda, y dos páginas de Ajustes seguidas se veían distintas (Fernando: «siempre a la izquierda
+en todos iPhones… más fácil mantener»). Se pide con `dsInlineTitle`; en el iPad y la Mac queda el del sistema. Las hojas con
+«Cancelar» a la izquierda lo dejan al centro. Lo cuida `DesignRulesTests+InlineTitle`.
+
 ### Un brillo no es un segundo fondo (27 nov 2026)
 
 Fernando, de «Decide por mí»: «tiene como que doble fondo». El resplandor del color del cartel elegido se cortaba en cuadro

@@ -74,7 +74,7 @@ struct AddonDetail: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: addon.name)).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: addon.name))
         .readableListWidth()
         .confirmationDialog(Text("¿Quitar «\(addon.name)»?"), isPresented: $confirmRemove, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
             Button(model.isLastSource(addon.id) ? "Quitar de todos modos" : "Quitar complemento", role: .destructive) { dismiss(); remove(addon) }

@@ -69,7 +69,7 @@ struct AddonsSettings: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Complementos").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Complementos")
         .readableListWidth()
         .toolbar {
             if !model.missingRecommended.isEmpty {

@@ -70,7 +70,7 @@ struct OrbitalUpgradeSheet: View {
             .contentMargins(.bottom, DS.Space.s2, for: .scrollContent)   // el pie de la lista no deja otro hueco
             .fittedScrollSheet()
             .readableListWidth()   // iPad y Mac: en su columna, como toda lista
-            .dsNavigationTitle("Darle su propia conexión").navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle("Darle su propia conexión")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(model.stage == .done ? "Listo" : "Cancelar") { dismiss() }

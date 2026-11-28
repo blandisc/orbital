@@ -65,14 +65,14 @@ struct ListGridView: View {
                     }
                 }
                 .padding(.bottom, DS.Layout.screenBottom)
-                .navigationTitle(shelfTitle(plan))
+                .dsInlineTitle(shelfTitle(plan))
                 .toolbar { if editable { ListEditToolbar(editing: $editing) { adding = true } } }
                 .appSheet(isPresented: $adding) { addSheet(plan) }
             }
         }
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline)   // mientras carga, sin hueco de título grande
     }
 }
 
@@ -146,7 +146,7 @@ struct PlatformRankingsView: View {
         }
         .background(Backdrop())
         .scrollEdgeEffectStyle(.hard, for: .top)   // el título flota: lo de debajo se tapa (en la Mac el borde suave no se nota)
-        .navigationTitle(Text(verbatim: hub.name)).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text(verbatim: hub.name))
         .task { await model.loadRankings(hub) }
     }
 

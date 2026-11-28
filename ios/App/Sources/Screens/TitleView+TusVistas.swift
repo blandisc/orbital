@@ -191,7 +191,7 @@ struct ViewingsSheet: View {
             }
             .contentMargins(.top, DS.Space.s2, for: .scrollContent)   // sin el hueco de sección entre la barra y la tarjeta
             .readableListWidth()   // iPad y Mac: en su columna, como toda lista
-            .dsNavigationTitle("Tus vistas").navigationBarTitleDisplayMode(.inline)
+            .dsInlineTitle("Tus vistas")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
             .appSheet(item: $editing) { v in
                 ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: v.at) { date in move(v, to: date) }

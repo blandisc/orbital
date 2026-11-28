@@ -73,7 +73,7 @@ struct YearView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
-        .navigationTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))")).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))"))
         .task {
             await observer.model.load()
             if selectedDay == nil { selectedDay = observer.model.lastDay }

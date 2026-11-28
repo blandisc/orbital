@@ -60,7 +60,7 @@ struct DebridAccountView: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(title(model)).navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle(title(model))
         .readableListWidth()
         .appSheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid, service: model.service) }
         .appSheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
@@ -370,7 +370,7 @@ private struct DebridChangeKeyPage: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .dsNavigationTitle("Cambiar la clave").navigationBarTitleDisplayMode(.inline)
+        .dsInlineTitle("Cambiar la clave")
         .readableListWidth()
         .onAppear { model.token = "" }
         .dsFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }
