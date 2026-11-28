@@ -27,7 +27,7 @@ extension TitleModel {
     }
 
     private func released(_ episodes: [Episode], now: Date) -> [Episode] {
-        episodes.filter { ($0.released.flatMap(Self.day) ?? .distantPast) <= now }
+        episodes.filter { ($0.released.flatMap(Self.releasedAt) ?? .distantPast) <= now }
     }
 
     /// Ya está vista (la película, el episodio o todos los que ya salieron de la temporada o la serie).
@@ -48,7 +48,7 @@ extension TitleModel {
     /// El día que salió: el de la película o el de un episodio (nil si no se sabe).
     public func releaseDate(of videoID: String) -> Date? {
         if kind == "movie" { return Self.day(credits.released) }
-        return seasons.lazy.flatMap(\.episodes).first { $0.id == videoID }?.released.flatMap(Self.day)
+        return seasons.lazy.flatMap(\.episodes).first { $0.id == videoID }?.released.flatMap { Self.day($0) }
     }
 
     /// El rango de estrenos de lo que cubre («20 sep 2005» o, para varios, el primero y el último).
@@ -80,27 +80,35 @@ extension TitleModel {
             case .release: (id, min(releaseDate(of: id) ?? now, now))
             }
         }
-        await services.watch.markWatched(kind: kind, metaID: metaID, videos: dated, name: originalTitle)
+        stateEdits += 1
+        await services.watch.markWatched(kind: kind, metaID: metaID, videos: dated, name: sentTitle)
         await refreshState()
     }
 
     /// «La vi otra vez»: otra vista ahora (en Trakt queda una más).
     public func markWatchedAgain(_ scope: WatchedScope) async {
         let now = Date()
-        await services.watch.markWatched(kind: kind, metaID: metaID, videos: videos(in: scope).map { ($0, now) }, name: originalTitle)
+        stateEdits += 1
+        await services.watch.markWatched(kind: kind, metaID: metaID, videos: videos(in: scope).map { ($0, now) }, name: sentTitle)
         await refreshState()
     }
 
     /// «Quitar de vistas»: sale de lo visto aquí y en Trakt.
     public func unmarkWatched(_ scope: WatchedScope) async {
+        stateEdits += 1
         await services.watch.unmarkWatched(kind: kind, metaID: metaID, videoIDs: videos(in: scope).filter(watched.contains))
         await refreshState()
     }
 
-    /// «2005-10-18» o «2005-10-18T00:00:00.000Z» → la fecha (nil si no se entiende).
-    static func day(_ text: String) -> Date? {
-        guard text.count >= 10 else { return nil }
-        return try? Date(String(text.prefix(10)), strategy: .iso8601.year().month().day())
+    /// «2005-10-18» o «2005-10-18T00:00:00.000Z» → ese día a mediodía en tu calendario (nil si no se entiende). A medianoche
+    /// UTC, en México «El día que salió» decía el 17 y se mandaba a Trakt el día anterior (revisión del 28 nov 2026).
+    static func day(_ text: String, calendar: Calendar = .current) -> Date? { ISODates.localDay(text, calendar: calendar) }
+
+    /// Desde cuándo ya salió: con hora, esa hora (un episodio que sale hoy a las 20:00 aún no cuenta como estrenado, igual que
+    /// su renglón dice «Sale el…»); solo con el día, desde el inicio de ese día.
+    static func releasedAt(_ text: String) -> Date? {
+        if text.count > 10, let exact = ISODates.parse(text) { return exact }
+        return day(text).map { Calendar.current.startOfDay(for: $0) }
     }
 }
 

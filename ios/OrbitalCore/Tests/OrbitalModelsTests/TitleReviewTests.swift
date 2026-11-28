@@ -35,4 +35,16 @@ final class TitleReviewTests: XCTestCase {
         await title.unmarkWatched(.episode(episode))
         XCTAssertGreaterThan(title.stateVersion, after)
     }
+
+    /// Revisión del 28 nov 2026: «El día que salió» es ese día en tu calendario (en México salía el anterior) y un episodio que
+    /// sale hoy más tarde todavía no cuenta como estrenado.
+    func testReleaseDaysAreLocalAndLaterTodayIsNotOutYet() {
+        var mx = Calendar(identifier: .gregorian); mx.timeZone = TimeZone(identifier: "America/Mexico_City")!
+        let day = try? XCTUnwrap(TitleModel.day("2005-10-18T00:00:00.000Z", calendar: mx))
+        XCTAssertEqual(day.map { mx.component(.day, from: $0) }, 18)
+        let later = Date().addingTimeInterval(3 * 3600)
+        let text = ISO8601DateFormatter().string(from: later)
+        XCTAssertGreaterThan(TitleModel.releasedAt(text) ?? .distantPast, Date(), "sale más tarde: aún no")
+        XCTAssertNotNil(TitleModel.releasedAt("2005-10-18"))
+    }
 }

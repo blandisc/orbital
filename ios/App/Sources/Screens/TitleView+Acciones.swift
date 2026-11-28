@@ -165,6 +165,13 @@ extension TitleView {
     func continueAction(_ model: TitleModel) -> ContinueAction {
         let label = model.continueLabel
         let go = { play(model) }
+        // La ficha no llegó: «Reintentar» también en una película o una serie que ya empezaste (antes decía «Ver» y llevaba
+        // a «Sin internet», sin otra forma de volver a cargar que salir; revisión del 28 nov 2026).
+        if model.loadFailed && !model.isLoading {
+            return ContinueAction(title: Text("Reintentar"), symbol: "arrow.clockwise", play: {
+                Task { await model.load(); await model.loadBestSource(onCellular: env.connectivity.isCellular) }
+            })
+        }
         if model.continueVideoID == nil && !model.isLoading {
             // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
             // No cargó (sin red, Cinemeta caído, un id raro): el botón mismo reintenta (OI-3, 20 nov 2026: un error trae su

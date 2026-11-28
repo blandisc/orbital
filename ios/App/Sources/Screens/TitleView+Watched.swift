@@ -87,13 +87,15 @@ struct TitleWatchedWhen: ViewModifier {
             let earlier: Int = { if case .episode(let id) = scope, !model.isWatched(scope) { return model.earlierUnwatched(than: id).count }; return 0 }()
             WatchedWhenSheet(title: title(scope), detail: detail(scope), poster: model.poster, releaseTitle: releaseTitle(scope), releaseDetail: releaseDetail,
                              alreadyWatched: model.isWatched(scope), earlier: earlier, language: language,
-                             pick: { when, alsoEarlier in Task { await model.markWatched(scope, when: when, alsoEarlier: alsoEarlier); env.collections.forgetWatched() } },
-                             again: { Task { await model.markWatchedAgain(scope) } },
+                             // Al terminar, todo lo que lee lo visto se pone al día (otra ficha del mismo título abierta atrás, Lo que ves, «Ocultar lo
+                             // que ya vi»), como al cerrar el reproductor (revisión del 28 nov 2026).
+                             pick: { when, alsoEarlier in Task { await model.markWatched(scope, when: when, alsoEarlier: alsoEarlier); env.watchedSomething += 1 } },
+                             again: { Task { await model.markWatchedAgain(scope); env.watchedSomething += 1 } },
                              remove: {
                                  Task {
                                      await model.unmarkWatched(scope)
                                      for id in model.videos(in: scope) { env.watching.forget(metaID: model.metaID, videoID: id) }
-                                     env.collections.forgetWatched()
+                                     env.watchedSomething += 1
                                  }
                              })
         }

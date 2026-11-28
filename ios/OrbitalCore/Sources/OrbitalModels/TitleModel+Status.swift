@@ -7,7 +7,7 @@ extension TitleModel {
         let series = kind == "series"
         let released = series ? videos(in: .series, now: now) : [metaID]
         let upcoming = series && seasons.filter { !$0.isSpecials }.flatMap(\.episodes)
-            .contains { ($0.released.flatMap(Self.day) ?? .distantPast) > now }
+            .contains { ($0.released.flatMap(Self.releasedAt) ?? .distantPast) > now }
         // Solo los episodios estrenados de la serie (sin especiales): 3 especiales vistos ya no completan una que va en 7 de 10.
         var seen = series ? released.filter { watched.contains($0) }.count : (watched.contains(metaID) ? 1 : 0)
         // Una serie que vas a medias o que ya pasó del primer episodio también la estás viendo, aunque aún no llegue lo visto.

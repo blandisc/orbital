@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import OrbitalAddons
 import OrbitalCore
 import OrbitalModels
 
@@ -123,7 +124,7 @@ extension AppEnvironment {
     func releaseDate(_ s: Suggestion) async -> Date? {
         guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb),
               let text = meta["released"]?.nonEmptyString else { return nil }
-        return try? Date(String(text.prefix(10)), strategy: .iso8601.year().month().day())
+        return ISODates.localDay(text)
     }
 
     /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).

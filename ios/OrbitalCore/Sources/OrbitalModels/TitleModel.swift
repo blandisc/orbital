@@ -39,8 +39,17 @@ public final class TitleModel: ObservableModel {
     /// Cuántas veces se ha tocado «Mi lista»: una lectura de lo tuyo que salió antes de un toque trae el valor viejo y no lo
     /// pisa (al abrir la ficha llegaban los episodios de Trakt y «Mi lista» se regresaba sola).
     private var libraryEdits = 0
+    /// Cambios tuyos (guardar, marcar, quitar) desde que se pidió lo tuyo al cargar: si hubo, lo pedido ya es viejo y se vuelve
+    /// a leer (revisión del 28 nov 2026: tocar «Guardar» o «Vista» mientras cargaba se deshacía al terminar de cargar).
+    var stateEdits = 0
     @Tracked public private(set) var isLoading = false
     @Tracked public private(set) var error: String? = nil
+    /// La ficha no llegó (sin red o Cinemeta caído): «Ver» se vuelve «Reintentar», también en una película o una serie que ya
+    /// empezaste (antes el botón decía «Ver» y llevaba a «Sin internet»).
+    public var loadFailed: Bool { error != nil && meta == nil }
+    /// El nombre que se manda a Mi lista, Trakt y el reproductor: el original o, si la ficha no llegó, el que se ve (antes iba
+    /// vacío).
+    public var sentTitle: String { originalTitle.isEmpty ? title : originalTitle }
     @Tracked public private(set) var message: String? = nil
     /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
     @Tracked public private(set) var consoleOverview: String? = nil
@@ -203,6 +212,7 @@ public final class TitleModel: ObservableModel {
         defer { isLoading = false }
         // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
         let watch = services.watch, id = metaID
+        let editsAtStart = stateEdits
         let state = Task { await watch.entry(metaID: id) }
         // Los complementos, a la vez que la ficha y lo tuyo: las fuentes ya no esperan a `addonCollectionGet` al final.
         let finder = services.finder
@@ -247,10 +257,11 @@ public final class TitleModel: ObservableModel {
             // Con internet no se culpa a la conexión: es Cinemeta (de donde sale la ficha) el que no contestó.
             self.error = services.isOnline() ? "No pude cargar la ficha: el servicio de las fichas no contesta. Intenta en un rato." : "No pude cargar la ficha. Revisa tu conexión."
         } catch {}   // cancelado al salir: sin error falso
-        await refreshState(prefetched: await state.value)
+        let mine = await state.value
+        await refreshState(prefetched: stateEdits == editsAtStart ? mine : nil)
         // Los episodios que viste en otro aparato (Trakt), aunque la serie no esté entre las recientes: llegan y se repinta.
         if kind == "series", metaID.hasPrefix("tt"), services.trakt?.linked == true {
-            let sync = services.sync, id = metaID, name = originalTitle
+            let sync = services.sync, id = metaID, name = sentTitle
             Task { [weak self] in await sync.pullShow(imdb: id, name: name); await self?.refreshState() }
         }
     }
@@ -365,7 +376,8 @@ public final class TitleModel: ObservableModel {
     }
 
     /// «4 de 10 vistos» de la temporada elegida.
-    public var seasonProgress: (watched: Int, total: Int) { (rows.filter(\.watched).count, rows.count) }
+    /// Lo mismo que cuenta «Vista» (lo estrenado): el encabezado decía «8 de 10» y el menú «8 de 8» (revisión del 28 nov 2026).
+    public var seasonProgress: (watched: Int, total: Int) { watchedCount(.season(selectedSeason)) }
 
     /// Respaldo sin clave de TMDB en el iPhone: la sinopsis en español que calcula tu Orbital. Con clave, el iPhone no le
     /// pregunta nada a la consola (el tono del logo lo mide `LogoTone` aquí mismo).
@@ -440,7 +452,8 @@ public final class TitleModel: ObservableModel {
             return video
         }
         if kind == "movie" { return metaID }
-        return seasons.first { !$0.isSpecials }?.episodes.first?.id
+        // Una serie que solo tiene especiales: el primero (antes «Aún sin episodios» con la lista llena abajo).
+        return (seasons.first { !$0.isSpecials } ?? seasons.first)?.episodes.first?.id
     }
 
     /// «Continuar T2 E5» / «Reproducir» / «Reproducir T1 E1».
@@ -474,7 +487,7 @@ public final class TitleModel: ObservableModel {
         guard let video = videoID ?? continueVideoID else { return nil }
         var label = ""
         if kind == "series", let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-        return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: originalTitle, displayTitle: title, episodeLabel: label,
+        return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: sentTitle, displayTitle: title, episodeLabel: label,
                            poster: poster, year: info.year, meta: meta, fromStart: fromStart)
     }
 
@@ -495,9 +508,9 @@ public final class TitleModel: ObservableModel {
     /// Mi lista: cambia aquí al instante y viaja a tu watchlist de Trakt (sin conexión, en cuanto haya).
     public func toggleLibrary() async {
         let target = !inLibrary
-        libraryEdits += 1
+        libraryEdits += 1; stateEdits += 1
         inLibrary = target
-        await services.watch.setInLibrary(kind: kind, metaID: metaID, title: originalTitle, poster: poster, add: target, outbox: services.traktOutbox)
+        await services.watch.setInLibrary(kind: kind, metaID: metaID, title: sentTitle, poster: poster, add: target, outbox: services.traktOutbox)
         await services.forYou.clearCache(["trakt:watchlist"])   // solo la watchlist: lo demás de Para ti sigue válido
     }
 
@@ -596,7 +609,7 @@ public final class TitleModel: ObservableModel {
     /// Marca un episodio (o la película) como visto: en el teléfono al instante y en Trakt (y la copia a Stremio). Marcar un
     /// episodio anterior no mueve tu punto de «Seguir viendo».
     public func markWatched(_ videoID: String) async {
-        await services.watch.markWatched(kind: kind, metaID: metaID, videoID: videoID, name: originalTitle)
+        await services.watch.markWatched(kind: kind, metaID: metaID, videoID: videoID, name: sentTitle)
         await refreshState()
     }
 
@@ -606,35 +619,6 @@ public final class TitleModel: ObservableModel {
         await refreshState()
     }
 
-    // MARK: descargar
-    public enum DownloadOutcome: Equatable { case queued(Int), noSources, notEnoughSpace(String), already, failed(String) }
-
-    /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
-    @discardableResult
-    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false, keepBoth: Bool = false) async -> DownloadOutcome {
-        var queued = 0
-        for video in videoIDs {
-            var label = ""
-            if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace, keepBoth: keepBoth) {
-            case .queued: queued += 1
-            case .noSources: if queued == 0 { return .noSources } else { continue }
-            case .already: if videoIDs.count == 1 { return .already } else { continue }
-            case .notEnoughSpace(let message): return .notEnoughSpace(message)
-            case .failed(let message): return .failed(message)
-            }
-        }
-        await refreshState()
-        return queued > 0 ? .queued(queued) : .noSources
-    }
-
-    /// «Descargar los siguientes N episodios».
-    public func downloadNext(_ count: Int) async -> DownloadOutcome {
-        let from = continueVideoID
-        let ids = seasons.filter { !$0.isSpecials }.flatMap { $0.episodes.map(\.id) }
-        guard let from, let i = ids.firstIndex(of: from) else { return .noSources }
-        return await download(Array(ids.dropFirst(i).prefix(count)))
-    }
 
     /// «T2 E5» de un episodio de esta serie; nil en una película.
     public func episodeLabel(_ videoID: String) -> String? {

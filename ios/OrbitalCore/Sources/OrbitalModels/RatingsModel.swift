@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 
 /// Calificar como en Trakt: tus estrellas (5 con medias, 1…10 en Trakt) y el recordatorio inteligente que asoma sobre la
@@ -108,7 +109,7 @@ public final class RatingsModel: ObservableModel {
         guard p.count >= 2, p[p.count - 2] > 0, let videos = meta?["videos"]?.array else { return nil }
         let season = p[p.count - 2], episode = p[p.count - 1]
         let out = videos.filter { $0["season"]?.intValue == season }.compactMap { v -> Int? in
-            if let r = v["released"]?.string, r.count >= 10, let d = try? Date(String(r.prefix(10)), strategy: .iso8601.year().month().day()), d > now { return nil }
+            if let r = v["released"]?.string, r.count >= 10, let d = ISODates.localDay(r), d > now { return nil }
             return v["episode"]?.intValue ?? v["number"]?.intValue
         }
         guard let last = out.max(), last == episode else { return nil }

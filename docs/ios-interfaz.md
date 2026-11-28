@@ -1395,6 +1395,12 @@ congelaba antes de aparecer) y estaba igual en «¿Seguro?», el póster que se 
 mosaico. Se escribe `guard (try? await Task.sleep(…)) != nil else { return }` (o `break` en un ciclo).
 `DesignRulesTests.testTaskIDWaitsStopWhenCancelled` lo vigila.
 
+### Los días son de tu calendario (28 nov 2026)
+
+Una fecha que solo dice el día («Vista el 1 nov», «El día que salió») es ese día donde estás, al enseñarla y al mandarla a
+Trakt. Leída como medianoche UTC, en México salía el día anterior (Letterboxd y la ficha) y una del 1 de enero caía en el año
+pasado. Se lee con `ISODates.localDay`. `DesignRulesTests.testCalendarDaysAreReadInYourTimeZone` lo vigila.
+
 ### Escenas de lección: escala y giro antes del lugar (19 nov 2026)
 
 En una escena de Aprende, una pieza puesta con `sceneAt` crece o gira con `.scaleEffect`/`.rotationEffect` **antes** de
