@@ -17,6 +17,8 @@ final class ListSelection {
 
     func toggle(_ id: String) { if chosen.contains(id) { chosen.remove(id) } else { chosen.insert(id) } }
     func set(_ ids: Set<String>) { chosen = ids }
+    /// Suelta lo elegido que ya no se ve (un filtro lo escondió): la barra nunca actúa sobre lo que no tienes enfrente.
+    func keepOnly(_ ids: Set<String>) { if !chosen.isSubset(of: ids) { chosen.formIntersection(ids) } }
     func clear() { chosen = [] }
 
     func dragChanged(start: CGPoint, location: CGPoint, translation: CGSize) {
@@ -149,6 +151,8 @@ struct ListBarIcon: View {
 struct SelectionHeader: View {
     let selection: ListSelection
     let all: [String]
+    /// Otros que también se ven y se eligen pero no entran en «Todas» (en Viendo, «¿Las dejaste?»).
+    var alsoShown: [String] = []
 
     var body: some View {
         let count = selection.chosen.count, every = !all.isEmpty && Set(all).isSubset(of: selection.chosen)
@@ -165,6 +169,7 @@ struct SelectionHeader: View {
         }
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityElement(children: .contain)
+        .onChange(of: all + alsoShown, initial: true) { _, shown in selection.keepOnly(Set(shown)) }
     }
 }
 

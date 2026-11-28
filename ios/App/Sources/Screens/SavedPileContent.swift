@@ -38,6 +38,7 @@ struct SavedPileContent: View {
         let all = status == .watching ? board.items(status) + board.stale : board.items(status)
         let items = shown(board.items(status))
         let every = status == .watching ? items + shown(board.stale) : items
+        let staleIDs = status == .watching ? shown(board.stale).map(\.imdb) : []
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if let header { header }
@@ -46,7 +47,7 @@ struct SavedPileContent: View {
                 } else if all.isEmpty {
                     empty
                 } else if status == .watched {
-                    bar(nil, every: every)
+                    bar(nil, every: every, stale: staleIDs)
                     ForEach(months(items, board), id: \.0) { month, group in
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection)
@@ -57,9 +58,9 @@ struct SavedPileContent: View {
                 } else {
                     if !items.isEmpty {
                         SortableGrid(listID: "saved-state:\(status.rawValue)", items: items, collections: collections.model,
-                                     showsKindFilter: false, loading: !model.boardReady, states: nil, bar: { AnyView(bar($0, every: every)) }) { s, width in cell(s, width: width) }
+                                     showsKindFilter: false, loading: !model.boardReady, states: nil, bar: { AnyView(bar($0, every: every, stale: staleIDs)) }) { s, width in cell(s, width: width) }
                     } else {
-                        bar(nil, every: every)
+                        bar(nil, every: every, stale: staleIDs)
                     }
                     if status == .watching, !shown(board.stale).isEmpty { stale(shown(board.stale)) }
                 }
@@ -80,11 +81,11 @@ struct SavedPileContent: View {
     }
 
     /// El renglón bajo las pestañas: el orden a la izquierda (donde lo hay) y, a la derecha, filtrar y elegir varios.
-    private func bar(_ parts: ListBarParts?, every: [Suggestion]) -> some View {
+    private func bar(_ parts: ListBarParts?, every: [Suggestion], stale: [String]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             controls(parts, every: every)
             // «Editar»: cuántas van y «Todas», debajo del renglón que lo abrió.
-            if selection.editing { SelectionHeader(selection: selection, all: ListBarParts.visible(parts, else: every)) }
+            if selection.editing { SelectionHeader(selection: selection, all: ListBarParts.visible(parts, else: every), alsoShown: parts == nil ? [] : stale) }
         }
     }
 

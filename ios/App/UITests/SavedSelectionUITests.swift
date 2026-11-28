@@ -27,4 +27,35 @@ final class SavedSelectionUITests: XCTestCase {
         XCTAssertEqual(app.buttons.matching(identifier: "title-link").count, before - 2, "salen las dos")
         let b = XCTAttachment(screenshot: app.screenshot()); b.name = "quitadas"; b.lifetime = .keepAlways; add(b)
     }
+
+    /// Revisión del 28 nov: con «Todas» elegidas, cambiar a Películas suelta las series (ya no se ven): la barra solo actúa
+    /// sobre lo que tienes enfrente.
+    func testCambiarElFiltroSueltaLoQueYaNoSeVe() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-mute", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launch()
+        let edit = app.buttons["list-edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 10))
+        edit.tap()
+        let all = app.buttons["select-all"]
+        XCTAssertTrue(all.waitForExistence(timeout: 5))
+        all.tap()
+        let count = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'elegidas de'")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 5))
+        let before = count.label
+        let pill = app.buttons["kind-all"].firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 5), "la pastilla del tipo de la lista")
+        pill.tap()
+        let movies = app.buttons["kind-movie"].firstMatch
+        XCTAssertTrue(movies.waitForExistence(timeout: 5))
+        movies.tap()
+        sleep(1)
+        let after = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'elegidas de'")).firstMatch
+        XCTAssertTrue(after.waitForExistence(timeout: 5))
+        XCTAssertNotEqual(after.label, before, "las series escondidas dejan de contar")
+        let parts = after.label.components(separatedBy: " elegidas de ")
+        XCTAssertEqual(parts.first, parts.last, "quedan elegidas justo las que se ven: \(after.label)")
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "solo-peliculas"; a.lifetime = .keepAlways; add(a)
+    }
 }

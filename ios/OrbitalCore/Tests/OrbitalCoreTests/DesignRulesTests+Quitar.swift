@@ -66,3 +66,23 @@ extension DesignRulesTests {
         XCTAssertTrue(body.contains("undoWindow: DS.Timing.undoCommit"), "el archivo espera a que el aviso se vaya")
     }
 }
+
+/// «Lo que haces con varios elegidos toca solo lo que ves» (`docs/ios-interfaz.md`, 28 nov 2026): en Guardado, elegir varios,
+/// cambiar a «Películas» y tocar «Vista» marcaba también las series elegidas que ya no se veían.
+extension DesignRulesTests {
+    func testTheSelectionBarOnlyActsOnWhatYouSee() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let code = try String(contentsOf: root.appendingPathComponent("Design/ListSelection.swift"), encoding: .utf8)
+        let header = try XCTUnwrap(code.range(of: "struct SelectionHeader"), "la cuenta de lo elegido vive en SelectionHeader")
+        XCTAssertTrue(code[header.upperBound...].prefix(2000).contains("selection.keepOnly("), "al cambiar lo que se ve, se suelta lo escondido")
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)).allObjects
+        var bars = 0
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            guard text.contains("SavedSelectionBar(model:") else { continue }
+            bars += 1
+            XCTAssertTrue(text.contains("SelectionHeader(selection:"), "\(file.lastPathComponent): la barra va con la cuenta que suelta lo escondido")
+        }
+        XCTAssertGreaterThanOrEqual(bars, 2, "Guardado y sus listas")
+    }
+}

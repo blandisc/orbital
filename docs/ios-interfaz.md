@@ -592,6 +592,9 @@ solo «Guardar» tenía «Deshacer».
   volver a bajarla tarda y gasta datos). Ningún «Borrar» de Descargas llama a `delete(` directo. Lo cuidan
   `DesignRulesTests+Quitar.swift` (`testDeletingADownloadOffersUndo`) y
   `ScreenModelsTests.testDeletingADownloadCanBeUndoneUntilTheNoticeIsGone`.
+- **Lo que haces con varios elegidos toca solo lo que ves** (28 nov 2026): si un filtro esconde algo que habías elegido, deja
+  de estar elegido y la cuenta lo dice; la barra de abajo nunca actúa sobre lo que no tienes enfrente (`ListSelection.keepOnly`
+  desde `SelectionHeader`). Lo cuida `DesignRulesTests+Quitar.swift` (`testTheSelectionBarOnlyActsOnWhatYouSee`).
 
 Lo cuidan `DecidePolishTests` (OrbitalModelsTests) y `DesignRulesTests+Decide.swift`. En la TV: «No me interesa» de su Decide
 tampoco tiene «Deshacer» (pendiente en el registro de paridad); lo demás de la TV no cambia.
