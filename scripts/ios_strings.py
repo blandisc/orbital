@@ -1651,6 +1651,10 @@ TRANSLATIONS = {
     "Claves de Explorar": "Explore keys",
     "En este aparato, Orbital no controla la TV. Usa tu iPhone.": "On this device, Orbital doesn't control the TV. Use your iPhone.",
     "Falta tu nube": "Your cloud is missing",
+    # IN2-A: los controles de la TV junto a «En la TV» (VoiceOver) y el avance de una descarga en su menú.
+    "Control %@": "Controller %@", "Control %@, %@": "Controller %@, %@", "con cable": "wired", "batería llena": "full battery",
+    "batería a la mitad": "half battery", "batería baja": "low battery", "sin batería": "battery empty",
+    "Lleva %lld\\u{00A0}%": "%lld\\u{00A0}% done",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {")) Aquí, al instante", ")) Listas al instante", ")) se queda en este iPhone", ")) solo filtra películas", "play The Office · pause · next episode", "—See it? Here it comes.", "The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

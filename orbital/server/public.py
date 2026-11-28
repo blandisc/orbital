@@ -167,6 +167,13 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """La pista del iPhone por el túnel: las tres frases de este momento (con token, como todo aquí)."""
         return await run_in_threadpool(main_app.state.voice_hints)
 
+    @public.get("/api/system")
+    async def system_players() -> dict:
+        """IN2-A por el túnel: solo los controles conectados (uno por jugador, con su batería). El wifi y Alexa se quedan
+        en el puerto local: el iPhone no los usa."""
+        from ..api.ui import connected_players
+        return {"players": await run_in_threadpool(connected_players)}
+
     def saw_phone(request: Request | None = None) -> None:
         """Para Ajustes › Cuentas: en memoria, la hora exacta (¿está abierta ahora?) y en disco, una escritura cada 10
         min como mucho («Lo usaste hace 2 h»). Con la app nueva, por aparato (iPhone e iPad usan el mismo token, y la
