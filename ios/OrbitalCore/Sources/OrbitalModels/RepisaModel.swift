@@ -108,6 +108,8 @@ public final class RepisaModel: ObservableModel {
     /// «Hoy» (LD-C y LV-A, Fernando, 25 nov 2026: «no sé qué ver»): las recetas del día, antes de las listas famosas. Sin
     /// «Porque viste…» (Fernando, 26 nov 2026: ya vive en Inicio; aquí van grupos hechos por ánimo, «MOOD» en la tabla). Sin lo que ya viste. Se guardan el día: mañana salen otras.
     private func loadToday(_ table: ExploreTable) async {
+        // Lo visto aún no llega si Explorar abrió hace un momento (lo trae `load()`, más abajo): se pide aquí.
+        if watched.isEmpty { watched = await watchedSource().union(episodesSeen) }
         let watchedNow = watched
         let hide: ([CanonCollection.Item]) -> [CanonCollection.Item] = { items in
             Array(items.filter { !watchedNow.contains($0.imdb) }.prefix(Self.todayCount)).enumerated().map { i, it in var x = it; x.rank = i + 1; return x }
@@ -136,12 +138,18 @@ public final class RepisaModel: ObservableModel {
     }
 
     /// Las de esta semana con lo que ya se tiene (escritas en la tabla o guardadas).
+    /// Las de «Hoy» que ya estaban se quedan mientras se vuelven a pedir (antes desaparecían y regresaban en cada recarga).
     private func arrange(_ table: ExploreTable) {
+        let todayLists = weeklyLists.filter { $0.id.hasPrefix(Self.todayPrefix) }
+        let todayItems = weekly.filter { $0.id.hasPrefix(Self.todayPrefix) }
         weeklyLists = table.thisWeek(clock())
         weekly = weeklyLists.map { list in
             let items = list.written ?? cached(list.id, fresh: false) ?? []
             return CanonCollection(id: list.id, family: .list, grouping: .rank, items: items)
         }
+        let at = weeklyLists.firstIndex { !$0.dated } ?? weeklyLists.count
+        weeklyLists.insert(contentsOf: todayLists, at: at)
+        weekly.insert(contentsOf: todayItems, at: min(at, weekly.count))
     }
 
     private func savedTable(fresh: Bool) -> ExploreTable? {

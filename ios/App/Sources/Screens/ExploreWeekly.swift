@@ -12,7 +12,8 @@ struct ExploreWeekly: View {
     var body: some View {
         let model = env.repisa
         let _ = model.track()
-        let cards = model.weekly.filter { !Self.isStrip($0) }, strips = model.weekly.filter(Self.isStrip)
+        let ready = model.weekly.filter { !$0.items.isEmpty }   // nunca una tarjeta vacía mientras llegan sus pósters
+        let cards = ready.filter { !Self.isStrip($0) }, strips = ready.filter(Self.isStrip)
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSChapterHead(label: CollectionSection.weekly.title, symbol: CollectionSection.weekly.symbol)
             if !cards.isEmpty {

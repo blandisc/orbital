@@ -80,6 +80,7 @@ public final class ParaTiModel: ObservableModel {
 
     /// Pruebas: lo que trae un estante sin pasar por la red.
     func seedRailForTesting(listID: String, splits: Bool, _ items: [Suggestion]) { railItems[key(listID: listID, splits: splits)] = items }
+    func seedForTesting(source: Source, newOnPlatforms: [Suggestion]) { self.source = source; self.newOnPlatforms = newOnPlatforms }
 
     // MARK: lo de la última vez
     /// Los estantes de la última vez (sus listas y lo que traían), guardados en el teléfono: Para ti abre con ellos al instante
@@ -97,8 +98,9 @@ public final class ParaTiModel: ObservableModel {
         staleKeys = Set(railItems.keys)   // se ven, pero se piden de nuevo
     }
 
+    /// Solo con «Todo», que es como abre Explorar: con Películas o Series guardaba una que al abrir se tiraba (y abría en blanco).
     private func saveSnapshot() {
-        guard !Task.isCancelled, !lists.isEmpty else { return }
+        guard !Task.isCancelled, !lists.isEmpty, kind == "all" else { return }
         let rails = railItems.mapValues { Array($0.prefix(Self.snapshotRowLimit)) }
         let console = source == .console, kind = kind, lists = lists
         services.caches.set(Self.snapshotKey) {   // se codifica fuera del hilo principal
@@ -532,20 +534,18 @@ public final class ParaTiModel: ObservableModel {
         if inList { watchlistKeys.insert(imdb) } else { watchlistKeys.remove(imdb) }
     }
 
-    /// «No me interesa».
+    /// «No me interesa»: sale de todo Explorar al momento y se recuerda en el iPhone aunque las sugerencias vengan de la TV (si
+    /// la TV no contestaba, antes regresaba al abrir otra vez). Los rankings de las plataformas no cambian: son la lista real.
     public func dismiss(_ s: Suggestion) async {
-        switch source {
-        case .console: await services.forYouRemote.dismiss(s.imdb)
-        case .phone:
-            await services.forYou.dismiss(s.imdb)
-            // La TV también deja de sugerirlo (si tu Orbital contesta; si no, queda en el iPhone).
-            if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
-        }
         mosaic.removeAll { $0.imdb == s.imdb }
+        newOnPlatforms.removeAll { $0.imdb == s.imdb }
         let without = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
         if without != railItems { railItems = without }
         airings.removeAll { $0.series.imdb == s.imdb }
         if let current = because { because = (current.seed, current.items.filter { $0.imdb != s.imdb }) }
+        await services.forYou.dismiss(s.imdb)
+        // La TV también deja de sugerirlo (si tu Orbital contesta; si no, queda en el iPhone).
+        if source == .console || services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
     }
 
     /// «Crear una lista» al final de Tus listas: una lista nueva (privada) en tu Trakt, que sale ya en Tus listas (se

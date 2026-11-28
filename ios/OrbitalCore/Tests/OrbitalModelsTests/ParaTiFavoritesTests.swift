@@ -25,4 +25,20 @@ final class ParaTiFavoritesTests: XCTestCase {
         FavoriteChange.post(d, add: true)
         XCTAssertEqual(model.railItems[key]?.first?.imdb, "tt4", "un corazón nuevo entra al principio")
     }
+
+    /// Revisión del 28 nov: «No me interesa» con las sugerencias de la TV se recuerda en el iPhone (si la TV no contesta, antes
+    /// regresaba) y sale también de «Nuevo en tus plataformas».
+    func testNoMeInteresaSeRecuerdaAunqueVengaDeLaTVYSaleDeNuevo() async throws {
+        let rig = try ServicesRig()
+        let model = ParaTiModel(rig.services)
+        let (a, b) = (suggestion("tt1"), suggestion("tt2"))
+        model.seedForTesting(source: .console, newOnPlatforms: [a, b])
+        model.seedRailForTesting(listID: "trend", splits: false, [a, b])
+        await model.dismiss(a)
+        XCTAssertEqual(model.newOnPlatforms.map(\.imdb), ["tt2"])
+        XCTAssertEqual(model.railItems[model.key(listID: "trend", splits: false)]?.map(\.imdb), ["tt2"])
+        let remembered = await rig.services.forYou.dismissedIDs()
+        XCTAssertTrue(remembered.contains("tt1"), "queda en el iPhone aunque la TV no conteste")
+    }
 }
+
