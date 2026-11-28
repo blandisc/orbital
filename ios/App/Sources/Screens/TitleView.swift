@@ -406,13 +406,13 @@ struct TitleView: View {
         let fallback = WindowMetrics.size.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
         guard contentWidth > 0, belowHero > 0 else { return fallback }
         let padding = scheme == .dark ? 0 : DS.Space.s4
-        // `viewport` ya es el alto entre la barra de arriba y la de pestañas, y el contenido empieza bajo la de arriba (el arte
-        // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
-        // la segunda fila de acciones quedaba debajo de las pestañas.
-        let room = viewport.height - belowHero - padding - DS.Space.s2
+        // `viewport` es el alto entre la barra de arriba y la de pestañas (el arte solo se extiende detrás de la de arriba): lo
+        // libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y la 2.ª fila quedaba bajo las pestañas.
+        let room = viewport.height - belowHero - padding - DS.Space.s2 - env.ui.ratingReminderHeight   // y «¿Qué tal…?» flotando
         let width = contentWidth - (scheme == .dark ? 0 : side * 2)
-        guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
-        let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
+        let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge
+            : WindowMetrics.shortPhone ? DS.TitleAction.heroAspectMaxShortPhone : DS.TitleAction.heroAspectMax
+        guard room > 0 else { return cap }
         return min(cap, max(DS.TitleAction.heroAspect, width / room))
     }
 

@@ -25,4 +25,12 @@ extension DesignRulesTests {
         let posters = try text("Posters.swift", in: try sources(["Design"]))
         XCTAssertTrue(posters.contains("!centered && ArtFit.needsFocus"), "y el recorte respeta artCentered")
     }
+
+    /// La ficha en el Duo cerrado: el arte cede (más bajito) hasta que «Guardar · Descargar · Vista · Tráiler» queden a la
+    /// vista sobre las pestañas y sobre «¿Qué tal…?». Antes la pastilla los tapaba y tocar «Vista» no hacía nada.
+    func testTitleActionsClearTheTabBarOnTheDuo() throws {
+        let title = try text("TitleView.swift", in: try sources(["Screens"]))
+        XCTAssertTrue(title.contains("WindowMetrics.shortPhone ? DS.TitleAction.heroAspectMaxShortPhone"), "en el Duo el arte puede ser más bajito")
+        XCTAssertTrue(title.contains("- env.ui.ratingReminderHeight"), "y le deja su lugar a «¿Qué tal…?»")
+    }
 }
