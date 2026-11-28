@@ -322,8 +322,10 @@ public final class DecideModel: ObservableModel {
                     self.details[id] = d
                 }
                 self.saveDetails(); self.changed()
+                await self.refillIfStarved()
             }
             self?.ratingTMDB = nil
+            await self?.refillIfStarved()   // lo último que llegó también cuenta
         }
     }
 
@@ -358,10 +360,25 @@ public final class DecideModel: ObservableModel {
                     self.details[id] = d
                 }
                 self.saveDetails(); self.changed()
+                await self.refillIfStarved()
             }
             self?.statsTMDB = nil
+            await self?.refillIfStarved()   // lo último que llegó también cuenta
         }
     }
+
+    /// Llegaron datos de fondo (Letterboxd, la fama, la calificación de TMDB) y no había ninguna que cumpliera: se busca otra
+    /// vez. Antes decía «Nada con ★4+ Letterboxd» al instante, mientras los datos aún llegaban, y no se reponía.
+    func refillIfStarved() async {
+        guard !stopped, pick == nil, exhausted || starved else { return }
+        exhausted = false; starved = false
+        await next()
+    }
+
+    /// Faltan datos que un filtro elegido necesita (siguen llegando por detrás): sin ninguna que cumpla aún, «Buscando…».
+    /// Se quedó en «Buscando…» esperando esos datos (solo entonces se vuelve a buscar al llegar: nunca a media búsqueda).
+    var starved = false
+    var waitingOnData: Bool { ratingLetterboxd != nil || statsTMDB != nil || ratingTMDB != nil }
 
     /// El promedio de Letterboxd de las películas de la lista (de pocas en pocas; Letterboxd recuerda cada una).
     var ratingLetterboxd: Task<Void, Never>?
@@ -384,8 +401,10 @@ public final class DecideModel: ObservableModel {
                     self.details[s.imdb] = d
                 }
                 self.saveDetails(); self.changed()
+                await self.refillIfStarved()
             }
             self?.ratingLetterboxd = nil
+            await self?.refillIfStarved()   // lo último que llegó también cuenta
         }
     }
 

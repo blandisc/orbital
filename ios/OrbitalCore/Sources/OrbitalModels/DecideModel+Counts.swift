@@ -148,9 +148,11 @@ extension DecideModel {
             found = [s] + found.filter { $0.imdb != lead }.prefix(max(0, found.count - 1))
         }
         coalescing {   // los tres nuevos y la elegida en un solo aviso
-            isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
+            // Sin ninguna aún y con datos en camino (Letterboxd, la fama): «Buscando…», no «Nada con…»; al llegar se busca otra vez.
+            let waiting = found.isEmpty && waitingOnData
+            isLoading = waiting; starved = waiting   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
             picks = found
-            if let first = found.first { select(first) } else { pick = nil; exhausted = true }
+            if let first = found.first { select(first) } else { pick = nil; exhausted = !waiting }
         }
         // La duración y la calificación llegan después, sin bloquear nada; los siguientes se preparan desde ya.
         fillUpcoming()

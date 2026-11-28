@@ -63,6 +63,24 @@ final class DecideNewFiltersTests: XCTestCase {
         model.stop()
     }
 
+    /// Con ★4+ de Letterboxd, mientras Letterboxd contesta: «Buscando…», no «Nada con…»; y al llegar, la que cumple (revisión
+    /// del 27 nov 2026: se quedaba vacío para siempre).
+    func testLetterboxdQueTardaNoDejaElTrioVacio() async throws {
+        let rig = try ServicesRig()
+        func page(_ avg: String) -> Data { Data(#"<meta property="og:url" content="https://letterboxd.com/film/x/" /><meta name="twitter:data2" content="\#(avg) out of 5" /><body data-tmdb-id="1">"#.utf8) }
+        rig.http.raw["https://letterboxd.com/imdb/tt1/"] = page("4.2")
+        rig.http.raw["https://letterboxd.com/imdb/tt2/"] = page("3.1")
+        let model = DecideModel(rig.services, pool: [item("tt1"), item("tt2")])
+        model.time = .long
+        model.minLetterboxd = 4
+        await model.apply()
+        XCTAssertTrue(model.pick != nil || !model.exhausted, "mientras llegan los datos no dice «Nada con…»")
+        for _ in 0..<400 where model.pick == nil { try? await Task.sleep(nanoseconds: 5_000_000) }
+        XCTAssertEqual(model.pick?.imdb, "tt1", "al llegar Letterboxd, la de 4.2")
+        XCTAssertFalse(model.isLoading)
+        model.stop()
+    }
+
     func testFamaComparteLosRangosDelFiltroAvanzado() {
         XCTAssertTrue(AdvancedFilter.Fame.gems.matches(average: 7.4, votes: 900, series: false))
         XCTAssertFalse(AdvancedFilter.Fame.gems.matches(average: 7.4, votes: 9000, series: false), "con muchos votos ya no es joya oculta")
