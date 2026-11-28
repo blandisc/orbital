@@ -86,6 +86,8 @@ public final class TitleModel: ObservableModel {
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
     @Tracked private var entry: LibraryEntry? = nil
     @Tracked private(set) var watched = Set<String>()   // lo visto (ids de video); lo lee «¿Cuándo la viste?» (TitleModel+Watched)
+    /// Sube cada vez que se vuelve a leer lo tuyo: «La viste N veces» pregunta otra vez (marcar, ver o deshacer fuera de la hoja).
+    @Tracked public private(set) var stateVersion = 0
     @Tracked private var downloadStates: [String: DownloadState] = [:]
     /// Por video, el id de la copia que se enseña (`downloadID`).
     var downloadIDs: [String: String] = [:]
@@ -396,6 +398,7 @@ public final class TitleModel: ObservableModel {
         applyDownloads(await queue)
         settleSeason()
         buildRows()
+        stateVersion += 1
     }
 
     /// La temporada salta sola solo al abrir la ficha; luego manda la tuya (Fernando, 9 nov: volver de ver la cambiaba).

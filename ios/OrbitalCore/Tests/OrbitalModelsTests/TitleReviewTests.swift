@@ -21,4 +21,18 @@ final class TitleReviewTests: XCTestCase {
         XCTAssertLessThanOrEqual(count.watched, count.total)
         XCTAssertTrue(title.watchedAnyEpisode)
     }
+
+    /// «La viste N veces» vuelve a preguntar cuando cambia lo tuyo: marcar, ver o deshacer fuera de su hoja.
+    func testWatchChangesBumpTheStateVersion() async throws {
+        let rig = try ScreenModelsTests().titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        let before = title.stateVersion
+        let episode = try XCTUnwrap(title.videos(in: .series).first)
+        await title.markWatchedAgain(.episode(episode))
+        XCTAssertGreaterThan(title.stateVersion, before)
+        let after = title.stateVersion
+        await title.unmarkWatched(.episode(episode))
+        XCTAssertGreaterThan(title.stateVersion, after)
+    }
 }

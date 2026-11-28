@@ -17,7 +17,7 @@ extension TitleView {
     /// «La viste 2 veces · la última, el 14 mar 2025 ›» bajo tu calificación (películas vistas, con Trakt).
     @ViewBuilder func yourViewings(_ model: TitleModel) -> some View {
         if model.canFavorite, model.kind == "movie", model.isWatched(.movie) {
-            ViewingsLine(kind: model.kind, metaID: model.metaID, version: viewingsFor == nil ? 0 : 1) {
+            ViewingsLine(kind: model.kind, metaID: model.metaID, version: model.stateVersion * 2 + (viewingsFor == nil ? 0 : 1)) {
                 viewingsFor = ViewingsTarget(kind: model.kind, metaID: model.metaID, videoID: model.metaID, title: model.title)
             }
         }
