@@ -209,4 +209,17 @@ final class StoredFileTests: XCTestCase {
         XCTAssertEqual(saved.first { $0.kind == "movie" }?.title, "Dune", "lo del índice gana sobre lo reconstruido")
         XCTAssertEqual(saved.count, 2)
     }
+
+    /// Tras restaurar un respaldo del iPhone el índice vuelve y los videos no: una terminada sin archivo ya no sale «lista».
+    func testADoneDownloadWhoseFileIsGoneIsNotShown() throws {
+        let root = try makeDownloads(), url = folder.appendingPathComponent("downloads.json")
+        var gone = DownloadIndexFile.scan(root: root).first { $0.kind == "movie" }!
+        gone.relativePath = "tt9/tt9/video.mkv"
+        let kept = DownloadIndexFile.scan(root: root).first { $0.kind == "series" }!
+        let queued = DownloadItem(id: "tt8|tt8", kind: "movie", metaID: "tt8", videoID: "tt8", title: "", originalTitle: "", subtitle: "",
+                              poster: nil, addon: "", sourceIndex: 0, expectedBytes: 10, relativePath: "tt8/tt8/video.mkv", createdAt: 1)
+        XCTAssertTrue(StoredFile.write([gone, kept, queued], to: url, what: "prueba"))
+        let items = DownloadIndexFile(url: url, root: root).load()
+        XCTAssertEqual(items.map(\.id), [kept.id, queued.id], "la de sin archivo se va; la que está en cola se queda (se baja)")
+    }
 }

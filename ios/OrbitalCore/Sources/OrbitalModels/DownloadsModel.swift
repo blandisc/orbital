@@ -135,10 +135,16 @@ public final class DownloadsModel: ObservableModel {
         guard !ids.isEmpty else { return }
         deleting.formUnion(ids)
         undoable.formUnion(ids)
+        // Cada borrado lleva su ficha: borrar, «Deshacer» y borrar otra vez dejaba que la espera del primero borrara el
+        // archivo antes de tiempo y el segundo «Deshacer» ya no hacía nada (revisión del 27 nov 2026).
+        deleteTicket += 1
+        let ticket = deleteTicket
+        for id in ids { deleteTickets[id] = ticket }
         items.removeAll { ids.contains($0.id) }
         Task {
             if undoWindow > .zero { try? await Task.sleep(for: undoWindow) }
-            let still = ids.intersection(undoable)
+            let still = ids.intersection(undoable).filter { deleteTickets[$0] == ticket }
+            for id in still { deleteTickets[id] = nil }
             undoable.subtract(still)
             for id in still { await remove(id) }
             deleting.subtract(still)
@@ -155,6 +161,8 @@ public final class DownloadsModel: ObservableModel {
     }
     private var deleting: Set<String> = []
     private var undoable: Set<String> = []
+    private var deleteTicket = 0
+    private var deleteTickets: [String: Int] = [:]
 
     /// «Buscar subtítulos» de una descarga: lo que hay en OpenSubtitles y tus complementos, con la huella del archivo (los de
     /// esa copia exacta primero).
@@ -169,8 +177,7 @@ public final class DownloadsModel: ObservableModel {
         guard let real = await services.finder.playableSubtitle(option.url),
               let response = try? await services.http.send(HTTPRequest(url: real, timeout: 20)), response.status == 200, !response.data.isEmpty else { return false }
         let two = Streams.languageCodes.first { $0.value == option.language }?.key ?? option.language
-        let count = item.subtitleFiles.filter { ($0 as NSString).lastPathComponent.hasPrefix(two) }.count
-        return await services.downloads.addSubtitle(id: item.id, name: "\(two)-\(count + 1).srt", data: response.data)
+        return await services.downloads.addSubtitle(id: item.id, language: two, data: response.data)
     }
 
     /// Donde se ponen los enlaces para compartir. Se vacía al borrar una descarga y al abrir la app: un enlace olvidado

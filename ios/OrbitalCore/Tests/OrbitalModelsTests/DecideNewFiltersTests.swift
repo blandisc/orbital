@@ -88,4 +88,19 @@ final class DecideNewFiltersTests: XCTestCase {
         XCTAssertFalse(AdvancedFilter.Fame.classics.matches(average: 7.6, votes: 900, series: false))
         XCTAssertTrue(AdvancedFilter.Fame.niche.matches(average: 6.8, votes: 120, series: false))
     }
+
+    /// Una lista elegida sin nada que cumpla: entre los arreglos va «De todo lo sugerido» (revisión del 27 nov 2026: solo
+    /// ofrecía quitar filtros y, con solo la lista puesta, ningún botón).
+    func testUnaListaSinNadaOfreceDeTodoLoSugerido() async throws {
+        let rig = try ServicesRig()
+        var horror = item("tt2"); horror.genres = ["Horror"]
+        let model = DecideModel(rig.services, pool: [item("tt1")], sources: [.init(id: "s", name: "Terror", items: [horror])])
+        model.time = .long
+        model.genres = ["drama"]
+        await model.setSources(["s"])
+        XCTAssertEqual(model.count(), 0)
+        let lists = model.relaxations().first { $0.relax == .lists }
+        XCTAssertEqual(lists?.count, 1, "fuera de la lista, la de Drama")
+        XCTAssertEqual(model.chosenSourceNames, ["Terror"])
+    }
 }

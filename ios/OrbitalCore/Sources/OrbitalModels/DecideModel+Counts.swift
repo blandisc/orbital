@@ -7,8 +7,8 @@ extension DecideModel {
     /// Cuántas opciones hay con lo elegido (o con un cambio: `change`), sin contar lo que ya viste ni lo apartado hoy. Lo
     /// que aún no se sabe (sin datos de Cinemeta) no cuenta todavía; el número sube solo cuando llegan.
     /// `strictTime`: que el tiempo filtre aunque no lo hayas elegido (los conteos del menú «Tiempo»).
-    public func count(strictTime: Bool? = nil, _ change: (inout Filters) -> Void = { _ in }) -> Int {
-        tally(strictTime: strictTime, change).known
+    public func count(strictTime: Bool? = nil, anySource: Bool = false, _ change: (inout Filters) -> Void = { _ in }) -> Int {
+        tally(strictTime: strictTime, anySource: anySource, change).known
     }
 
     /// Un conteo con lo que aún no se puede decidir aparte (13 nov 2026). `known`: las que cumplen y ya se sabe; `pending`:
@@ -25,7 +25,8 @@ extension DecideModel {
     /// y «Ver N» son `tally(deck:)` con lo puesto; cada baldosa, cuántas quedarían **si eliges esa**, con todo lo demás puesto
     /// (en los de varias —géneros, épocas, premios— con esa sola en su grupo). La baldosa elegida dice lo mismo que arriba.
     /// `deck`: con lo que filtra el mazo (sin tiempo ni ánimo y con lo ya visto, como `deckPool`).
-    public func tally(deck: Bool = false, strictTime: Bool? = nil, _ change: (inout Filters) -> Void = { _ in }) -> Tally {
+    /// `anySource`: de todo lo sugerido, como si no hubieras elegido listas (para «De todo lo sugerido»).
+    public func tally(deck: Bool = false, strictTime: Bool? = nil, anySource: Bool = false, _ change: (inout Filters) -> Void = { _ in }) -> Tally {
         let strict = deck ? false : (strictTime ?? timeChosen)
         var f = filters
         change(&f)
@@ -33,7 +34,7 @@ extension DecideModel {
         let skipped = notToday()
         let seen = deck || f.includeWatched ? [] : (watched ?? [])
         var known = 0, pending = 0
-        for s in candidatesPool where !skipped.contains(s.imdb) && !seen.contains(s.imdb) && (f.kind == nil || s.kind == f.kind) {
+        for s in (anySource ? pool : candidatesPool) where !skipped.contains(s.imdb) && !seen.contains(s.imdb) && (f.kind == nil || s.kind == f.kind) {
             guard let v = verdict(s, f) else { pending += 1; continue }
             // El tiempo de la hora (no lo elegiste) ordena, no filtra: cuenta lo mismo que se puede proponer.
             if v.matches && (v.fits || !strict) { known += 1 }
@@ -74,6 +75,7 @@ extension DecideModel {
         if minLetterboxd > 0 { out.append((.letterboxd, count { $0.minLetterboxd = 0 })) }
         if fame != .any { out.append((.fame, count { $0.fame = .any })) }
         if !awards.isEmpty { out.append((.awards, count { $0.awards = [] })) }
+        if !sourceIDs.isEmpty { out.append((.lists, count(anySource: true))) }   // una lista sin nada: ofrecer salir de ella
         if timeChosen { for t in Time.allCases where t != time { out.append((.time(t), count(strictTime: true) { $0.time = t })) } }
         return Array(out.filter { $0.1 > 0 }.sorted { $0.1 > $1.1 }.prefix(2))
     }

@@ -140,7 +140,8 @@ public final class TVNowModel: ObservableModel {
         guard active, !localPlayerOpen else { return }   // con el reproductor del iPhone abierto, en pausa (A11)
         // Al volver de segundo plano se pregunta ya (el primer sondeo va sin espera); lo último que se supo se queda mientras
         // tanto: antes se borraba y el accesorio parpadeaba («de repente desaparece»).
-        guard services.orbital.isConfigured else { now = nil; return }
+        // Sin tu Orbital, nada de la tele se queda: el juego dejaba su barra abajo para siempre (revisión del 27 nov 2026).
+        guard services.orbital.isConfigured else { now = nil; game = nil; console = nil; focus = nil; legend = [:]; return }
         pollTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.tick()

@@ -234,6 +234,9 @@ public final class HomeModel: ObservableModel {
         let seen = Set(spotlight.map(\.imdb) + continueWatching.map(\.metaID))
         let picks = Self.mixSpotlight([recsM ?? [], recsS ?? []], excluding: seen, limit: Self.rowLimit)
         if !picks.isEmpty { forYouPicks = picks }
+        // Sin Trakt no hay recomendaciones tuyas: las de la cuenta que desconectaste ya no se quedan, ni guardadas al abrir
+        // (como «Tu watchlist» y los favoritos; revisión del 27 nov 2026).
+        else if !(await forYou.traktLinked) { forYouPicks = [] }
     }
 
     /// El Top 10 de un servicio, series y películas a la vez.
@@ -295,6 +298,10 @@ public final class HomeModel: ObservableModel {
         // Lo que Trakt ya tiene y el teléfono aún no (la primera sincronización), al final; lo que quitaste aquí, no.
         let waiting = services.traktOutbox.pending.filter { $0.target == TraktOutbox.watchlist && !$0.add }.map(\.imdb)
         let extra = myList.isEmpty && services.library.isEmpty ? watchlistDetails.filter { !ids.contains($0.imdb) && !waiting.contains($0.imdb) } : []
+        // Lo quitado aquí deja de esconderse en cuanto la biblioteca ya no lo tiene: si lo vuelves a guardar, regresa (antes
+        // se quedaba fuera hasta cerrar la app, revisión del 27 nov 2026).
+        let listed = Set(myList.map(\.metaID))
+        hiddenPending = hiddenPending.filter { listed.contains($0.key) }
         let next = ParaHoy.first((shown + extra).filter { hiddenPending[$0.imdb] == nil }, kv: services.kv, now: services.now())   // lo de «Para hoy», primero
         if next != traktPending { traktPending = next }
     }
@@ -409,6 +416,9 @@ public final class HomeModel: ObservableModel {
         if undoWindow > .zero { try? await Task.sleep(for: undoWindow) }
         guard undoable.removeValue(forKey: item.metaID) != nil else { return }   // lo deshiciste: no sale nada del aparato
         await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
+        // Ya lo sabe la biblioteca: si lo vuelves a ver, regresa a la fila (antes se quedaba fuera hasta cerrar la app,
+        // revisión del 27 nov 2026).
+        dismissed.remove(item.metaID)
     }
 
     /// «Deshacer» de «Quitar de Seguir viendo»: regresa a su lugar de la fila, como estaba.

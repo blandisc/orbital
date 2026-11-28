@@ -29,7 +29,9 @@ public final class DownloadIndexFile: Sendable {
     public func load() -> [DownloadItem] {
         state.withLock { state in
             switch read(url) {
-            case .loaded(let items): return items
+            // Una terminada sin su archivo no se enseña: el índice entra en el respaldo del iPhone y los videos no (pesan
+            // gigas), así que al restaurar salían «listas» que no se podían ver ni volver a bajar (revisión del 27 nov 2026).
+            case .loaded(let items): return items.filter { $0.state != .done || hasFile($0) }
             case .missing, .corrupt: return rebuild(&state)
             case .unreadable: state.unread = true; return rebuild(&state)
             }
@@ -54,6 +56,10 @@ public final class DownloadIndexFile: Sendable {
             }
             return StoredFile.write(items, to: url, what: "el índice de descargas")
         }
+    }
+
+    private func hasFile(_ item: DownloadItem) -> Bool {
+        FileManager.default.fileExists(atPath: DownloadFiles.contained(root: root, relativePath: item.relativePath, id: item.id).path)
     }
 
     /// Lo que hay en la carpeta (`<título>/<video>/video.<ext>`, `DownloadFiles.relativePath`) como descargas terminadas.

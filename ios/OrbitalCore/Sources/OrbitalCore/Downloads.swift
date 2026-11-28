@@ -374,13 +374,15 @@ public actor Downloads {
     static func sha(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
     /// Un subtítulo que buscaste para una descarga (en «Buscar subtítulos»): se guarda junto al video, para verlo sin conexión.
+    /// El nombre («es-2.srt») se elige aquí, con lo que ya tiene: dos del mismo idioma seguidos se pisaban (revisión del 27 nov
+    /// 2026: la hoja contaba con su copia vieja de la descarga y los dos se llamaban «es-2.srt»).
     @discardableResult
-    public func addSubtitle(id: String, name: String, data: Data) -> Bool {
+    public func addSubtitle(id: String, language: String, data: Data) -> Bool {
         guard var item = items[id] else { return false }
         let folder = fileURL(item).deletingLastPathComponent().appendingPathComponent("subs")
         guard DownloadFiles.isStrictlyInside(folder, root: root) else { return false }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let file = DownloadFiles.component(name)
+        let file = Self.freeName(language: DownloadFiles.component(language), taken: Set(item.subtitleFiles), folder: folder)
         guard (try? data.write(to: folder.appendingPathComponent(file))) != nil else { return false }
         if !item.subtitleFiles.contains("subs/\(file)") { item.subtitleFiles.append("subs/\(file)") }
         items[id] = item

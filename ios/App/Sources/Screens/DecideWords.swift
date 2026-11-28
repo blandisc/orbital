@@ -79,6 +79,7 @@ struct DecideWords {
         if m.fame != .any { parts.append(tr(Self.fameKey(m.fame))) }
         if !m.awards.isEmpty { parts.append(tr("Premios")) }
         if let t = m.shownTime { parts.append(timeName(t)) }
+        parts.append(contentsOf: m.chosenSourceNames.map { "«\($0)»" })   // solo una lista elegida: «Nada con » quedaba sin nombre
         return parts.joined(separator: " + ")
     }
 
