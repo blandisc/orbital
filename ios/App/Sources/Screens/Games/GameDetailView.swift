@@ -121,7 +121,7 @@ struct GameDetailView: View {
                     ProgressView(value: done).tint(DS.text)
                     Text("\(GameItem.sizeText(game.gigabytes * done)) de \(game.sizeText) · faltan \(max(1, Int((1 - done) * 8))) min")
                         .recipe(.data, color: DS.textMuted)
-                    Button("Cancelar") { catalog.cancelDownload(game.id) }.dsSecondaryButton().dsControlSize(.regular)
+                    Button("Cancelar la descarga") { catalog.cancelDownload(game.id) }.dsSecondaryButton().dsControlSize(.regular)
                 }
             }
             if case .downloading = game.place {} else {
