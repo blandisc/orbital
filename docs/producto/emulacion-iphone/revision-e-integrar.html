@@ -1,0 +1,198 @@
+<title>Juegos en el iPhone: revisión y arranque</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; cada grupo de pantallas es una tira que se desliza de lado; la decisión con sus dos opciones lado a lado al final. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64; --line:#dcd9d1;
+  --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6; --strip:#0c0c0e;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad; --line:#2c2c31;
+  --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14; --strip:#000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad; --line:#2c2c31;
+  --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14; --strip:#000; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:70ch}
+.lede{font-size:1.12rem;color:var(--muted)}
+section{display:grid;gap:18px}
+.group{display:grid;gap:12px}
+.group header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.group header span{color:var(--muted);font-size:.92rem}
+.strip{overflow-x:auto;background:var(--strip);border-radius:18px;padding:12px;-webkit-overflow-scrolling:touch}
+.strip img{display:block;height:min(62vh,460px);width:auto;max-width:none;border-radius:8px}
+.fixes{margin:0;padding-left:1.2em;display:grid;gap:4px;max-width:75ch}
+.fixes li::marker{color:var(--teal)}
+.note{padding:16px 18px;border-radius:14px;background:var(--warn-soft);color:var(--fg);max-width:75ch}
+.note b{color:var(--warn)}
+.yes{font-family:var(--f-display);font-size:1.5rem;font-weight:800;color:var(--teal)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-width:80ch;counter-reset:s}
+.steps li{display:grid;grid-template-columns:2.2rem 1fr auto;gap:12px;align-items:baseline;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);counter-increment:s}
+.steps li::before{content:counter(s);font-family:var(--f-mono);color:var(--teal);font-weight:500}
+.steps li.now{border:2px solid var(--teal)}
+.steps .t{color:var(--muted);font-size:.88rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.steps small{display:block;color:var(--muted);font-size:.9rem}
+.code{font-family:var(--f-mono);font-size:.82rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{display:grid;gap:12px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.card.rec{border:2px solid var(--teal)}
+.card header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gain b{color:var(--teal)} .lose b{color:var(--warn)}
+.pick{color:var(--teal);font-weight:600}
+/* dibujo de cada opción: un iPhone (o un Duo) y lo que pasa */
+.scene{display:flex;gap:16px;align-items:center;justify-content:center;padding:18px;border-radius:14px;background:var(--raised);min-height:150px}
+.phone{width:58px;height:116px;border:3px solid var(--fg);border-radius:14px;display:grid;place-items:center;font-size:.7rem;font-weight:600;text-align:center;line-height:1.2;background:var(--surface)}
+.duo{display:flex;gap:2px}
+.duo .phone{width:52px;border-radius:12px}
+.duo.later{opacity:.45}
+.arrow{font-family:var(--f-mono);color:var(--muted)}
+.scene ul{margin:0;padding-left:1em;font-size:.85rem;color:var(--muted)}
+.asks{display:grid;gap:12px;max-width:80ch}
+.ask{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.ask p{color:var(--muted)} .ask p b{color:var(--fg)}
+.foot{color:var(--muted);font-size:.9rem}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:14px">
+  <h1>Juegos en el iPhone: revisión y arranque</h1>
+  <p class="lede">Las 32 pantallas, revisadas una por una en el iPhone 17 Pro. Abajo de cada grupo, lo que corregí. Al final, cómo empezamos con los emuladores y lo que necesito de ti.</p>
+</header>
+
+<section>
+  <h2>Las pantallas</h2>
+  <p class="foot">Desliza cada tira de lado. Todo está en main, escondido: la app de todos los días no cambia.</p>
+
+  <div class="group">
+    <header><h3>Inicio y consolas</h3><span>Inicio · Sin la TV, la primera vez · La TV no responde · Una consola</span></header>
+    <div class="strip"><img src="capturas/1-inicio-y-consolas.png" alt="Inicio de Juegos, sin la TV, la TV no responde y la consola Switch"></div>
+    <ul class="fixes">
+      <li>Si la TV no responde, lo dice arriba y solo muestra lo que ya bajaste. «Recientes» dice «En tu iPhone» en vez de «Aquí o en la TV».</li>
+      <li>En «Tus consolas» solo salen las que tienen juegos que puedes abrir.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>La ficha del juego</h3><span>En tu iPhone · En la TV · Bajando · No corre todavía · Hay versión nueva</span></header>
+    <div class="strip"><img src="capturas/2-ficha.png" alt="Fichas de juego en sus cinco estados"></div>
+    <ul class="fixes">
+      <li>«Primera vez» ahora se llama «Al abrir»: dice si pide el modo rápido.</li>
+      <li>«Mando» dice tu mando de verdad o «Botones en pantalla».</li>
+      <li>«Necesita» dice cuánto ocupa y cuánto tienes libre, con números reales.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>Avisos</h3><span>La TV no responde · No cabe · Fuera de casa · Se juega en la TV · Antes del primer juego · Trayendo tu partida</span></header>
+    <div class="strip"><img src="capturas/3-avisos.png" alt="Avisos antes de jugar"></div>
+    <ul class="fixes">
+      <li>«No cabe» dice cuánto necesita el juego y cuánto tienes (35 GB y tienes 26), en vez de un texto general.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>Jugando, parado</h3><span>Game Boy · DS · Pausa · Con mando</span></header>
+    <div class="strip"><img src="capturas/4-jugando-parado.png" alt="Jugando con el iPhone parado"></div>
+    <ul class="fixes">
+      <li>La Game Boy trae solo B y A, en diagonal como la de verdad; antes tenía cuatro botones.</li>
+      <li>Con mando, los botones en pantalla se esconden solos.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>Jugando, de lado</h3><span>Switch · Pausa</span></header>
+    <div class="strip"><img src="capturas/5-jugando-de-lado.png" alt="Switch de lado y su pausa"></div>
+    <ul class="fixes">
+      <li>Los juegos de la TV no podían girar: la app vive en vertical. Ahora abren de lado, como el reproductor. Si los juegas parado, el juego va arriba y los botones abajo, sin taparlo.</li>
+      <li>De lado, ☰ va arriba al centro: en la esquina tapaba el gatillo derecho.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>Al salir y tus partidas</h3><span>Al día · Pendiente · Se cerró · Partidas · ¿Con cuál sigues? · Regresar a una</span></header>
+    <div class="strip"><img src="capturas/6-al-salir-y-partidas.png" alt="Al salir de un juego y la lista de partidas"></div>
+    <ul class="fixes">
+      <li>Al salir, la línea bajo «Jugar» repite lo que dijo el aviso. Si tu partida quedó pendiente, ya no dice «al día».</li>
+      <li>«¿Con cuál sigues?»: las dos opciones miden lo mismo y la sugerida (la más avanzada) va marcada.</li>
+    </ul>
+  </div>
+
+  <div class="group">
+    <header><h3>Ajustes de juegos</h3><span>Ajustes · En tu iPhone · Botones en pantalla</span></header>
+    <div class="strip"><img src="capturas/7-ajustes.png" alt="Ajustes de juegos"></div>
+  </div>
+
+  <div class="group">
+    <header><h3>Duo cerrado</h3><span>Inicio · Ficha · Jugando, con su aviso · Pausa</span></header>
+    <div class="strip"><img src="capturas/8-duo-cerrado.png" alt="Juegos en la pantalla de afuera del Duo"></div>
+    <ul class="fixes">
+      <li>Se puede jugar cerrado. La primera vez de cada partida sale «Se ve mejor con el Duo abierto» y se va solo (E5-A).</li>
+    </ul>
+  </div>
+
+  <p class="note"><b>Falta el Duo abierto y medio abierto.</b> Para abrir el simulador hace falta tu permiso en el panel del simulador y no estabas. Las tomo en cuanto lo des.</p>
+</section>
+
+<section>
+  <h2>¿Empezamos a integrar los emuladores?</h2>
+  <p class="yes">Sí.</p>
+  <p>Las pantallas ya están. Seguimos el plan que acordamos; el primer paso ya es integrar: compilo cada motor desde su código, lo abro desde Orbital y corro tus juegos en tu iPhone.</p>
+  <ol class="steps">
+    <li class="now"><div><b>Día de prueba</b><small>Compilo nxnative (Luigi's Mansion 3), los de portátiles, iCube, DukeX y Olympus (God of War III), y los corro en tu iPhone. Mido cuadros, calor, batería, tu GameSir y el modo rápido. Reviso cómo guarda partidas la TV en cada consola.</small></div><span class="t">1–2 días</span></li>
+    <li><div><b>La pestaña «Juegos» de verdad</b><small>Tu catálogo real y bajar juegos. La TV aprende a mandar juegos y partidas (entra al registro de paridad).</small></div><span class="t">2–3 semanas</span></li>
+    <li><div><b>Portátiles</b><small>Game Boy y DS, con partidas que van y vienen con la TV. La más ligera: prueba toda la cadena.</small></div><span class="t">1 semana</span></li>
+    <li><div><b>Switch con nxnative</b><small>Luigi's Mansion 3, Mario Kart 8 y Odyssey, con la pausa y los botones de Orbital.</small></div><span class="t">1–2 semanas</span></li>
+    <li><div><b>God of War III</b><small>Con la primera vez del modo rápido.</small></div><span class="t">1–2 semanas</span></li>
+    <li><div><b>GameCube y Wii, Xbox 360, Xbox y MeloNX</b><small>Uno por uno.</small></div><span class="t">1–2 semanas c/u</span></li>
+  </ol>
+  <p class="foot">Todo junto: unos 3 meses. Solo en tu versión (Ultra), instalada desde la Mac; nada entra a Plus ni a la App Store.</p>
+</section>
+
+<section>
+  <h2>Lo que decides</h2>
+  <h3><span class="code">IN1</span> ¿En qué iPhone hacemos el día de prueba?</h3>
+  <div class="cards">
+    <article class="card rec">
+      <header><span class="code">IN1-A</span><b>En tu 17 Pro, ya</b></header>
+      <div class="scene" aria-hidden="true">
+        <div class="phone">17 Pro<br>hoy</div>
+        <span class="arrow">→</span>
+        <ul><li>qué corre</li><li>cuadros y calor</li><li>partidas</li></ul>
+      </div>
+      <p class="gain"><b>Ganas:</b> arrancamos esta semana. Los motores son los mismos que en el Duo y tu 17 Pro tiene el chip que piden (nxnative necesita A17 Pro o más nuevo).</p>
+      <p class="lose"><b>Pierdes:</b> el acomodo del Duo (medio abierto, pantalla de afuera) se prueba después, cuando lo tengas. Ese acomodo ya está diseñado.</p>
+    </article>
+    <article class="card">
+      <header><span class="code">IN1-B</span><b>Esperar al Duo</b></header>
+      <div class="scene" aria-hidden="true">
+        <div class="duo later"><div class="phone">Duo</div><div class="phone">…</div></div>
+        <span class="arrow">→</span>
+        <ul><li>todo de una vez</li><li>en el aparato final</li></ul>
+      </div>
+      <p class="gain"><b>Ganas:</b> los números salen del aparato donde vas a jugar.</p>
+      <p class="lose"><b>Pierdes:</b> semanas sin avanzar. Lo que encontremos en la prueba (un juego que no corre, una partida que no cruza) lo sabríamos tarde.</p>
+    </article>
+  </div>
+  <p class="pick">Recomiendo IN1-A: lo que se aprende en el 17 Pro vale igual en el Duo, y lo único propio del Duo ya está dibujado.</p>
+</section>
+
+<section>
+  <h2>Lo que necesito de ti</h2>
+  <p>No son decisiones de diseño: son permisos para tocar tus cosas. Con un «sí» a cada código, empiezo.</p>
+  <div class="asks">
+    <div class="ask"><span class="code">OK1</span><p><b>Copiar tus juegos de la Lenovo a la Mac</b> para la prueba: Luigi's Mansion 3 con las llaves de tu Switch, Pokémon Esmeralda y Mario Kart DS (con el BIOS de tu DS), God of War III y un juego de GameCube. Solo esos; no veo nada más de la Lenovo.</p></div>
+    <div class="ask"><span class="code">OK2</span><p><b>Bajar el código de los motores</b> a la Mac para compilarlos: nxnative, iCube, DukeX, Olympus y el de portátiles (todos abiertos, en GitHub). Se compilan desde su código; no instalo programas armados por otros.</p></div>
+    <div class="ask"><span class="code">OK3</span><p><b>Tu iPhone conectado a la Mac</b> un rato para instalar las pruebas. Para el modo rápido (God of War III y GameCube), instalas tú StikDebug y LocalDevVPN en tu iPhone; te paso los pasos cuando lleguemos ahí.</p></div>
+  </div>
+  <p class="foot">Por ejemplo: «IN1-A, OK1, OK2, OK3».</p>
+</section>
+</div>
