@@ -220,9 +220,11 @@ struct DownloadsView: View {
             if !model.readyMovies.isEmpty {
                 Section {
                     DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: level, symbol: symbol("film")).listHeadRow()
-                    // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
-                    ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
-                        readyRow(title: titleName(g.title, id: g.metaID, kind: g.kind), poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
+                    // Un renglón por cada copia, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar). Con «Bajar
+                    // también esta», cada versión tiene el suyo: antes la segunda no se podía ver ni borrar y su tamaño sumaba en el de
+                    // la primera (revisión del 27 nov 2026).
+                    ForEach(model.readyMovies.flatMap { g in g.items.map { (g, $0) } }, id: \.1.id) { g, item in
+                        readyRow(title: titleName(g.title, id: g.metaID, kind: g.kind), poster: g.poster, data: [fromMedia(item), item.quality, bytes(item.writtenBytes)].compactMap { $0 }, item: item, model: model)
                     }
                 }
                 .downloadCard()
