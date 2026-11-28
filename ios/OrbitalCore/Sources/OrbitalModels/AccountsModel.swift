@@ -183,6 +183,9 @@ public final class DebridModel: ObservableModel {
     public private(set) var redeem: Redeem = .idle { didSet { changed() } }
 
     /// D4: canjea tus puntos por días de Premium (la pantalla pregunta antes: no se puede deshacer).
+    /// Al volver a abrir tu nube, el aviso del canje anterior ya no se enseña (se quedaba toda la sesión).
+    public func forgetRedeem() { if redeem != .working { redeem = .idle } }
+
     public func redeemPoints() async {
         redeem = .working
         do {

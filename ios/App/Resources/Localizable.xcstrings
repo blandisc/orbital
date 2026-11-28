@@ -5688,6 +5688,17 @@
         }
       }
     },
+    "Cambiar el Id. de aplicación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the application ID"
+          }
+        }
+      }
+    },
     "Cambiar filtros": {
       "extractionState": "manual",
       "localizations": {
@@ -36228,6 +36239,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "After two failures in a row it's no longer waited for; it's retried on its own, up to every hour."
+          }
+        }
+      }
+    },
+    "Trayendo tu historial…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bringing in your history…"
           }
         }
       }

@@ -20,11 +20,12 @@ struct OneDriveSettings: View {
                     Text("Usa la misma de la TV. Si aún no la tienes: en entra.microsoft.com › Registros de aplicaciones › Nuevo registro, ponle «Orbital», elige «Cuentas personales de Microsoft» y créala. En «Autenticación» activa «Permitir flujos de clientes públicos». Copia su «Id. de aplicación (cliente)».")
                         .recipe(.footnote)
                     TextField("Id. de aplicación (cliente)", text: $draftID).textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .onAppear { draftID = model.clientID }
+                        .onAppear { if draftID.isEmpty { draftID = model.clientID } }
                     if !draftID.trimmingCharacters(in: .whitespaces).isEmpty { Button("Guardar") { model.setClientID(draftID) } }
                 case .unlinked:
                     Button("Conectar OneDrive") { Task { await model.link() } }
                     Text("Aparece un código para escribir en microsoft.com/link. Solo pide leer tus archivos.").recipe(.caption, color: DS.textFaint)
+                    changeClientID(model)
                 case .linking(let code, let url):
                     DeviceCodeCard(service: "Microsoft", code: code, url: URL(string: url))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -40,6 +41,7 @@ struct OneDriveSettings: View {
                 case .failed(let message):
                     DSNotice(verbatim: env.message(message), tone: .error)
                     Button("Reintentar") { Task { await model.link() } }
+                    changeClientID(model)   // un Id. mal pegado fallaba siempre, sin forma de corregirlo
                 }
             } header: { Text("Cuenta") }
             .listRowBackground(DS.surface)
@@ -148,5 +150,13 @@ struct OneDriveFolderPicker: View {
     private func load() async {
         error = nil; folders = nil
         do { folders = try await model.folders(path) } catch { self.error = "\(error)" }
+    }
+}
+
+extension OneDriveSettings {
+    /// Volver a escribir el Id. de aplicación (con el de ahora ya puesto, para corregirlo).
+    func changeClientID(_ model: OneDriveModel) -> some View {
+        Button("Cambiar el Id. de aplicación") { draftID = model.clientID; model.setClientID("") }
+            .accessibilityIdentifier("onedrive-change-client")
     }
 }

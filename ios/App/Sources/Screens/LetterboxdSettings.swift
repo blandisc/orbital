@@ -45,7 +45,9 @@ struct LetterboxdSettings: View {
                                 value: model.importedAt.map { Text(verbatim: Strings.date($0, .dayMonthShort, language: env.services.appSettings.uiLanguage)) })
                 }
                 .buttonStyle(.plain)
+                .disabled(model.loading)   // cruzar cada película con IMDb tarda: un segundo toque la traía dos veces
                 .accessibilityIdentifier("letterboxd-import")
+                if model.loading, model.connected { DSInlineProgress(text: Text("Trayendo tu historial…")) }
                 if let url = URL(string: "\(Letterboxd.site)/settings/data/") { Link(destination: url) { Label("Bajar tu archivo de Letterboxd", systemImage: "arrow.up.right") } }
             } header: { Text("Tu archivo, una vez") } footer: {
                 Text("En Letterboxd › Ajustes › Datos › Exportar. Trae tu diario completo, tus calificaciones, tus reseñas y tus listas (también las privadas).")

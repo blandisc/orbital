@@ -71,6 +71,7 @@ struct DebridAccountView: View {
         .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
         .dsFeedback(.success, trigger: model.redeem) { _, new in new == .done }
         .task { await model.checkShared() }   // CX2-A: la copia de tus aparatos Apple, cada vez que se abre
+        .onAppear { model.forgetRedeem() }
         .task { guard !checked else { return }; checked = true; await model.recheck() }
         .onChange(of: model.service) { _, _ in Task { await model.recheck() } }   // cambiaste de nube: se le pregunta a la nueva
         .onDisappear { if model.hasToken { model.target = nil } }
