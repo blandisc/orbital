@@ -43,9 +43,11 @@ struct SavedMoveMenu: View {
         let wasListed = model.watchlist.contains { $0.imdb == s.imdb }
         switch to {
         case .inList:
-            if from == .dropped { _ = await follow.unhide(s.imdb, following: false) }
+            let wasDropped = from == .dropped
+            if wasDropped { _ = await follow.unhide(s.imdb, following: false) }
             await model.setInWatchlist(s, true)
-            done(to) { Task { await model.setInWatchlist(s, false) } }
+            // «Deshacer» la deja como estaba: fuera de Mi lista solo si no estaba, y de vuelta en «Las dejé» si venía de ahí.
+            done(to) { Task { if !wasListed { await model.setInWatchlist(s, false) }; if wasDropped { _ = await follow.hide(s.imdb) } } }
         case .watching:
             if let problem = await follow.unhide(s.imdb, following: false) { env.notify(problem, tone: .error); return }
             done(to) { Task { _ = await follow.hide(s.imdb) } }

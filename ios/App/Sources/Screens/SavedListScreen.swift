@@ -176,7 +176,7 @@ struct SavedListContent: View {
         let model = model, env = env, list = model.selected, name = model.selectedName
         Task {
             if await model.remove(s) {
-                env.notifyListEdit(s, list: list, name: name, added: false) { Task { if model.selected == list { await model.add(s) } } }
+                env.notifyListEdit(s, list: list, name: name, added: false) { Task { if model.selected == list { _ = await model.add(s) } else { await model.setMany([s], in: list, add: true) } } }   // aunque ya saliste
             } else {
                 env.notify(format: "No pude cambiar «%@»", env.listName(list, name: name), tone: .warn)
             }

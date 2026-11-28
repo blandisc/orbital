@@ -116,12 +116,16 @@ struct SavedSelectionBar: View {
 
     private func moveTo(_ target: String) async {
         let picked = chosen, model = model, from = listID
+        // Los que ya estaban en el destino se quedan ahí al «Deshacer» (antes se quitaban también).
+        let already = target == SavedModel.watchlist ? Set(model.watchlist.map(\.imdb))
+            : Set(((try? await env.services.forYou.items(listID: target)) ?? []).map(\.imdb))
+        let added = picked.filter { !already.contains($0.imdb) }
         await model.setMany(picked, in: target, add: true)
         if let from { await model.setMany(picked, in: from, add: false) }
         let name = env.listName(target, name: model.lists.first { $0.id == target }?.name ?? "")
         notify(String(format: Strings.tr(from == nil ? "Agregadas a «%@»" : "Movidas a «%@»", language: env.services.appSettings.uiLanguage), name),
                detail: count(picked.count, "%d título", "%d títulos")) {
-            await model.setMany(picked, in: target, add: false)
+            await model.setMany(added, in: target, add: false)
             if let from { await model.setMany(picked, in: from, add: true) }
         }
     }
@@ -137,9 +141,10 @@ struct SavedSelectionBar: View {
         let picked = chosen, model = model, follow = env.follow
         let dropped = picked.map(\.imdb).filter { follow.hidden.contains($0) }
         if !dropped.isEmpty { _ = await follow.unhide(dropped) }
+        let added = picked.filter { s in !model.watchlist.contains { $0.imdb == s.imdb } }   // los que ya estaban se quedan
         await model.setMany(picked, in: SavedModel.watchlist, add: true)
         notify(count(picked.count, "%d guardada en Mi lista", "%d guardadas en Mi lista")) {
-            await model.setMany(picked, in: SavedModel.watchlist, add: false)
+            await model.setMany(added, in: SavedModel.watchlist, add: false)
             if !dropped.isEmpty { _ = await follow.hide(dropped) }
         }
     }

@@ -37,7 +37,7 @@ extension TitleView {
                 }
             case .done?:
                 Menu {
-                    Button("Ver sin internet", systemImage: "play.fill") { start(model, videoID: target) }
+                    Button("Ver sin internet", systemImage: "play.fill") { if let target { Task { await env.playDownloaded(metaID: model.metaID, videoID: target) } } }   // el archivo bajado, no la red
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                     if series { Section { seriesDownloads(model, episode: false) } }
@@ -60,7 +60,7 @@ extension TitleView {
             }
         }
         .menuStyle(.button).buttonStyle(.plain)
-        .disabled(target == nil || (model.debridOffer != nil && model.recommendedSource?.instant != true))   // IOS-17, R2-A: con «Pedirlo y avisarme», apagado
+        .disabled(target == nil || (model.downloadState(target) == nil && model.debridOffer != nil && model.recommendedSource?.instant != true))   // IOS-17, R2-A: con «Pedirlo y avisarme», apagado; lo ya bajado se maneja igual
         .accessibilityIdentifier("title-download")
     }
 

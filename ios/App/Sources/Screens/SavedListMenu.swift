@@ -121,9 +121,9 @@ struct SavedListManagement: ViewModifier {
     private func duplicate() {
         let id = listID, name = String(format: Strings.tr("Copia de %@", language: env.services.appSettings.uiLanguage), listName)
         run("No pude duplicar la lista") {
-            let made = try await model.duplicateList(id, name: name)
+            // La copia queda en «Listas»; esta sigue a la vista (antes se elegía la copia y esta se quedaba cargando).
+            _ = try await model.duplicateList(id, name: name)
             env.notify(format: "Hice «%@»", name, tone: .success)
-            await model.choose(made)
         }
     }
 

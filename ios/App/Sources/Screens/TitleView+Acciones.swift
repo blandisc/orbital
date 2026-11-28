@@ -190,7 +190,7 @@ extension TitleView {
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, note: note,
                               version: playVersion(model, languageName: languageName, pending: pending),
-                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
+                              play: go, restart: label.isResume ? { [.none, .offline].contains(model.sourceCheck) ? play(model) : start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
                               why: model.poorFit.map(poorFitReason), tint: artAccent)
     }
 
