@@ -407,8 +407,8 @@ struct TitleView: View {
         guard contentWidth > 0, belowHero > 0 else { return fallback }
         let padding = scheme == .dark ? 0 : DS.Space.s4
         // `viewport` es el alto entre la barra de arriba y la de pestañas (el arte solo se extiende detrás de la de arriba): lo
-        // libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y la 2.ª fila quedaba bajo las pestañas.
-        let room = viewport.height - belowHero - padding - DS.Space.s2 - env.ui.ratingReminderHeight   // y «¿Qué tal…?» flotando
+        // libre es eso menos lo de abajo del arte y, solo en el Duo, «¿Qué tal…?» (en el 17 Pro el arte no cambia al salir).
+        let room = viewport.height - belowHero - padding - DS.Space.s2 - (WindowMetrics.shortPhone ? env.ui.ratingReminderHeight : 0)
         let width = contentWidth - (scheme == .dark ? 0 : side * 2)
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge
             : WindowMetrics.shortPhone ? DS.TitleAction.heroAspectMaxShortPhone : DS.TitleAction.heroAspectMax

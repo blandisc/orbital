@@ -31,7 +31,7 @@ extension DesignRulesTests {
     func testTitleActionsClearTheTabBarOnTheDuo() throws {
         let title = try text("TitleView.swift", in: try sources(["Screens"]))
         XCTAssertTrue(title.contains("WindowMetrics.shortPhone ? DS.TitleAction.heroAspectMaxShortPhone"), "en el Duo el arte puede ser más bajito")
-        XCTAssertTrue(title.contains("- env.ui.ratingReminderHeight"), "y le deja su lugar a «¿Qué tal…?»")
+        XCTAssertTrue(title.contains("(WindowMetrics.shortPhone ? env.ui.ratingReminderHeight : 0)"), "en el Duo le deja su lugar a «¿Qué tal…?»; en el 17 Pro el arte no cambia")
     }
 
     /// Una hoja no tapa la hora: en el Duo cerrado la cápsula de la hora baja junto a la cámara, así que el tope de toda hoja

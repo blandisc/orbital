@@ -69,7 +69,7 @@ struct SavedListManagement: ViewModifier {
             }
             .appSheet(isPresented: $reordering) {
                 ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: listName),
-                                 items: model.items) { order in
+                                 items: model.selected == listID ? model.items : []) { order in   // los de esta lista, no los de otra recién elegida
                     do { try await model.reorder(listID, imdbs: order); return true }
                     catch { env.notify("No pude guardar tu orden", detail: "Revisa tu conexión e inténtalo otra vez.", tone: .warn); return false }
                 }
@@ -92,7 +92,7 @@ struct SavedListManagement: ViewModifier {
                 } label: { Label("Quién la ve", systemImage: Self.privacySymbol(privacy)) }
                 .pickerStyle(.menu)
                 Button { reordering = true } label: { Label("Ordenar a mano", systemImage: "line.3.horizontal") }
-                    .disabled(model.items.count < 2)
+                    .disabled(model.selected != listID || model.items.count < 2)
                 Button { duplicate() } label: { Label("Duplicar", systemImage: "plus.square.on.square") }
                 if privacy == "private" {
                     Button { openToShare = true } label: { Label("Compartir enlace", systemImage: "square.and.arrow.up") }
