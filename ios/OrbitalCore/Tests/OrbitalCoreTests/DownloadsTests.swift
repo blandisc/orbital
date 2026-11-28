@@ -601,3 +601,24 @@ extension DownloadsTests {
         XCTAssertEqual(now?.state, .downloading)
     }
 }
+
+extension DownloadsTests {
+    /// Al relanzar, las que el sistema sigue bajando (más de las que la cola arranca) dicen «bajando» con su avance, no «En cola».
+    func testARelaunchedDownloadThatKeepsRunningIsAdopted() async throws {
+        let transport = FakeTransport(), secrets = InMemorySecrets()
+        let saved = ["tt1:1:1", "tt1:1:2", "tt1:1:3"].map { video -> DownloadItem in
+            var i = item(video, size: 1000); i.state = .downloading
+            secrets.set(SecretKey.download(i.id), "https://rd.example/\(video).mkv")
+            return i
+        }
+        let d = makeDownloads(transport, secrets: secrets, saved: saved)
+        await settle("arrancan las que caben") { transport.starts.count == Downloads.maxActive }
+        let extra = try XCTUnwrap(saved.first { s in !transport.starts.contains { $0.id == s.id } })
+        let before = await d.item(extra.id)
+        XCTAssertEqual(before?.state, .queued)
+        transport.emit(.progress(id: extra.id, written: 400, total: 1000))
+        await settle("se adopta") { await d.item(extra.id)?.state == .downloading }
+        let now = await d.item(extra.id)
+        XCTAssertEqual(now?.writtenBytes, 400)
+    }
+}

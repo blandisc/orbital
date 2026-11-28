@@ -24,6 +24,9 @@ public actor Downloads {
     private let onChange: @Sendable ([DownloadItem]) -> Void
     private var items: [String: DownloadItem] = [:]
     private var waiting = Set<String>()      // esperando su reintento (no se arrancan hasta que pase la espera)
+    /// Las que bajaban al cerrarse la app: quedan «en cola», pero su tarea del sistema puede seguir viva (en segundo plano se
+    /// arrancan todas). Si avisan avance, se adoptan como «bajando» en vez de quedarse «En cola» congeladas (revisión del 27 nov).
+    private var relaunched = Set<String>()
     /// Un solo `pump` a la vez (el actor deja entrar otro en cada `await`: dos podían arrancar la misma o pasarse del tope).
     private var pumping = false, pumpAgain = false
     /// La app se va a segundo plano: se crean de una vez todas las de la cola. Una tarea creada en segundo plano (la siguiente
@@ -60,7 +63,7 @@ public actor Downloads {
         self.subtitles = subtitles; self.clock = clock; self.backoff = backoff; self.onChange = onChange
         for var item in saved {
             // Tras cerrar la app lo que bajaba queda en cola: se retoma al arrancar.
-            if item.state == .downloading { item.state = .queued }
+            if item.state == .downloading { item.state = .queued; relaunched.insert(item.id) }
             items[item.id] = item
         }
     }
@@ -120,7 +123,7 @@ public actor Downloads {
 
     public func pause(_ id: String) async {
         guard let before = items[id], before.state == .downloading || before.state == .queued else { return }
-        waiting.remove(id)
+        waiting.remove(id); relaunched.remove(id)
         await transport.cancel(id: id)
         // Se vuelve a leer después de esperar: la borraron o terminó mientras se pausaba (no se pisa un «listo» con «en pausa»).
         guard var item = items[id], item.state == .downloading || item.state == .queued else { return }
@@ -199,6 +202,7 @@ public actor Downloads {
             // del sistema, no en el archivo: el avance no se regresa a cero al retomarla (al bloquear el iPhone parecía que
             // se reiniciaba); el primer avance real lo corrige si de verdad empezó de nuevo.
             item.writtenBytes = max(onDisk, item.writtenBytes)
+            relaunched.remove(item.id)
             item.state = .downloading
             items[item.id] = item
             active += 1
@@ -237,7 +241,9 @@ public actor Downloads {
             items[id] = item
             changed()
         case .progress(let id, let written, let total):
-            guard var item = items[id], item.state == .downloading else { return }
+            guard var item = items[id] else { return }
+            if item.state == .queued, relaunched.remove(id) != nil { item.state = .downloading }
+            guard item.state == .downloading else { return }
             item.writtenBytes = written
             item.waitingForNetwork = false
             // El tamaño del servidor manda (la fuente puede anunciar el de todo un paquete de temporada), salvo que sea
