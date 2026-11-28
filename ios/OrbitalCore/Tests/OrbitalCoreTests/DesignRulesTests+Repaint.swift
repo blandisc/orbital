@@ -31,4 +31,18 @@ extension DesignRulesTests {
         }
         XCTAssertEqual(offenders, [], "con el modelo suelto, `let _ = model.track()` al empezar `body` (o pásale su ModelObserver)")
     }
+
+    /// Y lo que hiciste no se pierde al repintarse: el modelo de una pantalla se arma dentro de `State(wrappedValue:)`, no en una
+    /// línea antes. SwiftUI vuelve a llamar al `init` en cada repintado del padre y lo armado afuera se tiraba («¿Qué vemos?» y la
+    /// guía, 28 nov 2026).
+    func testScreenModelsAreBuiltInsideTheirState() throws {
+        var offenders: [String] = []
+        for source in try sources(["Design", "Screens"]) {
+            for (i, line) in source.lines.enumerated() where line.contains("State(wrappedValue: ModelObserver(") {
+                let before = source.lines[max(0, i - 4)..<i]
+                if before.contains(where: { $0.contains("let model = ") || $0.contains("var model = ") }) { offenders.append("\(source.name):\(i + 1)") }
+            }
+        }
+        XCTAssertEqual(offenders, [], "arma el modelo dentro de State(wrappedValue: ModelObserver(Self.makeModel(…)))")
+    }
 }

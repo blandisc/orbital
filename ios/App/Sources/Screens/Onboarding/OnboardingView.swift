@@ -22,11 +22,17 @@ struct OnboardingView: View {
     let practice: Bool
 
     init(practice: Bool = false, done: @escaping () -> Void) {
+        // Se arma dentro de `State` (perezoso): SwiftUI vuelve a llamar a este init en cada repintado del padre, y un modelo
+        // armado afuera se tiraba cada vez (y con «practicar», unos servicios de mentira nuevos).
+        _guide = State(wrappedValue: ModelObserver(Self.makeModel(practice: practice)))
+        self.practice = practice; self.done = done
+    }
+
+    private static func makeModel(practice: Bool) -> OnboardingModel {
         let env = AppEnvironment.shared
         let model = OnboardingModel(practice ? AppComposition.practiceServices(env.transport) : env.services)
         model.practice = practice
-        _guide = State(wrappedValue: ModelObserver(model))
-        self.practice = practice; self.done = done
+        return model
     }
 
     var body: some View {

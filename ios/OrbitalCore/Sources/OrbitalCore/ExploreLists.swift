@@ -99,7 +99,7 @@ public struct ExploreTable: Sendable, Equatable, Codable {
     public func recipesToday(_ date: Date) -> [ExploreRecipe] {
         let all = recipes ?? [], n = max(0, daily ?? 2)
         guard !all.isEmpty, n > 0 else { return [] }
-        let day = Int(floor(date.timeIntervalSince1970 / 86400))
+        let day = Int(floor(date.timeIntervalSince1970 / 86400))   // día UTC a propósito: el mismo que la TV
         func wheel(_ pool: [ExploreRecipe], _ k: Int) -> [ExploreRecipe] {
             guard !pool.isEmpty, k > 0 else { return [] }
             if pool.count <= k { return pool }

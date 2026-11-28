@@ -52,7 +52,7 @@ public struct LetterboxdArchive: Sendable, Equatable {
             let year = row["Year"].flatMap { Int($0) }
             let watched = (row["Watched Date"]?.isEmpty == false ? row["Watched Date"] : nil).flatMap(LetterboxdEntry.day)
             // Una por película y día (el diario y sus reseñas se juntan); sin fecha, una por película.
-            let key = "\(title.lowercased())|\(year ?? 0)|\(watched.map { Int($0.timeIntervalSince1970 / 86400) } ?? -1)"
+            let key = "\(title.lowercased())|\(year ?? 0)|\(watched.map { Int($0.timeIntervalSince1970 / 86400) } ?? -1)"   // día UTC a propósito: el del diario
             var entry = byKey[key] ?? LetterboxdEntry(title: title, year: year)
             if byKey[key] == nil { entry.id = "archive|\(key)"; entry.watched = watched; order.append(key) }
             apply(&entry)

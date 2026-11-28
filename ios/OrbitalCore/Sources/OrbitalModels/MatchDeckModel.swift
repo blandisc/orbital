@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 import OrbitalCore
 
 /// «¿Qué vemos hoy?» · Encuentra tu match perfecto: un mazo de cartas con lo que te propone Para ti, sin lo que ya viste
@@ -127,7 +128,7 @@ public final class MatchDeckModel: ObservableModel {
     }
 
     private func rebuild() {
-        let day = Int(clock().timeIntervalSince1970 / 86400)
+        let day = ISODates.dayNumber(clock())   // el mismo orden todo tu día (con el día UTC se barajaba a las 18:00; 28 nov 2026)
         // Lo que ya guardaste en esta vuelta tampoco vuelve.
         // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
         let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
@@ -168,6 +169,8 @@ public final class MatchDeckModel: ObservableModel {
         remember(s.imdb, saved: true)
         ParaHoy.mark(s.imdb, kv: services.kv, now: services.now())
         await keep(s, add: true)
+        // «Deshacer» llegó mientras se guardaba: ya no entra a Mi lista (antes se quedaba ahí; revisión del 28 nov 2026).
+        guard saved.contains(where: { $0.imdb == s.imdb }) else { return }
         try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
     }
 
@@ -190,6 +193,7 @@ public final class MatchDeckModel: ObservableModel {
     /// Las de la derecha van a «Tu match perfecto» de Trakt (con Trakt conectado); si no, a Mi lista.
     public var savesToTrakt: Bool { services.trakt?.linked ?? false }
     static let matchListKey = "match.trakt-list"
+    private var findingMatchList: Task<String, Error>?
 
     /// Con Trakt, a tu lista «Tu match perfecto» (se crea la primera vez y se recuerda su id); sin Trakt o si falla, a tu
     /// destino de siempre (Mi lista).
@@ -203,7 +207,16 @@ public final class MatchDeckModel: ObservableModel {
     }
 
     /// El id de «Tu match perfecto»: el recordado si sigue en tus listas, una con ese nombre o una nueva.
+    /// Una sola a la vez: dos guardados seguidos la primera vez creaban dos «Tu match perfecto» en Trakt.
     func matchList(_ trakt: Trakt) async throws -> String {
+        if let finding = findingMatchList { return try await finding.value }
+        let task = Task { try await self.findMatchList(trakt) }
+        findingMatchList = task
+        defer { findingMatchList = nil }
+        return try await task.value
+    }
+
+    private func findMatchList(_ trakt: Trakt) async throws -> String {
         let remembered = services.kv.data(Self.matchListKey).map { String(decoding: $0, as: UTF8.self) }
         let lists = try await trakt.lists()
         if let remembered, lists.contains(where: { $0.id == remembered }) { return remembered }

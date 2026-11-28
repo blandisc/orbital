@@ -59,11 +59,17 @@ struct DecideView: View {
 
     init(pool: [Suggestion], sources: [DecideModel.Source] = [], reload: (() async -> (pool: [Suggestion], sources: [DecideModel.Source]))? = nil,
          lead: String? = nil, open: @escaping (TitleRoute) -> Void) {
-        let model = DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)
-        model.lead = lead
-        _observer = State(wrappedValue: ModelObserver(model))
+        // El modelo se arma una sola vez, al usarse (adentro del cierre): antes cada repintado de quien abre la hoja creaba uno
+        // nuevo que se tiraba, leyendo 1500 fichas y pidiendo lo visto a Trakt cada vez (revisión del 28 nov 2026).
+        _observer = State(wrappedValue: ModelObserver(Self.makeModel(pool: pool, sources: sources, lead: lead)))
         self.reload = reload
         self.open = open
+    }
+
+    private static func makeModel(pool: [Suggestion], sources: [DecideModel.Source], lead: String?) -> DecideModel {
+        let model = DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)
+        model.lead = lead
+        return model
     }
 
     private var words: DecideWords { DecideWords(language: env.services.appSettings.uiLanguage) }

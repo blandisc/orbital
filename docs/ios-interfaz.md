@@ -709,7 +709,9 @@ lo cuida `DesignRulesTests+Glow`.
 
 Una vista que recibe un modelo suelto (`let model: SavedModel`) lo sigue con `let _ = model.track()` al empezar `body`, o
 recibe su `ModelObserver`; si no, no se vuelve a pintar cuando el modelo cambia (el «···» de tus listas nunca salía). Los
-modelos que se siguen por propiedad (Inicio, la ficha) no lo necesitan. Lo cuida `DesignRulesTests+Repaint`.
+modelos que se siguen por propiedad (Inicio, la ficha) no lo necesitan. Y lo que hiciste no se pierde al repintarse: el modelo
+de una pantalla se arma dentro de su `State(wrappedValue:)`, no antes (28 nov 2026: «¿Qué vemos?» y la guía lo tiraban en cada
+repintado). Lo cuida `DesignRulesTests+Repaint`.
 
 ### Ninguna tarea sobrevive a su vista (13 nov 2026)
 

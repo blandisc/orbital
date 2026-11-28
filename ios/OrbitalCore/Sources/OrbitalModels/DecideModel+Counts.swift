@@ -145,9 +145,16 @@ extension DecideModel {
         }
         // DL1 (25 nov 2026, «cuando te aparece un póster en la pantalla principal, tiene que aparecer cuando abras el feature»):
         // al abrir, el del frente de la tarjeta va primero y elegido.
-        if let lead, let s = pool.first(where: { $0.imdb == lead }) {
+        // Solo si aún cabe: «Hoy no», «No me interesa», ya vista o de otro tipo ya no regresa primero al reabrir (la tarjeta
+        // de Explorar seguía con ese póster al frente; revisión del 28 nov 2026). Y cuenta como enseñada.
+        if let lead {
             self.lead = nil
-            found = [s] + found.filter { $0.imdb != lead }.prefix(max(0, found.count - 1))
+            let seen = includeWatched ? [] : (watched ?? [])
+            if let s = pool.first(where: { $0.imdb == lead }), !notToday().contains(lead), !pendingDismissals.contains(lead),
+               !seen.contains(lead), kind == nil || s.kind == kind {
+                shown.insert(lead)
+                found = [s] + found.filter { $0.imdb != lead }.prefix(max(0, found.count - 1))
+            }
         }
         coalescing {   // los tres nuevos y la elegida en un solo aviso
             // Sin ninguna aún y con datos en camino (Letterboxd, la fama): «Buscando…», no «Nada con…»; al llegar se busca otra vez.

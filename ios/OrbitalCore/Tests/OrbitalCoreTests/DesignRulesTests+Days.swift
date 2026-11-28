@@ -11,8 +11,11 @@ extension DesignRulesTests {
             let files = try XCTUnwrap(FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)).allObjects
             for case let file as URL in files where file.pathExtension == "swift" {
                 let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n")
-                for (i, line) in lines.enumerated() where line.contains(".iso8601.year().month().day()") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("///") {
-                    problems.append("\(file.lastPathComponent):\(i + 1)")
+                for (i, line) in lines.enumerated() where !line.trimmingCharacters(in: .whitespaces).hasPrefix("///") {
+                    // También el «día» como segundos UTC entre 86400: cambia a las 18:00 en México (el mazo se barajaba en la
+                    // tarde). Se usa ISODates.dayNumber, salvo donde el día UTC es a propósito y lo dice.
+                    let utcDay = line.contains("timeIntervalSince1970 / 86400") && !line.contains("día UTC a propósito")
+                    if line.contains(".iso8601.year().month().day()") || utcDay { problems.append("\(file.lastPathComponent):\(i + 1)") }
                 }
             }
         }

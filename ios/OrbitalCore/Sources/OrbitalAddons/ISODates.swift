@@ -27,6 +27,12 @@ public enum ISODates {
         return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12))
     }
 
+    /// El número de día en tu calendario (cambia a tu medianoche, no a las 18:00 de México como el día UTC).
+    public static func dayNumber(_ date: Date, calendar: Calendar = .current) -> Int {
+        let offset = Double(calendar.timeZone.secondsFromGMT(for: date))
+        return Int(floor((date.timeIntervalSince1970 + offset) / 86400))
+    }
+
     /// Con milésimas o sin ellas.
     public static func parse(_ text: String) -> Date? { precise.date(from: text) ?? plain.date(from: text) }
     /// «2026-10-23T02:00:00Z».

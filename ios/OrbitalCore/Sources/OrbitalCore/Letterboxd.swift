@@ -269,7 +269,7 @@ public struct LetterboxdEntry: Sendable, Codable, Equatable, Identifiable {
     public var traktRating: Int? { rating.map { max(1, min(10, Int(($0 * 2).rounded()))) } }
 
     /// La misma película vista el mismo día (para no repetir lo del diario y lo del archivo).
-    public var sameWatchKey: String { "\(imdb ?? "\(title.lowercased())|\(year ?? 0)")|\(watched.map { Int($0.timeIntervalSince1970 / 86400) } ?? -1)" }
+    public var sameWatchKey: String { "\(imdb ?? "\(title.lowercased())|\(year ?? 0)")|\(watched.map { Int($0.timeIntervalSince1970 / 86400) } ?? -1)" }   // día UTC a propósito: el del diario
 
     /// El día del diario a mediodía UTC: a medianoche UTC, en México salía «Vista el 31 oct» lo del 1 nov (y en Trakt, el
     /// día anterior). A mediodía es el mismo día de UTC−12 a UTC+11 (revisión del 28 nov 2026).

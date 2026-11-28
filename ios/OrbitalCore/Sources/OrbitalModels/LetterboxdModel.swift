@@ -130,7 +130,7 @@ public final class LetterboxdModel: ObservableModel {
         return utcDay(da) == utcDay(db)
     }
     /// El día del diario (en UTC, como lo escribe Letterboxd).
-    static func utcDay(_ d: Date) -> Int { Int((d.timeIntervalSince1970 / 86400).rounded(.down)) }
+    static func utcDay(_ d: Date) -> Int { Int((d.timeIntervalSince1970 / 86400).rounded(.down)) }   // día UTC a propósito: el del diario
 
     /// El IMDb de lo que aún no lo tiene: por su código de TMDB (el diario), su página en Letterboxd o su título y año.
     private func matchIMDb() async {

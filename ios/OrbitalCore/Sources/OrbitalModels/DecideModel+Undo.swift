@@ -29,8 +29,14 @@ extension DecideModel {
         if let replacement = removal.replacement, let at = current.firstIndex(where: { $0.imdb == replacement }) {
             current[at] = s
             shown.remove(replacement)   // la que había entrado puede volver a salir después
+        } else if removal.replacement == nil, kind == nil || s.kind == kind {
+            current.insert(s, at: min(removal.index, current.count))   // no entró otra: regresa a su hueco
         } else {
-            current.insert(s, at: min(removal.index, current.count))
+            // Ya barajaste o cambiaste de tipo: vuelve a sugerirse, pero no entra como cuarto póster ni una película entre
+            // las series (revisión del 28 nov 2026).
+            exhausted = false
+            dropUpcoming(); fillUpcoming()
+            return
         }
         picks = current
         exhausted = false
