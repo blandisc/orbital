@@ -15,8 +15,9 @@ public final class FollowModel: ObservableModel {
     public private(set) var hidden: Set<String> { didSet { if oldValue != hidden { changed() } } }
     /// Las escondidas según Trakt, con su nombre (para «Escondidas»).
     private var hiddenFromTrakt: [TraktHiddenShow] = [] { didSet { if oldValue != hiddenFromTrakt { changed() } } }
-    /// La última que escondiste y si la seguías: lo que regresa «Deshacer».
-    public private(set) var lastHidden: (imdb: String, wasFollowing: Bool)?
+    /// Las que escondiste y aún pueden deshacerse, con si las seguías: cada «Deshacer» regresa la suya (dejar dos seguidas y
+    /// deshacer la primera ya no regresa la segunda).
+    public private(set) var undoable: [String: Bool] = [:]
     private let services: Services
 
     public init(_ services: Services) {
@@ -95,7 +96,7 @@ public final class FollowModel: ObservableModel {
     public func hide(_ imdb: String) async -> String? {
         let wasFollowing = isFollowing(imdb)
         let before = (hidden, unfollowed)
-        lastHidden = (imdb, wasFollowing)
+        undoable[imdb] = wasFollowing
         await apply(hidden: hidden.union([imdb]), unfollowed: unfollowed.union([imdb]))
         guard let trakt = services.trakt, trakt.linked else { return nil }
         do {
@@ -106,7 +107,7 @@ public final class FollowModel: ObservableModel {
             return nil
         } catch {
             await apply(hidden: before.0, unfollowed: before.1)
-            lastHidden = nil
+            undoable[imdb] = nil
             return "Trakt no contestó. Intenta de nuevo en un momento."
         }
     }
@@ -118,7 +119,6 @@ public final class FollowModel: ObservableModel {
         guard !ids.isEmpty else { return nil }
         if ids.count == 1 { return await hide(ids[0]) }
         let before = (hidden, unfollowed)
-        lastHidden = nil
         await apply(hidden: hidden.union(ids), unfollowed: unfollowed.union(ids))
         guard let trakt = services.trakt, trakt.linked else { return nil }
         do {
@@ -177,11 +177,10 @@ public final class FollowModel: ObservableModel {
         }
     }
 
-    /// «Deshacer» del aviso «Escondida»: como estaba.
-    public func undoHide() async -> String? {
-        guard let last = lastHidden else { return nil }
-        lastHidden = nil
-        return await unhide(last.imdb, following: last.wasFollowing)
+    /// «Deshacer» del aviso «Escondida» o «La dejaste» de esa serie: como estaba. Dos veces no hace nada.
+    public func undoHide(_ imdb: String) async -> String? {
+        guard let wasFollowing = undoable.removeValue(forKey: imdb) else { return nil }
+        return await unhide(imdb, following: wasFollowing)
     }
 
     /// Guarda las dos listas y avisa a lo que las lee: tus estrenos (y los avisos), «Sigue viendo» en Inicio y los widgets.

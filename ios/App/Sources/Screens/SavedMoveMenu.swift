@@ -61,7 +61,7 @@ struct SavedMoveMenu: View {
                 if let problem = await follow.hide(s.imdb) { env.notify(problem, tone: .error); return }
                 await ReleaseNotifier.forget(s.imdb)
                 if wasListed { await model.setInWatchlist(s, false) }
-                done(to) { Task { _ = await follow.undoHide(); if wasListed { await model.setInWatchlist(s, true) } } }
+                done(to) { Task { _ = await follow.undoHide(s.imdb); if wasListed { await model.setInWatchlist(s, true) } } }
             } else {
                 await model.dropMovie(s)
                 done(to) { Task { await model.undoDropMovie(s, wasListed: wasListed) } }

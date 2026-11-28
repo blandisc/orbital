@@ -71,7 +71,7 @@ struct FollowedSeriesView: View {
             if let problem = await follow.hide(imdb) { env.notify(problem, tone: .error); return }
             await ReleaseNotifier.forget(imdb)
             env.notify("Escondida", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-                Task { if let problem = await follow.undoHide() { env.notify(problem, tone: .error) } }
+                Task { if let problem = await follow.undoHide(imdb) { env.notify(problem, tone: .error) } }
             }
         }
     }

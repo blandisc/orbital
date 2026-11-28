@@ -115,7 +115,7 @@ extension TitleView {
             if wasInList { await model.toggleLibrary() }
             env.notify("La dejaste", detail: model.title, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
                 Task {
-                    if let problem = await follow.undoHide() { env.notify(problem, tone: .error) }
+                    if let problem = await follow.undoHide(model.metaID) { env.notify(problem, tone: .error) }
                     if wasInList, !model.inLibrary { await model.toggleLibrary() }
                 }
             }

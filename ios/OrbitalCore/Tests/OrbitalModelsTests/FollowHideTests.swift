@@ -63,16 +63,30 @@ final class FollowHideTests: XCTestCase {
         await model.loadSeries()
         _ = await model.setFollowing("tt0000001", false)   // ya estaba apagada
         _ = await model.hide("tt0000001")
-        let problem = await model.undoHide()
+        let problem = await model.undoHide("tt0000001")
         XCTAssertNil(problem)
         XCTAssertTrue(model.hidden.isEmpty)
         XCTAssertEqual(model.visibleSeries.map(\.imdb), ["tt0000001", "tt0000002"], "regresa a la lista")
         XCTAssertFalse(model.isFollowing("tt0000001"), "apagada, como estaba")
         XCTAssertEqual(sentIDs(rig, "/users/hidden/progress_watched/remove"), ["tt0000001"], "vuelve a tu progreso en Trakt")
         XCTAssertTrue(sentIDs(rig, "/users/hidden/calendar/remove").isEmpty, "pero sigue fuera de tu calendario: no te avisa")
-        XCTAssertNil(model.lastHidden)
-        let again = await model.undoHide()
+        XCTAssertTrue(model.undoable.isEmpty)
+        let again = await model.undoHide("tt0000001")
         XCTAssertNil(again, "deshacer dos veces no hace nada")
+    }
+
+    /// Revisión del 28 nov: dejar dos series seguidas y deshacer la primera regresa la primera (antes, la última escondida).
+    func testDeshacerRegresaLaSuyaAunqueDejarasOtraDespues() async throws {
+        let rig = try linkedRig()
+        let model = FollowModel(rig.services)
+        await model.loadSeries()
+        _ = await model.hide("tt0000001")
+        _ = await model.hide("tt0000002")
+        _ = await model.undoHide("tt0000001")
+        XCTAssertEqual(model.hidden, ["tt0000002"], "la segunda sigue dejada")
+        XCTAssertTrue(model.isFollowing("tt0000001"), "la primera regresa como estaba")
+        _ = await model.undoHide("tt0000002")
+        XCTAssertTrue(model.hidden.isEmpty)
     }
 
     func testMostrarOtraVezLaRegresaYLaVuelveASeguir() async throws {
