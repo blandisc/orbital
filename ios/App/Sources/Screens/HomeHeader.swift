@@ -37,8 +37,11 @@ struct HomeHeader: View {
                 DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
                     .padding(.trailing, DS.Space.s4)
             } else {
-                DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
-                    .padding(.leading, DS.Space.s2)
+                // En el iPhone el filtro va en la portada (`HomeView.kindOnHero`); aquí, solo en el iPad en ventana angosta.
+                if !HomeView.kindOnHero {
+                    DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
+                        .padding(.leading, DS.Space.s2)
+                }
                 Spacer(minLength: DS.Space.s2)
             }
             // SX1: mientras eliges, la cápsula cede su lugar ANTES de que la pastilla lo necesite (`fold`, más rápido que el

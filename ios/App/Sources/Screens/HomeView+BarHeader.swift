@@ -36,11 +36,14 @@ extension HomeView {
         .sharedBackgroundVisibility(.hidden)
     }
 
-    /// HB1-B (Fernando, 27 nov 2026: «vamos con el filtro en la portada»): en el Duo el filtro de Inicio no cabe en el renglón
-    /// de la hora; va recogido (solo lo que ves) en la esquina de arriba de la portada, a la misma distancia de la orilla que el
-    /// texto de la portada. Se abre hacia la izquierda con los tres. Es la misma pastilla del 17 Pro.
+    /// HB1-B (Fernando, 27 nov 2026: «vamos con el filtro en la portada»): el filtro de Inicio va recogido (solo lo que ves) en
+    /// la esquina de arriba de la portada, a la misma distancia de la orilla que el texto de la portada. Se abre hacia la
+    /// izquierda con los tres. Primero en el Duo (no cabía en el renglón de la hora); desde la misma noche en todo iPhone
+    /// (Fernando: «que sea lo más posible la misma aplicación… para reducir mantenimiento»). En el iPad y la Mac sigue arriba.
+    static var kindOnHero: Bool { headerInBar || ThisDevice.isPhone }
+
     @ViewBuilder var heroKind: some View {
-        if Self.headerInBar {
+        if Self.kindOnHero {
             DSKindFilter(kind: kindBinding, menu: true, open: $heroKindOpen).accessibilityIdentifier("home-kind-filter")
                 // A la misma distancia de la orilla que el texto de la portada: en claro es tarjeta (su orilla + su margen); en
                 // oscuro el arte llega a la orilla (solo el margen).

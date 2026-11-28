@@ -65,16 +65,15 @@ final class DuoHomeBarUITests: XCTestCase {
         XCTAssertTrue(explore.exists && explore.isHittable, "al subir, vuelve completa")
     }
 
-    /// HB1-B: en el Duo el filtro de Inicio va en la esquina de la portada; se abre con los tres y filtra. En los demás iPhone
-    /// sigue en el encabezado, debajo de la hora.
+    /// HB1-B: el filtro de Inicio va en la esquina de la portada en todo iPhone (primero el Duo; desde el 27 nov también los
+    /// demás, «lo más posible la misma aplicación»); se abre con los tres y filtra.
     func testTheKindFilterSitsOnTheHeroOnTheDuo() {
         let pill = app.buttons["kind-all"].firstMatch
         XCTAssertTrue(pill.waitForExistence(timeout: 30), "el filtro de Inicio")
         let top = app.windows.firstMatch.frame.minY
-        if duo {
-            XCTAssertGreaterThan(pill.frame.minY - top, 60, "en el Duo, sobre la portada (no en el renglón de la hora)")
-            XCTAssertGreaterThan(pill.frame.midX, app.windows.firstMatch.frame.midX, "en su esquina derecha")
-        }
+        XCTAssertGreaterThan(pill.frame.minY - top, 60, "sobre la portada (no en el renglón de arriba)")
+        XCTAssertGreaterThan(pill.frame.midX, app.windows.firstMatch.frame.midX, "en su esquina derecha")
+        XCTAssertFalse(app.navigationBars.buttons["kind-all"].exists, "y no se repite arriba")
         pill.tap()
         let movies = app.buttons["kind-movie"].firstMatch
         XCTAssertTrue(movies.waitForExistence(timeout: 5), "se abre con los tres")
