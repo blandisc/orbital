@@ -56,9 +56,12 @@ final class DuoHomeBarUITests: XCTestCase {
         sleep(2)
         try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "/tmp/orbital-duo-dock-shrunk.png"))
         XCTAssertFalse(explore.exists && explore.isHittable, "al bajar, la barra se encoge a un botón")
+        // El primer arrastre lleva impulso y baja más de lo que el dedo recorrió: se sube hasta arriba, como lo haría la mano.
         let back = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        back.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75)))
-        sleep(2)
+        for _ in 0..<3 where !(explore.exists && explore.isHittable) {
+            back.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75)))
+            sleep(2)
+        }
         XCTAssertTrue(explore.exists && explore.isHittable, "al subir, vuelve completa")
     }
 
