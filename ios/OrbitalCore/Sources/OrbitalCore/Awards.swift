@@ -12,8 +12,18 @@ public struct AwardCollection: Sendable, Identifiable, Equatable {
     public let winners: [Winner]
 
     /// Los ganadores como sugerencias (con el año del premio como motivo: «2025»).
+    /// Una serie que ganó varias veces sale una sola vez, con sus años («2026, 2025»): repetida, la cuadrícula confundía sus
+    /// celdas y la portada mostraba dos veces el mismo póster (revisión del 28 nov 2026).
     public var suggestions: [Suggestion] {
-        winners.map { Suggestion(art: $0.imdb, kind: kind, title: $0.title, year: $0.year, reason: .console(String($0.awardYear))) }
+        var years: [String: [Int]] = [:], order: [Winner] = []
+        for w in winners {
+            if years[w.imdb] == nil { order.append(w) }
+            years[w.imdb, default: []].append(w.awardYear)
+        }
+        return order.map { w in
+            Suggestion(art: w.imdb, kind: kind, title: w.title, year: w.year,
+                       reason: .console((years[w.imdb] ?? [w.awardYear]).map(String.init).joined(separator: ", ")))
+        }
     }
 }
 

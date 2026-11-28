@@ -16,6 +16,8 @@ public final class WatchingModel: ObservableModel {
     public nonisolated static let ttl: TimeInterval = 10 * 60
     /// Hasta dónde se mira atrás para «Siempre».
     public nonisolated static let years = 10
+    /// Cuántos días atrás se vuelven a pedir al forzar.
+    public nonisolated static let refreshDays = 90
     static let cacheKey = "watching-history"
     /// Lo guardado en el iPhone: desde cuándo cubre y las vistas (así no se vuelve a bajar todo en cada arranque).
     private struct Saved: Codable {
@@ -86,9 +88,17 @@ public final class WatchingModel: ObservableModel {
         if covered, !force, let fetchedAt, now.timeIntervalSince(fetchedAt) < Self.ttl { return }
         var ok = true
         if covered {
-            // Ya está guardado: solo lo nuevo desde la última vista.
-            let from = plays.map(\.at).max() ?? needed
-            if let new = try? await trakt.plays(since: from.addingTimeInterval(1), until: now, maxPages: 5) { merge(new) } else { ok = false }
+            // Ya está guardado: solo lo nuevo desde la última vista. Al forzar (jalar, o viste / quitaste / cambiaste la fecha
+            // de algo), los últimos 90 días se vuelven a pedir y reemplazan lo guardado: lo marcado con una fecha pasada
+            // nunca llegaba y lo deshecho se quedaba contado (revisión del 28 nov 2026).
+            let last = plays.map(\.at).max() ?? needed
+            let window = calendar.date(byAdding: .day, value: -Self.refreshDays, to: now) ?? now
+            let from = force ? max(needed, min(last.addingTimeInterval(1), window)) : last.addingTimeInterval(1)
+            if let new = try? await trakt.plays(since: from, until: now, maxPages: force ? 20 : 5) {
+                // Solo si llegó completa (sin topar las páginas): si no, lo que no llegó se borraría.
+                if force, new.count < 20 * Trakt.historyPage { plays.removeAll { $0.at >= from && $0.at <= now } }
+                merge(new)
+            } else { ok = false }
         } else if let found = try? await trakt.plays(since: needed, until: now, maxPages: full ? 40 : 4) {
             // Se junta con lo que ya hay (no se reemplaza): si la semana de la tarjeta llegaba después de los diez años,
             // los borraba y guardaba solo la semana.

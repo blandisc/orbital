@@ -108,7 +108,8 @@ struct WatchingView: View {
             let letterboxd = env.letterboxd
             await letterboxd.load()
             guard env.services.trakt?.linked == true else { notInTrakt = []; return }
-            notInTrakt = letterboxd.missingInTrakt(watched: await env.collections.watchedIDs())
+            guard let watched = await env.collections.knownWatchedIDs() else { notInTrakt = []; return }   // Trakt no contestó: no se ofrece
+            notInTrakt = letterboxd.missingInTrakt(watched: watched)
         }
         .navigationDestination(item: $rated) { r in WatchingRatedView(stars: r.stars, items: ratedItems(), onOpenTitle: onOpenTitle) }
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil }.environment(env).duoBars() }
@@ -298,7 +299,8 @@ struct WatchingView: View {
                     if let n = await env.letterboxd.passToTrakt(items) {
                         notInTrakt = []
                         env.collections.forgetWatched()
-                        env.notify(n == 1 ? "1 película pasó a Trakt" : "\(n) películas pasaron a Trakt", detail: "Con el día que las viste y tus estrellas", tone: .success)
+                        if n == 0 { env.notify("Ya estaban en Trakt", tone: .success) } else {
+                        env.notify(n == 1 ? "1 película pasó a Trakt" : "\(n) películas pasaron a Trakt", detail: "Con el día que las viste y tus estrellas", tone: .success) }
                     } else { env.notify("Trakt no las aceptó", detail: "Intenta de nuevo en un momento", tone: .error) }
                     passing = false
                 }

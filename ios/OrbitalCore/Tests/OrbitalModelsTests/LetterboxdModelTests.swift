@@ -33,6 +33,12 @@ final class LetterboxdModelTests: XCTestCase {
         // Lo que Trakt no tiene: al historial con su día y con sus estrellas (8 de 10).
         XCTAssertEqual(model.missingInTrakt(watched: ["tt31000001"]).count, 0)
         let missing = model.missingInTrakt(watched: [])
+        // Trakt sin contestar «lo que ya viste»: no se manda nada (antes mandaba todo el diario otra vez).
+        let offline = await model.passToTrakt(missing)
+        XCTAssertNil(offline)
+        XCTAssertTrue(rig.http.bodies("https://api.trakt.tv/sync/history").isEmpty)
+        rig.http.json["https://api.trakt.tv/sync/watched/movies"] = []
+        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=full"] = []
         rig.http.json["https://api.trakt.tv/sync/history"] = ["added": ["movies": 1]]
         rig.http.json["https://api.trakt.tv/sync/ratings"] = ["added": ["movies": 1]]
         let passed = await model.passToTrakt(missing)

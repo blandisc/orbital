@@ -118,6 +118,7 @@ struct SortableGrid<Cell: View>: View {
     @State private var rating = false
     /// «Ocultar lo que ya vi» solo con Trakt (lo visto sale de ahí).
     private let hideWatchedAvailable: Bool
+    private let collections: CollectionsModel
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
@@ -126,6 +127,7 @@ struct SortableGrid<Cell: View>: View {
         let shared = collections
         self.states = states; self.bar = bar; self.manualOrder = manualOrder
         self.hideWatchedAvailable = collections.traktLinked && states == nil
+        self.collections = collections
         self.listID = listID; self.items = items; self.cell = cell
         self.showsKindFilter = showsKindFilter; self.loading = loading
         self.watched = watched ?? { await shared.watchedIDs() }
@@ -160,7 +162,7 @@ struct SortableGrid<Cell: View>: View {
             if bar == nil { ToolbarItem(placement: .topBarTrailing) { menu } }
         }
         .onChange(of: sort) { _, new in ListSort.remember(new, listID: listID) }
-        .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
+        .task(id: "\(filter.hideWatched)|\(collections.watchedGeneration)") { if filter.hideWatched, let watched { seen = await watched() } }
         // También cuando llega la lista: si entraste con el orden de IMDb guardado, la lista todavía venía vacía.
         .task(id: needsIMDb ? items.count : -1) {
             guard needsIMDb, let imdbRatings, !items.isEmpty else { rating = false; return }
@@ -495,7 +497,7 @@ struct FilteredRanking<Content: View>: View {
                                hideWatchedAvailable: collections.traktLinked, loading: rating)
             }
         }
-        .task(id: filter.hideWatched) { if filter.hideWatched { seen = await collections.watchedIDs() } }
+        .task(id: "\(filter.hideWatched)|\(collections.watchedGeneration)") { if filter.hideWatched { seen = await collections.watchedIDs() } }
         .task(id: filter.minRating == nil ? -1 : items.count) {
             guard filter.minRating != nil, !items.isEmpty else { return }
             rating = true

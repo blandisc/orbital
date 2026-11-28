@@ -92,6 +92,8 @@ extension AppEnvironment {
             notify(format: "No pude marcar «%@» como vista", s.title, failure: error, tone: .warn)
             return false
         }
+        // Lo que lee lo visto (Lo que ves, «Ocultar lo que ya vi», Inicio) se pone al día, como al cerrar el reproductor.
+        watchedSomething += 1
         // Gestor ola 3: «Otra fecha» por si la viste antes y «Deshacer», que quita solo esta vista (las de antes se quedan).
         let language = services.appSettings.uiLanguage
         notify(String(format: Strings.tr("«%@» quedó como vista", language: language), s.title), tone: .success,
@@ -100,7 +102,7 @@ extension AppEnvironment {
                }, secondTitle: "Deshacer", secondSymbol: "arrow.uturn.backward", second: { [weak self] in
                    Task {
                        let ok = await watch.undoViewing(kind: s.kind, metaID: s.imdb, videoID: s.imdb, at: date, wasSeen: wasSeen)
-                       self?.collections.forgetWatched()
+                       self?.watchedSomething += 1
                        if !ok { self?.notify("No pude deshacerlo", detail: "Sin internet. Bórrala en «Tus vistas» de su ficha.", tone: .warn) }
                    }
                })
@@ -110,6 +112,7 @@ extension AppEnvironment {
     /// «Otra fecha» del aviso de «Vista»: la vista recién marcada pasa a ese día.
     func redate(_ r: RedateRequest, to date: Date) async {
         if await services.watch.redateViewing(kind: r.kind, videoID: r.videoID, at: r.at, to: date) {
+            watchedSomething += 1
             notify("Fecha cambiada", detail: Strings.date(date, .dayMonthYear, language: services.appSettings.uiLanguage), tone: .success)
         } else {
             notify("No pude cambiar la fecha", detail: "Sin internet. Cámbiala en «Tus vistas» de su ficha.", tone: .warn)

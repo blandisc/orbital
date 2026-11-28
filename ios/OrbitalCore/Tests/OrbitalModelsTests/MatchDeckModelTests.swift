@@ -131,6 +131,25 @@ final class WatchingModelTests: XCTestCase {
         XCTAssertTrue(again.loaded)
     }
 
+    /// Revisión del 28 nov 2026: al forzar (jalar, o marcaste / quitaste / cambiaste la fecha), lo de los últimos 90 días se
+    /// vuelve a pedir: lo marcado con una fecha pasada llega y lo deshecho sale.
+    func testAlForzarLlegaLoMarcadoConOtraFechaYSaleLoDeshecho() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        let clock = rig.clock
+        let iso = ISO8601DateFormatter()
+        func row(_ imdb: String, daysAgo: Double) -> JSON {
+            ["type": "movie", "watched_at": .string(iso.string(from: clock.now.addingTimeInterval(-daysAgo * 86400))),
+             "movie": ["title": .string(imdb), "runtime": 100, "genres": ["drama"], "ids": ["imdb": .string(imdb)]]]
+        }
+        rig.http.prefix["https://api.trakt.tv/sync/history"] = [row("tt1", daysAgo: 1)]
+        let model = WatchingModel(rig.services, clock: { clock.now })
+        await model.load()
+        XCTAssertEqual(model.plays.map(\.imdb), ["tt1"])
+        rig.http.prefix["https://api.trakt.tv/sync/history"] = [row("tt2", daysAgo: 20)]   // tt1 deshecha; tt2 con fecha de hace 20 días
+        await model.load(force: true)
+        XCTAssertEqual(model.plays.map(\.imdb), ["tt2"])
+    }
+
     func testSinRedYSinNadaGuardadoEsUnError() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         rig.http.offline = true

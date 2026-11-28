@@ -99,6 +99,9 @@ final class LetterboxdTests: XCTestCase {
         XCTAssertTrue(dune.rewatch)
         XCTAssertEqual(dune.review, "Enorme, otra vez.\nY mejor.")
         XCTAssertEqual(dune.watched, LetterboxdEntry.day("2026-10-01"))
+        // En México (UTC−6) el 1 nov sigue siendo el 1 nov.
+        var mx = Calendar(identifier: .gregorian); mx.timeZone = TimeZone(identifier: "America/Mexico_City")!
+        XCTAssertEqual(mx.component(.day, from: try XCTUnwrap(LetterboxdEntry.day("2026-11-01"))), 1)
         XCTAssertEqual(archive.entries.first?.title, "Dune: Part Two", "lo más reciente primero")
         let roma = try XCTUnwrap(archive.entries.first { $0.title == "Roma" })
         XCTAssertNil(roma.watched, "calificada sin entrada en el diario: sin fecha")

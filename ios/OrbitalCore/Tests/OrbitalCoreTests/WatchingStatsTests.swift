@@ -34,6 +34,14 @@ final class WatchingStatsTests: XCTestCase {
         XCTAssertTrue(WatchingStats.make([], period: .month, now: now, calendar: calendar).isEmpty)
     }
 
+    /// Revisión del 28 nov 2026: el lunes, sin ver nada aún, la racha de la semana pasada sigue viva (antes salía 0).
+    func testLaRachaNoSeBorraElLunes() {
+        let now = date("2026-11-02")   // lunes
+        let plays = [play("2026-10-30", "tt1"), play("2026-10-31", "tt2"), play("2026-11-01", "tt3")]
+        XCTAssertEqual(WatchingStats.make(plays, period: .week, now: now, calendar: calendar).currentStreak, 3)
+        XCTAssertEqual(WatchingStats.make(plays, period: .month, now: now, calendar: calendar).currentStreak, 3)
+    }
+
     func testSiempreEmpiezaEnLoMasViejo() {
         let now = date("2026-03-10")
         let s = WatchingStats.make([play("2024-05-01", "tt1"), play("2026-01-01", "tt2")], period: .all, now: now, calendar: calendar)

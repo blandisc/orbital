@@ -112,6 +112,8 @@ public final class LetterboxdModel: ObservableModel {
                 kept.rating = entry.rating ?? kept.rating; kept.review = entry.review ?? kept.review
                 kept.liked = kept.liked || entry.liked; kept.rewatch = kept.rewatch || entry.rewatch
                 kept.watched = kept.watched ?? entry.watched
+                // El mismo día con la hora nueva (mediodía UTC): lo guardado antes a medianoche se mostraba un día antes.
+                if let a = kept.watched, let b = entry.watched, Self.utcDay(a) == Self.utcDay(b) { kept.watched = b }
                 merged[i] = kept
             } else { merged.append(entry) }
         }
@@ -125,8 +127,10 @@ public final class LetterboxdModel: ObservableModel {
     static func same(_ a: LetterboxdEntry, _ b: LetterboxdEntry) -> Bool {
         guard a.title.caseInsensitiveCompare(b.title) == .orderedSame, a.year == b.year else { return false }
         guard let da = a.watched, let db = b.watched else { return a.watched == nil && b.watched == nil }
-        return Calendar(identifier: .gregorian).isDate(da, inSameDayAs: db)
+        return utcDay(da) == utcDay(db)
     }
+    /// El día del diario (en UTC, como lo escribe Letterboxd).
+    static func utcDay(_ d: Date) -> Int { Int((d.timeIntervalSince1970 / 86400).rounded(.down)) }
 
     /// El IMDb de lo que aún no lo tiene: por su código de TMDB (el diario), su página en Letterboxd o su título y año.
     private func matchIMDb() async {
@@ -146,10 +150,14 @@ public final class LetterboxdModel: ObservableModel {
             for await (i, m) in group { if let m { out[i] = m }; add() }
             return out
         }
+        // Por película (título y año), no por lugar en la lista: otra lectura que llegó mientras se buscaba pudo reordenarla y
+        // la ficha caía en otra película (revisión del 28 nov 2026).
         for (i, match) in found {
-            let index = missing[i]
-            guard entries.indices.contains(index), entries[index].imdb == nil else { continue }
-            entries[index].imdb = match.imdb; entries[index].kind = match.kind; entries[index].tmdbID = entries[index].tmdbID ?? match.tmdbID
+            let e = pending[i]
+            for index in entries.indices where entries[index].imdb == nil && entries[index].year == e.year
+                && entries[index].title.caseInsensitiveCompare(e.title) == .orderedSame {
+                entries[index].imdb = match.imdb; entries[index].kind = match.kind; entries[index].tmdbID = entries[index].tmdbID ?? match.tmdbID
+            }
         }
     }
 
@@ -189,7 +197,10 @@ public final class LetterboxdModel: ObservableModel {
     /// Devuelve cuántas pasaron (nil si Trakt no aceptó).
     public func passToTrakt(_ items: [LetterboxdEntry]) async -> Int? {
         guard let trakt = services.trakt, trakt.linked else { return nil }
-        let valid = items.filter { $0.imdb != nil }
+        // Justo antes de mandar, lo que Trakt ya tiene se quita: dos jugadas de la misma película no se deshacen de golpe.
+        guard let already = try? await trakt.watchedIDs() else { return nil }
+        let valid = items.filter { $0.imdb != nil && !already.contains($0.imdb!) }
+        guard !valid.isEmpty else { return 0 }
         do {
             try await trakt.addToHistory(valid.map { (TraktTarget(imdb: $0.imdb!), $0.watched ?? Trakt.unknownDate) })
             for e in valid where e.traktRating != nil { try? await trakt.setRating(imdb: e.imdb!, series: false, rating: e.traktRating) }

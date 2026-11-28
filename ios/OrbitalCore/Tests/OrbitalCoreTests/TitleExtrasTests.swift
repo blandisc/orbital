@@ -190,7 +190,9 @@ final class AwardsTests: XCTestCase {
             XCTAssertGreaterThan(award.winners.count, 20, award.id)
             XCTAssertTrue(award.winners.allSatisfy { $0.imdb.hasPrefix("tt") }, award.id)
             XCTAssertEqual(award.winners.map(\.awardYear), award.winners.map(\.awardYear).sorted(by: >), "\(award.id): del más reciente")
-            XCTAssertEqual(award.suggestions.first?.reason, .console(String(award.winners[0].awardYear)), "el año del premio, bajo el póster")
+            guard case .console(let years)? = award.suggestions.first?.reason else { return XCTFail(award.id) }
+            XCTAssertTrue(years.hasPrefix(String(award.winners[0].awardYear)), "el año del premio, bajo el póster")
+            XCTAssertEqual(Set(award.suggestions.map(\.id)).count, award.suggestions.count, "\(award.id): cada título una vez (las celdas no se confunden)")
         }
         XCTAssertEqual(Awards.all.first { $0.id == "emmy" }?.kind, "series")
     }

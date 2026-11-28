@@ -271,10 +271,12 @@ public struct LetterboxdEntry: Sendable, Codable, Equatable, Identifiable {
     /// La misma película vista el mismo día (para no repetir lo del diario y lo del archivo).
     public var sameWatchKey: String { "\(imdb ?? "\(title.lowercased())|\(year ?? 0)")|\(watched.map { Int($0.timeIntervalSince1970 / 86400) } ?? -1)" }
 
+    /// El día del diario a mediodía UTC: a medianoche UTC, en México salía «Vista el 31 oct» lo del 1 nov (y en Trakt, el
+    /// día anterior). A mediodía es el mismo día de UTC−12 a UTC+11 (revisión del 28 nov 2026).
     static func day(_ text: String) -> Date? {
         let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.locale = Locale(identifier: "en_US_POSIX")
         f.timeZone = TimeZone(identifier: "UTC"); f.dateFormat = "yyyy-MM-dd"
-        return f.date(from: String(text.prefix(10)))
+        return f.date(from: String(text.prefix(10))).map { $0.addingTimeInterval(12 * 3600) }
     }
 }
 

@@ -16,7 +16,10 @@ public final class CollectionsModel: ObservableModel {
     private var watchedCache: Set<String>?
 
     /// Viste algo: «Ocultar lo que ya vi» se vuelve a preguntar.
-    public func forgetWatched() { watchedCache = nil }
+    public func forgetWatched() { watchedCache = nil; watchedGeneration += 1 }
+    /// Cambia cada vez que lo visto cambia: una lista con «Ocultar lo que ya vi» abierto vuelve a preguntar (revisión del
+    /// 28 nov 2026: lo que marcabas como vista desde su póster se quedaba en la lista).
+    public private(set) var watchedGeneration = 0 { didSet { changed() } }
     /// Otra cuenta (o desconectaste Trakt): nada de la anterior se queda.
     public func resetAccount() { watchedCache = nil; myList = [] }
     /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
@@ -180,9 +183,12 @@ public final class CollectionsModel: ObservableModel {
     private var imdbCache: [String: Double] = [:]
 
     /// Lo que ya viste (Trakt), para «Ocultar lo que ya vi»; se pide una vez.
-    public func watchedIDs() async -> Set<String> {
+    public func watchedIDs() async -> Set<String> { await knownWatchedIDs() ?? [] }
+    /// Igual, pero nil si Trakt no contestó: «no sé» no es «no has visto nada» (revisión del 28 nov 2026: con Trakt caído,
+    /// «Pasarlas» mandaba todo tu diario de Letterboxd otra vez).
+    public func knownWatchedIDs() async -> Set<String>? {
         if let watchedCache { return watchedCache }
-        guard let trakt = services.trakt, trakt.linked, let found = try? await trakt.watchedIDs() else { return [] }
+        guard let trakt = services.trakt, trakt.linked, let found = try? await trakt.watchedIDs() else { return nil }
         watchedCache = found
         return found
     }

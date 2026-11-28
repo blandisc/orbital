@@ -40920,6 +40920,17 @@
         }
       }
     },
+    "Ya estaban en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They were already on Trakt"
+          }
+        }
+      }
+    },
     "Ya está %@": {
       "extractionState": "manual",
       "localizations": {

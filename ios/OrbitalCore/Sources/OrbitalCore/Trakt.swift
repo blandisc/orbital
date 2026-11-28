@@ -413,7 +413,7 @@ public actor Trakt {
         return out
     }
 
-    static let historyPage = 250
+    public static let historyPage = 250
 
     /// Lo último que viste (película o serie), lo más reciente primero, sin repetir.
     public func recentlyWatched(limit: Int = 5) async throws -> [TraktEntry] {

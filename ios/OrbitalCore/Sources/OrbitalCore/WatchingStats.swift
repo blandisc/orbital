@@ -73,10 +73,12 @@ public struct WatchingStats: Sendable, Equatable {
             if let previous, calendar.dateComponents([.day], from: previous, to: day).day == 1 { run += 1 } else { run = 1 }
             longest = max(longest, run); previous = day
         }
+        // La de hoy, con todo tu historial: con solo el periodo se borraba cada lunes y cada día 1 (revisión del 28 nov 2026).
+        let everyDay = Set(all.filter { $0.at <= now }.map { calendar.startOfDay(for: $0.at) })
         var current = 0
         var cursor = calendar.startOfDay(for: now)
-        if days[cursor] == nil, let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) { cursor = yesterday }
-        while days[cursor] != nil, let before = calendar.date(byAdding: .day, value: -1, to: cursor) { current += 1; cursor = before }
+        if !everyDay.contains(cursor), let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) { cursor = yesterday }
+        while everyDay.contains(cursor), let before = calendar.date(byAdding: .day, value: -1, to: cursor) { current += 1; cursor = before }
 
         let unit: Calendar.Component = switch period { case .week: .day; case .month: .weekOfYear; case .year: .month; case .all: .year }
         var buckets: [Bucket] = []
