@@ -468,6 +468,7 @@ public actor ForYou {
                 groups[i].first = min(groups[i].first, row.episode)
                 groups[i].last = max(groups[i].last, row.episode)
                 groups[i].count += 1
+                if row.season == groups[i].season { groups[i].episodeTimes[row.episode] = min(groups[i].episodeTimes[row.episode] ?? row.aired, row.aired) }
                 continue
             }
             let e = row.show
@@ -475,7 +476,8 @@ public actor ForYou {
                                     poster: String(format: metahubPoster, e.imdb), wide: String(format: metahubBackground, e.imdb), reason: .watching)
             index[key] = groups.count
             groups.append(Airing(series: series, season: row.season, first: row.episode, last: row.episode, count: 1, episodeTitle: row.episodeTitle,
-                                 aired: row.aired, day: day, network: row.network, atDawn: calendar.component(.hour, from: row.aired) < dawnHour))
+                                 aired: row.aired, day: day, network: row.network, atDawn: calendar.component(.hour, from: row.aired) < dawnHour,
+                                 episodeTimes: [row.episode: row.aired]))
         }
         return groups.sorted { ($0.aired, $0.series.title) < ($1.aired, $1.series.title) }
     }

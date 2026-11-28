@@ -277,8 +277,10 @@ public final class HomeModel: ObservableModel {
         // Las series que escondiste (SS1-A) tampoco, ni en los estrenos ya cargados; salvo un episodio que dejaste a medias.
         let hidden = ForYou.hidden(services.kv)
         continueWatching = c.filter { !dismissed.contains($0.metaID) && $0.shownInContinue(hidden: hidden) }
-        if upcoming.contains(where: { hidden.contains($0.series.imdb) }) { upcoming.removeAll { hidden.contains($0.series.imdb) } }
-        if recentAirings.contains(where: { hidden.contains($0.series.imdb) }) { recentAirings.removeAll { hidden.contains($0.series.imdb) } }
+        // Y de los estrenos, también las que dejaste de seguir (seguían en «Lo nuevo de lo tuyo» hasta la siguiente carga).
+        let off = hidden.union(ForYou.unfollowed(services.kv))
+        if upcoming.contains(where: { off.contains($0.series.imdb) }) { upcoming.removeAll { off.contains($0.series.imdb) } }
+        if recentAirings.contains(where: { off.contains($0.series.imdb) }) { recentAirings.removeAll { off.contains($0.series.imdb) } }
         myList = m
         offline = !services.isOnline(); error = nil   // sin red se enseña lo del teléfono y se dice (el corte A lo había apagado)
         dressList()
@@ -412,9 +414,13 @@ public final class HomeModel: ObservableModel {
         dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
-        undoable[item.metaID] = (index, item)
+        // Cada quitada con su ficha: quitar, deshacer y volver a quitar antes de que pase la primera espera ya no hace que esa
+        // primera mande la segunda antes de tiempo (y su «Deshacer» ya no servía; revisión del 28 nov 2026).
+        let token = UUID()
+        undoable[item.metaID] = (index, item, token)
         if undoWindow > .zero { try? await Task.sleep(for: undoWindow) }
-        guard undoable.removeValue(forKey: item.metaID) != nil else { return }   // lo deshiciste: no sale nada del aparato
+        guard undoable[item.metaID]?.2 == token else { return }   // lo deshiciste (o la quitaste otra vez): esta no manda nada
+        undoable[item.metaID] = nil
         await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
         // Ya lo sabe la biblioteca: si lo vuelves a ver, regresa a la fila (antes se quedaba fuera hasta cerrar la app,
         // revisión del 27 nov 2026).
@@ -423,13 +429,13 @@ public final class HomeModel: ObservableModel {
 
     /// «Deshacer» de «Quitar de Seguir viendo»: regresa a su lugar de la fila, como estaba.
     public func undoDismiss(_ item: HomeItem) {
-        guard let (index, saved) = undoable.removeValue(forKey: item.metaID) else { return }
+        guard let (index, saved, _) = undoable.removeValue(forKey: item.metaID) else { return }
         dismissed.remove(item.metaID)
         continueWatching.insert(saved, at: min(index, continueWatching.count))
         publishWidget()
     }
     /// Lo quitado de «Seguir viendo» que aún se puede deshacer: su lugar y cómo estaba.
-    private var undoable: [String: (Int, HomeItem)] = [:]
+    private var undoable: [String: (Int, HomeItem, UUID)] = [:]
 }
 
 /// Aviso de que un título entró o salió de tus favoritos (desde la ficha o desde Inicio), para que Inicio lo refleje al momento.

@@ -186,4 +186,15 @@ final class CinemetaTests: XCTestCase {
         for _ in 0..<200 where http.calls.count < 2 { try await Task.sleep(nanoseconds: 5_000_000) }
         XCTAssertEqual(http.calls.count, 2, "revalida en segundo plano")
     }
+
+    /// Revisión del 28 nov 2026: sin el medio día de margen, el episodio de hoy no es «Nuevo» desde la mañana del día anterior.
+    func testAnEpisodeAirsOnItsDayInYourCalendar() {
+        var mx = Calendar(identifier: .gregorian); mx.timeZone = TimeZone(identifier: "America/Mexico_City")!
+        let eve = mx.date(from: DateComponents(year: 2026, month: 11, day: 27, hour: 20))!.timeIntervalSince1970
+        let morning = mx.date(from: DateComponents(year: 2026, month: 11, day: 28, hour: 8))!.timeIntervalSince1970
+        XCTAssertFalse(CinemetaParsing.aired("2026-11-28T00:00:00.000Z", now: eve, calendar: mx), "la víspera aún no")
+        XCTAssertTrue(CinemetaParsing.aired("2026-11-28T00:00:00.000Z", now: morning, calendar: mx), "ese día sí")
+        XCTAssertFalse(CinemetaParsing.aired("2026-11-28T20:00:00.000Z", now: morning, calendar: mx), "con hora, desde esa hora")
+        XCTAssertTrue(CinemetaParsing.aired(nil, now: morning, calendar: mx))
+    }
 }

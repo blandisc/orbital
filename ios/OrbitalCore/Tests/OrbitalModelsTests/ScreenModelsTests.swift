@@ -92,6 +92,17 @@ final class ScreenModelsTests: XCTestCase {
         await home.refresh()
         XCTAssertEqual(home.continueWatching.map(\.metaID), before, "y otra carga no la vuelve a quitar")
 
+        // Quitar, deshacer y quitar otra vez: la primera espera no manda la segunda antes de tiempo (revisión del 28 nov 2026).
+        let first = Task { await home.dismiss(middle, undoWindow: .milliseconds(200)) }
+        try await Task.sleep(for: .milliseconds(50))
+        home.undoDismiss(middle)
+        let second = Task { await home.dismiss(middle, undoWindow: .milliseconds(400)) }
+        await first.value
+        XCTAssertNil(rig.services.library.entry("tt2")?.hiddenAt, "la segunda aún se puede deshacer")
+        home.undoDismiss(middle)
+        await second.value
+        XCTAssertNil(rig.services.library.entry("tt2")?.hiddenAt)
+
         await home.dismiss(middle, undoWindow: .milliseconds(50))
         XCTAssertNotNil(rig.services.library.entry("tt2")?.hiddenAt, "sin deshacer, se quita de verdad al terminar el plazo")
         await home.refresh()

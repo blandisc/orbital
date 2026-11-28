@@ -25,6 +25,6 @@ enum AppearNotifier {
         content.sound = .default
         content.userInfo = ["kind": entry.kind, "id": entry.metaID, "title": entry.title, "open": "title"]
         let id = DebridRequestNotifier.prefix + "appear." + entry.id
-        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: ReleaseNotifier.quietTrigger(unlessActive: true)))
     }
 }

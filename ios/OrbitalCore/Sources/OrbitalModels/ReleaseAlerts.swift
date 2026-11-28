@@ -64,7 +64,12 @@ public final class ReleaseAlerts {
     /// Cada episodio que ya salió (en la ventana) y aún no se avisó. Un estreno de varios episodios el mismo día cuenta cada uno.
     public nonisolated static func pending(_ airings: [Airing], sent: Set<String>, now: Date) -> [(airing: Airing, episode: Int, id: String)] {
         airings.filter { $0.aired <= now && now.timeIntervalSince($0.aired) <= window }
-            .flatMap { a in (a.first...max(a.first, a.last)).map { (a, $0, "\(a.series.imdb):\(a.season):\($0)") } }
+            .flatMap { a -> [(airing: Airing, episode: Int, id: String)] in
+                // Cada episodio a su hora; sin las horas, el rango como antes.
+                let episodes = a.episodeTimes.isEmpty ? Array(a.first...max(a.first, a.last))
+                                                      : a.episodeTimes.filter { $0.value <= now }.keys.sorted()
+                return episodes.map { (a, $0, "\(a.series.imdb):\(a.season):\($0)") }
+            }
             .filter { !sent.contains($0.2) }
     }
 
@@ -82,7 +87,8 @@ public final class ReleaseAlerts {
         guard services.appSettings.releaseAlerts else { return [] }
         let started = Date()
         let now = services.now()
-        let airings = (try? await services.forYou.calendar(skip: -1, days: 2)) ?? []
+        // Desde anteayer: la ventana del aviso es de 36 h y, a media mañana, lo de anteanoche quedaba fuera (revisión del 28 nov).
+        let airings = (try? await services.forYou.calendar(skip: -2, days: 3)) ?? []
         report.nextAiring = airings.map(\.aired).filter { $0 > now }.min()
         let pending = Self.pending(airings, sent: sent(), now: now)
         report.pending = pending.map(\.id)

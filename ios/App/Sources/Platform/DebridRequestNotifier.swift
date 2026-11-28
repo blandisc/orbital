@@ -76,7 +76,7 @@ enum DebridRequestNotifier {
         content.body = request.cloud.spoken(Strings.tr("Ya se liberó un lugar en tu Real-Debrid", language: language))
         content.threadIdentifier = thread
         content.userInfo = ["kind": request.kind, "id": request.metaID, "title": request.title, "open": "title"]
-        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "retried." + request.hash, content: content, trigger: nil))
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "retried." + request.hash, content: content, trigger: ReleaseNotifier.quietTrigger(unlessActive: true)))
     }
 
     /// Con la app cerrada (iOS la despierta un momento): una sola consulta a Real-Debrid por todos los pedidos en camino.
@@ -102,7 +102,7 @@ enum DebridRequestNotifier {
         content.sound = .default
         content.userInfo = ["kind": request.kind, "id": request.metaID, "video": request.videoIDs.first ?? request.metaID, "title": request.title]
         if let image = await attachment(request) { content.attachments = [image] }
-        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + request.hash, content: content, trigger: nil))
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + request.hash, content: content, trigger: ReleaseNotifier.quietTrigger(unlessActive: true)))
     }
 
     /// «Sigue sin bajar · ¿probar otra versión?» (R13): una vez, a las 24 h sin avance. Tocarlo abre la ficha.
@@ -113,7 +113,7 @@ enum DebridRequestNotifier {
         content.body = Strings.tr("Sigue sin bajar · ¿probar otra versión?", language: language)
         content.threadIdentifier = thread
         content.userInfo = ["kind": request.kind, "id": request.metaID, "title": request.title, "open": "title"]
-        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "stalled." + request.hash, content: content, trigger: nil))
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "stalled." + request.hash, content: content, trigger: ReleaseNotifier.quietTrigger(unlessActive: true)))
     }
 
     /// Tocar el aviso o uno de sus botones. false si no es de los pedidos.

@@ -24,6 +24,15 @@ final class ReleaseAlertsTests: XCTestCase {
         XCTAssertEqual(ids, ["tt1:4:2", "tt4:4:1", "tt4:4:3"])
     }
 
+    /// Revisión del 28 nov 2026: en un estreno doble (20:00 y 21:00) el segundo se avisa a su hora, y un hueco no inventa episodio.
+    func testEachEpisodeIsAnnouncedAtItsOwnTime() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var double = airing("tt5", aired: now.addingTimeInterval(-1800), first: 1, last: 3)
+        double.episodeTimes = [1: now.addingTimeInterval(-1800), 3: now.addingTimeInterval(1800)]
+        XCTAssertEqual(ReleaseAlerts.pending([double], sent: [], now: now).map(\.id), ["tt5:4:1"])
+        XCTAssertEqual(ReleaseAlerts.pending([double], sent: [], now: now.addingTimeInterval(3600)).map(\.id), ["tt5:4:1", "tt5:4:3"])
+    }
+
     func testQuietHoursWaitUntilEightInTheMorning() {
         func at(_ hour: Int) -> Date { calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: hour, minute: 30))! }
         XCTAssertNil(ReleaseAlerts.deliverAt(now: at(21), calendar: calendar))
@@ -45,13 +54,13 @@ final class ReleaseAlertsCheckTests: XCTestCase {
         rig.services.settings.update { $0.releaseAlerts = true }
         let now = rig.clock.now
         let cal = Calendar.current
-        let start = ForYou.dayString(cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: now))!, calendar: cal)
+        let start = ForYou.dayString(cal.date(byAdding: .day, value: -3, to: cal.startOfDay(for: now))!, calendar: cal)
         let aired = ISO8601DateFormatter().string(from: now.addingTimeInterval(-3 * 3600))
         func row(_ imdb: String, _ title: String) -> JSON {
             ["first_aired": .string(aired), "episode": ["season": 2, "number": 1, "title": "Estreno"],
              "show": ["title": .string(title), "ids": ["imdb": .string(imdb), "trakt": 1]]]
         }
-        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/4?extended=full"] = [row("tt0000001", "Sin fuentes aún"), row("tt0000002", "Ya tiene")]
+        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/5?extended=full"] = [row("tt0000001", "Sin fuentes aún"), row("tt0000002", "Ya tiene")]
         let alerts = ReleaseAlerts(rig.services)
         let due = await alerts.due()
         XCTAssertEqual(due.map(\.id).sorted(), ["tt0000001:2:1", "tt0000002:2:1"], "los dos: salir basta")
@@ -68,13 +77,13 @@ final class ReleaseAlertsCheckTests: XCTestCase {
         rig.services.settings.update { $0.releaseAlerts = true }
         let now = rig.clock.now
         let cal = Calendar.current
-        let start = ForYou.dayString(cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: now))!, calendar: cal)
+        let start = ForYou.dayString(cal.date(byAdding: .day, value: -3, to: cal.startOfDay(for: now))!, calendar: cal)
         let aired = ISO8601DateFormatter().string(from: now.addingTimeInterval(-3 * 3600))
         func row(_ number: Int, _ title: String) -> JSON {
             ["first_aired": .string(aired), "episode": ["season": 1, "number": .int(number), "title": .string(title)],
              "show": ["title": "Avatar", "ids": ["imdb": "tt0000003", "trakt": 3]]]
         }
-        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/4?extended=full"] = [row(10, "Ghosts and Spirits"), row(11, "Battle of the Ruins")]
+        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/5?extended=full"] = [row(10, "Ghosts and Spirits"), row(11, "Battle of the Ruins")]
         for n in [10, 11] {
             rig.http.json["https://a.example/stream/series/tt0000003%3A1%3A\(n).json"] = ["streams": [
                 ["name": "T\n1080p [RD+]", "title": .string("Avatar.S01E\(n).1080p.WEB-DL\n💾 1 GB"), "url": .string("https://rd.example/\(n).mkv")]]]

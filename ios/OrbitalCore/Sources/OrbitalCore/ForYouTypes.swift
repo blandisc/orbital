@@ -101,6 +101,9 @@ public struct Airing: Sendable, Equatable, Identifiable {
     public var network: String
     /// Sale antes de las 6 de la mañana (lo de streaming): «Desde la madrugada» en vez de la hora.
     public var atDawn: Bool
+    /// La hora de cada episodio del grupo (de su temporada): el segundo de un estreno doble se avisa a su hora, no con el
+    /// primero, y un hueco (E1 y E3) no inventa el E2 (revisión del 28 nov 2026). Vacío: solo se sabe la del primero.
+    public var episodeTimes: [Int: Date] = [:]
     public var id: String { "\(series.imdb):\(Int(day.timeIntervalSince1970))" }
     /// Un episodio como lo escribe la TV en español («T2 E5»): lo que se usa si la interfaz no da otro.
     public static let spanishEpisode: @Sendable (Int, Int) -> String = { "T\($0) E\($1)" }

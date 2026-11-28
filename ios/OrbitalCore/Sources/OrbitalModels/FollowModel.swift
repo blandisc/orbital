@@ -78,14 +78,17 @@ public final class FollowModel: ObservableModel {
         ForYou.setUnfollowed(unfollowed, kv: services.kv)
         // Seguirla otra vez (desde su ficha) también la saca de «Escondidas»: Trakt la vuelve a mostrar.
         if following, hidden.contains(imdb) { hidden.remove(imdb); ForYou.setHidden(hidden, kv: services.kv) }
+        NotificationCenter.default.post(name: LocalLibrary.changed, object: nil)   // Inicio la saca (o la regresa) al momento
         guard let trakt = services.trakt, trakt.linked else { return nil }
         do {
             try await trakt.setFollowing(imdb: imdb, following: following)
             await services.forYou.clearCache(["trakt:calendar"])
             return nil
         } catch {
-            unfollowed = before; hidden = hiddenBefore
-            ForYou.setUnfollowed(before, kv: services.kv); ForYou.setHidden(hiddenBefore, kv: services.kv)
+            // Regresa solo esta serie: otra que cambiaste mientras tanto y Trakt sí aceptó se queda (revisión del 28 nov 2026).
+            if before.contains(imdb) { unfollowed.insert(imdb) } else { unfollowed.remove(imdb) }
+            if hiddenBefore.contains(imdb) { hidden.insert(imdb) } else { hidden.remove(imdb) }
+            ForYou.setUnfollowed(unfollowed, kv: services.kv); ForYou.setHidden(hidden, kv: services.kv)
             return "Trakt no contestó. Intenta de nuevo en un momento."
         }
     }

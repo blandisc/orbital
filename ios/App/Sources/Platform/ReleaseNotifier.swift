@@ -97,16 +97,27 @@ enum ReleaseNotifier {
         // Aunque iOS ya esté por cortar, lo que salió se avisa (sin la imagen, que es lo que tarda).
         let cut = Task.isCancelled
         if !due.isEmpty {
-            await post(due, language: env.services.appSettings.uiLanguage, images: !cut)
-            alerts.markSent(due.map(\.id))
+            // Solo lo que iOS sí aceptó queda como avisado: uno que no se pudo poner se intenta en la siguiente revisión
+            // (antes quedaba avisado y nunca llegaba; revisión del 28 nov 2026).
+            let posted = await post(due, language: env.services.appSettings.uiLanguage, images: !cut)
+            alerts.markSent(posted)
         }
         log(origin, [String(format: "%.1fs", report.seconds), "pendientes=\(report.pending)", "avisados=\(due.map(\.id))", cut ? "iOS-cortó" : "",
                      report.nextAiring.map { "siguiente=\(ISODates.string($0))" } ?? ""].filter { !$0.isEmpty })
     }
 
-    @MainActor static func post(_ due: [ReleaseAlerts.Alert], language: String, images: Bool = true) async {
-        let when = ReleaseAlerts.deliverAt(now: Date())
-        let trigger = when.map { UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: $0), repeats: false) }
+    /// Cuándo sale un aviso que se pone ahora: ya, o en el horario silencioso (23 a 8) a las 8. Lo usan todos los avisos que se
+    /// ponen solos, también los que llegan con la app cerrada de noche.
+    /// `unlessActive`: con la app abierta sale ya (un pedido que esperas despierto a las 23:30 no espera a mañana).
+    @MainActor static func quietTrigger(now: Date = Date(), unlessActive: Bool = false) -> UNCalendarNotificationTrigger? {
+        if unlessActive, UIApplication.shared.applicationState == .active { return nil }
+        return ReleaseAlerts.deliverAt(now: now).map { UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: $0), repeats: false) }
+    }
+
+    @discardableResult
+    @MainActor static func post(_ due: [ReleaseAlerts.Alert], language: String, images: Bool = true) async -> [String] {
+        let trigger = quietTrigger()
+        var posted: [String] = []
         // Las imágenes a la vez: de una en una, con varios episodios se comían el tiempo que da iOS en segundo plano.
         var art: [String: UNNotificationAttachment] = [:]
         if images {
@@ -131,8 +142,11 @@ enum ReleaseNotifier {
             content.sound = .default
             content.userInfo = ["kind": "series", "id": alert.metaID, "video": alert.id, "title": alert.show]
             if let image = art[alert.id] { content.attachments = [image] }
-            try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.\(alert.id)", content: content, trigger: trigger))
+            if (try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.\(alert.id)", content: content, trigger: trigger))) != nil {
+                posted.append(alert.id)
+            }
         }
+        return posted
     }
 
     /// La primera línea del aviso, sin tono coloquial.

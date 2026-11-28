@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Lo que dice en pantalla: `userText` (UserText.swift).
 public enum CinemetaError: Error, Sendable {
@@ -298,10 +299,16 @@ public enum CinemetaParsing {
         return episodes[i + 1].id
     }
 
-    /// ¿Ya salió? Sin fecha (o con una rara) se da por emitido. Medio día de margen por los husos horarios.
-    public static func aired(_ released: String?, now: Double = Date().timeIntervalSince1970) -> Bool {
-        guard let when = LibraryRules.epoch(released.map(JSON.string)) else { return true }
-        return when <= now + 12 * 3600
+    /// ¿Ya salió? Sin fecha (o con una rara) se da por emitido. Cinemeta suele dar solo el día (medianoche UTC): cuenta desde
+    /// que empieza ese día en tu calendario. Con hora de verdad, desde esa hora. Antes había medio día de margen y «Nuevo» salía
+    /// en Seguir viendo hasta 12 horas antes del estreno, con un episodio sin fuentes (revisión del 28 nov 2026).
+    public static func aired(_ released: String?, now: Double = Date().timeIntervalSince1970, calendar: Calendar = .current) -> Bool {
+        guard let released, let when = LibraryRules.epoch(JSON.string(released)) else { return true }
+        let dayOnly = released.count <= 10 || released.dropFirst(11).hasPrefix("00:00:00")
+        if dayOnly, let day = ISODates.localDay(released, calendar: calendar) {
+            return calendar.startOfDay(for: day).timeIntervalSince1970 <= now
+        }
+        return when <= now
     }
 
     /// Ibas al día: terminaste `videoID` y el siguiente aún no salía. Si ya salió (después de `since`, cuando lo terminaste),
