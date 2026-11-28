@@ -14,8 +14,8 @@ extension DS {
         static let onTint = DS.backdropDeep
         /// El relleno de un filtro entra creciendo desde este tamaño (con `DS.Motion.grow`), no aparece de golpe.
         static let fillFrom: CGFloat = 0.4
-        /// El resplandor detrás de los tres carteles, del color del elegido: lo fuerte que se ve y hasta dónde llega.
-        static let glow = 0.32, glowReach: CGFloat = 260
+        /// El resplandor detrás de los tres carteles, del color del elegido: lo fuerte que se ve (llega hasta su orilla, `DSGlow`).
+        static let glow = 0.32
         /// Barajar: los carteles salen y entran de uno en uno (este tiempo entre uno y otro), desde este tamaño y esta altura,
         /// y lo que tardan en irse antes de pedir los nuevos.
         static let shuffleStagger: Double = 0.05, shuffleFrom: CGFloat = 0.9, shuffleRise = DS.Space.s4

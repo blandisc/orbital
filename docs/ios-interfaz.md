@@ -684,6 +684,12 @@ de un título usa `titleName`, igual que el texto que se ve**, nunca `.title` cr
 siempre en inglés («MOBLAND» sobre «Tierra de Mafia»); si no coincide, va el nombre en letra (`titleName.logo(…)`; en la ficha `model.logo(shown:)`, que compara con `originalTitle`;
 `DisplayTitle.logoFits`). Ficha, portada, mosaico, tarjetas y canales. Lo cuida `testLogosSayTheShownName`.
 
+### Un brillo no es un segundo fondo (27 nov 2026)
+
+Fernando, de «Decide por mí»: «tiene como que doble fondo». El resplandor del color del cartel elegido se cortaba en cuadro
+dentro de la hoja. Un resplandor que flota detrás de algo es `DSGlow` (se desvanece antes de su orilla), en todas las pantallas;
+lo cuida `DesignRulesTests+Glow`.
+
 ### Lo que cambia se ve al momento (27 nov 2026)
 
 Una vista que recibe un modelo suelto (`let model: SavedModel`) lo sigue con `let _ = model.track()` al empezar `body`, o

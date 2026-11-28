@@ -377,11 +377,9 @@ struct DecideView: View {
     /// tono sobre el papel. Cambia con un fundido al elegir otro.
     private var glow: some View {
         let tone = art.colors.map { scheme == .dark ? $0.accent : $0.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix) } ?? .clear
-        return RadialGradient(colors: [tone.opacity(DS.DecideLive.glow), .clear], center: .center, startRadius: 0, endRadius: DS.DecideLive.glowReach)
+        return DSGlow(tone: tone, strength: DS.DecideLive.glow)
             .padding(-DS.Space.s8)
             .animation(DS.Motion.tint(reduceMotion) ?? DS.Motion.fade, value: art.colors)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
     }
 
     /// Lo que quitas se puede deshacer (F5): «Ya no te la sugiero · Deshacer» o «Hoy no · Deshacer».

@@ -37,6 +37,20 @@ extension View {
 }
 
 /// Una caja con su aire de adentro (`DS.Space.s4`) y su fondo (`dsCard`).
+/// Receta: un resplandor suave del color del arte detrás de algo (los tres de «Decide por mí»). Se desvanece antes de llegar a
+/// su orilla, así que nunca se ve como un segundo fondo cortado en cuadro (Fernando, 27 nov 2026: «tiene como que doble
+/// fondo»). Un resplandor que flota sobre otra superficie es este; un degradado con orilla cortada no.
+struct DSGlow: View {
+    let tone: Color
+    let strength: Double
+
+    var body: some View {
+        EllipticalGradient(colors: [tone.opacity(strength), .clear], center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
 struct DSCard<Content: View>: View {
     var level: DSCardLevel = .row
     var translucent = false
