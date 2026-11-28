@@ -62,7 +62,10 @@ public final class SearchModel: ObservableModel {
         latest += 1
         let ticket = latest
         guard query.count >= 2 else { results = []; error = nil; isSearching = false; searchedQuery = nil; return }
-        let key = query.lowercased()
+        // Con el idioma de los títulos y si hay clave de TMDB: cambiarlos ya no deja los nombres de antes (revisión del 28 nov
+        // 2026).
+        let settings = services.appSettings
+        let key = "\(settings.metadataLanguage ?? settings.uiLanguage)|\(services.tmdb.configured)|\(query.lowercased())"
         if let cached = memory[key] { results = cached; error = nil; searchedQuery = query; isSearching = false; return }
         isSearching = true
         error = nil   // un error de la búsqueda anterior no tapa lo que está cargando

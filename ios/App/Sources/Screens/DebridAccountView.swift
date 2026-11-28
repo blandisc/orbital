@@ -151,6 +151,7 @@ struct DebridAccountView: View {
     private func redeemButton(_ points: Int) -> some View {
         Button { confirmRedeem = true } label: { Label("Canjear puntos", systemImage: "gift").frame(maxWidth: .infinity) }
             .dsProblemFix(primary: false)
+            .disabled(debrid.model.redeem == .working)
             .accessibilityIdentifier("debrid-redeem")
     }
 

@@ -255,6 +255,9 @@ struct BrowseView: View {
                 .perfTag("search.grid")
                 .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
         }
+        // Al irte de los resultados (abriste uno, también con VoiceOver o el teclado, que no pasan por el toque de arriba) lo
+        // buscado queda en «Buscaste hace poco» (revisión del 28 nov 2026). Al borrar el texto no: ya está vacío.
+        .onDisappear { if answered, !model.results.isEmpty { model.remember(query) } }
         // Los pósters de los primeros resultados, todos a la vez en cuanto llegan (antes cada celda pedía el suyo hasta
         // aparecer, de a poco).
         .task(id: shown.prefix(DS.Size.searchPrefetch).map(\.metaID)) {

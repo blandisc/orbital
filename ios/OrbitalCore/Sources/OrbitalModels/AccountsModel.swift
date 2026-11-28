@@ -58,6 +58,7 @@ public final class DebridModel: ObservableModel {
     }
 
     public var hasToken: Bool { services.debrid.hasToken }
+    private var rechecks = 0
     /// DN1 · la nube que usas (Ajustes › Cuentas › Tu nube).
     public var service: DebridService { services.debrid.service }
     /// La nube que se está conectando en la hoja (la que tocaste en «Tu nube»; si no, la que usas). La clave pegada es de esta.
@@ -96,7 +97,14 @@ public final class DebridModel: ObservableModel {
     /// sin respuesta: «No pude ver tu cuenta»; confirmada: «Conectada ✓».
     public func recheck() async {
         keyCheck = .checking
-        switch await services.debrid.checkNow() {
+        rechecks += 1
+        let ticket = rechecks, asked = service
+        let answer = await services.debrid.checkNow()
+        // Una comprobación vieja no pisa la nueva: cambiaste de nube o quitaste la clave mientras tanto (salía «TorBox» con el
+        // usuario de Real-Debrid, o «N días» con la clave ya quitada; revisión del 28 nov 2026).
+        guard ticket == rechecks, asked == service else { return }
+        guard hasToken else { status = nil; keyCheck = .checking; return }
+        switch answer {
         case .status(let fresh): status = fresh; keyCheck = .confirmed
         case .invalidToken: keyCheck = .rejected
         case .unreachable: keyCheck = .unreachable
@@ -139,7 +147,11 @@ public final class DebridModel: ObservableModel {
             while !Task.isCancelled, services.now() < deadline {
                 try await Task.sleep(for: .milliseconds(Int(code.interval * 1000)))
                 guard !Task.isCancelled else { return }
-                guard let pair = try await rd.deviceCredentials(code) else { continue }
+                // Un corte de red mientras apruebas en Safari (la app en segundo plano) no tira el código: se vuelve a preguntar
+                // hasta que venza (revisión del 28 nov 2026).
+                let pair: (clientID: String, clientSecret: String)?
+                do { pair = try await rd.deviceCredentials(code) } catch DebridError.network { continue }
+                guard let pair else { continue }
                 codeFlow = .connecting
                 let found = try await services.debrid.connect(code: code, clientID: pair.clientID, clientSecret: pair.clientSecret)
                 guard found.isPremium else { check = .free(found); codeFlow = .idle; return }
@@ -187,6 +199,7 @@ public final class DebridModel: ObservableModel {
     public func forgetRedeem() { if redeem != .working { redeem = .idle } }
 
     public func redeemPoints() async {
+        guard redeem != .working else { return }   // dos toques: el segundo pisaba «Listo» con un error
         redeem = .working
         do {
             if let fresh = try await services.debrid.redeemPoints() { status = fresh }

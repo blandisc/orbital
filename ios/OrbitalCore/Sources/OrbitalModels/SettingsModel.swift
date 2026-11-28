@@ -127,6 +127,7 @@ public final class SettingsModel: ObservableModel {
     public func loadTraktName() async {
         guard let t = services.trakt, t.linked else { return }
         if let name = try? await t.username() {
+            await forgetIfAnotherAccount(name)
             trakt = .linked(name)
             // Sin nombre propio todavía: el primero de tu Trakt («Fernando Iracheta» → «Fernando»); se cambia en tu perfil.
             if settings.displayName.isEmpty, let first = name.split(separator: " ").first, !first.isEmpty { update { $0.displayName = String(first) } }
@@ -137,9 +138,13 @@ public final class SettingsModel: ObservableModel {
     /// trakt.tv/activate. La sesión es solo de aquí (tu Orbital tiene la suya); no hace falta secreto.
     public func linkTrakt() async {
         guard let t = services.trakt else { return trakt = .off }
+        // Un segundo toque mientras se pide el código no pide otro (cambiaba el código que ya habías escrito en trakt.tv).
+        guard !requestingCode else { return }
         linking?.cancel()
         do {
+            requestingCode = true
             let code = try await t.deviceCode()
+            requestingCode = false
             // Dos toques seguidos piden dos códigos: el que llegó antes se olvida (si no, al vencer, su espera pisaba la
             // conexión hecha con el código que sí se ve).
             linking?.cancel()
@@ -163,9 +168,10 @@ public final class SettingsModel: ObservableModel {
             }
             linking = task
             await task.value
-        } catch { trakt = .failed("\(error)") }
+        } catch { requestingCode = false; trakt = .failed("\(error)") }
     }
 
+    private var requestingCode = false
     private func setTrakt(_ state: TraktState) { trakt = state }
     private func finishLinking() async {
         services.reconfigure()
@@ -176,7 +182,20 @@ public final class SettingsModel: ObservableModel {
 
     public func cancelLinking() { linking?.cancel(); trakt = computeTraktState() }
 
+    /// La cuenta de Trakt de la última vez. Si conectas otra, lo de la anterior no se mezcla: se vuelve a leer todo tu historial
+    /// (las marcas de sincronización eran de la otra y solo llegaba lo más nuevo) y lo que esperaba subirse a la anterior no se
+    /// manda a esta (revisión del 28 nov 2026).
+    static let accountKey = "trakt-account"
+    func forgetIfAnotherAccount(_ name: String) async {
+        let previous = services.kv.data(Self.accountKey).flatMap { String(data: $0, encoding: .utf8) }
+        services.kv.set(Self.accountKey, data: Data(name.utf8))
+        guard let previous, previous != name else { return }
+        await services.sync.forget()
+        services.traktOutbox.queue.store.update { $0 = PendingWork() }
+    }
+
     public func unlinkTrakt() async {
+        await services.sync.forget()   // al volver a conectar, se lee todo otra vez
         await services.trakt?.unlink()
         services.scrobbleLog.clear()
         scrobble = services.scrobbleLog.status

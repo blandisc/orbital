@@ -79,7 +79,8 @@ extension SettingsView {
             } icon: {
                 Image(systemName: "key").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.ListTint.addon).frame(width: DS.SettingsLook.rowIcon)
             }
-            if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
+            // Solo espacios no es una clave: «Guardar» con eso borraba la tuya sin avisar (revisión del 28 nov 2026).
+            if !tmdbKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
             // Una clave tuya equivocada dejaba sin fichas en español ni Explorar, sin regreso: se quita y vuelve la incluida.
             else if model.hasTMDBKey { Button("Quitar mi clave", role: .destructive) { model.setTMDBKey("") } }
         } header: { Text("Claves de Explorar") } footer: {
