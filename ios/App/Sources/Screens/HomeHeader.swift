@@ -61,7 +61,7 @@ struct HomeHeader: View {
         }
         // RN2: en la Mac las pestañas en su cápsula, al centro del renglón (como la tele).
         .overlay { if TopRow.tabsInLogoRow && MacTabStrip.centered { MacTabStrip() } }
-        .padding(.horizontal, DS.Space.gutter)
+        .padding(.leading, DS.Space.gutter).padding(.trailing, Self.trailingAir)
         .padding(.bottom, DS.Space.s1)
         .dsChromeType()   // regla «Las barras fijas no se salen con letra grande»
         // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad
@@ -78,6 +78,10 @@ struct HomeHeader: View {
         let shrink = AnyTransition.scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity)
         return .asymmetric(insertion: shrink.animation(fold.delay(DS.KindPill.returnDelay)), removal: shrink.animation(fold))
     }
+
+    /// La cápsula (el control y tu foto, que abre Ajustes) más pegada a la orilla en el iPhone: aprovecha mejor el renglón
+    /// (Fernando, 28 nov 2026: «pegas ajustes un poquito más a la derecha»). iPad y Mac, con el margen de siempre.
+    static var trailingAir: CGFloat { ThisDevice.isPhone ? DS.Space.s2 : DS.Space.gutter }
 
     /// El aire a la izquierda de la cápsula: con el control, el suyo; con tu foto sola, el mismo que a la derecha.
     static func leadingAir(remote: Bool) -> CGFloat { remote ? DS.Space.s4 : DS.Space.s1 }
