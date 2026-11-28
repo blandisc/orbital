@@ -104,7 +104,7 @@ struct ContinueAction: View {
         if let text { text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(2) }
     }
 
-    /// ↺ «Desde el principio»: de la familia de botones redondos de la app, con su nombre para VoiceOver.
+    /// ⇤ «Desde el principio»: de la familia de botones redondos de la app, con su nombre para VoiceOver.
     @ViewBuilder private var restartButton: some View {
         if let restart {
             DSIconButton(symbol: DS.Symbol.restart, label: "Desde el principio", action: restart)

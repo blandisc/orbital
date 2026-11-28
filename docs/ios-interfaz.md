@@ -127,6 +127,8 @@ salía ~20 pt más ancha, recorrida a la izquierda y cortada de los dos lados.
   derecho iOS los escondería en «…». El filtro de Inicio va recogido en la esquina de arriba de la portada, a la distancia del texto de la portada (HB1-B). La portada es más baja (`aspectShortPhone`) y va al centro (`artCentered`). Solo cuando
   `WindowMetrics.shortPhone`: en el 17 Pro no cambia nada. En la ficha, el arte cede hasta `heroAspectMaxShortPhone` para que los
   mosaicos (Guardar, Descargar, Vista, Tráiler) queden sobre las pestañas y sobre «¿Qué tal…?», que también se resta del lugar libre.
+  Una hoja no tapa la hora: con una hoja abierta, la hora baja junto a la cámara, así que toda hoja a la medida topa en
+  `DS.Sheet.maxShare` (más bajo en el Duo) y lo que no cabe abre completa, con su renglón junto a la hora.
   Lo cuidan `DuoHomeBarUITests` y `DesignRulesTests+DuoHome`.
 
 ### Lo que se desplaza a lo ancho (13 nov 2026)

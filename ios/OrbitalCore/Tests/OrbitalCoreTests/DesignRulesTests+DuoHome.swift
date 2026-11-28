@@ -33,4 +33,14 @@ extension DesignRulesTests {
         XCTAssertTrue(title.contains("WindowMetrics.shortPhone ? DS.TitleAction.heroAspectMaxShortPhone"), "en el Duo el arte puede ser más bajito")
         XCTAssertTrue(title.contains("- env.ui.ratingReminderHeight"), "y le deja su lugar a «¿Qué tal…?»")
     }
+
+    /// Una hoja no tapa la hora: en el Duo cerrado la cápsula de la hora baja junto a la cámara, así que el tope de toda hoja
+    /// a la medida es uno solo (`DS.Sheet.maxShare`) y en el Duo es más bajo.
+    func testSheetsClearTheClockOnTheDuo() throws {
+        let tokens = try text("Tokens.swift", in: try sources(["Design"]))
+        XCTAssertTrue(tokens.contains("WindowMetrics.shortPhone ? maxShareShortPhone"), "en el Duo la hoja no llega a la hora")
+        for source in try sources(["Design", "Screens"]) where source.name != "Tokens.swift" {
+            XCTAssertFalse(source.lines.joined().contains("height * 0.86"), "\(source.name): el tope de una hoja es DS.Sheet.maxShare")
+        }
+    }
 }

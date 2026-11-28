@@ -178,8 +178,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let sheetBottom = s8
     }
 
-    /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
-    enum Sheet { static let maxShare: CGFloat = 0.86, versionStart: CGFloat = 0.6 }   // versionStart: «Versión» abre a este alto y ahí espera a que lleguen
+    /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca). En el Duo cerrado
+    /// la cápsula de la hora baja junto a la cámara: una hoja a la medida no sube hasta ella (su ✕ quedaba debajo); lo que no
+    /// cabe abre completa, con su renglón junto a la hora. En el 17 Pro sigue en 0,86.
+    enum Sheet {
+        static var maxShare: CGFloat { WindowMetrics.shortPhone ? maxShareShortPhone : 0.86 }
+        static let maxShareShortPhone: CGFloat = 0.76, versionStart: CGFloat = 0.6   // versionStart: «Versión» abre a este alto y ahí espera a que lleguen
+    }
 
     enum Radius {
         static let xs = Mac.fit(DesignTokens.Radius.xs), sm = Mac.fit(DesignTokens.Radius.sm), md = Mac.fit(DesignTokens.Radius.md)

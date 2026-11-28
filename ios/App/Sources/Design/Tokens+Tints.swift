@@ -98,7 +98,7 @@ extension DS {
         /// Qué parte del alto de la pantalla toma el pad (en un iPhone grande crece).
         static let padShare: CGFloat = 0.2
         /// Lo más que crece la hoja estirada (la de toda hoja alta).
-        static let maxShare = DS.Sheet.maxShare
+        static var maxShare: CGFloat { DS.Sheet.maxShare }
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
         static let swipeStep: CGFloat = 56
         /// Inercia del pad: desde qué velocidad al soltar (pt/s) sigue solo, cuántos pt/s vale cada flecha más, cuántas
