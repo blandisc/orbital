@@ -37,8 +37,9 @@ extension SavedModel {
             }
             await services.forYou.clearCache(["trakt:watchlist"])
         } else if let id = Self.traktListID(listID) {
-            for s in items where s.imdb.hasPrefix("tt") { outbox.enqueue(.init(target: id, imdb: s.imdb, series: s.kind == "series", add: add)) }
-            listCounts[listID] = max(0, (listCounts[listID] ?? 0) + (add ? items.count : -items.count))
+            let sent = items.filter { $0.imdb.hasPrefix("tt") }   // sin id de IMDb no llega a Trakt: tampoco cuenta
+            for s in sent { outbox.enqueue(.init(target: id, imdb: s.imdb, series: s.kind == "series", add: add)) }
+            listCounts[listID] = max(0, (listCounts[listID] ?? 0) + (add ? sent.count : -sent.count))
             await services.forYou.clearCache(["trakt:list:\(id)", "trakt:listkeys"])
         }
         if selected == listID { for s in items { setShown(s, shown: add) } }

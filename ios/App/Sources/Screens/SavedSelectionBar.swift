@@ -126,11 +126,14 @@ struct SavedSelectionBar: View {
 
     private func moveTo(_ target: String) async {
         let picked = chosen, model = model, from = listID
-        // Los que ya estaban en el destino se quedan ahí al «Deshacer» (antes se quitaban también).
-        let already = target == SavedModel.watchlist ? Set(model.watchlist.map(\.imdb))
-            : Set(((try? await env.services.forYou.items(listID: target)) ?? []).map(\.imdb))
+        // Los que ya estaban en el destino se quedan ahí al «Deshacer» (antes se quitaban también) y no suman a su cuenta. Sin
+        // red no se sabe qué tiene: lo que está en alguna de tus listas (lo último que se supo) se queda al deshacer.
+        let already: Set<String>
+        if target == SavedModel.watchlist { already = Set(model.watchlist.map(\.imdb)) }
+        else if let items = try? await env.services.forYou.items(listID: target) { already = Set(items.map(\.imdb)) }
+        else { already = await env.services.forYou.listKeys() }
         let added = picked.filter { !already.contains($0.imdb) }
-        await model.setMany(picked, in: target, add: true)
+        await model.setMany(added, in: target, add: true)
         if let from { await model.setMany(picked, in: from, add: false) }
         let name = env.listName(target, name: model.lists.first { $0.id == target }?.name ?? "")
         notify(String(format: Strings.tr(from == nil ? "Agregadas a «%@»" : "Movidas a «%@»", language: env.services.appSettings.uiLanguage), name),

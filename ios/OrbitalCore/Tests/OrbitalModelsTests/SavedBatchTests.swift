@@ -67,4 +67,16 @@ final class SavedBatchTests: XCTestCase {
         await model.markMoviesWatched([movie("tt0000001")])
         XCTAssertEqual(marks(), first, "ya vista: no se marca otra vez")
     }
+
+    /// La cuenta de una lista sube solo con lo que llega a Trakt (un título sin id de IMDb no se manda ni cuenta).
+    func testLaCuentaDeUnaListaSoloSumaLoQueSeManda() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.offline = true
+        let model = SavedModel(rig.services)
+        model.listCounts["list:42"] = 5
+        let local = Suggestion(art: "od:abc", kind: "movie", title: "Video casero", year: nil, reason: .inWatchlist)
+        await model.setMany([movie("tt0000001"), local], in: "list:42", add: true)
+        XCTAssertEqual(model.listCounts["list:42"], 6)
+    }
 }
+
