@@ -88,9 +88,9 @@ final class MosaicUITests: XCTestCase {
         func snap(_ name: String) -> XCUIScreenshot {
             let shot = app.screenshot(); let a = XCTAttachment(screenshot: shot); a.name = name; a.lifetime = .keepAlways; add(a); return shot
         }
-        /// La franja del muro: de la orilla de arriba de la portada al botón del mosaico.
+        /// El muro: hoy la puerta del mosaico es la portada misma (el muro entero se toca), así que se mide dentro de ella.
         func wall(_ shot: XCUIScreenshot) -> Double {
-            texture(shot, top: walk.frame.maxY - 280, bottom: walk.frame.minY - 8)
+            texture(shot, top: walk.frame.minY + 8, bottom: walk.frame.maxY - 8)
         }
         XCTAssertTrue(walk.waitForExistence(timeout: 30))
         // Con los pósters ya bajados (la primera vez llegan de la red).
@@ -131,7 +131,9 @@ final class MosaicUITests: XCTestCase {
         }
         guard drawn else { return 0 }
         let scale = CGFloat(h) / app.frame.height
-        let rows = max(0, Int(top * scale))..<min(h, Int(bottom * scale))
+        let (low, high) = (max(0, Int(top * scale)), min(h, Int(bottom * scale)))
+        guard low < high else { return 0 }   // la franja quedó fuera de la pantalla: sin textura (antes el Range tiraba la prueba)
+        let rows = low..<high
         var values: [Double] = []
         for y in stride(from: rows.lowerBound, to: rows.upperBound, by: 6) {
             for x in stride(from: 0, to: w, by: 6) {
@@ -158,12 +160,18 @@ final class MosaicUITests: XCTestCase {
 
     func testAfterChoosingATileTheMosaicStillScrolls() {
         launch()
-        // La primera que se puede tocar (en un SE la tercera puede quedar bajo la franja o fuera de la pantalla).
-        guard let tile = tiles.allElementsBoundByIndex.dropFirst().first(where: \.isHittable) else { return XCTFail("ninguna pieza a la vista") }
+        // Una pieza a media pantalla: las de arriba quedan bajo la barra (tocarlas no elige nada) y en un SE la tercera puede
+        // quedar fuera de la pantalla.
+        let screen = app.windows.firstMatch.frame
+        guard let tile = tiles.allElementsBoundByIndex.first(where: { $0.isHittable && $0.frame.midY > screen.height * 0.3 && $0.frame.midY < screen.height * 0.55 }) else {
+            return XCTFail("ninguna pieza a la vista")
+        }
         tile.tap()   // la elige (un segundo toque la abriría)
         sleep(1)
         let p = probe()
-        drag(fromY: 0.8, toY: 0.3)
+        // Desde arriba del pie de la elegida (va de ~0.7 a ~0.85 del mosaico, con «Más» y ▶): un arrastre que empieza en el
+        // pie es del pie.
+        drag(fromY: 0.62, toY: 0.12)
         sleep(1)
         XCTAssertGreaterThan(rise(of: p), 150, "con una pieza elegida, arrastrar también baja el mosaico (no se queda pegado)")
         XCTAssertTrue(mosaic.exists, "y no abrió la ficha")
