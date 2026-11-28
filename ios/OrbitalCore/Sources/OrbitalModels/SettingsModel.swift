@@ -119,7 +119,7 @@ public final class SettingsModel: ObservableModel {
     public func setTMDBKey(_ key: String) {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         services.secrets.set(SecretKey.tmdbKey, trimmed.isEmpty ? nil : trimmed)
-        hasTMDBKey = !trimmed.isEmpty
+        hasTMDBKey = !trimmed.isEmpty   // la tuya (sin ella vuelve la incluida)
         services.reconfigure()
     }
 
@@ -139,6 +139,9 @@ public final class SettingsModel: ObservableModel {
         linking?.cancel()
         do {
             let code = try await t.deviceCode()
+            // Dos toques seguidos piden dos códigos: el que llegó antes se olvida (si no, al vencer, su espera pisaba la
+            // conexión hecha con el código que sí se ve).
+            linking?.cancel()
             trakt = .linking(code: code.userCode, url: code.verificationURL.replacingOccurrences(of: "https://", with: ""))
             let task = Task { [weak self] in
                 var interval = max(code.interval, 1)

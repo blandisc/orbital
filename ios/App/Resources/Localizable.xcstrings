@@ -26977,6 +26977,17 @@
         }
       }
     },
+    "Quitar mi clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove my key"
+          }
+        }
+      }
+    },
     "Quitar silencio": {
       "extractionState": "manual",
       "localizations": {

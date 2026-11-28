@@ -77,9 +77,10 @@ public enum TorrentioProbe {
 
     /// La dirección para pedir las versiones del título de prueba (sin `/manifest.json`). Sin clave, la de Torrentio sin
     /// Real-Debrid: dice qué existe, no qué arranca.
-    public static func streamURL(options: AddonOptions, token: String?) -> URL? {
+    /// `service`: tu nube (con TorBox o AllDebrid la clave va con su nombre; antes se mandaba como si fuera de Real-Debrid).
+    public static func streamURL(options: AddonOptions, token: String?, service: DebridService = .realDebrid) -> URL? {
         let base: String
-        if let manifest = TorrentioConfig.manifestURL(options: options, token: token) { base = String(manifest.dropLast("/manifest.json".count)) }
+        if let manifest = TorrentioConfig.manifestURL(options: options, token: token, service: service) { base = String(manifest.dropLast("/manifest.json".count)) }
         else {
             let parts = TorrentioConfig.parts(options).filter { !$0.hasPrefix("debridoptions=") }
             base = parts.isEmpty ? AddonCatalog.torrentioBase : "\(AddonCatalog.torrentioBase)/\(parts.joined(separator: "|"))"

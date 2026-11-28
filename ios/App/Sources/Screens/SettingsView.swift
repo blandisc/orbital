@@ -311,7 +311,7 @@ struct SettingsView: View {
     private var addonsValue: Text {
         let list = env.services.addonList
         guard list.isConfigured else { return Text("Sin configurar") }
-        let on = list.installed.filter(\.enabled).count
+        let on = AddonsModel.visible(list.installed).filter(\.enabled).count   // los mismos que enseña la página (sin OpenSubtitles)
         return on == 1 ? Text("1 prendido") : Text("\(String(on)) prendidos")
     }
 

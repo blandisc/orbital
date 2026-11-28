@@ -44,6 +44,9 @@ final class TorrentioProbeTests: XCTestCase {
         XCTAssertEqual(url.absoluteString.removingPercentEncoding, "https://torrentio.strem.fun/language=latino|qualityfilter=cam/stream/series/tt0386676:1:1.json")
         let keyed = try XCTUnwrap(TorrentioProbe.streamURL(options: AddonOptions(), token: "KEY123456"))
         XCTAssertTrue(keyed.absoluteString.removingPercentEncoding?.contains("realdebrid=KEY123456/stream/series/") == true)
+        let torbox = try XCTUnwrap(TorrentioProbe.streamURL(options: AddonOptions(), token: "KEY123456", service: .torBox))
+        XCTAssertTrue(torbox.absoluteString.removingPercentEncoding?.contains("torbox=KEY123456/stream/series/") == true,
+                      "con TorBox la prueba usa tu nube, no Real-Debrid")
     }
 }
 

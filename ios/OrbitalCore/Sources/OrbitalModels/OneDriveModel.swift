@@ -67,6 +67,9 @@ public final class OneDriveModel: ObservableModel {
         let drive = services.oneDrive
         do {
             let code = try await drive.deviceCode()
+            // Dos toques seguidos piden dos códigos: el que llegó antes se olvida (si no, al vencer, su espera pisaba la
+            // conexión hecha con el código que sí se ve).
+            linking?.cancel()
             state = .linking(code: code.userCode, url: code.verificationURL)
             let task = Task { [weak self] in
                 var interval = max(code.interval, 1)

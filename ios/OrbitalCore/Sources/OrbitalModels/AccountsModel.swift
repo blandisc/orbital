@@ -83,7 +83,9 @@ public final class DebridModel: ObservableModel {
     /// La clave se tomó de tu Torrentio importado de Stremio (no la pegaste): se dice en Ajustes.
     public var keyCameFromImport: Bool { services.debrid.keyCameFromImport }
     public var tokenURL: URL { connecting.keyURL }
-    public var renewURL: URL { service.renewURL }
+    /// Renovar tu nube; con una clave gratuita recién pegada, la Premium de la nube que estás conectando (pegar una de TorBox
+    /// estando en Real-Debrid abría la página de Real-Debrid).
+    public var renewURL: URL { if case .free = check { return connecting.renewURL }; return service.renewURL }
     /// «Continuar» de la guía: la clave guardada sirve (Premium).
     public var ready: Bool { if case .ok = check { return true }; return hasToken && status?.isPremium == true }
 
@@ -143,6 +145,7 @@ public final class DebridModel: ObservableModel {
                 guard found.isPremium else { check = .free(found); codeFlow = .idle; return }
                 services.addonList.startWithRecommended()
                 await services.resetAccountCaches()
+                target = nil   // como al pegar la clave: de la página de conectar a tu cuenta
                 status = found; keyCheck = .confirmed; check = .ok(found); codeFlow = .idle
                 announceAccountChange()
                 return
@@ -232,7 +235,7 @@ public final class AddonsModel: ObservableModel {
     }
 
     /// Lo que se enseña: todo menos OpenSubtitles, que ya no es complemento (vive en Ajustes › Idioma y subtítulos).
-    static func visible(_ all: [InstalledAddon]) -> [InstalledAddon] { all.filter { !$0.isOpenSubtitles } }
+    public static func visible(_ all: [InstalledAddon]) -> [InstalledAddon] { all.filter { !$0.isOpenSubtitles } }
 
     /// Qué dice cada uno debajo de su nombre: «Usa tu Real-Debrid», «Subtítulos»…, y si vino de Stremio.
     public static func summary(_ addon: InstalledAddon) -> (usesDebrid: Bool, subtitles: Bool, imported: Bool) {

@@ -28,9 +28,11 @@ final class DebridCodeTests: XCTestCase {
     func testTheCodeConnectsWithoutPastingAndArmsTheRecommended() async throws {
         let rig = try rig()
         let model = DebridModel(rig.services)
+        model.target = .realDebrid   // como al tocar Real-Debrid en «Tu nube»
         model.connectWithCode()
         await wait(model)
         guard case .ok(let status) = model.check else { return XCTFail("conectada: \(model.check) \(model.codeFlow)") }
+        XCTAssertNil(model.target, "de la página de conectar a tu cuenta, como al pegar la clave")
         XCTAssertEqual(status.username, "fernando")
         XCTAssertTrue(model.connectedByCode)
         XCTAssertEqual(rig.services.addonList.debridToken, first, "Torrentio se arma con la llave nueva")

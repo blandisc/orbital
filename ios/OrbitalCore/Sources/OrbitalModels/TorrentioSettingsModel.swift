@@ -78,12 +78,12 @@ public final class TorrentioSettingsModel: ObservableModel {
         let current = options
         probe = .checking
         let key = services.addonList.debridToken   // solo para armar la dirección: nunca se enseña ni se anota
-        guard let url = TorrentioProbe.streamURL(options: current, token: key) else { probe = .idle; return }
+        guard let url = TorrentioProbe.streamURL(options: current, token: key, service: services.addonList.debridService) else { probe = .idle; return }
         do {
             let streams = try await services.http.getJSON(url, timeout: 12)?["streams"]?.array ?? []
             var recommended: Int?
             if TorrentioProbe.count(streams) == (0, 0, 0), current != TorrentioConfig.recommended,
-               let other = TorrentioProbe.streamURL(options: TorrentioProbe.recommended(keeping: current), token: key) {
+               let other = TorrentioProbe.streamURL(options: TorrentioProbe.recommended(keeping: current), token: key, service: services.addonList.debridService) {
                 let found = TorrentioProbe.count(try await services.http.getJSON(other, timeout: 12)?["streams"]?.array ?? [])
                 recommended = found.instant + found.toRequest + found.other
             } else if TorrentioProbe.count(streams) == (0, 0, 0) {

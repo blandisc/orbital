@@ -80,6 +80,8 @@ extension SettingsView {
                 Image(systemName: "key").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.ListTint.addon).frame(width: DS.SettingsLook.rowIcon)
             }
             if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
+            // Una clave tuya equivocada dejaba sin fichas en español ni Explorar, sin regreso: se quita y vuelve la incluida.
+            else if model.hasTMDBKey { Button("Quitar mi clave", role: .destructive) { model.setTMDBKey("") } }
         } header: { Text("Claves de Explorar") } footer: {
             env.services.usesBuiltInTMDBKey
                 ? Text("Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.")
