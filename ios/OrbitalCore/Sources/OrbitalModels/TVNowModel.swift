@@ -34,6 +34,9 @@ public final class TVNowModel: ObservableModel {
     /// «Intentar de nuevo» del control: pregunta ya, sin esperar el siguiente sondeo.
     public func retryNow() async {
         unreachable = false
+        // Con el sondeo en marcha se reinicia: si no, tras «Reintentar» seguía la espera larga de las fallas (revisión del
+        // 28 nov 2026). El primer sondeo del reinicio va sin espera.
+        if active, !localPlayerOpen, services.orbital.isConfigured { setActive(true); return }
         await tick()
     }
     /// La pantalla de la TV al frente (la manda la consola; nil en versiones viejas): el control se arma según ella.

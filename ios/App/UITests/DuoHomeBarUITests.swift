@@ -54,7 +54,6 @@ final class DuoHomeBarUITests: XCTestCase {
         let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
         from.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)))
         sleep(2)
-        try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "/tmp/orbital-duo-dock-shrunk.png"))
         XCTAssertFalse(explore.exists && explore.isHittable, "al bajar, la barra se encoge a un botón")
         // Al subir con la mano (un deslizar con impulso, como el pulgar): iOS regresa la barra. Un arrastre lento sin soltar no
         // cuenta como «subir» para iOS (28 nov 2026: así fallaba esta prueba, no la app).
