@@ -16,8 +16,12 @@ final class MatchDeckSwipeUITests: XCTestCase {
         shot("antes")
         let count = app.descendants(matching: .any).matching(identifier: "match-saved-count").firstMatch
         let before = count.exists ? count.label : ""
-        let mid = app.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.45))
-        mid.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.47)), withVelocity: .fast, thenHoldForDuration: 0)
+        // Desde la carta misma: en una pantalla baja (el Duo cerrado) la carta es angosta y queda al centro, y un arrastre que
+        // empieza a un lado de ella no la mueve.
+        let info = app.descendants(matching: .any)["match-info"]
+        let cardY = info.exists ? (info.frame.minY - 60) / app.frame.height : 0.45
+        let mid = app.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: cardY))
+        mid.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: cardY + 0.02)), withVelocity: .fast, thenHoldForDuration: 0)
         sleep(2)
         shot("derecha")
         let after = count.exists ? count.label : ""

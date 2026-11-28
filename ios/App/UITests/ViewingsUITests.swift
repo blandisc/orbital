@@ -25,8 +25,16 @@ final class ViewingsUITests: XCTestCase {
         if done.waitForExistence(timeout: 2) { done.tap() }
     }
 
+    /// Lo sube poco a poco hasta que quede en la parte libre de la pantalla: ni bajo la barra de arriba ni bajo las pestañas y
+    /// «¿Qué tal…?» (en una pantalla baja, como el Duo cerrado, un `swipeUp` entero lo pasaba de largo bajo la barra).
     func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
-        for _ in 0..<8 where !(element.exists && element.isHittable) { app.swipeUp() }
+        let height = app.frame.height
+        func clear() -> Bool { element.exists && element.isHittable && element.frame.minY > height * 0.15 && element.frame.maxY < height * 0.7 }
+        for _ in 0..<16 where !clear() {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            let up = element.exists && element.frame.maxY > 0 && element.frame.minY < height * 0.15
+            from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 0, dy: up ? 120 : -120)))
+        }
     }
 
     func testTusVistasYTuNotaEnLaFicha() {
@@ -100,8 +108,13 @@ final class ViewingsUITests: XCTestCase {
         XCTAssertTrue(mark.waitForExistence(timeout: 25))
         mark.tap()
         // Dentro de un menú de iOS el identificador no llega: se busca por su nombre («Temporada 1 · 3 de 22 vistos»).
-        let season = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Temporada'")).firstMatch
-        XCTAssertTrue(season.waitForExistence(timeout: 5), "la temporada en el menú de «Vista»")
+        // «Temporada 2» también es el selector de temporadas de la ficha: la del menú es la que va justo arriba de «Toda la serie».
+        let whole = app.buttons.matching(NSPredicate(format: "label == 'Toda la serie'")).firstMatch
+        XCTAssertTrue(whole.waitForExistence(timeout: 5), "el menú de «Vista»")
+        let season = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Temporada'")).allElementsBoundByIndex
+            .filter { $0.frame.maxY <= whole.frame.minY + 2 && $0.frame.minX < whole.frame.maxX && $0.frame.maxX > whole.frame.minX }
+            .max { $0.frame.maxY < $1.frame.maxY } ?? whole
+        XCTAssertNotEqual(season.label, whole.label, "la temporada en el menú de «Vista»")
         season.tap()
         answerWhen(app)
         mark.tap()

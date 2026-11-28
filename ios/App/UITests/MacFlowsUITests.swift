@@ -9,7 +9,9 @@ import XCTest
 final class MacFlowsUITests: XCTestCase {
     var app: XCUIApplication!
 
-    override func setUp() {
+    override func setUpWithError() throws {
+        // El acomodo de la Mac se prueba en el simulador del iPad (ver arriba): en un iPhone no aplica.
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "solo en el simulador del iPad")
         continueAfterFailure = false
         app = XCUIApplication()
     }

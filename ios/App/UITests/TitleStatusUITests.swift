@@ -49,8 +49,12 @@ final class TitleStatusUITests: XCTestCase {
         let poster = app.buttons.matching(identifier: "title-link").firstMatch
         XCTAssertTrue(poster.waitForExistence(timeout: 10), "hay pósters en Vistas")
         poster.press(forDuration: 1.2)
-        let move = app.buttons.matching(NSPredicate(format: "label == 'Mi lista' AND identifier != 'saved-tab-mylist'")).firstMatch
-        XCTAssertTrue(move.waitForExistence(timeout: 5), "el menú «Mover a…» ofrece «Mi lista»")
+        let options = app.buttons.matching(NSPredicate(format: "label == 'Mi lista' AND identifier != 'saved-tab-mylist'"))
+        XCTAssertTrue(options.firstMatch.waitForExistence(timeout: 5), "el menú «Mover a…» ofrece «Mi lista»")
+        sleep(1)   // que el menú termine de abrir
+        // La del menú, la que se puede tocar (detrás puede quedar otra «Mi lista» que no está a la vista).
+        for o in options.allElementsBoundByIndex { print("DIAG Mi lista \(o.frame) hittable \(o.isHittable) id \(o.identifier)") }
+        let move = options.allElementsBoundByIndex.first(where: \.isHittable) ?? options.firstMatch
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "mover"; a.lifetime = .keepAlways; add(a)
         move.tap()
         XCTAssertTrue(app.staticTexts["Guardada en Mi lista"].waitForExistence(timeout: 5), "avisa con «Deshacer»")

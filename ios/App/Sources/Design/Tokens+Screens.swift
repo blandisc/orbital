@@ -111,7 +111,7 @@ extension DS {
         static let heroAspectMax: CGFloat = 1.6
         /// En el iPhone ancho y bajo (el Duo cerrado) el arte cede más, como la portada de Inicio: si no, las acciones de una
         /// serie que vas viendo quedaban debajo de las pestañas (27 nov 2026).
-        static let heroAspectMaxShortPhone: CGFloat = 2.1
+        static let heroAspectMaxShortPhone: CGFloat = 2.8
         /// Con letra de accesibilidad el arte cede más (las acciones ocupan dos renglones).
         static let heroAspectMaxLarge: CGFloat = 3
         /// «Ver» / «Continuar»: el botón sólido de la ficha (con la calidad en un segundo renglón) y su barrita de avance.

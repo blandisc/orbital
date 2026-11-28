@@ -20,6 +20,12 @@ final class SavedListMenuUITests: XCTestCase {
         XCTAssertTrue(newList.waitForExistence(timeout: 10), "«Nueva lista» al final de las listas")
         let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Para ver con Ana'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
+        // En una pantalla baja (el Duo cerrado) la lista queda bajo «¿Qué tal…?»: se sube primero, como lo haría el dedo.
+        let h = app.frame.height
+        for _ in 0..<10 where !(row.isHittable && row.frame.minY > h * 0.12 && row.frame.midY < h * 0.6) {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 0, dy: row.frame.minY < h * 0.12 ? 100 : -100)))
+        }
         row.tap()
         let more = app.buttons["saved-list-more"]
         XCTAssertTrue(more.waitForExistence(timeout: 10), "el «···» de la lista")

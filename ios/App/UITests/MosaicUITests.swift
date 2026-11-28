@@ -96,8 +96,11 @@ final class MosaicUITests: XCTestCase {
         // Con los pósters ya bajados (la primera vez llegan de la red).
         var before = 0.0
         for _ in 0..<20 { before = wall(app.screenshot()); if before > 0.12 { break }; sleep(1) }
+        // Que lleguen todos los pósters: si llegan más distintos, el muro se arma otra vez con todos (es a propósito, ver
+        // `CoverWall`). En el Duo tardan más y la prueba tomaba el muro de antes de que llegaran.
+        var wallBefore = probe.label
+        for _ in 0..<10 { sleep(2); if probe.label == wallBefore { break }; wallBefore = probe.label }
         _ = snap("a-listas")
-        let wallBefore = probe.label
         XCTAssertGreaterThan(before, 0.12, "el muro se ve antes de entrar al mosaico")
 
         walk.tap(); XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20)); sleep(3)

@@ -250,7 +250,7 @@ struct DecideView: View {
     }
 
     private var close: some View {
-        DSIconButton(symbol: "xmark", label: "Cerrar", size: .large) { dismiss() }   // del tamaño de «Filtros», en su misma orilla (≥ 44 pt)
+        DSIconButton(symbol: "xmark", label: "Cerrar", size: .selector) { dismiss() }   // el mismo círculo que «Filtros» (SZ1: el nativo `large` mide distinto según el iPhone; en el Duo, 47)
             .accessibilityIdentifier("decide-close")
     }
 

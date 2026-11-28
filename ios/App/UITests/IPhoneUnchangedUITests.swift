@@ -37,9 +37,9 @@ final class IPhoneUnchangedUITests: XCTestCase {
 
     /// Tocar un póster abre la ficha a pantalla completa, como siempre (el panel de la derecha es solo del iPad y la Mac).
     func testAPosterOpensTheTitleFullScreen() {
-        open(["-demo-tab", "2"])
+        open(["-demo-tab", "1", "-demo-mode", "lists"])   // los pósters viven en Explorar (Buscar es el campo)
         let poster = app.buttons["title-link"].firstMatch
-        XCTAssertTrue(poster.waitForExistence(timeout: 30), "no hay pósters en Buscar")
+        XCTAssertTrue(poster.waitForExistence(timeout: 30), "no hay pósters en Explorar")
         poster.tap()
         XCTAssertTrue(app.buttons["title-play"].waitForExistence(timeout: 20), "la ficha no abrió")
         XCTAssertFalse(app.buttons["title-panel-close"].exists, "en el iPhone la ficha no va en un panel")
@@ -49,7 +49,10 @@ final class IPhoneUnchangedUITests: XCTestCase {
         open(["-demo-tmdb", "-demo-title", "series:tt0386676"])
         let play = app.buttons["title-play"]
         XCTAssertTrue(play.waitForExistence(timeout: 30), "falta el botón de ver")
-        XCTAssertGreaterThan(play.frame.width, width - 80, "el botón de ver va casi de orilla a orilla (sin margen de lectura)")
+        // «Ver» lleva su versión al lado (`title-sources`, la botonera partida) o va solo: el renglón entero va de orilla a orilla.
+        let sources = app.buttons["title-sources"]
+        let row = sources.exists ? play.frame.union(sources.frame) : play.frame
+        XCTAssertGreaterThan(row.width, width - 80, "el botón de ver va casi de orilla a orilla (sin margen de lectura)")
         shot("ficha")
         open(["-demo-open", "settings"])
         let profile = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Tu perfil'")).firstMatch
