@@ -53,10 +53,13 @@ final class TitleStatusUITests: XCTestCase {
         XCTAssertTrue(options.firstMatch.waitForExistence(timeout: 5), "el menú «Mover a…» ofrece «Mi lista»")
         sleep(1)   // que el menú termine de abrir
         // La del menú, la que se puede tocar (detrás puede quedar otra «Mi lista» que no está a la vista).
-        for o in options.allElementsBoundByIndex { print("DIAG Mi lista \(o.frame) hittable \(o.isHittable) id \(o.identifier)") }
         let move = options.allElementsBoundByIndex.first(where: \.isHittable) ?? options.firstMatch
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "mover"; a.lifetime = .keepAlways; add(a)
         move.tap()
+        // En el Duo cerrado el primer toque sintético sobre el menú del sistema a veces se pierde (el dedo sí entra): otra vez.
+        if !app.staticTexts["Guardada en Mi lista"].waitForExistence(timeout: 2), move.exists {
+            move.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).tap()
+        }
         XCTAssertTrue(app.staticTexts["Guardada en Mi lista"].waitForExistence(timeout: 5), "avisa con «Deshacer»")
     }
 }
