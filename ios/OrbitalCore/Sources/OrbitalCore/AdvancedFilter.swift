@@ -83,7 +83,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     /// Cuántos filtros están puestos (el «Ver resultados · 3» y el punto en la puerta).
     public var activeCount: Int {
         [format != .all, seriesStatus != .any && format == .series, !genres.isEmpty || !excluded.isEmpty, years != nil || spread,
-         length != .any, minRating != nil || minLetterboxd != nil, fame != .any, !countries.isEmpty, !studios.isEmpty, !providers.isEmpty, !awards.isEmpty].filter { $0 }.count
+         length != .any, minRating != nil || activeLetterboxd != nil, fame != .any, !countries.isEmpty, !studios.isEmpty, !providers.isEmpty, !awards.isEmpty].filter { $0 }.count
     }
     public var isEmpty: Bool { activeCount == 0 }
 
@@ -141,6 +141,9 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     /// «Nada con esos filtros» aunque hubiera cientos (Fernando, 1 nov 2026). Ahí manda la calificación de TMDB y
     /// «Mejor calificadas en Letterboxd» ordena como «Mejor calificadas».
     public var usesLetterboxd: Bool { format != .series && (minLetterboxd != nil || sort == .letterboxd) }
+    /// El mínimo de Letterboxd que de verdad filtra: con «Series» no cuenta (Letterboxd no califica series), así que ni se
+    /// enseña puesto ni suma al «Filtros · N». Una sola fuente para el mosaico, el resumen y la cuenta.
+    public var activeLetterboxd: Double? { format == .series ? nil : minLetterboxd }
 
     /// Lo menos que dura una película (sin esto «Corta» traía cortometrajes de 5 minutos).
     static let featureMinutes = 60

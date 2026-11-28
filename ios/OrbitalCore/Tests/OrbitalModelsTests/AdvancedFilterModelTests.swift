@@ -130,6 +130,25 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(model.results.count, 3)
     }
 
+    /// Sin red a media cuadrícula: lo que ya se ve se queda, la pantalla ofrece «Reintentar» al final y al volver la red sigue
+    /// (antes la cuadrícula acababa sin decir nada; revisión del 27 nov 2026).
+    func testUnaPaginaSiguienteQueNoLlegaSeDiceYSeReintenta() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        let model = AdvancedFilterModel(rig.services)
+        model.filter = movies()
+        await model.search()
+        XCTAssertEqual(model.results.count, 3)
+        rig.http.offline = true
+        await model.more()
+        XCTAssertFalse(model.failed, "lo que ya ves no se tapa")
+        XCTAssertTrue(model.moreFailed, "al final: «Reintentar»")
+        XCTAssertEqual(model.results.count, 3)
+        rig.http.offline = false
+        await model.more()
+        XCTAssertFalse(model.moreFailed)
+    }
+
     func testSinClaveDeTMDBNoSePideNada() async throws {
         let rig = try ServicesRig()
         let model = AdvancedFilterModel(rig.services)

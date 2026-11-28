@@ -34,7 +34,7 @@ struct FilterTile: View {
                 page.title.recipe(mini ? .badge : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 if page == .rating, value != nil {
                     // De dónde sale el número de arriba (el logo de TMDB o el de Letterboxd) y, con las dos, las estrellas.
-                    let f = context.filter, stars = f.format == .series ? nil : f.minLetterboxd
+                    let f = context.filter, stars = f.activeLetterboxd
                     HStack(spacing: DS.Space.s1) {
                         if f.minRating != nil {
                             Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))

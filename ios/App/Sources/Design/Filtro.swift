@@ -175,12 +175,12 @@ struct FilterArt: View {
             switch page {
             case .era where f.years != nil || f.spread:
                 MiniRuler(years: f.years ?? AdvancedFilter.firstYear...f.currentYear, last: f.currentYear)
-            case .rating where f.minRating != nil || f.minLetterboxd != nil:
+            case .rating where f.minRating != nil || f.activeLetterboxd != nil:
                 // El número manda (en el verde de Calificación); el logo de TMDB, chico, dice de dónde sale.
                 // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más» y el logo de TMDB).
                 HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
-                    Text(verbatim: FilterText.number(f.minRating ?? f.minLetterboxd ?? 0)).font((mini ? DS.TextRecipe.labelLarge : DS.TextRecipe.title).font).monospacedDigit().foregroundStyle(page.hue)
+                    Text(verbatim: FilterText.number(f.minRating ?? f.activeLetterboxd ?? 0)).font((mini ? DS.TextRecipe.labelLarge : DS.TextRecipe.title).font).monospacedDigit().foregroundStyle(page.hue)
                 }
             case .fame where f.fame != .any:
                 // Con una elegida, el cuadro chiquito con su esquina; sin nada, su ícono de línea como los demás (antes, cuatro

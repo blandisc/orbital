@@ -61,7 +61,7 @@ struct FilterRatingEditor: View {
     }
 
     private var summaryLine: Text {
-        let lb = filter.format == .series ? nil : filter.minLetterboxd
+        let lb = filter.activeLetterboxd
         switch (filter.minRating, lb) {
         case (nil, nil): return Text("Sin mínimo").foregroundStyle(DS.textMuted)
         case let (t?, nil): return line(t, RatingSlider.tmdb, prefix: "", whose: Text("del público"))
@@ -130,7 +130,7 @@ enum RatingLevels {
             let number = Text(verbatim: prefix + short(v) + "+")
             return word(v, in: presets).map { Text("\($0) · \(number)") } ?? number
         }
-        switch (f.minRating, f.minLetterboxd) {
+        switch (f.minRating, f.activeLetterboxd) {
         case let (t?, l?): return Text("\(Text(verbatim: short(t) + "+")) y \(Text(verbatim: "★" + short(l) + "+"))")
         case let (t?, nil): return one(t, tmdb, "")
         case let (nil, l?): return one(l, letterboxd, "★")

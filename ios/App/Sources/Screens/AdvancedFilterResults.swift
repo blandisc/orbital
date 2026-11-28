@@ -49,6 +49,8 @@ struct FilterResultsView: View {
                 }
                 .padding(.horizontal, DS.Space.gutter)
                 if model.isLoading { DSLoadingState() }
+                // La página siguiente no llegó: se dice y se puede pedir otra vez (antes la cuadrícula acababa sin más).
+                else if model.moreFailed { DSErrorState(offline: !env.isOnline, fills: false) { Task { await model.more() } } }
             }
             .padding(.bottom, DS.Space.s4)
         }

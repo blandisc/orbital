@@ -185,12 +185,14 @@ struct DSLoadingState: View {
 /// «Reintentar». Nunca un vacío que diga «nada» cuando lo que pasó es que no llegó.
 struct DSErrorState: View {
     var offline = false
+    /// En falso: al final de una lista que ya tiene algo (la página siguiente no llegó), sin ocupar toda la pantalla.
+    var fills = true
     let retry: () -> Void
 
     var body: some View {
         DSEmptyState(symbol: offline ? "wifi.slash" : "exclamationmark.triangle",
                      title: offline ? Text("Sin conexión") : Text("No se pudo cargar"),
-                     message: offline ? Text("Revisa tu internet e intenta de nuevo.") : Text("Intenta de nuevo en un momento.")) {
+                     message: offline ? Text("Revisa tu internet e intenta de nuevo.") : Text("Intenta de nuevo en un momento."), fills: fills) {
             Button("Reintentar", systemImage: "arrow.clockwise", action: retry)
         }
     }

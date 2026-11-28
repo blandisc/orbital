@@ -237,6 +237,8 @@ final class AdvancedFilterTests: XCTestCase {
         f.minLetterboxd = 3.5
         XCTAssertEqual(f.kinds, ["series"], "con «Series», Letterboxd no cuenta: antes no se buscaba nada")
         XCTAssertFalse(f.usesLetterboxd)
+        XCTAssertNil(f.activeLetterboxd, "ni se enseña puesto")
+        XCTAssertEqual(f.activeCount, 1, "solo «Series»: ★3.5 no filtra series y no suma al «Filtros · N»")
         XCTAssertEqual(dict(f.params(kind: "series"))["sort_by"], "vote_average.desc", "ordena como «Mejor calificadas»")
         let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(f))
         XCTAssertEqual(back.minLetterboxd, 3.5)

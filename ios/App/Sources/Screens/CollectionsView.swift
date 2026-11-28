@@ -102,6 +102,7 @@ struct CollectionGridView: View {
         .task(id: kind) {
             guard route.kind == .year, let year = Int(route.id) else { return }
             loading = true
+            yearItems = []   // al cambiar de tipo, la cuadrícula carga en vez de enseñar los del otro bajo la etiqueta nueva
             let found = await collections.model.items(year: year, kind: kind)
             guard !Task.isCancelled else { return }   // cambiaste de Películas a Series: no se pinta lo del otro
             yearItems = found

@@ -444,7 +444,9 @@ public final class DecideModel: ObservableModel {
                 for await r in group { out.append(r) }
                 return out
             }
-            for (id, items) in found { loadedItems[id] = items }
+            // Una lista que llegó vacía (o que no cargó: el cargador no distingue) no se recuerda: al elegirla otra vez o con
+            // «Reintentar» se vuelve a pedir. Antes se quedaba vacía toda la hoja.
+            for (id, items) in found where !items.isEmpty { loadedItems[id] = items }
             describeInBackground(found.flatMap(\.1))
         }
         var recent = recentSourceIDs.filter { !ids.contains($0) }

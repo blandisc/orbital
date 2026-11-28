@@ -272,4 +272,25 @@ final class DecideFiltersTests: XCTestCase {
         XCTAssertEqual(model.recentSourceIDs.first, "list:terror")
         model.stop()
     }
+
+    /// Una lista que no cargó (sin red, se acabó el tiempo) no se queda vacía toda la hoja: elegirla otra vez o «Reintentar» la
+    /// vuelve a pedir (revisión del 27 nov 2026).
+    func testAListThatFailedToLoadIsAskedAgain() async throws {
+        let rig = try ServicesRig()
+        let listItems = [suggestion(10, genres: ["Horror"]), suggestion(11, genres: ["Horror"])]
+        final class Box: @unchecked Sendable { var fail = true; var calls = 0 }
+        let box = Box()
+        let lazy = DecideModel.Source(id: "list:terror", name: "Terror de octubre", origin: "Trakt", items: [],
+                                      load: { box.calls += 1; return box.fail ? [] : listItems })
+        let model = DecideModel(rig.services, pool: [suggestion(1, genres: ["Comedy"])], sources: [lazy])
+        model.time = .long
+        await model.setSources(["list:terror"])
+        XCTAssertNil(model.itemCount(lazy), "falló: no se recuerda vacía")
+        box.fail = false
+        await model.retry(pool: [suggestion(1, genres: ["Comedy"])], sources: [lazy])
+        XCTAssertEqual(box.calls, 2, "«Reintentar» la vuelve a pedir")
+        XCTAssertEqual(model.itemCount(lazy), 2)
+        XCTAssertEqual(model.count(), 2)
+        model.stop()
+    }
 }

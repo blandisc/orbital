@@ -112,7 +112,8 @@ public final class AdvancedFilterModel: ObservableModel {
     /// Busca desde la primera página con el filtro de ahora (si es el mismo de la última vez, no vuelve a pedir).
     public func search() async {
         guard searched != filter || results.isEmpty else { return }
-        searched = filter; page = 0; exhausted = false; results = []; failed = false; letterboxdDown = false
+        generation += 1   // lo que aún llegue de la búsqueda anterior ya no entra (aunque el filtro vuelva a ser el mismo)
+        searched = filter; page = 0; exhausted = false; results = []; failed = false; moreFailed = false; letterboxdDown = false
         if filter.hideWatched, let watchedSource { watched = await watchedSource() }
         await more()
     }
@@ -121,6 +122,11 @@ public final class AdvancedFilterModel: ObservableModel {
     static let fillTarget = 20
     /// Al llegar al final de la cuadrícula mientras aún cargaba: se pide otra vez al terminar.
     private var wantsMore = false
+    /// Cada búsqueda desde la primera página: una página que llega de otra búsqueda se descarta. Comparar el filtro no
+    /// bastaba: con A→B→A rápido, la página de la primera A entraba en la segunda y se perdían las de antes.
+    private var generation = 0
+    /// Una página siguiente no llegó (ya había resultados): la pantalla ofrece «Reintentar» al final.
+    public private(set) var moreFailed = false { didSet { if oldValue != moreFailed { changed() } } }
 
     /// Las páginas que sigan hasta juntar una pantalla de títulos nuevos (hasta cinco). Antes paraba con uno solo: con
     /// «Sin lo que ya vi» la primera página quedaba en tres o cuatro y, si el último ya se veía, nunca pedía la segunda.
@@ -133,13 +139,14 @@ public final class AdvancedFilterModel: ObservableModel {
                 await nextPage()
                 if results.count - before >= Self.fillTarget || exhausted || failed { break }
             }
-        } while wantsMore && !exhausted && !failed
+        } while wantsMore && !exhausted && !failed && !moreFailed
     }
 
     private func nextPage() async {
         // Los premios vienen con la app: no necesitan la clave de TMDB (sin ella, «Óscar» daba cero resultados).
         guard !isLoading, !exhausted, available || !filter.awards.isEmpty else { return }
-        let asked = filter
+        let asked = filter, run = generation
+        moreFailed = false
         isLoading = true
         defer { isLoading = false }
         do {
@@ -151,7 +158,7 @@ public final class AdvancedFilterModel: ObservableModel {
                 return
             }
             let (rows, _, found) = try await services.tmdb.discoverCounting(asked, page: page + 1)
-            guard asked.withoutClock == filter.withoutClock else { return }   // cambiaste el filtro mientras llegaba: se descarta
+            guard run == generation, asked.withoutClock == filter.withoutClock else { return }   // cambiaste el filtro mientras llegaba: se descarta
             if page == 0 { count = found }
             page += 1
             if rows.isEmpty { exhausted = true; return }
@@ -163,14 +170,14 @@ public final class AdvancedFilterModel: ObservableModel {
             // los que no pasan aparecerían y se irían).
             var held: [Suggestion] = []
             _ = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: services.tmdb) { [weak self] batch in
-                guard let self, asked.withoutClock == self.filter.withoutClock else { return false }   // cambiaste el filtro: lo demás ya no sirve
+                guard let self, run == self.generation, asked.withoutClock == self.filter.withoutClock else { return false }   // cambiaste el filtro: lo demás ya no sirve
                 let fresh = batch.filter { !hidden.contains($0.imdb) && asked.fits(kind: $0.kind, runtime: $0.runtime) && have.insert($0.imdb).inserted }
                 if asked.usesLetterboxd { held += fresh } else if !fresh.isEmpty { self.results += fresh }
                 return true
             }
             if asked.usesLetterboxd, !held.isEmpty {
                 let averages = await Letterboxd(http: services.http, kv: services.kv).averages(held.map(\.imdb))
-                guard asked.withoutClock == filter.withoutClock else { return }
+                guard run == generation, asked.withoutClock == filter.withoutClock else { return }
                 // Ni una con su promedio: Letterboxd no contestó (o pidió verificación). Se dice, en vez de tirarlas todas
                 // como si fueran de 0 estrellas y decir «Nada con esos filtros».
                 if averages.isEmpty { letterboxdDown = true; failed = results.isEmpty; return }
@@ -180,7 +187,8 @@ public final class AdvancedFilterModel: ObservableModel {
                 results += asked.sort == .letterboxd ? rated.sorted { ($0.letterboxdRating ?? 0) > ($1.letterboxdRating ?? 0) } : rated
             }
         } catch {
-            failed = results.isEmpty
+            guard run == generation else { return }
+            failed = results.isEmpty; moreFailed = !results.isEmpty
         }
     }
 

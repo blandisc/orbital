@@ -95,6 +95,10 @@ extension DecideModel {
         pool = (newPool + newSources.flatMap(\.items)).filter { seen.insert($0.imdb).inserted }
         sources = newSources.filter { !$0.items.isEmpty || $0.load != nil }
         pick = nil; picks = []; exhausted = false
+        // Con listas elegidas que no cargaron, se piden otra vez (con lo demás ya en mano, otra vuelta basta).
+        if sources.contains(where: { sourceIDs.contains($0.id) && itemCount($0) == nil && $0.load != nil }) {
+            return await setSources(sourceIDs)
+        }
         await quick()
     }
 
