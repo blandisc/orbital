@@ -197,4 +197,39 @@ final class HistoryModelTests: XCTestCase {
         await viewings.undoRemove(only)
         let seen = await rig.services.watch.isSeen(metaID: "tt1160419", videoID: "tt1160419"); XCTAssertTrue(seen)
     }
+
+    /// Revisión del 28 nov: borrar vistas recorre las páginas de Trakt; «Ver más» no se salta las que pasaron a la anterior.
+    func testVerMasTrasBorrarNoSeSaltaLasQueSeRecorrieron() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json[page(1)] = .array((1...100).map { row($0, "2025-03-14T21:12:00.000Z", imdb: "tt\($0)") })
+        let history = model(rig)
+        await history.loadMore()
+        _ = history.remove(try XCTUnwrap(history.entries.first))
+        // En Trakt ya se borró la 1: la 101 pasó a la página 1 y la 2 empieza en la 102.
+        rig.http.json[page(1)] = .array((2...101).map { row($0, "2025-03-14T21:12:00.000Z", imdb: "tt\($0)") })
+        rig.http.json[page(2)] = [row(102, "2025-01-02T18:30:00.000Z", imdb: "tt102")]
+        await history.loadMore()
+        let ids = Set(history.entries.map(\.id))
+        XCTAssertTrue(ids.contains(101), "la que se recorrió a la página anterior no se pierde")
+        XCTAssertTrue(ids.contains(102))
+        XCTAssertFalse(ids.contains(1), "la borrada no regresa")
+        XCTAssertEqual(history.entries.count, 101)
+    }
+
+    /// Sin red, volver a cargar no vacía el Historial: se queda lo de antes y avisa.
+    func testRecargarSinRedNoVaciaElHistorial() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json[page(1)] = [row(901, "2025-03-14T21:12:00.000Z")]
+        let history = model(rig)
+        await history.loadMore()
+        rig.http.offline = true
+        await history.reload()
+        XCTAssertEqual(history.entries.map(\.id), [901])
+        XCTAssertTrue(history.failed)
+        rig.http.offline = false
+        rig.http.json[page(1)] = [row(902, "2025-03-15T21:12:00.000Z"), row(901, "2025-03-14T21:12:00.000Z")]
+        await history.retry()
+        XCTAssertEqual(history.entries.map(\.id), [902, 901], "«Reintentar» repite la recarga, no pide la página 2")
+    }
 }
+

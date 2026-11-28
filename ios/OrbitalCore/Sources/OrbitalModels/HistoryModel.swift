@@ -25,6 +25,12 @@ public final class HistoryModel: ObservableModel {
     public var monthName: @MainActor (Date) -> String { didSet { regroup(); changed() } }
 
     private var page = 1
+    /// Vistas borradas desde la última página: Trakt recorre las suyas y la siguiente empezaría más adelante.
+    private var removedSincePage = 0
+    /// Lo borrado aquí que aún puede deshacerse: no regresa al pedir otra página antes de que llegue a Trakt.
+    private var hidden: Set<Int> = []
+    /// Lo que falló fue volver a cargar: «Reintentar» lo repite (no pide la página que sigue).
+    private var retryReloads = false
     private let services: Services
 
     public init(_ services: Services, monthName: @escaping @MainActor (Date) -> String) {
@@ -42,25 +48,46 @@ public final class HistoryModel: ObservableModel {
     /// La primera página, si aún no hay nada.
     public func loadIfNeeded() async { if entries.isEmpty { await loadMore() } }
 
-    /// La página que sigue (de 100 en 100). Lo que ya estaba no se repite.
+    /// La página que sigue (de 100 en 100). Lo que ya estaba no se repite. Si se borraron vistas, las páginas de Trakt se
+    /// recorrieron hacia atrás: se pide también la anterior para no saltarse las que pasaron a ella.
     public func loadMore() async {
         guard !loading else { return }
         loading = true; failed = false
         do {
-            let found = try await services.watch.history(page: page)
-            let known = Set(entries.map(\.id))
-            entries += found.entries.filter { !known.contains($0.id) }
+            var found = try await services.watch.history(page: page)
+            if removedSincePage > 0, page > 1 {
+                let previous = try await services.watch.history(page: page - 1)
+                found.entries = previous.entries + found.entries
+            }
+            append(found.entries)
             more = found.full   // contado antes de quitar lo borrado aquí: «Ver más» no se apaga antes de tiempo
-            page += 1
+            page += 1; removedSincePage = 0
         } catch { failed = true }
         loading = false
     }
 
-    /// Desde el principio (deslizar hacia abajo, tras cambiar una fecha o deshacer).
+    /// Desde el principio (deslizar hacia abajo, tras cambiar una fecha o deshacer). Lo de antes se queda hasta que llega la
+    /// página nueva: sin red, el Historial no se vacía (solo avisa).
     public func reload() async {
         guard !loading else { return }   // con una página en camino, reiniciar la dejaría caer en una lista vacía
-        entries = []; page = 1; more = true
-        await loadMore()
+        loading = true; failed = false; retryReloads = false
+        do {
+            let found = try await services.watch.history(page: 1)
+            entries = []; append(found.entries)
+            more = found.full; page = 2; removedSincePage = 0
+        } catch { failed = true; retryReloads = true }
+        loading = false
+    }
+
+    /// «Reintentar»: repite lo que falló (volver a cargar desde el principio, o la página que seguía).
+    public func retry() async {
+        if retryReloads { retryReloads = false; await reload() } else { await loadMore() }
+    }
+
+    private func append(_ found: [TraktHistoryEntry]) {
+        let known = Set(entries.map(\.id))
+        var seen = Set<Int>()
+        entries += found.filter { !known.contains($0.id) && !hidden.contains($0.id) && seen.insert($0.id).inserted }
     }
 
     /// Lo quita de la lista ya (la pantalla lo anima) y devuelve el envío a Trakt. El Historial solo ve las páginas que cargó:
@@ -68,6 +95,7 @@ public final class HistoryModel: ObservableModel {
     public func remove(_ e: TraktHistoryEntry) -> @MainActor () async -> Void {
         let left = entries.filter { $0.target == e.target && $0.id != e.id }.count
         entries.removeAll { $0.id == e.id }
+        hidden.insert(e.id); removedSincePage += 1
         let watch = services.watch
         return { await watch.removeViewing(TraktViewing(id: e.id, at: e.at), kind: e.kind, metaID: e.target.imdb, videoID: Self.videoID(e),
                                            remaining: left, sure: false) }
@@ -75,6 +103,7 @@ public final class HistoryModel: ObservableModel {
 
     /// «Deshacer» de «Vista borrada»: la misma vista, con su fecha, otra vez; luego la lista desde el principio.
     public func undoRemove(_ e: TraktHistoryEntry) async {
+        hidden.remove(e.id)
         await services.watch.addViewing(kind: e.kind, metaID: e.target.imdb, videoID: Self.videoID(e), name: e.title, at: e.at)
         await reload()
     }
@@ -95,6 +124,7 @@ public final class HistoryModel: ObservableModel {
     public func removeRepeats() -> (count: Int, send: @MainActor () async -> Void) {
         let ids = Array(repeats)
         entries.removeAll { ids.contains($0.id) }
+        hidden.formUnion(ids); removedSincePage += ids.count
         let watch = services.watch
         return (ids.count, { await watch.removeViewings(ids) })
     }

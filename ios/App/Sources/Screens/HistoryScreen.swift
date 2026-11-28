@@ -60,7 +60,7 @@ struct HistoryScreen: View {
             }
             if model.failed {
                 DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tu historial"), message: Text("Revisa tu conexión e inténtalo otra vez."), fills: false) {
-                    Button("Reintentar") { Task { await model.loadMore() } }
+                    Button("Reintentar") { Task { await model.retry() } }
                 }
                 .listRowBackground(Color.clear)
             } else if model.loading {
