@@ -14,6 +14,7 @@ struct SavedMoveMenu: View {
     let model: SavedModel
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let moves = SavedModel.moves(kind: suggestion.kind, from: from)
         Section {
             ForEach(moves, id: \.self) { to in

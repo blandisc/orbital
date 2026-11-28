@@ -11,7 +11,10 @@ struct SavedListManagement: ViewModifier {
     @Environment(AppEnvironment.self) private var env
     /// Borrada la lista, su pantalla ya no tiene qué enseñar: de vuelta al tablero.
     @Environment(\.dismiss) private var dismiss
-    let model: SavedModel
+    /// Por el observador, no el modelo suelto: leer `observer.model` es lo que vuelve a pintar el «···» cuando cambia la lista
+    /// (con el modelo suelto nunca salía; 27 nov 2026).
+    var observer: ModelObserver<SavedModel>
+    private var model: SavedModel { observer.model }
     /// «Ordenar a mano» (también desde «Ordenar y filtrar», en Mi lista).
     @Binding var reordering: Bool
     /// Elegir varios está abierto: el «···» se esconde para no chocar.
@@ -22,8 +25,10 @@ struct SavedListManagement: ViewModifier {
     @State private var openToShare = false
     private struct ShareAsk: Identifiable { var id: String { "share" } }
 
-    private var listID: String { model.selected }
-    private var own: Bool { model.canEdit && listID != SavedModel.watchlist }
+    /// La lista de esta pantalla (no la elegida del modelo, que cambia después de abrirla).
+    let listID: String
+    private var own: Bool { model.traktLinked && TitleActions.isEditable(listID: listID) && listID != SavedModel.watchlist }
+    private var listName: String { model.lists.first { $0.id == listID }?.name ?? "" }
     private var privacy: String { model.privacies[listID] ?? "private" }
 
     func body(content: Content) -> some View {
@@ -39,9 +44,9 @@ struct SavedListManagement: ViewModifier {
                 Button("Guardar") { let name = newName; run("No pude cambiar el nombre") { try await model.renameList(listID, to: name) } }
                     .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .confirmationDialog(Text("¿Borrar «\(model.selectedName)»?"), isPresented: $deleting, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
+            .confirmationDialog(Text("¿Borrar «\(listName)»?"), isPresented: $deleting, titleVisibility: .visible) {   // ds-exception: confirmación destructiva corta
                 Button("Borrar lista", role: .destructive) {
-                    let id = listID, name = model.selectedName, dismiss = dismiss
+                    let id = listID, name = listName, dismiss = dismiss
                     run("No pude borrar la lista") {
                         try await model.deleteList(id)
                         env.notify(format: "Borraste «%@»", name, tone: .success)
@@ -63,7 +68,7 @@ struct SavedListManagement: ViewModifier {
                            }, id: "list-share-card")
             }
             .appSheet(isPresented: $reordering) {
-                ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName),
+                ReorderListSheet(title: listID == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: listName),
                                  items: model.items) { order in
                     do { try await model.reorder(listID, imdbs: order); return true }
                     catch { env.notify("No pude guardar tu orden", detail: "Revisa tu conexión e inténtalo otra vez.", tone: .warn); return false }
@@ -78,7 +83,7 @@ struct SavedListManagement: ViewModifier {
                 Section { Text("Sin internet: cambiar tu lista necesita conexión") }
             }
             Group {
-                Button { newName = model.selectedName; renaming = true } label: { Label("Cambiar nombre", systemImage: "pencil") }
+                Button { newName = listName; renaming = true } label: { Label("Cambiar nombre", systemImage: "pencil") }
                 Picker(selection: Binding(get: { privacy }, set: { new in run("No pude cambiar quién la ve") { try await model.setPrivacy(listID, new) } })) {
                     Label("Solo tú", systemImage: "lock").tag("private")
                     Label("Con el enlace", systemImage: "link").tag("link")
@@ -92,7 +97,7 @@ struct SavedListManagement: ViewModifier {
                 if privacy == "private" {
                     Button { openToShare = true } label: { Label("Compartir enlace", systemImage: "square.and.arrow.up") }
                 } else if let url = Trakt.listURL(String(listID.dropFirst("list:".count))) {
-                    ShareLink(item: url, subject: Text(verbatim: model.selectedName)) { Label("Compartir enlace", systemImage: "square.and.arrow.up") }
+                    ShareLink(item: url, subject: Text(verbatim: listName)) { Label("Compartir enlace", systemImage: "square.and.arrow.up") }
                 }
                 Divider()
                 Button(role: .destructive) { deleting = true } label: { Label("Borrar lista", systemImage: "trash") }
@@ -114,7 +119,7 @@ struct SavedListManagement: ViewModifier {
     }
 
     private func duplicate() {
-        let id = listID, name = String(format: Strings.tr("Copia de %@", language: env.services.appSettings.uiLanguage), model.selectedName)
+        let id = listID, name = String(format: Strings.tr("Copia de %@", language: env.services.appSettings.uiLanguage), listName)
         run("No pude duplicar la lista") {
             let made = try await model.duplicateList(id, name: name)
             env.notify(format: "Hice «%@»", name, tone: .success)

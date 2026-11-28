@@ -79,7 +79,7 @@ struct SavedListContent: View {
         // Al volver de una lista a Mi lista (o al revés), la que toca; lo que ya llegó de ella sale al instante.
         .onAppear { model.refreshProgress(); Task { await model.choose(listID) } }
         .appSheet(isPresented: $adding) { addSheet }
-        .modifier(SavedListManagement(model: model, reordering: $reordering, editing: selection.editing))
+        .modifier(SavedListManagement(observer: observer, reordering: $reordering, editing: selection.editing, listID: listID))
         .onChange(of: model.selected) { selection.editing = false }
     }
 

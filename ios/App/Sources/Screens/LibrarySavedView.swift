@@ -185,6 +185,7 @@ private struct SavedMessage<Content: View>: View {
     let model: SavedModel
     @ViewBuilder let content: Content
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { content }
                 .refreshOrbitHost()

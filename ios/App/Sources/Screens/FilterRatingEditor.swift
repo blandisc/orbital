@@ -17,6 +17,7 @@ struct FilterRatingEditor: View {
     private func edit(_ change: (inout AdvancedFilter) -> Void) { var f = model.filter; change(&f); model.filter = f }
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             summary
             VStack(alignment: .leading, spacing: DS.Space.s2) {

@@ -74,7 +74,10 @@ final class ViewingsUITests: XCTestCase {
         app.textViews["note-editor"].typeText("La vi en el cine con Ana.")
         shot(app, "nota")
         app.buttons["note-save"].tap()
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'con Ana'")).firstMatch.waitForExistence(timeout: 5), "la nota sale en la ficha")
+        // F1 (12 nov): la nota ya no es un renglón; el botón redondo se llena y la lee en voz (su valor).
+        expectation(for: NSPredicate(format: "value CONTAINS 'con Ana'"), evaluatedWith: note)
+        waitForExpectations(timeout: 5)
+        XCTAssertEqual(note.label, "Tu nota", "la nota queda en la ficha: el botón se llena")
         shot(app, "ficha-con-nota")
     }
 
@@ -96,12 +99,13 @@ final class ViewingsUITests: XCTestCase {
         let mark = app.buttons["title-watched"]
         XCTAssertTrue(mark.waitForExistence(timeout: 25))
         mark.tap()
-        let season = app.buttons["title-watched-season"]
-        XCTAssertTrue(season.waitForExistence(timeout: 5))
+        // Dentro de un menú de iOS el identificador no llega: se busca por su nombre («Temporada 1 · 3 de 22 vistos»).
+        let season = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Temporada'")).firstMatch
+        XCTAssertTrue(season.waitForExistence(timeout: 5), "la temporada en el menú de «Vista»")
         season.tap()
         answerWhen(app)
         mark.tap()
-        let rate = app.buttons["title-watched-rate-season"]
+        let rate = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calificar la temporada'")).firstMatch
         XCTAssertTrue(rate.waitForExistence(timeout: 10), "«Calificar la temporada» en el menú de «Vista»")
         rate.tap()
         let stars = app.otherElements["season-rating"]

@@ -417,6 +417,7 @@ struct FixMatchSheet: View {
     @State private var searching = false
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         NavigationStack {
             List {
                 Section {

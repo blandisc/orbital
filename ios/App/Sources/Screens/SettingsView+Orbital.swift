@@ -54,6 +54,7 @@ private struct OrbitalLinkSection: View {
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let services = env.services
         let _ = services.track()
         Group {

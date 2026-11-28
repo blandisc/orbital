@@ -21,7 +21,8 @@ final class SaveSheetUITests: XCTestCase {
         XCTAssertEqual(app.buttons["save-new-list"].frame, before.1, "«Nueva lista…» no se movió")
         XCTAssertLessThan(recent.frame.minY, app.buttons["save-list-101"].exists ? app.buttons["save-list-101"].frame.minY : .infinity,
                           "las recientes van arriba")
-        XCTAssertLessThan(recent.frame.maxY, watchlist.frame.minY, "tus listas arriba, las fijas abajo")
+        // Revisión del 11 nov: las fijas (Mi lista, Favoritos) van arriba y tus listas de Trakt debajo.
+        XCTAssertLessThan(watchlist.frame.maxY, recent.frame.minY, "las fijas arriba, tus listas abajo")
         XCTAssertGreaterThanOrEqual(watchlist.frame.height, 44, "objetivo táctil de al menos 44 pt")
 
         // Una lista nueva entra arriba sin mover las fijas.

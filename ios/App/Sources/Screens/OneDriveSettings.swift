@@ -109,6 +109,7 @@ struct OneDriveFolderPicker: View {
     @State private var error: String?
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         List {
             Section {
                 // En la raíz: todo tu OneDrive (se recorren hasta cuatro niveles de carpetas).

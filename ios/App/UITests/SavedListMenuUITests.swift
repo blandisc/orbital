@@ -34,9 +34,15 @@ final class SavedListMenuUITests: XCTestCase {
         field.tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30))
         field.typeText("Con Ana")
-        app.alerts.buttons["Guardar"].tap()
+        // Al borrar todo, «Guardar» se apaga y tarda un momento en volver a prenderse: tocarlo antes no hace nada.
+        let save = app.alerts.buttons["Guardar"]
+        expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: save)
+        waitForExpectations(timeout: 5)
+        sleep(1)
+        save.tap()
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Con Ana'")).firstMatch.waitForExistence(timeout: 5)
-                      || app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Con Ana'")).firstMatch.exists, "el nombre nuevo")
+                      || app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Con Ana'")).firstMatch.exists
+                      || app.navigationBars["Con Ana"].exists, "el nombre nuevo (en iOS 27 el título es la barra)")
         more.tap()
         app.buttons["Ordenar a mano"].tap()
         XCTAssertTrue(app.navigationBars.buttons["Guardar"].waitForExistence(timeout: 5), "la hoja con agarraderas")

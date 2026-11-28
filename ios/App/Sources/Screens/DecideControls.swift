@@ -20,6 +20,7 @@ struct DecideControls: View {
     private var language: String { env.services.appSettings.uiLanguage }
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let m = model
         let parts = words.setParts(m, deck: deck)
         VStack(alignment: .leading, spacing: DS.Space.s2) {

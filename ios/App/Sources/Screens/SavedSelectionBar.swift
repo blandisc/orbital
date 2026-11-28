@@ -23,6 +23,7 @@ struct SavedSelectionBar: View {
     private var chosen: [Suggestion] { items.filter { selection.chosen.contains($0.imdb) } }
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let actions = SavedModel.batchActions(listID: listID, pile: pile)
         let none = chosen.isEmpty
         DSSelectionBar {

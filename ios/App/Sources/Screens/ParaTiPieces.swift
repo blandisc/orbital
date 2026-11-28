@@ -191,6 +191,7 @@ struct PlanPoster: View {
     var width: CGFloat = DS.Poster.railWidth
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let favorites = plan.id == ForYou.favoritesList
         let own = TitleActions.isEditable(listID: plan.id)
         // En Mi lista todo está ahí: el marcador sobra.

@@ -43,6 +43,7 @@ struct DecideFilters: View {
     }
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let _ = BodyCount.tick("decide-filters", why: Self._printChanges)   // cuántas veces se pinta (`-perf-bodies`)
         let m = observer.model
         let total = m.tally(deck: deck)
@@ -294,6 +295,7 @@ struct DecideListPicker: View {
     private var language: String { env.services.appSettings.uiLanguage }
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         let all = model.sources
         let origins = Dictionary(grouping: all, by: \.origin).filter { !$0.key.isEmpty }.map { ($0.key, $0.value.count) }.sorted { $0.1 > $1.1 }
         let matching = all.filter { s in

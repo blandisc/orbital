@@ -506,6 +506,7 @@ struct DownloadSubtitlesSheet: View {
     @State private var saving: String?
 
     var body: some View {
+        let _ = model.track()   // el modelo llega suelto: así se vuelve a pintar cuando cambia
         DSSheet(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? titleName(item.title, id: item.metaID, kind: item.kind) : "\(titleName(item.title, id: item.metaID, kind: item.kind)) · \(item.subtitle)"), spacing: DS.Space.s2) {
             if let found {
                 if found.isEmpty {

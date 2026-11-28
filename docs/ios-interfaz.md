@@ -682,6 +682,12 @@ de un título usa `titleName`, igual que el texto que se ve**, nunca `.title` cr
 siempre en inglés («MOBLAND» sobre «Tierra de Mafia»); si no coincide, va el nombre en letra (`titleName.logo(…)`; en la ficha `model.logo(shown:)`, que compara con `originalTitle`;
 `DisplayTitle.logoFits`). Ficha, portada, mosaico, tarjetas y canales. Lo cuida `testLogosSayTheShownName`.
 
+### Lo que cambia se ve al momento (27 nov 2026)
+
+Una vista que recibe un modelo suelto (`let model: SavedModel`) lo sigue con `let _ = model.track()` al empezar `body`, o
+recibe su `ModelObserver`; si no, no se vuelve a pintar cuando el modelo cambia (el «···» de tus listas nunca salía). Los
+modelos que se siguen por propiedad (Inicio, la ficha) no lo necesitan. Lo cuida `DesignRulesTests+Repaint`.
+
 ### Ninguna tarea sobrevive a su vista (13 nov 2026)
 
 Tras el congelamiento de «Una por una» el registro traía un segundo cierre (`swift::AsyncTask::completeFuture` →
