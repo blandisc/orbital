@@ -184,7 +184,7 @@ struct SettingsView: View {
         content
             .appSheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
             .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
-                Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
+                Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); NotificationButtons.register(language: s.uiLanguage, tv: false) }
                 Button("Dejarla conectada", role: .cancel) {}
             } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
             .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {   // ds-exception: confirmación de desconectar (sí o no)
@@ -256,7 +256,7 @@ struct SettingsView: View {
                : Text("¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.")   // edición: la sección solo existe con `settingsEntries.orbital` (console)
         }
         .listRowBackground(DS.surface)
-        .onChange(of: on) { _, now in ReleaseNotifier.registerCategory(language: model.settings.uiLanguage, tv: now) }
+        .onChange(of: on) { _, now in NotificationButtons.register(language: model.settings.uiLanguage, tv: now) }
     }
 
     /// La página de cada renglón de la lista: la misma en iPhone y iPad (empujada) y en la Mac (a la derecha, MA1).

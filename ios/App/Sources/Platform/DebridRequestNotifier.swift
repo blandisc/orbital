@@ -22,18 +22,15 @@ enum DebridRequestNotifier {
     enum Action { static let watch = "debrid.watch", tv = "debrid.tv" }
 
     /// Los botones del aviso. `tv`: con «Usar con tu Orbital» prendido, «Ver en la TV»; apagado, no sale.
-    static func registerCategory(language: String, tv: Bool) {
+    static func makeCategory(language: String, tv: Bool) -> UNNotificationCategory {
         let actions = [
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver ahora", language: language), options: [.foreground],
                                  icon: UNNotificationActionIcon(systemImageName: "play.fill")),
             UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [],
                                  icon: UNNotificationActionIcon(systemImageName: "tv.and.mediabox")),
         ].filter { tv || $0.identifier != Action.tv }
-        let ready = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
-                                           hiddenPreviewsBodyPlaceholder: Strings.tr("La nube terminó tu pedido", language: language), options: [])
-        UNUserNotificationCenter.current().getNotificationCategories { existing in
-            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category }.union([ready]))
-        }
+        return UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
+                                      hiddenPreviewsBodyPlaceholder: Strings.tr("La nube terminó tu pedido", language: language), options: [])
     }
 
     /// ¿Ya se pidió permiso de avisos? (`.notDetermined`: la primera vez que pides algo se explica antes, R10).

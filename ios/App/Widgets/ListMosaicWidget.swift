@@ -91,7 +91,8 @@ enum ListMosaicImages {
 struct ListMosaicWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: WidgetStore.listsKind, intent: ChooseListIntent.self, provider: ListMosaicProvider()) { entry in
-            ListMosaicView(entry: entry)
+            // En el idioma de la app, como los demás widgets (el nombre de la lista lo traía; «12 títulos» iba en el del iPhone).
+            ListMosaicView(entry: entry).environment(\.locale, Locale(identifier: WidgetStore.load()?.language ?? "es"))
         }
         .configurationDisplayName("Mosaico de una lista")
         .description("Los pósters de la lista que elijas, como el muro de Explorar.")

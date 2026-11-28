@@ -12,7 +12,7 @@ extension AppEnvironment {
         case .explore, .decide, .watching: openTab = 1
         case .downloads: openTab = Self.downloadsTab
         case .calendar: openTab = 0
-        case .languages: ui.openLanguages = true; ui.openSettings = true   // Ajustes › Idiomas y subtítulos › Tus idiomas
+        case .languages: ui.openLanguages = true   // Ajustes › Tus idiomas (ella sola pone Ajustes debajo; con las dos salían dos Ajustes)
         }
     }
 }

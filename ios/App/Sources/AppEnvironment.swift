@@ -484,6 +484,10 @@ final class AppEnvironment {
         case .title(let kind, let id):
             pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
         case .play(let kind, let id, let video):
+            // Si ese video ya está bajado, se ve lo bajado (sin red llegaba a una ficha que no cargaba).
+            if let video, let item = await services.downloads.item(DownloadItem.makeID(metaID: id, videoID: video)), item.state == .done {
+                return await playDownloaded(metaID: id, videoID: video)
+            }
             guard let video, let meta = try? await services.cinemeta.meta(kind: kind, id: id) else {
                 pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
                 return
@@ -494,7 +498,8 @@ final class AppEnvironment {
             if kind == "series", parts.count >= 3, let episode = Int(parts[parts.count - 1]) {
                 label = Strings.episode(season: Int(parts[parts.count - 2]), episode: episode, language: services.appSettings.uiLanguage)
             }
-            await play(kind: kind, metaID: id, videoID: video, title: name, originalTitle: name, episodeLabel: label, poster: meta["poster"]?.string)
+            await play(kind: kind, metaID: id, videoID: video, title: name, originalTitle: name, episodeLabel: label, poster: meta["poster"]?.string,
+                       meta: meta)   // la ficha que ya llegó (sin ella se volvía a pedir antes de «Ver»)
         }
     }
 }

@@ -39,7 +39,6 @@ struct RootView: View {
         _services = State(wrappedValue: ModelObserver(env.services))
     }
 
-    /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
     /// Lo que sube la pastilla de calificar: encima de «Viendo en la TV» cuando ese accesorio va sobre la barra (iOS 26.1+, y
     /// no cuando la barra se minimiza y el accesorio se va a su lado).
     private func reminderLift() -> CGFloat {
@@ -48,12 +47,6 @@ struct RootView: View {
         return (tv.now != nil || tv.game != nil) && !ui.tvAccessoryInline ? DS.Toast.accessoryLift : 0
     }
 
-    /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
-    static func handoffFrom(_ position: Double) -> Text {
-        guard position >= DS.Toast.fromStartUnder else { return Text("desde el principio") }
-        let time = Duration.seconds(position).formatted(.time(pattern: position >= 3600 ? .hourMinuteSecond : .minuteSecond))
-        return Text("desde \(time)")
-    }
 
     /// Las pestañas con lo que se abre a pantalla completa encima (reproductor, guía, historias) y sus preguntas. Aparte del
     /// cuerpo: de una sola pieza, el Swift de la CI (Xcode 26.3) no lo alcanzaba a revisar.
@@ -176,7 +169,7 @@ struct RootView: View {
             await env.catalog.load()
             if env.catalog.popular.first?.poster != before { await warm() }
         }
-        .onChange(of: env.services.orbitalOn) { _, on in DebridRequestNotifier.registerCategory(language: env.services.appSettings.uiLanguage, tv: on) }
+        .onChange(of: env.services.orbitalOn) { _, on in NotificationButtons.register(language: env.services.appSettings.uiLanguage, tv: on) }
         .onChange(of: scenePhase) { _, phase in
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
@@ -475,7 +468,12 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         // Un aviso o «Tus pedidos» (RX1-A) abre la pestaña desde su principio: Descargas, no Ajustes encima.
-        .onChange(of: ui.openTab) { _, new in if let new { setTab(new); paths[new] = NavigationPath(); env.openTab = nil } }
+        .onChange(of: ui.openTab) { _, new in
+            guard let new else { return }
+            env.openTab = nil
+            let open = { setTab(new); paths[new] = NavigationPath() }
+            if LinkCovers.clear(keep: ui.showingGuide || env.playing != nil) { Task { try? await Task.sleep(for: DS.Motion.tabSettle); open() } } else { open() }
+        }
         .onChange(of: ui.goBack) { _, back in
             guard back else { return }
             ui.goBack = false
@@ -540,8 +538,8 @@ struct MainTabs: View {
     private func openPendingTitle() {
         guard let route = env.pendingTitle else { return }
         env.pendingTitle = nil
-        setTab(0)
-        if titleAsPanel { titleHost.show(route) } else { paths[0].append(route) }   // iPad y Mac: flotando a la izquierda
+        let show = { setTab(0); if titleAsPanel { titleHost.show(route) } else { paths[0].append(route) } }   // iPad y Mac: flotando
+        if LinkCovers.clear(keep: ui.showingGuide || env.playing != nil) { Task { try? await Task.sleep(for: DS.Motion.tabSettle); show() } } else { show() }
     }
 
     /// Solo la pestaña (repetible: no abre nada encima dos veces).

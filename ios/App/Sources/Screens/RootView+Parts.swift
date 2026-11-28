@@ -70,3 +70,27 @@ private struct WindowProbe: UIViewRepresentable {
 }
 
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
+
+extension RootView {
+    /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
+    /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
+    static func handoffFrom(_ position: Double) -> Text {
+        guard position >= DS.Toast.fromStartUnder else { return Text("desde el principio") }
+        let time = Duration.seconds(position).formatted(.time(pattern: position >= 3600 ? .hourMinuteSecond : .minuteSecond))
+        return Text("desde \(time)")
+    }
+}
+
+/// Un enlace de fuera (un widget, un aviso, el Centro de control) se ve: lo que tapaba la app (una lección, el control, una
+/// hoja de versiones) se cierra antes; la ficha se abría debajo y no pasaba nada a la vista (revisión del 28 nov 2026). La guía
+/// de la primera vez y el reproductor se quedan (`keep`). Devuelve si cerró algo (lo de abajo espera a que se vaya).
+@MainActor enum LinkCovers {
+    static func clear(keep: Bool) -> Bool {
+        guard !keep else { return false }
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        guard let root = scenes.first(where: { $0.activationState == .foregroundActive })?.keyWindow?.rootViewController,
+              root.presentedViewController != nil else { return false }
+        root.dismiss(animated: true)
+        return true
+    }
+}

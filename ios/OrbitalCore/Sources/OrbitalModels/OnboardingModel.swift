@@ -48,9 +48,10 @@ public final class OnboardingModel: ObservableModel {
         super.init()
     }
 
-    /// ¿Se enseña la guía al abrir? La primera vez. Quien ya usaba la app (Real-Debrid o Trakt conectados) no la ve.
+    /// ¿Se enseña la guía al abrir? La primera vez. Quien ya usaba la app (Real-Debrid o Trakt conectados) no la ve, y la que
+    /// quedó a medias hace más de 24 h tampoco: la invita Inicio (`unfinished`); antes salía entera en cada arranque.
     public static func shouldShow(_ services: Services) -> Bool {
-        services.kv.data(seenKey) == nil && !services.debrid.hasToken && services.trakt?.linked != true
+        services.kv.data(seenKey) == nil && !services.debrid.hasToken && services.trakt?.linked != true && !unfinished(services)
     }
 
     // MARK: los pasos
@@ -141,7 +142,9 @@ public final class OnboardingModel: ObservableModel {
     }
 
     /// El paso donde ibas, si cerraste la app hace menos de 24 h.
-    public var resumeStep: Step? {
+    public var resumeStep: Step? { Self.resumeStep(services) }
+
+    static func resumeStep(_ services: Services) -> Step? {
         guard let data = services.kv.data(Self.progressKey), let saved = try? JSONDecoder().decode([String: String].self, from: data),
               let step = saved["step"].flatMap(Step.init(rawValue:)), let at = saved["at"].flatMap(Double.init) else { return nil }
         return services.now().timeIntervalSince1970 - at < Self.resumeWindow ? step : nil
@@ -149,7 +152,7 @@ public final class OnboardingModel: ObservableModel {
 
     /// ¿Quedó a medias hace más de 24 h? Inicio lo dice sin obligar: «Termina de preparar Orbital».
     public static func unfinished(_ services: Services) -> Bool {
-        services.kv.data(seenKey) == nil && services.kv.data(progressKey) != nil && OnboardingModel(services).resumeStep == nil
+        services.kv.data(seenKey) == nil && services.kv.data(progressKey) != nil && resumeStep(services) == nil
     }
 
     // MARK: los pósters de la bienvenida y tus plataformas

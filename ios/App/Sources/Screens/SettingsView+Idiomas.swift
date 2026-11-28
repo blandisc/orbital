@@ -32,7 +32,7 @@ extension SettingsView {
         Section {
             languagePick(title: "La app", detail: "Menús, botones y avisos", symbol: "character.bubble", tint: DS.ListTint.series,
                          preview: .app,
-                         selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } }))
+                         selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v }; NotificationButtons.register(language: v, tv: AppEnvironment.shared.services.orbitalOn) }))   // los avisos también
                 .accessibilityIdentifier("languages-app")
             languagePick(title: "Títulos y sinopsis", detail: "Y los pósters, en ese idioma si los hay", symbol: "text.quote", tint: DS.ListTint.calendar,
                          preview: .poster,

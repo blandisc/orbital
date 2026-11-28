@@ -59,9 +59,9 @@ enum ReleaseNotifier {
     /// Una revisión a la vez (al abrir la app y en segundo plano podían cruzarse y avisar dos veces).
     @MainActor private static var checking = false
 
-    /// Los botones del aviso (se registran una vez, al arrancar).
+    /// Los botones del aviso (se registran con los de los demás avisos: `NotificationButtons.register`).
     /// `tv`: con «Usar con tu Orbital» prendido, el botón «Ver en la TV»; apagado, no sale.
-    static func registerCategory(language: String, tv: Bool) {
+    static func makeCategory(language: String, tv: Bool) -> UNNotificationCategory {
         let actions = [
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
             UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "tv.and.mediabox")),
@@ -69,11 +69,8 @@ enum ReleaseNotifier {
             // Una serie que ya no te interesa: desde el mismo aviso (sin abrir la app).
             UNNotificationAction(identifier: Action.unfollow, title: Strings.tr("Dejar de seguir", language: language), options: [.destructive], icon: UNNotificationActionIcon(systemImageName: "bell.slash")),
         ].filter { tv || $0.identifier != Action.tv }
-        let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
-                                             hiddenPreviewsBodyPlaceholder: Strings.tr("Episodio nuevo", language: language), options: [])
-        UNUserNotificationCenter.current().getNotificationCategories { existing in
-            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != oldGroupCategory }.union([release]))
-        }
+        return UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
+                                      hiddenPreviewsBodyPlaceholder: Strings.tr("Episodio nuevo", language: language), options: [])
     }
 
     /// Pide permiso (al encender el aviso en Ajustes). false: no lo diste.
@@ -208,5 +205,18 @@ enum ReleaseNotifier {
             let link: URL? = WidgetLink.play(kind: kind, id: id, video: video)
             if let link { await env.handle(url: link) }
         }
+    }
+}
+
+/// Los botones de todos los avisos de la app, de una sola vez. Cada aviso registraba los suyos leyendo los de los demás y
+/// escribiendo encima; al arrancar, los tres leían «ninguno» y el último borraba a los otros dos: avisos sin «Ver» ni
+/// «Reintentar» (revisión del 28 nov 2026). Se vuelve a llamar al cambiar el idioma o «Usar con tu Orbital».
+@MainActor enum NotificationButtons {
+    static func register(language: String, tv: Bool) {
+        UNUserNotificationCenter.current().setNotificationCategories([
+            ReleaseNotifier.makeCategory(language: language, tv: tv),
+            DownloadFailureNotifier.makeCategory(language: language),
+            DebridRequestNotifier.makeCategory(language: language, tv: tv),
+        ])
     }
 }

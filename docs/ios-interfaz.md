@@ -1403,6 +1403,12 @@ Una fecha que solo dice el día («Vista el 1 nov», «El día que salió») es 
 Trakt. Leída como medianoche UTC, en México salía el día anterior (Letterboxd y la ficha) y una del 1 de enero caía en el año
 pasado. Se lee con `ISODates.localDay`. `DesignRulesTests.testCalendarDaysAreReadInYourTimeZone` lo vigila.
 
+### Los botones de los avisos van juntos (28 nov 2026)
+
+Los botones de un aviso («Ver», «Ver en la TV», «Reintentar», «Ver ahora») siempre salen, en el idioma de la app. Se
+registran todos de una vez (`NotificationButtons.register`) al abrir la app, al cambiar el idioma y al prender o apagar tu
+Orbital; registrados cada uno por su lado, el último borraba a los demás. `DesignRulesTests.testNoticeButtonsAreRegisteredTogether`.
+
 ### Escenas de lección: escala y giro antes del lugar (19 nov 2026)
 
 En una escena de Aprende, una pieza puesta con `sceneAt` crece o gira con `.scaleEffect`/`.rotationEffect` **antes** de

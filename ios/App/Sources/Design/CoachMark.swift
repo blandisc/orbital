@@ -72,6 +72,8 @@ struct CoachOverlay: View {
     let skipAll: () -> Void
     @State private var shown = false
     @State private var bubbleHeight: CGFloat = 0
+    /// VoiceOver va al título del aviso al salir: antes no decía nada (un anuncio vacío) y el aviso quedaba visto sin oírse.
+    @AccessibilityFocusState private var voiceOverOnTitle: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -99,8 +101,11 @@ struct CoachOverlay: View {
                 .offset(y: shown || reduceMotion ? 0 : DS.Space.s2)
                 .opacity(shown || reduceMotion ? 1 : 0)
         }
-        .task { withAnimation(DS.Motion.enter(reduceMotion)) { shown = true } }
-        .onAppear { UIAccessibility.post(notification: .announcement, argument: nil) }
+        .task {
+            withAnimation(DS.Motion.enter(reduceMotion)) { shown = true }
+            try? await Task.sleep(for: DS.Motion.tabSettle)   // que la burbuja ya esté en su lugar
+            voiceOverOnTitle = true
+        }
     }
 
     /// Debajo de lo señalado si cabe; si no, arriba; si tampoco, abajo de la pantalla. El aviso chico va abajo, sobre la barra
@@ -127,6 +132,7 @@ struct CoachOverlay: View {
                     .accessibilityHidden(true)
             }
             Text(coach.title).recipe(.cardTitle, color: DS.text).fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader).accessibilityFocused($voiceOverOnTitle)
             Text(coach.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s2) {
                 if let story {
@@ -143,6 +149,7 @@ struct CoachOverlay: View {
         .padding(DS.Space.s4)
         .dsCard(.card)
         .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(coach.spotlight ? .isModal : [])   // con velo, lo de atrás no se alcanza (como con el dedo)
         .accessibilityAction(.escape, done)
         .accessibilityIdentifier("coach-\(coach.id)")
     }

@@ -13,17 +13,14 @@ enum DownloadFailureNotifier {
     private static let notifiedKey = "download-failed-notified"
 
     /// Los botones del aviso (se registran una vez, al arrancar).
-    static func registerCategory(language: String) {
+    static func makeCategory(language: String) -> UNNotificationCategory {
         let actions = [
             UNNotificationAction(identifier: Action.retry, title: Strings.tr("Reintentar", language: language), options: [],
                                  icon: UNNotificationActionIcon(systemImageName: "arrow.clockwise")),
             UNNotificationAction(identifier: Action.title, title: Strings.tr("Otra versión", language: language), options: [.foreground],
                                  icon: UNNotificationActionIcon(systemImageName: "list.bullet")),
         ]
-        let failed = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [], options: [])
-        UNUserNotificationCenter.current().getNotificationCategories { existing in
-            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category }.union([failed]))
-        }
+        return UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [], options: [])
     }
 
     /// Cada cambio de la cola: las que pasaron a «falló» desde la última vez se avisan si la app no está a la vista.

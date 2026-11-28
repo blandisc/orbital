@@ -192,7 +192,7 @@ struct WelcomeLanguageMenu: View {
         let model = settings.model
         let language = model.settings.uiLanguage
         Menu {
-            Picker(selection: Binding(get: { language }, set: { v in model.update { $0.uiLanguage = v } })) {
+            Picker(selection: Binding(get: { language }, set: { v in model.update { $0.uiLanguage = v }; NotificationButtons.register(language: v, tv: AppEnvironment.shared.services.orbitalOn) })) {
                 Text(verbatim: "Español").tag("es")
                 Text(verbatim: "English").tag("en")
             } label: { Text("Idioma de la app") }

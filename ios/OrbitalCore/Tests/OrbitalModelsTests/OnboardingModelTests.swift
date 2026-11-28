@@ -90,9 +90,11 @@ final class OnboardingModelTests: XCTestCase {
         guide.reached(.trakt)
         XCTAssertEqual(OnboardingModel(rig.services).resumeStep, .trakt)
         XCTAssertFalse(OnboardingModel.unfinished(rig.services))
+        XCTAssertTrue(OnboardingModel.shouldShow(rig.services), "antes de 24 h sigue donde ibas")
         rig.clock.now = rig.clock.now.addingTimeInterval(25 * 3600)
         XCTAssertNil(OnboardingModel(rig.services).resumeStep)
         XCTAssertTrue(OnboardingModel.unfinished(rig.services), "«Termina de preparar Orbital»")
+        XCTAssertFalse(OnboardingModel.shouldShow(rig.services), "después, ya no sale entera en cada arranque")
         guide.finish()
         XCTAssertFalse(OnboardingModel.unfinished(rig.services))
     }
