@@ -143,7 +143,7 @@ struct SavedListContent: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             controls(parts)
             // «Editar»: cuántas van y «Todas», debajo del renglón que lo abrió.
-            if selection.editing && showsGrid { SelectionHeader(selection: selection, all: shownItems.map(\.imdb)) }
+            if selection.editing && showsGrid { SelectionHeader(selection: selection, all: ListBarParts.visible(parts, else: shownItems)) }
         }
     }
 
@@ -161,7 +161,7 @@ struct SavedListContent: View {
                     .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
             }
             if editable {
-                ListSelectButtons(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb))
+                ListSelectButtons(selection: selection, add: { adding = true }, all: ListBarParts.visible(parts, else: shownItems))
             }
         }
         .padding(.horizontal, DS.Space.gutter)

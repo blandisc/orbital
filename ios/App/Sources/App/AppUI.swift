@@ -43,6 +43,8 @@ final class AppUI {
     var seeingDownloads = false
     /// Lo que mide «¿Qué tal…?» flotando sobre la barra (0 si no está): Guardado le aparta ese lugar abajo (GD2).
     var ratingReminderHeight: CGFloat = 0
+    /// Cuántas barras de abajo están a la vista (elegir varios, «Siguiente» de una colección): mientras, «¿Qué tal…?» se aparta.
+    var bottomBars = 0
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
     /// V9: lo que hacen el botón del control de Inicio y abrir una ficha en el panel (iPad, Mac), por ventana (`window`). Las

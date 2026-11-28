@@ -71,7 +71,8 @@ struct FloatingRatingReminder: View {
     let lift: CGFloat
 
     var body: some View {
-        if env.ui.handoff == nil, env.notices.current == nil {
+        // Tampoco encima de una barra de abajo: en el Duo tapaba «Quitar» al elegir varios (27 nov 2026).
+        if env.ui.handoff == nil, env.notices.current == nil, env.ui.bottomBars == 0 {
             RatingReminderHost().dsNoticePlacement(lift: lift)
         }
     }
@@ -103,6 +104,16 @@ struct RatingReminderRoom: ViewModifier {
     }
 }
 
+/// Una barra de abajo (elegir varios, «Siguiente»): mientras se ve, «¿Qué tal…?» no flota encima de ella.
+struct HoldsBottomBar: ViewModifier {
+    func body(content: Content) -> some View {
+        content.onAppear { AppEnvironment.shared.ui.bottomBars += 1 }
+            .onDisappear { AppEnvironment.shared.ui.bottomBars = max(0, AppEnvironment.shared.ui.bottomBars - 1) }
+    }
+}
+
 extension View {
     func ratingReminderRoom() -> some View { modifier(RatingReminderRoom()) }
+    /// Receta: toda barra de abajo de una pantalla (no de una hoja) la lleva.
+    func holdsBottomBar() -> some View { modifier(HoldsBottomBar()) }
 }

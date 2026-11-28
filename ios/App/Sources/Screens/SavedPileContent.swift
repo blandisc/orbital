@@ -84,7 +84,7 @@ struct SavedPileContent: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             controls(parts, every: every)
             // «Editar»: cuántas van y «Todas», debajo del renglón que lo abrió.
-            if selection.editing { SelectionHeader(selection: selection, all: every.map(\.imdb)) }
+            if selection.editing { SelectionHeader(selection: selection, all: ListBarParts.visible(parts, else: every)) }
         }
     }
 
@@ -103,7 +103,7 @@ struct SavedPileContent: View {
                     .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
             }
             if let watchedView, hasDropped { watchedMenu(watchedView) }
-            ListSelectButtons(selection: selection, all: every.map(\.imdb))
+            ListSelectButtons(selection: selection, all: ListBarParts.visible(parts, else: every))
         }
         .padding(.horizontal, DS.Space.gutter)
     }

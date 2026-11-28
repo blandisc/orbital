@@ -57,6 +57,7 @@ struct SavedSelectionBar: View {
             Button("Ahora no", role: .cancel) { newName = "" }
             Button("Crear") { let name = newName; newName = ""; run { await createAndMove(name) } }
         } message: { Text("Nace «Solo tú» y lo que elegiste entra ahí.") }
+        .holdsBottomBar()
     }
 
     /// Tus otras listas (y Mi lista, si estás en una tuya) y «Lista nueva…».

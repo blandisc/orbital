@@ -684,6 +684,11 @@ de un título usa `titleName`, igual que el texto que se ve**, nunca `.title` cr
 siempre en inglés («MOBLAND» sobre «Tierra de Mafia»); si no coincide, va el nombre en letra (`titleName.logo(…)`; en la ficha `model.logo(shown:)`, que compara con `originalTitle`;
 `DisplayTitle.logoFits`). Ficha, portada, mosaico, tarjetas y canales. Lo cuida `testLogosSayTheShownName`.
 
+### «Todas» elige solo lo que se ve (27 nov 2026)
+
+Con un filtro puesto, «Todas» tomaba también los títulos escondidos y «Quitar» se los llevaba. Toda lista que ofrece elegir
+varios saca «Todas» de `ListBarParts.visible`; lo cuida `DesignRulesTests+Selection`.
+
 ### Un brillo no es un segundo fondo (27 nov 2026)
 
 Fernando, de «Decide por mí»: «tiene como que doble fondo». El resplandor del color del cartel elegido se cortaba en cuadro

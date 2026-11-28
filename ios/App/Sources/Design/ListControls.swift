@@ -136,7 +136,7 @@ struct SortableGrid<Cell: View>: View {
     var body: some View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd, states: states ?? [:])
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            if let bar { bar(ListBarParts(sort: sortMenu, filters: menu)) }
+            if let bar { bar(ListBarParts(sort: sortMenu, filters: menu, shown: shown.map(\.imdb))) }
             if filter.isActive { ListFilterChips(filter: $filter) }
             // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
             // calificada que estaba abajo nunca subía, sin saber por qué).
@@ -202,6 +202,11 @@ struct SortableGrid<Cell: View>: View {
 struct ListBarParts {
     let sort: ListSortMenu
     let filters: ListFilterMenu
+    /// Los que se ven con los filtros puestos: «Todas» elige solo estos (antes también los escondidos, y «Quitar» se los llevaba).
+    let shown: [String]
+
+    /// Lo que «Todas» puede elegir: lo que se ve en la cuadrícula o, sin ella, toda la lista.
+    static func visible(_ parts: ListBarParts?, else items: [Suggestion]) -> [String] { parts?.shown ?? items.map(\.imdb) }
 }
 
 /// El orden elegido a la vista, a la izquierda del renglón de una lista (Guardado, GD2): «↕ Agregadas: más recientes». Un toque

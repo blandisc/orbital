@@ -311,6 +311,7 @@ struct RepisaCollectionView: View {
         .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("repisa-next")
+        .holdsBottomBar()
     }
 
     private func quick(_ item: CanonCollection.Item, _ c: CanonCollection, _ model: RepisaModel) -> some View {
