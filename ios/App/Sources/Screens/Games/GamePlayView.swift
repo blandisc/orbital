@@ -23,14 +23,15 @@ struct GamePlayView: View {
                 DS.video
                 if halfOpen {
                     halves(box.size)
-                } else if landscape || game.layout == .tv {
+                } else if landscape {
                     sideways
                 } else {
                     upright(box.size)
                 }
                 if paused { pause }
             }
-            .overlay(alignment: .topTrailing) {
+            // De lado, arriba al centro (en las esquinas van los gatillos); parado, arriba a la derecha (al centro, la isla).
+            .overlay(alignment: landscape ? .top : .topTrailing) {
                 if !paused {
                     DSIconButton(symbol: "line.3.horizontal", label: "Pausa", size: .regular) { paused = true }
                         .opacity(pads.connected ? DS.Opacity.faint : 1)
@@ -45,6 +46,10 @@ struct GamePlayView: View {
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .tracksDuoHalfOpen($halfOpen)
+        // El iPhone vive en vertical; un juego gira libre. Las consolas de la TV abren de lado (como el reproductor) y las
+        // portátiles parado; al salir, vuelve a vertical. En iPad, la Mac y el Duo abierto decide el sistema.
+        .onAppear { Orientation.rotate(allowed: .allButUpsideDown, to: game.layout == .tv ? .landscape : .portrait) }
+        .onDisappear { Orientation.rotate(allowed: .portrait, to: .portrait) }
         .task {
             guard WindowMetrics.duoOuter else { return }
             withAnimation(DS.Motion.base(reduceMotion)) { outerNotice = true }
@@ -68,7 +73,9 @@ struct GamePlayView: View {
                 GameScreen(game: game, aspect: DS.Games.dsAspect, label: "Pantalla de arriba").frame(height: each)
                 GameScreen(game: game, aspect: DS.Games.dsAspect, label: "Pantalla táctil").frame(height: each)
             } else {
-                GameScreen(game: game, aspect: DS.Games.gbaAspect).frame(height: size.width / DS.Games.gbaAspect)
+                // Parado, también las de la TV: el juego arriba y los botones abajo, sin taparlo; de lado, a todo lo ancho.
+                let aspect = game.layout == .tv ? DS.Games.tvAspect : DS.Games.gbaAspect
+                GameScreen(game: game, aspect: aspect).frame(height: size.width / aspect)
             }
             if pads.connected { Spacer(minLength: 0) } else { GameTouchPad(layout: game.layout, over: false) }
         }
@@ -84,7 +91,7 @@ struct GamePlayView: View {
             ZStack {
                 if game.layout == .dualScreen {
                     GameScreen(game: game, aspect: DS.Games.dsAspect, label: "Pantalla táctil")
-                    if !pads.connected { GameTouchPad(layout: .portable, over: true, compact: true) }
+                    if !pads.connected { GameTouchPad(layout: .dualScreen, over: true, compact: true) }
                 } else if !pads.connected {
                     GameTouchPad(layout: game.layout, over: false)
                 }
@@ -167,7 +174,6 @@ private struct GameTouchPad: View {
         .padding(.vertical, over ? DS.Space.s4 : DS.Space.s6)
         .frame(maxHeight: .infinity, alignment: over ? .bottom : .center)
         .opacity(over ? DS.Games.padSeeThrough : 1)
-        .scaleEffect(compact ? DS.Games.padCompact : 1)
         .accessibilityHidden(true)   // son controles del juego; VoiceOver no juega
     }
 
@@ -184,15 +190,24 @@ private struct GameTouchPad: View {
         }
     }
 
-    private var faces: some View {
+    /// Cuatro botones (X, Y, A, B) en las de la TV y el DS; la Game Boy solo tiene B y A, en diagonal como la de verdad.
+    @ViewBuilder private var faces: some View {
         let b = DS.Games.padButton
-        return ZStack {
-            face("X").offset(y: -b)
-            face("Y").offset(x: -b)
-            face("A").offset(x: b)
-            face("B").offset(y: b)
+        if layout == .portable {
+            ZStack {
+                face("B").offset(x: -b / 2, y: b / 3)
+                face("A").offset(x: b / 2 + DS.Space.s2, y: -b / 3)
+            }
+            .frame(width: b * 3, height: b * 2)
+        } else {
+            ZStack {
+                face("X").offset(y: -b)
+                face("Y").offset(x: -b)
+                face("A").offset(x: b)
+                face("B").offset(y: b)
+            }
+            .frame(width: b * 3, height: b * 3)
         }
-        .frame(width: b * 3, height: b * 3)
     }
 
     private func face(_ letter: String) -> some View {

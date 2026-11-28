@@ -34,17 +34,6 @@
         }
       }
     },
-    "%@ (ejemplo). Puedes intentarlo igual; tu partida de la TV no se toca.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ (example). You can try anyway; your TV save isn't touched."
-          }
-        }
-      }
-    },
     "%@ Aquí, al instante": {
       "localizations": {
         "en": {
@@ -256,6 +245,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ has been paused for a while: it closes by itself in 10 minutes."
+          }
+        }
+      }
+    },
+    "%@ necesita %lld GB y tienes %lld libres. Quita juegos que ya no juegas; tus partidas se quedan en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ needs %lld GB and you have %lld free. Remove games you don't play; your saves stay on the TV."
           }
         }
       }
@@ -835,6 +835,17 @@
         }
       }
     },
+    "%@. Puedes intentarlo igual; tu partida de la TV no se toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. You can try anyway; your TV save isn't touched."
+          }
+        }
+      }
+    },
     "%d en Las dejé": {
       "extractionState": "manual",
       "localizations": {
@@ -923,13 +934,13 @@
         }
       }
     },
-    "%lld GB libres · tienes 61": {
+    "%lld GB · tienes %lld libres": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld GB free · you have 61"
+            "value": "%lld GB · you have %lld free"
           }
         }
       }
@@ -2934,6 +2945,17 @@
         }
       }
     },
+    "Al abrir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it opens"
+          }
+        }
+      }
+    },
     "Al abrir trae la de la TV; al salir la manda de regreso.": {
       "extractionState": "manual",
       "localizations": {
@@ -4437,6 +4459,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download this one"
+          }
+        }
+      }
+    },
+    "Bajar para intentarlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download to try it"
           }
         }
       }
@@ -14690,17 +14723,6 @@
         }
       }
     },
-    "GameSir · conectado": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GameSir · connected"
-          }
-        }
-      }
-    },
     "Globo de Oro a Mejor película dramática": {
       "extractionState": "manual",
       "localizations": {
@@ -16306,6 +16328,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The TV isn't answering"
+          }
+        }
+      }
+    },
+    "La TV no responde: juegas lo que ya bajaste. Tus partidas se mandan al volver a casa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV isn't answering: you play what you already downloaded. Your saves are sent when you get home."
           }
         }
       }
@@ -25979,17 +26012,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "First episode"
-          }
-        }
-      }
-    },
-    "Primera vez": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "First time"
           }
         }
       }
@@ -37292,13 +37314,67 @@
         }
       }
     },
-    "Tu copia es la 1.3.0. Con la 1.4.1 correría preparado en la Mac: más rápido y más fresco.": {
+    "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos el iPhone.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your copy is 1.3.0. With 1.4.1 it would run prepared on the Mac: faster and cooler."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your copy is 1.3.0. With the 1.4.1 update it runs faster and keeps the iPad cooler."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your copy is 1.3.0. With the 1.4.1 update it runs faster and keeps the iPhone cooler."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your copy is 1.3.0. With the 1.4.1 update it runs faster and keeps the Mac cooler."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your copy is 1.3.0. With the 1.4.1 update it runs faster and keeps the iPhone cooler."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos el iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos el iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos el iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -41495,6 +41571,17 @@
         }
       }
     },
+    "en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on the TV"
+          }
+        }
+      }
+    },
     "en la nube": {
       "extractionState": "manual",
       "localizations": {
@@ -41513,6 +41600,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "in movies and shows"
+          }
+        }
+      }
+    },
+    "en tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on your iPhone"
           }
         }
       }

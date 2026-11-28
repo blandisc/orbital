@@ -10,6 +10,7 @@ enum GameProblem: String, Identifiable {
 struct GameProblemPrompt: View {
     let problem: GameProblem
     let game: GameItem
+    var free = 61
     let close: () -> Void
 
     var body: some View {
@@ -35,7 +36,7 @@ struct GameProblemPrompt: View {
     private var message: Text {
         switch problem {
         case .tvDown: Text("Lo que ya bajó se queda. Prende Orbital en la TV y sigue donde iba.")
-        case .noSpace: Text("Faltan 9 GB para \(game.title). Quita juegos que ya no juegas; tus partidas se quedan en la TV.")
+        case .noSpace: Text("\(game.title) necesita \(Int(game.gigabytes.rounded(.up))) GB y tienes \(Int(free)) libres. Quita juegos que ya no juegas; tus partidas se quedan en la TV.")
         case .offline: Text("Juegas con tu última partida de este iPhone. Si avanzaste en la TV desde entonces, eso no está aquí todavía.")
         case .tvPlaying: Text("Alguien juega \(game.title) en la TV. Si sigues aquí, al final te preguntamos con cuál partida te quedas.")
         }

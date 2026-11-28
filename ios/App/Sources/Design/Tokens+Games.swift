@@ -14,7 +14,9 @@ extension DS {
         static let gridMin: CGFloat = 104
         /// Los mosaicos de «Tus consolas»: lo mínimo de ancho y su alto.
         static let consoleMin: CGFloat = 150
-        static let consoleHeight: CGFloat = 76
+        static let consoleHeight: CGFloat = 112
+        /// Las portadas encimadas de cada consola: el ancho de cada una y cuánto se encima a la anterior.
+        static let doorCover: CGFloat = 30, doorOverlap: CGFloat = 10
         /// La portada de la ficha: su alto, parte del ancho de la columna, con tope para el Duo abierto.
         static let heroShare: CGFloat = 0.62
         static let heroMax: CGFloat = 420
@@ -35,8 +37,6 @@ extension DS {
         static let gbaAspect: CGFloat = 3.0 / 2.0
         static let dsAspect: CGFloat = 4.0 / 3.0
         static let tvAspect: CGFloat = 16.0 / 9.0
-        /// Los botones de un DS medio abierto, sobre la pantalla táctil: más chicos para no taparla.
-        static let padCompact: CGFloat = 0.7
         /// Parado, lo más que ocupa el juego del alto (las dos pantallas del DS); lo demás es para los botones.
         static let uprightGameShare: CGFloat = 0.6
         /// Cuánto se queda el aviso al salir de un juego (P23) y el de «Se ve mejor con el Duo abierto» (E5-A).

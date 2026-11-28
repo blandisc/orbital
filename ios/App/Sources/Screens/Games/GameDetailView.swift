@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// La ficha de un juego (P4–P9): dónde está, cómo va tu partida, cómo corre y cuánto llevas. «Jugar» si está aquí, «Bajar de
-/// la TV» si no; mientras baja, cuánto falta, con pausar y cancelar. Lo que no corre todavía dice por qué y deja intentarlo.
+/// la TV» si no; mientras baja, cuánto falta y cancelar. Lo que no corre todavía dice por qué y deja intentarlo.
 struct GameDetailView: View {
     let id: String
     @Environment(GamesCatalog.self) private var catalog
@@ -13,6 +13,7 @@ struct GameDetailView: View {
     @State private var crashed = Demo.has("-demo-game-crash")
     @AppStorage("games.firstTimeDone") private var firstTimeDone = false
     @State private var firstTime = Demo.has("-demo-game-first")
+    @State private var pads = GamePads()
 
     var body: some View {
         if let game = catalog.game(id) {
@@ -35,7 +36,7 @@ struct GameDetailView: View {
                         if !game.playable {
                             GameStatusLine(symbol: "nosign", text: Text("Todavía no corre en el iPhone"))
                             if let note = game.note {
-                                Text("\(Text(note)) (ejemplo). Puedes intentarlo igual; tu partida de la TV no se toca.")
+                                Text("\(Text(note)). Puedes intentarlo igual; tu partida de la TV no se toca.")
                                     .recipe(.body, color: DS.textMuted)
                             }
                         }
@@ -56,7 +57,7 @@ struct GameDetailView: View {
                 }
                 .environment(env).duoBars()
             }
-            .appSheet(item: $problem) { GameProblemPrompt(problem: $0, game: game) { problem = nil } }
+            .appSheet(item: $problem) { GameProblemPrompt(problem: $0, game: game, free: catalog.freeGigabytes) { problem = nil } }
             .appSheet(isPresented: $crashed) { GameCrashPrompt(game: game) { again in crashed = false; if again { launching = true } } }
             .appSheet(isPresented: $firstTime) { GameFirstTimeGuide { firstTime = false; firstTimeDone = true; launching = true } }
             .overlay(alignment: .bottom) {
@@ -65,7 +66,7 @@ struct GameDetailView: View {
             .onAppear {
                 if let raw = Demo.value(after: "-demo-game-toast") { finished(.saved(GameItem.Save(rawValue: raw) ?? .synced)) }
                 if let raw = Demo.value(after: "-demo-game-sheet") { problem = GameProblem(rawValue: raw) }
-                if Demo.has("-demo-game-downloading") { catalog.download(game.id) }
+                if Demo.has("-demo-game-downloading") { catalog.downloadSample(game.id) }
                 if Demo.has("-demo-game-launch") { launching = true }   // con -demo-game-hold o -demo-game-play
             }
         } else {
@@ -79,7 +80,9 @@ struct GameDetailView: View {
     /// Al salir de un juego se regresa a su ficha (S1-A) con cómo quedó tu partida (P23), o la hoja de «se cerró» (P24).
     private func finished(_ how: GameExit) {
         if how == .crashed { crashed = true; return }
+        if case .saved(let save) = how { catalog.setSave(id, save) }
         withAnimation(DS.Motion.base(reduceMotion)) { exitNote = how }
+        guard !Demo.has("-demo-game-toast") else { return }   // en la captura se queda
         Task {
             try? await Task.sleep(for: DS.Games.exitNoteFor)
             withAnimation(DS.Motion.base(reduceMotion)) { exitNote = nil }
@@ -105,12 +108,18 @@ struct GameDetailView: View {
                         .dsGlassButton().dsControlSize(.large)
                 }
             case .tv:
-                Button { download(game) } label: { Label("Bajar de la TV", systemImage: "arrow.down").frame(maxWidth: .infinity) }
-                    .dsPrimaryButton().dsControlSize(.large)
+                if game.playable {
+                    Button { download(game) } label: { Label("Bajar de la TV", systemImage: "arrow.down").frame(maxWidth: .infinity) }
+                        .dsPrimaryButton().dsControlSize(.large)
+                } else {
+                    // E6-A: lo que no corre se puede intentar, pero no se ofrece como la acción principal.
+                    Button { download(game) } label: { Label("Bajar para intentarlo", systemImage: "arrow.down").frame(maxWidth: .infinity) }
+                        .dsGlassButton().dsControlSize(.large)
+                }
             case .downloading(let done):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     ProgressView(value: done).tint(DS.text)
-                    Text("\(String(format: "%.1f", game.gigabytes * done)) de \(game.sizeText) · faltan \(max(1, Int((1 - done) * 8))) min")
+                    Text("\(GameItem.sizeText(game.gigabytes * done)) de \(game.sizeText) · faltan \(max(1, Int((1 - done) * 8))) min")
                         .recipe(.data, color: DS.textMuted)
                     Button("Cancelar") { catalog.cancelDownload(game.id) }.dsSecondaryButton().dsControlSize(.regular)
                 }
@@ -133,7 +142,7 @@ struct GameDetailView: View {
         VStack(spacing: 0) {
             GameFact(label: "Dónde", value: game.place == .phone ? Text("En tu iPhone") : Text("En la TV"))
             if game.place == .tv {
-                GameFact(label: "Necesita", value: Text("\(Int(game.gigabytes.rounded(.up))) GB libres · tienes 61"))
+                GameFact(label: "Necesita", value: Text("\(Int(game.gigabytes.rounded(.up))) GB · tienes \(Int(catalog.freeGigabytes)) libres"))
             }
             if game.minutesPlayed > 0 {
                 GameFact(label: "Jugado", value: game.place == .phone ? game.playedText : Text("\(game.playedText) en la TV"))
@@ -142,13 +151,15 @@ struct GameDetailView: View {
                 GameFact(label: "Cómo corre", value: game.runsText)
                 if let note = game.note { GameFact(label: "Qué se sabe", value: Text(note)) }
             }
-            if game.needsFastMode { GameFact(label: "Primera vez", value: Text("Pide el modo rápido")) }
-            if game.place == .phone { GameFact(label: "Mando", value: Text("GameSir · conectado")) }
+            if game.needsFastMode { GameFact(label: "Al abrir", value: Text("Pide el modo rápido")) }
+            if game.place == .phone {
+                GameFact(label: "Mando", value: pads.connected ? Text("\(Text(verbatim: pads.name ?? "")) · conectado") : Text("Botones en pantalla"))
+            }
         }
     }
 
     private func download(_ game: GameItem) {
-        if game.gigabytes > 30, Demo.has("-demo-game-full") { problem = .noSpace; return }
+        if game.gigabytes > Double(catalog.freeGigabytes) { problem = .noSpace; return }
         catalog.download(game.id)
     }
 }

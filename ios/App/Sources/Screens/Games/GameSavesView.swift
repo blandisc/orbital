@@ -117,10 +117,11 @@ struct GameConflictChoice: View {
 
     var body: some View {
         DSSheet(title: Text("¿Con cuál sigues?"), subtitle: Text("Jugaste \(game.title) aquí y en la TV")) {
-            HStack(alignment: .top, spacing: DS.Space.s2) {
+            HStack(alignment: .top, spacing: DS.Space.s2) {   // las dos opciones miden lo mismo
                 option(symbol: "iphone", played: Text("9 h 40 min"), place: Text("En tu iPhone"), when: Text("Hoy"), primary: true)
                 option(symbol: "tv", played: Text("9 h 5 min"), place: Text("En la TV"), when: Text("Ayer"), primary: false)
             }
+            .fixedSize(horizontal: false, vertical: true)
             Text("La otra no se borra: queda en Partidas.").recipe(.footnote, color: DS.textMuted)
         }
         .dsSheetContent()
@@ -136,8 +137,11 @@ struct GameConflictChoice: View {
                 if primary { Text("La más avanzada").recipe(.caption, color: DS.eyebrow) }
             }
             .padding(DS.Space.s4)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .dsCard(.row)
+            .overlay {   // la más avanzada, marcada: es la que sugerimos
+                if primary { RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(DS.accent, lineWidth: DS.Stroke.regular) }
+            }
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

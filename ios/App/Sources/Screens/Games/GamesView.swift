@@ -24,6 +24,7 @@ struct GamesTab: View {
     /// `-demo-game <id>` abre la ficha de un juego; `-demo-games-console <id>` una consola; `-demo-games-empty` la TV sin catálogo.
     private func openDemo() {
         if Demo.has("-demo-games-empty") { catalog.games = []; catalog.reachable = false }
+        if Demo.has("-demo-games-offline") { catalog.reachable = false }
         if let id = Demo.value(after: "-demo-games-console"), let console = GameConsole.all.first(where: { $0.id == id }) {
             path.append(GameConsoleRoute(console: console))
         }
@@ -52,6 +53,10 @@ private struct GamesHome: View {
                 .padding(.top, DS.Space.s16)
             } else {
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+                    if !catalog.reachable {
+                        DSNotice(text: "La TV no responde: juegas lo que ya bajaste. Tus partidas se mandan al volver a casa.")
+                            .padding(.horizontal, DS.Space.gutter)
+                    }
                     if !catalog.recent.isEmpty {
                         section(DSSectionHead(title: Text("Recientes"), eyebrow: Text("Aquí o en la TV"))) {
                             ForEach(catalog.recent) { game in
@@ -62,7 +67,7 @@ private struct GamesHome: View {
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                         DSSectionHead(title: Text("Tus consolas"))
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Games.consoleMin), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
-                            ForEach(GameConsole.all) { console in
+                            ForEach(GameConsole.all.filter { !catalog.games(of: $0).isEmpty }) { console in
                                 NavigationLink(value: GameConsoleRoute(console: console)) {
                                     ConsoleDoor(console: console, games: catalog.games(of: console))
                                 }
@@ -150,10 +155,20 @@ private struct ConsoleDoor: View {
     var body: some View {
         DSCard {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
+                // Las portadas de sus primeros juegos, encimadas: se reconoce la consola sin leer.
+                HStack(spacing: -DS.Games.doorOverlap) {
+                    ForEach(games.prefix(3)) { game in
+                        GameArt(title: game.title, showsTitle: false)
+                            .frame(width: DS.Games.doorCover, height: DS.Games.doorCover / DS.Games.boxAspect)
+                            .clipShape(.rect(cornerRadius: DS.Radius.xs, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).strokeBorder(DS.surface, lineWidth: DS.Stroke.regular) }
+                    }
+                }
+                Spacer(minLength: DS.Space.s2)
                 Text(console.name).recipe(.cardTitle)
                 GameConsole.countText(games.count).recipe(.data, color: DS.textMuted)
             }
-            .frame(maxWidth: .infinity, minHeight: DS.Games.consoleHeight, alignment: .bottomLeading)
+            .frame(maxWidth: .infinity, minHeight: DS.Games.consoleHeight, alignment: .leading)
         }
         .contentShape(.rect)
     }
@@ -211,7 +226,7 @@ private struct GameRecentCover: View {
             GameArt(title: game.title)
                 .aspectRatio(DS.Games.wideAspect, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: DS.Radius.md, style: .continuous))
-            game.lastPlayedText.recipe(.caption, color: DS.textMuted)
+            Text("\(game.lastPlayedText) · \(game.place == .phone ? Text("en tu iPhone") : Text("en la TV"))").recipe(.caption, color: DS.textMuted)
         }
         .frame(width: DS.Games.wideWidth)
         .contentShape(.rect)
@@ -240,8 +255,6 @@ extension GameItem {
         return m == 0 ? Text("\(h) h") : Text("\(h) h \(m) min")
     }
     /// «7.1 GB», «16 MB».
-    var sizeText: String {
-        let bytes = Int64(gigabytes * 1_000_000_000)
-        return bytes.formatted(.byteCount(style: .file))
-    }
+    var sizeText: String { Self.sizeText(gigabytes) }
+    static func sizeText(_ gigabytes: Double) -> String { Int64(gigabytes * 1_000_000_000).formatted(.byteCount(style: .file)) }
 }

@@ -66,7 +66,7 @@ struct GameItem: Identifiable, Hashable {
 
 /// Los órdenes de una consola: los de la TV y, solo aquí, «En tu iPhone».
 enum GameOrder: String, CaseIterable, Hashable {
-    case recent, added, favorites, az, unplayed, onPhone
+    case recent, onPhone, added, favorites, az, unplayed
     var title: LocalizedStringKey {
         switch self {
         case .recent: "Recientes"; case .added: "Añadidos"; case .favorites: "Favoritos"; case .az: "A–Z"
@@ -91,12 +91,17 @@ final class GamesCatalog {
     /// La TV respondió y hay catálogo (sin ella y sin nada bajado: P3).
     var reachable: Bool
 
+    /// Lo libre en el iPhone, en GB (la ficha y «No cabe» dicen lo mismo). En la muestra, 61; con `-demo-game-full`, 26.
+    var freeGigabytes: Int = Demo.has("-demo-game-full") ? 26 : 61
+
     init(games: [GameItem], reachable: Bool = true) { self.games = games; self.reachable = reachable }
 
     var onPhone: [GameItem] { games.filter { $0.place == .phone } }
-    var recent: [GameItem] { Array(GameOrder.recent.apply(games.filter { $0.lastPlayedDays != nil }).prefix(6)) }
-    var favorites: [GameItem] { games.filter(\.favorite) }
-    func games(of console: GameConsole) -> [GameItem] { games.filter { $0.console == console } }
+    /// Lo que se ve: todo con la TV; sin ella, solo lo que ya bajaste (se juega igual, fuera de casa también).
+    var visible: [GameItem] { reachable ? games : onPhone }
+    var recent: [GameItem] { Array(GameOrder.recent.apply(visible.filter { $0.lastPlayedDays != nil }).prefix(6)) }
+    var favorites: [GameItem] { visible.filter(\.favorite) }
+    func games(of console: GameConsole) -> [GameItem] { visible.filter { $0.console == console } }
     func game(_ id: String) -> GameItem? { games.first { $0.id == id } }
 
     func toggleFavorite(_ id: String) {
@@ -115,6 +120,18 @@ final class GamesCatalog {
                 self.games[j].place = step == 20 ? .phone : .downloading(Double(step) / 20)
             }
         }
+    }
+
+    /// Para la captura: a la mitad y quieta.
+    func downloadSample(_ id: String) {
+        guard let i = games.firstIndex(where: { $0.id == id }) else { return }
+        games[i].place = .downloading(0.5)
+    }
+
+    /// Cómo quedó tu partida al salir de un juego: lo dice el aviso y lo repite la línea de la ficha.
+    func setSave(_ id: String, _ save: GameItem.Save) {
+        guard let i = games.firstIndex(where: { $0.id == id }) else { return }
+        games[i].save = save
     }
 
     func cancelDownload(_ id: String) {
@@ -140,7 +157,7 @@ extension GamesCatalog {
             game("lm3", "Luigi's Mansion 3", s, 2019, 7.1, .phone, played: 580, favorite: true, last: 0, added: 40),
             game("mk8", "Mario Kart 8 Deluxe", s, 2017, 13.4, .phone, played: 1210, favorite: true, last: 3, added: 90),
             game("smo", "Super Mario Odyssey", s, 2017, 5.7, .phone, played: 0, runs: .issues, fast: true, added: 2,
-                 version: "Tu copia es la 1.3.0. Con la 1.4.1 correría preparado en la Mac: más rápido y más fresco."),
+                 version: "Tu copia es la 1.3.0. Con la actualización 1.4.1 corre más rápido y calienta menos el iPhone."),
             game("spl3", "Splatoon 3", s, 2022, 6.2, .tv, played: 95, runs: .issues, fast: true, last: 12, added: 60,
                  note: "Baja de velocidad en las partidas grandes"),
             game("kf2", "Kirby Fighters 2", s, 2020, 1.4, .tv, played: 0, runs: .notYet, fast: true, added: 70,
