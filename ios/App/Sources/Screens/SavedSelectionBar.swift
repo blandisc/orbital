@@ -101,7 +101,7 @@ struct SavedSelectionBar: View {
     }
 
     private func drop() async {
-        let picked = chosen, model = model, follow = env.follow
+        let picked = chosen, model = model, follow = env.follow, watch = env.services.watch
         let series = picked.filter { $0.kind == "series" }.map(\.imdb)
         if let problem = await follow.hide(series) { env.notify(problem, tone: .error); return }
         for id in series { await ReleaseNotifier.forget(id) }
@@ -112,6 +112,7 @@ struct SavedSelectionBar: View {
         notify(count(picked.count, "%d en Las dejé", "%d en Las dejé")) {
             _ = await follow.unhide(series)
             await model.setMany(listed, in: fromList, add: true)
+            for s in picked where s.kind == "movie" { await watch.restoreContinue(metaID: s.imdb) }
         }
     }
 

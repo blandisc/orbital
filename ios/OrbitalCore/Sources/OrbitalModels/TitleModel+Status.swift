@@ -20,4 +20,9 @@ extension TitleModel {
         if inLibrary { await toggleLibrary() }
         await services.watch.dismissContinue(metaID: metaID)
     }
+    /// «Deshacer» de «La dejé» en una película: vuelve a «Seguir viendo» (y a Mi lista, si estaba).
+    public func undoDropMovie(wasInList: Bool) async {
+        await services.watch.restoreContinue(metaID: metaID)
+        if wasInList, !inLibrary { await toggleLibrary() }
+    }
 }

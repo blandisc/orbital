@@ -144,6 +144,15 @@ extension WatchService {
         }
         await flushPending()
     }
+
+    /// «Deshacer» de «La dejé» en una película: regresa a «Seguir viendo» donde ibas. Si el borrado en Trakt aún no salía, ya no
+    /// sale; si ya salió, aquí se queda tu punto igual (el aparato lo guarda).
+    public func restoreContinue(metaID: String) async {
+        guard store.entry(metaID)?.hiddenAt != nil else { return }
+        store.update(metaID, make: { LibraryMerge.make(metaID, kind: "movie", name: "") }) { $0.hiddenAt = nil }
+        announceChange()
+        pending.update { work in work.playbackRemovals.removeAll { $0.target.imdb == metaID } }
+    }
 }
 
 extension CinemetaParsing {

@@ -62,7 +62,7 @@ struct SavedMoveMenu: View {
                 done(to) { Task { _ = await follow.undoHide(); if wasListed { await model.setInWatchlist(s, true) } } }
             } else {
                 await model.dropMovie(s)
-                done(to) { Task { if wasListed { await model.setInWatchlist(s, true) } } }
+                done(to) { Task { await model.undoDropMovie(s, wasListed: wasListed) } }
             }
         case .none: break
         }

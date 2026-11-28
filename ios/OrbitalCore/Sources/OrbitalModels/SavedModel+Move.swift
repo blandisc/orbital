@@ -44,4 +44,9 @@ extension SavedModel {
         await setInWatchlist(s, false)
         await services.watch.dismissContinue(metaID: s.imdb)
     }
+    /// «Deshacer» de «La dejé» en una película: vuelve a «Seguir viendo» (y a Mi lista, si estaba).
+    public func undoDropMovie(_ s: Suggestion, wasListed: Bool) async {
+        await services.watch.restoreContinue(metaID: s.imdb)
+        if wasListed { await setInWatchlist(s, true) }
+    }
 }

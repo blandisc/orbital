@@ -122,7 +122,7 @@ extension TitleView {
         } else {
             await model.dropMovie()
             env.notify("La dejaste", detail: "Ya no sale en Mi lista ni en Seguir viendo", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-                Task { if wasInList, !model.inLibrary { await model.toggleLibrary() } }
+                Task { await model.undoDropMovie(wasInList: wasInList) }
             }
         }
     }
