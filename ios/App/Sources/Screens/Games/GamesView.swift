@@ -58,7 +58,7 @@ private struct GamesHome: View {
                             .padding(.horizontal, DS.Space.gutter)
                     }
                     if !catalog.recent.isEmpty {
-                        section(DSSectionHead(title: Text("Recientes"), eyebrow: Text("Aquí o en la TV"))) {
+                        section(DSSectionHead(title: Text("Recientes"), eyebrow: catalog.reachable ? Text("Aquí o en la TV") : Text("En tu iPhone"))) {
                             ForEach(catalog.recent) { game in
                                 NavigationLink(value: GameRoute(id: game.id)) { GameRecentCover(game: game) }.buttonStyle(.plain)
                             }
