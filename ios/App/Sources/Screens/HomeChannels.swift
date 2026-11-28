@@ -151,6 +151,9 @@ struct ChannelsSheet: View {
     @State private var query = ""
     /// La búsqueda va en camino (no se dice «No encontré…» antes de tiempo).
     @State private var searching = false
+    /// Tus canales como estaban al abrir: el que quitas se queda en su lugar con «+» hasta que cierres, para volver a ponerlo
+    /// (antes desaparecía y, si no era de los sugeridos, solo regresaba buscándolo; revisión del 28 nov 2026).
+    @State private var opened: [ChannelsModel.Pick]?
     @Environment(\.dismiss) private var dismiss
     @Environment(AppEnvironment.self) private var env
 
@@ -168,14 +171,15 @@ struct ChannelsSheet: View {
                         results
                     } else {
                         // La nota va pegada a los pósters de arriba (antes tenía el aire de una sección y quedaba suelta).
-                        section(Text("Tus canales"), model.picks, note: model.suggestions.isEmpty)
-                        if !model.suggestions.isEmpty { section(Text("Te sugerimos"), model.suggestions, note: true) }
+                        section(Text("Tus canales"), yours, note: suggested.isEmpty)
+                        if !suggested.isEmpty { section(Text("Te sugerimos"), suggested, note: true) }
                         if env.services.settingsEntries.simpsons { simpsonsSeasons }
                     }
                 }
                 .padding(DS.Space.gutter)
             }
             .dsInlineTitle("Tus canales")
+            .onAppear { if opened == nil { opened = model.picks } }
             .scrollEdgeEffectStyle(.hard, for: .top)   // el buscador flota: lo de debajo se tapa, no se ve a través
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Busca una serie para añadirla"))
             .task(id: query) {
@@ -209,6 +213,15 @@ struct ChannelsSheet: View {
         }
     }
 
+    /// Los de al abrir (prendidos o ya quitados) y luego los que agregaste.
+    private var yours: [ChannelsModel.Pick] {
+        guard let opened else { return model.picks }
+        return opened + model.picks.filter { pick in !opened.contains { $0.id == pick.id } }
+    }
+
+    /// Las sugerencias sin las que ya salen arriba (un sugerido que quitaste se queda arriba con «+», no sale dos veces).
+    private var suggested: [ChannelsModel.Pick] { model.suggestions.filter { s in !yours.contains { $0.id == s.id } } }
+
     private func section(_ title: Text, _ picks: [ChannelsModel.Pick], note: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: title, level: .section)
@@ -226,6 +239,7 @@ struct ChannelsSheet: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: name(pick)))
                     .accessibilityValue(model.isChannel(pick.id) ? Text("Es canal") : Text("No es canal"))
+                    .accessibilityIdentifier("channel-pick-\(pick.id)")
                 }
             }
             if note {

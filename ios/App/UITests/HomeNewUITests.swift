@@ -78,6 +78,27 @@ final class HomeNewUITests: XCTestCase {
         shot("anadido")
     }
 
+    /// Revisión del 28 nov: quitar un canal en «Tus canales» lo deja en su lugar con «+» mientras la hoja sigue abierta; un
+    /// toque más lo regresa (antes desaparecía y solo se podía buscar otra vez).
+    func testQuitarUnCanalSePuedeRegresarSinBuscarlo() {
+        let edit = reachAddChannel()
+        XCTAssertTrue(edit.waitForExistence(timeout: 20))
+        edit.tap()
+        let first = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'channel-pick-'")).firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10), "tus canales en la hoja")
+        let id = first.identifier
+        let pick = app.buttons[id]
+        XCTAssertEqual(pick.value as? String, "Es canal")
+        pick.tap()
+        sleep(1)
+        XCTAssertTrue(pick.exists, "se queda en su lugar")
+        XCTAssertEqual(pick.value as? String, "No es canal")
+        shot("quitado")
+        pick.tap()
+        sleep(1)
+        XCTAssertEqual(pick.value as? String, "Es canal", "un toque más lo regresa")
+    }
+
     func testInicioYaNoTieneFiltro() {
         XCTAssertTrue(app.descendants(matching: .any)["home-kind-filter"].waitForExistence(timeout: 20), "la franja del tipo")
         XCTAssertFalse(app.buttons["home-filters"].exists, "el filtro vive en Buscar, no en Inicio")
