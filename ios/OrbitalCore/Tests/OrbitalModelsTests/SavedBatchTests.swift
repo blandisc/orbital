@@ -52,4 +52,19 @@ final class SavedBatchTests: XCTestCase {
         XCTAssertEqual(rig.http.bodies("\(api)/users/hidden/dropped").count, 1)
         XCTAssertEqual(rig.http.bodies("\(api)/users/hidden/dropped").first.flatMap(JSON.parse)?["shows"]?.array?.count, 2)
     }
+
+    /// «Vistas» con una película que ya habías visto: no suma otra vista en Trakt (revisión del 27 nov 2026: su «Deshacer»
+    /// borraba de Trakt todas sus vistas).
+    func testMarcarVistaUnaYaVistaNoSumaOtra() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json["\(api)/sync/history"] = ["added": ["movies": 1]]
+        let model = SavedModel(rig.services)
+        await model.markMoviesWatched([movie("tt0000001")])
+        let marks = { rig.http.calls.filter { $0.contains("cinemeta") }.count }   // cada vista marcada se pide a Cinemeta
+        let first = marks()
+        XCTAssertGreaterThan(first, 0, "la primera sí llega a Trakt")
+        XCTAssertEqual(model.state(of: movie("tt0000001")), .watched)
+        await model.markMoviesWatched([movie("tt0000001")])
+        XCTAssertEqual(marks(), first, "ya vista: no se marca otra vez")
+    }
 }

@@ -52,8 +52,10 @@ struct SavedMoveMenu: View {
             if let problem = await follow.unhide(s.imdb, following: false) { env.notify(problem, tone: .error); return }
             done(to) { Task { _ = await follow.hide(s.imdb) } }
         case .watched:
-            await model.markMovieWatched(s)
-            done(to) { Task { await model.unmarkMovieWatched(s); if wasListed { await model.setInWatchlist(s, true) } } }
+            // Ya vista: no suma otra vista, y «Deshacer» no la quita de lo visto (en Trakt borraría todas sus vistas).
+            let already = model.state(of: s) == .watched
+            if already { if wasListed { await model.setInWatchlist(s, false) } } else { await model.markMovieWatched(s) }
+            done(to) { Task { if !already { await model.unmarkMovieWatched(s) }; if wasListed { await model.setInWatchlist(s, true) } } }
         case .dropped:
             if s.kind == "series" {
                 if let problem = await follow.hide(s.imdb) { env.notify(problem, tone: .error); return }

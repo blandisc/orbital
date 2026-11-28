@@ -49,10 +49,13 @@ extension SavedModel {
     @discardableResult
     public func markMoviesWatched(_ items: [Suggestion], at date: Date = Date()) async -> [Suggestion] {
         let movies = items.filter { $0.kind == "movie" }
+        // Las que ya habías visto no suman otra vista en Trakt (y su «Deshacer» no las toca: quitar de lo visto en Trakt borra
+        // todas sus vistas, revisión del 27 nov 2026).
+        let fresh = movies.filter { state(of: $0) != .watched }
         for s in movies { noteWatched(s, at: date); noteMoved(s.imdb, to: .watched) }
         let listed = movies.filter { s in watchlist.contains { $0.imdb == s.imdb } }
         await setMany(listed, in: Self.watchlist, add: false)
-        for s in movies { try? await actions.markWatched(s, at: date) }
+        for s in fresh { try? await actions.markWatched(s, at: date) }
         return movies
     }
 

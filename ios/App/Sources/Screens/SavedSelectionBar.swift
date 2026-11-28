@@ -19,6 +19,8 @@ struct SavedSelectionBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var naming = false
     @State private var newName = ""
+    /// Una acción en marcha: la barra no acepta otra (un doble toque marcaba dos veces, revisión del 27 nov 2026).
+    @State private var busy = false
 
     private var chosen: [Suggestion] { items.filter { selection.chosen.contains($0.imdb) } }
 
@@ -52,10 +54,12 @@ struct SavedSelectionBar: View {
             }
             .buttonStyle(.plain).menuStyle(.button)
         }
+        .disabled(busy)
         .alert("Lista nueva", isPresented: $naming) {   // ds-exception: pide un nombre: el campo de texto del sistema
             TextField("Nombre", text: $newName)
             Button("Ahora no", role: .cancel) { newName = "" }
-            Button("Crear") { let name = newName; newName = ""; run { await createAndMove(name) } }
+            Button("Crear") { let name = newName.trimmingCharacters(in: .whitespaces); newName = ""; run { await createAndMove(name) } }
+                .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
         } message: { Text("Nace «Solo tú» y lo que elegiste entra ahí.") }
         .holdsBottomBar()
     }
@@ -75,8 +79,10 @@ struct SavedSelectionBar: View {
 
     /// Hace la acción con lo elegido y sale de elegir.
     private func run(_ work: @escaping () async -> Void) {
+        guard !busy else { return }
+        busy = true
         let motion = DS.Motion.base(reduceMotion)
-        Task { await work(); withAnimation(motion) { selection.editing = false } }
+        Task { await work(); busy = false; withAnimation(motion) { selection.editing = false } }
     }
 
     private func count(_ n: Int, _ one: String, _ many: String) -> String {
@@ -91,18 +97,20 @@ struct SavedSelectionBar: View {
     private func watched() async {
         let picked = chosen, model = model
         let listed = picked.filter { s in model.watchlist.contains { $0.imdb == s.imdb } }
+        let already = Set(picked.filter { model.state(of: $0) == .watched }.map(\.imdb))   // ya vistas: «Deshacer» no borra sus vistas
         let movies = await model.markMoviesWatched(picked)
         let series = picked.count - movies.count
         notify(count(movies.count, "%d marcada como vista", "%d marcadas como vistas"),
                detail: series > 0 ? Strings.tr("Las series se marcan por capítulo en su ficha", language: env.services.appSettings.uiLanguage) : nil) {
-            await model.unmarkMoviesWatched(movies)
+            await model.unmarkMoviesWatched(movies.filter { !already.contains($0.imdb) })
             await model.setMany(listed.filter { s in movies.contains { $0.imdb == s.imdb } }, in: SavedModel.watchlist, add: true)
         }
     }
 
     private func drop() async {
         let picked = chosen, model = model, follow = env.follow, watch = env.services.watch
-        let series = picked.filter { $0.kind == "series" }.map(\.imdb)
+        // Las que ya habías dejado no se tocan: «Deshacer» no las regresa a Viendo.
+        let series = picked.filter { $0.kind == "series" && !follow.hidden.contains($0.imdb) }.map(\.imdb)
         if let problem = await follow.hide(series) { env.notify(problem, tone: .error); return }
         for id in series { await ReleaseNotifier.forget(id) }
         let fromList = listID ?? SavedModel.watchlist
