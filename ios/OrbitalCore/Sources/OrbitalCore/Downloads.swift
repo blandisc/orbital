@@ -138,6 +138,20 @@ public actor Downloads {
         Task { await pump() }
     }
 
+    /// Cambió «Solo con Wi‑Fi»: lo que bajaba (o esperaba el Wi‑Fi) se vuelve a pedir con la red nueva, desde donde iba. El
+    /// sistema lee esa regla al crear cada pedido: apagarla no soltaba las que esperaban y decían «Esperando conexión» con
+    /// datos móviles (revisión del 27 nov 2026).
+    public func reconnect() async {
+        let ids = items.values.filter { $0.state == .downloading }.map(\.id)
+        for id in ids { await transport.cancel(id: id) }
+        for id in ids {
+            guard var item = items[id], item.state == .downloading else { continue }
+            item.state = .queued; item.waitingForNetwork = false
+            items[id] = item
+        }
+        if !ids.isEmpty { changed(); await pump() }
+    }
+
     /// Borra la descarga y su archivo.
     public func remove(_ id: String) async {
         guard let item = items.removeValue(forKey: id) else { return }

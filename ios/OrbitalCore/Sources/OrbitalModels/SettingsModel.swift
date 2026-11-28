@@ -72,6 +72,7 @@ public final class SettingsModel: ObservableModel {
         let before = settings
         services.settings.update(change)
         settings = services.appSettings
+        if before.wifiOnlyDownloads != settings.wifiOnlyDownloads { Task { [services] in await services.downloads.reconnect() } }
         if before.traktClientID != settings.traktClientID {
             // También en el Keychain: pegada a mano (sin consola) sobrevive a borrar la app, como la que trae tu Orbital.
             services.secrets.set(SecretKey.traktClientID, settings.traktClientID.isEmpty ? nil : settings.traktClientID)

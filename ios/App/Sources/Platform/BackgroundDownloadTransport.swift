@@ -230,10 +230,11 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         return (total, resolved)
     }
 
-    func startParts(id: String, context: Context, live: [URLSessionTask]) {
+    /// `background`: por el carril de segundo plano aunque la app se vea (el que espera a que vuelva la red).
+    func startParts(id: String, context: Context, live: [URLSessionTask], background: Bool = false) {
         guard let parts = context.parts, let token = context.token else { return }
         if parts.allSatisfy(\.done) { return assemble(id) }
-        let foreground = lock.withLock { inForeground }
+        let foreground = !background && lock.withLock { inForeground }
         // Con la app a la vista, las tareas de segundo plano de este archivo se sueltan: el carril rápido sigue desde lo que hay en
         // el archivo de cada pedazo (lo que la de segundo plano llevaba a medias se vuelve a bajar en segundos).
         let running: Set<Int> = foreground ? [] : Set(live.compactMap { task -> Int? in
@@ -439,8 +440,21 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         guard let stream = dropStream(id, part: part, task: task) else { return }   // lo soltamos nosotros (pausa, cambio de carril)
         if let error, (error as NSError).code == NSURLErrorCancelled { return }
         if stream.got >= parts[part].size { return markPartDone(id, part: part) }
+        if let error, Self.offlineCodes.contains((error as NSError).code) { return waitForNetwork(id, context) }
         let status = (task.response as? HTTPURLResponse)?.statusCode
         failParts(id, token: context.token, status: status, message: error?.localizedDescription ?? "El servidor cortó el pedazo")
+    }
+
+    /// Sin red (o sin la que permites): no cuenta como intento. El carril rápido no espera a la red, así que una grande se
+    /// gastaba sus reintentos en segundos y quedaba «Falló» para siempre al salir del Wi‑Fi; ahora sigue por el de segundo
+    /// plano, que espera la red y continúa desde lo que hay (revisión del 27 nov 2026).
+    static let offlineCodes: Set<Int> = [NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost, NSURLErrorDataNotAllowed,
+                                         NSURLErrorInternationalRoamingOff]
+    private func waitForNetwork(_ id: String, _ context: Context) {
+        guard let token = context.token, lock.withLock({ failedTokens.insert(token).inserted }) else { return }   // una vez por archivo
+        stopStreams(id)
+        startParts(id: id, context: context, live: [], background: true)
+        continuation.yield(.waiting(id: id))
     }
 
     /// Quita un pedazo del carril rápido (si sigue siendo esa tarea) y cierra su archivo.

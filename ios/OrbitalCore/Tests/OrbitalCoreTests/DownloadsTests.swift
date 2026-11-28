@@ -582,3 +582,22 @@ private final class Flag: @unchecked Sendable {
     private let lock = NSLock(); private var _value = false
     var value: Bool { get { lock.withLock { _value } } set { lock.withLock { _value = newValue } } }
 }
+
+extension DownloadsTests {
+    /// Cambiar «Solo con Wi‑Fi» vuelve a pedir lo que bajaba (o esperaba el Wi‑Fi), con la regla nueva.
+    func testChangingWifiOnlyRestartsWhatWasWaiting() async throws {
+        let transport = FakeTransport(), secrets = InMemorySecrets()
+        let d = makeDownloads(transport, secrets: secrets)
+        let a = item("tt1:1:1")
+        try await d.enqueue(a, url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("empieza") { transport.starts.count == 1 }
+        transport.emit(.waiting(id: a.id))
+        await settle("espera el Wi‑Fi") { await d.item(a.id)?.waitingForNetwork == true }
+        await d.reconnect()
+        await settle("se vuelve a pedir") { transport.starts.count == 2 }
+        XCTAssertEqual(transport.cancels, [a.id])
+        let now = await d.item(a.id)
+        XCTAssertEqual(now?.waitingForNetwork, false)
+        XCTAssertEqual(now?.state, .downloading)
+    }
+}
