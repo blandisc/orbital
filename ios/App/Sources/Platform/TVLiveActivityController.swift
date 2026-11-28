@@ -15,6 +15,8 @@ final class TVLiveActivityController {
     private var subscription: ObservableModel.Subscription?
     /// La quitaste de la pantalla bloqueada: no vuelve hasta que la TV ponga otra cosa.
     private var dismissedTitle: String?
+    /// La actualización en curso: la siguiente la espera.
+    private var updating: Task<Void, Never>?
     var language: () -> String = { "es" }
 
     func follow(_ tv: TVNowModel) {
@@ -24,9 +26,16 @@ final class TVLiveActivityController {
         watchPushToken(tv)
         Task { for extra in live.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) } }
         self.tv = tv
+        // Una a la vez, con lo último de la TV: un sondeo avisa varios cambios seguidos y, mientras bajaba el póster, cada aviso
+        // pedía su propia actividad (salían dos «Viendo en la TV»; revisión del 28 nov 2026).
         subscription = tv.onChange { [weak self, weak tv] in
-            guard let self, let tv else { return }
-            Task { await self.update(tv.now, tv: tv) }
+            guard let self, tv != nil else { return }
+            let previous = self.updating
+            self.updating = Task { [weak self, weak tv] in
+                await previous?.value
+                guard let self, let tv else { return }
+                await self.update(tv.now, tv: tv)
+            }
         }
         TVControlIntent.run = { [weak tv] action in
             guard let tv, ThisDevice.capabilities.console else { return }

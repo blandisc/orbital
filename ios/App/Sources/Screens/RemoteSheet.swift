@@ -109,7 +109,8 @@ struct RemoteSheet: View {
         .animation(DS.Motion.smooth(reduceMotion), value: showsScares)
         // El renglón de la voz crece y se pliega con lo de abajo en el mismo movimiento (nada brinca después).
         .animation(DS.Motion.smooth(reduceMotion), value: voicePhase)
-        .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
+        // Al cerrarlo, la respuesta que faltaba ya no se dice ni abre nada (antes hablaba y podía abrir el reproductor después).
+        .onDisappear { speech.cancel(); stopAsking(); collapsing?.cancel(); settling?.cancel(); model.setRemoteOpen(false) }
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
         .task(id: "\(model.context)·\(model.now?.metaID ?? "")·\(model.now?.live == true)") { await model.loadHints() }   // las frases del momento
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
@@ -420,8 +421,13 @@ struct RemoteSheet: View {
                             // Otra de las varias: se pone en la TV y solo cambia su letrero (el carrusel se queda).
                             choose: { choice in
                                 Task {
-                                    _ = await VoiceAssistant(services: env.services, tvNow: model).choose(choice)
-                                    collapseLater()
+                                    let outcome = await VoiceAssistant(services: env.services, tvNow: model).choose(choice)
+                                    if outcome.ok { collapseLater(); return }
+                                    // No llegó a la TV: se dice y qué tramo falló (antes decía «Poniéndose», se plegaba y nada).
+                                    var shown = outcome.reply
+                                    shown.speech = Strings.message(outcome.speech, language: env.services.appSettings.uiLanguage)
+                                    reply = shown; replyOpen = true
+                                    issue = await model.diagnoseConnection()
                                 }
                             },
                             retry: { if let lastSaid { say(model, lastSaid) } },

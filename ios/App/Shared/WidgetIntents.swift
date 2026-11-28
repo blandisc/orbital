@@ -71,6 +71,14 @@ struct WidgetTVStatus: Codable, Equatable {
         WidgetStore.defaults?.set(data, forKey: key)
     }
 
+    /// Cuándo deja de contar lo último (nil si ya no cuenta): el widget se vuelve a pintar entonces. Antes «La TV no contesta»
+    /// o «Mandando…» se quedaban hasta seis horas, porque el widget solo se repintaba a medianoche (revisión del 28 nov 2026).
+    static func expiry(now: Date = Date()) -> Date? {
+        guard let data = WidgetStore.defaults?.data(forKey: key), let status = try? JSONDecoder().decode(WidgetTVStatus.self, from: data) else { return nil }
+        let end = status.at.addingTimeInterval(status.state == .sending ? 60 : ttl)
+        return end > now ? end : nil
+    }
+
     /// Lo de `metaID` si pasó hace menos de `ttl` (y lo de «va en camino», solo un minuto: si la app no contestó, ya no va).
     static func current(for metaID: String, now: Date = Date()) -> State? {
         guard let data = WidgetStore.defaults?.data(forKey: key),

@@ -53,12 +53,13 @@ public final class OrbitalSetupModel: ObservableModel {
     private func connect(_ link: OrbitalPairing) async {
         connecting = true; problem = nil
         defer { connecting = false }
+        let before = services.orbital.isConfigured ? services.orbitalConnection() : nil
         do {
             try await services.pair(link, name: deviceName)
             stage = .connected
         } catch {
-            // No contestó o no aceptó el token: se queda apagada, como estaba.
-            services.turnOffOrbital()
+            // No contestó o no aceptó el código: se queda como estaba (conectada con lo de antes, o apagada).
+            if let before { services.restoreOrbital(before) } else { services.turnOffOrbital() }
             problem = (error as? OrbitalRemote.Failure)?.description ?? "Tu Orbital no contestó."
         }
     }

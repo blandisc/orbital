@@ -123,6 +123,20 @@ final class TVNowModelTests: XCTestCase {
         model.setActive(false)
     }
 
+    /// Revisión del 28 nov: la TV pide la llave del aparato (`device_key_required`): el control dice que hay que volver a
+    /// conectarlos, no «Tu Orbital no contesta» con un «Reintentar» que nunca sirve.
+    func testAMissingDeviceKeyIsAPairingProblemNotUnreachable() async throws {
+        let rig = try connected()
+        rig.http.statuses["https://tv.example/api/companion/now"] = 401
+        rig.http.json["https://tv.example/api/companion/now"] = .object(["code": .string("device_key_required")])
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        model.setActive(true)
+        try await Task.sleep(nanoseconds: 30_000_000)
+        XCTAssertTrue(model.tokenProblem)
+        XCTAssertFalse(model.unreachable)
+        model.setActive(false)
+    }
+
     func testUnreachableOrbitalHidesTheCardWithoutError() async throws {
         let rig = try connected()
         // Sin JSON para esa URL: FakeHTTP contesta 404 (como una Orbital de otra versión).

@@ -25,7 +25,9 @@ struct NextUpProvider: TimelineProvider {
         // Una entrada ahora y otra a medianoche: «Hoy» y «Mañana» cambian de día, y un estreno que ya pasó deja de verse.
         let today = Calendar.current.startOfDay(for: now)
         let midnight = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
-        let entries = [now, midnight].map { NextUpEntry(date: $0, snapshot: Self.fromDay($0, stored)) }
+        // Y otra cuando se vence lo de «En la TV» (va en camino, ya está o no contestó), para que no se quede pegado.
+        let dates = ([now, midnight] + [WidgetTVStatus.expiry(now: now)].compactMap { $0 }.filter { $0 < midnight }).sorted()
+        let entries = dates.map { NextUpEntry(date: $0, snapshot: Self.fromDay($0, stored)) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(DS.Widget.fallbackRefresh))))
     }
 

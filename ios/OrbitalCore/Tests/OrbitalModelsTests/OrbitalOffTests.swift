@@ -95,6 +95,21 @@ final class OrbitalSetupModelTests: XCTestCase {
         XCTAssertNil(setup.advance(), "después de la tercera, se cierra")
     }
 
+    /// Revisión del 28 nov: ya conectada, un nuevo escaneo que falla (código vencido, la TV dormida) deja la conexión de antes.
+    func testAFailedRescanKeepsTheConnectionYouHad() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://tv.example/api/ping"] = .object(["ok": .bool(true)])
+        rig.http.json["https://tv.example/api/companion"] = .object([:])
+        let setup = OrbitalSetupModel(rig.services)
+        await setup.scanned("orbital-ios://pair?u=https%3A%2F%2Ftv.example&t=secreto")
+        XCTAssertTrue(rig.services.orbitalOn)
+        rig.http.json["https://tv.example/api/ping"] = nil   // la TV ya no contesta
+        await setup.scanned("orbital-ios://pair?u=https%3A%2F%2Ftv.example&t=otro")
+        XCTAssertNotNil(setup.problem, "dice que no se pudo")
+        XCTAssertTrue(rig.services.orbitalOn, "sigue conectada")
+        XCTAssertEqual(rig.services.secrets.get(SecretKey.orbitalToken), "secreto", "con lo de antes")
+    }
+
     func testAConsoleThatDoesNotAnswerLeavesItOff() async throws {
         let rig = try ServicesRig()   // sin respuesta en /api/ping
         let setup = OrbitalSetupModel(rig.services)

@@ -115,6 +115,28 @@ extension Services {
         }
     }
 
+    /// Cómo estaba la conexión con tu TV, para dejarla igual si un nuevo escaneo falla (revisión del 28 nov 2026: un código
+    /// vencido o la TV dormida borraban la dirección, el token y la llave; con la llave borrada, el siguiente escaneo bueno
+    /// sumaba otro renglón en la TV en vez de reemplazar el suyo).
+    public struct OrbitalConnection: Sendable {
+        let secrets: [String: String?]
+        let enabled: Bool, address: String, pairing: Int
+    }
+
+    static let orbitalSecretKeys = [SecretKey.orbitalAddress, SecretKey.orbitalToken, SecretKey.orbitalDeviceKey, SecretKey.orbitalTVID]
+
+    public func orbitalConnection() -> OrbitalConnection {
+        OrbitalConnection(secrets: Dictionary(uniqueKeysWithValues: Self.orbitalSecretKeys.map { ($0, secrets.get($0)) }),
+                          enabled: settings.value.orbitalEnabled, address: settings.value.orbitalAddress, pairing: tvPairing)
+    }
+
+    public func restoreOrbital(_ saved: OrbitalConnection) {
+        for (key, value) in saved.secrets { secrets.set(key, value) }
+        settings.update { $0.orbitalEnabled = saved.enabled; $0.orbitalAddress = saved.address }
+        tvPairing = saved.pairing
+        changed()
+    }
+
     /// Quitaste este aparato en Tu Orbital: se olvidan su llave y el token, y queda sin emparejar (la dirección se queda).
     public func forgetThisDevice() {
         secrets.set(SecretKey.orbitalDeviceKey, nil)

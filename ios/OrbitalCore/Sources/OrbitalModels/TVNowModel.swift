@@ -200,6 +200,9 @@ public final class TVNowModel: ObservableModel {
         let found = await services.scares(imdb: imdb, fallbackTitle: now.title)
         guard scaresFor == imdb else { return }
         scares = found
+        // Cerraste el control a medio pedir, o no había red: la próxima vez que lo abras se vuelve a pedir (antes el mapa no
+        // volvía en toda la película).
+        if found == nil { scaresFor = nil }
     }
 
     private func tick() async {
@@ -229,7 +232,7 @@ public final class TVNowModel: ObservableModel {
             if game != nil {
                 if consoleFetchedAt.map({ Date().timeIntervalSince($0) > Self.consoleSeconds }) ?? true { await refreshConsole() }
             } else { console = nil; consoleFetchedAt = nil }
-        } catch OrbitalRemote.Failure.badToken {
+        } catch let failure as OrbitalRemote.Failure where failure.lostPairing {
             tokenProblem = true
             now = nil
             game = nil
@@ -300,7 +303,7 @@ public final class TVNowModel: ObservableModel {
             guard Date().timeIntervalSince(next.at) < Self.keyFreshness else { continue }
             do { try await services.orbital.input(next.action); remoteOutdated = false }
             catch OrbitalRemote.Failure.outdated { remoteOutdated = true; pendingKeys.removeAll() }
-            catch OrbitalRemote.Failure.badToken { tokenProblem = true; pendingKeys.removeAll() }
+            catch let failure as OrbitalRemote.Failure where failure.lostPairing { tokenProblem = true; pendingKeys.removeAll() }
             catch { pendingKeys.removeAll(); missed(error) }   // sin red: las que esperaban se tiran (no llegan 50 s después)
         }
         refreshSoon()
@@ -397,7 +400,7 @@ public final class TVNowModel: ObservableModel {
             setNow(playing, immediately: action == "stop")   // «Salir» se ve al momento
             fetchedAt = Date()
             tokenProblem = false
-        } catch OrbitalRemote.Failure.badToken {
+        } catch let failure as OrbitalRemote.Failure where failure.lostPairing {
             tokenProblem = true
         } catch {
             // No se pudo: se deja como estaba (el siguiente sondeo lo corrige) y se dice que no llegó.
@@ -423,6 +426,7 @@ public final class TVNowModel: ObservableModel {
         case .brake: volumeBrakes += 1
         case .send: break
         }
+        let before = volume
         if let shown { volume = shown }
         volumeHeldUntil = Date().addingTimeInterval(Self.volumeHold)
         pendingVolume += delta
@@ -437,13 +441,16 @@ public final class TVNowModel: ObservableModel {
                 let playing = try await services.orbital.control(action: "volume", delta: Double(step))
                 if accept(ticket) { setNow(playing); fetchedAt = Date() }   // con su hora: la barra de avance no brinca
                 volumeOutdated = false
-            } catch OrbitalRemote.Failure.badToken {
+            } catch let failure as OrbitalRemote.Failure where failure.lostPairing {
                 tokenProblem = true; pendingVolume = 0
             } catch OrbitalRemote.Failure.outdated {
                 volumeOutdated = true; pendingVolume = 0   // una consola sin la acción «volume»: se avisa que hay que actualizarla
             } catch OrbitalRemote.Failure.refused {
                 volumeOutdated = true; pendingVolume = 0   // las de antes contestan «Esa acción no existe»
-            } catch { pendingVolume = 0 }
+            } catch {
+                // No llegó (la TV no contesta): la barra regresa a donde estaba y se dice, como las demás teclas.
+                pendingVolume = 0; volume = before; missed(error)
+            }
         }
     }
 
@@ -481,7 +488,7 @@ public final class TVNowModel: ObservableModel {
         do {
             game = try await services.orbital.game(action: action)
             tokenProblem = false
-        } catch OrbitalRemote.Failure.badToken { tokenProblem = true } catch { missed(error) }
+        } catch let failure as OrbitalRemote.Failure where failure.lostPairing { tokenProblem = true } catch { missed(error) }
     }
 
     /// El modo de energía de la consola, o cerrar una app que gasta memoria.
@@ -492,4 +499,10 @@ public final class TVNowModel: ObservableModel {
     }
 
     deinit { pollTask?.cancel() }
+}
+
+extension OrbitalRemote.Failure {
+    /// La TV ya no reconoce este iPhone (otro token, sin llave, borrado o reinstalada): hay que volver a escanear su código. No
+    /// es «no contesta»: reintentar no sirve (revisión del 28 nov 2026).
+    var lostPairing: Bool { [.badToken, .needsKey, .removed, .unknownTV].contains(self) }
 }
