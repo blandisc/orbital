@@ -60,6 +60,8 @@ public actor OneDriveLibrary {
     private let folder: @Sendable () -> String
     private let clock: @Sendable () -> Date
     private var scanning: Task<Index, Error>?
+    /// La carpeta de la revisión en curso: si eliges otra mientras tanto, esa no se reusa (revisión del 28 nov 2026).
+    private var scanningFolder: String?
 
     public init(drive: OneDrive, cinemeta: Cinemeta, kv: KeyValueStore, folder: @escaping @Sendable () -> String, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.drive = drive; self.cinemeta = cinemeta; self.kv = kv; self.folder = folder; self.clock = clock
@@ -85,9 +87,12 @@ public actor OneDriveLibrary {
     /// Revisa la carpeta y empareja cada video con su ficha. Una sola revisión a la vez.
     @discardableResult
     public func scan() async throws -> Index {
-        if let scanning { return try await scanning.value }
+        let path = folder()
+        if let scanning {
+            if scanningFolder == path { return try await scanning.value }
+            scanning.cancel()
+        }
         let task = Task<Index, Error> {
-            let path = folder()
             let files = try await drive.videos(path)
             let fixes = self.fixes
             var found: [String: Fix?] = [:]
@@ -98,19 +103,31 @@ public actor OneDriveLibrary {
             var entries: [Entry] = [], unmatched: [OneDriveFile] = []
             for file in files {
                 let key = Self.key(file.info)
-                if found[key] == nil {
-                    if let fixed = fixes[key] { found[key] = .some(fixed) } else { found[key] = .some(await match(file.info)) }
-                }
+                // Lo que corregiste manda sobre lo reconocido antes.
+                if let fixed = fixes[key] { found[key] = .some(fixed) } else if found[key] == nil { found[key] = .some(await match(file.info)) }
                 if let fix = found[key] ?? nil { entries.append(Entry(file: file, imdb: fix.imdb, kind: file.info.kind, name: fix.name, poster: fix.poster, year: fix.year)) }
                 else { unmatched.append(file) }
             }
+            // Una corrección hecha mientras se revisaba no se pierde: se vuelven a leer antes de guardar.
+            let late = self.fixes.filter { fixes[$0.key] != $0.value }
+            if !late.isEmpty {
+                entries = entries.map { e in
+                    guard let f = late[Self.key(e.file.info)] else { return e }
+                    return Entry(file: e.file, imdb: f.imdb, kind: e.kind, name: f.name, poster: f.poster, year: f.year)
+                }
+                entries += unmatched.compactMap { file in
+                    late[Self.key(file.info)].map { f in Entry(file: file, imdb: f.imdb, kind: file.info.kind, name: f.name, poster: f.poster, year: f.year) }
+                }
+                unmatched.removeAll { late[Self.key($0.info)] != nil }
+            }
             let index = Index(folder: path, scannedAt: clock(), entries: entries, unmatched: unmatched.count, unmatchedFiles: unmatched)
             // Cambiaste de carpeta o desconectaste mientras se revisaba: esto ya no es tu biblioteca.
-            if folder() == path, drive.linked { save(index) }
+            if !Task.isCancelled, folder() == path, drive.linked { save(index) }
             return index
         }
         scanning = task
-        defer { scanning = nil }
+        scanningFolder = path
+        defer { if scanningFolder == path { scanning = nil; scanningFolder = nil } }
         return try await task.value
     }
 

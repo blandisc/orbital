@@ -35,13 +35,16 @@ public struct OneDriveName: Sendable, Equatable, Codable {
         var stem = replace(ns.deletingPathExtension, #"[._]+"#, " ")
         stem = replace(stem, #"\[[^\]]*\]|\{[^}]*\}"#, " ")
         let thisYear = Calendar(identifier: .gregorian).component(.year, from: now)
-        if let m = first(#"\b[Ss](\d{1,2})\s*[Ee](\d{1,3})\b|\b(\d{1,2})x(\d{2,3})\b"#, stem) {
+        // «S01E03E04» y «S01E03-E04» (dos capítulos en un archivo) cuentan como el primero; «1x03» y «1X03» también.
+        if let m = first(#"\b[Ss](\d{1,2})\s*[Ee](\d{1,3})(?:-?[Ee]\d{1,3})*\b|\b(\d{1,2})[xX](\d{2,3})\b"#, stem) {
             let season = Int(group(m, 1, stem) ?? group(m, 3, stem) ?? "") ?? 0
             let episode = Int(group(m, 2, stem) ?? group(m, 4, stem) ?? "") ?? 0
-            var title = String(stem[..<Range(m.range, in: stem)!.lowerBound])
-            let year = first(#"\b(19|20)\d{2}\b"#, title).flatMap { group($0, 0, title) }.flatMap(Int.init)
-            title = replace(title, #"\(?\b(19|20)\d{2}\b\)?"#, " ")
-            return OneDriveName(kind: "series", title: clean(title), year: year, season: season, episode: episode)
+            let before = String(stem[..<Range(m.range, in: stem)!.lowerBound])
+            let year = first(#"\b(19|20)\d{2}\b"#, before).flatMap { group($0, 0, before) }.flatMap(Int.init)
+            let title = clean(replace(before, #"\(?\b(19|20)\d{2}\b\)?"#, " "))
+            // Una serie que se llama como un año («1923», «1883»): el año es su nombre, no se borra.
+            if title.isEmpty { return OneDriveName(kind: "series", title: clean(before), year: nil, season: season, episode: episode) }
+            return OneDriveName(kind: "series", title: title, year: year, season: season, episode: episode)
         }
         var year: Int?
         let years = all(#"\(?\b((?:19|20)\d{2})\b\)?"#, stem).filter { m in
@@ -206,7 +209,9 @@ public actor OneDrive {
         catch let error as OneDriveError { throw error }
         catch { throw OneDriveError.message("No pude conectar con OneDrive.") }
         switch response.status {
-        case 200: guard let json = JSON.parse(response.data), json.object != nil else { fallthrough }; return json
+        // Algo que no se entiende (la página de un Wi‑Fi de hotel, un cuerpo cortado) no es tu sesión vencida: antes caía en el
+        // 401 y te desconectaba (revisión del 28 nov 2026).
+        case 200: guard let json = JSON.parse(response.data), json.object != nil else { throw OneDriveError.message("No pude conectar con OneDrive.") }; return json
         case 401:
             // El permiso se venció antes de tiempo: se renueva una vez; si tampoco sirve, la sesión se olvida (Ajustes vuelve a «Conectar»).
             if !retried, var t = tokens(), !(t.refresh_token ?? "").isEmpty {

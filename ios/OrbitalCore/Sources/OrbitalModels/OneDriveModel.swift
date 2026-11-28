@@ -50,8 +50,11 @@ public final class OneDriveModel: ObservableModel {
     /// Cómo se llama tu carpeta: «/» es todo tu OneDrive.
     public static func folderName(_ path: String) -> String? { path == "/" ? nil : (path as NSString).lastPathComponent }
 
-    public var movies: Int { index?.entries.filter { $0.kind == "movie" }.count ?? 0 }
-    public var episodes: Int { index?.entries.filter { $0.kind == "series" }.count ?? 0 }
+    /// Cuántas películas y episodios: una copia en 4K y otra en 1080p son la misma (revisión del 28 nov 2026).
+    public var movies: Int { Set(index?.entries.filter { $0.kind == "movie" }.map(\.imdb) ?? []).count }
+    public var episodes: Int {
+        Set(index?.entries.filter { $0.kind == "series" }.map { "\($0.imdb)|\($0.file.info.season ?? 0)|\($0.file.info.episode ?? 0)" } ?? []).count
+    }
 
     public func setClientID(_ value: String) {
         let clean = value.trimmingCharacters(in: .whitespacesAndNewlines)

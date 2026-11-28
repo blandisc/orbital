@@ -15,6 +15,11 @@ final class OneDriveTests: XCTestCase {
         XCTAssertEqual(p("El Chavo [Latino] S02E10.avi"), OneDriveName(kind: "series", title: "El Chavo", year: nil, season: 2, episode: 10))
         XCTAssertEqual(p("Doctor.Who.2005.S01E01.mkv")?.year, 2005)
         XCTAssertNil(p("notas.txt"))
+        // Revisión del 28 nov: dos capítulos en un archivo y series que se llaman como un año.
+        XCTAssertEqual(p("Severance.S01E03E04.mkv"), OneDriveName(kind: "series", title: "Severance", year: nil, season: 1, episode: 3))
+        XCTAssertEqual(p("Severance S01E03-E04.mkv"), OneDriveName(kind: "series", title: "Severance", year: nil, season: 1, episode: 3))
+        XCTAssertEqual(p("1923.S01E01.mkv"), OneDriveName(kind: "series", title: "1923", year: nil, season: 1, episode: 1))
+        XCTAssertEqual(p("Lost 1X03.mkv"), OneDriveName(kind: "series", title: "Lost", year: nil, season: 1, episode: 3))
     }
 
     func makeDrive(_ http: FakeHTTP, secrets: InMemorySecrets = InMemorySecrets(), clock: Clock = Clock()) -> OneDrive {
@@ -134,6 +139,24 @@ final class OneDriveTests: XCTestCase {
         let again = try await library.scan()
         XCTAssertEqual(again.entries.map(\.imdb), ["tt0085995"], "y en la siguiente revisión")
         XCTAssertEqual(http.calls.filter { $0.contains("search=Vacaciones") }.count, 1, "lo corregido ya no se busca")
+    }
+
+    /// Revisión del 28 nov 2026: lo que corregiste manda sobre lo que la revisión anterior reconoció (una revisión que seguía
+    /// corriendo al corregir guardaba la ficha vieja).
+    func testAFixWinsOverWhatThePreviousScanFound() async throws {
+        let http = FakeHTTP(), clock = Clock(), kv = InMemoryKeyValueStore()
+        let drive = linkedDrive(http, clock: clock)
+        http.json[children("Pelis")] = ["value": [["id": "a4", "name": "Vacaciones 2019.mp4", "size": 100, "file": [:]]]]
+        http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=Vacaciones.json"] = ["metas": [["id": "tt0000001", "name": "Otra", "releaseInfo": "2019"]]]
+        let library = OneDriveLibrary(drive: drive, cinemeta: Cinemeta(http: http), kv: kv, folder: { "Pelis" }, clock: { clock.now })
+        let first = try await library.scan()
+        XCTAssertEqual(first.entries.map(\.imdb), ["tt0000001"])
+        // La corrección llega por su cuenta (como si la revisión anterior siguiera en curso y guardara después).
+        let info = try XCTUnwrap(first.entries.first?.file.info)
+        let fixes = [OneDriveLibrary.key(info): OneDriveLibrary.Fix(imdb: "tt0085995", name: "Vacation", poster: nil, year: "1983")]
+        kv.set("onedrive-fixes", data: try JSONEncoder().encode(fixes))
+        let again = try await library.scan()
+        XCTAssertEqual(again.entries.map(\.imdb), ["tt0085995"])
     }
 
     func testWithoutAFolderNothingIsAsked() async {

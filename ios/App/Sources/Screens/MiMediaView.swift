@@ -130,7 +130,7 @@ struct MiMediaView<Top: View>: View {
                         }
                     }
                 Text(verbatim: model.name(t)).recipe(.footnote, color: DS.text).lineLimit(1)
-                DataLine(parts: [t.bestResolution, t.kind == "series" ? count("%lld episodios", t.entries.count) : (t.entries.count > 1 ? count("%lld versiones", t.entries.count) : "")])
+                DataLine(parts: [t.bestResolution, t.kind == "series" ? count("%lld episodios", Set(t.entries.map { "\($0.file.info.season ?? 0)|\($0.file.info.episode ?? 0)" }).count) : (t.entries.count > 1 ? count("%lld versiones", t.entries.count) : "")])
             }
             .frame(width: fill ? nil : DS.Poster.railWidth)
         }
