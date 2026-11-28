@@ -68,3 +68,5 @@ private struct WindowProbe: UIViewRepresentable {
         override func didMoveToWindow() { super.didMoveToWindow(); found(window) }
     }
 }
+
+extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }

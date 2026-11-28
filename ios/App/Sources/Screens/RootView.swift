@@ -224,8 +224,6 @@ struct RootView: View {
     }
 }
 
-extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
-
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
     @Environment(AppEnvironment.self) private var env
