@@ -216,7 +216,7 @@ struct HomeView: View {
     var body: some View {
         let _ = BodyCount.tick("home", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = home.model
-        ScrollView { page(model, kind: model.spotlightKind) }   // el tipo de la barra (Todo · Películas · Series) filtra toda la página
+        ScrollView { page(model, kind: model.spotlightKind) }.onChange(of: model.spotlightKind) { continueKind = $1 ?? "" }   // el tipo filtra toda la página y su «Ver todo»
         // Un Bool (Equatable): el encabezado solo se vuelve a pintar al cruzar la línea, no en cada cuadro del desplazamiento.
         .scrollEdgeEffectStyle(.hard, for: .top)   // el encabezado propio (HE1-B) tapa lo que pasa por debajo, como la barra de antes
         // Con margen (se encoge pasando `collapseAt` y crece hasta volver bajo `expandAt`): al encogerse, el encabezado cambia de
@@ -302,9 +302,9 @@ struct HomeView: View {
 
     /// Con orden y filtros (películas o series, género, ocultar lo visto), como toda lista abierta desde «Ver todo».
     private func titleGrid(_ route: HomeListRoute) -> some View {
-        let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending : home.model.forYouPicks
-        return ScrollView {
-            SortableGrid(listID: "home:\(route.id)", items: items, collections: env.collections) { s, width in
+        let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending : home.model.forYouPicks.filter { !dismissedPicks.contains($0.imdb) }
+        return ScrollView {   // abre con el tipo de Inicio: «Mi lista · 4» de películas ya no enseña también las series
+            SortableGrid(listID: "home:\(route.id)", items: items, collections: env.collections, kind: home.model.spotlightKind) { s, width in
                 if let list = route.list {
                     TitleLink(route: s.route, width: width).contextMenu { listActions(s, in: list) }
                 } else {

@@ -51,4 +51,22 @@ final class SearchAndDownloadsUndoUITests: XCTestCase {
         undo.tap()
         XCTAssertTrue(app.cells.containing(NSPredicate(format: "label == 'Dune' OR label == 'Duna'")).firstMatch.waitForExistence(timeout: 5), "«Deshacer» la regresa")
     }
+
+    /// Borrar el último episodio de una serie descargada te regresa a Descargas, no a una página en blanco (revisión del 27 nov 2026).
+    func testDeletingTheLastEpisodeGoesBackToDownloads() {
+        launch(["-demo-tab", "3", "-demo-downloads", "-demo-library", "downloads"])
+        let office = app.staticTexts.matching(NSPredicate(format: "label == 'The Office' OR label == 'La Oficina'")).firstMatch
+        XCTAssertTrue(office.waitForExistence(timeout: 20), "La Oficina en Descargas")
+        office.tap()
+        for episode in ["T2 · E5", "T2 · E6"] {
+            let row = app.staticTexts[episode].firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "\(episode) en la serie")
+            row.swipeLeft()
+            let delete = app.buttons["Borrar"].firstMatch
+            XCTAssertTrue(delete.waitForExistence(timeout: 5))
+            delete.tap()
+        }
+        let dune = app.staticTexts.matching(NSPredicate(format: "label == 'Dune' OR label == 'Duna'")).firstMatch
+        XCTAssertTrue(dune.waitForExistence(timeout: 5), "de vuelta en Descargas, con lo demás")
+    }
 }

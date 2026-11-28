@@ -413,6 +413,7 @@ struct DownloadSeriesView: View {
     @Environment(\.titleName) var titleName
     var observer: ModelObserver<DownloadsModel>
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
     let metaID: String
 
     var body: some View {
@@ -437,9 +438,11 @@ struct DownloadSeriesView: View {
                 }
                 .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
             } else if let season = group?.seasons.first {
-                DownloadSeasonView(observer: observer, metaID: metaID, season: season.number)
+                DownloadSeasonView(observer: observer, metaID: metaID, season: season.number, popsWhenEmpty: false)
             }
         }
+        // Borraste lo último de la serie: de vuelta a Descargas, no una página en blanco (revisión del 27 nov 2026).
+        .onChange(of: group == nil) { _, gone in if gone { dismiss() } }
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .dsInlineTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? ""))
@@ -454,6 +457,9 @@ struct DownloadSeasonView: View {
     @State private var subtitlesFor: DownloadItem?
     let metaID: String
     let season: Int
+    /// Dentro de la serie (una sola temporada) la que regresa es la serie, no esta.
+    var popsWhenEmpty = true
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         let model = observer.model
@@ -489,6 +495,8 @@ struct DownloadSeasonView: View {
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .dsInlineTitle(Text(verbatim: group.map { titleName($0.title, id: $0.metaID, kind: $0.kind) } ?? ""))
+        // Borraste el último episodio de la temporada: de vuelta, no solo el encabezado «Temporada N» (revisión del 27 nov 2026).
+        .onChange(of: items.isEmpty) { _, empty in if empty, popsWhenEmpty { dismiss() } }
         .appSheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
     }
 }

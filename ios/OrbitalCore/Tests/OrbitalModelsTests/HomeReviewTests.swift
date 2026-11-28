@@ -61,4 +61,18 @@ final class HomeReviewTests: XCTestCase {
         XCTAssertNil(model.game, "sin tu Orbital no queda la barra del juego")
         model.setActive(false)
     }
+
+    /// Un botón del control que no llega a la TV lo dice (antes se apagaba un momento y nada).
+    func testARemoteButtonThatDoesNotReachTheTVSaysSo() async throws {
+        let rig = try ServicesRig()
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
+        rig.secrets.set(SecretKey.orbitalToken, "secreto")
+        let model = TVNowModel(rig.services, intervalSeconds: 60)
+        var told = 0
+        model.onCommandFailed = { _ in told += 1 }
+        await model.control("toggle")   // nadie contesta en tv.example
+        XCTAssertEqual(told, 1)
+        await model.control("toggle")
+        XCTAssertEqual(told, 1, "dos seguidos: un solo aviso")
+    }
 }

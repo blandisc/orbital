@@ -121,7 +121,8 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
-         states: [String: WatchState]? = nil, bar: ((ListBarParts) -> AnyView)? = nil, manualOrder: (() -> Void)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+         states: [String: WatchState]? = nil, bar: ((ListBarParts) -> AnyView)? = nil, manualOrder: (() -> Void)? = nil, kind: String? = nil,
+         @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = collections
         self.states = states; self.bar = bar; self.manualOrder = manualOrder
         self.hideWatchedAvailable = collections.traktLinked && states == nil
@@ -131,6 +132,7 @@ struct SortableGrid<Cell: View>: View {
         self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
         self.letterboxdRatings = { items in await shared.letterboxdRatings(items.filter { $0.kind == "movie" }.map(\.imdb)) }
         _sort = State(initialValue: ListSort.saved(listID: listID))
+        _filter = State(initialValue: ListFilter(kind: kind))   // `kind`: empieza con el tipo de donde vienes (el de Inicio)
     }
 
     var body: some View {

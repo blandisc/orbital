@@ -247,6 +247,18 @@ public final class TVNowModel: ObservableModel {
         }
     }
 
+    /// Un botón del control que no llegó a la TV (apagada, otra red): la app lo dice (`notifyOrbital`). Antes el botón se
+    /// apagaba un momento y nada; el control seguía viéndose vivo unos 35 s (revisión del 27 nov 2026).
+    public var onCommandFailed: ((Error) -> Void)?
+    private var lastMissed = Date.distantPast
+    private func missed(_ error: Error) {
+        guard !(error is CancellationError) else { return }
+        refreshSoon()   // que el sondeo se entere ya de que no contesta
+        guard Date().timeIntervalSince(lastMissed) > 4 else { return }   // una ráfaga de teclas: un solo aviso
+        lastMissed = Date()
+        onCommandFailed?(error)
+    }
+
     // MARK: orden de las respuestas
     private var issued = 0, applied = 0
     private func nextTicket() -> Int { issued += 1; return issued }
@@ -289,7 +301,7 @@ public final class TVNowModel: ObservableModel {
             do { try await services.orbital.input(next.action); remoteOutdated = false }
             catch OrbitalRemote.Failure.outdated { remoteOutdated = true; pendingKeys.removeAll() }
             catch OrbitalRemote.Failure.badToken { tokenProblem = true; pendingKeys.removeAll() }
-            catch { pendingKeys.removeAll() }   // sin red: las que esperaban se tiran (no llegan 50 s después)
+            catch { pendingKeys.removeAll(); missed(error) }   // sin red: las que esperaban se tiran (no llegan 50 s después)
         }
         refreshSoon()
     }
@@ -358,7 +370,7 @@ public final class TVNowModel: ObservableModel {
     public func type(_ text: String, submit: Bool, replace: Bool = false) async {
         do { try await services.orbital.type(text, submit: submit, replace: replace) }
         catch OrbitalRemote.Failure.outdated { remoteOutdated = true }
-        catch {}
+        catch { missed(error) }
     }
 
     /// LA-B: le da a la TV el buzón de la isla (ver `OrbitalRemote.registerActivityPush`). Si falla, se vuelve a dar con
@@ -388,7 +400,8 @@ public final class TVNowModel: ObservableModel {
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
         } catch {
-            // No se pudo: se deja como estaba: el siguiente sondeo (5 s) lo corrige solo.
+            // No se pudo: se deja como estaba (el siguiente sondeo lo corrige) y se dice que no llegó.
+            missed(error)
         }
     }
 
@@ -468,7 +481,7 @@ public final class TVNowModel: ObservableModel {
         do {
             game = try await services.orbital.game(action: action)
             tokenProblem = false
-        } catch OrbitalRemote.Failure.badToken { tokenProblem = true } catch {}
+        } catch OrbitalRemote.Failure.badToken { tokenProblem = true } catch { missed(error) }
     }
 
     /// El modo de energía de la consola, o cerrar una app que gasta memoria.

@@ -279,6 +279,7 @@ final class AppEnvironment {
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)
         tvNow.inbox = inbox
+        tvNow.onCommandFailed = { [weak self] in self?.notifyOrbital($0) }
         tvActivity.language = { [services] in services.appSettings.uiLanguage }
         tvActivity.follow(tvNow)
         catalog = CatalogModel(services)
